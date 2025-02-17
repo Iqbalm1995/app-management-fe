@@ -1,3 +1,5 @@
+"use client";
+
 import {
   HeaderContent,
   HeaderContentProps,
@@ -9,6 +11,7 @@ import {
   Card,
   CardBody,
   CardHeader,
+  Divider,
   Flex,
   Heading,
   HStack,
@@ -16,6 +19,8 @@ import {
   StackDivider,
   Text,
 } from "@chakra-ui/react";
+import { useRef, useState } from "react";
+import { useDrag, useDrop } from "react-dnd";
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Kanban Example",
@@ -80,6 +85,15 @@ const ListTaskCard: DummyCardProps[] = [
 ];
 
 const DummyCardBoard = () => {
+  const [cards, setCards] = useState<DummyCardProps[]>(ListTaskCard);
+
+  const moveCard = (dragIndex: number, hoverIndex: number) => {
+    const draggedCard = cards[dragIndex];
+    const newCards = [...cards];
+    newCards.splice(dragIndex, 1);
+    newCards.splice(hoverIndex, 0, draggedCard);
+    setCards(newCards);
+  };
   return (
     <Flex
       as={Stack}
@@ -89,33 +103,97 @@ const DummyCardBoard = () => {
       flexShrink={0}
       bg={"gray.200"}
       p={4}
-      rounded={radiusStyle}
     >
-      <Box px={4} py={2} rounded={radiusStyle}>
+      <Box px={4} py={2}>
         <Heading as="h4" size="md">
           Card Board 1
         </Heading>
       </Box>
-      {ListTaskCard.sort((a, b) => a.taskPos - b.taskPos).map((task) => (
-        <DummyCard key={task.taskCode} {...task} />
+      {cards.map((task, index) => (
+        <DraggableCard
+          key={task.taskCode}
+          index={index}
+          task={task}
+          moveCard={moveCard}
+        />
       ))}
+      <Divider />
+      <Box px={4} py={2} fontSize={"xs"} overflowX="auto">
+        <pre>{JSON.stringify(cards, null, 2)}</pre>
+      </Box>
     </Flex>
   );
 };
 
-const DummyCard = ({ taskCode, taskName, taskDesc }: DummyCardProps) => {
+const DraggableCard = ({
+  task,
+  index,
+  moveCard,
+}: {
+  task: DummyCardProps;
+  index: number;
+  moveCard: (dragIndex: number, hoverIndex: number) => void;
+}) => {
+  const ref = useRef<HTMLDivElement>(null);
+
+  const [{ isDragging }, drag, preview] = useDrag({
+    type: "CARD",
+    item: { index },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
+
+  const [, drop] = useDrop({
+    accept: "CARD",
+    hover: (item: { index: number }) => {
+      if (item.index !== index) {
+        moveCard(item.index, index);
+        item.index = index;
+      }
+    },
+  });
+
+  // Make sure to attach the drop target and drag reference correctly
+  drag(drop(ref));
+
+  // Return the draggable card with custom styles
   return (
-    <Card rounded={radiusStyle} flexShrink={0}>
-      <CardBody p={5}>
-        <Heading size="sm" textTransform="uppercase">
-          #{taskCode} - {taskName}
-        </Heading>
-        <Text pt="2" fontSize="sm" whiteSpace="normal">
-          {taskDesc}
-        </Text>
-      </CardBody>
-    </Card>
+    <Box
+      ref={ref}
+      cursor="move"
+      style={{
+        opacity: isDragging ? 1 : 1, // Keep full opacity even when dragging
+        transition: "opacity 0.2s ease", // Optional: Smooth transition
+      }}
+    >
+      <Card rounded="lg" flexShrink={0}>
+        <CardBody p={5}>
+          <Heading size="sm" textTransform="uppercase">
+            #{task.taskCode} - {task.taskName}
+          </Heading>
+          <Text pt="2" fontSize="sm" whiteSpace="normal">
+            {task.taskDesc}
+          </Text>
+        </CardBody>
+      </Card>
+    </Box>
   );
 };
+
+// const DummyCard = ({ taskCode, taskName, taskDesc }: DummyCardProps) => {
+//   return (
+//     <Card rounded={radiusStyle} flexShrink={0}>
+//       <CardBody p={5}>
+//         <Heading size="sm" textTransform="uppercase">
+//           #{taskCode} - {taskName}
+//         </Heading>
+//         <Text pt="2" fontSize="sm" whiteSpace="normal">
+//           {taskDesc}
+//         </Text>
+//       </CardBody>
+//     </Card>
+//   );
+// };
 
 export default KanbanPage;

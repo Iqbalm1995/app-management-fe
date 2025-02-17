@@ -3,6 +3,8 @@
 
 import { CacheProvider } from "@chakra-ui/next-js";
 import { ChakraProvider, extendTheme, ThemeConfig } from "@chakra-ui/react";
+import { DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
 import "@fontsource/poppins/400.css"; // Regular weight
 import "@fontsource/poppins/500.css"; // Medium weight
 import "@fontsource/poppins/600.css"; // Semi-bold weight
@@ -164,7 +166,9 @@ const theme = extendTheme({
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <CacheProvider>
-      <ChakraProvider theme={theme}>{children}</ChakraProvider>
+      <ChakraProvider theme={theme}>
+        <DndProvider backend={HTML5Backend}>{children}</DndProvider>
+      </ChakraProvider>
     </CacheProvider>
   );
 }
