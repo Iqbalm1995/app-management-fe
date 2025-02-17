@@ -1,0 +1,121 @@
+import {
+  HeaderContent,
+  HeaderContentProps,
+} from "@/app/components/headerContent";
+import SidebarWithHeader from "@/app/components/sidebar";
+import { radiusStyle } from "@/app/constants/applicationConstants";
+import {
+  Box,
+  Card,
+  CardBody,
+  CardHeader,
+  Flex,
+  Heading,
+  HStack,
+  Stack,
+  StackDivider,
+  Text,
+} from "@chakra-ui/react";
+
+const HeaderDataContent: HeaderContentProps = {
+  titleName: "Kanban Example",
+  breadCrumb: ["Home", "Kanban"],
+};
+
+function KanbanPage() {
+  return (
+    <SidebarWithHeader>
+      <HeaderContent
+        titleName={HeaderDataContent.titleName}
+        breadCrumb={HeaderDataContent.breadCrumb}
+      />
+      <Flex
+        as={HStack}
+        minH={"80vh"}
+        bg={"primary.50"}
+        p={5}
+        alignItems={"start"}
+        justifyContent={"start"}
+        overflowX="auto" // Make Flex scrollable horizontally
+        whiteSpace="nowrap" // Prevent line breaks
+        spacing={4}
+        rounded={radiusStyle}
+      >
+        <DummyCardBoard />
+        <DummyCardBoard />
+        <DummyCardBoard />
+      </Flex>
+    </SidebarWithHeader>
+  );
+}
+
+interface DummyCardProps {
+  taskCode: string;
+  taskName: string;
+  taskDesc: string;
+  taskPos: number;
+}
+
+const ListTaskCard: DummyCardProps[] = [
+  {
+    taskCode: "T001",
+    taskName: "Task 1",
+    taskDesc:
+      "Lorem ipsum dolor sit, amet consectetur adipisicing elit. Qui adipisci perspiciatis dolorem modi harum nemo numquam molestias enim. A omnis sapiente mollitia itaque facere, molestias voluptates natus cumque ullam architecto.",
+    taskPos: 1,
+  },
+  {
+    taskCode: "T002",
+    taskName: "Task 2",
+    taskDesc: "Lorem ipsum dolor sit, amet consectetur adipisicing elit.",
+    taskPos: 2,
+  },
+  {
+    taskCode: "T003",
+    taskName: "Task 3",
+    taskDesc:
+      "Lorem ipsum dolor sit, amet consectetur adipisicing elit 3. Qui adipisci perspiciatis dolorem modi harum nemo numquam molestias enim",
+    taskPos: 3,
+  },
+];
+
+const DummyCardBoard = () => {
+  return (
+    <Flex
+      as={Stack}
+      direction="column"
+      spacing={4}
+      width={{ base: "full", md: "350px" }}
+      flexShrink={0}
+      bg={"gray.200"}
+      p={4}
+      rounded={radiusStyle}
+    >
+      <Box px={4} py={2} rounded={radiusStyle}>
+        <Heading as="h4" size="md">
+          Card Board 1
+        </Heading>
+      </Box>
+      {ListTaskCard.sort((a, b) => a.taskPos - b.taskPos).map((task) => (
+        <DummyCard key={task.taskCode} {...task} />
+      ))}
+    </Flex>
+  );
+};
+
+const DummyCard = ({ taskCode, taskName, taskDesc }: DummyCardProps) => {
+  return (
+    <Card rounded={radiusStyle} flexShrink={0}>
+      <CardBody p={5}>
+        <Heading size="sm" textTransform="uppercase">
+          #{taskCode} - {taskName}
+        </Heading>
+        <Text pt="2" fontSize="sm" whiteSpace="normal">
+          {taskDesc}
+        </Text>
+      </CardBody>
+    </Card>
+  );
+};
+
+export default KanbanPage;
