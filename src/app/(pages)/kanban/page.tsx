@@ -1,5 +1,6 @@
 "use client";
 
+import { HorizontalFadeDivider } from "@/app/components/divider";
 import { DropZoneComponent } from "@/app/components/dropzone";
 import {
   HeaderContent,
@@ -22,8 +23,11 @@ import {
   Card,
   CardBody,
   CardHeader,
+  Checkbox,
   Divider,
   Flex,
+  Grid,
+  GridItem,
   Heading,
   HStack,
   Image,
@@ -38,12 +42,15 @@ import {
   Stack,
   StackDivider,
   Text,
+  Textarea,
   useDisclosure,
   VStack,
+  Wrap,
+  WrapItem,
 } from "@chakra-ui/react";
 import { setIn } from "formik";
 import { useEffect, useState } from "react";
-import { FaCheckCircle } from "react-icons/fa";
+import { FaCheckCircle, FaCog } from "react-icons/fa";
 import { FaCommentDots, FaGripVertical, FaPlus } from "react-icons/fa6";
 import { LuGrip } from "react-icons/lu";
 
@@ -232,138 +239,137 @@ function KanbanPage() {
           Refresh
         </Button>
       </Box>
-      <Flex
-        as={HStack}
-        p={4}
-        spacing={8}
-        justifyContent={"start"}
-        alignItems={"start"}
-        rounded={radiusStyle}
-        minH={"75vh"}
-      >
-        {/* To-Do Tasks */}
-        <Flex
-          as={Stack}
-          direction="column"
-          spacing={4}
-          width={{ base: "full", md: "350px" }}
-          bg={"white"}
-          rounded={radiusStyle}
-          boxShadow={"md"}
-          p={5}
-          minH={"75vh"}
-          onDragOver={handleDragOver}
-          onDrop={(e) => handleDrop("toDo", e)}
-          onDragLeave={handleDragLeave}
-          transition="all 0.3s ease"
-          border={isHovered ? "2px dashed blue" : "none"}
-        >
-          <Heading size="md" mb={4}>
-            To Do
-          </Heading>
-          {todoTasks
-            .sort((a, b) => a.index - b.index)
-            .map((task) => (
-              <Task
-                key={task.id} // Important: Add a key prop here!
-                task={task}
-                handleDragStart={handleDragStart}
-                handleDragEnd={handleDragEnd}
-              />
-            ))}
-          <Flex
-            w={"full"}
-            h={"50vh"}
-            justifyContent={"center"}
-            alignItems={"center"}
-            display={isLoading ? "flex" : "none"}
-          >
-            <Spinner />
-          </Flex>
-        </Flex>
 
-        {/* In-Progress Tasks */}
-        <Flex
-          as={Stack}
-          direction="column"
-          spacing={4}
-          width={{ base: "full", md: "350px" }}
-          bg={"white"}
-          rounded={radiusStyle}
-          boxShadow={"md"}
-          p={5}
-          minH={"75vh"}
-          onDragOver={handleDragOver}
-          onDrop={(e) => handleDrop("inProgress", e)}
-          onDragLeave={handleDragLeave}
-          transition="all 0.3s ease"
-          border={isHovered ? "2px dashed green" : "none"}
-        >
-          <Heading size="md" mb={4}>
-            In Progress
-          </Heading>
-          {inProgressTasks
-            .sort((a, b) => a.index - b.index)
-            .map((task) => (
-              <Task
-                key={task.id} // Important: Add a key prop here!
-                task={task}
-                handleDragStart={handleDragStart}
-                handleDragEnd={handleDragEnd}
-              />
-            ))}
-          <Flex
-            w={"full"}
-            h={"50vh"}
-            justifyContent={"center"}
-            alignItems={"center"}
-            display={isLoading ? "flex" : "none"}
-          >
-            <Spinner />
-          </Flex>
-        </Flex>
-
-        {/* Done Tasks */}
-        <Flex
-          as={Stack}
-          direction="column"
-          spacing={4}
-          width={{ base: "full", md: "350px" }}
-          bg={"white"}
-          rounded={radiusStyle}
-          boxShadow={"md"}
-          p={5}
-          minH={"75vh"}
-          onDragOver={handleDragOver}
-          onDrop={(e) => handleDrop("done", e)}
-          onDragLeave={handleDragLeave}
-          transition="all 0.3s ease"
-          border={isHovered ? "2px dashed green" : "none"}
-        >
-          <Heading size="md" mb={4}>
-            Done
-          </Heading>
-          {doneTask
-            .sort((a, b) => a.index - b.index)
-            .map((task) => (
-              <Task
-                key={task.id} // Important: Add a key prop here!
-                task={task}
-                handleDragStart={handleDragStart}
-                handleDragEnd={handleDragEnd}
-              />
-            ))}
-          <Flex
-            w={"full"}
-            h={"50vh"}
-            justifyContent={"center"}
-            alignItems={"center"}
-            display={isLoading ? "flex" : "none"}
-          >
-            <Spinner />
-          </Flex>
-        </Flex>
-      </Flex>
+      <Box p={4}>
+        <Wrap spacing={4} minH={"75vh"}>
+          <WrapItem width={{ base: "full", md: "350px" }}>
+            {/* To-Do Tasks */}
+            <Flex
+              as={Stack}
+              direction="column"
+              spacing={4}
+              width={"full"}
+              bg={"white"}
+              rounded={radiusStyle}
+              boxShadow={"md"}
+              p={5}
+              minH={"75vh"}
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop("toDo", e)}
+              onDragLeave={handleDragLeave}
+              transition="all 0.3s ease"
+              border={isHovered ? "2px dashed blue" : "none"}
+            >
+              <Heading size="md" mb={4}>
+                To Do
+              </Heading>
+              {todoTasks
+                .sort((a, b) => a.index - b.index)
+                .map((task) => (
+                  <Task
+                    key={task.id} // Important: Add a key prop here!
+                    task={task}
+                    handleDragStart={handleDragStart}
+                    handleDragEnd={handleDragEnd}
+                  />
+                ))}
+              <Flex
+                w={"full"}
+                h={"50vh"}
+                justifyContent={"center"}
+                alignItems={"center"}
+                display={isLoading ? "flex" : "none"}
+              >
+                <Spinner />
+              </Flex>
+            </Flex>
+          </WrapItem>
+          <WrapItem width={{ base: "full", md: "350px" }}>
+            {/* In-Progress Tasks */}
+            <Flex
+              as={Stack}
+              direction="column"
+              spacing={4}
+              width={"full"}
+              bg={"white"}
+              rounded={radiusStyle}
+              boxShadow={"md"}
+              p={5}
+              minH={"75vh"}
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop("inProgress", e)}
+              onDragLeave={handleDragLeave}
+              transition="all 0.3s ease"
+              border={isHovered ? "2px dashed green" : "none"}
+            >
+              <Heading size="md" mb={4}>
+                In Progress
+              </Heading>
+              {inProgressTasks
+                .sort((a, b) => a.index - b.index)
+                .map((task) => (
+                  <Task
+                    key={task.id} // Important: Add a key prop here!
+                    task={task}
+                    handleDragStart={handleDragStart}
+                    handleDragEnd={handleDragEnd}
+                  />
+                ))}
+              <Flex
+                w={"full"}
+                h={"50vh"}
+                justifyContent={"center"}
+                alignItems={"center"}
+                display={isLoading ? "flex" : "none"}
+              >
+                <Spinner />
+              </Flex>
+            </Flex>
+          </WrapItem>
+          <WrapItem width={{ base: "full", md: "350px" }}>
+            {/* Done Tasks */}
+            <Flex
+              as={Stack}
+              direction="column"
+              spacing={4}
+              width={"full"}
+              bg={"white"}
+              rounded={radiusStyle}
+              boxShadow={"md"}
+              p={5}
+              minH={"75vh"}
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop("done", e)}
+              onDragLeave={handleDragLeave}
+              transition="all 0.3s ease"
+              border={isHovered ? "2px dashed green" : "none"}
+            >
+              <Heading size="md" mb={4}>
+                Done
+              </Heading>
+              {doneTask
+                .sort((a, b) => a.index - b.index)
+                .map((task) => (
+                  <Task
+                    key={task.id} // Important: Add a key prop here!
+                    task={task}
+                    handleDragStart={handleDragStart}
+                    handleDragEnd={handleDragEnd}
+                  />
+                ))}
+              <Flex
+                w={"full"}
+                h={"50vh"}
+                justifyContent={"center"}
+                alignItems={"center"}
+                display={isLoading ? "flex" : "none"}
+              >
+                <Spinner />
+              </Flex>
+            </Flex>
+          </WrapItem>
+        </Wrap>
+      </Box>
     </SidebarWithHeader>
   );
 }
@@ -404,6 +410,25 @@ const ImageAttachment: ImageAttachmentProps[] = [
     src: "./img/business/corp-assets-005.jpg",
     alt: "Image 3",
   },
+  {
+    id: generateUUIDV1(),
+    name: "Image 4",
+    src: "./img/business/corp-assets-006.jpg",
+    alt: "Image 4",
+  },
+];
+
+interface SubTaskTypes {
+  id: number;
+  text: string;
+  completed: boolean;
+}
+
+const SubTasksInit: SubTaskTypes[] = [
+  { id: 1, text: "Sub Task 1", completed: false },
+  { id: 2, text: "Sub Task 2", completed: true },
+  { id: 3, text: "Sub Task 3", completed: false },
+  { id: 4, text: "Sub Task 4", completed: true },
 ];
 
 const Task: React.FC<TaskProps> = ({
@@ -412,6 +437,15 @@ const Task: React.FC<TaskProps> = ({
   handleDragEnd,
 }) => {
   const TaskModalDisc = useDisclosure();
+  const [SubTasks, setSubTasks] = useState<SubTaskTypes[]>(SubTasksInit);
+
+  const handleSubTaskChange = (id: number) => {
+    setSubTasks((prevTasks) =>
+      prevTasks.map((task) =>
+        task.id === id ? { ...task, completed: !task.completed } : task
+      )
+    );
+  };
 
   return (
     <>
@@ -519,51 +553,155 @@ const Task: React.FC<TaskProps> = ({
         isOpen={TaskModalDisc.isOpen}
         motionPreset="slideInBottom"
         scrollBehavior={"inside"}
-        size={"3xl"}
+        size={"5xl"}
       >
         <ModalOverlay />
-        <ModalContent rounded={radiusStyle} py={4}>
-          <ModalHeader>
-            <Flex
-              w={"full"}
-              justifyContent={"space-between"}
-              alignItems={"center"}
-              pb={4}
-            >
-              <Badge colorScheme="red" rounded={radiusStyle} px={2}>
-                Critical
-              </Badge>
-            </Flex>
-            {task.text}
-          </ModalHeader>
+        <ModalContent rounded={radiusStyle} py={4} m={2}>
           <ModalCloseButton />
           <ModalBody>
-            <Flex w={"full"} as={VStack} spacing={7}>
-              <Text
-                justifyContent={"space-between"}
-                alignItems={"start"}
-                w={"full"}
-              >
-                Lorem ipsum dolor sit, amet consectetur adipisicing elit.
-                Voluptate quasi beatae expedita rem iste, laboriosam voluptas
-                rerum dicta quos praesentium magnam, inventore, culpa odit quo
-                ut veniam optio minima labore!
-              </Text>
-              <Flex w={"full"} as={HStack} overflowX={"auto"}>
-                {ImageAttachment.map((image, index) => (
-                  <ImagePreview key={index} {...image} />
-                ))}
-                <ImageAddMore />
-              </Flex>
-              <Divider />
-            </Flex>
+            <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"}>
+              <GridItem colSpan={{ base: 12, sm: 12, md: 8, lg: 8 }}>
+                <Flex
+                  w={"full"}
+                  as={VStack}
+                  spacing={4}
+                  justifyContent={"start"}
+                  alignItems={"start"}
+                >
+                  <Flex
+                    w={"full"}
+                    as={VStack}
+                    alignItems={"start"}
+                    justifyContent={"start"}
+                    spacing={2}
+                  >
+                    <Badge colorScheme="red" rounded={radiusStyle} px={2}>
+                      Critical
+                    </Badge>
+                    <Text fontWeight={600} fontSize={23}>
+                      {task.text}
+                    </Text>
+                  </Flex>
+                  <Text
+                    justifyContent={"space-between"}
+                    alignItems={"start"}
+                    w={"full"}
+                  >
+                    Lorem ipsum dolor sit, amet consectetur adipisicing elit.
+                    Voluptate quasi beatae expedita rem iste, laboriosam
+                    voluptas rerum dicta quos praesentium magnam, inventore,
+                    culpa odit quo ut veniam optio minima labore!
+                  </Text>
+                  <Flex
+                    w={"full"}
+                    justifyContent={"start"}
+                    as={HStack}
+                    spacing={2}
+                    color={"gray.500"}
+                  >
+                    <FaCheckCircle size={16} />
+                    <Text fontWeight={600} fontSize={18}>
+                      Sub Task ({SubTasks.length})
+                    </Text>
+                  </Flex>
+                  <Flex
+                    w={"full"}
+                    justifyContent={"start"}
+                    alignItems={"start"}
+                    as={VStack}
+                    spacing={2}
+                    color={"gray.700"}
+                    px={4}
+                  >
+                    {SubTasks.map((subTask, index) => (
+                      <Checkbox
+                        key={index}
+                        isChecked={subTask.completed}
+                        onChange={() => handleSubTaskChange(subTask.id)}
+                        checked={subTask.completed}
+                      >
+                        <Text as={subTask.completed ? "s" : "p"}>
+                          {subTask.text}
+                        </Text>
+                      </Checkbox>
+                    ))}
+                  </Flex>
+                  <Wrap spacing={2}>
+                    {ImageAttachment.map((image, index) => (
+                      <WrapItem key={index}>
+                        <ImagePreview {...image} />
+                      </WrapItem>
+                    ))}
+                    <WrapItem>
+                      <ImageAddMore />
+                    </WrapItem>
+                  </Wrap>
+                  <HorizontalFadeDivider />
+                  <Flex
+                    w={"full"}
+                    justifyContent={"start"}
+                    as={HStack}
+                    spacing={2}
+                    color={"gray.500"}
+                  >
+                    <FaCommentDots size={16} />
+                    <Text fontWeight={600} fontSize={18}>
+                      Comments (4)
+                    </Text>
+                  </Flex>
+                  <Flex
+                    w={"full"}
+                    justifyContent={"start"}
+                    as={HStack}
+                    spacing={4}
+                    color={"gray.500"}
+                    p={2}
+                  >
+                    <Avatar
+                      size="md"
+                      name="Ryan Florence"
+                      src="https://bit.ly/ryan-florence"
+                    />
+                    <Textarea placeholder="Add a comment" />
+                  </Flex>
+                </Flex>
+              </GridItem>
+              <GridItem colSpan={{ base: 12, sm: 12, md: 4, lg: 4 }}>
+                <Flex
+                  w={"full"}
+                  as={VStack}
+                  spacing={7}
+                  justifyContent={"start"}
+                  alignItems={"start"}
+                  rounded={radiusStyle}
+                  bgColor={"primary.100"}
+                  boxShadow={"lg"}
+                  minH={"60vh"}
+                  p={5}
+                  mt={5}
+                >
+                  <Flex
+                    w={"full"}
+                    justifyContent={"start"}
+                    as={HStack}
+                    spacing={2}
+                    color={"gray.800"}
+                  >
+                    <FaCog size={16} />
+                    <Text fontWeight={600} fontSize={18}>
+                      Options
+                    </Text>
+                  </Flex>
+                </Flex>
+              </GridItem>
+            </Grid>
           </ModalBody>
-          <ModalFooter>
+          {/* <ModalFooter>
             <Button colorScheme="blue" mr={3} onClick={TaskModalDisc.onClose}>
               Close
             </Button>
             <Button variant="ghost">Secondary Action</Button>
-          </ModalFooter>
+          </ModalFooter> */}
         </ModalContent>
       </Modal>
     </>
@@ -574,47 +712,50 @@ const ImagePreview = ({ name, alt, src }: ImageAttachmentProps) => {
   const ImageModalDisc = useDisclosure();
 
   return (
-    <>
+    <Box
+      rounded={radiusStyle}
+      position="relative"
+      // boxSize="130px"
+      w={{ base: "80px", sm: "80px", md: "100px", lg: "100px" }}
+      h={{ base: "80px", sm: "80px", md: "100px", lg: "100px" }}
+      cursor="pointer"
+      p={1}
+      border={"1px solid"}
+      borderColor={"gray.300"}
+      onClick={() => ImageModalDisc.onOpen()}
+      _hover={{
+        "& > .previewOverlay": { opacity: 1 },
+      }}
+    >
+      <Image
+        rounded={radiusStyle}
+        src={src}
+        // boxSize="120px"
+        w={{ base: "70px", sm: "70px", md: "90px", lg: "90px" }}
+        h={{ base: "70px", sm: "70px", md: "90px", lg: "90px" }}
+        objectFit="cover"
+      />
+      {/* Hover overlay */}
       <Box
         rounded={radiusStyle}
-        position="relative"
-        boxSize="130px"
-        cursor="pointer"
-        p={1}
-        border={"1px solid"}
-        borderColor={"gray.300"}
-        onClick={() => ImageModalDisc.onOpen()}
-        _hover={{
-          "& > .previewOverlay": { opacity: 1 },
-        }}
+        className="previewOverlay"
+        position="absolute"
+        top={0}
+        left={0}
+        w="full"
+        h="full"
+        bg="rgba(0, 0, 0, 0.6)"
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        opacity={0}
+        transition="opacity 0.3s"
       >
-        <Image
-          rounded={radiusStyle}
-          src={src}
-          boxSize="120px"
-          objectFit="cover"
-        />
-        {/* Hover overlay */}
-        <Box
-          rounded={radiusStyle}
-          className="previewOverlay"
-          position="absolute"
-          top={0}
-          left={0}
-          w="100%"
-          h="100%"
-          bg="rgba(0, 0, 0, 0.6)"
-          display="flex"
-          justifyContent="center"
-          alignItems="center"
-          opacity={0}
-          transition="opacity 0.3s"
-        >
-          <Text fontSize="lg" fontWeight="light" color="white">
-            Preview
-          </Text>
-        </Box>
+        <Text fontSize="lg" fontWeight="light" color="white">
+          Preview
+        </Text>
       </Box>
+
       {/* Modal for image preview */}
       <Modal
         isOpen={ImageModalDisc.isOpen}
@@ -645,7 +786,7 @@ const ImagePreview = ({ name, alt, src }: ImageAttachmentProps) => {
           </ModalBody>
         </ModalContent>
       </Modal>
-    </>
+    </Box>
   );
 };
 
@@ -655,7 +796,7 @@ const ImageAddMore = () => {
     <Box
       rounded={radiusStyle}
       position="relative"
-      boxSize="130px"
+      boxSize={{ base: "80px", sm: "80px", md: "100px", lg: "100px" }}
       cursor="pointer"
       p={1}
       border={"1px solid"}
@@ -667,7 +808,7 @@ const ImageAddMore = () => {
       {/* Add Image Placeholder */}
       <Box
         rounded={radiusStyle}
-        boxSize="120px"
+        boxSize={{ base: "70px", sm: "70px", md: "90px", lg: "90px" }}
         display="flex"
         justifyContent="center"
         alignItems="center"
@@ -696,7 +837,7 @@ const ImageAddMore = () => {
         onClick={AddImageModalDisc.onOpen}
       >
         <Text fontSize="lg" fontWeight="light" color="white">
-          Add Image
+          Add New
         </Text>
       </Box>
       {/* Modal for image preview */}
