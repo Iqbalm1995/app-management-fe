@@ -11,12 +11,13 @@ import {
   boardToDoLabel,
   radiusStyle,
 } from "@/app/constants/applicationConstants";
-import { truncateText } from "@/app/helper/MasterHelper";
+import { generateUUIDV1, truncateText } from "@/app/helper/MasterHelper";
 import {
   Avatar,
   AvatarGroup,
   Badge,
   Box,
+  Button,
   Card,
   CardBody,
   CardHeader,
@@ -24,15 +25,25 @@ import {
   Flex,
   Heading,
   HStack,
+  Image,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  Spinner,
   Stack,
   StackDivider,
   Text,
+  useDisclosure,
   VStack,
 } from "@chakra-ui/react";
 import { setIn } from "formik";
 import { useEffect, useState } from "react";
 import { FaCheckCircle } from "react-icons/fa";
-import { FaCommentDots, FaGripVertical } from "react-icons/fa6";
+import { FaCommentDots, FaGripVertical, FaPlus } from "react-icons/fa6";
 import { LuGrip } from "react-icons/lu";
 
 const HeaderDataContent: HeaderContentProps = {
@@ -57,9 +68,11 @@ function KanbanPage() {
   const [isHovered, setIsHovered] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [isLoading, setisLoading] = useState<boolean>(false);
+  const [RefreshAction, setRefreshAction] = useState(0);
 
   useEffect(() => {
-    delay(500);
+    setisLoading(true);
+    delay(1000);
     setTodoTasks([
       { id: 1, text: "Task 1", index: 0 },
       { id: 2, text: "Task 2", index: 1 },
@@ -71,7 +84,12 @@ function KanbanPage() {
       { id: 6, text: "Task 6", index: 1 },
     ]);
     setDoneTasks([]);
-  }, []);
+    setisLoading(false);
+  }, [RefreshAction]);
+
+  const handleRefresh = () => {
+    setRefreshAction(RefreshAction + 1);
+  };
 
   const handleDragStart = (task: Task, e: React.DragEvent) => {
     setDraggedTask(task);
@@ -208,6 +226,11 @@ function KanbanPage() {
         titleName={HeaderDataContent.titleName}
         breadCrumb={HeaderDataContent.breadCrumb}
       />
+      <Box px={4}>
+        <Button onClick={handleRefresh} colorScheme={"primary"}>
+          Refresh
+        </Button>
+      </Box>
       <Flex
         as={HStack}
         p={4}
@@ -223,7 +246,7 @@ function KanbanPage() {
           direction="column"
           spacing={4}
           width={{ base: "full", md: "350px" }}
-          bg={"primary.100"}
+          bg={"white"}
           rounded={radiusStyle}
           boxShadow={"md"}
           p={5}
@@ -247,6 +270,15 @@ function KanbanPage() {
                 handleDragEnd={handleDragEnd}
               />
             ))}
+          <Flex
+            w={"full"}
+            h={"50vh"}
+            justifyContent={"center"}
+            alignItems={"center"}
+            display={isLoading ? "flex" : "none"}
+          >
+            <Spinner />
+          </Flex>
         </Flex>
 
         {/* In-Progress Tasks */}
@@ -255,7 +287,7 @@ function KanbanPage() {
           direction="column"
           spacing={4}
           width={{ base: "full", md: "350px" }}
-          bg={"primary.100"}
+          bg={"white"}
           rounded={radiusStyle}
           boxShadow={"md"}
           p={5}
@@ -279,6 +311,15 @@ function KanbanPage() {
                 handleDragEnd={handleDragEnd}
               />
             ))}
+          <Flex
+            w={"full"}
+            h={"50vh"}
+            justifyContent={"center"}
+            alignItems={"center"}
+            display={isLoading ? "flex" : "none"}
+          >
+            <Spinner />
+          </Flex>
         </Flex>
 
         {/* Done Tasks */}
@@ -287,7 +328,7 @@ function KanbanPage() {
           direction="column"
           spacing={4}
           width={{ base: "full", md: "350px" }}
-          bg={"primary.100"}
+          bg={"white"}
           rounded={radiusStyle}
           boxShadow={"md"}
           p={5}
@@ -311,6 +352,15 @@ function KanbanPage() {
                 handleDragEnd={handleDragEnd}
               />
             ))}
+          <Flex
+            w={"full"}
+            h={"50vh"}
+            justifyContent={"center"}
+            alignItems={"center"}
+            display={isLoading ? "flex" : "none"}
+          >
+            <Spinner />
+          </Flex>
         </Flex>
       </Flex>
     </SidebarWithHeader>
@@ -327,105 +377,326 @@ interface TaskProps {
   handleDragEnd: () => void;
 }
 
+interface ImageAttachmentProps {
+  id: string;
+  name: string;
+  src: string;
+  alt: string;
+}
+
+const ImageAttachment: ImageAttachmentProps[] = [
+  {
+    id: generateUUIDV1(),
+    name: "Image 1",
+    src: "./img/business/corp-assets-004.jpg",
+    alt: "Image 1",
+  },
+  {
+    id: generateUUIDV1(),
+    name: "Image 2",
+    src: "./img/business/corp-assets-002.jpg",
+    alt: "Image 2",
+  },
+  {
+    id: generateUUIDV1(),
+    name: "Image 3",
+    src: "./img/business/corp-assets-005.jpg",
+    alt: "Image 3",
+  },
+];
+
 const Task: React.FC<TaskProps> = ({
   task,
   handleDragStart,
   handleDragEnd,
 }) => {
+  const TaskModalDisc = useDisclosure();
+
   return (
-    <Flex
-      as={VStack}
-      key={`todo-${task.id}`}
-      id={`task-${task.id}`}
-      w={"full"}
-      spacing={2}
-      p={4}
-      // bg="primary.100"
-      bg={"white"}
-      minH={"70px"}
-      rounded={radiusStyle}
-      draggable
-      onDragStart={(e) => handleDragStart(task, e)}
-      onDragEnd={handleDragEnd}
-    >
-      <Flex
-        as={HStack}
-        w={"full"}
-        justifyContent={"space-between"}
-        alignItems={"center"}
-        cursor={"grab"}
-      >
-        <Badge colorScheme="red" rounded={radiusStyle} px={2}>
-          Critical
-        </Badge>
-      </Flex>
+    <>
       <Flex
         as={VStack}
+        key={`todo-${task.id}`}
+        id={`task-${task.id}`}
         w={"full"}
-        justifyContent={"start"}
-        alignItems={"start"}
-        minH={"40px"}
-        spacing={0}
-      >
-        <Text fontWeight={600} fontSize={18}>
-          {task.text}
-        </Text>
-        <Text
-          fontWeight={"normal"}
-          color={"gray.600"}
-          fontSize={15}
-          justifyContent={"space-between"}
-        >
-          {truncateText(
-            "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla nec purus feugiat, vestibulum lorem id, posuere turpis. Integer nec odio. Praesent libero. Sed cursus ante dapibus diam. Sed nisi. Nulla quis sem at nibh elementum imperdiet. Duis sagittis ipsum. Praesent mauris. Fusce nec tellus sed augue semper porta. Mauris massa. Vestibulum lacinia arcu eget nulla. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Curabitur sodales ligula in libero. Sed dignissim lacinia nunc. Curabitur tortor. Pellentesque nibh. Aenean quam. In scelerisque sem at dolor. Maecenas mattis. Sed convallis tristique sem. Proin ut ligula vel nunc egestas porttitor. Morbi lectus risus, iaculis vel, suscipit quis, luctus non, massa. Fusce ac turpis quis ligula lacinia aliquet. Mauris ipsum. Nulla metus metus, ullamcorper vel, tincidunt sed, euismod in, nibh.",
-            80
-          )}
-        </Text>
-      </Flex>
-      <Flex
-        as={HStack}
-        w={"full"}
-        justifyContent={"space-between"}
-        alignItems={"center"}
-        h={"full"}
+        spacing={2}
+        p={4}
+        // bg="primary.100"
+        boxShadow={"lg"}
+        border={"1px solid"}
+        borderColor={"gray.200"}
+        bg={"white"}
+        minH={"70px"}
+        rounded={radiusStyle}
+        draggable
+        onDragStart={(e) => handleDragStart(task, e)}
+        onDragEnd={handleDragEnd}
+        onClick={TaskModalDisc.onOpen}
       >
         <Flex
+          as={HStack}
+          w={"full"}
+          justifyContent={"space-between"}
+          alignItems={"center"}
+          cursor={"grab"}
+        >
+          <Badge colorScheme="red" rounded={radiusStyle} px={2}>
+            Critical
+          </Badge>
+        </Flex>
+        <Flex
+          as={VStack}
+          w={"full"}
+          justifyContent={"start"}
+          alignItems={"start"}
+          minH={"40px"}
+          spacing={0}
+          cursor={"pointer"}
+        >
+          <Text fontWeight={600} fontSize={18}>
+            {task.text}
+          </Text>
+          <Text
+            fontWeight={"normal"}
+            color={"gray.600"}
+            fontSize={15}
+            justifyContent={"space-between"}
+          >
+            {truncateText(
+              "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla nec purus feugiat, vestibulum lorem id, posuere turpis. Integer nec odio. Praesent libero. Sed cursus ante dapibus diam. Sed nisi. Nulla quis sem at nibh elementum imperdiet. Duis sagittis ipsum. Praesent mauris. Fusce nec tellus sed augue semper porta. Mauris massa. Vestibulum lacinia arcu eget nulla. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Curabitur sodales ligula in libero. Sed dignissim lacinia nunc. Curabitur tortor. Pellentesque nibh. Aenean quam. In scelerisque sem at dolor. Maecenas mattis. Sed convallis tristique sem. Proin ut ligula vel nunc egestas porttitor. Morbi lectus risus, iaculis vel, suscipit quis, luctus non, massa. Fusce ac turpis quis ligula lacinia aliquet. Mauris ipsum. Nulla metus metus, ullamcorper vel, tincidunt sed, euismod in, nibh.",
+              80
+            )}
+          </Text>
+        </Flex>
+        <Flex
+          as={HStack}
+          w={"full"}
           justifyContent={"space-between"}
           alignItems={"center"}
           h={"full"}
-          w={"full"}
         >
-          <AvatarGroup
-            size={"sm"}
-            max={2}
-            colorScheme={"blue"}
-            color={"gray.500"}
-          >
-            <Avatar name="Ryan Florence" bg={"blue.500"} />
-            <Avatar name="Prosper Otemuyiwa" bg={"blue.200"} />
-            <Avatar name="Christian Nwamba" bg={"blue.100"} />
-          </AvatarGroup>
           <Flex
-            as={HStack}
-            justifyContent={"center"}
+            justifyContent={"space-between"}
             alignItems={"center"}
             h={"full"}
-            color={"gray.500"}
-            cursor={"grab"}
-            spacing={1.5}
+            w={"full"}
           >
-            <FaCommentDots size={16} />
-            <Text fontSize={17} fontWeight={"semibold"}>
-              50
-            </Text>
-            <FaCheckCircle size={16} />
-            <Text fontSize={17} fontWeight={"semibold"}>
-              4
-            </Text>
+            <AvatarGroup
+              size={"sm"}
+              max={2}
+              colorScheme={"blue"}
+              color={"gray.500"}
+            >
+              <Avatar name="Ryan Florence" bg={"blue.500"} />
+              <Avatar name="Prosper Otemuyiwa" bg={"blue.200"} />
+              <Avatar name="Christian Nwamba" bg={"blue.100"} />
+            </AvatarGroup>
+            <Flex
+              as={HStack}
+              justifyContent={"center"}
+              alignItems={"center"}
+              h={"full"}
+              color={"gray.500"}
+              cursor={"grab"}
+              spacing={1.5}
+            >
+              <FaCommentDots size={16} />
+              <Text fontSize={17} fontWeight={"semibold"}>
+                50
+              </Text>
+              <FaCheckCircle size={16} />
+              <Text fontSize={17} fontWeight={"semibold"}>
+                4
+              </Text>
+            </Flex>
           </Flex>
         </Flex>
       </Flex>
-    </Flex>
+      <Modal
+        isCentered
+        onClose={TaskModalDisc.onClose}
+        isOpen={TaskModalDisc.isOpen}
+        motionPreset="slideInBottom"
+        scrollBehavior={"inside"}
+        size={"3xl"}
+      >
+        <ModalOverlay />
+        <ModalContent rounded={radiusStyle} py={4}>
+          <ModalHeader>
+            <Flex
+              w={"full"}
+              justifyContent={"space-between"}
+              alignItems={"center"}
+              pb={4}
+            >
+              <Badge colorScheme="red" rounded={radiusStyle} px={2}>
+                Critical
+              </Badge>
+            </Flex>
+            {task.text}
+          </ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <Flex w={"full"} as={VStack} spacing={7}>
+              <Text
+                justifyContent={"space-between"}
+                alignItems={"start"}
+                w={"full"}
+              >
+                Lorem ipsum dolor sit, amet consectetur adipisicing elit.
+                Voluptate quasi beatae expedita rem iste, laboriosam voluptas
+                rerum dicta quos praesentium magnam, inventore, culpa odit quo
+                ut veniam optio minima labore!
+              </Text>
+              <Flex w={"full"} as={HStack} overflowX={"auto"}>
+                {ImageAttachment.map((image, index) => (
+                  <ImagePreview key={index} {...image} />
+                ))}
+                <ImageAddMore />
+              </Flex>
+              <Divider />
+            </Flex>
+          </ModalBody>
+          <ModalFooter>
+            <Button colorScheme="blue" mr={3} onClick={TaskModalDisc.onClose}>
+              Close
+            </Button>
+            <Button variant="ghost">Secondary Action</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    </>
+  );
+};
+
+const ImagePreview = ({ name, alt, src }: ImageAttachmentProps) => {
+  const ImageModalDisc = useDisclosure();
+
+  return (
+    <>
+      <Box
+        rounded={radiusStyle}
+        position="relative"
+        boxSize="130px"
+        cursor="pointer"
+        p={1}
+        border={"1px solid"}
+        borderColor={"gray.300"}
+        onClick={() => ImageModalDisc.onOpen()}
+        _hover={{
+          "& > .previewOverlay": { opacity: 1 },
+        }}
+      >
+        <Image
+          rounded={radiusStyle}
+          src={src}
+          boxSize="120px"
+          objectFit="cover"
+        />
+        {/* Hover overlay */}
+        <Box
+          rounded={radiusStyle}
+          className="previewOverlay"
+          position="absolute"
+          top={0}
+          left={0}
+          w="100%"
+          h="100%"
+          bg="rgba(0, 0, 0, 0.6)"
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          opacity={0}
+          transition="opacity 0.3s"
+        >
+          <Text fontSize="lg" fontWeight="light" color="white">
+            Preview
+          </Text>
+        </Box>
+      </Box>
+      {/* Modal for image preview */}
+      <Modal
+        isOpen={ImageModalDisc.isOpen}
+        onClose={ImageModalDisc.onClose}
+        isCentered
+        size={"xl"} // Set to "xl" for a more responsive size
+      >
+        <ModalOverlay />
+        <ModalContent
+          rounded={radiusStyle}
+          maxW="90vw"
+          maxH="90vh"
+          bg="rgba(255, 255, 255, 0.1)" // Semi-transparent background for glass effect
+          backdropFilter="blur(10px)" // Apply blur for frosted glass effect
+          boxShadow="lg" // Optionally add shadow to enhance the look
+        >
+          <ModalCloseButton color={"white"} />
+          <ModalBody p={0}>
+            <Box
+              w="full"
+              h="80vh" // Set the height to make it fit within the modal size
+              backgroundPosition="center"
+              backgroundRepeat="no-repeat"
+              backgroundSize="contain" // Ensure the image fits well without stretching
+              backgroundImage={`url(${src})`}
+              rounded={radiusStyle}
+            />
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+    </>
+  );
+};
+
+const ImageAddMore = () => {
+  return (
+    <Box
+      rounded={radiusStyle}
+      position="relative"
+      boxSize="130px"
+      cursor="pointer"
+      p={1}
+      border={"1px solid"}
+      borderColor={"gray.300"}
+      _hover={{
+        "& > .previewOverlay": { opacity: 1 },
+      }}
+    >
+      {/* Add Image Placeholder */}
+      <Box
+        rounded={radiusStyle}
+        boxSize="120px"
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        bg="gray.100" // Placeholder background
+        border="2px dashed" // Dashed border to signify 'add' functionality
+        color={"primary.300"}
+      >
+        <FaPlus size={50} />
+      </Box>
+
+      {/* Hover overlay */}
+      <Box
+        rounded={radiusStyle}
+        className="previewOverlay"
+        position="absolute"
+        top={0}
+        left={0}
+        w="100%"
+        h="100%"
+        bg="rgba(0, 0, 0, 0.6)"
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        opacity={0}
+        transition="opacity 0.3s"
+      >
+        <Text fontSize="lg" fontWeight="light" color="white">
+          Add Image
+        </Text>
+      </Box>
+    </Box>
   );
 };
 
