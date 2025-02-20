@@ -1,5 +1,6 @@
 "use client";
 
+import { DropZoneComponent } from "@/app/components/dropzone";
 import {
   HeaderContent,
   HeaderContentProps,
@@ -649,6 +650,7 @@ const ImagePreview = ({ name, alt, src }: ImageAttachmentProps) => {
 };
 
 const ImageAddMore = () => {
+  const AddImageModalDisc = useDisclosure();
   return (
     <Box
       rounded={radiusStyle}
@@ -691,11 +693,33 @@ const ImageAddMore = () => {
         alignItems="center"
         opacity={0}
         transition="opacity 0.3s"
+        onClick={AddImageModalDisc.onOpen}
       >
         <Text fontSize="lg" fontWeight="light" color="white">
           Add Image
         </Text>
       </Box>
+      {/* Modal for image preview */}
+      <Modal
+        isOpen={AddImageModalDisc.isOpen}
+        onClose={AddImageModalDisc.onClose}
+        isCentered
+        size={"2xl"} // Set to "xl" for a more responsive size
+      >
+        <ModalOverlay />
+        <ModalContent
+          rounded={radiusStyle}
+          // bg="rgba(255, 255, 255, 0.1)" // Semi-transparent background for glass effect
+          // backdropFilter="blur(10px)" // Apply blur for frosted glass effect
+          boxShadow="lg" // Optionally add shadow to enhance the look
+        >
+          <ModalCloseButton />
+          <ModalHeader>Upload Files</ModalHeader>
+          <ModalBody p={4}>
+            <DropZoneComponent />
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 };
