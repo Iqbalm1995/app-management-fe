@@ -49,9 +49,15 @@ import {
   WrapItem,
 } from "@chakra-ui/react";
 import { setIn } from "formik";
+import { u } from "framer-motion/client";
 import { useEffect, useState } from "react";
 import { FaCheckCircle, FaCog } from "react-icons/fa";
-import { FaCommentDots, FaGripVertical, FaPlus } from "react-icons/fa6";
+import {
+  FaCommentDots,
+  FaEllipsisVertical,
+  FaGripVertical,
+  FaPlus,
+} from "react-icons/fa6";
 import { LuGrip } from "react-icons/lu";
 
 const HeaderDataContent: HeaderContentProps = {
@@ -384,37 +390,47 @@ interface TaskProps {
   handleDragEnd: () => void;
 }
 
-interface ImageAttachmentProps {
+interface AttachmentProps {
   id: string;
   name: string;
   src: string;
   alt: string;
+  extension?: string;
+  size?: string;
 }
 
-const ImageAttachment: ImageAttachmentProps[] = [
+const ImageAttachment: AttachmentProps[] = [
   {
     id: generateUUIDV1(),
     name: "Image 1",
     src: "./img/business/corp-assets-004.jpg",
     alt: "Image 1",
+    extension: "jpg",
+    size: "1.2MB",
   },
   {
     id: generateUUIDV1(),
     name: "Image 2",
     src: "./img/business/corp-assets-002.jpg",
     alt: "Image 2",
+    extension: "jpg",
+    size: "1.5MB",
   },
   {
     id: generateUUIDV1(),
     name: "Image 3",
     src: "./img/business/corp-assets-005.jpg",
     alt: "Image 3",
+    extension: "jpg",
+    size: "1.8MB",
   },
   {
     id: generateUUIDV1(),
     name: "Image 4",
     src: "./img/business/corp-assets-006.jpg",
     alt: "Image 4",
+    extension: "jpg",
+    size: "2.0MB",
   },
 ];
 
@@ -657,13 +673,30 @@ const Task: React.FC<TaskProps> = ({
                     color={"gray.500"}
                     p={2}
                   >
-                    <Avatar
-                      size="md"
-                      name="Ryan Florence"
-                      src="https://bit.ly/ryan-florence"
+                    <Flex
+                      justifyContent={"center"}
+                      alignItems={"center"}
+                      as={VStack}
+                      spacing={2}
+                    >
+                      <Avatar
+                        size="md"
+                        name="Ryan Florence"
+                        src="https://bit.ly/ryan-florence"
+                      />
+                      {/* <Text fontWeight={600} fontSize={14} textAlign={"center"}>
+                        Asep
+                      </Text> */}
+                    </Flex>
+                    <Textarea
+                      placeholder="Add a comment"
+                      rounded={radiusStyle}
                     />
-                    <Textarea placeholder="Add a comment" />
                   </Flex>
+                  {/* Comment Task */}
+                  {initialValueComment.map((comment, index) => (
+                    <TaskComment key={index} dataComments={comment} />
+                  ))}
                 </Flex>
               </GridItem>
               <GridItem colSpan={{ base: 12, sm: 12, md: 4, lg: 4 }}>
@@ -708,7 +741,7 @@ const Task: React.FC<TaskProps> = ({
   );
 };
 
-const ImagePreview = ({ name, alt, src }: ImageAttachmentProps) => {
+const ImagePreview = ({ name, alt, src }: AttachmentProps) => {
   const ImageModalDisc = useDisclosure();
 
   return (
@@ -862,6 +895,286 @@ const ImageAddMore = () => {
         </ModalContent>
       </Modal>
     </Box>
+  );
+};
+
+const ImagePreviewSM = ({ name, alt, src }: AttachmentProps) => {
+  const ImageModalDisc = useDisclosure();
+
+  return (
+    <Box
+      rounded={radiusStyle}
+      position="relative"
+      // boxSize="130px"
+      w={{ base: "40px", sm: "40px", md: "60px", lg: "60px" }}
+      h={{ base: "40px", sm: "40px", md: "60px", lg: "60px" }}
+      cursor="pointer"
+      p={1}
+      border={"1px solid"}
+      borderColor={"gray.300"}
+      onClick={() => ImageModalDisc.onOpen()}
+      _hover={{
+        "& > .previewOverlay": { opacity: 1 },
+      }}
+    >
+      <Image
+        rounded={radiusStyle}
+        src={src}
+        // boxSize="120px"
+        w={{ base: "30px", sm: "30px", md: "50px", lg: "50px" }}
+        h={{ base: "30px", sm: "30px", md: "50px", lg: "50px" }}
+        objectFit="cover"
+      />
+      {/* Hover overlay */}
+      <Box
+        rounded={radiusStyle}
+        className="previewOverlay"
+        position="absolute"
+        top={0}
+        left={0}
+        w="full"
+        h="full"
+        bg="rgba(0, 0, 0, 0.6)"
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        opacity={0}
+        transition="opacity 0.3s"
+      >
+        <Text fontSize="xs" fontWeight="light" color="white">
+          Preview
+        </Text>
+      </Box>
+
+      {/* Modal for image preview */}
+      <Modal
+        isOpen={ImageModalDisc.isOpen}
+        onClose={ImageModalDisc.onClose}
+        isCentered
+        size={"xl"} // Set to "xl" for a more responsive size
+      >
+        <ModalOverlay />
+        <ModalContent
+          rounded={radiusStyle}
+          maxW="90vw"
+          maxH="90vh"
+          bg="rgba(255, 255, 255, 0.1)" // Semi-transparent background for glass effect
+          backdropFilter="blur(10px)" // Apply blur for frosted glass effect
+          boxShadow="lg" // Optionally add shadow to enhance the look
+        >
+          <ModalCloseButton color={"white"} />
+          <ModalBody p={0}>
+            <Box
+              w="full"
+              h="80vh" // Set the height to make it fit within the modal size
+              backgroundPosition="center"
+              backgroundRepeat="no-repeat"
+              backgroundSize="contain" // Ensure the image fits well without stretching
+              backgroundImage={`url(${src})`}
+              rounded={radiusStyle}
+            />
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+    </Box>
+  );
+};
+
+const ImageAddMoreSM = () => {
+  const AddImageModalDisc = useDisclosure();
+  return (
+    <Box
+      rounded={radiusStyle}
+      position="relative"
+      boxSize={{ base: "40px", sm: "40px", md: "60px", lg: "60px" }}
+      cursor="pointer"
+      p={1}
+      border={"1px solid"}
+      borderColor={"gray.300"}
+      _hover={{
+        "& > .previewOverlay": { opacity: 1 },
+      }}
+    >
+      {/* Add Image Placeholder */}
+      <Box
+        rounded={radiusStyle}
+        boxSize={{ base: "30px", sm: "30px", md: "50px", lg: "50px" }}
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        bg="gray.100" // Placeholder background
+        border="2px dashed" // Dashed border to signify 'add' functionality
+        color={"primary.300"}
+      >
+        <FaPlus size={20} />
+      </Box>
+
+      {/* Hover overlay */}
+      <Box
+        rounded={radiusStyle}
+        className="previewOverlay"
+        position="absolute"
+        top={0}
+        left={0}
+        w="100%"
+        h="100%"
+        bg="rgba(0, 0, 0, 0.6)"
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        opacity={0}
+        transition="opacity 0.3s"
+        onClick={AddImageModalDisc.onOpen}
+      >
+        <Text fontSize="xs" fontWeight="light" color="white">
+          Add New
+        </Text>
+      </Box>
+      {/* Modal for image preview */}
+      <Modal
+        isOpen={AddImageModalDisc.isOpen}
+        onClose={AddImageModalDisc.onClose}
+        isCentered
+        size={"2xl"} // Set to "xl" for a more responsive size
+      >
+        <ModalOverlay />
+        <ModalContent
+          rounded={radiusStyle}
+          // bg="rgba(255, 255, 255, 0.1)" // Semi-transparent background for glass effect
+          // backdropFilter="blur(10px)" // Apply blur for frosted glass effect
+          boxShadow="lg" // Optionally add shadow to enhance the look
+        >
+          <ModalCloseButton />
+          <ModalHeader>Upload Files</ModalHeader>
+          <ModalBody p={4}>
+            <DropZoneComponent />
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+    </Box>
+  );
+};
+
+interface TaskCommnetProps {
+  id: string;
+  text: string;
+  date: string;
+  user: TaskCommentUserProps;
+  attachment: AttachmentProps[];
+}
+
+interface TaskCommentUserProps {
+  id: string;
+  name: string;
+  avatar?: string | null;
+}
+
+const initialValueComment: TaskCommnetProps[] = [
+  {
+    id: generateUUIDV1(),
+    text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla nec purus feugiat, vestibulum lorem id, posuere turpis. Integer nec odio. Praesent libero. Sed cursus ante dapibus diam. Sed nisi. Nulla quis sem at nibh elementum imperdiet. Duis sagittis ipsum. Praesent mauris. Fusce nec tellus sed augue semper porta. Mauris massa. Vestibulum lacinia arcu eget nulla. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Curabitur sodales ligula in libero. Sed dignissim lacinia nunc. Curabitur tortor. Pellentesque nibh. Aenean quam. In scelerisque sem at dolor. Maecenas mattis. Sed convallis tristique sem. Proin ut ligula vel nunc egestas porttitor. Morbi lectus risus, iaculis vel, suscipit quis, luctus non, massa. Fusce ac turpis quis ligula lacinia aliquet. Mauris ipsum. Nulla metus metus, ullamcorper vel, tincidunt sed, euismod in, nibh.",
+    date: "2025-02-21 12.00",
+    user: {
+      id: generateUUIDV1(),
+      name: "Ryan Florence",
+      avatar: "https://bit.ly/ryan-florence",
+    },
+    attachment: ImageAttachment,
+  },
+  {
+    id: generateUUIDV1(),
+    text: "Aoakwoakwokaw...",
+    date: "2025-02-21 12.01",
+    user: {
+      id: generateUUIDV1(),
+      name: "Mus",
+      avatar: null,
+    },
+    attachment: [],
+  },
+  {
+    id: generateUUIDV1(),
+    text: "Bjir...",
+    date: "2025-02-21 14.00",
+    user: {
+      id: generateUUIDV1(),
+      name: "Mus",
+      avatar: null,
+    },
+    attachment: [],
+  },
+];
+
+const TaskComment = ({ dataComments }: { dataComments: TaskCommnetProps }) => {
+  const limitText: number = 100;
+  const [limitTextState, setlimitTextState] = useState<number>(limitText);
+
+  const handleShowMore = () => {
+    if (dataComments.text.length > limitTextState) {
+      setlimitTextState(dataComments.text.length);
+    } else {
+      setlimitTextState(limitText);
+    }
+  };
+
+  return (
+    <>
+      <Flex
+        w={"full"}
+        justifyContent={"start"}
+        alignItems={"start"}
+        as={HStack}
+        spacing={2}
+        p={2}
+      >
+        <Avatar size={"md"} name={dataComments.user.name} src={undefined} />
+        <Flex as={VStack} spacing={1} alignItems={"start"} w={"full"} pl={3}>
+          <Flex
+            as={HStack}
+            w={"full"}
+            justifyContent={"space-between"}
+            alignItems={"start"}
+          >
+            <Flex as={Wrap} spacing={2}>
+              <Text fontWeight={600} fontSize={15}>
+                {dataComments.user.name}
+              </Text>
+              <Text fontSize={12} color={"gray.500"} alignSelf={"center"}>
+                {dataComments.date}
+              </Text>
+            </Flex>
+            <Button size={"sm"} variant={"ghost"}>
+              <FaEllipsisVertical />
+            </Button>
+          </Flex>
+          <Text as={"p"} fontSize={15}>
+            {truncateText(dataComments.text, limitTextState)}
+          </Text>
+          {limitText < dataComments.text.length && (
+            <Button
+              size={"sm"}
+              variant={"link"}
+              colorScheme={"primary"}
+              onClick={() => handleShowMore()}
+            >
+              {dataComments.text.length === limitTextState
+                ? "Hide Less"
+                : "Show More"}
+            </Button>
+          )}
+          <Wrap spacing={2} pt={2}>
+            {dataComments.attachment.map((attc, index) => (
+              <WrapItem key={index}>
+                <ImagePreviewSM {...attc} />
+              </WrapItem>
+            ))}
+            <WrapItem>
+              <ImageAddMoreSM />
+            </WrapItem>
+          </Wrap>
+        </Flex>
+      </Flex>
+    </>
   );
 };
 
