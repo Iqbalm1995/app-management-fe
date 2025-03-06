@@ -5,7 +5,7 @@ import {
   HeaderContent,
   HeaderContentProps,
 } from "@/app/components/headerContent";
-import SidebarWithHeader from "@/app/components/sidebar";
+import LayoutAdmin from "@/app/components/layoutAdmin";
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Beranda",
@@ -14,13 +14,13 @@ const HeaderDataContent: HeaderContentProps = {
 
 function DropZonePage() {
   return (
-    <SidebarWithHeader>
+    <LayoutAdmin>
       <HeaderContent
         titleName={HeaderDataContent.titleName}
         breadCrumb={HeaderDataContent.breadCrumb}
       />
       <DropZoneComponent />
-    </SidebarWithHeader>
+    </LayoutAdmin>
   );
 }
 

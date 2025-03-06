@@ -5,27 +5,23 @@ import {
   HeaderContentProps,
 } from "@/app/components/headerContent";
 import LayoutAdmin from "@/app/components/layoutAdmin";
-import LoadingMiniSignature from "@/app/components/loadingMini";
-import { TableComponentFull } from "@/app/components/tableComponents";
 import {
   radiusStyle,
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
 } from "@/app/constants/applicationConstants";
-import { AuthDataModelInterface } from "@/app/context/AuthContext";
-import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
+import { AuthDataModelInterface, useAuth } from "@/app/context/AuthContext";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
-import useMasterUsers, {
-  MasterUserResponse,
-} from "@/app/services/useMasterUsers";
-import { PaggingListPayload } from "@/app/types/masterTypes";
-import { RepeatIcon, Search2Icon } from "@chakra-ui/icons";
+import useMasterRoles, {
+  MasterRolesResponse,
+} from "@/app/services/useMasterRoles";
 import {
   Box,
   Button,
   Card,
   CardBody,
   CardHeader,
+  Code,
   Flex,
   Grid,
   GridItem,
@@ -34,10 +30,12 @@ import {
   InputGroup,
   InputLeftElement,
   Stack,
+  Text,
   Tooltip,
   useColorModeValue,
   VStack,
 } from "@chakra-ui/react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ColumnDef,
   getCoreRowModel,
@@ -48,16 +46,22 @@ import {
   PaginationState,
   useReactTable,
 } from "@tanstack/react-table";
-import { useEffect, useMemo, useState } from "react";
+import { PaggingListPayload } from "@/app/types/masterTypes";
+import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
+import { RepeatIcon, Search2Icon } from "@chakra-ui/icons";
+import useAuthData from "@/app/context/useAuthData";
+import LoadingMiniSignature from "@/app/components/loadingMini";
+import { TableComponentFull } from "@/app/components/tableComponents";
 
 const HeaderDataContent: HeaderContentProps = {
-  titleName: "Master User Manager",
-  breadCrumb: ["Home", "User Config", "Master User Manager"],
+  titleName: "Master Role System",
+  breadCrumb: ["Home", "User Config", "Master Role System"],
 };
 
-function MasterUsersPage() {
+function MasterRolePage() {
   const showToast = useToastHelper();
-  const { isLoading, error, List, GetDetailById } = useMasterUsers();
+  const { isLoading, error, List, GetDetailById, GetDetailByCode } =
+    useMasterRoles();
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -75,7 +79,7 @@ function MasterUsersPage() {
     }
   }, [DataAuth]);
 
-  const [Data, setData] = useState<MasterUserResponse[]>([]);
+  const [Data, setData] = useState<MasterRolesResponse[]>([]);
   const [RefreshData, setRefreshData] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
 
@@ -94,7 +98,7 @@ function MasterUsersPage() {
     [pageIndex, pageSize]
   );
 
-  const columnsData = useMemo<ColumnDef<MasterUserResponse>[]>(
+  const columnsData = useMemo<ColumnDef<MasterRolesResponse>[]>(
     () => [
       {
         accessorKey: "numbData",
@@ -105,31 +109,24 @@ function MasterUsersPage() {
         footer: (props) => props.column.id,
       },
       {
-        accessorFn: (row) => row.userCode,
-        id: "userCode",
+        accessorFn: (row) => row.roleCode,
+        id: "roleCode",
         cell: (info) => info.getValue(),
-        header: () => <span>Kode User</span>,
+        header: () => <span>Kode Role</span>,
         footer: (props) => props.column.id,
       },
       {
-        accessorFn: (row) => row.userFirstName,
-        id: "userFirstName",
+        accessorFn: (row) => row.roleName,
+        id: "roleName",
         cell: (info) => info.getValue(),
-        header: () => <span>Nama Belakang</span>,
+        header: () => <span>Nama Role</span>,
         footer: (props) => props.column.id,
       },
       {
-        accessorFn: (row) => row.userLastName,
-        id: "userLastName",
+        accessorFn: (row) => row.roleDesc,
+        id: "roleDesc",
         cell: (info) => info.getValue(),
-        header: () => <span>Nama Depan</span>,
-        footer: (props) => props.column.id,
-      },
-      {
-        accessorFn: (row) => row.username,
-        id: "username",
-        cell: (info) => info.getValue(),
-        header: () => <span>Username</span>,
+        header: () => <span>Deskripsi</span>,
         footer: (props) => props.column.id,
       },
     ],
@@ -142,7 +139,7 @@ function MasterUsersPage() {
       limit: pageSize,
       page: pageIndex,
       filterWhere: [],
-      fieldOrder: ["createdAt"],
+      fieldOrder: ["roleName"],
       orderDir: "asc",
     };
 
@@ -169,8 +166,8 @@ function MasterUsersPage() {
           return;
         }
 
-        const itemsData: MasterUserResponse[] =
-          requestData.data as MasterUserResponse[];
+        const itemsData: MasterRolesResponse[] =
+          requestData.data as MasterRolesResponse[];
         const totalData: number = requestData.countTotal as number;
         const totalPages: number =
           totalData > 0 ? Math.ceil(totalData / pageSize) : -1;
@@ -214,7 +211,6 @@ function MasterUsersPage() {
         titleName={HeaderDataContent.titleName}
         breadCrumb={HeaderDataContent.breadCrumb}
       />
-
       <VStack spacing={5} alignItems={"start"} w={"full"} pt={5}>
         <Grid templateColumns="repeat(12, 1fr)" gap={2} w={"full"}>
           <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}></GridItem>
@@ -311,4 +307,4 @@ function MasterUsersPage() {
   );
 }
 
-export default MasterUsersPage;
+export default MasterRolePage;

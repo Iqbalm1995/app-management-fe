@@ -1,0 +1,37 @@
+"use client";
+
+import { ReactNode, useEffect, useState } from "react";
+import { DELAY_MEDIUM } from "../constants/applicationConstants";
+import { Box, useColorModeValue } from "@chakra-ui/react";
+import { LoadingOverlay } from "./loadingOverlay";
+import { usePathname } from "next/navigation";
+import NavigationAdmin from "./sidebar";
+
+const LayoutAdmin = ({ children }: { children: ReactNode }) => {
+  const pathname = usePathname();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate loading time
+    const timer = setTimeout(() => setLoading(false), DELAY_MEDIUM);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <>
+      <Box position="relative" minHeight="100vh">
+        <LoadingOverlay isLoading={loading} />
+        <Box
+          opacity={loading ? 0.5 : 1}
+          pointerEvents={loading ? "none" : "auto"}
+        >
+          <Box minH="100vh" bg={useColorModeValue("gray.100", "gray.900")}>
+            <NavigationAdmin>{children}</NavigationAdmin>
+          </Box>
+        </Box>
+      </Box>
+    </>
+  );
+};
+
+export default LayoutAdmin;

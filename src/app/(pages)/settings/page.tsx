@@ -4,6 +4,7 @@ import {
   HeaderContent,
   HeaderContentProps,
 } from "@/app/components/headerContent";
+import LayoutAdmin from "@/app/components/layoutAdmin";
 import SidebarWithHeader from "@/app/components/sidebar";
 import { Box, Card, CardBody, CardHeader } from "@chakra-ui/react";
 
@@ -14,7 +15,7 @@ const HeaderDataContent: HeaderContentProps = {
 
 function SettingsPage() {
   return (
-    <SidebarWithHeader>
+    <LayoutAdmin>
       <HeaderContent {...HeaderDataContent} />
       <Card>
         <CardHeader>Setting</CardHeader>
@@ -24,7 +25,7 @@ function SettingsPage() {
           </Box>
         </CardBody>
       </Card>
-    </SidebarWithHeader>
+    </LayoutAdmin>
   );
 }
 

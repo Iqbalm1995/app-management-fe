@@ -718,3 +718,7 @@ export function separateRtRw(input: string): RtRwConversion {
   const [rt, rw] = parts;
   return { rt, rw };
 }
+
+export function truncateToTwoWords(text: string): string {
+  return text.split(" ").slice(0, 2).join(" ");
+}

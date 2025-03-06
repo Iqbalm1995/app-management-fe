@@ -6,6 +6,7 @@ import {
   HeaderContent,
   HeaderContentProps,
 } from "@/app/components/headerContent";
+import LayoutAdmin from "@/app/components/layoutAdmin";
 import SidebarWithHeader from "@/app/components/sidebar";
 import {
   boardDoneLabel,
@@ -235,7 +236,7 @@ function KanbanPage() {
   };
 
   return (
-    <SidebarWithHeader>
+    <LayoutAdmin>
       <HeaderContent
         titleName={HeaderDataContent.titleName}
         breadCrumb={HeaderDataContent.breadCrumb}
@@ -376,7 +377,7 @@ function KanbanPage() {
           </WrapItem>
         </Wrap>
       </Box>
-    </SidebarWithHeader>
+    </LayoutAdmin>
   );
 }
 

@@ -16,13 +16,14 @@ import {
   Flex,
   Grid,
   GridItem,
+  HStack,
   Icon,
   Image,
   Text,
   Tooltip,
   VStack,
 } from "@chakra-ui/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { AiFillFileExcel, AiFillFilePdf, AiFillFileWord } from "react-icons/ai";
 import { FaFileAlt } from "react-icons/fa";
@@ -38,6 +39,7 @@ export interface FileDetails {
 export function DropZoneComponent() {
   const [files, setFiles] = useState<File[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<FileDetails[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
 
   const { getRootProps, getInputProps } = useDropzone({
     accept: {
@@ -52,34 +54,27 @@ export function DropZoneComponent() {
     },
   });
 
+  useEffect(() => {
+    if (files.length > 0) {
+      const newPreviews = files.map((file) => URL.createObjectURL(file));
+      setPreviews(newPreviews);
+      return () =>
+        newPreviews.forEach((preview) => URL.revokeObjectURL(preview));
+    }
+  }, [files]);
+
   const handleUpload = () => {
     const fileDetails = files.map((file) => {
-      const fileParts = file.name.split(".");
-      const extension =
-        fileParts.length > 1 ? fileParts[fileParts.length - 1] : "";
-
-      return {
-        name: fileParts[0], // Raw name without extension
-        extension,
-        size: file.size, // File size in bytes
-        file, // Add the actual file object
-      };
+      const [name, extension] = file.name.split(".");
+      return { name, extension, size: file.size, file };
     });
-
     setUploadedFiles(fileDetails);
-
-    // Prepare FormData for API payload
     const formData = new FormData();
-    uploadedFiles.forEach((uploadedFile) => {
-      formData.append("files", uploadedFile.file); // Append file objects to FormData
-    });
-
-    // Log for debugging
+    uploadedFiles.forEach((uploadedFile) =>
+      formData.append("files", uploadedFile.file)
+    );
     console.log("Form Data Payload:", formData);
     console.log("Uploaded Files:", fileDetails);
-
-    // This formData is ready to be sent to an API endpoint using Axios or Fetch
-    // Example with Axios: axios.post('/upload', formData)
   };
 
   const renderFileIcon = (file: File) => {
@@ -94,6 +89,10 @@ export function DropZoneComponent() {
       default:
         return <Icon as={FaFileAlt} w={12} h={12} color="gray.500" />;
     }
+  };
+
+  const handleResetListUpload = () => {
+    setFiles([]);
   };
 
   return (
@@ -158,14 +157,18 @@ export function DropZoneComponent() {
                 // boxSize="130px" // Adjust size for better alignment
                 w={"full"}
                 boxShadow={"md"}
+                bgColor={"white"}
               >
                 {file.type.startsWith("image/") ? (
                   <Image
-                    src={URL.createObjectURL(file)}
+                    src={previews[index]}
                     alt={file.name}
                     boxSize="120px"
-                    objectFit="contain" // Center the image inside the box
+                    objectFit="contain"
                     rounded={radiusStyle}
+                    onLoad={() =>
+                      URL.revokeObjectURL(URL.createObjectURL(file))
+                    }
                   />
                 ) : (
                   <Box
@@ -186,9 +189,12 @@ export function DropZoneComponent() {
         ))}
       </Grid>
       {/* Upload Button */}
-      <Flex w={"full"} justifyContent={"end"}>
+      <Flex w={"full"} justifyContent={"end"} as={HStack}>
         <Button colorScheme="blue" onClick={handleUpload}>
           Upload Files
+        </Button>
+        <Button colorScheme="gray" onClick={handleResetListUpload}>
+          Reset
         </Button>
       </Flex>
     </Flex>

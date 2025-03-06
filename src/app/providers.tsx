@@ -12,6 +12,10 @@ import "@fontsource/poppins/700.css"; // Bold weight
 
 import "@fontsource/source-sans-pro/400.css";
 import "@fontsource/source-sans-pro/700.css";
+import { Global, css } from "@emotion/react";
+import { AuthProvider } from "./context/AuthContext";
+
+// import "@/styles/global.css";
 
 const colors = {
   black: "#0c1015",
@@ -147,6 +151,18 @@ const colors = {
     "800": "#004690",
     "900": "#003369",
   },
+  secondary: {
+    50: "#f2f8ff",
+    100: "#cae3ff",
+    200: "#9acaff",
+    300: "#5da9ff",
+    400: "#3795ff",
+    500: "#0077fe",
+    600: "#0065d7",
+    700: "#0051ad",
+    800: "#004593",
+    900: "#00326b",
+  },
 };
 
 const config: ThemeConfig = {
@@ -167,7 +183,25 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <CacheProvider>
       <ChakraProvider theme={theme}>
-        <DndProvider backend={HTML5Backend}>{children}</DndProvider>
+        <DndProvider backend={HTML5Backend}>
+          <Global
+            styles={css`
+              .fc-daygrid-event.fc-daygrid-block-event {
+                background-color: transparent;
+                border-color: transparent;
+              }
+              .fc-event-main {
+                background-color: transparent;
+                border-color: transparent;
+              }
+              .fc-daygrid-event-harness-inset .fc-daygrid-event {
+                background-color: transparent;
+                border-color: transparent;
+              }
+            `}
+          />
+          <AuthProvider>{children}</AuthProvider>
+        </DndProvider>
       </ChakraProvider>
     </CacheProvider>
   );

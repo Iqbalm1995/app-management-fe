@@ -1,0 +1,835 @@
+"use client";
+
+import {
+  Box,
+  Button,
+  ButtonGroup,
+  Card,
+  CardBody,
+  Flex,
+  Grid,
+  GridItem,
+  HStack,
+  Heading,
+  Input,
+  Select,
+  Stack,
+  StackDivider,
+  Table,
+  Tbody,
+  Td,
+  Text,
+  Th,
+  Thead,
+  Tr,
+  VStack,
+  useColorModeValue,
+} from "@chakra-ui/react";
+import { flexRender } from "@tanstack/react-table";
+import {
+  BsChevronBarLeft,
+  BsChevronBarRight,
+  BsChevronLeft,
+  BsChevronRight,
+} from "react-icons/bs";
+
+export function ControlTableNum({ table }: any) {
+  const pageCount = table.getPageCount();
+  const currentPage = table.getState().pagination.pageIndex + 1;
+
+  // Create array for page numbers
+  const visiblePages = Array.from(
+    { length: Math.min(5, pageCount) },
+    (_, i) => i + 1
+  ); // Show first 5 pages for now
+  return (
+    <Flex
+      minWidth="max-content"
+      w={"full"}
+      justifyContent="center"
+      gap="2"
+      my={4}
+    >
+      <Grid templateColumns="repeat(12, 1fr)" gap={2} w={"full"}>
+        <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}>
+          <HStack
+            gap="2"
+            w={"full"}
+            h={"full"}
+            alignItems={"center"}
+            justifyContent={{
+              base: "center",
+              sm: "center",
+              md: "start",
+              lg: "start",
+            }}
+            divider={<StackDivider borderColor="gray.300" />}
+            // bg={"red"}
+          >
+            <TableInputShowPage table={table} />
+            <>
+              <Text fontWeight={600}>Halaman </Text>
+              <Text> {table.getState().pagination.pageIndex + 1} </Text>/{" "}
+              <Text> {table.getPageCount()} </Text>
+            </>
+          </HStack>
+        </GridItem>
+        <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}>
+          <Flex
+            gap="2"
+            w={"full"}
+            h={"full"}
+            alignItems={"center"}
+            justifyContent={"end"}
+          >
+            <ButtonGroup
+              size="sm"
+              w={{ base: "full", sm: "full", md: "auto", lg: "auto" }}
+              isAttached
+              variant="outline"
+              colorScheme={"gray"}
+            >
+              <Button
+                onClick={() => table.setPageIndex(0)}
+                isDisabled={!table.getCanPreviousPage()}
+                minW="60px"
+              >
+                Pertama
+              </Button>
+              <Button
+                onClick={() => table.previousPage()}
+                isDisabled={!table.getCanPreviousPage()}
+                minW="60px"
+              >
+                <BsChevronLeft />
+              </Button>
+              {/* Page numbers */}
+              {visiblePages.map((page) => (
+                <Button
+                  key={page}
+                  onClick={() => table.setPageIndex(page - 1)}
+                  isActive={currentPage === page}
+                  minW="40px"
+                >
+                  {page}
+                </Button>
+              ))}
+              {currentPage !== 1 ? <Button minW="40px">...</Button> : ""}
+              {currentPage !== 1 && (
+                <Button
+                  onClick={() => table.setPageIndex(pageCount - 1)}
+                  minW="40px"
+                >
+                  {pageCount}
+                </Button>
+              )}
+              <Button
+                onClick={() => table.nextPage()}
+                isDisabled={!table.getCanNextPage()}
+                minW="60px"
+              >
+                <BsChevronRight />
+              </Button>
+              <Button
+                onClick={() => table.setPageIndex(pageCount - 1)}
+                isDisabled={!table.getCanNextPage()}
+                minW="60px"
+              >
+                Terakhir
+              </Button>
+            </ButtonGroup>
+          </Flex>
+        </GridItem>
+      </Grid>
+    </Flex>
+  );
+}
+
+export function ControlTable({ table }: any) {
+  const pageCount = table.getPageCount();
+  const currentPage = table.getState().pagination.pageIndex + 1;
+
+  // Create array for page numbers
+  const visiblePages = Array.from(
+    { length: Math.min(5, pageCount) },
+    (_, i) => i + 1
+  ); // Show first 5 pages for now
+  return (
+    <Flex
+      minWidth="max-content"
+      w={"full"}
+      justifyContent="center"
+      gap="2"
+      my={4}
+    >
+      <Grid templateColumns="repeat(12, 1fr)" gap={2} w={"full"}>
+        <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}>
+          <HStack
+            gap="2"
+            w={"full"}
+            h={"full"}
+            alignItems={"center"}
+            justifyContent={{
+              base: "center",
+              sm: "center",
+              md: "start",
+              lg: "start",
+            }}
+            divider={<StackDivider borderColor="gray.300" />}
+            // bg={"red"}
+          >
+            <TableInputShowPage table={table} />
+            <>
+              <Text fontWeight={600}>Halaman </Text>
+              <Text> {table.getState().pagination.pageIndex + 1} </Text>/{" "}
+              <Text> {table.getPageCount()} </Text>
+            </>
+          </HStack>
+        </GridItem>
+        <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}>
+          <Flex
+            gap="2"
+            w={"full"}
+            h={"full"}
+            alignItems={"center"}
+            justifyContent={{
+              base: "center",
+              sm: "center",
+              md: "end",
+              lg: "end",
+            }}
+          >
+            <ButtonGroup
+              size="sm"
+              w={{ base: "full", sm: "full", md: "auto", lg: "auto" }}
+              isAttached
+              variant="outline"
+              colorScheme={"gray"}
+            >
+              <Button
+                onClick={() => table.setPageIndex(0)}
+                isDisabled={!table.getCanPreviousPage()}
+                minW="40px"
+                w={{ base: "full", sm: "full", md: "auto", lg: "auto" }}
+              >
+                <BsChevronBarLeft />
+              </Button>
+              <Button
+                onClick={() => table.previousPage()}
+                isDisabled={!table.getCanPreviousPage()}
+                minW="40px"
+                w={{ base: "full", sm: "full", md: "auto", lg: "auto" }}
+              >
+                <BsChevronLeft />
+              </Button>
+              {/* Page numbers */}
+              {visiblePages.map((page) => (
+                <Button
+                  key={page}
+                  onClick={() => table.setPageIndex(page - 1)}
+                  isActive={currentPage === page}
+                  minW="35px"
+                  display={{
+                    base: "none",
+                    sm: "none",
+                    md: "block",
+                    lg: "block",
+                  }}
+                >
+                  {page}
+                </Button>
+              ))}
+              {currentPage !== 1 ? (
+                <Button
+                  minW="35px"
+                  display={{
+                    base: "none",
+                    sm: "none",
+                    md: "block",
+                    lg: "block",
+                  }}
+                >
+                  ...
+                </Button>
+              ) : (
+                ""
+              )}
+              {currentPage !== 1 && (
+                <Button
+                  onClick={() => table.setPageIndex(pageCount - 1)}
+                  minW="35px"
+                  display={{
+                    base: "none",
+                    sm: "none",
+                    md: "block",
+                    lg: "block",
+                  }}
+                >
+                  {pageCount}
+                </Button>
+              )}
+              <Button
+                onClick={() => table.nextPage()}
+                isDisabled={!table.getCanNextPage()}
+                minW="40px"
+                w={{ base: "full", sm: "full", md: "auto", lg: "auto" }}
+              >
+                <BsChevronRight />
+              </Button>
+              <Button
+                onClick={() => table.setPageIndex(pageCount - 1)}
+                isDisabled={!table.getCanNextPage()}
+                minW="40px"
+                w={{ base: "full", sm: "full", md: "auto", lg: "auto" }}
+              >
+                <BsChevronBarRight />
+              </Button>
+            </ButtonGroup>
+          </Flex>
+        </GridItem>
+      </Grid>
+    </Flex>
+  );
+}
+
+export function TableInputShowPage({ table }: any) {
+  return (
+    <Flex
+      justifyContent={{
+        base: "center",
+        sm: "center",
+        md: "flex-end",
+        lg: "flex-end",
+      }}
+      gap="2"
+      alignItems={"center"}
+    >
+      <Text fontWeight={600}>Tampil</Text>
+      <Select
+        size="sm"
+        w={{
+          base: "full",
+          sm: "full",
+          md: "80px",
+          lg: "80px",
+        }}
+        // variant="flushed"
+        rounded={"md"}
+        textAlign={"center"}
+        value={table.getState().pagination.pageSize}
+        onChange={(e) => {
+          table.setPageSize(Number(e.target.value));
+        }}
+      >
+        {[5, 10, 20, 30, 40, 50].map((pageSize) => (
+          <option key={pageSize} value={pageSize}>
+            {pageSize}
+          </option>
+        ))}
+      </Select>
+    </Flex>
+  );
+}
+
+export function ControlTableSM({ table }: any) {
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <Flex minWidth="max-content" justifyContent="end" gap="2" my="3%">
+        <Grid templateColumns="repeat(5, 1fr)" gap={2}>
+          <GridItem colSpan={{ base: 5, sm: 5, md: 5, lg: 1 }}>
+            <Button
+              leftIcon={<BsChevronBarLeft />}
+              onClick={() => table.setPageIndex(0)}
+              isDisabled={!table.getCanPreviousPage()}
+              size="sm"
+              colorScheme="bjb_color_theme"
+              width={"full"}
+            ></Button>
+          </GridItem>
+          <GridItem colSpan={{ base: 5, sm: 5, md: 5, lg: 1 }}>
+            <Button
+              leftIcon={<BsChevronLeft />}
+              onClick={() => table.previousPage()}
+              isDisabled={!table.getCanPreviousPage()}
+              size="sm"
+              colorScheme="bjb_color_theme"
+              width={"full"}
+            ></Button>
+          </GridItem>
+          <GridItem colSpan={{ base: 5, sm: 5, md: 5, lg: 1 }}>
+            <Flex gap="2" ml="15px" mr="15px" width={"full"}>
+              <strong>{table.getState().pagination.pageIndex + 1} </strong>/{" "}
+              <strong> {table.getPageCount()} </strong>
+            </Flex>
+          </GridItem>
+          <GridItem colSpan={{ base: 5, sm: 5, md: 5, lg: 1 }}>
+            <Button
+              rightIcon={<BsChevronRight />}
+              onClick={() => table.nextPage()}
+              isDisabled={!table.getCanNextPage()}
+              size="sm"
+              colorScheme="bjb_color_theme"
+              width={"full"}
+            ></Button>
+            <Button
+              rightIcon={<BsChevronBarRight />}
+              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+              isDisabled={!table.getCanNextPage()}
+              size="sm"
+              colorScheme="bjb_color_theme"
+              width={"full"}
+            ></Button>
+          </GridItem>
+        </Grid>
+      </Flex>
+    </div>
+  );
+}
+
+export function TableComponent({ table }: any) {
+  return (
+    <Flex overflowX={"auto"}>
+      <Table
+        variant={"simple"}
+        // colorScheme="secondary"
+        borderTop={"1px"}
+        borderColor={useColorModeValue("gray.100", "gray.700")}
+        size={"sm"}
+      >
+        <Thead>
+          {table.getHeaderGroups().map((headerGroup: any) => (
+            <Tr
+              key={headerGroup.id}
+              bg={useColorModeValue("secondary.50", "gray.800")}
+            >
+              {headerGroup.headers.map((header: any) => {
+                return (
+                  <Th
+                    py={4}
+                    key={header.id}
+                    colSpan={header.colSpan}
+                    // fontWeight={800}
+                    color={useColorModeValue("secondary.800", "secondary.500")}
+                  >
+                    <Heading as="h5" size="sm">
+                      {header.isPlaceholder ? null : (
+                        <div>
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                        </div>
+                      )}
+                    </Heading>
+                  </Th>
+                );
+              })}
+            </Tr>
+          ))}
+        </Thead>
+        <Tbody>
+          {table.getRowModel().rows.length > 0 ? (
+            table.getRowModel().rows.map((row: any, index: any) => {
+              const startingNumber = index + 1;
+              return (
+                <Tr key={row.id}>
+                  {row.getVisibleCells().map((cell: any) => {
+                    return (
+                      <Td key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </Td>
+                    );
+                  })}
+                </Tr>
+              );
+            })
+          ) : (
+            <Tr>
+              <Td colSpan={table.options.columns.length + 1}>
+                <Flex
+                  justifyContent={"center"}
+                  alignItems={"center"}
+                  minH={"30vh"}
+                >
+                  Belum ada data
+                </Flex>
+              </Td>
+            </Tr>
+          )}
+        </Tbody>
+      </Table>
+    </Flex>
+  );
+}
+
+export function TableComponentFull({ table }: any) {
+  return (
+    <>
+      <Grid
+        templateColumns="repeat(2, 1fr)"
+        gap={5}
+        px={3}
+        // bg={"red"}
+        w={"full"}
+      >
+      </Grid>
+      <Box pb={8} w={"full"}>
+        <TableComponent table={table} />
+        <Flex w={"full"} px={5}>
+          <ControlTable table={table} />
+        </Flex>
+      </Box>
+    </>
+  );
+}
+
+export function TableComponentFullSm({ table }: any) {
+  return (
+    <>
+      <Grid
+        templateColumns="repeat(2, 1fr)"
+        gap={5}
+        px={5}
+        py={2}
+        // bg={"red"}
+        w={"full"}
+      ></Grid>
+      <Box pb={8} w={"full"}>
+        <TableComponentSm table={table} />
+        <Flex w={"full"} px={5} py={2}>
+          <ControlTableSmx table={table} />
+        </Flex>
+      </Box>
+    </>
+  );
+}
+
+export function TableComponentSm({ table }: any) {
+  return (
+    <Flex overflowX={"auto"}>
+      <Table
+        variant={"simple"}
+        // colorScheme="secondary"
+        borderTop={"1px"}
+        borderColor={"gray.100"}
+        colorScheme="gray"
+        size={"sm"}
+      >
+        <Thead>
+          {table.getHeaderGroups().map((headerGroup: any) => (
+            <Tr key={headerGroup.id} bg={"secondary.50"}>
+              {headerGroup.headers.map((header: any) => {
+                return (
+                  <Th
+                    py={4}
+                    key={header.id}
+                    colSpan={header.colSpan}
+                    // fontWeight={800}
+                    color={"secondary.800"}
+                    // textAlign={"center"}
+                  >
+                    <Heading as="h5" size="xs">
+                      {header.isPlaceholder ? null : (
+                        <div>
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                        </div>
+                      )}
+                    </Heading>
+                  </Th>
+                );
+              })}
+            </Tr>
+          ))}
+        </Thead>
+        <Tbody>
+          {table.getRowModel().rows.length > 0 ? (
+            table.getRowModel().rows.map((row: any, index: any) => {
+              const startingNumber = index + 1;
+              return (
+                <Tr key={row.id}>
+                  {row.getVisibleCells().map((cell: any) => {
+                    return (
+                      <Td key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </Td>
+                    );
+                  })}
+                </Tr>
+              );
+            })
+          ) : (
+            <Tr>
+              <Td colSpan={table.options.columns.length + 1}>
+                <Flex justifyContent={"center"}>Belum ada data</Flex>
+              </Td>
+            </Tr>
+          )}
+        </Tbody>
+      </Table>
+    </Flex>
+  );
+}
+
+export function TableInputShowPageSm({ table }: any) {
+  return (
+    <Flex
+      justifyContent={{
+        base: "center",
+        sm: "center",
+        md: "flex-end",
+        lg: "flex-end",
+      }}
+      gap="2"
+      alignItems={"center"}
+    >
+      <Text fontWeight={600}>Tampil</Text>
+      <Select
+        size="xs"
+        w={{
+          base: "full",
+          sm: "full",
+          md: "80px",
+          lg: "80px",
+        }}
+        // variant="flushed"
+        rounded={"md"}
+        textAlign={"center"}
+        value={table.getState().pagination.pageSize}
+        onChange={(e) => {
+          table.setPageSize(Number(e.target.value));
+        }}
+      >
+        {[5, 10, 20, 30, 40, 50].map((pageSize) => (
+          <option key={pageSize} value={pageSize}>
+            {pageSize}
+          </option>
+        ))}
+      </Select>
+    </Flex>
+  );
+}
+
+export function ControlTableSmx({ table }: any) {
+  return (
+    <Flex
+      minWidth="max-content"
+      w={"full"}
+      justifyContent="center"
+      gap="2"
+      my={4}
+    >
+      <Grid templateColumns="repeat(12, 1fr)" gap={2} w={"full"}>
+        <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}>
+          <HStack
+            gap="2"
+            w={"full"}
+            h={"full"}
+            alignItems={"center"}
+            justifyContent={{
+              base: "center",
+              sm: "center",
+              md: "start",
+              lg: "start",
+            }}
+            divider={<StackDivider borderColor="gray.300" />}
+            // bg={"red"}
+          >
+            <TableInputShowPageSm table={table} />
+            <>
+              <Text fontWeight={600}>Halaman </Text>
+              <Text> {table.getState().pagination.pageIndex + 1} </Text>/{" "}
+              <Text> {table.getPageCount()} </Text>
+            </>
+          </HStack>
+        </GridItem>
+        <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}>
+          <Flex
+            gap="2"
+            w={"full"}
+            h={"full"}
+            alignItems={"center"}
+            justifyContent={"end"}
+          >
+            <ButtonGroup
+              size="xs"
+              w={{ base: "full", sm: "full", md: "auto", lg: "auto" }}
+              isAttached
+              variant="outline"
+            >
+              <Button
+                onClick={() => table.setPageIndex(0)}
+                isDisabled={!table.getCanPreviousPage()}
+                // colorScheme={"secondary"}
+                variant={"outline"}
+                width={"full"}
+                minW={{ base: 0, sm: 0, md: "60px", lg: "60px" }}
+              >
+                <BsChevronBarLeft />
+              </Button>
+              <Button
+                onClick={() => table.previousPage()}
+                isDisabled={!table.getCanPreviousPage()}
+                // colorScheme={"secondary"}
+                variant={"outline"}
+                width={"full"}
+                minW={{ base: 0, sm: 0, md: "60px", lg: "60px" }}
+              >
+                <BsChevronLeft />
+              </Button>
+              <Button
+                onClick={() => table.nextPage()}
+                isDisabled={!table.getCanNextPage()}
+                // colorScheme={"secondary"}
+                variant={"outline"}
+                width={"full"}
+                minW={{ base: 0, sm: 0, md: "60px", lg: "60px" }}
+              >
+                <BsChevronRight />
+              </Button>
+              <Button
+                onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+                isDisabled={!table.getCanNextPage()}
+                // colorScheme={"secondary"}
+                variant={"outline"}
+                width={"full"}
+                minW={{ base: 0, sm: 0, md: "60px", lg: "60px" }}
+              >
+                <BsChevronBarRight />
+              </Button>
+            </ButtonGroup>
+          </Flex>
+        </GridItem>
+      </Grid>
+    </Flex>
+  );
+}
+
+export function ControlTableSmx2({ table }: any) {
+  const pageCount = table.getPageCount();
+  const currentPage = table.getState().pagination.pageIndex + 1;
+
+  // Create array for page numbers
+  const visiblePages = Array.from(
+    { length: Math.min(5, pageCount) },
+    (_, i) => i + 1
+  ); // Show first 5 pages for now
+
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <Flex
+        minWidth="max-content"
+        w={"full"}
+        justifyContent="center"
+        gap="2"
+        my={4}
+      >
+        <Grid templateColumns="repeat(12, 1fr)" gap={2} w={"full"}>
+          <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}>
+            <HStack
+              gap="2"
+              w={"full"}
+              h={"full"}
+              alignItems={"center"}
+              justifyContent={{
+                base: "center",
+                sm: "center",
+                md: "start",
+                lg: "start",
+              }}
+              divider={<StackDivider borderColor="gray.300" />}
+              // bg={"red"}
+            >
+              <TableInputShowPageSm table={table} />
+              <>
+                <Text fontWeight={600}>Halaman </Text>
+                <Text> {table.getState().pagination.pageIndex + 1} </Text>/{" "}
+                <Text> {table.getPageCount()} </Text>
+              </>
+            </HStack>
+          </GridItem>
+          <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}>
+            <Flex
+              gap="2"
+              w={"full"}
+              h={"full"}
+              alignItems={"center"}
+              justifyContent={"end"}
+            >
+              <ButtonGroup
+                size="sm"
+                w={{ base: "full", sm: "full", md: "auto", lg: "auto" }}
+                isAttached
+                variant="solid"
+                colorScheme={"primary"}
+              >
+                <Button
+                  onClick={() => table.setPageIndex(0)}
+                  isDisabled={!table.getCanPreviousPage()}
+                  minW="60px"
+                >
+                  Pertama
+                </Button>
+                <Button
+                  onClick={() => table.previousPage()}
+                  isDisabled={!table.getCanPreviousPage()}
+                  minW="60px"
+                >
+                  <BsChevronLeft />
+                </Button>
+
+                {/* Page numbers */}
+                {visiblePages.map((page) => (
+                  <Button
+                    key={page}
+                    onClick={() => table.setPageIndex(page - 1)}
+                    isActive={currentPage === page}
+                    minW="40px"
+                  >
+                    {page}
+                  </Button>
+                ))}
+
+                {/* Ellipsis for more pages */}
+                {currentPage < pageCount - 5 && currentPage === 1 && (
+                  <Button minW="40px">...</Button>
+                )}
+                {currentPage !== 1 && (
+                  <Button
+                    onClick={() => table.setPageIndex(pageCount - 1)}
+                    minW="40px"
+                  >
+                    {pageCount}
+                  </Button>
+                )}
+
+                <Button
+                  onClick={() => table.nextPage()}
+                  isDisabled={!table.getCanNextPage()}
+                  minW="60px"
+                >
+                  <BsChevronRight />
+                </Button>
+                <Button
+                  onClick={() => table.setPageIndex(pageCount - 1)}
+                  isDisabled={!table.getCanNextPage()}
+                  minW="60px"
+                >
+                  Terakhir
+                </Button>
+              </ButtonGroup>
+            </Flex>
+          </GridItem>
+        </Grid>
+      </Flex>
+    </div>
+  );
+}

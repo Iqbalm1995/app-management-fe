@@ -1,0 +1,117 @@
+"use client";
+
+import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { useToastHelper } from "../helper/ToastMessagesHelper";
+import {
+  DELAY_LOW,
+  INACTIVITY_LIMIT_DEFAULT,
+  LINK_MENU_HOME,
+  LINK_MENU_ROOT,
+  STATUS_LOGIN_OFF,
+  STATUS_LOGIN_ON,
+} from "../constants/applicationConstants";
+import { redirect, usePathname } from "next/navigation";
+
+export interface AuthDataModelInterface {
+  dataLogin: object | null;
+  dataAuth: loginReturn | null;
+  statusLogin: string;
+}
+
+interface AuthContextInterface {
+  authData: AuthDataModelInterface;
+  goLogin: (data: object, dataAuth: loginReturn) => void;
+  goLogout: () => void;
+  isAuthenticated: boolean;
+}
+
+export interface loginReturn {
+  apiKey: string;
+  expiration: string;
+}
+
+const AuthContext = createContext<AuthContextInterface | undefined>(undefined);
+
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const pathname = usePathname();
+  const [authData, setAuthData] = useState<AuthDataModelInterface>({
+    dataLogin: null,
+    dataAuth: null,
+    statusLogin: STATUS_LOGIN_OFF,
+  });
+  const [loading, setLoading] = useState(true); // Add loading state
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      const storedData = localStorage.getItem("authData");
+      if (storedData) {
+        const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
+        setAuthData(StorageAuth);
+        if (
+          StorageAuth.statusLogin === STATUS_LOGIN_OFF &&
+          pathname !== LINK_MENU_ROOT
+        ) {
+          redirect(LINK_MENU_ROOT); // redirect to login
+        }
+      } else {
+        localStorage.setItem("authData", JSON.stringify(authData));
+        redirect(LINK_MENU_ROOT); // redirect to login
+      }
+      setLoading(false); // Set loading to false once data is checked
+      isFirstRender.current = false;
+    }
+  }, [authData, pathname]);
+
+  const handleLogin = async (data: object, dataAuth: loginReturn) => {
+    // const DataLogin: loginReturn = data as loginReturn;
+    const authData: AuthDataModelInterface = {
+      dataLogin: data,
+      dataAuth: dataAuth,
+      statusLogin: STATUS_LOGIN_ON,
+    };
+    setTimeout(() => {
+      localStorage.setItem("authData", JSON.stringify(authData));
+      localStorage.setItem("tokenData", dataAuth.apiKey);
+      setAuthData(authData);
+      redirect(LINK_MENU_HOME);
+    }, DELAY_LOW); // 1-second delay
+  };
+
+  const handleLogout = async () => {
+    setLoading(true);
+    setTimeout(() => {
+      const authData: AuthDataModelInterface = {
+        dataLogin: null,
+        dataAuth: null,
+        statusLogin: STATUS_LOGIN_OFF,
+      };
+      localStorage.setItem("authData", JSON.stringify(authData));
+      localStorage.setItem("tokenData", "");
+      setAuthData(authData);
+      setLoading(false);
+      redirect(LINK_MENU_ROOT);
+    }, DELAY_LOW);
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        authData,
+        goLogin: handleLogin,
+        goLogout: handleLogout,
+        isAuthenticated: authData.statusLogin === STATUS_LOGIN_ON,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+};

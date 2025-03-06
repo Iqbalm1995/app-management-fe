@@ -2,7 +2,7 @@ import {
   HeaderContent,
   HeaderContentProps,
 } from "@/app/components/headerContent";
-import SidebarWithHeader from "@/app/components/sidebar";
+import LayoutAdmin from "@/app/components/layoutAdmin";
 import { radiusStyle } from "@/app/constants/applicationConstants";
 import { Box, Card, CardBody, CardHeader } from "@chakra-ui/react";
 
@@ -13,7 +13,7 @@ const HeaderDataContent: HeaderContentProps = {
 
 function HomePage() {
   return (
-    <SidebarWithHeader>
+    <LayoutAdmin>
       <HeaderContent
         titleName={HeaderDataContent.titleName}
         breadCrumb={HeaderDataContent.breadCrumb}
@@ -25,7 +25,7 @@ function HomePage() {
           </Box>
         </CardBody>
       </Card>
-    </SidebarWithHeader>
+    </LayoutAdmin>
   );
 }
 
