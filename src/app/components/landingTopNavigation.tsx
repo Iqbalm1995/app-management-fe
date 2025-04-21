@@ -198,16 +198,16 @@ export default function TopNavigationLanding() {
                     </HStack>
                   </MenuButton>
                   <MenuList
-                    color={useColorModeValue("gray.800", "white")}
-                    bg={useColorModeValue("white", "gray.900")}
+                    color={colorMode == "light" ? "gray.800" : "white"}
+                    bg={colorMode == "light" ? "white" : "gray.900"}
                     rounded={radiusStyle}
                   >
                     <MenuItem
-                      color={useColorModeValue("gray.800", "white")}
-                      bg={useColorModeValue("white", "gray.900")}
+                      color={colorMode == "light" ? "gray.800" : "white"}
+                      bg={colorMode == "light" ? "white" : "gray.900"}
                       _hover={{
-                        bg: useColorModeValue("gray.100", "gray.700"),
-                        color: useColorModeValue("gray.900", "white"),
+                        bg: colorMode == "light" ? "gray.100" : "gray.700",
+                        color: colorMode == "light" ? "gray.900" : "white",
                       }}
                       rounded={radiusStyle}
                     >
@@ -219,10 +219,11 @@ export default function TopNavigationLanding() {
                         p={1}
                       >
                         <Text
-                          color={useColorModeValue(
-                            "secondary.900",
-                            "secondary.200"
-                          )}
+                          color={
+                            colorMode == "light"
+                              ? "secondary.900"
+                              : "secondary.200"
+                          }
                           fontSize={"sm"}
                           fontWeight={700}
                         >
@@ -230,7 +231,7 @@ export default function TopNavigationLanding() {
                         </Text>
                         <Text
                           fontSize="xs"
-                          color={useColorModeValue("gray.600", "gray.100")}
+                          color={colorMode == "light" ? "gray.600" : "gray.100"}
                         >
                           {(DataAuth && DataAuth.teamRole?.teamRoleName) ||
                             (DataAuth && DataAuth.role.roleName)}
@@ -241,11 +242,11 @@ export default function TopNavigationLanding() {
                     <Link href={LINK_MENU_HOME}>
                       <MenuItem
                         icon={<RiHomeLine />}
-                        color={useColorModeValue("gray.800", "white")}
-                        bg={useColorModeValue("white", "gray.900")}
+                        color={colorMode == "light" ? "gray.800" : "white"}
+                        bg={colorMode == "light" ? "white" : "gray.900"}
                         _hover={{
-                          bg: useColorModeValue("gray.100", "gray.700"),
-                          color: useColorModeValue("gray.900", "white"),
+                          bg: colorMode == "light" ? "gray.100" : "gray.700",
+                          color: colorMode == "light" ? "gray.900" : "white",
                         }}
                         rounded={radiusStyle}
                       >
@@ -255,11 +256,11 @@ export default function TopNavigationLanding() {
                     <Link href={`#`}>
                       <MenuItem
                         icon={<MdPassword />}
-                        color={useColorModeValue("gray.800", "white")}
-                        bg={useColorModeValue("white", "gray.900")}
+                        color={colorMode == "light" ? "gray.800" : "white"}
+                        bg={colorMode == "light" ? "white" : "gray.900"}
                         _hover={{
-                          bg: useColorModeValue("gray.100", "gray.700"),
-                          color: useColorModeValue("gray.900", "white"),
+                          bg: colorMode == "light" ? "gray.100" : "gray.700",
+                          color: colorMode == "light" ? "gray.900" : "white",
                         }}
                         rounded={radiusStyle}
                       >
@@ -268,8 +269,8 @@ export default function TopNavigationLanding() {
                     </Link>
                     <MenuItem
                       icon={<FaPowerOff />}
-                      color={useColorModeValue("gray.800", "white")}
-                      bg={useColorModeValue("white", "gray.900")}
+                      color={colorMode == "light" ? "gray.800" : "white"}
+                      bg={colorMode == "light" ? "white" : "gray.900"}
                       _hover={{
                         bg: "red.600",
                         color: "white",
@@ -300,6 +301,7 @@ export default function TopNavigationLanding() {
 }
 
 const DesktopNav = () => {
+  const { colorMode } = useColorMode();
   return (
     <Stack direction={"row"} spacing={4}>
       {NAV_ITEMS_LANDING.map((navItem) => (
@@ -312,10 +314,10 @@ const DesktopNav = () => {
                 href={navItem.href ?? "#"}
                 fontSize={"md"}
                 fontWeight={600}
-                color={useColorModeValue("primary.800", "white")}
+                color={colorMode == "light" ? "primary.800" : "white"}
                 _hover={{
                   textDecoration: "none",
-                  color: useColorModeValue("primary.900", "gray.100"),
+                  color: colorMode == "light" ? "primary.900" : "gray.100",
                 }}
               >
                 {navItem.label}

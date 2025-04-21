@@ -31,6 +31,7 @@ const LayoutLanding = ({ children }: { children: ReactNode }) => {
   return (
     <>
       <Box position="relative" minHeight="90vh">
+        <title>KOBRA - Applications Management</title>
         <LoadingOverlay isLoading={loading} />
         <Box
           opacity={loading ? 0.5 : 1}

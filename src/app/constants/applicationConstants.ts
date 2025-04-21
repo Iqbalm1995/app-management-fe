@@ -1,3 +1,5 @@
+import { OptionListProps } from "../types/masterTypes";
+
 // STYLE
 export const radiusStyle: string = "2xl";
 
@@ -51,3 +53,25 @@ export const RES_CODE_OK: number = 200;
 export const RES_CODE_BAD_REQUEST: number = 400;
 export const RES_CODE_NOT_FOUND: number = 404;
 export const RES_CODE_SERVER_ERROR: number = 500;
+
+export const GENERAL_STATUS_ACTIVE: string = "ACTIVE";
+export const GENERAL_STATUS_INACTIVE: string = "INACTIVE";
+
+export const OptionChangeLogsCategory: OptionListProps[] = [
+  {
+    label: "INFO",
+    value: "INFO",
+  },
+  {
+    label: "WARNING",
+    value: "WARNING",
+  },
+  {
+    label: "CRITICAL / ERROR",
+    value: "CRITICAL",
+  },
+  {
+    label: "FIXED",
+    value: "FIXED",
+  },
+];

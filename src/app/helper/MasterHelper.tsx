@@ -5,9 +5,11 @@ import {
   AlertTitle,
   Badge,
   Box,
+  Text,
 } from "@chakra-ui/react";
 import React, { ReactNode, useEffect, useState } from "react";
 import { format } from "date-fns";
+import { radiusStyle } from "../constants/applicationConstants";
 
 // capitalize each word string
 export function capitalizeWords(str: string) {
@@ -721,4 +723,134 @@ export function separateRtRw(input: string): RtRwConversion {
 
 export function truncateToTwoWords(text: string): string {
   return text.split(" ").slice(0, 2).join(" ");
+}
+
+export const TextStatusProps = ({
+  statusData,
+  ...rest
+}: {
+  statusData: string;
+}) => {
+  if (statusData == "NEW") {
+    return (
+      <Text fontSize={"medium"} fontWeight={600} color={"white"} {...rest}>
+        NEW
+      </Text>
+    );
+  }
+
+  if (statusData == "ACTIVE") {
+    return (
+      <Text fontSize={"medium"} fontWeight={600} color={"green.200"} {...rest}>
+        ACTIVE
+      </Text>
+    );
+  }
+
+  if (statusData == "ONHOLD") {
+    return (
+      <Text fontSize={"medium"} fontWeight={600} color={"yellow.300"} {...rest}>
+        ON HOLD
+      </Text>
+    );
+  }
+
+  if (statusData == "INACTIVE") {
+    return (
+      <Text fontSize={"medium"} fontWeight={600} color={"red.400"} {...rest}>
+        IN ACTIVE
+      </Text>
+    );
+  }
+
+  return (
+    <Text fontSize={"medium"} fontWeight={600} {...rest}>
+      {statusData}
+    </Text>
+  );
+};
+
+export const TextLabelProps = ({
+  statusData,
+  ...rest
+}: {
+  statusData: string;
+}) => {
+  if (statusData == "INFO") {
+    return (
+      <Badge colorScheme={"secondary"} rounded={radiusStyle} px={2} {...rest}>
+        INFO
+      </Badge>
+    );
+  }
+  if (statusData == "WARNING") {
+    return (
+      <Badge colorScheme={"yellow"} rounded={radiusStyle} px={2} {...rest}>
+        WARNING
+      </Badge>
+    );
+  }
+  if (statusData == "CRITICAL") {
+    return (
+      <Badge colorScheme={"red"} rounded={radiusStyle} px={2} {...rest}>
+        CRITICAL / ERROR
+      </Badge>
+    );
+  }
+  if (statusData == "ERROR") {
+    return (
+      <Badge colorScheme={"red"} rounded={radiusStyle} px={2} {...rest}>
+        ERROR
+      </Badge>
+    );
+  }
+  if (statusData == "FIXED") {
+    return (
+      <Badge colorScheme={"green"} rounded={radiusStyle} px={2} {...rest}>
+        FIXED
+      </Badge>
+    );
+  }
+
+  return (
+    <Badge colorScheme={"gray"} rounded={radiusStyle} px={2} {...rest}>
+      {statusData}
+    </Badge>
+  );
+};
+
+export function generateTimestamp(): string {
+  const currentDate = new Date();
+  return currentDate.toISOString();
+}
+
+export function generateUniqueCode(parameter: string): string {
+  const timestamp = Date.now(); // Get current time in milliseconds
+  return `${parameter}-${timestamp}`;
+}
+
+export const getCurrentQuarter = () => {
+  const currentMonth = new Date().getMonth();
+  return Math.floor(currentMonth / 3) + 1; // Q1-Q4
+};
+
+export const getQuarterDateRange = (year: number, quarter: number | "all") => {
+  if (quarter === "all") {
+    const startDate = new Date(Date.UTC(year, 0, 1));
+    const endDate = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
+    return { startDate, endDate };
+  }
+
+  const startMonth = (quarter - 1) * 3;
+  const startDate = new Date(Date.UTC(year, startMonth, 1));
+  const endDate = new Date(Date.UTC(year, startMonth + 3, 0, 23, 59, 59, 999));
+  return { startDate, endDate };
+};
+
+export function getRandomNumber(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min)) + min;
+}
+
+export function getRandomNumberInclusive(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }

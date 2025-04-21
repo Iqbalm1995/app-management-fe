@@ -65,10 +65,14 @@ function MasterRolePage() {
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
 
+  // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
-  const storedData = localStorage.getItem("authData");
-  const tokenData: string = localStorage.getItem("tokenData") as string;
+  const [tokenData, setTokenData] = useState<string>("");
+
   useEffect(() => {
+    const storedData = localStorage.getItem("authData");
+    const token: string = localStorage.getItem("tokenData") as string;
+
     if (DataAuth == null) {
       if (storedData) {
         const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
@@ -77,7 +81,12 @@ function MasterRolePage() {
         setDataAuth(UserData);
       }
     }
+
+    if (token) {
+      setTokenData(token);
+    }
   }, [DataAuth]);
+  // End SetUp auth data on current page
 
   const [Data, setData] = useState<MasterRolesResponse[]>([]);
   const [RefreshData, setRefreshData] = useState<number>(0);

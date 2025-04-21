@@ -24,8 +24,9 @@ const AUTH_STORAGE_KEY = "AuthData";
 
 export const logout = () => {
   const authData: AuthDataModelInterface = {
-    DataLogin: null,
+    dataLogin: null,
     statusLogin: "logged_out",
+    dataAuth: null,
   };
   if (typeof window !== "undefined") {
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authData));
@@ -37,9 +38,9 @@ export const getAuthData = (): AuthDataModelInterface => {
     const storedData = localStorage.getItem(AUTH_STORAGE_KEY);
     return storedData
       ? JSON.parse(storedData)
-      : { DataLogin: null, statusLogin: "logged_out" };
+      : { dataLogin: null, dataAuth: null, statusLogin: "logged_out" };
   }
-  return { DataLogin: null, statusLogin: "logged_out" };
+  return { dataLogin: null, dataAuth: null, statusLogin: "logged_out" };
 };
 
 export const isAuthenticated = (): boolean => {

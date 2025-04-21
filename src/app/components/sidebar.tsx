@@ -71,6 +71,7 @@ import {
   FiBox,
   FiPlay,
   FiSettings,
+  FiPlayCircle,
 } from "react-icons/fi";
 import { IconType } from "react-icons";
 import {
@@ -90,17 +91,23 @@ import {
   getFromLocalStorage,
   saveToLocalStorage,
 } from "../utils/localStorageUtils";
-import { useAuth } from "../context/AuthContext";
+import { AuthDataModelInterface, useAuth } from "../context/AuthContext";
 import {
   DELAY_ZERO,
+  ENDPOINT_API_BASEURL,
+  ENDPOINT_PORT_BASIC,
   LINK_MENU_ROOT,
   radiusStyle,
   WIDTH_SIDEBAR,
 } from "../constants/applicationConstants";
 import { RiMenu2Line } from "react-icons/ri";
 import { LogoApplications, LogoApplicationsLite } from "./logoApps";
-import { truncateToTwoWords } from "../helper/MasterHelper";
+import { buildUrlPort, truncateToTwoWords } from "../helper/MasterHelper";
 import {
+  FaChess,
+  FaDiagramProject,
+  FaFire,
+  FaFlipboard,
   FaPowerOff,
   FaRegFolderOpen,
   FaUserPlus,
@@ -111,9 +118,14 @@ import { FooterAdminPanel } from "./layoutLanding";
 import SignatureLineColor from "./signatureStyle";
 import { BsKanban } from "react-icons/bs";
 import { IoCalendarNumberOutline } from "react-icons/io5";
-import { MdOutlinePermMedia } from "react-icons/md";
+import { MdGroupWork, MdOutlinePermMedia } from "react-icons/md";
 import { usePathname } from "next/navigation";
 import { AuthDataResponse } from "../services/useAuthentications";
+import { BiSolidReport } from "react-icons/bi";
+import { CiMemoPad, CiServer } from "react-icons/ci";
+import { RxActivityLog } from "react-icons/rx";
+import { TbLayoutDashboardFilled } from "react-icons/tb";
+import { FaDraftingCompass } from "react-icons/fa";
 // import { useAuth } from "@/context/AuthContext";
 
 // Page Split
@@ -134,9 +146,115 @@ interface LinkItemProps {
 
 const LinkItems: LinkItemProps[] = [
   {
-    name: "Home",
-    icon: FiHome,
+    name: "Dashboard",
+    icon: TbLayoutDashboardFilled,
     link: "/home",
+    role: ["admin"],
+    menuID: "1",
+    children: [],
+  },
+  {
+    name: "BRD",
+    icon: FaDraftingCompass,
+    link: "/brd",
+    role: ["admin"],
+    menuID: "1",
+    children: [],
+  },
+  {
+    name: "Memo",
+    icon: CiMemoPad,
+    link: "/memos",
+    role: ["admin"],
+    menuID: "1",
+    children: [],
+  },
+  // {
+  //   name: "Apps",
+  //   icon: FiPlayCircle,
+  //   link: "/apps",
+  //   role: ["admin"],
+  //   menuID: "1",
+  //   children: [],
+  // },
+  {
+    name: "Projects",
+    icon: FaDiagramProject,
+    link: "/projects",
+    role: ["admin"],
+    menuID: "1",
+    children: [
+      {
+        name: "Projects Manager",
+        icon: FaDiagramProject,
+        link: "/projects-manager",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Project Tasks",
+        icon: BsKanban,
+        link: "/project-tasks",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  {
+    name: "Reports",
+    icon: BiSolidReport,
+    link: "/reports",
+    role: ["admin"],
+    menuID: "1",
+    children: [
+      {
+        name: "Project Reports",
+        icon: BiSolidReport,
+        link: "/reports/project",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Event Reports",
+        icon: BiSolidReport,
+        link: "/reports/project",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  {
+    name: "Team Manager",
+    icon: FaChess,
+    link: "/teams",
+    role: ["admin"],
+    menuID: "1",
+    children: [],
+  },
+  {
+    name: "Server Manager",
+    icon: CiServer,
+    link: "/server-manager",
+    role: ["admin"],
+    menuID: "1",
+    children: [],
+  },
+  {
+    name: "File Archive",
+    icon: MdOutlinePermMedia,
+    link: "/file-archives",
+    role: ["admin"],
+    menuID: "1",
+    children: [],
+  },
+  {
+    name: "Avtivities",
+    icon: RxActivityLog,
+    link: "/activities",
     role: ["admin"],
     menuID: "1",
     children: [],
@@ -160,6 +278,14 @@ const LinkItems: LinkItemProps[] = [
         name: "Master Role Sys",
         icon: FaUsersRays,
         link: "/users/roles",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Master Division",
+        icon: FaFire,
+        link: "/users/divisions",
         role: ["admin"],
         menuID: "1",
         children: [],
@@ -221,16 +347,30 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [LiteMode, setLiteMode] = useState<boolean>(false);
   const { isAuthenticated, authData, goLogout } = useAuth();
-  const [LoadingProcess, setLoadingProcess] = useState<boolean>(false);
   const { colorMode, toggleColorMode } = useColorMode();
 
+  // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
+  const [tokenData, setTokenData] = useState<string>("");
+
   useEffect(() => {
-    if (authData.dataLogin != null) {
-      const authGet: AuthDataResponse = authData.dataLogin as AuthDataResponse;
-      setDataAuth(authGet);
+    const storedData = localStorage.getItem("authData");
+    const token: string = localStorage.getItem("tokenData") as string;
+
+    if (DataAuth == null) {
+      if (storedData) {
+        const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
+        const UserData: AuthDataResponse =
+          StorageAuth.dataLogin as AuthDataResponse;
+        setDataAuth(UserData);
+      }
     }
-  }, [authData]);
+
+    if (token) {
+      setTokenData(token);
+    }
+  }, [DataAuth]);
+  // End SetUp auth data on current page
 
   useEffect(() => {
     // Retrieve the value from local storage when the component mounts
@@ -534,7 +674,6 @@ const SidebarContent = ({
     <Box
       p={2}
       w={{ base: "full", md: LiteModeTrigger ? "95px" : WIDTH_SIDEBAR }}
-      minH={"85vh"}
       pos="fixed"
       {...rest}
     >
@@ -564,8 +703,8 @@ const SidebarContent = ({
 
         <AdditionalProfileBar LiteModeTrigger={LiteModeTrigger} />
 
-        <Flex pt={5} pb={2} mx={3} h={"full"}>
-          <VStack w={"full"} h={"80%"} align={"start"}>
+        <Flex pt={5} pb={2} mx={3}>
+          <VStack w={"full"} h={"65vh"} align={"start"} overflowX="auto">
             <Heading pl={2} as="h6" size="xs">
               Menu
             </Heading>
@@ -821,17 +960,30 @@ function AdditionalProfileBar({
 }: {
   LiteModeTrigger: boolean;
 }) {
-  const [show, setShow] = React.useState(false);
-  const showToast = useToastHelperShort();
-  const { isAuthenticated, authData, goLogout } = useAuth();
+  const { authData, goLogout } = useAuth();
 
+  // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
+  const [tokenData, setTokenData] = useState<string>("");
+
   useEffect(() => {
-    if (authData.dataLogin != null) {
-      const authGet: AuthDataResponse = authData.dataLogin as AuthDataResponse;
-      setDataAuth(authGet);
+    const storedData = localStorage.getItem("authData");
+    const token: string = localStorage.getItem("tokenData") as string;
+
+    if (DataAuth == null) {
+      if (storedData) {
+        const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
+        const UserData: AuthDataResponse =
+          StorageAuth.dataLogin as AuthDataResponse;
+        setDataAuth(UserData);
+      }
     }
-  }, [authData]);
+
+    if (token) {
+      setTokenData(token);
+    }
+  }, [DataAuth]);
+  // End SetUp auth data on current page
 
   return (
     <>
@@ -866,19 +1018,33 @@ function AdditionalProfileBar({
             <Tooltip
               borderRadius={"xl"}
               hasArrow
-              label={DataAuth && truncateToTwoWords(DataAuth.firstName)}
+              label={
+                (DataAuth && DataAuth.teamMember.teamName) ||
+                (DataAuth && truncateToTwoWords(DataAuth.firstName)) ||
+                ""
+              }
             >
               <Avatar
                 size={"md"}
                 color={"white"}
                 name={
-                  (DataAuth && truncateToTwoWords(DataAuth.firstName)) || ""
+                  (DataAuth &&
+                    truncateToTwoWords(DataAuth.teamMember.teamName)) ||
+                  (DataAuth && truncateToTwoWords(DataAuth.firstName)) ||
+                  ""
                 }
                 mr={LiteModeTrigger ? 0 : 2}
-                bgGradient={
-                  "linear(to-br, primary.500, secondary.500 40%, yellow.500)"
-                }
                 cursor={"pointer"}
+                src={
+                  (DataAuth &&
+                    buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC) +
+                      DataAuth.teamMember.teamPict) ||
+                  (DataAuth &&
+                    buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC) +
+                      DataAuth.profilePict) ||
+                  ""
+                }
+                boxShadow={"md"}
               />
             </Tooltip>
             <Flex

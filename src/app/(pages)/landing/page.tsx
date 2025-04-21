@@ -52,6 +52,8 @@ function LandingPage() {
   };
   const [SearchChannels, setSearchChannels] = useState<string>("");
 
+  const ModalForm = useDisclosure();
+
   return (
     <LayoutLanding>
       <Flex w={"full"} minH={"92vh"}>
@@ -152,9 +154,9 @@ function LandingPage() {
                     </Box>
                   </Flex>
                 </Flex>
-                <Box color={"white"}>
+                {/* <Box color={"white"}>
                   <pre>{JSON.stringify(authData, null, 2)}</pre>
-                </Box>
+                </Box> */}
               </Container>
             </VStack>
           </Flex>

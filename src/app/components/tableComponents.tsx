@@ -292,6 +292,149 @@ export function ControlTable({ table }: any) {
   );
 }
 
+export function ControlTableAlternate1({ table }: any) {
+  const pageCount = table.getPageCount();
+  const currentPage = table.getState().pagination.pageIndex + 1;
+
+  // Create array for page numbers
+  const visiblePages = Array.from(
+    { length: Math.min(5, pageCount) },
+    (_, i) => i + 1
+  ); // Show first 5 pages for now
+  return (
+    <Flex
+      minWidth="max-content"
+      w={"full"}
+      justifyContent="center"
+      gap="2"
+      my={4}
+    >
+      <Flex as={Stack} gap="2" w={"full"} h={"full"}>
+        <Flex
+          gap="2"
+          w={"full"}
+          h={"full"}
+          alignItems={"center"}
+          justifyContent={"center"}
+        >
+          <ButtonGroup
+            size="sm"
+            w={{ base: "full", sm: "full", md: "auto", lg: "auto" }}
+            isAttached
+            variant="outline"
+            colorScheme={"gray"}
+          >
+            <Button
+              onClick={() => table.setPageIndex(0)}
+              isDisabled={!table.getCanPreviousPage()}
+              minW="40px"
+              w={{ base: "full", sm: "full", md: "auto", lg: "auto" }}
+            >
+              <BsChevronBarLeft />
+            </Button>
+            <Button
+              onClick={() => table.previousPage()}
+              isDisabled={!table.getCanPreviousPage()}
+              minW="40px"
+              w={{ base: "full", sm: "full", md: "auto", lg: "auto" }}
+            >
+              <BsChevronLeft />
+            </Button>
+            {/* Page numbers */}
+            {visiblePages.map((page) => (
+              <Button
+                key={page}
+                onClick={() => table.setPageIndex(page - 1)}
+                isActive={currentPage === page}
+                minW="35px"
+                display={{
+                  base: "none",
+                  sm: "none",
+                  md: "block",
+                  lg: "block",
+                }}
+              >
+                {page}
+              </Button>
+            ))}
+            {currentPage !== 1 ? (
+              <Button
+                minW="35px"
+                display={{
+                  base: "none",
+                  sm: "none",
+                  md: "block",
+                  lg: "block",
+                }}
+              >
+                ...
+              </Button>
+            ) : (
+              ""
+            )}
+            {currentPage !== 1 && (
+              <Button
+                onClick={() => table.setPageIndex(pageCount - 1)}
+                minW="35px"
+                display={{
+                  base: "none",
+                  sm: "none",
+                  md: "block",
+                  lg: "block",
+                }}
+              >
+                {pageCount}
+              </Button>
+            )}
+            <Button
+              onClick={() => table.nextPage()}
+              isDisabled={!table.getCanNextPage()}
+              minW="40px"
+              w={{ base: "full", sm: "full", md: "auto", lg: "auto" }}
+            >
+              <BsChevronRight />
+            </Button>
+            <Button
+              onClick={() => table.setPageIndex(pageCount - 1)}
+              isDisabled={!table.getCanNextPage()}
+              minW="40px"
+              w={{ base: "full", sm: "full", md: "auto", lg: "auto" }}
+            >
+              <BsChevronBarRight />
+            </Button>
+          </ButtonGroup>
+        </Flex>
+
+        <Flex justifyContent={"center"} gap="2" alignItems={"center"}>
+          <Text>Show</Text>
+          <Select
+            size="sm"
+            w={{
+              base: "full",
+              sm: "full",
+              md: "80px",
+              lg: "80px",
+            }}
+            // variant="flushed"
+            rounded={"md"}
+            textAlign={"center"}
+            value={table.getState().pagination.pageSize}
+            onChange={(e) => {
+              table.setPageSize(Number(e.target.value));
+            }}
+          >
+            {[5, 10, 20, 30, 40, 50].map((pageSize) => (
+              <option key={pageSize} value={pageSize}>
+                {pageSize}
+              </option>
+            ))}
+          </Select>
+        </Flex>
+      </Flex>
+    </Flex>
+  );
+}
+
 export function TableInputShowPage({ table }: any) {
   return (
     <Flex
@@ -304,7 +447,7 @@ export function TableInputShowPage({ table }: any) {
       gap="2"
       alignItems={"center"}
     >
-      <Text fontWeight={600}>Tampil</Text>
+      <Text fontWeight={600}>Show</Text>
       <Select
         size="sm"
         w={{
@@ -400,12 +543,12 @@ export function TableComponent({ table }: any) {
           {table.getHeaderGroups().map((headerGroup: any) => (
             <Tr
               key={headerGroup.id}
-              bg={useColorModeValue("secondary.50", "gray.800")}
+              bg={useColorModeValue("secondary.50", "gray.900")}
             >
               {headerGroup.headers.map((header: any) => {
                 return (
                   <Th
-                    py={4}
+                    py={3}
                     key={header.id}
                     colSpan={header.colSpan}
                     // fontWeight={800}
@@ -465,6 +608,92 @@ export function TableComponent({ table }: any) {
   );
 }
 
+export function TableComponentHeadless({ table }: any) {
+  return (
+    <Flex overflowX={"auto"}>
+      <Table
+        variant={"simple"}
+        // colorScheme="secondary"
+        size={"sm"}
+        border={0}
+      >
+        <Tbody border={0}>
+          {table.getRowModel().rows.length > 0 ? (
+            table.getRowModel().rows.map((row: any, index: any) => {
+              return (
+                <Tr key={row.id} border={0}>
+                  {row.getVisibleCells().map((cell: any) => {
+                    return (
+                      <Td key={cell.id} border={0}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </Td>
+                    );
+                  })}
+                </Tr>
+              );
+            })
+          ) : (
+            <Tr>
+              <Td colSpan={table.options.columns.length + 1}>
+                <Flex
+                  justifyContent={"center"}
+                  alignItems={"center"}
+                  minH={"30vh"}
+                >
+                  Belum ada data
+                </Flex>
+              </Td>
+            </Tr>
+          )}
+        </Tbody>
+      </Table>
+    </Flex>
+  );
+}
+
+export function TableComponentFullHeadless({ table }: any) {
+  return (
+    <>
+      <Grid
+        templateColumns="repeat(2, 1fr)"
+        gap={5}
+        px={3}
+        // bg={"red"}
+        w={"full"}
+      ></Grid>
+      <Box pb={8} w={"full"}>
+        <TableComponentHeadless table={table} />
+        <Flex w={"full"} px={5}>
+          <ControlTable table={table} />
+        </Flex>
+      </Box>
+    </>
+  );
+}
+
+export function TableComponentFullHeadlessAlternate1({ table }: any) {
+  return (
+    <>
+      <Grid
+        templateColumns="repeat(2, 1fr)"
+        gap={5}
+        px={3}
+        // bg={"red"}
+        w={"full"}
+      ></Grid>
+      <Box pb={8} w={"full"}>
+        <TableComponentHeadless table={table} />
+        <Flex w={"full"} px={5}>
+          <ControlTableAlternate1 table={table} />
+        </Flex>
+      </Box>
+    </>
+  );
+}
+
 export function TableComponentFull({ table }: any) {
   return (
     <>
@@ -474,8 +703,7 @@ export function TableComponentFull({ table }: any) {
         px={3}
         // bg={"red"}
         w={"full"}
-      >
-      </Grid>
+      ></Grid>
       <Box pb={8} w={"full"}>
         <TableComponent table={table} />
         <Flex w={"full"} px={5}>
@@ -591,7 +819,7 @@ export function TableInputShowPageSm({ table }: any) {
       gap="2"
       alignItems={"center"}
     >
-      <Text fontWeight={600}>Tampil</Text>
+      <Text fontWeight={600}>Show</Text>
       <Select
         size="xs"
         w={{

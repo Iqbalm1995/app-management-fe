@@ -36,10 +36,20 @@ export interface PaggingListPayload {
   orderDir: "asc" | "desc";
 }
 
+export interface PaggingListPayloadCustom {
+  search: string;
+  teamId: string;
+  limit: number;
+  page: number;
+  filterWhere: ListSearchByParam[];
+  fieldOrder: string[];
+  orderDir: "asc" | "desc";
+}
+
 export interface ListSearchByParam {
-  key: string;
+  field: string;
   operator: "%" | "=" | ">" | "<" | ">=" | "<=";
-  values: string;
+  value: string;
 }
 
 export interface OptionListProps {
@@ -61,4 +71,20 @@ export interface PasswordValidationResult {
   minLength: boolean;
   noRepeatedChars: boolean;
   passwordsMatch: boolean;
+}
+
+export interface FileDetails {
+  name: string;
+  extension: string;
+  size: number;
+  file: File; // Adding the file object itself for multipart upload
+}
+
+export interface AttachmentProps {
+  id: string;
+  name: string;
+  src: string;
+  alt: string;
+  extension?: string;
+  size?: string;
 }
