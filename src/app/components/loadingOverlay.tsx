@@ -1,3 +1,5 @@
+"use client";
+
 import { Box, Center, Flex, HStack, Text } from "@chakra-ui/react";
 import { motion } from "framer-motion";
 import Lottie from "lottie-react";

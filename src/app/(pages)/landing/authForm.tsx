@@ -24,7 +24,6 @@ import {
   Popover,
   PopoverTrigger,
   PopoverContent,
-  useColorModeValue,
   useBreakpointValue,
   useDisclosure,
   Switch,
@@ -52,6 +51,7 @@ import {
   Image,
   ButtonGroup,
   Divider,
+  useColorMode,
 } from "@chakra-ui/react";
 import { HttpStatusCode } from "axios";
 import { hash } from "crypto";
@@ -79,6 +79,7 @@ const FormSchema = Yup.object().shape({
 
 const AuthPanelModal = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const { colorMode } = useColorMode();
   const isCentered = useBreakpointValue({
     base: false,
     sm: false,
@@ -106,7 +107,7 @@ const AuthPanelModal = () => {
         <ModalContent
           rounded={radiusStyle}
           m={{ base: 3, sm: 3, md: 0, lg: 0 }}
-          bg={useColorModeValue("white", "gray.900")}
+          bg={colorMode == "light" ? "white" : "gray.900"}
         >
           {/* <ModalHeader>Login Otentikasi</ModalHeader> */}
           <ModalCloseButton />

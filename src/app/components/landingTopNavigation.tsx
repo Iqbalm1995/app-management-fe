@@ -12,7 +12,6 @@ import {
   Popover,
   PopoverTrigger,
   PopoverContent,
-  useColorModeValue,
   useDisclosure,
   HStack,
   StackDivider,

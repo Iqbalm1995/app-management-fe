@@ -1,0 +1,2268 @@
+"use client";
+
+import { ConfirmationDialog } from "@/app/components/confirmationDialog";
+import { InputGroupPanel } from "@/app/components/customPanels";
+import CurrencyInput from "@/app/components/inputProps/currencyInput";
+import UserSearchSelect from "@/app/components/inputProps/userSearchSelect";
+import LayoutAdmin from "@/app/components/layoutAdmin";
+import {
+  InputLayout,
+  InputLayoutFull,
+} from "@/app/components/layoutContentBody";
+import {
+  DELAY_MEDIUM,
+  MAX_SIZE_TABLE,
+  radiusStyle,
+  RES_CODE_OK,
+  RES_GENERIC_ERROR_MSG,
+} from "@/app/constants/applicationConstants";
+import { AuthDataModelInterface } from "@/app/context/AuthContext";
+import {
+  nomCompColor,
+  stringToDateFormatedReverse,
+} from "@/app/helper/MasterHelper";
+import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
+import { AuthDataResponse } from "@/app/services/useAuthentications";
+import useConstants from "@/app/services/useConstants";
+import useDivision, { DivisionResponse } from "@/app/services/useDivisions";
+import useRequirements, {
+  ReqAssignUserPayload,
+  RequirementsResponse,
+  RequirementsUpdatePayload,
+} from "@/app/services/useRequirements";
+import useUsers, { UsersResponse } from "@/app/services/useUsers";
+
+import { OptionListProps, PaggingListPayload } from "@/app/types/masterTypes";
+import {
+  Box,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  Flex,
+  Grid,
+  GridItem,
+  Heading,
+  Stack,
+  Text,
+  Wrap,
+  Tabs,
+  TabList,
+  TabPanels,
+  Tab,
+  FormControl,
+  FormLabel,
+  Input,
+  FormErrorMessage,
+  Textarea,
+  useColorMode,
+  HStack,
+  Progress,
+  useSteps,
+  Stepper,
+  Step,
+  StepIndicator,
+  StepStatus,
+  StepIcon,
+  StepNumber,
+  StepTitle,
+  StepDescription,
+  StepSeparator,
+  Badge,
+  Switch,
+  Avatar,
+  Spacer,
+  Tooltip,
+} from "@chakra-ui/react";
+import { Select } from "chakra-react-select";
+import { useFormik } from "formik";
+import { useEffect, useState } from "react";
+import {
+  FiMinusCircle,
+  FiPlusCircle,
+  FiRefreshCcw,
+  FiSave,
+  FiXCircle,
+} from "react-icons/fi";
+import * as Yup from "yup";
+
+const FormSchemaUpdate = Yup.object().shape({
+  id: Yup.string().required(),
+
+  reffParentId: Yup.string().nullable(),
+
+  requirementType: Yup.string().required(),
+  reqNumber: Yup.string().required(),
+  reqNarative: Yup.string().required(),
+  reqInititateDate: Yup.string().required(),
+  reqAcceptedDate: Yup.string().nullable(),
+  reqStatus: Yup.string().required(),
+  isCarryOver: Yup.mixed<"Y" | "N">().oneOf(["Y", "N"]).required(),
+
+  reqReviewStartDate: Yup.string().nullable(),
+  reqReviewEndDate: Yup.string().nullable(),
+
+  assignedFromId: Yup.string().required(),
+  assignedFromName: Yup.string().required(),
+  assignedToDate: Yup.string().required(),
+
+  userPicId: Yup.string().required(),
+  userPicName: Yup.string().required(),
+  userPicContanct: Yup.string().required(),
+  userPicEmail: Yup.string().email().required(),
+
+  workProgramCodeEx: Yup.string().required(),
+  workProgramNameEx: Yup.string().required(),
+  workProgramAccNameEx: Yup.string().required(),
+  workProgramAccNumberEx: Yup.string().required(),
+  workProgramAccCcUser: Yup.string().required(),
+  workProgramBudgetUser: Yup.number().required(),
+  workProgramRealUsers: Yup.number().required(),
+  workProgramLeftoversUsers: Yup.number().required(),
+
+  workProgramCodeInt: Yup.string().required(),
+  workProgramNameInt: Yup.string().required(),
+  workProgramAccNameInt: Yup.string().required(),
+  workProgramAccNumberInt: Yup.string().required(),
+  workProgramAccCcInt: Yup.string().required(),
+  workProgramBudgetInt: Yup.number().required(),
+  workProgramRealInt: Yup.number().required(),
+  workProgramLeftoversInt: Yup.number().required(),
+
+  appInitialCode: Yup.string().required(),
+  appInitialName: Yup.string().required(),
+  backlogFeature: Yup.string().required(),
+  backlogDescription: Yup.string().nullable(),
+  backlogChange: Yup.string().nullable(),
+  note: Yup.string().nullable(),
+
+  nextStep: Yup.string().required(),
+
+  senderDivisionId: Yup.string().required(),
+  picAssignUsers: Yup.array()
+    .of(
+      Yup.object().shape({
+        userId: Yup.string().required(),
+        isChecked: Yup.mixed<"Y" | "N">().oneOf(["Y", "N"]).required(),
+      })
+    )
+    .required(),
+
+  backlogFeatures: Yup.array()
+    .of(
+      Yup.object().shape({
+        backlogId: Yup.string().nullable(),
+        backlogName: Yup.string().required(),
+        backlogDesc: Yup.string().nullable(),
+      })
+    )
+    .required(),
+});
+
+const initialValues: RequirementsUpdatePayload = {
+  id: "",
+
+  reffParentId: null,
+
+  requirementType: "",
+  reqNumber: "",
+  reqNarative: "",
+  reqInititateDate: "",
+  reqAcceptedDate: null,
+  reqStatus: "",
+  isCarryOver: "N",
+
+  reqReviewStartDate: null,
+  reqReviewEndDate: null,
+
+  assignedFromId: "",
+  assignedFromName: "",
+  assignedToDate: "",
+
+  userPicId: "",
+  userPicName: "",
+  userPicContanct: "",
+  userPicEmail: "",
+
+  workProgramCodeEx: "",
+  workProgramNameEx: "",
+  workProgramAccNameEx: "",
+  workProgramAccNumberEx: "",
+  workProgramAccCcUser: "",
+  workProgramBudgetUser: 0,
+  workProgramRealUsers: 0,
+  workProgramLeftoversUsers: 0,
+
+  workProgramCodeInt: "",
+  workProgramNameInt: "",
+  workProgramAccNameInt: "",
+  workProgramAccNumberInt: "",
+  workProgramAccCcInt: "",
+  workProgramBudgetInt: 0,
+  workProgramRealInt: 0,
+  workProgramLeftoversInt: 0,
+
+  appInitialCode: "",
+  appInitialName: "",
+  backlogFeature: "",
+  backlogDescription: null,
+  backlogChange: null,
+  note: null,
+
+  nextStep: "",
+
+  senderDivisionId: "",
+  picAssignUsers: [],
+  backlogFeatures: [],
+};
+
+const stepsProgress = [
+  { title: "DRAFT", description: "Draft dokumen" },
+  // { title: "CARRY OVER", description: "BRD dari tahun sebelumnya" },
+  {
+    title: "NEEDS REVIEW",
+    description: "Sudah disubmit, menunggu review",
+  },
+  {
+    title: "IN PROGRESS REVIEW",
+    description: "sedang direview oleh reviewer",
+  },
+  {
+    title: "TEMPORARY APPROVED",
+    description: "Disetujui sementara oleh reviewer",
+  },
+  {
+    title: "ON HOLD",
+    description:
+      "Ditolak berdasarkan review, perlu perubahan/revisi oleh pembuat",
+  },
+  { title: "CANCELED", description: "Ditolak oleh user" },
+  {
+    title: "APPROVED",
+    description: "Disetujui dan selesai oleh reviewer",
+  },
+];
+
+interface RequirementDetailInfoProps {
+  RefreshAction: () => void;
+  RefreshData: number;
+  ReqData: RequirementsResponse;
+}
+
+const RequirementDetailInfoSection = ({
+  ReqData,
+  RefreshData,
+  RefreshAction,
+}: RequirementDetailInfoProps) => {
+  const showToast = useToastHelper();
+  const { colorMode } = useColorMode();
+
+  const delay = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
+
+  const { GetDetailById, UpdateReq } = useRequirements();
+  const { ListConstantData } = useConstants();
+  const { List: ListUsers } = useUsers();
+  const { List: ListDivisions } = useDivision();
+
+  // SetUp auth data on current page
+  const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
+  const [tokenData, setTokenData] = useState<string>("");
+
+  useEffect(() => {
+    const storedData = localStorage.getItem("authData");
+    const token: string = localStorage.getItem("tokenData") as string;
+
+    if (DataAuth == null) {
+      if (storedData) {
+        const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
+        const UserData: AuthDataResponse =
+          StorageAuth.dataLogin as AuthDataResponse;
+        setDataAuth(UserData);
+      }
+    }
+
+    if (token) {
+      setTokenData(token);
+    }
+  }, [DataAuth]);
+  // End SetUp auth data on current page
+
+  const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
+  const [ActionLoading, setActionLoading] = useState(false);
+  const [IsEditMode, setIsEditMode] = useState(false);
+
+  const [openConfirmUpdateDialog, setOpenConfirmUpdateDialog] = useState(false);
+  const [questionMsgDialog, setQuestionMsgDialog] = useState<string>("");
+  const [captionDialog, setCaptionDialog] = useState<string>("");
+  const [UpdatePayload, setUpdatePayload] =
+    useState<RequirementsUpdatePayload | null>(null);
+
+  // useSteps setup with initial index 0
+  const { activeStep, setActiveStep } = useSteps({
+    index: 0,
+    count: stepsProgress.length,
+  });
+  const [progressPercentage, setProgressPercentage] = useState(0);
+
+  const formik = useFormik<RequirementsUpdatePayload>({
+    initialValues: initialValues,
+    validationSchema: FormSchemaUpdate,
+    validateOnChange: false,
+    validateOnBlur: false,
+    onSubmit: async (values) => {
+      //   await handleConfirmSaveData(values);
+      console.log(values);
+    },
+  });
+
+  useEffect(() => {
+    LoadDataDivision();
+    handleSearchUser("", "clear");
+    ResetDivisionState();
+    if (DataAuth && DataAuth.teamMember && ReqData) {
+      formik.setFieldValue("id", ReqData.id);
+      formik.setFieldValue("senderDivisionId", ReqData.senderDivisionId);
+      setSelectedDivision({
+        value: ReqData.senderDivisionData.id,
+        label: `${ReqData.senderDivisionData.divisionName} (${ReqData.senderDivisionData.divisionCode})`,
+      });
+
+      formik.setFieldValue("requirementType", ReqData.requirementType);
+
+      formik.setFieldValue("reqNumber", ReqData.reqNumber);
+      formik.setFieldValue("reqNarative", ReqData.reqNarative);
+      formik.setFieldValue(
+        "reqInititateDate",
+        ReqData.reqInititateDate
+          ? stringToDateFormatedReverse(ReqData.reqInititateDate)
+          : null
+      );
+      formik.setFieldValue(
+        "reqAcceptedDate",
+        ReqData.reqAcceptedDate
+          ? stringToDateFormatedReverse(ReqData.reqAcceptedDate)
+          : null
+      );
+      formik.setFieldValue("reqStatus", ReqData.reqStatus);
+      formik.setFieldValue("isCarryOver", ReqData.isCarryOver);
+
+      formik.setFieldValue(
+        "reqReviewStartDate",
+        ReqData.reqReviewStartDate
+          ? stringToDateFormatedReverse(ReqData.reqReviewStartDate)
+          : null
+      );
+      formik.setFieldValue(
+        "reqReviewEndDate",
+        ReqData.reqReviewEndDate
+          ? stringToDateFormatedReverse(ReqData.reqReviewEndDate)
+          : null
+      );
+
+      formik.setFieldValue("assignedFromId", ReqData.assignedFromId);
+      if (ReqData.assignedFromId) {
+        handleSearchUser(ReqData.assignedFromId, "searchAssignedFromUser");
+        formik.setFieldValue("assignedFromName", ReqData.assignedFromName);
+      }
+      // formik.setFieldValue("assignedToId", ReqData.assignedToId);
+      // if (ReqData.assignedToId) {
+      //   handleSearchUser(ReqData.assignedToId, "searchAssignedToUser");
+      //   formik.setFieldValue("assignedToName", ReqData.assignedToName);
+      // }
+      formik.setFieldValue("userPicId", ReqData.userPicId);
+      if (ReqData.userPicId) {
+        handleSearchUser(ReqData.userPicId, "searchPICUser");
+        formik.setFieldValue("userPicName", ReqData.userPicName);
+        formik.setFieldValue("userPicContanct", ReqData.userPicContanct);
+        formik.setFieldValue("userPicEmail", ReqData.userPicEmail);
+      }
+
+      formik.setFieldValue(
+        "assignedToDate",
+        ReqData.assignedToDate
+          ? stringToDateFormatedReverse(ReqData.assignedToDate)
+          : null
+      );
+
+      formik.setFieldValue("workProgramCodeEx", ReqData.workProgramCodeEx);
+      formik.setFieldValue("workProgramNameEx", ReqData.workProgramNameEx);
+      formik.setFieldValue(
+        "workProgramAccNameEx",
+        ReqData.workProgramAccNameEx
+      );
+      formik.setFieldValue(
+        "workProgramAccNumberEx",
+        ReqData.workProgramAccNumberEx
+      );
+      formik.setFieldValue(
+        "workProgramAccCcUser",
+        ReqData.workProgramAccCcUser
+      );
+      formik.setFieldValue(
+        "workProgramBudgetUser",
+        ReqData.workProgramBudgetUser
+      );
+      formik.setFieldValue(
+        "workProgramRealUsers",
+        ReqData.workProgramRealUsers
+      );
+      formik.setFieldValue(
+        "workProgramLeftoversUsers",
+        ReqData.workProgramLeftoversUsers
+      );
+      formik.setFieldValue("workProgramCodeInt", ReqData.workProgramCodeInt);
+      formik.setFieldValue("workProgramNameInt", ReqData.workProgramNameInt);
+      formik.setFieldValue(
+        "workProgramAccNameInt",
+        ReqData.workProgramAccNameInt
+      );
+      formik.setFieldValue(
+        "workProgramAccNumberInt",
+        ReqData.workProgramAccNumberInt
+      );
+      formik.setFieldValue("workProgramAccCcInt", ReqData.workProgramAccCcInt);
+      formik.setFieldValue(
+        "workProgramBudgetInt",
+        ReqData.workProgramBudgetInt
+      );
+      formik.setFieldValue("workProgramRealInt", ReqData.workProgramRealInt);
+      formik.setFieldValue(
+        "workProgramLeftoversInt",
+        ReqData.workProgramLeftoversInt
+      );
+
+      formik.setFieldValue("appInitialCode", ReqData.appInitialCode);
+      formik.setFieldValue("appInitialName", ReqData.appInitialName);
+      formik.setFieldValue("backlogFeature", ReqData.backlogFeature);
+      formik.setFieldValue("backlogDescription", ReqData.backlogDescription);
+      formik.setFieldValue("backlogChange", ReqData.backlogChange);
+      formik.setFieldValue("note", ReqData.note);
+      formik.setFieldValue("reqDurationDay", ReqData.reqDurationDay);
+      formik.setFieldValue(
+        "reqReviewStartDate",
+        ReqData.reqReviewStartDate
+          ? stringToDateFormatedReverse(ReqData.reqReviewStartDate)
+          : null
+      );
+      formik.setFieldValue("picAssignUsers", ReqData.picAssignUsers);
+      // formik.setFieldValue("backlogFeatures", ReqData.backlogFeatures);
+
+      formik.setFieldValue("nextStep", ReqData.nextStep);
+
+      setChoosedMemberProjects(
+        ReqData.picAssignUsers.map((item) => item.userData)
+      );
+
+      // if (ReqData.divisionInvolved.length > 0) {
+      //   const divisionIds: string[] = ReqData.divisionInvolved.map(
+      //     (division) => division.id
+      //   );
+      //   formik.setFieldValue("involvedDivisionIds", divisionIds);
+      //   const divisionInfoList: DivisionResponse[] =
+      //     ReqData.divisionInvolved.map(
+      //       ({ id, divisionCode, divisionName, divisionDesc }) => ({
+      //         id,
+      //         divisionCode,
+      //         divisionName,
+      //         divisionDesc: divisionDesc ?? "", // convert null to empty string
+      //       })
+      //     );
+      //   setDivisionSelected(divisionInfoList);
+      // }
+
+      const currentStepTitle = formik.values.reqStatus || ReqData.reqStatus; // this can come from props/state/API
+      const stepIndex = stepsProgress.findIndex(
+        (step) => step.title === currentStepTitle
+      );
+      if (stepIndex !== -1) {
+        setActiveStep(stepIndex);
+        const percent = Math.round(
+          ((stepIndex + 1) / stepsProgress.length) * 100
+        );
+        setProgressPercentage(percent);
+      }
+    }
+  }, [DataAuth, RefreshData, ReqData]);
+
+  const [DataDivisions, setDataDivisions] = useState<DivisionResponse[]>([]);
+  const [DivisionSelected, setDivisionSelected] = useState<DivisionResponse[]>(
+    []
+  );
+  const [DivisionSearchText, setDivisionSearchText] = useState<string>("");
+
+  const ResetDivisionState = () => {
+    setDataDivisions([]);
+    setDivisionSelected([]);
+    setDivisionSearchText("");
+  };
+  // Append function
+  const handleAddDivision = (division: DivisionResponse) => {
+    // Prevent duplicates (optional)
+    const exists = DivisionSelected.find((d) => d.id === division.id);
+    if (!exists) {
+      const newList = [...DivisionSelected, division];
+      setDivisionSelected(newList);
+      setDivisionSearchText("");
+      // Update formik
+      formik.setFieldValue(
+        "involvedDivisionIds",
+        newList.map((d) => d.id)
+      );
+    } else {
+      showToast({
+        description: "Division already exist on list involved",
+        statusToast: "warning",
+      });
+    }
+  };
+  // Remove function
+  const handleRemoveDivision = (divisionId: string) => {
+    const newList = DivisionSelected.filter((d) => d.id !== divisionId);
+    setDivisionSelected(newList);
+    // Update formik
+    formik.setFieldValue(
+      "involvedDivisionIds",
+      newList.map((d) => d.id)
+    );
+  };
+
+  useEffect(() => {
+    const getDataDivisionFunc = async () => {
+      const GetData: DivisionResponse[] = await GetDataDivision(
+        DivisionSearchText
+      );
+      setDataDivisions(GetData);
+    };
+    if (DivisionSearchText.length >= 2) {
+      getDataDivisionFunc();
+    } else if (DivisionSearchText.length <= 2) {
+      setDataDivisions([]);
+    }
+  }, [DivisionSearchText]);
+
+  const [DataUsersAssignedFrom, setDataUsersAssignedFrom] = useState<
+    UsersResponse[]
+  >([]);
+  const [AssignedFromUser, setAssignedFromUser] = useState<string>("");
+  const handleAssignedFromUser = (user: UsersResponse | null) => {
+    if (user) {
+      formik.setFieldValue("assignedFromId", user.userCode);
+      formik.setFieldValue(
+        "assignedFromName",
+        `${user.userFirstName} ${user.userLastName}`
+      );
+      handleSearchUser(user.userCode, "searchAssignedFromUser");
+      console.log("Selected User Object:", user);
+    } else {
+      formik.setFieldValue("assignedFromId", null);
+      formik.setFieldValue("assignedFromName", null);
+      handleSearchUser("", "searchAssignedFromUser");
+    }
+  };
+
+  const [DataUsersAssignedTo, setDataUsersAssignedTo] = useState<
+    UsersResponse[]
+  >([]);
+  const [AssignedToUser, setAssignedToUser] = useState<string>("");
+  const handleAssignedToUser = (user: UsersResponse | null) => {
+    if (user) {
+      formik.setFieldValue("assignedToId", user.userCode);
+      formik.setFieldValue(
+        "assignedToName",
+        `${user.userFirstName} ${user.userLastName}`
+      );
+      handleSearchUser(user.userCode, "searchAssignedToUser");
+      console.log("Selected User Object:", user);
+    } else {
+      formik.setFieldValue("assignedToId", null);
+      formik.setFieldValue("assignedToName", null);
+      handleSearchUser("", "searchAssignedToUser");
+    }
+  };
+
+  const [DataUsersPIC, setDataUsersPIC] = useState<UsersResponse[]>([]);
+  const [PICUser, setPICUser] = useState<string>("");
+  const handlePICUser = (user: UsersResponse | null) => {
+    if (user) {
+      formik.setFieldValue("userPicId", user.userCode);
+      formik.setFieldValue(
+        "userPicName",
+        `${user.userFirstName} ${user.userLastName}`
+      );
+      handleSearchUser(user.userCode, "searchPICUser");
+    } else {
+      formik.setFieldValue("userPicId", null);
+      formik.setFieldValue("userPicName", null);
+      handleSearchUser("", "searchPICUser");
+    }
+  };
+
+  const handleCleanDataUser = () => {
+    setDataUsersAssignedFrom([]);
+    setAssignedFromUser("");
+
+    setDataUsersAssignedTo([]);
+    setAssignedToUser("");
+
+    setDataUsersPIC([]);
+    setPICUser("");
+  };
+
+  const handleSearchUser = async (
+    textSearch: string,
+    key:
+      | "searchAssignedFromUser"
+      | "searchAssignedToUser"
+      | "searchPICUser"
+      | "clear"
+  ) => {
+    if (key == "clear") {
+      handleCleanDataUser();
+      return;
+    }
+
+    const DataUserLoad = await GetDataUser(textSearch);
+    if (key == "searchAssignedFromUser") {
+      setAssignedFromUser(textSearch);
+      if (textSearch.length >= 2) {
+        setDataUsersAssignedFrom(DataUserLoad);
+      } else if (textSearch.length <= 0) {
+        setDataUsersAssignedFrom([]);
+      }
+    }
+    if (key == "searchAssignedToUser") {
+      setAssignedToUser(textSearch);
+      if (textSearch.length >= 2) {
+        setDataUsersAssignedTo(DataUserLoad);
+      } else if (textSearch.length <= 0) {
+        setDataUsersAssignedTo([]);
+      }
+    }
+    if (key == "searchPICUser") {
+      setPICUser(textSearch);
+      if (textSearch.length >= 2) {
+        setDataUsersPIC(DataUserLoad);
+      } else if (textSearch.length <= 0) {
+        setDataUsersPIC([]);
+      }
+    }
+  };
+
+  // Handle Option Data
+
+  const GetDataUser = async (
+    searchValue: string,
+    limit: number = 1
+  ): Promise<UsersResponse[]> => {
+    const PayloadList: PaggingListPayload = {
+      search: searchValue,
+      limit: limit,
+      page: 0,
+      filterWhere: [],
+      fieldOrder: ["userFirstName"],
+      orderDir: "asc",
+    };
+    const requestData = await ListUsers(PayloadList, tokenData);
+    const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+
+    if (isErrorResponse || !requestData) {
+      showToast({
+        description: requestData?.message || RES_GENERIC_ERROR_MSG,
+        statusToast: "error",
+      });
+      return [];
+    } else {
+      console.log(requestData);
+      if (requestData.data == null) {
+        showToast({
+          description: "Data return error",
+          statusToast: "error",
+        });
+        return [];
+      }
+
+      const itemsData: UsersResponse[] = requestData.data as UsersResponse[];
+      return itemsData;
+    }
+  };
+
+  //   Handle Save Data
+
+  const handleConfirmSaveData = async (data: RequirementsUpdatePayload) => {
+    setCaptionDialog("Confirm Save");
+    setQuestionMsgDialog(`Are you sure want update requirement info?`);
+    setOpenConfirmUpdateDialog(true);
+    setUpdatePayload(data);
+  };
+
+  const handleConfirmSaveDataTrigger = () => {
+    setOpenConfirmUpdateDialog(!openConfirmUpdateDialog);
+  };
+
+  const handleUpdateData = async () => {
+    setActionLoading(true);
+    await delay(DELAY_MEDIUM);
+    if (DataAuth && DataAuth.teamMember && UpdatePayload) {
+      await UpdateReqServ();
+      setIsEditMode(false);
+    } else {
+      showToast({
+        description: "ID is invalid",
+        statusToast: "error",
+      });
+      setActionLoading(false);
+      setUpdatePayload(null);
+      setIsEditMode(false);
+    }
+  };
+
+  const UpdateReqServ = async () => {
+    if (UpdatePayload) {
+      const requestData = await UpdateReq(UpdatePayload, tokenData);
+      const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+
+      if (isErrorResponse || !requestData) {
+        showToast({
+          description: requestData?.message || RES_GENERIC_ERROR_MSG,
+          statusToast: "error",
+        });
+        setIsLoadingProcess(false);
+        setActionLoading(false);
+        return;
+      } else {
+        console.log(requestData);
+        showToast({
+          description: `Data project update successfully`,
+          statusToast: "success",
+        });
+        setIsLoadingProcess(false);
+        setActionLoading(false);
+        setIsEditMode(false);
+        RefreshAction();
+        return;
+      }
+    }
+  };
+
+  // Assign To Multiple
+  const [SearchUserInput, setSearchUserInput] = useState<string>("");
+  const [DataUsers, setDataUsers] = useState<UsersResponse[]>([]);
+  const [ChoosedMemberProjects, setChoosedMemberProjects] = useState<
+    UsersResponse[]
+  >([]);
+
+  useEffect(() => {
+    const mappedPayload: ReqAssignUserPayload[] = ChoosedMemberProjects.map(
+      (user) => ({
+        userId: user.id,
+        isChecked: "N", // default
+      })
+    );
+
+    formik.setFieldValue("picAssignUsers", mappedPayload);
+  }, [ChoosedMemberProjects]);
+
+  const handleSearchUserAssign = async (textSearch: string) => {
+    setDataUsers([]);
+    setSearchUserInput(textSearch);
+    if (textSearch.length >= 2) {
+      const ListUserData: UsersResponse[] = await GetDataUser(textSearch, 3);
+      setDataUsers(ListUserData);
+    } else if (textSearch.length <= 0) {
+      setDataUsers([]);
+    }
+  };
+  const handleAddUserAssign = (data: UsersResponse) => {
+    setChoosedMemberProjects([...ChoosedMemberProjects, data]); // Add new item to the state
+    setDataUsers([]);
+    setSearchUserInput("");
+  };
+  const handleRemoveUserAssign = (id: string) => {
+    const updatedProjects = ChoosedMemberProjects.filter(
+      (project) => project.id !== id
+    );
+    setChoosedMemberProjects(updatedProjects);
+    setDataUsers([]);
+    setSearchUserInput("");
+  };
+  const handleResetUsersAssign = () => {
+    setDataUsers([]);
+    setSearchUserInput("");
+    // setChoosedMemberProjects(MemberProjects);
+  };
+
+  // END Assign To Multiple
+
+  // Division Select
+
+  // Option Data Setup
+  const [IsLoadingDivisionSelect, setIsLoadingDivisionSelect] = useState(false);
+  const [OptionDivision, setOptionDivision] = useState<OptionListProps[]>([]);
+  const [SelectedDivision, setSelectedDivision] =
+    useState<OptionListProps | null>(null);
+  const handleSelectedDivision = (data: OptionListProps) => {
+    setSelectedDivision(data);
+    formik.setFieldValue("senderDivisionId", data.value);
+  };
+  const handleUnSelectedDivision = () => {
+    setSelectedDivision(null);
+    formik.setFieldValue("senderDivisionId", null);
+  };
+
+  const GetDataDivision = async (
+    searchValue: string = "",
+    limit: number = 1
+  ): Promise<DivisionResponse[]> => {
+    setIsLoadingDivisionSelect(true);
+    const PayloadList: PaggingListPayload = {
+      search: searchValue,
+      limit: limit,
+      page: 0,
+      filterWhere: [],
+      fieldOrder: ["divisionName"],
+      orderDir: "asc",
+    };
+    const token: string = localStorage.getItem("tokenData") as string;
+    const requestData = await ListDivisions(PayloadList, token);
+    const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+
+    if (isErrorResponse || !requestData) {
+      showToast({
+        description: requestData?.message || RES_GENERIC_ERROR_MSG,
+        statusToast: "error",
+      });
+      setIsLoadingDivisionSelect(false);
+      return [];
+    } else {
+      console.log(requestData);
+      if (requestData.data == null) {
+        showToast({
+          description: "Data return error",
+          statusToast: "error",
+        });
+        setIsLoadingDivisionSelect(false);
+        return [];
+      }
+
+      const itemsData: DivisionResponse[] =
+        requestData.data as DivisionResponse[];
+
+      const mapOptionData: OptionListProps[] = itemsData.map((d) => ({
+        label: `${d.divisionName} (${d.divisionCode})`,
+        value: d.id,
+      }));
+      setOptionDivision(mapOptionData);
+      setIsLoadingDivisionSelect(false);
+
+      return itemsData;
+    }
+  };
+
+  const LoadDataDivision = async () => {
+    if (OptionDivision.length <= 0) {
+      const dataDivision = await GetDataDivision("", MAX_SIZE_TABLE);
+    }
+  };
+
+  // End Division Select
+
+  return (
+    <Flex
+      as={Stack}
+      w={"full"}
+      //   divider={<StackDivider borderColor="gray.200" />}
+      spacing={6}
+      px={4}
+    >
+      {/* <Grid templateColumns="repeat(2, 1fr)" gap={2} w={"full"}>
+          <GridItem colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }} w={"full"}>
+            <Box
+              overflowY={"auto"}
+              overflowX={"auto"}
+              maxH={"350px"}
+              p={2}
+              bgColor={"gray.200"}
+            >
+              <pre>{JSON.stringify(formik.values, null, 2)}</pre>
+            </Box>
+          </GridItem>
+          <GridItem colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }} w={"full"}>
+            <Box
+              overflowY={"auto"}
+              overflowX={"auto"}
+              maxH={"350px"}
+              p={2}
+              bgColor={"blue.100"}
+            >
+              <pre>{JSON.stringify(ReqData, null, 2)}</pre>
+            </Box>
+          </GridItem>
+        </Grid> */}
+
+      {/* Stepper Progress */}
+      <Box w={"full"}>
+        <Flex w={"full"} as={HStack} justifyContent={"space-between"} pb={4}>
+          <Heading as="h5" size="sm" w={"full"}>
+            Progress - ({progressPercentage}%)
+          </Heading>
+        </Flex>
+        <Progress
+          colorScheme={"secondary"}
+          hasStripe
+          value={progressPercentage}
+          rounded={radiusStyle}
+          my={3}
+        />
+        <Flex
+          w="full"
+          p={4}
+          minH="80px"
+          justifyContent="start"
+          alignItems="center"
+          rounded={radiusStyle}
+          border="1px"
+          borderColor="gray.200"
+          boxShadow="md"
+          overflowX="auto"
+        >
+          <Box minWidth="max-content">
+            <Stepper
+              index={activeStep}
+              gap="8"
+              orientation="horizontal"
+              w="max-content"
+            >
+              {stepsProgress.map((step, index) => (
+                <Step key={index}>
+                  <StepIndicator>
+                    <StepStatus
+                      complete={<StepIcon />}
+                      incomplete={<StepNumber />}
+                      active={<StepNumber />}
+                    />
+                  </StepIndicator>
+
+                  {/* Allow step content to wrap */}
+                  <Box flexShrink={0} minW="120px" maxW="180px">
+                    <StepTitle
+                      fontSize="sm"
+                      whiteSpace="normal"
+                      wordBreak="break-word"
+                      fontWeight={
+                        ReqData.reqStatus?.toLocaleLowerCase() ==
+                        step.title.toLocaleLowerCase()
+                          ? 600
+                          : 500
+                      }
+                    >
+                      {step.title}
+                    </StepTitle>
+                    <StepDescription
+                      fontSize="xs"
+                      mt={1}
+                      whiteSpace="normal"
+                      wordBreak="break-word"
+                      fontWeight={
+                        ReqData.reqStatus?.toLocaleLowerCase() ==
+                        step.title.toLocaleLowerCase()
+                          ? 600
+                          : 500
+                      }
+                    >
+                      {step.description}
+                    </StepDescription>
+                  </Box>
+
+                  <StepSeparator />
+                </Step>
+              ))}
+            </Stepper>
+          </Box>
+        </Flex>
+      </Box>
+
+      <ConfirmationDialog
+        key={"confirmUpdateData"}
+        isOpenTrigger={openConfirmUpdateDialog}
+        action={handleUpdateData}
+        trigger={handleConfirmSaveDataTrigger}
+        questionMsg={questionMsgDialog}
+        captionMsg={captionDialog}
+      />
+      <Flex w={"full"} as={HStack} justifyContent={"space-between"}>
+        <Heading as="h5" size="md" w={"full"}>
+          #{ReqData.reqNumber}
+        </Heading>
+        <Flex as={Wrap} justifyContent={"end"} px={0} w={"full"}>
+          <Button
+            display={IsEditMode ? "none" : "flex"}
+            size={"sm"}
+            leftIcon={<FiRefreshCcw />}
+            onClick={() => RefreshAction()}
+            isLoading={ActionLoading}
+          >
+            Muat Ulang
+          </Button>
+          <Button
+            display={IsEditMode ? "flex" : "none"}
+            size={"sm"}
+            colorScheme={"red"}
+            leftIcon={<FiXCircle />}
+            onClick={() => {
+              setIsEditMode(false);
+              RefreshAction();
+            }}
+            isLoading={ActionLoading}
+          >
+            Batal
+          </Button>
+          {/* <Button
+              display={IsEditMode ? "none" : "flex"}
+              size={"sm"}
+              leftIcon={<FiEdit3 />}
+              colorScheme={"secondary"}
+              onClick={() => setIsEditMode(true)}
+              isLoading={ActionLoading}
+            >
+              Edit
+            </Button> */}
+          <Button
+            display={IsEditMode ? "flex" : "none"}
+            size={"sm"}
+            colorScheme={"green"}
+            leftIcon={<FiSave />}
+            // type={"submit"}
+            onClick={() => {
+              formik.submitForm();
+            }}
+            isLoading={ActionLoading}
+          >
+            Simpan
+          </Button>
+        </Flex>
+      </Flex>
+
+      <form onSubmit={formik.handleSubmit} onReset={formik.handleReset}>
+        <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"}>
+          <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 12 }} w={"full"}>
+            <Flex as={Stack} w={"full"} pt={4} spacing={4}>
+              <Input
+                id="id"
+                name="id"
+                type="hidden"
+                value={formik.values.id ?? ""}
+                readOnly
+              />
+              <Input
+                id="requirementType"
+                name="requirementType"
+                type="hidden"
+                value={formik.values.requirementType ?? ""}
+                readOnly
+              />
+              <Input
+                id="reqStatus"
+                name="reqStatus"
+                type="hidden"
+                value={formik.values.reqStatus ?? ""}
+                readOnly
+              />
+              <Input
+                id="nextStep"
+                name="nextStep"
+                type="hidden"
+                value={formik.values.nextStep ?? ""}
+                readOnly
+              />
+
+              <InputGroupPanel
+                headerTitle={`Informasi Umum ${ReqData.requirementType}`}
+              >
+                <FormControl
+                  id={"senderDivisionId"}
+                  isInvalid={formik.errors.senderDivisionId ? true : false}
+                  isRequired
+                >
+                  <InputLayout>
+                    <FormLabel h={"full"} mt={2}>
+                      Divisi Pengirim
+                    </FormLabel>
+                    <Stack spacing={0}>
+                      <Select
+                        id={"senderDivisionId"}
+                        options={OptionDivision}
+                        isSearchable={true}
+                        onChange={(e) => {
+                          e
+                            ? handleSelectedDivision({
+                                label: e.label,
+                                value: e.value,
+                              })
+                            : handleUnSelectedDivision();
+                        }}
+                        placeholder={"Select Division"}
+                        isLoading={IsLoadingProcess || IsLoadingDivisionSelect}
+                        value={SelectedDivision}
+                        isReadOnly={!IsEditMode}
+                        variant={IsEditMode ? "outline" : "unstyled"}
+                        isDisabled={ActionLoading}
+                      />
+                      <FormErrorMessage>
+                        {formik.errors.senderDivisionId}
+                      </FormErrorMessage>
+                    </Stack>
+                  </InputLayout>
+                </FormControl>
+
+                <FormControl
+                  id="reqNumber"
+                  isInvalid={formik.errors.reqNumber ? true : false}
+                  isRequired
+                >
+                  <InputLayout>
+                    <FormLabel h={"full"} mt={2}>
+                      Nomor {ReqData.requirementType}
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Input
+                        id="reqNumber"
+                        name="reqNumber"
+                        type="text"
+                        onChange={formik.handleChange}
+                        value={formik.values.reqNumber ?? ""}
+                        placeholder={`Req. ${ReqData.requirementType} Number`}
+                        minLength={3}
+                        maxLength={50}
+                        readOnly={!IsEditMode}
+                        variant={IsEditMode ? "outline" : "unstyled"}
+                        isDisabled={ActionLoading}
+                      />
+                      <FormErrorMessage>
+                        {formik.errors.reqNumber}
+                      </FormErrorMessage>
+                    </Stack>
+                  </InputLayout>
+                </FormControl>
+
+                <FormControl
+                  id="reqNarative"
+                  isInvalid={formik.errors.reqNarative ? true : false}
+                  isRequired
+                >
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Perihal {ReqData.requirementType}
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Textarea
+                        id="reqNarative"
+                        name="reqNarative"
+                        onChange={formik.handleChange}
+                        defaultValue={formik.values.reqNarative ?? ""}
+                        placeholder={`Perlihal ${ReqData.requirementType}`}
+                        maxLength={300}
+                        readOnly={!IsEditMode}
+                        variant={IsEditMode ? "outline" : "unstyled"}
+                        isDisabled={ActionLoading}
+                      />
+
+                      <FormErrorMessage>
+                        {formik.errors.reqNumber}
+                      </FormErrorMessage>
+                    </Stack>
+                  </InputLayoutFull>
+                </FormControl>
+
+                <FormControl
+                  id="reqInititateDate"
+                  isInvalid={formik.errors.reqInititateDate ? true : false}
+                  isRequired
+                >
+                  <InputLayout>
+                    <FormLabel h={"full"} mt={2}>
+                      Tanggal Inisiasi Memo
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Input
+                        id="reqInititateDate"
+                        name="reqInititateDate"
+                        type="date"
+                        onChange={formik.handleChange}
+                        value={formik.values.reqInititateDate ?? ""}
+                        readOnly={!IsEditMode}
+                        variant={IsEditMode ? "outline" : "unstyled"}
+                        isDisabled={ActionLoading}
+                      />
+                      <FormErrorMessage>
+                        {formik.errors.reqInititateDate}
+                      </FormErrorMessage>
+                    </Stack>
+                  </InputLayout>
+                </FormControl>
+
+                <FormControl
+                  id="reqAcceptedDate"
+                  isInvalid={formik.errors.reqAcceptedDate ? true : false}
+                >
+                  <InputLayout>
+                    <FormLabel h={"full"} mt={2}>
+                      Tanggal Memo Diterima
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Input
+                        id="reqAcceptedDate"
+                        name="reqAcceptedDate"
+                        type="date"
+                        onChange={formik.handleChange}
+                        value={formik.values.reqAcceptedDate ?? ""}
+                        readOnly={!IsEditMode}
+                        variant={IsEditMode ? "outline" : "unstyled"}
+                        isDisabled={ActionLoading}
+                      />
+                      <FormErrorMessage>
+                        {formik.errors.reqAcceptedDate}
+                      </FormErrorMessage>
+                    </Stack>
+                  </InputLayout>
+                </FormControl>
+
+                <FormControl id="reqDateDuration">
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Durasi Memo
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Text px={2} fontWeight={600}>
+                        {ReqData.reqDurationDay}
+                      </Text>
+                    </Stack>
+                  </InputLayoutFull>
+                </FormControl>
+
+                <FormControl
+                  id="isCarryOver"
+                  isInvalid={formik.errors.isCarryOver ? true : false}
+                  isRequired
+                >
+                  <InputLayout>
+                    <FormLabel h={"full"} mt={2} as={"i"}>
+                      <Tooltip
+                        label={"Proyek yang melewati tahun"}
+                        hasArrow
+                        bg={"secondary.800"}
+                        rounded={radiusStyle}
+                        px={4}
+                      >
+                        CarryOver?
+                      </Tooltip>
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Flex as={HStack} spacing={4}>
+                        <Switch
+                          id="isCarryOver"
+                          size={"lg"}
+                          isChecked={formik.values.isCarryOver === "Y"}
+                          onChange={(e) => {
+                            formik.setFieldValue(
+                              "isCarryOver",
+                              e.target.checked ? "Y" : "N"
+                            );
+                          }}
+                          isDisabled={ActionLoading}
+                          readOnly={!IsEditMode}
+                          display={IsEditMode ? "flex" : "none"}
+                        />
+                        <Text as={"b"} textAlign={"center"}>
+                          {formik.values.isCarryOver == "Y" ? (
+                            <Badge
+                              variant="solid"
+                              colorScheme="yellow"
+                              fontSize={"md"}
+                              rounded={radiusStyle}
+                              px={4}
+                            >
+                              CARRYOVER
+                            </Badge>
+                          ) : (
+                            <Badge
+                              variant="solid"
+                              colorScheme="teal"
+                              fontSize={"md"}
+                              rounded={radiusStyle}
+                              px={4}
+                            >
+                              NO
+                            </Badge>
+                          )}
+                        </Text>
+                      </Flex>
+                      <FormErrorMessage>
+                        {formik.errors.isCarryOver}
+                      </FormErrorMessage>
+                    </Stack>
+                  </InputLayout>
+                </FormControl>
+              </InputGroupPanel>
+
+              <InputGroupPanel
+                headerTitle={`Penugasan Personil ${ReqData.requirementType}`}
+              >
+                <FormControl
+                  id="assignedToDate"
+                  isInvalid={formik.errors.assignedToDate ? true : false}
+                  isRequired
+                >
+                  <InputLayout>
+                    <FormLabel h={"full"} mt={2}>
+                      Tanggal Ditugaskan
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Input
+                        id="assignedToDate"
+                        name="assignedToDate"
+                        type="date"
+                        onChange={formik.handleChange}
+                        value={formik.values.assignedToDate ?? ""}
+                        readOnly={!IsEditMode}
+                        variant={IsEditMode ? "outline" : "unstyled"}
+                        isDisabled={ActionLoading}
+                      />
+                      <FormErrorMessage>
+                        {formik.errors.assignedToDate}
+                      </FormErrorMessage>
+                    </Stack>
+                  </InputLayout>
+                </FormControl>
+
+                <FormControl
+                  id="searchAssignedFromUser"
+                  isInvalid={formik.errors.assignedFromId ? true : false}
+                >
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Ditugaskan Oleh
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Input
+                        id="searchAssignedFromUser"
+                        name="searchAssignedFromUser"
+                        type="text"
+                        onChange={(e) => {
+                          handleSearchUser(
+                            e.target.value,
+                            "searchAssignedFromUser"
+                          );
+                        }}
+                        value={AssignedFromUser}
+                        placeholder="Search Users"
+                        readOnly={!IsEditMode}
+                        variant={IsEditMode ? "outline" : "unstyled"}
+                        isDisabled={ActionLoading}
+                      />
+
+                      <UserSearchSelect
+                        key={"searchAssignedFromUser"}
+                        selectedUserCode={formik.values.assignedFromId}
+                        usersData={DataUsersAssignedFrom}
+                        onUserSelect={handleAssignedFromUser}
+                        editMode={IsEditMode}
+                      />
+                      <FormErrorMessage>
+                        {formik.errors.assignedFromId}
+                      </FormErrorMessage>
+                    </Stack>
+                  </InputLayoutFull>
+                </FormControl>
+
+                <FormControl id="searchAssignedToUser">
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Ditugaskan Ke
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Input
+                        id="searchAssignedToUser"
+                        name="searchAssignedToUser"
+                        type="text"
+                        onChange={(e) => {
+                          handleSearchUserAssign(e.target.value);
+                        }}
+                        value={SearchUserInput}
+                        placeholder="Search Users"
+                        display={IsEditMode ? "flex" : "none"}
+                      />
+
+                      <Flex
+                        as={Stack}
+                        w={"full"}
+                        p={2}
+                        spacing={3}
+                        overflowX={"auto"}
+                      >
+                        {DataUsers.map((dt, index) => {
+                          const availableData = ChoosedMemberProjects.find(
+                            (x) => x.id === dt.id
+                          );
+                          return (
+                            <Flex
+                              bg={
+                                colorMode == "light" ? "gray.100" : "gray.700"
+                              }
+                              w={"full"}
+                              py={3}
+                              px={8}
+                              rounded={radiusStyle}
+                              boxShadow={"md"}
+                              as={HStack}
+                              spacing={8}
+                              key={index}
+                            >
+                              <Box>
+                                <Avatar name={dt.userFirstName} src="" />
+                              </Box>
+                              <Box>
+                                <Stack spacing={0}>
+                                  <Text color={"gray.900"} fontWeight={600}>
+                                    {dt.userFirstName} {dt.userLastName} (
+                                    {dt.userCode})
+                                  </Text>
+                                  <Text
+                                    fontWeight={500}
+                                    fontSize={"small"}
+                                    color={"gray.700"}
+                                  >
+                                    {dt.team?.teamName} |{" "}
+                                    {dt.teamRole?.teamRoleName}
+                                  </Text>
+                                </Stack>
+                              </Box>
+                              <Spacer />
+                              <>
+                                <Button
+                                  rounded={radiusStyle}
+                                  colorScheme={"green"}
+                                  size={"sm"}
+                                  isDisabled={availableData != null}
+                                  onClick={() => handleAddUserAssign(dt)}
+                                  leftIcon={<FiPlusCircle />}
+                                >
+                                  Tambah
+                                </Button>
+                              </>
+                            </Flex>
+                          );
+                        })}
+                      </Flex>
+
+                      <Card
+                        rounded={radiusStyle}
+                        boxShadow={"md"}
+                        bgGradient={
+                          "linear(to-br, secondary.500, secondary.800)"
+                        }
+                        color={"white"}
+                        minH={"10vh"}
+                      >
+                        <CardHeader pb={1} fontWeight={600}>
+                          Reviewer ({ChoosedMemberProjects.length})
+                        </CardHeader>
+                        <CardBody>
+                          <Flex
+                            as={Stack}
+                            w={"full"}
+                            p={2}
+                            spacing={3}
+                            overflowX={"auto"}
+                            minH={"10vh"}
+                          >
+                            {ChoosedMemberProjects.length <= 0 && (
+                              <Flex w={"full"} justifyContent={"center"}>
+                                <Text pt={5}>No Data Assign Reviewer</Text>
+                              </Flex>
+                            )}
+                            {ChoosedMemberProjects.map((dt, index) => {
+                              return (
+                                <Flex
+                                  bg={
+                                    colorMode == "light"
+                                      ? "gray.100"
+                                      : "gray.700"
+                                  }
+                                  w={"full"}
+                                  py={4}
+                                  px={5}
+                                  rounded={radiusStyle}
+                                  boxShadow={"md"}
+                                  as={HStack}
+                                  spacing={5}
+                                  key={index}
+                                >
+                                  <Box>
+                                    <Avatar name={dt.userFirstName} src="" />
+                                  </Box>
+                                  <Box>
+                                    <Stack spacing={0}>
+                                      <Text color={"gray.900"} fontWeight={600}>
+                                        {dt.userFirstName} {dt.userLastName} (
+                                        {dt.userCode})
+                                      </Text>
+                                      <Text
+                                        fontWeight={500}
+                                        fontSize={"small"}
+                                        color={"secondary.700"}
+                                      >
+                                        {dt.team?.teamName} |{" "}
+                                        {dt.teamRole?.teamRoleName}
+                                      </Text>
+                                    </Stack>
+                                  </Box>
+                                  <Spacer />
+                                  <Badge
+                                    colorScheme={"secondary"}
+                                    rounded={radiusStyle}
+                                    px={2}
+                                  >
+                                    Selected
+                                  </Badge>
+                                  <>
+                                    <Tooltip
+                                      label={"Remove"}
+                                      placement="right-end"
+                                      hasArrow
+                                    >
+                                      <Button
+                                        colorScheme={"red"}
+                                        rounded={radiusStyle}
+                                        size={"sm"}
+                                        onClick={() =>
+                                          handleRemoveUserAssign(dt.id)
+                                        }
+                                        isDisabled={
+                                          ActionLoading || !IsEditMode
+                                        }
+                                        display={
+                                          ActionLoading || !IsEditMode
+                                            ? "none"
+                                            : "flex"
+                                        }
+                                      >
+                                        <FiMinusCircle />
+                                      </Button>
+                                    </Tooltip>
+                                  </>
+                                </Flex>
+                              );
+                            })}
+                          </Flex>
+                        </CardBody>
+                      </Card>
+                      <FormErrorMessage>
+                        {/* {formik.errors.picAssignUsers} */}
+                      </FormErrorMessage>
+                    </Stack>
+                  </InputLayoutFull>
+                </FormControl>
+              </InputGroupPanel>
+
+              <InputGroupPanel
+                headerTitle={`Informasi User ${ReqData.requirementType}`}
+              >
+                <FormControl
+                  id="searchPICUser"
+                  isInvalid={formik.errors.userPicId ? true : false}
+                >
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      User PIC
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Input
+                        id="searchPICUser"
+                        name="searchPICUser"
+                        type="text"
+                        onChange={(e) => {
+                          handleSearchUser(e.target.value, "searchPICUser");
+                        }}
+                        value={PICUser}
+                        placeholder="Search Users"
+                        readOnly={!IsEditMode}
+                        variant={IsEditMode ? "outline" : "unstyled"}
+                        isDisabled={ActionLoading}
+                      />
+
+                      <UserSearchSelect
+                        key={"searchAssignedUser"}
+                        selectedUserCode={formik.values.userPicId}
+                        usersData={DataUsersPIC}
+                        onUserSelect={handlePICUser}
+                        editMode={IsEditMode}
+                      />
+                      <FormErrorMessage>
+                        {formik.errors.userPicId}
+                      </FormErrorMessage>
+                    </Stack>
+                  </InputLayoutFull>
+                </FormControl>
+
+                <FormControl
+                  id="userPicContanct"
+                  isInvalid={formik.errors.userPicContanct ? true : false}
+                >
+                  <InputLayout>
+                    <FormLabel h={"full"} mt={2}>
+                      Kontak PIC (Handphone)
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Input
+                        id="userPicContanct"
+                        name="userPicContanct"
+                        type="text"
+                        onChange={formik.handleChange}
+                        value={formik.values.userPicContanct ?? ""}
+                        placeholder={`PIC Contact Number (08xxxxxx)`}
+                        minLength={9}
+                        maxLength={15}
+                        readOnly={!IsEditMode}
+                        variant={IsEditMode ? "outline" : "unstyled"}
+                        isDisabled={ActionLoading}
+                      />
+                      <FormErrorMessage>
+                        {formik.errors.userPicContanct}
+                      </FormErrorMessage>
+                    </Stack>
+                  </InputLayout>
+                </FormControl>
+
+                <FormControl
+                  id="userPicEmail"
+                  isInvalid={formik.errors.userPicEmail ? true : false}
+                >
+                  <InputLayout>
+                    <FormLabel h={"full"} mt={2}>
+                      Alamat E-mail PIC
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Input
+                        id="userPicEmail"
+                        name="userPicEmail"
+                        type="email"
+                        onChange={formik.handleChange}
+                        value={formik.values.userPicEmail ?? ""}
+                        placeholder={`PIC Email (xxxx@bankbjb.co.id)`}
+                        minLength={9}
+                        maxLength={50}
+                        readOnly={!IsEditMode}
+                        variant={IsEditMode ? "outline" : "unstyled"}
+                        isDisabled={ActionLoading}
+                      />
+                      <FormErrorMessage>
+                        {formik.errors.userPicEmail}
+                      </FormErrorMessage>
+                    </Stack>
+                  </InputLayout>
+                </FormControl>
+              </InputGroupPanel>
+
+              <InputGroupPanel
+                headerTitle={`Program Kerja User ${ReqData.requirementType}`}
+              >
+                <FormControl
+                  id="workProgramCodeEx"
+                  isInvalid={formik.errors.workProgramCodeEx ? true : false}
+                  isRequired
+                >
+                  <InputLayout>
+                    <FormLabel h={"full"} mt={2}>
+                      Kode Program Kerja User
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Input
+                        id="workProgramCodeEx"
+                        name="workProgramCodeEx"
+                        type="text"
+                        onChange={formik.handleChange}
+                        value={formik.values.workProgramCodeEx ?? ""}
+                        placeholder={`${ReqData.requirementType} Kode Program Kerja User`}
+                        minLength={3}
+                        maxLength={50}
+                        readOnly={!IsEditMode}
+                        variant={IsEditMode ? "outline" : "unstyled"}
+                        isDisabled={ActionLoading}
+                      />
+                      <FormErrorMessage>
+                        {formik.errors.workProgramCodeEx}
+                      </FormErrorMessage>
+                    </Stack>
+                  </InputLayout>
+                </FormControl>
+
+                <FormControl
+                  id="workProgramNameEx"
+                  isInvalid={formik.errors.workProgramNameEx ? true : false}
+                  isRequired
+                >
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Nama Program Kerja User
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Input
+                        id="workProgramNameEx"
+                        name="workProgramNameEx"
+                        type="text"
+                        onChange={formik.handleChange}
+                        value={formik.values.workProgramNameEx ?? ""}
+                        placeholder={`${ReqData.requirementType} Nama Program Kerja User`}
+                        minLength={3}
+                        maxLength={150}
+                        readOnly={!IsEditMode}
+                        variant={IsEditMode ? "outline" : "unstyled"}
+                        isDisabled={ActionLoading}
+                      />
+                      <FormErrorMessage>
+                        {formik.errors.workProgramNameEx}
+                      </FormErrorMessage>
+                    </Stack>
+                  </InputLayoutFull>
+                </FormControl>
+
+                <FormControl
+                  id="workProgramAccNameEx"
+                  isInvalid={formik.errors.workProgramAccNameEx ? true : false}
+                  isRequired
+                >
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Nama Rekening User
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Input
+                        id="workProgramAccNameEx"
+                        name="workProgramAccNameEx"
+                        type="text"
+                        onChange={formik.handleChange}
+                        value={formik.values.workProgramAccNameEx ?? ""}
+                        placeholder={`Nama Rekening User`}
+                        minLength={3}
+                        maxLength={150}
+                        readOnly={!IsEditMode}
+                        variant={IsEditMode ? "outline" : "unstyled"}
+                        isDisabled={ActionLoading}
+                      />
+                      <FormErrorMessage>
+                        {formik.errors.workProgramAccNameEx}
+                      </FormErrorMessage>
+                    </Stack>
+                  </InputLayoutFull>
+                </FormControl>
+
+                <FormControl
+                  id="workProgramAccNumberEx"
+                  isInvalid={
+                    formik.errors.workProgramAccNumberEx ? true : false
+                  }
+                  isRequired
+                >
+                  <InputLayout>
+                    <FormLabel h={"full"} mt={2}>
+                      Nomor Rekening User
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Input
+                        id="workProgramAccNumberEx"
+                        name="workProgramAccNumberEx"
+                        type="text"
+                        onChange={(e) => {
+                          const onlyNums = e.target.value.replace(
+                            /[^0-9]/g,
+                            ""
+                          );
+                          formik.setFieldValue(
+                            "workProgramAccNumberEx",
+                            onlyNums
+                          );
+                        }}
+                        value={formik.values.workProgramAccNumberEx ?? ""}
+                        placeholder={`Nomor Rekening User`}
+                        minLength={5}
+                        maxLength={25}
+                        readOnly={!IsEditMode}
+                        variant={IsEditMode ? "outline" : "unstyled"}
+                        isDisabled={ActionLoading}
+                      />
+                      <FormErrorMessage>
+                        {formik.errors.workProgramAccNumberEx}
+                      </FormErrorMessage>
+                    </Stack>
+                  </InputLayout>
+                </FormControl>
+
+                <FormControl
+                  id="workProgramAccCcUser"
+                  isInvalid={formik.errors.workProgramAccCcUser ? true : false}
+                  isRequired
+                >
+                  <InputLayout>
+                    <FormLabel h={"full"} mt={2}>
+                      Kode CC User
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Input
+                        id="workProgramAccCcUser"
+                        name="workProgramAccCcUser"
+                        type="text"
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/\D/g, ""); // remove non-digits
+                          const formatted = raw
+                            .replace(/(.{4})/g, "$1 ")
+                            .trim(); // format as #### #### #### ####
+                          formik.setFieldValue(
+                            "workProgramAccCcUser",
+                            formatted
+                          );
+                        }}
+                        value={formik.values.workProgramAccCcUser ?? ""}
+                        placeholder="1234 5678 9012 3456"
+                        minLength={15}
+                        maxLength={19} // 16 digits + 3 spaces
+                        readOnly={!IsEditMode}
+                        variant={IsEditMode ? "outline" : "unstyled"}
+                        isDisabled={ActionLoading}
+                      />
+                      <FormErrorMessage>
+                        {formik.errors.workProgramAccCcUser}
+                      </FormErrorMessage>
+                    </Stack>
+                  </InputLayout>
+                </FormControl>
+
+                <FormControl
+                  id="workProgramBudgetUser"
+                  isInvalid={formik.errors.workProgramBudgetUser ? true : false}
+                  isRequired
+                >
+                  <InputLayout>
+                    <FormLabel h={"full"} mt={2}>
+                      Anggaran User (Rp.)
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <CurrencyInput
+                        name="workProgramBudgetUser"
+                        value={formik.values.workProgramBudgetUser}
+                        onChange={formik.setFieldValue}
+                        variant={IsEditMode ? "outline" : "unstyled"}
+                        isDisabled={ActionLoading}
+                      />
+                      <FormErrorMessage>
+                        {formik.errors.workProgramBudgetUser}
+                      </FormErrorMessage>
+                    </Stack>
+                  </InputLayout>
+                </FormControl>
+
+                <FormControl
+                  id="workProgramRealUsers"
+                  isInvalid={formik.errors.workProgramRealUsers ? true : false}
+                  isRequired
+                >
+                  <InputLayout>
+                    <FormLabel h={"full"} mt={2}>
+                      Realisasi (Rp.)
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <CurrencyInput
+                        name="workProgramRealUsers"
+                        value={formik.values.workProgramRealUsers}
+                        onChange={formik.setFieldValue}
+                        variant={IsEditMode ? "outline" : "unstyled"}
+                        isDisabled={ActionLoading}
+                      />
+                      <FormErrorMessage>
+                        {formik.errors.workProgramRealUsers}
+                      </FormErrorMessage>
+                    </Stack>
+                  </InputLayout>
+                </FormControl>
+
+                <FormControl
+                  color={nomCompColor(
+                    formik.values.workProgramBudgetUser -
+                      formik.values.workProgramRealUsers
+                  )}
+                >
+                  <InputLayout>
+                    <FormLabel h={"full"} mt={2}>
+                      Sisa (Rp.)
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <CurrencyInput
+                        name="leftOverExt"
+                        value={
+                          formik.values.workProgramBudgetUser -
+                          formik.values.workProgramRealUsers
+                        }
+                        onChange={formik.setFieldValue}
+                        variant={IsEditMode ? "outline" : "unstyled"}
+                        isDisabled={ActionLoading}
+                        isReadOnly
+                      />
+                    </Stack>
+                  </InputLayout>
+                </FormControl>
+              </InputGroupPanel>
+
+              <InputGroupPanel
+                headerTitle={`Program Kerja IT ${ReqData.requirementType}`}
+              >
+                <FormControl
+                  id="workProgramCodeInt"
+                  isInvalid={formik.errors.workProgramCodeInt ? true : false}
+                  isRequired
+                >
+                  <InputLayout>
+                    <FormLabel h={"full"} mt={2}>
+                      Kode Program Kerja IT
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Input
+                        id="workProgramCodeInt"
+                        name="workProgramCodeInt"
+                        type="text"
+                        onChange={formik.handleChange}
+                        value={formik.values.workProgramCodeInt ?? ""}
+                        placeholder={`${ReqData.requirementType}`}
+                        minLength={3}
+                        maxLength={50}
+                        readOnly={!IsEditMode}
+                        variant={IsEditMode ? "outline" : "unstyled"}
+                        isDisabled={ActionLoading}
+                      />
+                      <FormErrorMessage>
+                        {formik.errors.workProgramCodeInt}
+                      </FormErrorMessage>
+                    </Stack>
+                  </InputLayout>
+                </FormControl>
+
+                <FormControl
+                  id="workProgramNameInt"
+                  isInvalid={formik.errors.workProgramNameInt ? true : false}
+                  isRequired
+                >
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Nama Program Kerja IT
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Input
+                        id="workProgramNameInt"
+                        name="workProgramNameInt"
+                        type="text"
+                        onChange={formik.handleChange}
+                        value={formik.values.workProgramNameInt ?? ""}
+                        placeholder={`${ReqData.requirementType} Nama Program Kerja IT`}
+                        minLength={3}
+                        maxLength={150}
+                        readOnly={!IsEditMode}
+                        variant={IsEditMode ? "outline" : "unstyled"}
+                        isDisabled={ActionLoading}
+                      />
+                      <FormErrorMessage>
+                        {formik.errors.workProgramNameInt}
+                      </FormErrorMessage>
+                    </Stack>
+                  </InputLayoutFull>
+                </FormControl>
+
+                <FormControl
+                  id="workProgramAccNameInt"
+                  isInvalid={formik.errors.workProgramAccNameInt ? true : false}
+                  isRequired
+                >
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Nama Rekening IT
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Input
+                        id="workProgramAccNameInt"
+                        name="workProgramAccNameInt"
+                        type="text"
+                        onChange={formik.handleChange}
+                        value={formik.values.workProgramAccNameInt ?? ""}
+                        placeholder={`Nama Rekening IT`}
+                        minLength={3}
+                        maxLength={150}
+                        readOnly={!IsEditMode}
+                        variant={IsEditMode ? "outline" : "unstyled"}
+                        isDisabled={ActionLoading}
+                      />
+                      <FormErrorMessage>
+                        {formik.errors.workProgramAccNameInt}
+                      </FormErrorMessage>
+                    </Stack>
+                  </InputLayoutFull>
+                </FormControl>
+
+                <FormControl
+                  id="workProgramAccNumberInt"
+                  isInvalid={
+                    formik.errors.workProgramAccNumberInt ? true : false
+                  }
+                  isRequired
+                >
+                  <InputLayout>
+                    <FormLabel h={"full"} mt={2}>
+                      Nomor Rekening IT
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Input
+                        id="workProgramAccNumberInt"
+                        name="workProgramAccNumberInt"
+                        type="text"
+                        onChange={(e) => {
+                          const onlyNums = e.target.value.replace(
+                            /[^0-9]/g,
+                            ""
+                          );
+                          formik.setFieldValue(
+                            "workProgramAccNumberInt",
+                            onlyNums
+                          );
+                        }}
+                        value={formik.values.workProgramAccNumberInt ?? ""}
+                        placeholder={`Nomor Rekening IT`}
+                        minLength={5}
+                        maxLength={25}
+                        readOnly={!IsEditMode}
+                        variant={IsEditMode ? "outline" : "unstyled"}
+                        isDisabled={ActionLoading}
+                      />
+                      <FormErrorMessage>
+                        {formik.errors.workProgramAccNumberEx}
+                      </FormErrorMessage>
+                    </Stack>
+                  </InputLayout>
+                </FormControl>
+
+                <FormControl
+                  id="workProgramAccCcInt"
+                  isInvalid={formik.errors.workProgramAccCcInt ? true : false}
+                  isRequired
+                >
+                  <InputLayout>
+                    <FormLabel h={"full"} mt={2}>
+                      Kode CC IT
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Input
+                        id="workProgramAccCcInt"
+                        name="workProgramAccCcInt"
+                        type="text"
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/\D/g, ""); // remove non-digits
+                          const formatted = raw
+                            .replace(/(.{4})/g, "$1 ")
+                            .trim(); // format as #### #### #### ####
+                          formik.setFieldValue(
+                            "workProgramAccCcInt",
+                            formatted
+                          );
+                        }}
+                        value={formik.values.workProgramAccCcInt ?? ""}
+                        placeholder="1234 5678 9012 3456"
+                        minLength={15}
+                        maxLength={19} // 16 digits + 3 spaces
+                        readOnly={!IsEditMode}
+                        variant={IsEditMode ? "outline" : "unstyled"}
+                        isDisabled={ActionLoading}
+                      />
+                      <FormErrorMessage>
+                        {formik.errors.workProgramAccCcUser}
+                      </FormErrorMessage>
+                    </Stack>
+                  </InputLayout>
+                </FormControl>
+
+                <FormControl
+                  id="workProgramBudgetInt"
+                  isInvalid={formik.errors.workProgramBudgetInt ? true : false}
+                  isRequired
+                >
+                  <InputLayout>
+                    <FormLabel h={"full"} mt={2}>
+                      Anggaran IT (Rp.)
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <CurrencyInput
+                        name="workProgramBudgetInt"
+                        value={formik.values.workProgramBudgetInt}
+                        onChange={formik.setFieldValue}
+                        variant={IsEditMode ? "outline" : "unstyled"}
+                        isDisabled={ActionLoading}
+                      />
+                      <FormErrorMessage>
+                        {formik.errors.workProgramBudgetInt}
+                      </FormErrorMessage>
+                    </Stack>
+                  </InputLayout>
+                </FormControl>
+
+                <FormControl
+                  id="workProgramRealInt"
+                  isInvalid={formik.errors.workProgramRealInt ? true : false}
+                  isRequired
+                >
+                  <InputLayout>
+                    <FormLabel h={"full"} mt={2}>
+                      Realisasi (Rp.)
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <CurrencyInput
+                        name="workProgramRealInt"
+                        value={formik.values.workProgramRealInt}
+                        onChange={formik.setFieldValue}
+                        variant={IsEditMode ? "outline" : "unstyled"}
+                        isDisabled={ActionLoading}
+                      />
+                      <FormErrorMessage>
+                        {formik.errors.workProgramRealInt}
+                      </FormErrorMessage>
+                    </Stack>
+                  </InputLayout>
+                </FormControl>
+
+                <FormControl
+                  color={nomCompColor(
+                    formik.values.workProgramBudgetInt -
+                      formik.values.workProgramRealInt
+                  )}
+                >
+                  <InputLayout>
+                    <FormLabel h={"full"} mt={2}>
+                      Sisa (Rp.)
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <CurrencyInput
+                        name="leftverInt"
+                        value={
+                          formik.values.workProgramBudgetInt -
+                          formik.values.workProgramRealInt
+                        }
+                        onChange={formik.setFieldValue}
+                        variant={IsEditMode ? "outline" : "unstyled"}
+                        isDisabled={ActionLoading}
+                        isReadOnly
+                      />
+                    </Stack>
+                  </InputLayout>
+                </FormControl>
+              </InputGroupPanel>
+
+              <InputGroupPanel
+                headerTitle={`Ringkasan Ruanglinkup ${ReqData.requirementType}`}
+              >
+                <FormControl
+                  id="appInitialCode"
+                  isInvalid={formik.errors.appInitialCode ? true : false}
+                >
+                  <InputLayout>
+                    <FormLabel h={"full"} mt={2}>
+                      Inisial Aplikasi
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Input
+                        id="appInitialCode"
+                        name="appInitialCode"
+                        type="text"
+                        onChange={formik.handleChange}
+                        value={formik.values.appInitialCode ?? ""}
+                        placeholder={`Inisial Aplikasi`}
+                        minLength={3}
+                        maxLength={50}
+                        readOnly={!IsEditMode}
+                        variant={IsEditMode ? "outline" : "unstyled"}
+                        isDisabled={ActionLoading}
+                      />
+                      <FormErrorMessage>
+                        {formik.errors.appInitialCode}
+                      </FormErrorMessage>
+                    </Stack>
+                  </InputLayout>
+                </FormControl>
+
+                <FormControl
+                  id="appInitialName"
+                  isInvalid={formik.errors.appInitialName ? true : false}
+                >
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Nama Aplikasi
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Input
+                        id="appInitialName"
+                        name="appInitialName"
+                        type="text"
+                        onChange={formik.handleChange}
+                        value={formik.values.appInitialName ?? ""}
+                        placeholder={`App Name`}
+                        minLength={3}
+                        maxLength={150}
+                        readOnly={!IsEditMode}
+                        variant={IsEditMode ? "outline" : "unstyled"}
+                        isDisabled={ActionLoading}
+                      />
+                      <FormErrorMessage>
+                        {formik.errors.appInitialName}
+                      </FormErrorMessage>
+                    </Stack>
+                  </InputLayoutFull>
+                </FormControl>
+
+                <FormControl
+                  id="note"
+                  isInvalid={formik.errors.note ? true : false}
+                >
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Catatan
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Textarea
+                        id="note"
+                        name="note"
+                        onChange={formik.handleChange}
+                        defaultValue={formik.values.note ?? ""}
+                        placeholder={`Notes`}
+                        maxLength={300}
+                        readOnly={!IsEditMode}
+                        variant={IsEditMode ? "outline" : "unstyled"}
+                        isDisabled={ActionLoading}
+                      />
+                      <FormErrorMessage>{formik.errors.note}</FormErrorMessage>
+                    </Stack>
+                  </InputLayoutFull>
+                </FormControl>
+              </InputGroupPanel>
+            </Flex>
+          </GridItem>
+        </Grid>
+      </form>
+
+      {/* <Box
+          overflowY={"auto"}
+          w={"full"}
+          maxH={"250px"}
+          p={2}
+          rounded={radiusStyle}
+          bgColor={"gray.300"}
+        >
+          <pre>{JSON.stringify(formik.values, null, 2)}</pre>
+        </Box> */}
+    </Flex>
+  );
+};
+
+export default RequirementDetailInfoSection;

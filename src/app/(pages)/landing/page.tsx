@@ -31,7 +31,7 @@ import {
   Stack,
   Text,
   Tooltip,
-  useColorModeValue,
+  useColorMode,
   useDisclosure,
   VStack,
 } from "@chakra-ui/react";
@@ -46,6 +46,7 @@ const MotionText = motion(Text);
 
 function LandingPage() {
   const [RefreshData, setRefreshData] = useState(0);
+  const { colorMode } = useColorMode();
   const { isAuthenticated, authData } = useAuth();
   const RefreshAction = () => {
     setRefreshData(RefreshData + 1);
@@ -79,21 +80,6 @@ function LandingPage() {
             p={5}
           >
             <VStack w={"full"} spacing={5} pt={"8vh"}>
-              {/* <SimpleGrid columns={2} spacing={2} w={"full"}>
-                <Flex as={Stack} w={"full"} spacing={0}>
-                  <Text color={"white"} fontSize={"smaller"}>
-                    Selamat Datang,
-                  </Text>
-                  <Text color={"white"}>
-                    {truncateToTwoWords("Mohamad Iqbal Musyaffa")}
-                  </Text>
-                </Flex>
-                <Flex w={"full"} justifyContent={"end"}>
-                  <Heading as="h4" size="md" color={"white"}>
-                    SQUAD KOBRA
-                  </Heading>
-                </Flex>
-              </SimpleGrid> */}
               <RealTimeClock />
 
               <InputGroup
@@ -107,7 +93,7 @@ function LandingPage() {
                   placeContent={"center"}
                   placeholder="Cari Apps"
                   rounded={"3xl"}
-                  bg={useColorModeValue("white", "gray.800")}
+                  bg={colorMode == "light" ? "white" : "gray.800"}
                   size={"lg"}
                   value={SearchChannels}
                   onChange={(e) => setSearchChannels(e.target.value)}
@@ -154,9 +140,6 @@ function LandingPage() {
                     </Box>
                   </Flex>
                 </Flex>
-                {/* <Box color={"white"}>
-                  <pre>{JSON.stringify(authData, null, 2)}</pre>
-                </Box> */}
               </Container>
             </VStack>
           </Flex>
@@ -175,6 +158,7 @@ const AppsDrawSquareV2 = ({ data }: { data: AppsDrawSquareProps }) => {
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
   const showToast = useToastHelper();
+  const { colorMode } = useColorMode();
   const [isHovered, setIsHovered] = useState(false);
   // const { isOpen, onOpen, onClose } = useDisclosure();
   const ModalAuth = useDisclosure();
@@ -218,10 +202,9 @@ const AppsDrawSquareV2 = ({ data }: { data: AppsDrawSquareProps }) => {
           bgGradient={
             isHovered && data.dataProduct.appsStatus == "ACTIVE"
               ? "linear(to-br, primary.500, secondary.500)" // when hovered and active
-              : useColorModeValue(
-                  "linear(to-br, white, gray.50)", // for light mode when not active
-                  "linear(to-br, gray.800, gray.900)" // for dark mode when not active
-                )
+              : colorMode == "light"
+              ? "linear(to-br, white, gray.50)" // for light mode when not active
+              : "linear(to-br, gray.800, gray.900)" // for dark mode when not active
           }
           boxShadow={"lg"}
           _hover={
@@ -245,7 +228,7 @@ const AppsDrawSquareV2 = ({ data }: { data: AppsDrawSquareProps }) => {
                 }
               : {}
           }
-          color={useColorModeValue("gray.600", "gray.100")}
+          color={colorMode == "light" ? "gray.600" : "gray.100"}
           transition="transform 0.2s ease-in-out, background-color 0.2s ease, box-shadow 0.2s ease-in-out" // Animate transform and box-shadow
           transform={
             isHovered && data.dataProduct.appsStatus == "ACTIVE"
@@ -319,7 +302,7 @@ const AppsDrawSquareV2 = ({ data }: { data: AppsDrawSquareProps }) => {
         <ModalContent
           rounded={radiusStyle}
           m={2}
-          bg={useColorModeValue("white", "gray.900")}
+          bg={colorMode == "light" ? "white" : "gray.900"}
         >
           {/* <ModalHeader>Launch Apps</ModalHeader> */}
           <ModalCloseButton color={"white"} />
@@ -462,6 +445,7 @@ const LoginPanel = ({
   onCloseDisc: () => void;
   textLoading: string;
 }) => {
+  const { colorMode } = useColorMode();
   return (
     <Modal
       size={"2xl"}
@@ -498,7 +482,7 @@ const LoginPanel = ({
                 <MotionText
                   fontWeight={600}
                   // color={"gray.800"}
-                  color={useColorModeValue("gray.800", "gray.50")}
+                  color={colorMode == "light" ? "gray.800" : "gray.50"}
                   initial={{ opacity: 0, y: 20 }} // Start faded out and below
                   animate={{ opacity: 1, y: 0 }} // Animate to fade in and move up
                   exit={{ opacity: 0, y: -20 }} // Optional: animate out when component is removed

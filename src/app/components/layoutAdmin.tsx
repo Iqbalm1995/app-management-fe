@@ -2,7 +2,7 @@
 
 import { ReactNode, useEffect, useState } from "react";
 import { DELAY_MEDIUM } from "../constants/applicationConstants";
-import { Box, useColorModeValue } from "@chakra-ui/react";
+import { Box, useColorMode } from "@chakra-ui/react";
 import { LoadingOverlay } from "./loadingOverlay";
 import { usePathname } from "next/navigation";
 import NavigationAdmin from "./sidebar";
@@ -10,6 +10,7 @@ import NavigationAdmin from "./sidebar";
 const LayoutAdmin = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
   const [loading, setLoading] = useState(true);
+  const { colorMode } = useColorMode();
 
   useEffect(() => {
     // Simulate loading time
@@ -25,7 +26,7 @@ const LayoutAdmin = ({ children }: { children: ReactNode }) => {
           opacity={loading ? 0.5 : 1}
           pointerEvents={loading ? "none" : "auto"}
         >
-          <Box minH="100vh" bg={useColorModeValue("gray.100", "gray.900")}>
+          <Box minH="100vh" bg={colorMode == "light" ? "gray.100" : "gray.900"}>
             <NavigationAdmin>{children}</NavigationAdmin>
           </Box>
         </Box>

@@ -32,7 +32,7 @@ import {
   Stack,
   Text,
   Tooltip,
-  useColorModeValue,
+  useColorMode,
   VStack,
 } from "@chakra-ui/react";
 import { useEffect, useMemo, useState } from "react";
@@ -64,6 +64,7 @@ function MasterRolePage() {
     useMasterRoles();
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
+  const { colorMode } = useColorMode();
 
   // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -255,7 +256,7 @@ function MasterRolePage() {
               w={"full"}
               rounded={radiusStyle}
               minH={"500px"}
-              bg={useColorModeValue("white", "gray.800")}
+              bg={colorMode == "light" ? "white" : "gray.800"}
               boxShadow={"md"}
             >
               <VStack w={"full"} p={0} align={"start"} spacing={2}>

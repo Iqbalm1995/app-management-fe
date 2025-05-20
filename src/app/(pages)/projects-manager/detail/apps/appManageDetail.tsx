@@ -179,7 +179,6 @@ const HeaderDataContent: HeaderContentProps = {
 };
 
 function AppsManageDetail() {
-  const showToast = useToastHelper();
   const { colorMode } = useColorMode();
   const searchParams = useSearchParams();
   const delay = (ms: number) =>
@@ -672,7 +671,7 @@ const AppInfromationSection = ({ handleHeaderTittle }: AppsManagePageProps) => {
                           isRequired
                         >
                           <InputLayoutFull>
-                            <FormLabel h={"full"} py={3}>
+                            <FormLabel h={"full"} mt={2}>
                               Aplication Short Name
                             </FormLabel>
                             <Stack spacing={0}>
@@ -701,7 +700,7 @@ const AppInfromationSection = ({ handleHeaderTittle }: AppsManagePageProps) => {
                           isRequired
                         >
                           <InputLayoutFull>
-                            <FormLabel h={"full"} py={3}>
+                            <FormLabel h={"full"} mt={2}>
                               Application Full Name
                             </FormLabel>
                             <Stack spacing={0}>
@@ -729,7 +728,7 @@ const AppInfromationSection = ({ handleHeaderTittle }: AppsManagePageProps) => {
                           isInvalid={formik.errors.appsDesc ? true : false}
                         >
                           <InputLayoutFull>
-                            <FormLabel h={"full"} py={3}>
+                            <FormLabel h={"full"} mt={2}>
                               Descriptions
                             </FormLabel>
                             <Stack spacing={0}>
@@ -754,7 +753,7 @@ const AppInfromationSection = ({ handleHeaderTittle }: AppsManagePageProps) => {
                           isInvalid={formik.errors.note ? true : false}
                         >
                           <InputLayoutFull>
-                            <FormLabel h={"full"} py={3}>
+                            <FormLabel h={"full"} mt={2}>
                               Note
                             </FormLabel>
                             <Stack spacing={0}>
@@ -781,7 +780,7 @@ const AppInfromationSection = ({ handleHeaderTittle }: AppsManagePageProps) => {
                           isRequired
                         >
                           <InputLayoutFull>
-                            <FormLabel h={"full"} py={3}>
+                            <FormLabel h={"full"} mt={2}>
                               Application Status
                             </FormLabel>
                             <Stack spacing={0}>
@@ -813,7 +812,7 @@ const AppInfromationSection = ({ handleHeaderTittle }: AppsManagePageProps) => {
                           isInvalid={formik.errors.readyToLaunch ? true : false}
                         >
                           <InputLayoutFull>
-                            <FormLabel h={"full"} py={3}>
+                            <FormLabel h={"full"} mt={2}>
                               Is Apps Ready to Launch?
                             </FormLabel>
                             <Stack spacing={0}>
@@ -2625,7 +2624,7 @@ const AppsEnvirontmentSection = () => {
                               isRequired
                             >
                               <InputLayout>
-                                <FormLabel h={"full"} py={3}>
+                                <FormLabel h={"full"} mt={2}>
                                   Environtment Name
                                 </FormLabel>
                                 <Stack spacing={0}>
@@ -2656,7 +2655,7 @@ const AppsEnvirontmentSection = () => {
                               isInvalid={formik.errors.envDesc ? true : false}
                             >
                               <InputLayout>
-                                <FormLabel h={"full"} py={3}>
+                                <FormLabel h={"full"} mt={2}>
                                   Environtment Descriptions
                                 </FormLabel>
                                 <Stack spacing={0}>
@@ -2694,7 +2693,7 @@ const AppsEnvirontmentSection = () => {
                           >
                             <FormControl id="InputLinkText" isRequired>
                               <InputLayout>
-                                <FormLabel h={"full"} py={3}>
+                                <FormLabel h={"full"} mt={2}>
                                   New Link Apps
                                 </FormLabel>
                                 <HStack spacing={2}>

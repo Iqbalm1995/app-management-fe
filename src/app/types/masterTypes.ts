@@ -38,7 +38,8 @@ export interface PaggingListPayload {
 
 export interface PaggingListPayloadCustom {
   search: string;
-  teamId: string;
+  teamId?: string | null;
+  reqId?: string | null;
   limit: number;
   page: number;
   filterWhere: ListSearchByParam[];
@@ -87,4 +88,11 @@ export interface AttachmentProps {
   alt: string;
   extension?: string;
   size?: string;
+}
+
+export interface FileDetails {
+  name: string;
+  extension: string;
+  size: number;
+  file: File; // Adding the file object itself for multipart upload
 }

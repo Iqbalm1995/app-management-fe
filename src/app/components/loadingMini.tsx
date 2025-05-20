@@ -1,8 +1,9 @@
-import { Flex, HStack, Text, useColorModeValue } from "@chakra-ui/react";
+import { Flex, HStack, Text, useColorMode } from "@chakra-ui/react";
 import Lottie from "lottie-react";
 import logoBjbFile from "../json/bjb_loading_v01.json";
 
 const LoadingMiniSignature = () => {
+  const { colorMode } = useColorMode();
   return (
     <Flex
       w={"full"}
@@ -14,7 +15,7 @@ const LoadingMiniSignature = () => {
         <Flex alignItems={"center"} h={"8vh"}>
           <Text
             fontWeight={500}
-            color={useColorModeValue("gray.800", "white")}
+            color={colorMode == "light" ? "gray.800" : "white"}
             pt={5}
           >
             Mohon Tunggu

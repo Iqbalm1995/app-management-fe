@@ -56,7 +56,7 @@ export const InputLayoutFull = ({ children }: { children: ReactNode }) => {
         md: "25% 75%",
       }}
       alignItems="center"
-      alignContent={"center"}
+      justifyContent={"start"}
       w="full"
     >
       {children}

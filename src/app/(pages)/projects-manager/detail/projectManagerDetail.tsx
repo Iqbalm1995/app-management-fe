@@ -6,7 +6,6 @@ import {
   HeaderContentProps,
 } from "@/app/components/headerContent";
 import LayoutAdmin from "@/app/components/layoutAdmin";
-import { InputLayoutFull } from "@/app/components/layoutContentBody";
 import LoadingMiniSignature from "@/app/components/loadingMini";
 import {
   DELAY_MEDIUM,
@@ -15,23 +14,15 @@ import {
   RES_GENERIC_ERROR_MSG,
 } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface, useAuth } from "@/app/context/AuthContext";
-import { TextStatusProps, truncateText } from "@/app/helper/MasterHelper";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useProjects, {
+  AppsResponse,
   ProjectDataResponse,
   ProjectUpdatePayload,
-  ProjectUpdatePICPayload,
 } from "@/app/services/useProjects";
-import useUsers, {
-  UsersFullResponse,
-  UsersResponse,
-} from "@/app/services/useUsers";
-import { AppsDataInterface, DATA_APPS } from "@/app/types/appsInterface";
-import { OptionListProps, PaggingListPayload } from "@/app/types/masterTypes";
+import { OptionListProps } from "@/app/types/masterTypes";
 import {
-  Avatar,
-  AvatarGroup,
   Box,
   Button,
   Card,
@@ -41,69 +32,64 @@ import {
   Grid,
   GridItem,
   Heading,
-  HStack,
   Stack,
-  Table,
-  Tbody,
-  Td,
   Text,
-  Tr,
   Wrap,
   Tabs,
   TabList,
   TabPanels,
   Tab,
   TabPanel,
-  TabIndicator,
   FormControl,
   FormLabel,
   Input,
   FormErrorMessage,
   Textarea,
-  Image,
-  Tooltip,
-  Container,
-  useColorModeValue,
-  VStack,
-  useDisclosure,
   useColorMode,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalCloseButton,
-  ModalBody,
-  Spacer,
-  ModalFooter,
+  Divider,
+  HStack,
+  StackDivider,
+  Progress,
+  useSteps,
+  Stepper,
+  Step,
+  StepIndicator,
+  StepStatus,
+  StepIcon,
+  StepNumber,
+  StepTitle,
+  StepDescription,
+  StepSeparator,
 } from "@chakra-ui/react";
-import { Select, useStateManager } from "chakra-react-select";
+import { Select } from "chakra-react-select";
 import { useFormik } from "formik";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { BsKanban } from "react-icons/bs";
-import { CiMemoPad } from "react-icons/ci";
-import { FaDraftingCompass } from "react-icons/fa";
-import { FaPlus } from "react-icons/fa6";
 import {
+  FiActivity,
+  FiAlertOctagon,
+  FiAlertTriangle,
   FiArrowLeft,
   FiCpu,
   FiEdit3,
-  FiHeart,
-  FiHexagon,
-  FiMinusCircle,
+  FiInfo,
   FiPlayCircle,
-  FiPlusCircle,
-  FiPlusSquare,
   FiRefreshCcw,
   FiSave,
+  FiServer,
   FiShare,
-  FiX,
   FiXCircle,
+  FiZap,
 } from "react-icons/fi";
 import * as Yup from "yup";
 import ProjectSummary from "./projectSummary";
-import ProjectManagerSection from "./projectAppsManager";
+import { CustomPanelAlert } from "@/app/components/customPanels";
+import AppInfromationSection from "./apps/appViewSection";
+import AppChangeLogSection from "./apps/appLogsViewSection";
+import AppsEnvirontmentSection from "./apps/appsEnvViewSection";
+import ProjectFeatureView from "./projectFeaturesView";
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Detail",
@@ -139,10 +125,12 @@ const FormSchemaEditProject = Yup.object().shape({
 function ProjectManagerDetail() {
   const showToast = useToastHelper();
   const searchParams = useSearchParams();
+  const { colorMode } = useColorMode();
 
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
-  const { List, GetDetailById, InsertProjects, UpdateProjects } = useProjects();
+  const { GetDetailById, UpdateProjects, GetDetailAppsByProjectId } =
+    useProjects();
 
   const [HeaderContentState, setHeaderContentState] =
     useState<HeaderContentProps>(HeaderDataContent);
@@ -184,6 +172,186 @@ function ProjectManagerDetail() {
   );
   const [RefreshData, setRefreshData] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
+
+  useEffect(() => {
+    if (DataAuth && DataAuth.teamMember && projectId) {
+      setIsLoadingProcess(true);
+      const GetDataList = async () => {
+        const requestData = await GetDetailById(projectId, tokenData);
+        const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+
+        if (isErrorResponse || !requestData) {
+          showToast({
+            description: requestData?.message || RES_GENERIC_ERROR_MSG,
+            statusToast: "error",
+          });
+          setIsLoadingProcess(false);
+          return;
+        } else {
+          console.log(requestData);
+          if (requestData.data == null) {
+            showToast({
+              description: "Data return error",
+              statusToast: "error",
+            });
+            setIsLoadingProcess(false);
+            return;
+          }
+
+          const itemsData: ProjectDataResponse =
+            requestData.data as ProjectDataResponse;
+
+          setDataProject(itemsData);
+          setHeaderContentState({
+            titleName: `Project Detail #${itemsData.projectCode}`,
+            breadCrumb: ["Home", "Project Manager", itemsData.projectCode],
+          });
+          setIsLoadingProcess(false);
+        }
+      };
+      GetDataList();
+    }
+  }, [DataAuth, RefreshData, projectId]);
+
+  return (
+    <LayoutAdmin>
+      <HeaderContent
+        titleName={HeaderContentState.titleName}
+        breadCrumb={HeaderContentState.breadCrumb}
+      />
+      <Link href={"/projects-manager"}>
+        <Button leftIcon={<FiArrowLeft />}>Back</Button>
+      </Link>
+
+      <Flex
+        bg={colorMode == "light" ? "white" : "gray.700"}
+        px={5}
+        py={6}
+        rounded={radiusStyle}
+        w={"full"}
+        justify={"space-between"}
+        boxShadow={"md"}
+      >
+        <Tabs size={"lg"} variant={"unstyled"} w={"full"}>
+          <TabList gap={2} overflowX={"auto"}>
+            <Tab
+              rounded={radiusStyle}
+              px={6}
+              _selected={{
+                color: "white",
+                bg: "primary.500",
+                boxShadow: "md",
+              }}
+            >
+              <FiInfo /> <Text pl={1}>Project Info</Text>
+            </Tab>
+            <Tab
+              rounded={radiusStyle}
+              px={6}
+              _selected={{
+                color: "white",
+                bg: "primary.500",
+                boxShadow: "md",
+              }}
+              isDisabled={!DataProject}
+            >
+              <FiCpu /> <Text pl={1}>Project Features</Text>
+            </Tab>
+            <Tab
+              rounded={radiusStyle}
+              px={6}
+              _selected={{
+                color: "white",
+                bg: "primary.500",
+                boxShadow: "md",
+              }}
+              isDisabled={!DataProject}
+            >
+              <FiPlayCircle /> <Text pl={1}>Application Info</Text>
+            </Tab>
+            <Tab
+              rounded={radiusStyle}
+              px={6}
+              _selected={{
+                color: "white",
+                bg: "primary.500",
+                boxShadow: "md",
+              }}
+              isDisabled={!DataProject}
+            >
+              <FiShare /> <Text pl={1}>Projects Attachments</Text>
+            </Tab>
+          </TabList>
+          <TabPanels pt={8}>
+            {/* PROJECT INFO */}
+            <TabPanel px={0}>
+              <ProjectInfoSection projectId={projectId} />
+            </TabPanel>
+            {/* FEATURES */}
+            <TabPanel px={0}>
+              <Suspense>
+                <ProjectFeatureView DataProject={DataProject} />
+              </Suspense>
+            </TabPanel>
+            {/* APPLICATION INFO */}
+            <TabPanel px={0}>
+              <Suspense>
+                <AppsInfoDetail DataProject={DataProject} />
+              </Suspense>
+            </TabPanel>
+            {/* ATTACHMENTS */}
+            <TabPanel px={0}></TabPanel>
+          </TabPanels>
+        </Tabs>
+      </Flex>
+    </LayoutAdmin>
+  );
+}
+
+const stepsProgress = [
+  { title: "Initiation", description: "Project start" },
+  { title: "Planning", description: "Set roadmap" },
+  { title: "Development", description: "Code features" },
+  { title: "Testing", description: "Bug checks" },
+  { title: "Deployment", description: "Go live" },
+];
+
+const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
+  const showToast = useToastHelper();
+
+  const delay = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
+  const { GetDetailById, UpdateProjects, GetDetailAppsByProjectId } =
+    useProjects();
+
+  // SetUp auth data on current page
+  const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
+  const [tokenData, setTokenData] = useState<string>("");
+
+  useEffect(() => {
+    const storedData = localStorage.getItem("authData");
+    const token: string = localStorage.getItem("tokenData") as string;
+
+    if (DataAuth == null) {
+      if (storedData) {
+        const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
+        const UserData: AuthDataResponse =
+          StorageAuth.dataLogin as AuthDataResponse;
+        setDataAuth(UserData);
+      }
+    }
+
+    if (token) {
+      setTokenData(token);
+    }
+  }, [DataAuth]);
+  // End SetUp auth data on current page
+
+  const [DataProject, setDataProject] = useState<ProjectDataResponse | null>(
+    null
+  );
+  const [RefreshData, setRefreshData] = useState<number>(0);
+  const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
   const [ActionLoading, setActionLoading] = useState(false);
   const [IsEditMode, setIsEditMode] = useState(false);
   const [DataOptions1, setDataOptions1] = useState<OptionListProps[]>(
@@ -195,8 +363,6 @@ function ProjectManagerDetail() {
   const [captionDialog, setCaptionDialog] = useState<string>("");
   const [UpdatePayload, setUpdatePayload] =
     useState<ProjectUpdatePayload | null>(null);
-
-  const [percentage, setPercentage] = useState(0);
 
   const formik = useFormik<ProjectUpdatePayload>({
     initialValues: {
@@ -334,10 +500,6 @@ function ProjectManagerDetail() {
           }
 
           setDataProject(itemsData);
-          setHeaderContentState({
-            titleName: `Project Detail #${itemsData.projectCode}`,
-            breadCrumb: ["Home", "Project Manager", itemsData.projectCode],
-          });
           setIsLoadingProcess(false);
         }
       };
@@ -345,16 +507,14 @@ function ProjectManagerDetail() {
     }
   }, [DataAuth, RefreshData, projectId]);
 
-  return (
-    <LayoutAdmin>
-      <HeaderContent
-        titleName={HeaderContentState.titleName}
-        breadCrumb={HeaderContentState.breadCrumb}
-      />
-      <Link href={"/projects-manager"}>
-        <Button leftIcon={<FiArrowLeft />}>Back</Button>
-      </Link>
+  // Stepper
+  const { activeStep } = useSteps({
+    index: 4,
+    count: stepsProgress.length,
+  });
 
+  return (
+    <Flex w={"full"}>
       <ConfirmationDialog
         key={"confirmUpdateData"}
         isOpenTrigger={openConfirmUpdateDialog}
@@ -363,358 +523,520 @@ function ProjectManagerDetail() {
         questionMsg={questionMsgDialog}
         captionMsg={captionDialog}
       />
-
-      <Card rounded={radiusStyle}>
-        <CardBody w={"full"}>
-          <Grid templateColumns="repeat(12, 1fr)" gap={5}>
-            {!projectId && !DataProject ? (
-              <>
-                <GridItem
-                  colSpan={{ base: 12, sm: 12, md: 12, lg: 12 }}
-                  w={"full"}
-                >
-                  <Card rounded={radiusStyle}>
-                    <CardBody>
-                      <Text color={"red.500"}>
-                        No project ID found in the URL
-                      </Text>
-                    </CardBody>
-                  </Card>
-                </GridItem>
-              </>
-            ) : (
-              <>
-                <GridItem
-                  colSpan={{ base: 12, sm: 12, md: 4, lg: 4 }}
-                  w={"full"}
-                >
-                  <Flex w={"full"} as={Stack} spacing={4}>
-                    <Card
-                      rounded={radiusStyle}
-                      boxShadow={"md"}
-                      bgGradient={"linear(to-br, secondary.500, secondary.800)"}
-                      color={"white"}
-                    >
-                      <CardHeader pb={1}>
-                        <Flex justifyContent={"space-between"}>
-                          <Heading as="h5" size="sm">
-                            Summary
-                          </Heading>
-                          <Flex as={Wrap} justifyContent={"end"} px={0}>
-                            <Button
-                              rounded={"3xl"}
-                              size={"sm"}
-                              rightIcon={<BsKanban />}
-                              //   onClick={() => RefreshAction()}
-                              // isLoading={ActionLoading}
-                            >
-                              Go to Kanban
-                            </Button>
-                          </Flex>
-                        </Flex>
-                      </CardHeader>
-                      <CardBody pt={2}>
-                        <Flex minH={"420px"}>
-                          <ProjectSummary
-                            data={DataProject}
-                            refreshActionMain={() => RefreshAction()}
-                          />
-                        </Flex>
-                      </CardBody>
-                    </Card>
+      {!projectId && !DataProject ? (
+        <CustomPanelAlert type={"error"}>
+          <FiAlertTriangle color={"red"} size={70} />
+          <Text>No project ID found in the URL</Text>
+        </CustomPanelAlert>
+      ) : (
+        <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"}>
+          <GridItem colSpan={{ base: 12, sm: 12, md: 4, lg: 4 }} w={"full"}>
+            <Flex w={"full"} as={Stack} spacing={4}>
+              <Card
+                rounded={radiusStyle}
+                boxShadow={"md"}
+                bgGradient={"linear(to-br, secondary.500, secondary.800)"}
+                color={"white"}
+              >
+                <CardHeader pb={1}>
+                  <Flex justifyContent={"space-between"}>
+                    <Heading as="h5" size="sm">
+                      Summary
+                    </Heading>
+                    <Flex as={Wrap} justifyContent={"end"} px={0}>
+                      <Button
+                        rounded={"3xl"}
+                        size={"sm"}
+                        rightIcon={<BsKanban />}
+                        //   onClick={() => RefreshAction()}
+                        // isLoading={ActionLoading}
+                      >
+                        Go to Kanban
+                      </Button>
+                    </Flex>
                   </Flex>
-                </GridItem>
-                <GridItem
-                  colSpan={{ base: 12, sm: 12, md: 8, lg: 8 }}
+                </CardHeader>
+                <CardBody pt={2}>
+                  <Flex minH={"420px"}>
+                    <ProjectSummary
+                      data={DataProject}
+                      refreshActionMain={() => RefreshAction()}
+                    />
+                  </Flex>
+                </CardBody>
+              </Card>
+            </Flex>
+          </GridItem>
+          <GridItem colSpan={{ base: 12, sm: 12, md: 8, lg: 8 }} w={"full"}>
+            {IsLoadingProcess ? (
+              <LoadingMiniSignature />
+            ) : (
+              <form onSubmit={formik.handleSubmit} onReset={formik.handleReset}>
+                <Flex
+                  as={Stack}
                   w={"full"}
+                  divider={<StackDivider borderColor="gray.200" />}
+                  spacing={6}
+                  px={4}
                 >
-                  {IsLoadingProcess ? (
-                    <LoadingMiniSignature />
-                  ) : (
-                    <form
-                      onSubmit={formik.handleSubmit}
-                      onReset={formik.handleReset}
+                  <Flex w={"full"} as={HStack} justifyContent={"space-between"}>
+                    <Heading as="h5" size="md" w={"full"}>
+                      Project Information #{DataProject?.projectCode}
+                    </Heading>
+                    <Flex as={Wrap} justifyContent={"end"} px={0} w={"full"}>
+                      <Button
+                        display={IsEditMode ? "none" : "flex"}
+                        size={"sm"}
+                        leftIcon={<FiRefreshCcw />}
+                        onClick={() => RefreshAction()}
+                        isLoading={ActionLoading}
+                      >
+                        Refresh
+                      </Button>
+                      <Button
+                        display={IsEditMode ? "flex" : "none"}
+                        size={"sm"}
+                        colorScheme={"red"}
+                        leftIcon={<FiXCircle />}
+                        onClick={() => {
+                          setIsEditMode(false);
+                          RefreshAction();
+                        }}
+                        isLoading={ActionLoading}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        display={IsEditMode ? "none" : "flex"}
+                        size={"sm"}
+                        leftIcon={<FiEdit3 />}
+                        colorScheme={"secondary"}
+                        onClick={() => setIsEditMode(true)}
+                        isLoading={ActionLoading}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        display={IsEditMode ? "flex" : "none"}
+                        size={"sm"}
+                        colorScheme={"green"}
+                        leftIcon={<FiSave />}
+                        // type={"submit"}
+                        onClick={() => {
+                          formik.submitForm();
+                        }}
+                        isLoading={ActionLoading}
+                      >
+                        Save
+                      </Button>
+                    </Flex>
+                  </Flex>
+                  <Flex minH={"420px"} as={Stack} py={4} px={2}>
+                    <FormControl
+                      id="projectNo"
+                      isInvalid={formik.errors.projectNo ? true : false}
+                      isRequired
                     >
-                      <Box w={"full"} p={4}>
-                        <Flex justifyContent={"space-between"}>
-                          <Heading as="h5" size="sm">
-                            Project Information #{DataProject?.projectCode}
-                          </Heading>
-                          <Flex as={Wrap} justifyContent={"end"} px={0}>
-                            <Button
-                              display={IsEditMode ? "none" : "flex"}
-                              size={"sm"}
-                              leftIcon={<FiRefreshCcw />}
-                              onClick={() => RefreshAction()}
-                              isLoading={ActionLoading}
-                            >
-                              Refresh
-                            </Button>
-                            <Button
-                              display={IsEditMode ? "flex" : "none"}
-                              size={"sm"}
-                              colorScheme={"red"}
-                              leftIcon={<FiXCircle />}
-                              onClick={() => {
-                                setIsEditMode(false);
-                                RefreshAction();
-                              }}
-                              isLoading={ActionLoading}
-                            >
-                              Cancel
-                            </Button>
-                            <Button
-                              display={IsEditMode ? "none" : "flex"}
-                              size={"sm"}
-                              leftIcon={<FiEdit3 />}
-                              colorScheme={"secondary"}
-                              onClick={() => setIsEditMode(true)}
-                              isLoading={ActionLoading}
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              display={IsEditMode ? "flex" : "none"}
-                              size={"sm"}
-                              colorScheme={"green"}
-                              leftIcon={<FiSave />}
-                              // type={"submit"}
-                              onClick={() => {
-                                formik.submitForm();
-                              }}
-                              isLoading={ActionLoading}
-                            >
-                              Save
-                            </Button>
-                          </Flex>
-                        </Flex>
-                        <Flex minH={"420px"} as={Stack} py={4}>
-                          <FormControl
-                            id="projectNo"
-                            isInvalid={formik.errors.projectNo ? true : false}
-                            isRequired
-                          >
-                            <FormLabel fontWeight={600} h={"full"}>
-                              Project No.
-                            </FormLabel>
-                            <Stack spacing={0}>
-                              <Input
-                                id="projectNo"
-                                name="projectNo"
-                                type="text"
-                                onChange={(e) => {
-                                  const uppercaseValue =
-                                    e.target.value.toUpperCase(); // Convert to uppercase
-                                  formik.setFieldValue(
-                                    "projectNo",
-                                    uppercaseValue
-                                  ); // Update Formik's value
-                                }}
-                                value={formik.values.projectNo ?? ""}
-                                placeholder="Project No."
-                                readOnly={!IsEditMode}
-                                variant={IsEditMode ? "outline" : "unstyled"}
-                                minLength={3}
-                                maxLength={80}
-                                isDisabled={ActionLoading}
+                      <FormLabel fontWeight={600} h={"full"}>
+                        Project No.
+                      </FormLabel>
+                      <Stack spacing={0}>
+                        <Input
+                          id="projectNo"
+                          name="projectNo"
+                          type="text"
+                          onChange={(e) => {
+                            const uppercaseValue = e.target.value.toUpperCase(); // Convert to uppercase
+                            formik.setFieldValue("projectNo", uppercaseValue); // Update Formik's value
+                          }}
+                          value={formik.values.projectNo ?? ""}
+                          placeholder="Project No."
+                          readOnly={!IsEditMode}
+                          variant={IsEditMode ? "outline" : "unstyled"}
+                          minLength={3}
+                          maxLength={80}
+                          isDisabled={ActionLoading}
+                        />
+                        <FormErrorMessage>
+                          {formik.errors.projectNo}
+                        </FormErrorMessage>
+                      </Stack>
+                    </FormControl>
+
+                    <FormControl
+                      id="projectName"
+                      isInvalid={formik.errors.projectName ? true : false}
+                      isRequired
+                    >
+                      <FormLabel fontWeight={600} h={"full"}>
+                        Project Name
+                      </FormLabel>
+                      <Stack spacing={0}>
+                        <Input
+                          id="projectName"
+                          name="projectName"
+                          type="text"
+                          onChange={(e) => {
+                            const uppercaseValue = e.target.value.toUpperCase(); // Convert to uppercase
+                            formik.setFieldValue("projectName", uppercaseValue); // Update Formik's value
+                          }}
+                          value={formik.values.projectName ?? ""}
+                          placeholder="Project Name"
+                          readOnly={!IsEditMode}
+                          variant={IsEditMode ? "outline" : "unstyled"}
+                          minLength={3}
+                          maxLength={80}
+                          isDisabled={ActionLoading}
+                        />
+                        <FormErrorMessage>
+                          {formik.errors.projectName}
+                        </FormErrorMessage>
+                      </Stack>
+                    </FormControl>
+
+                    <FormControl
+                      id="projectDesc"
+                      isInvalid={formik.errors.projectDesc ? true : false}
+                    >
+                      <FormLabel fontWeight={600} h={"full"}>
+                        Project Descriptions
+                      </FormLabel>
+                      <Stack spacing={0}>
+                        <Textarea
+                          id="projectDesc"
+                          name="projectDesc"
+                          onChange={(e) => {
+                            formik.setFieldValue("projectDesc", e.target.value);
+                          }}
+                          readOnly={!IsEditMode}
+                          variant={IsEditMode ? "outline" : "unstyled"}
+                          defaultValue={formik.values.projectDesc ?? ""}
+                          placeholder="Project Descriptions"
+                          isDisabled={ActionLoading}
+                        ></Textarea>
+                        <FormErrorMessage>
+                          {formik.errors.projectDesc}
+                        </FormErrorMessage>
+                      </Stack>
+                    </FormControl>
+
+                    <FormControl
+                      id="note"
+                      isInvalid={formik.errors.note ? true : false}
+                    >
+                      <FormLabel fontWeight={600} h={"full"}>
+                        Note
+                      </FormLabel>
+                      <Stack spacing={0}>
+                        <Textarea
+                          id="note"
+                          name="note"
+                          onChange={(e) => {
+                            formik.setFieldValue("note", e.target.value);
+                          }}
+                          readOnly={!IsEditMode}
+                          variant={IsEditMode ? "outline" : "unstyled"}
+                          defaultValue={formik.values.note ?? ""}
+                          placeholder="Notes"
+                          isDisabled={ActionLoading}
+                        ></Textarea>
+                        <FormErrorMessage>
+                          {formik.errors.note}
+                        </FormErrorMessage>
+                      </Stack>
+                    </FormControl>
+
+                    <FormControl
+                      id={"projectStatus"}
+                      isInvalid={formik.errors.projectStatus ? true : false}
+                      isRequired
+                    >
+                      <FormLabel fontWeight={600} h={"full"}>
+                        Project Status
+                      </FormLabel>
+                      <Stack spacing={0}>
+                        <Select
+                          id={"projectStatus"}
+                          options={DataOptions1}
+                          isSearchable={true}
+                          onChange={(e) => {
+                            e
+                              ? handleSelectedOption({
+                                  label: e.label,
+                                  value: e.value,
+                                })
+                              : handleUnselectedOption();
+                          }}
+                          value={SelectedOption1}
+                          variant={IsEditMode ? "outline" : "unstyled"}
+                          isReadOnly={!IsEditMode}
+                        />
+                        <FormErrorMessage>
+                          {formik.errors.projectStatus}
+                        </FormErrorMessage>
+                      </Stack>
+                    </FormControl>
+
+                    {/* <p>Project ID: {projectId}</p> */}
+                    <Box overflowY={"auto"}>
+                      {/* <pre>{JSON.stringify(formik.values, null, 2)}</pre> */}
+                    </Box>
+                  </Flex>
+                  {/* Stepper Progress */}
+                  <Box w={"full"}>
+                    <Flex
+                      w={"full"}
+                      as={HStack}
+                      justifyContent={"space-between"}
+                      pb={4}
+                    >
+                      <Heading as="h5" size="sm" w={"full"}>
+                        Progression - (70%)
+                      </Heading>
+                    </Flex>
+                    <Progress
+                      colorScheme={"secondary"}
+                      hasStripe
+                      value={70}
+                      rounded={radiusStyle}
+                      my={3}
+                    />
+                    <Flex
+                      w={"full"}
+                      p={4}
+                      minH={"80px"}
+                      justifyContent={"start"}
+                      alignItems={"center"}
+                      rounded={radiusStyle}
+                      border={"1px"}
+                      borderColor={"gray.200"}
+                      boxShadow={"md"}
+                      overflowX={"auto"}
+                    >
+                      {/* STEPPER */}
+                      <Stepper index={activeStep} w={"full"}>
+                        {stepsProgress.map((step, index) => (
+                          <Step key={index}>
+                            <StepIndicator>
+                              <StepStatus
+                                complete={<StepIcon />}
+                                incomplete={<StepNumber />}
+                                active={<StepNumber />}
                               />
-                              <FormErrorMessage>
-                                {formik.errors.projectNo}
-                              </FormErrorMessage>
-                            </Stack>
-                          </FormControl>
+                            </StepIndicator>
 
-                          <FormControl
-                            id="projectName"
-                            isInvalid={formik.errors.projectName ? true : false}
-                            isRequired
-                          >
-                            <FormLabel fontWeight={600} h={"full"}>
-                              Project Name
-                            </FormLabel>
-                            <Stack spacing={0}>
-                              <Input
-                                id="projectName"
-                                name="projectName"
-                                type="text"
-                                onChange={(e) => {
-                                  const uppercaseValue =
-                                    e.target.value.toUpperCase(); // Convert to uppercase
-                                  formik.setFieldValue(
-                                    "projectName",
-                                    uppercaseValue
-                                  ); // Update Formik's value
-                                }}
-                                value={formik.values.projectName ?? ""}
-                                placeholder="Project Name"
-                                readOnly={!IsEditMode}
-                                variant={IsEditMode ? "outline" : "unstyled"}
-                                minLength={3}
-                                maxLength={80}
-                                isDisabled={ActionLoading}
-                              />
-                              <FormErrorMessage>
-                                {formik.errors.projectName}
-                              </FormErrorMessage>
-                            </Stack>
-                          </FormControl>
+                            <Box flexShrink="0">
+                              <StepTitle>{step.title}</StepTitle>
+                              <StepDescription>
+                                {step.description}
+                              </StepDescription>
+                            </Box>
 
-                          <FormControl
-                            id="projectDesc"
-                            isInvalid={formik.errors.projectDesc ? true : false}
-                          >
-                            <FormLabel fontWeight={600} h={"full"}>
-                              Project Descriptions
-                            </FormLabel>
-                            <Stack spacing={0}>
-                              <Textarea
-                                id="projectDesc"
-                                name="projectDesc"
-                                onChange={(e) => {
-                                  formik.setFieldValue(
-                                    "projectDesc",
-                                    e.target.value
-                                  );
-                                }}
-                                readOnly={!IsEditMode}
-                                variant={IsEditMode ? "outline" : "unstyled"}
-                                defaultValue={formik.values.projectDesc ?? ""}
-                                placeholder="Project Descriptions"
-                                isDisabled={ActionLoading}
-                              ></Textarea>
-                              <FormErrorMessage>
-                                {formik.errors.projectDesc}
-                              </FormErrorMessage>
-                            </Stack>
-                          </FormControl>
+                            <StepSeparator />
+                          </Step>
+                        ))}
+                      </Stepper>
+                    </Flex>
+                  </Box>
+                </Flex>
+              </form>
+            )}
+          </GridItem>
+        </Grid>
+      )}
+    </Flex>
+  );
+};
 
-                          <FormControl
-                            id="note"
-                            isInvalid={formik.errors.note ? true : false}
-                          >
-                            <FormLabel fontWeight={600} h={"full"}>
-                              Note
-                            </FormLabel>
-                            <Stack spacing={0}>
-                              <Textarea
-                                id="note"
-                                name="note"
-                                onChange={(e) => {
-                                  formik.setFieldValue("note", e.target.value);
-                                }}
-                                readOnly={!IsEditMode}
-                                variant={IsEditMode ? "outline" : "unstyled"}
-                                defaultValue={formik.values.note ?? ""}
-                                placeholder="Notes"
-                                isDisabled={ActionLoading}
-                              ></Textarea>
-                              <FormErrorMessage>
-                                {formik.errors.note}
-                              </FormErrorMessage>
-                            </Stack>
-                          </FormControl>
+interface AppsInfoDetailProps {
+  DataProject: ProjectDataResponse | null;
+}
 
-                          <FormControl
-                            id={"projectStatus"}
-                            isInvalid={
-                              formik.errors.projectStatus ? true : false
-                            }
-                            isRequired
-                          >
-                            <FormLabel fontWeight={600} h={"full"}>
-                              Project Status
-                            </FormLabel>
-                            <Stack spacing={0}>
-                              <Select
-                                id={"projectStatus"}
-                                options={DataOptions1}
-                                isSearchable={true}
-                                onChange={(e) => {
-                                  e
-                                    ? handleSelectedOption({
-                                        label: e.label,
-                                        value: e.value,
-                                      })
-                                    : handleUnselectedOption();
-                                }}
-                                value={SelectedOption1}
-                                variant={IsEditMode ? "outline" : "unstyled"}
-                                isReadOnly={!IsEditMode}
-                              />
-                              <FormErrorMessage>
-                                {formik.errors.projectStatus}
-                              </FormErrorMessage>
-                            </Stack>
-                          </FormControl>
+const AppsInfoDetail = ({ DataProject }: AppsInfoDetailProps) => {
+  const showToast = useToastHelper();
+  const { colorMode } = useColorMode();
+  const { GetDetailAppsByProjectId } = useProjects();
 
-                          {/* <p>Project ID: {projectId}</p> */}
-                          <Box overflowY={"auto"}>
-                            {/* <pre>{JSON.stringify(formik.values, null, 2)}</pre> */}
-                          </Box>
-                        </Flex>
-                      </Box>
-                    </form>
-                  )}
-                </GridItem>
-                <GridItem
-                  colSpan={{ base: 12, sm: 12, md: 12, lg: 12 }}
-                  w={"full"}
-                >
-                  <Box w={"full"} p={4}>
-                    <Tabs position="relative" isFitted>
-                      <TabList overflowX={"auto"}>
-                        <Tab>
-                          <FiPlayCircle /> <Text pl={1}>APPS</Text>
+  const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
+  const storedData = localStorage.getItem("authData");
+  const tokenData: string = localStorage.getItem("tokenData") as string;
+  useEffect(() => {
+    if (DataAuth == null) {
+      if (storedData) {
+        const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
+        const UserData: AuthDataResponse =
+          StorageAuth.dataLogin as AuthDataResponse;
+        setDataAuth(UserData);
+      }
+    }
+  }, [DataAuth]);
+
+  const [DataApps, setDataApps] = useState<AppsResponse | null>(null);
+  const [RefreshData, setRefreshData] = useState<number>(0);
+  const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
+
+  useEffect(() => {
+    if (DataAuth && DataAuth.teamMember && DataProject && DataApps == null) {
+      setIsLoadingProcess(true);
+      const GetDataList = async () => {
+        const requestData = await GetDetailAppsByProjectId(
+          DataProject.id,
+          tokenData
+        );
+        const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+
+        if (isErrorResponse || !requestData) {
+          showToast({
+            description: requestData?.message || RES_GENERIC_ERROR_MSG,
+            statusToast: "error",
+          });
+          setIsLoadingProcess(false);
+          return;
+        } else {
+          console.log(requestData);
+          if (requestData.data == null) {
+            showToast({
+              description: "Data return error",
+              statusToast: "error",
+            });
+            setIsLoadingProcess(false);
+            return;
+          }
+
+          const itemsData: AppsResponse = requestData.data as AppsResponse;
+
+          setDataApps(itemsData);
+          setIsLoadingProcess(false);
+        }
+      };
+      GetDataList();
+    }
+  }, [DataProject, DataApps]);
+
+  return (
+    <Flex w={"full"}>
+      {IsLoadingProcess ? (
+        <LoadingMiniSignature />
+      ) : (
+        <Flex w={"full"}>
+          {DataProject && DataApps ? (
+            <Flex w={"full"} as={Stack}>
+              <Tabs
+                orientation="vertical"
+                variant={"unstyled"}
+                isFitted
+                w={"full"}
+              >
+                <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"}>
+                  <GridItem
+                    colSpan={{ base: 12, sm: 12, md: 9, lg: 9 }}
+                    w={"full"}
+                  >
+                    <TabPanels w={"full"}>
+                      <TabPanel px={0}>
+                        <Suspense>
+                          <AppInfromationSection />
+                        </Suspense>
+                      </TabPanel>
+                      <TabPanel px={0}>
+                        {DataApps && (
+                          <Suspense>
+                            <AppChangeLogSection AppsId={DataApps.id} />
+                          </Suspense>
+                        )}
+                      </TabPanel>
+                      <TabPanel px={0}>
+                        {DataApps && (
+                          <Suspense>
+                            <AppsEnvirontmentSection AppsId={DataApps.id} />
+                          </Suspense>
+                        )}
+                      </TabPanel>
+                    </TabPanels>
+                  </GridItem>
+                  <GridItem
+                    colSpan={{ base: 12, sm: 12, md: 3, lg: 3 }}
+                    w={"full"}
+                    minH={"500px"}
+                  >
+                    <Flex
+                      w={"full"}
+                      px={4}
+                      py={6}
+                      as={Stack}
+                      // rounded={radiusStyle}
+                      minH={"320px"}
+                      borderLeft={"2px"}
+                      borderColor={"gray.200"}
+                    >
+                      <Heading as="h5" size="sm">
+                        Options
+                      </Heading>
+                      <TabList w={"full"} gap={4} pt={3}>
+                        {/* APPS DETAILS */}
+                        <Tab
+                          rounded={radiusStyle}
+                          px={6}
+                          _selected={{
+                            color: "white",
+                            bg: "primary.500",
+                            boxShadow: "md",
+                            minH: "60px",
+                          }}
+                          justifyContent={"start"}
+                        >
+                          <FiInfo /> <Text pl={3}>Details</Text>
                         </Tab>
-                        {/* <Tab>
-                          <FaDraftingCompass /> <Text pl={1}>BRD</Text>
-                        </Tab> */}
-                        {/* <Tab>
-                          <CiMemoPad /> <Text pl={1}>Memo</Text>
-                        </Tab> */}
-                        <Tab>
-                          <FiCpu /> <Text pl={1}>Project Features</Text>
+                        <Tab
+                          rounded={radiusStyle}
+                          px={6}
+                          _selected={{
+                            color: "white",
+                            bg: "primary.500",
+                            boxShadow: "md",
+                            minH: "60px",
+                          }}
+                          justifyContent={"start"}
+                        >
+                          <FiActivity /> <Text pl={3}>Change Log</Text>
                         </Tab>
-                        <Tab>
-                          <FiShare /> <Text pl={1}>Projects Attachments</Text>
+                        <Tab
+                          rounded={radiusStyle}
+                          px={6}
+                          _selected={{
+                            color: "white",
+                            bg: "primary.500",
+                            boxShadow: "md",
+                            minH: "60px",
+                          }}
+                          justifyContent={"start"}
+                        >
+                          <FiServer /> <Text pl={3}>Environtment Links</Text>
                         </Tab>
                       </TabList>
-                      <TabIndicator
-                        mt="-1.5px"
-                        height="2px"
-                        bg="secondary.500"
-                        borderRadius="1px"
-                      />
-                      <TabPanels>
-                        <TabPanel>
-                          <ProjectManagerSection
-                            data={DataProject}
-                            refreshActionMain={() => RefreshAction()}
-                          />
-                        </TabPanel>
-                        {/* <TabPanel>
-                          <p>BRD!</p>
-                        </TabPanel> */}
-                        {/* <TabPanel>
-                          <p>Memo!</p>
-                        </TabPanel> */}
-                        <TabPanel>
-                          <p>Apps Features!</p>
-                        </TabPanel>
-                        <TabPanel>
-                          <p>Projects Attachments!</p>
-                        </TabPanel>
-                      </TabPanels>
-                    </Tabs>
-                  </Box>
-                </GridItem>
-              </>
-            )}
-          </Grid>
-        </CardBody>
-      </Card>
-    </LayoutAdmin>
+                    </Flex>
+                  </GridItem>
+                </Grid>
+              </Tabs>
+            </Flex>
+          ) : (
+            <CustomPanelAlert type={"info"}>
+              <FiAlertOctagon size={70} />
+              <Text>Application not found. Register now?</Text>
+              <Button
+                size={"lg"}
+                leftIcon={<FiZap />}
+                colorScheme={"primary"}
+                rounded={radiusStyle}
+              >
+                Register Apps Now
+              </Button>
+            </CustomPanelAlert>
+          )}
+        </Flex>
+      )}
+    </Flex>
   );
-}
+};
 
 export default ProjectManagerDetail;

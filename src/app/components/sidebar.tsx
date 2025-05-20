@@ -87,10 +87,6 @@ import {
   useToastHelper,
   useToastHelperShort,
 } from "../helper/ToastMessagesHelper";
-import {
-  getFromLocalStorage,
-  saveToLocalStorage,
-} from "../utils/localStorageUtils";
 import { AuthDataModelInterface, useAuth } from "../context/AuthContext";
 import {
   DELAY_ZERO,
@@ -118,7 +114,13 @@ import { FooterAdminPanel } from "./layoutLanding";
 import SignatureLineColor from "./signatureStyle";
 import { BsKanban } from "react-icons/bs";
 import { IoCalendarNumberOutline } from "react-icons/io5";
-import { MdGroupWork, MdOutlinePermMedia } from "react-icons/md";
+import {
+  MdChangeHistory,
+  MdGroupWork,
+  MdOutlineChangeCircle,
+  MdOutlineCircle,
+  MdOutlinePermMedia,
+} from "react-icons/md";
 import { usePathname } from "next/navigation";
 import { AuthDataResponse } from "../services/useAuthentications";
 import { BiSolidReport } from "react-icons/bi";
@@ -154,12 +156,37 @@ const LinkItems: LinkItemProps[] = [
     children: [],
   },
   {
-    name: "BRD",
+    name: "Requirements",
     icon: FaDraftingCompass,
-    link: "/brd",
+    link: "/requirements",
     role: ["admin"],
     menuID: "1",
-    children: [],
+    children: [
+      {
+        name: "BRD",
+        icon: MdOutlineCircle,
+        link: "/requirements/brd",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "RFC",
+        icon: MdChangeHistory,
+        link: "/requirements/rfc",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      // {
+      //   name: "Pending Review",
+      //   icon: MdOutlineCircle,
+      //   link: "/requirements/pending-reviews",
+      //   role: ["admin"],
+      //   menuID: "1",
+      //   children: [],
+      // },
+    ],
   },
   {
     name: "Memo",
@@ -308,6 +335,14 @@ const LinkItems: LinkItemProps[] = [
         children: [],
       },
       {
+        name: "Kanban Alt",
+        icon: BsKanban,
+        link: "/kanban-alt",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
         name: "Calendar",
         icon: IoCalendarNumberOutline,
         link: "/calendar",
@@ -374,7 +409,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Retrieve the value from local storage when the component mounts
-    const savedLiteMode = getFromLocalStorage("LiteMode");
+    const savedLiteMode: boolean = localStorage.getItem("LiteMode") === "true";
     if (savedLiteMode !== null) {
       setLiteMode(savedLiteMode);
     }
@@ -383,7 +418,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
   const toggleLiteMode = () => {
     const newValue = !LiteMode;
     setLiteMode(newValue);
-    saveToLocalStorage("LiteMode", newValue);
+    localStorage.setItem("LiteMode", newValue.toString());
   };
 
   const logoutAuthAction = async () => {

@@ -5,11 +5,23 @@ import {
   AlertTitle,
   Badge,
   Box,
+  Icon,
+  Image,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalOverlay,
   Text,
+  useColorMode,
+  useDisclosure,
 } from "@chakra-ui/react";
 import React, { ReactNode, useEffect, useState } from "react";
 import { format } from "date-fns";
 import { radiusStyle } from "../constants/applicationConstants";
+import { AiFillFileExcel, AiFillFilePdf, AiFillFileWord } from "react-icons/ai";
+import { FaFileAlt } from "react-icons/fa";
+import { AttachmentProps } from "../types/masterTypes";
 
 // capitalize each word string
 export function capitalizeWords(str: string) {
@@ -854,3 +866,190 @@ export function getRandomNumber(min: number, max: number): number {
 export function getRandomNumberInclusive(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
+
+export function colorProgression(num: number): string {
+  if (num <= 10) {
+    return "red";
+  }
+
+  if (num >= 11 && num <= 50) {
+    return "yellow";
+  }
+
+  if (num >= 51 && num <= 100) {
+    return "secondary";
+  }
+
+  return "red";
+}
+
+export function nomCompColor(num1: number): string {
+  const { colorMode } = useColorMode();
+  if (num1 < 0) {
+    return "red.500";
+  }
+
+  if (num1 > 0) {
+    return "green.500";
+  }
+
+  return colorMode == "light" ? "black" : "white";
+}
+
+export function getPriorityFromMatrix(impact: string, urgency: string): string {
+  if (impact === "HIGH" && urgency === "HIGH") return "CRITICAL";
+
+  if (
+    (impact === "HIGH" && urgency === "MEDIUM") ||
+    (impact === "MEDIUM" && urgency === "HIGH")
+  )
+    return "HIGH";
+
+  if (
+    (impact === "LOW" && urgency === "HIGH") ||
+    (impact === "MEDIUM" && urgency === "MEDIUM") ||
+    (impact === "HIGH" && urgency === "LOW")
+  )
+    return "MEDIUM";
+
+  // Remaining combinations fall to LOW
+  return "LOW";
+}
+
+export const monthSetMaster = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+export function calculateDurationInDays(
+  startDateStr: string,
+  endDateStr: string
+): number {
+  const startDate = new Date(startDateStr);
+  const endDate = new Date(endDateStr);
+
+  const diffTime = endDate.getTime() - startDate.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  return diffDays;
+}
+
+export const renderFileIcon = (file: File) => {
+  const ext = file.name.split(".").pop();
+  switch (ext) {
+    case "pdf":
+      return <Icon as={AiFillFilePdf} w={12} h={12} color="red.500" />;
+    case "xlsx":
+      return <Icon as={AiFillFileExcel} w={12} h={12} color="green.500" />;
+    case "docx":
+      return <Icon as={AiFillFileWord} w={12} h={12} color="blue.500" />;
+    default:
+      return <Icon as={FaFileAlt} w={12} h={12} color="gray.500" />;
+  }
+};
+
+export const ImagePreviewSM = ({ data }: { data: AttachmentProps }) => {
+  const ImageModalDisc = useDisclosure();
+
+  return (
+    <Box
+      rounded={radiusStyle}
+      position="relative"
+      // boxSize="130px"
+      w={{ base: "40px", sm: "40px", md: "60px", lg: "60px" }}
+      h={{ base: "40px", sm: "40px", md: "60px", lg: "60px" }}
+      cursor="pointer"
+      p={1}
+      border={"1px solid"}
+      borderColor={"gray.300"}
+      onClick={() => ImageModalDisc.onOpen()}
+      _hover={{
+        "& > .previewOverlay": { opacity: 1 },
+      }}
+    >
+      <Image
+        rounded={radiusStyle}
+        src={data.src}
+        // boxSize="120px"
+        w={{ base: "30px", sm: "30px", md: "50px", lg: "50px" }}
+        h={{ base: "30px", sm: "30px", md: "50px", lg: "50px" }}
+        objectFit="cover"
+      />
+      {/* Hover overlay */}
+      <Box
+        rounded={radiusStyle}
+        className="previewOverlay"
+        position="absolute"
+        top={0}
+        left={0}
+        w="full"
+        h="full"
+        bg="rgba(0, 0, 0, 0.6)"
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        opacity={0}
+        transition="opacity 0.3s"
+      >
+        <Text fontSize="xs" fontWeight="light" color="white">
+          Preview
+        </Text>
+      </Box>
+
+      {/* Modal for image preview */}
+      <Modal
+        isOpen={ImageModalDisc.isOpen}
+        onClose={ImageModalDisc.onClose}
+        isCentered
+        size={"xl"} // Set to "xl" for a more responsive size
+      >
+        <ModalOverlay />
+        <ModalContent
+          rounded={radiusStyle}
+          maxW="90vw"
+          maxH="90vh"
+          bg="rgba(255, 255, 255, 0.1)" // Semi-transparent background for glass effect
+          backdropFilter="blur(10px)" // Apply blur for frosted glass effect
+          boxShadow="lg" // Optionally add shadow to enhance the look
+        >
+          <ModalCloseButton color={"white"} />
+          <ModalBody p={0}>
+            <Box
+              w="full"
+              h="80vh" // Set the height to make it fit within the modal size
+              backgroundPosition="center"
+              backgroundRepeat="no-repeat"
+              backgroundSize="contain" // Ensure the image fits well without stretching
+              backgroundImage={`url(${data.src})`}
+              rounded={radiusStyle}
+            />
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+    </Box>
+  );
+};
+
+export const renderFileIconSTR = (extFile: string) => {
+  const ext = extFile.replace(".", "");
+  switch (ext) {
+    case "pdf":
+      return <Icon as={AiFillFilePdf} w={8} h={8} color="red.500" />;
+    case "xlsx":
+      return <Icon as={AiFillFileExcel} w={8} h={8} color="green.500" />;
+    case "docx":
+      return <Icon as={AiFillFileWord} w={8} h={8} color="blue.500" />;
+    default:
+      return <Icon as={FaFileAlt} w={8} h={8} color="gray.500" />;
+  }
+};

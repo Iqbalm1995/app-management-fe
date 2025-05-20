@@ -251,7 +251,7 @@ function ProjectManagerPage() {
         page: pageIndex,
         filterWhere: [],
         fieldOrder: ["createdAt"],
-        orderDir: "desc",
+        orderDir: "asc",
       };
 
       setIsLoadingProcess(true);
@@ -458,7 +458,7 @@ function ProjectManagerPage() {
                   isRequired
                 >
                   <InputLayoutFull>
-                    <FormLabel h={"full"} py={3}>
+                    <FormLabel h={"full"} mt={2}>
                       Project Code
                     </FormLabel>
                     <Stack spacing={0}>
@@ -489,7 +489,7 @@ function ProjectManagerPage() {
                   isInvalid={formik.errors.projectNo ? true : false}
                 >
                   <InputLayoutFull>
-                    <FormLabel h={"full"} py={3}>
+                    <FormLabel h={"full"} mt={2}>
                       Register No.
                     </FormLabel>
                     <Stack spacing={0}>
@@ -522,7 +522,7 @@ function ProjectManagerPage() {
                   isRequired
                 >
                   <InputLayoutFull>
-                    <FormLabel h={"full"} py={3}>
+                    <FormLabel h={"full"} mt={2}>
                       Project Name
                     </FormLabel>
                     <Stack spacing={0}>
@@ -553,7 +553,7 @@ function ProjectManagerPage() {
                   isInvalid={formik.errors.projectDesc ? true : false}
                 >
                   <InputLayoutFull>
-                    <FormLabel h={"full"} py={3}>
+                    <FormLabel h={"full"} mt={2}>
                       Descriptions (Optional)
                     </FormLabel>
                     <Stack spacing={0}>
@@ -579,7 +579,7 @@ function ProjectManagerPage() {
                   isInvalid={formik.errors.note ? true : false}
                 >
                   <InputLayoutFull>
-                    <FormLabel h={"full"} py={3}>
+                    <FormLabel h={"full"} mt={2}>
                       Note (Optional)
                     </FormLabel>
                     <Stack spacing={0}>

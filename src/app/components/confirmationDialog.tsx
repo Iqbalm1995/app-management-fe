@@ -11,7 +11,7 @@ import {
   ModalHeader,
   ModalOverlay,
   Text,
-  useColorModeValue,
+  useColorMode,
   useDisclosure,
 } from "@chakra-ui/react";
 import React, { useEffect, useRef } from "react";
@@ -27,6 +27,7 @@ export function ConfirmationDialog({
 }: any) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const initialRef = useRef<HTMLButtonElement | null>(null);
+  const { colorMode } = useColorMode();
 
   // Use useEffect to trigger onOpen when isOpenTrigger changes
   useEffect(() => {
@@ -48,7 +49,7 @@ export function ConfirmationDialog({
         <ModalContent
           rounded={radiusStyle}
           m={2}
-          bg={useColorModeValue("white", "gray.900")}
+          bg={colorMode == "light" ? "white" : "gray.900"}
         >
           <ModalHeader>{captionMsg}</ModalHeader>
           <ModalCloseButton />

@@ -83,7 +83,7 @@ import {
 } from "react-icons/fi";
 import { AiFillFileExcel, AiFillFilePdf, AiFillFileWord } from "react-icons/ai";
 import { FaFileAlt } from "react-icons/fa";
-import { truncateText } from "@/app/helper/MasterHelper";
+import { ImagePreviewSM, truncateText } from "@/app/helper/MasterHelper";
 import LoadingMiniSignature from "@/app/components/loadingMini";
 import { TableComponentFull } from "@/app/components/tableComponents";
 import { Search2Icon } from "@chakra-ui/icons";
@@ -789,87 +789,5 @@ function HomePage() {
     </LayoutAdmin>
   );
 }
-
-const ImagePreviewSM = ({ data }: { data: AttachmentProps }) => {
-  const ImageModalDisc = useDisclosure();
-
-  return (
-    <Box
-      rounded={radiusStyle}
-      position="relative"
-      // boxSize="130px"
-      w={{ base: "40px", sm: "40px", md: "60px", lg: "60px" }}
-      h={{ base: "40px", sm: "40px", md: "60px", lg: "60px" }}
-      cursor="pointer"
-      p={1}
-      border={"1px solid"}
-      borderColor={"gray.300"}
-      onClick={() => ImageModalDisc.onOpen()}
-      _hover={{
-        "& > .previewOverlay": { opacity: 1 },
-      }}
-    >
-      <Image
-        rounded={radiusStyle}
-        src={data.src}
-        // boxSize="120px"
-        w={{ base: "30px", sm: "30px", md: "50px", lg: "50px" }}
-        h={{ base: "30px", sm: "30px", md: "50px", lg: "50px" }}
-        objectFit="cover"
-      />
-      {/* Hover overlay */}
-      <Box
-        rounded={radiusStyle}
-        className="previewOverlay"
-        position="absolute"
-        top={0}
-        left={0}
-        w="full"
-        h="full"
-        bg="rgba(0, 0, 0, 0.6)"
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        opacity={0}
-        transition="opacity 0.3s"
-      >
-        <Text fontSize="xs" fontWeight="light" color="white">
-          Preview
-        </Text>
-      </Box>
-
-      {/* Modal for image preview */}
-      <Modal
-        isOpen={ImageModalDisc.isOpen}
-        onClose={ImageModalDisc.onClose}
-        isCentered
-        size={"xl"} // Set to "xl" for a more responsive size
-      >
-        <ModalOverlay />
-        <ModalContent
-          rounded={radiusStyle}
-          maxW="90vw"
-          maxH="90vh"
-          bg="rgba(255, 255, 255, 0.1)" // Semi-transparent background for glass effect
-          backdropFilter="blur(10px)" // Apply blur for frosted glass effect
-          boxShadow="lg" // Optionally add shadow to enhance the look
-        >
-          <ModalCloseButton color={"white"} />
-          <ModalBody p={0}>
-            <Box
-              w="full"
-              h="80vh" // Set the height to make it fit within the modal size
-              backgroundPosition="center"
-              backgroundRepeat="no-repeat"
-              backgroundSize="contain" // Ensure the image fits well without stretching
-              backgroundImage={`url(${data.src})`}
-              rounded={radiusStyle}
-            />
-          </ModalBody>
-        </ModalContent>
-      </Modal>
-    </Box>
-  );
-};
 
 export default HomePage;

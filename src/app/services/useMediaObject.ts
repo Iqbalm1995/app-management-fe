@@ -43,6 +43,12 @@ export interface InsertMediaObjectPayload {
   file: File;
 }
 
+export interface InsertMediaObjectByKeyPayload {
+  KeyData: string;
+  KeyId: string;
+  file: File;
+}
+
 interface useMediaObjectServices {
   List: (
     payload: PaggingListPayload,
@@ -58,6 +64,10 @@ interface useMediaObjectServices {
   ) => Promise<ApiGenericResponse<MediaObjectResponse | null> | null>;
   InsertMediaObject: (
     payload: InsertMediaObjectPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<MediaObjectResponse | null> | null>;
+  InsertMediaObjectByKey: (
+    payload: InsertMediaObjectByKeyPayload,
     token: string
   ) => Promise<ApiGenericResponse<MediaObjectResponse | null> | null>;
   DeleteMediaObject: (
@@ -244,6 +254,55 @@ const useMediaObject = (): useMediaObjectServices => {
     }
   };
 
+  const InsertMediaObjectByKey = async (
+    payload: InsertMediaObjectByKeyPayload,
+    token: string
+  ): Promise<ApiGenericResponse<MediaObjectResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/MediaObjects/uploadFileByKey";
+
+    // Create FormData and append payload fields
+    const formData = new FormData();
+    formData.append("KeyData", payload.KeyData);
+    formData.append("KeyId", payload.KeyId);
+    formData.append("file", payload.file);
+
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<MediaObjectResponse | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
   const DeleteMediaObject = async (
     id: string,
     token: string
@@ -289,6 +348,7 @@ const useMediaObject = (): useMediaObjectServices => {
     List,
     GetDetailById,
     GetDetailByCode,
+    InsertMediaObjectByKey,
     InsertMediaObject,
     DeleteMediaObject,
     isLoading,

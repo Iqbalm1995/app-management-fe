@@ -28,13 +28,7 @@ import { useDropzone } from "react-dropzone";
 import { AiFillFileExcel, AiFillFilePdf, AiFillFileWord } from "react-icons/ai";
 import { FaFileAlt } from "react-icons/fa";
 import { truncateText } from "../helper/MasterHelper";
-
-export interface FileDetails {
-  name: string;
-  extension: string;
-  size: number;
-  file: File; // Adding the file object itself for multipart upload
-}
+import { FileDetails } from "../types/masterTypes";
 
 export function DropZoneComponent() {
   const [files, setFiles] = useState<File[]>([]);
@@ -93,6 +87,14 @@ export function DropZoneComponent() {
 
   const handleResetListUpload = () => {
     setFiles([]);
+  };
+  const handleRemoveFile = (indexToRemove: number) => {
+    setFiles((prevFiles) =>
+      prevFiles.filter((_, idx) => idx !== indexToRemove)
+    );
+    setPreviews((prevPreviews) =>
+      prevPreviews.filter((_, idx) => idx !== indexToRemove)
+    );
   };
 
   return (
@@ -183,6 +185,14 @@ export function DropZoneComponent() {
                 <Text fontSize="sm" mt={2} textAlign="center">
                   {truncateText(file.name, 20)}
                 </Text>
+                <Button
+                  size="xs"
+                  colorScheme="red"
+                  mt={1}
+                  onClick={() => handleRemoveFile(index)}
+                >
+                  Remove
+                </Button>
               </Box>
             </Tooltip>
           </GridItem>

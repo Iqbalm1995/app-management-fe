@@ -228,6 +228,60 @@ export interface AppsEnvUpdateAccountAllPayload {
   accountsDesc: string | null;
 }
 
+export interface ProjectFeatureResponse {
+  id: string;
+  projectId: string;
+  featureName: string;
+  featureDesc: string | null;
+  featureSide: string | null;
+  maintenanceCategory: string;
+  maintenanceType: string;
+  rppb: string | null;
+  licensing: string | null;
+  featureStartDate: string | null;
+  featureEndDate: string | null;
+  urgency: string;
+  impact: string;
+  priority: string;
+  developmentStatus: string;
+  createdAt: string;
+  createdBy: string;
+}
+
+export interface ProjectFeatureInsertPayload {
+  projectId: string;
+  featureName: string;
+  featureDesc: string | null;
+  featureSide: string | null;
+  maintenanceCategory: string | null;
+  maintenanceType: string | null;
+  rppb: string | null;
+  licensing: string | null;
+  featureStartDate: string | null;
+  featureEndDate: string | null;
+  urgency: string | null;
+  impact: string | null;
+  priority: string | null;
+  developmentStatus: string | null;
+}
+
+export interface ProjectFeatureUpdatePayload {
+  id: string;
+  featureName: string;
+  featureDesc: string | null;
+  featureSide: string | null;
+  maintenanceCategory: string | null;
+  maintenanceType: string | null;
+  rppb: string | null;
+  licensing: string | null;
+  featureStartDate: string | null;
+  featureEndDate: string | null;
+  urgency: string | null;
+  impact: string | null;
+  priority: string | null;
+  developmentStatus: string | null;
+}
+
 interface useProjectsServices {
   List: (
     payload: PaggingListPayload,
@@ -263,6 +317,10 @@ interface useProjectsServices {
     token: string
   ) => Promise<ApiGenericResponse<AppsResponse[] | null> | null>;
   GetDetailAppsById: (
+    projectId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<AppsResponse | null> | null>;
+  GetDetailAppsByProjectId: (
     projectId: string,
     token: string
   ) => Promise<ApiGenericResponse<AppsResponse | null> | null>;
@@ -364,6 +422,28 @@ interface useProjectsServices {
   ) => Promise<ApiGenericResponse<string | null> | null>;
   UpdateAppsEnvAll: (
     payload: AppsEnvUpdateAllPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+
+  // logs
+  ListProjectFeatures: (
+    payload: PaggingListPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<ProjectFeatureResponse[] | null> | null>;
+  GetDetailProjectFeatureById: (
+    id: string,
+    token: string
+  ) => Promise<ApiGenericResponse<ProjectFeatureResponse | null> | null>;
+  InsertProjectFeature: (
+    payload: ProjectFeatureInsertPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  UpdateProjectFeature: (
+    payload: ProjectFeatureUpdatePayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  DeleteProjectFeature: (
+    id: string,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
 
@@ -707,6 +787,47 @@ const useProjects = (): useProjectsServices => {
   };
 
   const GetDetailAppsById = async (
+    id: string,
+    token: string
+  ): Promise<ApiGenericResponse<AppsResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Projects/apps/${id}`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<AppsResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const GetDetailAppsByProjectId = async (
     projectId: string,
     token: string
   ): Promise<ApiGenericResponse<AppsResponse | null> | null> => {
@@ -716,7 +837,7 @@ const useProjects = (): useProjectsServices => {
       ENDPOINT_API_BASEURL,
       ENDPOINT_PORT_BASIC
     );
-    const PathEndpoint: string = `/v1/Projects/apps/${projectId}`;
+    const PathEndpoint: string = `/v1/Projects/apps/project/${projectId}`;
     try {
       const response = await axiosInstance.get<
         ApiGenericResponse<AppsResponse>
@@ -1748,6 +1869,213 @@ const useProjects = (): useProjectsServices => {
     }
   };
 
+  const ListProjectFeatures = async (
+    payload: PaggingListPayload,
+    token: string
+  ): Promise<ApiGenericResponse<ProjectFeatureResponse[] | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/ProjectFeatures/list";
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<ProjectFeatureResponse[]>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const GetDetailProjectFeatureById = async (
+    id: string,
+    token: string
+  ): Promise<ApiGenericResponse<ProjectFeatureResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/ProjectFeatures/${id}`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<ProjectFeatureResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const InsertProjectFeature = async (
+    payload: ProjectFeatureInsertPayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/ProjectFeatures/insert";
+
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const UpdateProjectFeature = async (
+    payload: ProjectFeatureUpdatePayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/ProjectFeatures/update";
+
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const DeleteProjectFeature = async (
+    id: string,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Projects/apps/logs/${id}`;
+    try {
+      const response = await axiosInstance.delete<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
   return {
     List,
     GetDetailById,
@@ -1758,6 +2086,7 @@ const useProjects = (): useProjectsServices => {
     UpdatePIC,
     ListApps,
     GetDetailAppsById,
+    GetDetailAppsByProjectId,
     InsertProjectsApps,
     UpdateProjectsApps,
     UploadIconProjectsApps,
@@ -1782,6 +2111,13 @@ const useProjects = (): useProjectsServices => {
     UpdateAppsEnvAccount,
     DeleteAppsEnvAccount,
     UpdateAppsEnvAll,
+
+    ListProjectFeatures,
+    GetDetailProjectFeatureById,
+    InsertProjectFeature,
+    UpdateProjectFeature,
+    DeleteProjectFeature,
+
     isLoading,
     error,
   };

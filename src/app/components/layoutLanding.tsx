@@ -11,15 +11,14 @@ import {
   Spacer,
   Stack,
   Text,
-  useColorModeValue,
+  useColorMode,
 } from "@chakra-ui/react";
 import { LoadingOverlay } from "./loadingOverlay";
 import TopNavigationLanding from "./landingTopNavigation";
-import { usePathname } from "next/navigation";
 import SignatureLineColor from "./signatureStyle";
+import Head from "next/head";
 
 const LayoutLanding = ({ children }: { children: ReactNode }) => {
-  const pathname = usePathname();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -29,28 +28,24 @@ const LayoutLanding = ({ children }: { children: ReactNode }) => {
   }, []);
 
   return (
-    <>
-      <Box position="relative" minHeight="90vh">
+    <Box position="relative" minHeight="90vh">
+      <Head>
         <title>KOBRA - Applications Management</title>
-        <LoadingOverlay isLoading={loading} />
-        <Box
-          opacity={loading ? 0.5 : 1}
-          pointerEvents={loading ? "none" : "auto"}
-        >
-          <TopNavigationLanding />
-          {children}
-          <FooterAdminPanel />
-          <SignatureLineColor />
-        </Box>
-      </Box>
-    </>
+      </Head>
+      <LoadingOverlay isLoading={loading} />
+      <TopNavigationLanding />
+      {children}
+      <FooterAdminPanel />
+      <SignatureLineColor />
+    </Box>
   );
 };
 
 export const FooterAdminPanel = () => {
+  const { colorMode } = useColorMode();
   return (
     <Box
-      bg={useColorModeValue("primary.800", "gray.900")}
+      bg={colorMode == "light" ? "primary.800" : "gray.900"}
       color={"white"}
       px={3}
       py={3}

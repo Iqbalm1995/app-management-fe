@@ -569,7 +569,7 @@ const TeamProfileSettingProps = () => {
                   isRequired
                 >
                   <InputLayoutFull>
-                    <FormLabel h={"full"} py={3}>
+                    <FormLabel h={"full"} mt={2}>
                       Team Name
                     </FormLabel>
                     <Stack spacing={0}>
@@ -601,7 +601,7 @@ const TeamProfileSettingProps = () => {
                   isInvalid={formik.errors.teamDesc ? true : false}
                 >
                   <InputLayoutFull>
-                    <FormLabel h={"full"} py={3}>
+                    <FormLabel h={"full"} mt={2}>
                       Team Descriptions
                     </FormLabel>
                     <Stack spacing={0}>
@@ -1320,7 +1320,7 @@ const TeamMembersProps = () => {
                 {!IsEditMode && (
                   <FormControl id="searchUser" isRequired>
                     <InputLayoutFull>
-                      <FormLabel h={"full"} py={3}>
+                      <FormLabel h={"full"} mt={2}>
                         Search User
                       </FormLabel>
                       <Stack spacing={0}>
@@ -1406,7 +1406,7 @@ const TeamMembersProps = () => {
 
                 <FormControl id="setTeamRole" isRequired>
                   <InputLayoutFull>
-                    <FormLabel h={"full"} py={3}>
+                    <FormLabel h={"full"} mt={2}>
                       Team Role As?
                     </FormLabel>
                     <Stack spacing={0}>
@@ -2002,7 +2002,7 @@ const TeamRoleProps = () => {
                   isRequired
                 >
                   <InputLayoutFull>
-                    <FormLabel h={"full"} py={3}>
+                    <FormLabel h={"full"} mt={2}>
                       Team Role Code
                     </FormLabel>
                     <Stack spacing={0}>
@@ -2044,7 +2044,7 @@ const TeamRoleProps = () => {
                   isRequired
                 >
                   <InputLayoutFull>
-                    <FormLabel h={"full"} py={3}>
+                    <FormLabel h={"full"} mt={2}>
                       Team Role Name
                     </FormLabel>
                     <Stack spacing={0}>

@@ -464,7 +464,7 @@ const ProjectSummary = ({ data, refreshActionMain }: ProjectSummaryProps) => {
                 <Flex as={Stack} w={"full"} pt={4}>
                   <FormControl id="searchUser" isRequired>
                     <InputLayoutFull>
-                      <FormLabel h={"full"} py={3}>
+                      <FormLabel h={"full"} mt={2}>
                         Search User
                       </FormLabel>
                       <Stack spacing={0}>

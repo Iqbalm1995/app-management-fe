@@ -11,6 +11,7 @@ import SidebarWithHeader from "@/app/components/sidebar";
 import {
   boardDoneLabel,
   boardInProgressLabel,
+  boardInReview,
   boardToDoLabel,
   radiusStyle,
 } from "@/app/constants/applicationConstants";
@@ -78,6 +79,7 @@ function KanbanPage() {
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
   const [todoTasks, setTodoTasks] = useState<Task[]>([]);
   const [inProgressTasks, setInProgressTasks] = useState<Task[]>([]);
+  const [inReviewTask, setInReviewTasks] = useState<Task[]>([]);
   const [doneTask, setDoneTasks] = useState<Task[]>([]);
 
   const [isHovered, setIsHovered] = useState(false);
@@ -121,12 +123,13 @@ function KanbanPage() {
   };
 
   const handleDrop = (
-    targetList: "toDo" | "inProgress" | "done",
+    targetList: "toDo" | "inProgress" | "inReview" | "done",
     e: React.DragEvent
   ) => {
     const taskLists = {
       toDo: todoTasks,
       inProgress: inProgressTasks,
+      inReview: inReviewTask,
       done: doneTask,
     };
     if (!draggedTask) return;
@@ -159,10 +162,17 @@ function KanbanPage() {
       if (todoTasks.filter((task) => task.id === draggedTask.id).length <= 0) {
         // if same task is found in todoTasks then remove from todoTasks
         setTodoTasks(updatedTargetTasks);
+        // update Inprogress Task
         setInProgressTasks(
           inProgressTasks.filter((task) => task.id !== draggedTask.id)
         );
         updateTaskIndex(draggedTask.id, newIndex, setInProgressTasks);
+        // update inreview task
+        setInReviewTasks(
+          inReviewTask.filter((task) => task.id !== draggedTask.id)
+        );
+        updateTaskIndex(draggedTask.id, newIndex, setInReviewTasks);
+        // update done task
         setDoneTasks(doneTask.filter((task) => task.id !== draggedTask.id));
         updateTaskIndex(draggedTask.id, newIndex, setDoneTasks);
       } else {
@@ -177,8 +187,15 @@ function KanbanPage() {
       ) {
         // if same task is found in todoTasks then remove from todoTasks
         setInProgressTasks(updatedTargetTasks);
+        // update todo task
         setTodoTasks(todoTasks.filter((task) => task.id !== draggedTask.id));
         updateTaskIndex(draggedTask.id, newIndex, setTodoTasks);
+        // update inreview task
+        setInReviewTasks(
+          inReviewTask.filter((task) => task.id !== draggedTask.id)
+        );
+        updateTaskIndex(draggedTask.id, newIndex, setInReviewTasks);
+        // update done task
         setDoneTasks(doneTask.filter((task) => task.id !== draggedTask.id));
         updateTaskIndex(draggedTask.id, newIndex, setDoneTasks);
       } else {
@@ -187,16 +204,45 @@ function KanbanPage() {
       }
     }
 
+    if (targetList === boardInReview) {
+      if (
+        inReviewTask.filter((task) => task.id === draggedTask.id).length <= 0
+      ) {
+        // if same task is found in todoTasks then remove from todoTasks
+        setInReviewTasks(updatedTargetTasks);
+        // update todo task
+        setTodoTasks(todoTasks.filter((task) => task.id !== draggedTask.id));
+        updateTaskIndex(draggedTask.id, newIndex, setTodoTasks);
+        // update Inprogress Task
+        setInProgressTasks(
+          inProgressTasks.filter((task) => task.id !== draggedTask.id)
+        );
+        // update done task
+        setDoneTasks(doneTask.filter((task) => task.id !== draggedTask.id));
+        updateTaskIndex(draggedTask.id, newIndex, setDoneTasks);
+      } else {
+        // if same task is not found in todoTasks then remove from inProgressTasks
+        updateTaskIndex(draggedTask.id, newIndex, setInReviewTasks);
+      }
+    }
+
     if (targetList === boardDoneLabel) {
       if (doneTask.filter((task) => task.id === draggedTask.id).length <= 0) {
         // if same task is found in todoTasks then remove from todoTasks
         setDoneTasks(updatedTargetTasks);
+        // update todo task
         setTodoTasks(todoTasks.filter((task) => task.id !== draggedTask.id));
         updateTaskIndex(draggedTask.id, newIndex, setTodoTasks);
+        // update Inprogress Task
         setInProgressTasks(
           inProgressTasks.filter((task) => task.id !== draggedTask.id)
         );
         updateTaskIndex(draggedTask.id, newIndex, setInProgressTasks);
+        // update inreview task
+        setInReviewTasks(
+          inReviewTask.filter((task) => task.id !== draggedTask.id)
+        );
+        updateTaskIndex(draggedTask.id, newIndex, setInReviewTasks);
       } else {
         // if same task is not found in todoTasks then remove from inProgressTasks
         updateTaskIndex(draggedTask.id, newIndex, setDoneTasks);
@@ -247,136 +293,228 @@ function KanbanPage() {
         </Button>
       </Box>
 
-      <Box p={4}>
-        <Wrap spacing={4} minH={"75vh"}>
-          <WrapItem width={{ base: "full", md: "350px" }}>
-            {/* To-Do Tasks */}
+      <Grid templateColumns="repeat(4, 1fr)" gap={5} w={"full"}>
+        <GridItem colSpan={{ base: 4, sm: 4, md: 1, lg: 1 }}>
+          <Box
+            w={"full"}
+            h={"350px"}
+            borderRadius={"3xl"}
+            bg={"gray.300"}
+            overflowY={"auto"}
+            fontSize={"x-small"}
+          >
+            <pre>{JSON.stringify(todoTasks, null, 2)}</pre>
+          </Box>
+        </GridItem>
+        <GridItem colSpan={{ base: 4, sm: 4, md: 1, lg: 1 }}>
+          <Box
+            w={"full"}
+            h={"350px"}
+            borderRadius={"3xl"}
+            bg={"gray.300"}
+            overflowY={"auto"}
+            fontSize={"x-small"}
+          >
+            <pre>{JSON.stringify(inProgressTasks, null, 2)}</pre>
+          </Box>
+        </GridItem>{" "}
+        <GridItem colSpan={{ base: 4, sm: 4, md: 1, lg: 1 }}>
+          <Box
+            w={"full"}
+            h={"350px"}
+            borderRadius={"3xl"}
+            bg={"gray.300"}
+            overflowY={"auto"}
+            fontSize={"x-small"}
+          >
+            <pre>{JSON.stringify(inReviewTask, null, 2)}</pre>
+          </Box>
+        </GridItem>
+        <GridItem colSpan={{ base: 4, sm: 4, md: 1, lg: 1 }}>
+          <Box
+            w={"full"}
+            h={"350px"}
+            borderRadius={"3xl"}
+            bg={"gray.300"}
+            overflowY={"auto"}
+            fontSize={"x-small"}
+          >
+            <pre>{JSON.stringify(doneTask, null, 2)}</pre>
+          </Box>
+        </GridItem>
+        <GridItem colSpan={{ base: 4, sm: 4, md: 1, lg: 1 }}></GridItem>
+      </Grid>
+
+      <Grid templateColumns="repeat(4, 1fr)" gap={5} w={"full"}>
+        <GridItem colSpan={{ base: 4, sm: 4, md: 1, lg: 1 }}>
+          {/* To-Do Tasks */}
+          <Flex
+            as={Stack}
+            direction="column"
+            spacing={4}
+            width={"full"}
+            bg={"white"}
+            rounded={radiusStyle}
+            boxShadow={"md"}
+            p={5}
+            minH={"75vh"}
+            onDragOver={handleDragOver}
+            onDrop={(e) => handleDrop("toDo", e)}
+            onDragLeave={handleDragLeave}
+            transition="all 0.3s ease"
+            border={isHovered ? "2px dashed blue" : "none"}
+          >
+            <Heading size="md" mb={4}>
+              To Do
+            </Heading>
+            {todoTasks
+              .sort((a, b) => a.index - b.index)
+              .map((task) => (
+                <Task
+                  key={task.id} // Important: Add a key prop here!
+                  task={task}
+                  handleDragStart={handleDragStart}
+                  handleDragEnd={handleDragEnd}
+                />
+              ))}
             <Flex
-              as={Stack}
-              direction="column"
-              spacing={4}
-              width={"full"}
-              bg={"white"}
-              rounded={radiusStyle}
-              boxShadow={"md"}
-              p={5}
-              minH={"75vh"}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop("toDo", e)}
-              onDragLeave={handleDragLeave}
-              transition="all 0.3s ease"
-              border={isHovered ? "2px dashed blue" : "none"}
+              w={"full"}
+              h={"50vh"}
+              justifyContent={"center"}
+              alignItems={"center"}
+              display={isLoading ? "flex" : "none"}
             >
-              <Heading size="md" mb={4}>
-                To Do
-              </Heading>
-              {todoTasks
-                .sort((a, b) => a.index - b.index)
-                .map((task) => (
-                  <Task
-                    key={task.id} // Important: Add a key prop here!
-                    task={task}
-                    handleDragStart={handleDragStart}
-                    handleDragEnd={handleDragEnd}
-                  />
-                ))}
-              <Flex
-                w={"full"}
-                h={"50vh"}
-                justifyContent={"center"}
-                alignItems={"center"}
-                display={isLoading ? "flex" : "none"}
-              >
-                <Spinner />
-              </Flex>
+              <Spinner />
             </Flex>
-          </WrapItem>
-          <WrapItem width={{ base: "full", md: "350px" }}>
-            {/* In-Progress Tasks */}
+          </Flex>
+        </GridItem>
+        <GridItem colSpan={{ base: 4, sm: 4, md: 1, lg: 1 }}>
+          {/* In-Progress Tasks */}
+          <Flex
+            as={Stack}
+            direction="column"
+            spacing={4}
+            width={"full"}
+            bg={"white"}
+            rounded={radiusStyle}
+            boxShadow={"md"}
+            p={5}
+            minH={"75vh"}
+            onDragOver={handleDragOver}
+            onDrop={(e) => handleDrop("inProgress", e)}
+            onDragLeave={handleDragLeave}
+            transition="all 0.3s ease"
+            border={isHovered ? "2px dashed green" : "none"}
+          >
+            <Heading size="md" mb={4}>
+              In Progress
+            </Heading>
+            {inProgressTasks
+              .sort((a, b) => a.index - b.index)
+              .map((task) => (
+                <Task
+                  key={task.id} // Important: Add a key prop here!
+                  task={task}
+                  handleDragStart={handleDragStart}
+                  handleDragEnd={handleDragEnd}
+                />
+              ))}
             <Flex
-              as={Stack}
-              direction="column"
-              spacing={4}
-              width={"full"}
-              bg={"white"}
-              rounded={radiusStyle}
-              boxShadow={"md"}
-              p={5}
-              minH={"75vh"}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop("inProgress", e)}
-              onDragLeave={handleDragLeave}
-              transition="all 0.3s ease"
-              border={isHovered ? "2px dashed green" : "none"}
+              w={"full"}
+              h={"50vh"}
+              justifyContent={"center"}
+              alignItems={"center"}
+              display={isLoading ? "flex" : "none"}
             >
-              <Heading size="md" mb={4}>
-                In Progress
-              </Heading>
-              {inProgressTasks
-                .sort((a, b) => a.index - b.index)
-                .map((task) => (
-                  <Task
-                    key={task.id} // Important: Add a key prop here!
-                    task={task}
-                    handleDragStart={handleDragStart}
-                    handleDragEnd={handleDragEnd}
-                  />
-                ))}
-              <Flex
-                w={"full"}
-                h={"50vh"}
-                justifyContent={"center"}
-                alignItems={"center"}
-                display={isLoading ? "flex" : "none"}
-              >
-                <Spinner />
-              </Flex>
+              <Spinner />
             </Flex>
-          </WrapItem>
-          <WrapItem width={{ base: "full", md: "350px" }}>
-            {/* Done Tasks */}
+          </Flex>
+        </GridItem>
+        <GridItem colSpan={{ base: 4, sm: 4, md: 1, lg: 1 }}>
+          {/* In-Review Tasks */}
+          <Flex
+            as={Stack}
+            direction="column"
+            spacing={4}
+            width={"full"}
+            bg={"white"}
+            rounded={radiusStyle}
+            boxShadow={"md"}
+            p={5}
+            minH={"75vh"}
+            onDragOver={handleDragOver}
+            onDrop={(e) => handleDrop("inReview", e)}
+            onDragLeave={handleDragLeave}
+            transition="all 0.3s ease"
+            border={isHovered ? "2px dashed green" : "none"}
+          >
+            <Heading size="md" mb={4}>
+              In Review
+            </Heading>
+            {inReviewTask
+              .sort((a, b) => a.index - b.index)
+              .map((task) => (
+                <Task
+                  key={task.id} // Important: Add a key prop here!
+                  task={task}
+                  handleDragStart={handleDragStart}
+                  handleDragEnd={handleDragEnd}
+                />
+              ))}
             <Flex
-              as={Stack}
-              direction="column"
-              spacing={4}
-              width={"full"}
-              bg={"white"}
-              rounded={radiusStyle}
-              boxShadow={"md"}
-              p={5}
-              minH={"75vh"}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop("done", e)}
-              onDragLeave={handleDragLeave}
-              transition="all 0.3s ease"
-              border={isHovered ? "2px dashed green" : "none"}
+              w={"full"}
+              h={"50vh"}
+              justifyContent={"center"}
+              alignItems={"center"}
+              display={isLoading ? "flex" : "none"}
             >
-              <Heading size="md" mb={4}>
-                Done
-              </Heading>
-              {doneTask
-                .sort((a, b) => a.index - b.index)
-                .map((task) => (
-                  <Task
-                    key={task.id} // Important: Add a key prop here!
-                    task={task}
-                    handleDragStart={handleDragStart}
-                    handleDragEnd={handleDragEnd}
-                  />
-                ))}
-              <Flex
-                w={"full"}
-                h={"50vh"}
-                justifyContent={"center"}
-                alignItems={"center"}
-                display={isLoading ? "flex" : "none"}
-              >
-                <Spinner />
-              </Flex>
+              <Spinner />
             </Flex>
-          </WrapItem>
-        </Wrap>
-      </Box>
+          </Flex>
+        </GridItem>
+        <GridItem colSpan={{ base: 4, sm: 4, md: 1, lg: 1 }}>
+          {/* Done Tasks */}
+          <Flex
+            as={Stack}
+            direction="column"
+            spacing={4}
+            width={"full"}
+            bg={"white"}
+            rounded={radiusStyle}
+            boxShadow={"md"}
+            p={5}
+            minH={"75vh"}
+            onDragOver={handleDragOver}
+            onDrop={(e) => handleDrop("done", e)}
+            onDragLeave={handleDragLeave}
+            transition="all 0.3s ease"
+            border={isHovered ? "2px dashed green" : "none"}
+          >
+            <Heading size="md" mb={4}>
+              Done
+            </Heading>
+            {doneTask
+              .sort((a, b) => a.index - b.index)
+              .map((task) => (
+                <Task
+                  key={task.id} // Important: Add a key prop here!
+                  task={task}
+                  handleDragStart={handleDragStart}
+                  handleDragEnd={handleDragEnd}
+                />
+              ))}
+            <Flex
+              w={"full"}
+              h={"50vh"}
+              justifyContent={"center"}
+              alignItems={"center"}
+              display={isLoading ? "flex" : "none"}
+            >
+              <Spinner />
+            </Flex>
+          </Flex>
+        </GridItem>
+      </Grid>
     </LayoutAdmin>
   );
 }
@@ -564,6 +702,7 @@ const Task: React.FC<TaskProps> = ({
           </Flex>
         </Flex>
       </Flex>
+      {/* DETAIL TASK MODAL */}
       <Modal
         isCentered
         onClose={TaskModalDisc.onClose}
