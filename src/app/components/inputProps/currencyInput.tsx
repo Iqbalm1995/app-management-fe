@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 interface CurrencyInputProps extends Omit<InputProps, "onChange"> {
   value: number;
   name: string;
+  fieldCustom?: string;
   onChange: (field: string, value: number, shouldValidate?: boolean) => void;
 }
 
@@ -18,6 +19,7 @@ export default function CurrencyInput({
   value,
   onChange,
   name,
+  fieldCustom,
   ...rest
 }: CurrencyInputProps) {
   const [displayValue, setDisplayValue] = useState("");
@@ -39,7 +41,7 @@ export default function CurrencyInput({
     const input = e.target.value;
     const parsed = parseCurrency(input);
     setDisplayValue(formatCurrency(parsed));
-    onChange(name, parsed);
+    onChange(fieldCustom != null ? fieldCustom : name, parsed);
   };
 
   return (

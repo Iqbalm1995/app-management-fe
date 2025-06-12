@@ -1,5 +1,12 @@
 import { OptionListProps } from "../types/masterTypes";
 
+// CONST DATA =------------------------------------------------------------------
+
+export const DIVISION_ID_IT_BJB: string =
+  "c16c8808-f096-4a42-ac0b-3e7b8cc1c813";
+
+// CONST DATA =------------------------------------------------------------------
+
 // STYLE
 export const radiusStyle: string = "2xl";
 
@@ -59,10 +66,12 @@ export const BASE_PORT_MAIN: string = "8998";
 
 // Base Url Endpoint API
 export const ENDPOINT_API_BASEURL: string = "http://192.168.239.117";
+// export const ENDPOINT_API_BASEURL: string = "https://localhost:2332";
 export const ENDPOINT_PORT_BASIC: string = "2332";
 
 // Base Url Endpoint API
 export const ENDPOINT_API_BASEURL_OBJECT: string = "http://192.168.239.117";
+// export const ENDPOINT_API_BASEURL_OBJECT: string = "https://localhost:2332";
 export const ENDPOINT_PORT_BASIC_OBJECT: string = "2332";
 
 // generic response error
@@ -168,3 +177,51 @@ export const REQ_STATUS_TEMPORARY_APPROVED: string = "TEMPORARY APPROVED";
 export const REQ_STATUS_APPROVED: string = "APPROVED";
 export const REQ_STATUS_ON_HOLD: string = "ON HOLD";
 export const REQ_STATUS_CANCELED: string = "CANCELED";
+
+// appAccessMedi value
+export const APP_ACCESS_MEDIA_INTERNET: string = "INTERNET";
+export const APP_ACCESS_MEDIA_INTRANET: string = "INTRANET";
+
+export const APP_TYPE_OPTIONS = [
+  "CLIENT BASED",
+  "API",
+  "WEB BASED",
+  "WEB VIEW",
+  "MOBILE ANDROID",
+  "MOBILE iOS",
+  "OTHER",
+];
+
+export const APP_RELATED_OPTIONS = ["NON-REGULATOR", "REGULATOR"];
+
+export const APP_TRANSACTIONAL_OPTIONS = ["TRANSACTIONAL", "NON-REGULATOR"];
+
+export const APP_OPERATIONAL_OPTIONS = ["24-HOUR", "NO"];
+
+export const shortDay = ["S", "M", "T", "W", "T", "F", "S"];
+export const fullDay = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
+
+export const allDaysString = fullDay.join(", ");
+
+export const APP_ENV_LOCATION_OPTIONS = [
+  "ON-PREMISE DC1",
+  "ON-PREMISE DC2",
+  "AWS CLOUD",
+  "GOOGLE CLOUD",
+  "OTHER",
+];
+
+export const APP_INTEGRATED_OTHER_APPS = [
+  "CORE BANKING",
+  "SWITCHING",
+  "MIDDLEWARE",
+  "DATA WAREHOUSE",
+];

@@ -52,7 +52,6 @@ import {
   FiFileText,
   FiInfo,
 } from "react-icons/fi";
-import RequirementDetailInfoSection from "./requirementDetailInfoSection";
 import RequirementBacklogsSection from "./requirementBacklogsSection";
 import RequirementFilesSection from "./requirementFilesSection";
 import { FaCheckToSlot } from "react-icons/fa6";
@@ -68,7 +67,7 @@ function BrdDetailView() {
   const searchParams = useSearchParams();
   const { colorMode } = useColorMode();
 
-  const { GetDetailById, UpdateReq } = useRequirements();
+  const { GetDetailById } = useRequirements();
 
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
@@ -114,7 +113,7 @@ function BrdDetailView() {
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
 
   useEffect(() => {
-    if (DataAuth && DataAuth.teamMember && ReqId) {
+    if (DataAuth && DataAuth.team && ReqId) {
       setIsLoadingProcess(true);
       const GetDataList = async () => {
         const requestData = await GetDetailById(ReqId, tokenData);
@@ -243,7 +242,7 @@ function BrdDetailView() {
                         boxShadow: "md",
                       }}
                       isDisabled={!DataRequirement}
-                      display={"none"}
+                      // display={"none"}
                     >
                       <FaCheckToSlot />
                       <Text pl={2}>Review Approval</Text>
@@ -252,11 +251,14 @@ function BrdDetailView() {
                   <TabPanels pt={8}>
                     {/* 1 */}
                     <TabPanel px={0}>
-                      <RequirementDetailInfoSection
+                      <Text fontSize={"lg"} fontWeight={"bold"}>
+                        Coming Soon
+                      </Text>
+                      {/* <RequirementDetailInfoSection
                         ReqData={DataRequirement}
                         RefreshData={RefreshData}
                         RefreshAction={RefreshAction}
-                      />
+                      /> */}
                     </TabPanel>
                     {/* 2 */}
                     <TabPanel px={0}>

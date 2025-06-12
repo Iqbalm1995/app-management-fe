@@ -384,7 +384,7 @@ const AppInfromationSection = ({ handleHeaderTittle }: AppsManagePageProps) => {
   const handleUpdateData = async () => {
     setActionLoading(true);
     await delay(DELAY_MEDIUM);
-    if (DataAuth && DataAuth.teamMember && UpdatePayload) {
+    if (DataAuth && DataAuth.team && UpdatePayload) {
       await UpdateAppsServ();
       setIsEditMode(false);
     } else {
@@ -475,7 +475,7 @@ const AppInfromationSection = ({ handleHeaderTittle }: AppsManagePageProps) => {
   };
 
   useEffect(() => {
-    if (DataAuth && DataAuth.teamMember && AppsId) {
+    if (DataAuth && DataAuth.team && AppsId) {
       setIsLoadingProcess(true);
       const GetDataList = async () => {
         const requestData = await GetDetailAppsById(AppsId, tokenData);
@@ -561,7 +561,7 @@ const AppInfromationSection = ({ handleHeaderTittle }: AppsManagePageProps) => {
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (DataAuth && DataAuth.teamMember && AppsId) {
+    if (DataAuth && DataAuth.team && AppsId) {
       if (file) {
         if (file.type.startsWith("image/")) {
           const imageUrl = URL.createObjectURL(file); // Generate a URL for the image preview
@@ -1305,7 +1305,7 @@ const AppChangeLogSection = () => {
   );
 
   useEffect(() => {
-    if (DataAuth && DataAuth.teamMember) {
+    if (DataAuth && DataAuth.team) {
       const PayloadList: PaggingListPayload = {
         search: globalFilter,
         limit: pageSize,
@@ -1451,7 +1451,7 @@ const AppChangeLogSection = () => {
 
   const ModalForm = useDisclosure();
   const handleAddNew = () => {
-    if ((DataAuth && DataAuth.teamMember, AppsId)) {
+    if ((DataAuth && DataAuth.team, AppsId)) {
       formik.setFieldValue("id", null);
       formik.setFieldValue("appsId", AppsId);
       formik.setFieldValue("logTitle", "");
@@ -1471,7 +1471,7 @@ const AppChangeLogSection = () => {
   const handleEditData = async (id: string) => {
     setActionLoading(true);
     await delay(DELAY_MEDIUM);
-    if (DataAuth && DataAuth.teamMember) {
+    if (DataAuth && DataAuth.team) {
       const GetData: AppsLogsResponse | null = await GetDetailLogAppsServ(id);
       if (GetData == null) return;
       formik.setFieldValue("id", GetData.id);
@@ -1620,7 +1620,7 @@ const AppChangeLogSection = () => {
   const handleDeleteData = async () => {
     setActionLoading(true);
     await delay(DELAY_MEDIUM);
-    if (DataAuth && DataAuth.teamMember && detailData) {
+    if (DataAuth && DataAuth.team && detailData) {
       await DeleteAppsLogServ(detailData);
     } else {
       showToast({
@@ -1947,7 +1947,7 @@ const AppsEnvirontmentSection = () => {
   );
 
   useEffect(() => {
-    if (DataAuth && DataAuth.teamMember) {
+    if (DataAuth && DataAuth.team) {
       const PayloadList: PaggingListPayload = {
         search: globalFilter,
         limit: pageSize,
@@ -2266,7 +2266,7 @@ const AppsEnvirontmentSection = () => {
   const ModalForm = useDisclosure();
 
   const handleAddNewAccount = () => {
-    if ((DataAuth && DataAuth.teamMember, AppsId)) {
+    if ((DataAuth && DataAuth.team, AppsId)) {
       setEditModeAccount(false);
       formikAccountENV.setFieldValue("id", null);
       formikAccountENV.setFieldValue("accountsName", "");
@@ -2342,7 +2342,7 @@ const AppsEnvirontmentSection = () => {
       return;
     }
 
-    if ((DataAuth && DataAuth.teamMember, AppsId)) {
+    if ((DataAuth && DataAuth.team, AppsId)) {
       setEditModeAccount(false);
       const PayloadNewData: AppsEnvInsertPayload = {
         appsId: AppsId,
@@ -2388,7 +2388,7 @@ const AppsEnvirontmentSection = () => {
   const DeleteDataEnv = async () => {
     setActionLoading(true);
     await delay(DELAY_MEDIUM);
-    if (DataAuth && DataAuth.teamMember && DetailEnv) {
+    if (DataAuth && DataAuth.team && DetailEnv) {
       await DeleteEnvDataServ(DetailEnv.id);
     } else {
       showToast({

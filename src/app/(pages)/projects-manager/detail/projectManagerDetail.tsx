@@ -174,7 +174,7 @@ function ProjectManagerDetail() {
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
 
   useEffect(() => {
-    if (DataAuth && DataAuth.teamMember && projectId) {
+    if (DataAuth && DataAuth.team && projectId) {
       setIsLoadingProcess(true);
       const GetDataList = async () => {
         const requestData = await GetDetailById(projectId, tokenData);
@@ -397,7 +397,7 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
   const handleUpdateData = async () => {
     setActionLoading(true);
     await delay(DELAY_MEDIUM);
-    if (DataAuth && DataAuth.teamMember && UpdatePayload) {
+    if (DataAuth && DataAuth.team && UpdatePayload) {
       await UpdateTeamServ();
       setIsEditMode(false);
     } else {
@@ -456,7 +456,7 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
   };
 
   useEffect(() => {
-    if (DataAuth && DataAuth.teamMember && projectId) {
+    if (DataAuth && DataAuth.team && projectId) {
       setIsLoadingProcess(true);
       const GetDataList = async () => {
         const requestData = await GetDetailById(projectId, tokenData);
@@ -490,7 +490,7 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
           formik.setFieldValue("projectDesc", itemsData.projectDesc);
           formik.setFieldValue("projectStatus", itemsData.projectStatus);
           formik.setFieldValue("note", itemsData.note);
-          formik.setFieldValue("teamId", DataAuth.teamMember.id);
+          formik.setFieldValue("teamId", DataAuth.team ? DataAuth.team.id : "");
 
           const selectedStatus = DataOptions1.find(
             (x) => x.value == itemsData.projectStatus
@@ -876,7 +876,7 @@ const AppsInfoDetail = ({ DataProject }: AppsInfoDetailProps) => {
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
 
   useEffect(() => {
-    if (DataAuth && DataAuth.teamMember && DataProject && DataApps == null) {
+    if (DataAuth && DataAuth.team && DataProject && DataApps == null) {
       setIsLoadingProcess(true);
       const GetDataList = async () => {
         const requestData = await GetDetailAppsByProjectId(

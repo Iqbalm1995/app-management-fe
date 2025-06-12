@@ -270,7 +270,7 @@ function HomePage() {
   );
 
   useEffect(() => {
-    if (DataAuth && DataAuth.teamMember) {
+    if (DataAuth && DataAuth.team) {
       const PayloadList: PaggingListPayload = {
         search: globalFilter,
         limit: pageSize,
@@ -279,7 +279,7 @@ function HomePage() {
           {
             field: "teamId",
             operator: "=",
-            value: DataAuth.teamMember.id,
+            value: DataAuth.team.id,
           },
         ],
         fieldOrder: ["createdAt"],
@@ -352,7 +352,7 @@ function HomePage() {
 
   const ModalForm = useDisclosure();
   const handleAddNew = () => {
-    if (DataAuth && DataAuth.teamMember) {
+    if (DataAuth && DataAuth.team) {
       setProgressUpload(0);
       ModalForm.onOpen();
     } else {
@@ -398,7 +398,7 @@ function HomePage() {
 
   const [ProgressUpload, setProgressUpload] = useState(0);
   const handleUpload = async () => {
-    if (DataAuth && DataAuth.teamMember) {
+    if (DataAuth && DataAuth.team) {
       setActionLoading(true);
       // const fileDetails = files.map((file) => {
       //   const [name, extension] = file.name.split(".");
@@ -427,7 +427,7 @@ function HomePage() {
         for (const [index, dt] of files.entries()) {
           await delay(DELAY_MEDIUM); // Simulate upload delay
           await ActionUploadServ({
-            TeamId: DataAuth.teamMember.id,
+            TeamId: DataAuth.team.id,
             file: dt,
           });
           // Update the progress state with the callback function
@@ -537,7 +537,7 @@ function HomePage() {
   const handleDeleteData = async () => {
     setActionLoading(true);
     await delay(DELAY_MEDIUM);
-    if (DataAuth && DataAuth.teamMember && detailData) {
+    if (DataAuth && DataAuth.team && detailData) {
       await ActionDeleteMediaServ(detailData);
     } else {
       showToast({

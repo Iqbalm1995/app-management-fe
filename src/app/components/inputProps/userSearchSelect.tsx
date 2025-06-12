@@ -17,7 +17,7 @@ import { radiusStyle } from "@/app/constants/applicationConstants";
 import { UsersResponse } from "@/app/services/useUsers";
 
 interface UserSearchSelectProps {
-  selectedUserCode: string | undefined;
+  selectedUserCode: string | undefined | null;
   onUserSelect: (user: UsersResponse | null) => void;
   usersData: UsersResponse[];
   editMode?: boolean;
@@ -47,21 +47,21 @@ function UserSearchSelect({
           spacing={8}
         >
           <Box>
-            <Avatar name={user.userFirstName} src={user.profilePict ?? ""} />
+            <Avatar name={user.nama} src={user.profilePict ?? ""} />
           </Box>
           <Box>
             <Stack spacing={0}>
               <Text fontWeight={600}>
-                {user.userFirstName} {user.userLastName} ({user.userCode})
+                {user.nama} ({user.userId})
               </Text>
               <Text fontWeight={500} fontSize="small" color="gray.600">
                 {user.team?.teamName ?? "No Team"} |{" "}
-                {user.teamRole?.teamRoleName ?? "No Role"}
+                {user.teamRole?.specName ?? "No Role"}
               </Text>
             </Stack>
           </Box>
           <Spacer />
-          {selectedUserCode == user.userCode ? (
+          {selectedUserCode == user.userId ? (
             <>
               <Badge colorScheme={"secondary"} rounded={radiusStyle} px={2}>
                 Selected

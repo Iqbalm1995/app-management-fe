@@ -282,7 +282,7 @@ function HomePageView() {
           color={colorMode == "light" ? "gray.800" : "white"}
           textTransform={"capitalize"}
         >
-          Selamat Datang, {DataAuth && DataAuth.firstName.toLocaleLowerCase()}
+          Selamat Datang, {DataAuth && DataAuth.nama.toLocaleLowerCase()}
         </Heading>
 
         <Flex as={Wrap} w={"full"} justifyContent={"end"} alignItems={"center"}>

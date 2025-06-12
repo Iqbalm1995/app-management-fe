@@ -53,12 +53,9 @@ import {
   Divider,
   useColorMode,
 } from "@chakra-ui/react";
-import { HttpStatusCode } from "axios";
-import { hash } from "crypto";
 import { useFormik } from "formik";
 import Link from "next/link";
-import { useRouter } from "next/router";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { FiLogIn } from "react-icons/fi";
 import * as Yup from "yup";
 
@@ -185,6 +182,7 @@ const AuthForm = () => {
   const [IsError, setIsError] = useState(false);
   const { goLogin } = useAuth();
   const { Login, GetAuth, isLoading, error } = useAuthentications();
+  const [LupaPassText, setLupaPassText] = useState(false);
 
   const formik = useFormik({
     initialValues: initialValueAuthEx,
@@ -211,6 +209,7 @@ const AuthForm = () => {
     const response = await Login({
       username: values.username,
       password: encryptAES(values.password),
+      uim: false,
     });
 
     const isErrorResponse = response?.statusCode !== RES_CODE_OK;
@@ -287,7 +286,7 @@ const AuthForm = () => {
         </Text>
       </Box>
       <Box>
-        <Text>Gunakan akun Kobra bjb untuk masuk aplikasi.</Text>
+        <Text>Gunakan User ID dan Password Email/PC Anda</Text>
       </Box>
       <Box>
         {/* FORM AUTH */}
@@ -298,7 +297,7 @@ const AuthForm = () => {
               isInvalid={formik.errors.username ? true : false}
               isRequired
             >
-              <FormLabel my={0}>Username</FormLabel>
+              <FormLabel my={0}>User ID / E-mail</FormLabel>
               <Input
                 id="username"
                 name="username"
@@ -343,7 +342,11 @@ const AuthForm = () => {
               <Flex>
                 <Spacer />
                 <Link href="#">
-                  <Button size={"sm"} variant={"link"}>
+                  <Button
+                    size={"sm"}
+                    variant={"link"}
+                    onClick={() => setLupaPassText(!LupaPassText)}
+                  >
                     Lupa password?
                   </Button>
                 </Link>
@@ -360,6 +363,25 @@ const AuthForm = () => {
             >
               Masuk
             </Button>
+            <Text
+              fontSize={"smaller"}
+              color={"gray.600"}
+              pt={1}
+              display={LupaPassText ? "box" : "none"}
+            >
+              Untuk Reset Password silahkan ajukan melalui Aplikasi User Id
+              Management (UIM){" "}
+              <Link href={"#"}>
+                <Text as={"span"} fontWeight={600} color={"secondary.600"}>
+                  Website UIM
+                </Text>
+              </Link>{" "}
+              atau Jika membutuhkan panduan silahkan menghubungi IT Helpdesk di
+              Extension{" "}
+              <Text as={"span"} fontWeight={600}>
+                5101 – 5119
+              </Text>
+            </Text>
           </VStack>
         </form>
       </Box>

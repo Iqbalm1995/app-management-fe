@@ -112,38 +112,38 @@ const ProjectSummary = ({ data, refreshActionMain }: ProjectSummaryProps) => {
   };
 
   useEffect(() => {
-    if (DataAuth && DataAuth.teamMember && data) {
+    if (DataAuth && DataAuth.team && data) {
       setIsLoadingProcess(true);
-      const GetDataList = async () => {
-        const requestData = await ListPIC(data.id, tokenData);
-        const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+      // const GetDataList = async () => {
+      //   const requestData = await ListPIC(data.id, tokenData);
+      //   const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
 
-        if (isErrorResponse || !requestData) {
-          showToast({
-            description: requestData?.message || RES_GENERIC_ERROR_MSG,
-            statusToast: "error",
-          });
-          setIsLoadingProcess(false);
-          return;
-        } else {
-          console.log(requestData);
-          if (requestData.data == null) {
-            showToast({
-              description: "Data return error",
-              statusToast: "error",
-            });
-            setIsLoadingProcess(false);
-            return;
-          }
+      //   if (isErrorResponse || !requestData) {
+      //     showToast({
+      //       description: requestData?.message || RES_GENERIC_ERROR_MSG,
+      //       statusToast: "error",
+      //     });
+      //     setIsLoadingProcess(false);
+      //     return;
+      //   } else {
+      //     console.log(requestData);
+      //     if (requestData.data == null) {
+      //       showToast({
+      //         description: "Data return error",
+      //         statusToast: "error",
+      //       });
+      //       setIsLoadingProcess(false);
+      //       return;
+      //     }
 
-          const itemsData: UsersFullResponse[] =
-            requestData.data as UsersFullResponse[];
+      //     const itemsData: UsersFullResponse[] =
+      //       requestData.data as UsersFullResponse[];
 
-          setMemberProjects(itemsData);
-          setIsLoadingProcess(false);
-        }
-      };
-      GetDataList();
+      //     setMemberProjects(itemsData);
+      //     setIsLoadingProcess(false);
+      //   }
+      // };
+      // GetDataList();
     }
   }, [DataAuth, data, RefreshData]);
 
@@ -152,7 +152,7 @@ const ProjectSummary = ({ data, refreshActionMain }: ProjectSummaryProps) => {
     useState<ProjectUpdatePICPayload | null>(null);
 
   const handleAddNew = () => {
-    if (DataAuth && DataAuth.teamMember && data) {
+    if (DataAuth && DataAuth.team && data) {
       setPayloadUpdate(null);
       setDataUsers([]);
       setSearchUserInput("");
@@ -310,7 +310,7 @@ const ProjectSummary = ({ data, refreshActionMain }: ProjectSummaryProps) => {
             </Text>
 
             <Flex w={"full"} as={HStack} justifyContent={"space-between"}>
-              {MemberProjects.length > 0 ? (
+              {/* {MemberProjects.length > 0 ? (
                 <AvatarGroup size={"sm"} max={3}>
                   {MemberProjects.map((dt, index) => (
                     <Avatar
@@ -323,7 +323,7 @@ const ProjectSummary = ({ data, refreshActionMain }: ProjectSummaryProps) => {
                 <>
                   <TextStatusProps statusData={"No member yet"} />
                 </>
-              )}
+              )} */}
 
               <Tooltip label={"Add Member"} placement="right-end" hasArrow>
                 <Button
@@ -512,22 +512,22 @@ const ProjectSummary = ({ data, refreshActionMain }: ProjectSummaryProps) => {
                           key={index}
                         >
                           <Box>
-                            <Avatar name={dt.userFirstName} src="" />
+                            {/* <Avatar name={dt.userFirstName} src="" /> */}
                           </Box>
                           <Box>
                             <Stack spacing={0}>
-                              <Text color={"gray.900"} fontWeight={600}>
+                              {/* <Text color={"gray.900"} fontWeight={600}>
                                 {dt.userFirstName} {dt.userLastName} (
                                 {dt.userCode})
-                              </Text>
-                              <Text
+                              </Text> */}
+                              {/* <Text
                                 fontWeight={500}
                                 fontSize={"small"}
                                 color={"gray.700"}
                               >
                                 {dt.team?.teamName} |{" "}
                                 {dt.teamRole?.teamRoleName}
-                              </Text>
+                              </Text> */}
                             </Stack>
                           </Box>
                           <Spacer />
@@ -590,7 +590,7 @@ const ProjectSummary = ({ data, refreshActionMain }: ProjectSummaryProps) => {
                             spacing={5}
                             key={index}
                           >
-                            <Box>
+                            {/* <Box>
                               <Avatar name={dt.userFirstName} src="" />
                             </Box>
                             <Box>
@@ -608,7 +608,7 @@ const ProjectSummary = ({ data, refreshActionMain }: ProjectSummaryProps) => {
                                   {dt.teamRole?.teamRoleName}
                                 </Text>
                               </Stack>
-                            </Box>
+                            </Box> */}
                             <Spacer />
                             <>
                               <Tooltip

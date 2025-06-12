@@ -57,7 +57,7 @@ function LandingPage() {
 
   return (
     <LayoutLanding>
-      <Flex w={"full"} minH={"92vh"}>
+      <Flex w={"full"} minH={"86vh"}>
         <Flex
           zIndex={1}
           w={"full"}
@@ -82,7 +82,7 @@ function LandingPage() {
             <VStack w={"full"} spacing={5} pt={"8vh"}>
               <RealTimeClock />
 
-              <InputGroup
+              {/* <InputGroup
                 w={{ base: "full", sm: "full", md: "60%", lg: "60%" }}
               >
                 <InputLeftElement pointerEvents="none" boxSize={12} h={"full"}>
@@ -98,11 +98,11 @@ function LandingPage() {
                   value={SearchChannels}
                   onChange={(e) => setSearchChannels(e.target.value)}
                 />
-              </InputGroup>
+              </InputGroup> */}
 
               {/* LIST CONTENT */}
 
-              <Container
+              {/* <Container
                 as={Stack}
                 maxW={"container.xl"}
                 mt={"60px"}
@@ -140,7 +140,7 @@ function LandingPage() {
                     </Box>
                   </Flex>
                 </Flex>
-              </Container>
+              </Container> */}
             </VStack>
           </Flex>
         </Flex>

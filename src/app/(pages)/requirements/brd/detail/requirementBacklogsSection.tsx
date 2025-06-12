@@ -239,7 +239,7 @@ const RequirementBacklogsSection = ({
   );
 
   useEffect(() => {
-    if (DataAuth && DataAuth.teamMember && tokenData && ReqData) {
+    if (DataAuth && DataAuth.team && tokenData && ReqData) {
       const filterWhereData: ListSearchByParam[] = [
         {
           field: "reqId",

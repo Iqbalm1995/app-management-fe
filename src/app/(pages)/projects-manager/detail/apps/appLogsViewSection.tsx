@@ -216,7 +216,7 @@ const AppChangeLogSection = ({ AppsId }: { AppsId: string }) => {
   );
 
   useEffect(() => {
-    if (DataAuth && DataAuth.teamMember) {
+    if (DataAuth && DataAuth.team) {
       const PayloadList: PaggingListPayload = {
         search: globalFilter,
         limit: pageSize,
@@ -362,7 +362,7 @@ const AppChangeLogSection = ({ AppsId }: { AppsId: string }) => {
 
   const ModalForm = useDisclosure();
   const handleAddNew = () => {
-    if ((DataAuth && DataAuth.teamMember, AppsId)) {
+    if ((DataAuth && DataAuth.team, AppsId)) {
       formik.setFieldValue("id", null);
       formik.setFieldValue("appsId", AppsId);
       formik.setFieldValue("logTitle", "");
@@ -382,7 +382,7 @@ const AppChangeLogSection = ({ AppsId }: { AppsId: string }) => {
   const handleEditData = async (id: string) => {
     setActionLoading(true);
     await delay(DELAY_MEDIUM);
-    if (DataAuth && DataAuth.teamMember) {
+    if (DataAuth && DataAuth.team) {
       const GetData: AppsLogsResponse | null = await GetDetailLogAppsServ(id);
       if (GetData == null) return;
       formik.setFieldValue("id", GetData.id);
@@ -531,7 +531,7 @@ const AppChangeLogSection = ({ AppsId }: { AppsId: string }) => {
   const handleDeleteData = async () => {
     setActionLoading(true);
     await delay(DELAY_MEDIUM);
-    if (DataAuth && DataAuth.teamMember && detailData) {
+    if (DataAuth && DataAuth.team && detailData) {
       await DeleteAppsLogServ(detailData);
     } else {
       showToast({

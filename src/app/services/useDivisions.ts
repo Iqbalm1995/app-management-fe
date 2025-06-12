@@ -31,7 +31,31 @@ export interface DivisionUpdatePayload {
   divisionDesc: string;
 }
 
+export interface GroupDivisionResponse {
+  id: string;
+  divisionId: string;
+  groupCode: string;
+  groupName: string;
+  groupDesc?: string | null;
+  createdAt: string;
+  createdBy: string;
+}
+
+export interface GroupDivisionInsertPayload {
+  divisionId: string;
+  groupCode: string;
+  groupName: string;
+  groupDesc?: string | null;
+}
+
+export interface GroupDivisionUpdatePayload {
+  id: string;
+  groupName: string;
+  groupDesc?: string | null;
+}
+
 interface useDivision {
+  // DIVISION
   List: (
     payload: PaggingListPayload,
     token: string
@@ -52,6 +76,28 @@ interface useDivision {
     id: string,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
+
+  // GROUP DIVISION
+  ListGroupDivision: (
+    payload: PaggingListPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<GroupDivisionResponse[] | null> | null>;
+  GetDetailGroupDivisionById: (
+    id: string,
+    token: string
+  ) => Promise<ApiGenericResponse<GroupDivisionResponse | null> | null>;
+  InsertGroupDivision: (
+    payload: GroupDivisionInsertPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  UpdateGroupDivision: (
+    payload: GroupDivisionUpdatePayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  DeleteGroupDivision: (
+    id: string,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
   isLoading: boolean;
   error: string | null;
 }
@@ -59,6 +105,8 @@ interface useDivision {
 const useDivision = (): useDivision => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  // DIVISION
 
   const List = async (
     payload: PaggingListPayload,
@@ -265,12 +313,224 @@ const useDivision = (): useDivision => {
     }
   };
 
+  // GROUP DIVISION
+
+  const ListGroupDivision = async (
+    payload: PaggingListPayload,
+    token: string
+  ): Promise<ApiGenericResponse<GroupDivisionResponse[] | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/Divisions/group/list";
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<GroupDivisionResponse[]>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const GetDetailGroupDivisionById = async (
+    id: string,
+    token: string
+  ): Promise<ApiGenericResponse<GroupDivisionResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Divisions/group/${id}`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<GroupDivisionResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const InsertGroupDivision = async (
+    payload: GroupDivisionInsertPayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Divisions/group/insert`;
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const UpdateGroupDivision = async (
+    payload: GroupDivisionUpdatePayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Divisions/group/update`;
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const DeleteGroupDivision = async (
+    id: string,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Divisions/group/delete/${id}`;
+    try {
+      const response = await axiosInstance.delete<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
   return {
     List,
     GetDetailById,
     Insert,
     Update,
     Delete,
+    ListGroupDivision,
+    GetDetailGroupDivisionById,
+    InsertGroupDivision,
+    UpdateGroupDivision,
+    DeleteGroupDivision,
     isLoading,
     error,
   };

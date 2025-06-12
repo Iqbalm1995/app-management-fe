@@ -305,7 +305,7 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
   );
 
   useEffect(() => {
-    if (DataAuth && DataAuth.teamMember) {
+    if (DataAuth && DataAuth.team) {
       const PayloadList: PaggingListPayload = {
         search: globalFilter,
         limit: pageSize,
@@ -421,7 +421,7 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
 
   const ModalForm = useDisclosure();
   const handleAddNew = () => {
-    if ((DataAuth && DataAuth.teamMember, ProjectId)) {
+    if ((DataAuth && DataAuth.team, ProjectId)) {
       // formik.setFieldValue("id", null);
       formik.setFieldValue("projectId", ProjectId);
       // formik.setFieldValue("logTitle", "");

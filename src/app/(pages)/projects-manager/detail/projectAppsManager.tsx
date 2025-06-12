@@ -284,7 +284,7 @@ const ProjectManagerSection = ({
   );
 
   useEffect(() => {
-    if (DataAuth && DataAuth.teamMember && data) {
+    if (DataAuth && DataAuth.team && data) {
       const PayloadList: PaggingListPayload = {
         search: globalFilter,
         limit: pageSize,

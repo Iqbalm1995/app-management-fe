@@ -18,60 +18,207 @@ import handleAxiosError from "../utils/handleAxiosError";
 import { UsersResponse } from "./useUsers";
 import { MediaObjectResponse } from "./useMediaObject";
 
-export interface RequirementsResponse {
+export interface RequirementApprovalDataResponse {
   id: string;
-  reffParentId?: string;
+  reqIq: string;
+  reqIqHistory: string;
+  approverUserId: string;
+  approverUserCode: string;
+  approverUserFirstName: string;
+  approverUserLastnameName: string;
+  approverUserUsername: string;
+  approverUserEmail: string;
+  approverUserPhoneNumber: string;
+  divisionId: string;
+  divisionCode: string;
+  divisionName: string;
+  groupId: string;
+  groupCode: string;
+  groupName: string;
+  teamId: string;
+  teamCode: string;
+  teamName: string;
+  isChecked: string;
+  note: string;
+  nextAction: string;
+  approvedAt?: Date;
+  createdAt: Date;
+  createdBy: string;
+}
+
+export interface RequirementWorkProgramDataResponse {
+  id: string;
+  reqId: string;
+  workProgramSource: string;
+  workProgramCode?: string | null;
+  workProgramName?: string | null;
+  workProgramAccName?: string | null;
+  workProgramAccNumber?: string | null;
+  workProgramAccCc?: string | null;
+  workProgramBudget: number;
+  workProgramReal: number;
+  workProgramLeftovers: number;
+  divisionId: string;
+  divisionCode: string;
+  divisionName: string;
+  createdAt: Date;
+  createdBy: string;
+}
+
+export interface RequirementsResponse {
+  // STG 1
+  id: string;
+  requirementType: string;
+  reqStatus?: string | null;
+  nextStep?: string | null;
+  reffParentId?: string | null;
+  senderDivisionId: string;
+  senderDivisionCode?: string | null;
+  senderDivisionName?: string | null;
+  reqNumber: string;
+  reqNarative: string;
+  reqInititateDate: string;
+  reqAcceptedDate?: string | null;
+  reqDurationDay: number;
+  isCarryOver: string;
+  reqReviewStartDate?: string | null;
+  reqReviewEndDate?: string | null;
+  reqReviewDurationDay: number;
+
+  // STG 2 - AREA 1
+  assignedToDate?: string | null;
+  assignedFromId?: string | null;
+  assignedFromName?: string | null;
+  approvalDatas: RequirementApprovalDataResponse[];
+
+  // AREA 2
+  userPicId?: string | null;
+  userPicIdentityNumber?: string | null;
+  userPicName?: string | null;
+  userPicContanct?: string | null;
+  userPicEmail?: string | null;
+  userPicDivisionId?: string | null;
+  userPicDivisionCode?: string | null;
+  userPicDivisionName?: string | null;
+  userPicGroupId?: string | null;
+  userPicGroupCode?: string | null;
+  userPicGroupName?: string | null;
+
+  // STG 3
+  workPrograms: RequirementWorkProgramDataResponse[];
+
+  // STG 4 - APP INFORMATION
+  appInitialCode?: string | null;
+  appInitialName?: string | null;
+  backlogFeature?: string | null;
+  backlogDescription?: string | null;
+  backlogChange?: string | null;
+  appAccessMedia?: string | null;
+  appTypes?: string | null;
+  appTypeCustom?: string | null;
+  appRelatedness?: string | null;
+  appRelatednessDesc?: string | null;
+  appTransactionals?: string | null;
+  appOperational24hrs?: string | null;
+  appOperationalDays?: string | null;
+  appOperationalHourOpen?: string | null;
+  appOperationalHourClosed?: string | null;
+  appLiveTargetDate?: string | null;
+
+  appEnvLocations?: string | null;
+  appEnvLocationsOthers?: string | null;
+  appPrivateAuth?: string | null;
+  appHightAvailability?: string | null;
+  appIntegrationOthersApps?: string | null;
+
+  note?: string | null;
+
+  // ADDITIONAL
+  createdAt: string;
+  createdBy: string;
+  updatedAt?: string | null;
+  updatedBy?: string | null;
+}
+
+export interface PICAssignUserPayload {
+  userId: string;
+}
+
+export interface WorkProgramsPayload {
+  divisionId: string;
+  workProgramSource: string; // INTERNAL / EXTERNAL
+  workProgramCode?: string | null;
+  workProgramName?: string | null;
+  workProgramAccName?: string | null;
+  workProgramAccNumber?: string | null;
+  workProgramAccCc?: string | null;
+  workProgramBudget: number;
+  workProgramReal: number;
+  // workProgramLeftovers: number;
+}
+
+export interface ReqBacklogPayload {
+  backlogId?: string | null;
+  backlogName: string;
+  backlogDesc?: string | null;
+}
+
+export interface RequirementsInsertPayload {
+  // STG 1
+  reffParentId?: string | null;
+  senderDivisionId: string;
   requirementType: string;
   reqNumber: string;
   reqNarative: string;
   reqInititateDate: string;
-  reqAcceptedDate?: string;
-  reqStatus?: string;
-  isCarryOver: "Y" | "N";
-  reqDurationDay: number;
-  reqReviewStartDate?: string;
-  reqReviewEndDate?: string;
-  assignedFromId?: string;
-  assignedFromName?: string;
-  assignedToId?: string;
-  assignedToName?: string;
-  assignedToDate?: string;
-  userPicId?: string;
-  userPicName?: string;
-  userPicContanct?: string;
-  userPicEmail?: string;
-  nextStep?: string;
-  reqReviewDurationDay: number;
-  workProgramCodeEx: string;
-  workProgramNameEx: string;
-  workProgramAccNameEx: string;
-  workProgramAccNumberEx: string;
-  workProgramAccCcUser: string;
-  workProgramBudgetUser: number;
-  workProgramRealUsers: number;
-  workProgramLeftoversUsers: number;
-  workProgramCodeInt: string;
-  workProgramNameInt: string;
-  workProgramAccNameInt: string;
-  workProgramAccNumberInt: string;
-  workProgramAccCcInt: string;
-  workProgramBudgetInt: number;
-  workProgramRealInt: number;
-  workProgramLeftoversInt: number;
-  appInitialCode?: string;
-  appInitialName?: string;
-  backlogFeature?: string;
-  backlogDescription?: string;
-  backlogChange?: string;
-  note?: string;
-  createdAt: string;
-  createdBy: string;
-  updatedAt?: string;
-  updatedBy?: string;
-  senderDivisionId: string;
-  senderDivisionData: DivisionInvolvedDataResponse;
-  divisionInvolved: DivisionInvolvedDataResponse[];
-  picAssignUsers: PicAssignUserDataResponse[];
+  reqAcceptedDate?: string | null;
+  isCarryOver: string;
+
+  // STG 2
+
+  // AREA 1
+  assignedToDate?: string | null;
+  assignedFromId?: string | null;
+  assignedFromName?: string | null;
+  picAssignUsers: PICAssignUserPayload[];
+
+  // AREA 2
+  userPicId?: string | null;
+  userPicIdentityNumber?: string | null;
+  userPicName?: string | null;
+  userPicContanct?: string | null;
+  userPicEmail?: string | null;
+  userPicDivisionId?: string | null;
+  userPicGroupId?: string | null;
+
+  // AREA 3
+  workPrograms: WorkProgramsPayload[];
+
+  // AREA 4
+  appInitialCode?: string | null;
+  appInitialName?: string | null;
+  backlogChange?: string | null;
+  appAccessMedia?: string | null;
+  appTypes?: string | null;
+  appTypeCustom?: string | null;
+  appRelatedness?: string | null;
+  appRelatednessDesc?: string | null;
+  appTransactionals?: string | null;
+  appOperational24hrs?: string | null;
+  appOperationalDays?: string | null;
+  appOperationalHourOpen?: string | null;
+  appOperationalHourClosed?: string | null;
+  appLiveTargetDate?: string | null;
+
+  appEnvLocations?: string | null;
+  appEnvLocationsOthers?: string | null;
+  appPrivateAuth?: string | null;
+  appHightAvailability?: string | null;
+  appIntegrationOthersApps?: string | null;
+
+  note?: string | null;
+  isDraft: boolean;
+  backlogFeatures: ReqBacklogPayload[];
 }
 
 export interface BacklogDataResponse {
@@ -97,139 +244,6 @@ export interface BacklogDataResponse {
   createdBy: string;
   updatedAt: string | null;
   updatedBy: string;
-}
-
-export interface PicAssignUserDataResponse {
-  userData: UsersResponse;
-  isChecked: string;
-}
-
-export interface DivisionInvolvedDataResponse {
-  id: string;
-  divisionCode: string;
-  divisionName: string;
-  divisionDesc: string | null;
-}
-
-export interface ReqAssignUserPayload {
-  userId: string;
-  isChecked: "Y" | "N";
-}
-
-export interface ReqBacklogPayload {
-  backlogId?: string | null;
-  backlogName: string;
-  backlogDesc?: string | null;
-}
-
-export interface RequirementsInsertPayload {
-  reffParentId?: string | null;
-
-  requirementType: string;
-  reqNumber: string;
-  reqNarative: string;
-  reqInititateDate: string;
-  reqAcceptedDate?: string | null;
-  reqStatus: string;
-  isCarryOver: "Y" | "N";
-
-  reqReviewStartDate?: string | null;
-
-  assignedFromId: string;
-  assignedFromName: string;
-  assignedToDate: string;
-  assignedToId?: string | null;
-  assignedToName?: string | null;
-
-  userPicId: string;
-  userPicName: string;
-  userPicContanct: string;
-  userPicEmail: string;
-
-  workProgramCodeEx: string;
-  workProgramNameEx: string;
-  workProgramAccNameEx: string;
-  workProgramAccNumberEx: string;
-  workProgramAccCcUser: string;
-  workProgramBudgetUser: number;
-  workProgramRealUsers: number;
-
-  workProgramCodeInt: string;
-  workProgramNameInt: string;
-  workProgramAccNameInt: string;
-  workProgramAccNumberInt: string;
-  workProgramAccCcInt: string;
-  workProgramBudgetInt: number;
-  workProgramRealInt: number;
-
-  appInitialCode: string;
-  appInitialName: string;
-  backlogFeature?: string | null;
-
-  backlogDescription?: string | null;
-  backlogChange?: string | null;
-  note?: string | null;
-  involvedDivisionIds: string[];
-  senderDivisionId: string;
-  picAssignUsers: ReqAssignUserPayload[];
-  backlogFeatures: ReqBacklogPayload[];
-}
-
-export interface RequirementsUpdatePayload {
-  id: string;
-
-  reffParentId: string | null;
-
-  requirementType: string;
-  reqNumber: string;
-  reqNarative: string;
-  reqInititateDate: string;
-  reqAcceptedDate: string | null;
-  reqStatus: string;
-  isCarryOver: "Y" | "N";
-
-  reqReviewStartDate: string | null;
-  reqReviewEndDate: string | null;
-
-  assignedFromId: string;
-  assignedFromName: string;
-  assignedToDate: string;
-
-  userPicId: string;
-  userPicName: string;
-  userPicContanct: string;
-  userPicEmail: string;
-
-  workProgramCodeEx: string;
-  workProgramNameEx: string;
-  workProgramAccNameEx: string;
-  workProgramAccNumberEx: string;
-  workProgramAccCcUser: string;
-  workProgramBudgetUser: number;
-  workProgramRealUsers: number;
-  workProgramLeftoversUsers: number;
-
-  workProgramCodeInt: string;
-  workProgramNameInt: string;
-  workProgramAccNameInt: string;
-  workProgramAccNumberInt: string;
-  workProgramAccCcInt: string;
-  workProgramBudgetInt: number;
-  workProgramRealInt: number;
-  workProgramLeftoversInt: number;
-
-  appInitialCode: string;
-  appInitialName: string;
-  backlogFeature: string;
-  backlogDescription?: string | null;
-  backlogChange?: string | null;
-  note?: string | null;
-
-  nextStep: string;
-
-  senderDivisionId: string;
-  picAssignUsers: ReqAssignUserPayload[];
-  backlogFeatures: ReqBacklogPayload[];
 }
 
 export interface BacklogInsertPayload {
@@ -270,11 +284,6 @@ export interface BacklogUpdatePayload {
   reffId: string | null;
 }
 
-export interface RequirementsAssignProjectsPayload {
-  reqId: string;
-  projectId: string[];
-}
-
 interface useRequirements {
   List: (
     payload: PaggingListPayload,
@@ -288,18 +297,7 @@ interface useRequirements {
     payload: RequirementsInsertPayload,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
-  UpdateReq: (
-    payload: RequirementsUpdatePayload,
-    token: string
-  ) => Promise<ApiGenericResponse<string | null> | null>;
-  DeleteReq: (
-    id: string,
-    token: string
-  ) => Promise<ApiGenericResponse<string | null> | null>;
-  AssignProjects: (
-    payload: RequirementsAssignProjectsPayload,
-    token: string
-  ) => Promise<ApiGenericResponse<string | null> | null>;
+
   ListBacklog: (
     payload: PaggingListPayload,
     token: string
@@ -425,129 +423,6 @@ const useRequirements = (): useRequirements => {
       ENDPOINT_PORT_BASIC
     );
     const PathEndpoint: string = `/v1/Requirement/insert`;
-    try {
-      const response = await axiosInstance.post<
-        ApiGenericResponse<string | null>
-      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setIsLoading(false);
-      return response.data;
-    } catch (err) {
-      setIsLoading(false);
-      if (axios.isAxiosError(err)) {
-        const errorResponse = handleAxiosError(err);
-        setError(
-          err.response?.data?.message || "An error occurred during login."
-        );
-        return errorResponse;
-      } else {
-        setError("An unknown error occurred. Please try again.");
-        return {
-          statusCode: RES_CODE_SERVER_ERROR,
-          data: null,
-          message: "Error connect to api",
-          error: null,
-        };
-      }
-    }
-  };
-
-  const UpdateReq = async (
-    payload: RequirementsUpdatePayload,
-    token: string
-  ): Promise<ApiGenericResponse<string | null> | null> => {
-    setIsLoading(true);
-    setError(null);
-    const UrlEndpoint: string = buildUrlPort(
-      ENDPOINT_API_BASEURL,
-      ENDPOINT_PORT_BASIC
-    );
-    const PathEndpoint: string = `/v1/Requirement/update`;
-    try {
-      const response = await axiosInstance.post<
-        ApiGenericResponse<string | null>
-      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setIsLoading(false);
-      return response.data;
-    } catch (err) {
-      setIsLoading(false);
-      if (axios.isAxiosError(err)) {
-        const errorResponse = handleAxiosError(err);
-        setError(
-          err.response?.data?.message || "An error occurred during login."
-        );
-        return errorResponse;
-      } else {
-        setError("An unknown error occurred. Please try again.");
-        return {
-          statusCode: RES_CODE_SERVER_ERROR,
-          data: null,
-          message: "Error connect to api",
-          error: null,
-        };
-      }
-    }
-  };
-
-  const DeleteReq = async (
-    id: string,
-    token: string
-  ): Promise<ApiGenericResponse<string | null> | null> => {
-    setIsLoading(true);
-    setError(null);
-    const UrlEndpoint: string = buildUrlPort(
-      ENDPOINT_API_BASEURL,
-      ENDPOINT_PORT_BASIC
-    );
-    const PathEndpoint: string = `/v1/Requirement/delete/${id}`;
-    try {
-      const response = await axiosInstance.delete<
-        ApiGenericResponse<string | null>
-      >(`${UrlEndpoint}${PathEndpoint}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setIsLoading(false);
-      return response.data;
-    } catch (err) {
-      setIsLoading(false);
-      if (axios.isAxiosError(err)) {
-        const errorResponse = handleAxiosError(err);
-        setError(
-          err.response?.data?.message || "An error occurred during login."
-        );
-        return errorResponse;
-      } else {
-        setError("An unknown error occurred. Please try again.");
-        return {
-          statusCode: RES_CODE_SERVER_ERROR,
-          data: null,
-          message: "Error connect to api",
-          error: null,
-        };
-      }
-    }
-  };
-
-  const AssignProjects = async (
-    payload: RequirementsAssignProjectsPayload,
-    token: string
-  ): Promise<ApiGenericResponse<string | null> | null> => {
-    setIsLoading(true);
-    setError(null);
-    const UrlEndpoint: string = buildUrlPort(
-      ENDPOINT_API_BASEURL,
-      ENDPOINT_PORT_BASIC
-    );
-    const PathEndpoint: string = `/v1/Requirement/assign-projects-requirements`;
     try {
       const response = await axiosInstance.post<
         ApiGenericResponse<string | null>
@@ -828,9 +703,6 @@ const useRequirements = (): useRequirements => {
     List,
     GetDetailById,
     InsertReq,
-    UpdateReq,
-    DeleteReq,
-    AssignProjects,
     ListBacklog,
     GetDetailBacklogById,
     InsertBacklog,

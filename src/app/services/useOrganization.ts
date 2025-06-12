@@ -1,11 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  ApiGenericResponse,
-  PaggingListPayload,
-  PaggingListPayloadCustom,
-} from "../types/masterTypes";
+import { ApiGenericResponse, PaggingListPayload } from "../types/masterTypes";
 import { buildUrlPort } from "../helper/MasterHelper";
 import {
   ENDPOINT_API_BASEURL,
@@ -16,122 +12,55 @@ import axiosInstance from "../utils/axiosInstance";
 import axios from "axios";
 import handleAxiosError from "../utils/handleAxiosError";
 
-export interface UsersResponse {
-  id: string;
-  nrp: string;
-  nama: string;
-  nip: string;
-  userId: string;
-  kodeCabang?: string | null;
-  namaCabang?: string | null;
-  kodeInduk?: string | null;
-  namaInduk?: string | null;
-  kodeKanwil?: string | null;
-  namaKanwil?: string | null;
-  jabatan?: string | null;
-  email: string;
-  idFungsi?: string | null;
-  namaFungsi?: string | null;
-  kodePenempatan?: string | null;
-  namaPenempatan?: string | null;
-  idUim?: string | null;
-  costCentre?: string | null;
-  isApproval?: string | null;
-  kodeUnitKerja?: string | null;
-  namaUnitKerja?: string | null;
-  kodeJabatan?: string | null;
-  phoneNumber?: string | null;
-  userStatus: string;
-  profilePict?: string | null;
-  lastSync?: string | null;
-  createdAt: string;
-  createdBy: string;
-  updatedAt?: string | null;
-  updatedBy?: string | null;
-  team: UserTeamResponse | null;
-  teamRole: UserTeamRoleResponse | null;
-}
-
-export interface UsersFullResponse {
-  id: string;
-  userCode: string;
-  userFirstName: string;
-  userLastName: string;
-  username: string;
-  isActive: string;
-  profilePict: string | null;
-  lastLogin: string | null;
-  divisionId: string | null;
-  createdAt: string;
-  createdBy: string;
-  userEmail: string | null;
-  userPhoneNumber: string | null;
-  role: UserRoleResponse;
-  team: UserTeamResponse | null;
-  teamRole: UserTeamRoleResponse | null;
-}
-
-export interface UserRoleResponse {
-  id: string;
-  roleCode: string;
-  roleName: string;
-}
-
-export interface UserTeamResponse {
-  id: string;
-  teamCode: string;
-  teamName: string;
-  teamPict?: string | null;
-  orgGroupId?: string | null;
-  orgGroupCode?: string | null;
-}
-
-export interface UserTeamRoleResponse {
+export interface OrganizationResponse {
   id: string;
   parentId?: string | null;
-  category: string;
-  specCode: string;
-  specName: string;
-  specDesc?: string | null;
-  createdAt?: string | null;
-  createdBy?: string | null;
+  orgType: string;
+  orgCode: string;
+  orgParentCode?: string | null;
+  orgName: string;
+  orgDesc?: string | null;
+  createdAt: string;
+  createdBy: string;
 }
 
-interface useUsersServices {
+interface useOrganizationServices {
+  // DIVISION
   List: (
     payload: PaggingListPayload,
     token: string
-  ) => Promise<ApiGenericResponse<UsersResponse[] | null> | null>;
+  ) => Promise<ApiGenericResponse<OrganizationResponse[] | null> | null>;
   GetDetailById: (
     id: string,
     token: string
-  ) => Promise<ApiGenericResponse<UsersResponse | null> | null>;
-  GetDetailByUserId: (
-    UserId: string,
+  ) => Promise<ApiGenericResponse<OrganizationResponse | null> | null>;
+  GetDetailByCode: (
+    code: string,
     token: string
-  ) => Promise<ApiGenericResponse<UsersResponse | null> | null>;
+  ) => Promise<ApiGenericResponse<OrganizationResponse | null> | null>;
+
   isLoading: boolean;
   error: string | null;
 }
 
-const useUsers = (): useUsersServices => {
+const useOrganization = (): useOrganizationServices => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   const List = async (
     payload: PaggingListPayload,
     token: string
-  ): Promise<ApiGenericResponse<UsersResponse[] | null> | null> => {
+  ): Promise<ApiGenericResponse<OrganizationResponse[] | null> | null> => {
     setIsLoading(true);
     setError(null);
     const UrlEndpoint: string = buildUrlPort(
       ENDPOINT_API_BASEURL,
       ENDPOINT_PORT_BASIC
     );
-    const PathEndpoint: string = "/v1/Users/integrated/list";
+    const PathEndpoint: string = "/v1/Organizations/list";
     try {
       const response = await axiosInstance.post<
-        ApiGenericResponse<UsersResponse[]>
+        ApiGenericResponse<OrganizationResponse[]>
       >(`${UrlEndpoint}${PathEndpoint}`, payload, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -162,17 +91,17 @@ const useUsers = (): useUsersServices => {
   const GetDetailById = async (
     id: string,
     token: string
-  ): Promise<ApiGenericResponse<UsersResponse | null> | null> => {
+  ): Promise<ApiGenericResponse<OrganizationResponse | null> | null> => {
     setIsLoading(true);
     setError(null);
     const UrlEndpoint: string = buildUrlPort(
       ENDPOINT_API_BASEURL,
       ENDPOINT_PORT_BASIC
     );
-    const PathEndpoint: string = `/v1/Users/integrated/${id}`;
+    const PathEndpoint: string = `/v1/Organizations/${id}`;
     try {
       const response = await axiosInstance.get<
-        ApiGenericResponse<UsersResponse>
+        ApiGenericResponse<OrganizationResponse>
       >(`${UrlEndpoint}${PathEndpoint}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -200,20 +129,20 @@ const useUsers = (): useUsersServices => {
     }
   };
 
-  const GetDetailByUserId = async (
-    UserId: string,
+  const GetDetailByCode = async (
+    code: string,
     token: string
-  ): Promise<ApiGenericResponse<UsersResponse | null> | null> => {
+  ): Promise<ApiGenericResponse<OrganizationResponse | null> | null> => {
     setIsLoading(true);
     setError(null);
     const UrlEndpoint: string = buildUrlPort(
       ENDPOINT_API_BASEURL,
       ENDPOINT_PORT_BASIC
     );
-    const PathEndpoint: string = `/v1/Users/integrated/user-id/${UserId}`;
+    const PathEndpoint: string = `/v1/Organizations/code/${code}`;
     try {
       const response = await axiosInstance.get<
-        ApiGenericResponse<UsersResponse>
+        ApiGenericResponse<OrganizationResponse>
       >(`${UrlEndpoint}${PathEndpoint}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -244,10 +173,10 @@ const useUsers = (): useUsersServices => {
   return {
     List,
     GetDetailById,
-    GetDetailByUserId,
+    GetDetailByCode,
     isLoading,
     error,
   };
 };
 
-export default useUsers;
+export default useOrganization;

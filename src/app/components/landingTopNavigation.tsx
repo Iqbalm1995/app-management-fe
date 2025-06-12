@@ -185,7 +185,7 @@ export default function TopNavigationLanding() {
                           "linear(to-br, primary.500, secondary.500 40%, yellow.500)"
                         }
                         // src={"/img/default-user-img.jpg"}
-                        name={DataAuth?.firstName}
+                        name={DataAuth?.nama}
                         boxShadow={"md"}
                       />
                       <Box
@@ -226,14 +226,14 @@ export default function TopNavigationLanding() {
                           fontSize={"sm"}
                           fontWeight={700}
                         >
-                          {DataAuth && truncateToTwoWords(DataAuth.firstName)}
+                          {DataAuth && truncateToTwoWords(DataAuth.nama)}
                         </Text>
                         <Text
                           fontSize="xs"
                           color={colorMode == "light" ? "gray.600" : "gray.100"}
                         >
-                          {(DataAuth && DataAuth.teamRole?.teamRoleName) ||
-                            (DataAuth && DataAuth.role.roleName)}
+                          {(DataAuth && DataAuth.teamRole?.specName) ||
+                            (DataAuth && DataAuth.jabatan)}
                         </Text>
                       </VStack>
                     </MenuItem>

@@ -7,8 +7,6 @@ import {
   HeaderContentProps,
 } from "@/app/components/headerContent";
 import CurrencyInput from "@/app/components/inputProps/currencyInput";
-import DivisionListSelected from "@/app/components/inputProps/divisionListSelected";
-import DivisionListSearch from "@/app/components/inputProps/divisionSearch";
 import UserSearchSelect from "@/app/components/inputProps/userSearchSelect";
 import LabelMaster from "@/app/components/labelMasterProps";
 import LayoutAdmin from "@/app/components/layoutAdmin";
@@ -22,7 +20,18 @@ import {
   TableComponentFullHeadless,
 } from "@/app/components/tableComponents";
 import {
+  allDaysString,
+  APP_ACCESS_MEDIA_INTERNET,
+  APP_ACCESS_MEDIA_INTRANET,
+  APP_ENV_LOCATION_OPTIONS,
+  APP_INTEGRATED_OTHER_APPS,
+  APP_OPERATIONAL_OPTIONS,
+  APP_RELATED_OPTIONS,
+  APP_TRANSACTIONAL_OPTIONS,
+  APP_TYPE_OPTIONS,
   DELAY_MEDIUM,
+  DIVISION_ID_IT_BJB,
+  fullDay,
   GROUP_CONST_BRD_STATUS,
   LINK_MENU_ROOT,
   MAX_SIZE_TABLE,
@@ -42,6 +51,7 @@ import {
   formatDateToYYYYMMDD,
   getCurrentQuarter,
   getQuarterDateRange,
+  getQuarterText,
   nomCompColor,
   renderFileIcon,
   stringToDateFormatedReverse,
@@ -52,12 +62,13 @@ import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useConstants, {
   ConstantDataResponse,
 } from "@/app/services/useConstants";
-import useDivision, { DivisionResponse } from "@/app/services/useDivisions";
 import useRequirements, {
-  ReqAssignUserPayload,
+  PICAssignUserPayload,
   ReqBacklogPayload,
   RequirementsInsertPayload,
   RequirementsResponse,
+  RequirementWorkProgramDataResponse,
+  WorkProgramsPayload,
 } from "@/app/services/useRequirements";
 import useUsers, { UsersResponse } from "@/app/services/useUsers";
 import {
@@ -75,6 +86,8 @@ import {
   Card,
   CardBody,
   CardHeader,
+  Checkbox,
+  CheckboxGroup,
   Divider,
   Flex,
   FormControl,
@@ -85,6 +98,7 @@ import {
   GridItem,
   Heading,
   HStack,
+  Icon,
   IconButton,
   Image,
   Input,
@@ -95,6 +109,8 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
+  Radio,
+  RadioGroup,
   Spacer,
   Stack,
   Step,
@@ -108,6 +124,8 @@ import {
   Switch,
   Table,
   TableContainer,
+  Tag,
+  TagLabel,
   Tbody,
   Td,
   Text,
@@ -132,11 +150,11 @@ import {
   PaginationState,
   useReactTable,
 } from "@tanstack/react-table";
-import { useFormik } from "formik";
+import { FieldArray, FormikProps, useFormik } from "formik";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { redirect, useParams, usePathname } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   FiArrowLeft,
   FiArrowRight,
@@ -144,22 +162,33 @@ import {
   FiChevronUp,
   FiInfo,
   FiMinusCircle,
+  FiPlus,
   FiPlusCircle,
   FiPlusSquare,
   FiRefreshCcw,
   FiSave,
   FiXCircle,
 } from "react-icons/fi";
-import * as Yup from "yup";
+import * as yup from "yup";
 import { Select } from "chakra-react-select";
 import { useDropzone } from "react-dropzone";
-import { FaRegTrashCan } from "react-icons/fa6";
+import { FaRegTrashCan, FaTrash } from "react-icons/fa6";
 import useMediaObject, {
   InsertMediaObjectByKeyPayload,
 } from "@/app/services/useMediaObject";
 import RegistrationNumberInput from "@/app/components/inputProps/RegistrationNumberInput";
 import EmailInputMask from "@/app/components/inputProps/emailInputMask";
 import VersionCodeInput from "@/app/components/inputProps/versionInput";
+import { FaTrashAlt } from "react-icons/fa";
+import OtherInputAppsStringSeparator from "@/app/components/inputProps/InputMultiTags";
+import WeekdaySelector from "@/app/components/inputProps/WeekDaySelector";
+import InputTagsArea from "@/app/components/inputProps/InputMultiTagsArea";
+import { FeatureRecomentionsBacklogs } from "@/app/helper/FeatureDataRecomendations";
+import IdentificationNumberInput from "@/app/components/inputProps/IdentificationNumberInput";
+import InputSelectOptions from "@/app/components/inputProps/inputSelectOptions";
+import useOrganization, {
+  OrganizationResponse,
+} from "@/app/services/useOrganization";
 
 const TYPE_REQ: string = REQUIREMENT_TYPE_BRD;
 
@@ -168,141 +197,204 @@ const HeaderDataContent: HeaderContentProps = {
   breadCrumb: ["Home", "Requirements", TYPE_REQ, "Registrasi"],
 };
 
-const FormSchema = Yup.object().shape({
-  reffParentId: Yup.string().nullable(),
+const FormSchema = yup.object().shape({
+  // STG 1
+  reffParentId: yup.string().nullable(),
+  senderDivisionId: yup.string().required("Sender Division ID is required"),
+  requirementType: yup.string().required("Requirement Type is required"),
+  reqNumber: yup.string().required("Requirement Number is required"),
+  reqNarative: yup.string().required("Requirement Narrative is required"),
+  reqInititateDate: yup.string().required("Initiation Date is required"),
+  reqAcceptedDate: yup.string().nullable(),
+  isCarryOver: yup.string().required("IsCarryOver is required"),
 
-  requirementType: Yup.string().required("Requirement type is required"),
-  reqNumber: Yup.string().required("Request number is required"),
-  reqNarative: Yup.string().required("Narrative is required"),
-  reqInititateDate: Yup.string().required("Initiate date is required"),
-  reqAcceptedDate: Yup.string().nullable(),
-  reqStatus: Yup.string().required("Status is required"),
-  isCarryOver: Yup.mixed<"Y" | "N">()
-    .oneOf(["Y", "N"])
-    .required("Carry over is required"),
+  // STG 2 - AREA 1
+  assignedToDate: yup.string().nullable(),
+  assignedFromId: yup.string().nullable(),
+  assignedFromName: yup.string().nullable(),
+  picAssignUsers: yup
+    .array()
+    .of(
+      yup.object({
+        userId: yup.string().required("User ID is required"),
+      })
+    )
+    .required(),
 
-  reqReviewStartDate: Yup.string().nullable(),
+  // AREA 2
+  userPicId: yup.string().nullable(),
+  userPicIdentityNumber: yup.string().nullable(),
+  userPicName: yup.string().nullable(),
+  userPicContanct: yup.string().nullable(),
+  userPicEmail: yup.string().email().nullable(),
+  userPicDivisionId: yup.string().nullable(),
+  userPicGroupId: yup.string().nullable(),
 
-  assignedFromId: Yup.string().required("Assigned from ID is required"),
-  assignedFromName: Yup.string().required("Assigned from name is required"),
-  assignedToId: Yup.string().nullable(),
-  assignedToName: Yup.string().nullable(),
-  assignedToDate: Yup.string().required("Assigned to date is required"),
+  // AREA 3
+  workPrograms: yup
+    .array()
+    .of(
+      yup.object({
+        divisionId: yup.string().required(),
+        workProgramSource: yup.string().required(),
+        workProgramCode: yup.string().nullable(),
+        workProgramName: yup.string().nullable(),
+        workProgramAccName: yup.string().nullable(),
+        workProgramAccNumber: yup.string().nullable(),
+        workProgramAccCc: yup.string().nullable(),
+        workProgramBudget: yup.number().required(),
+        workProgramReal: yup.number().required(),
+        workProgramLeftovers: yup.number().required(),
+      })
+    )
+    .required(),
 
-  userPicId: Yup.string().required("User PIC ID is required"),
-  userPicName: Yup.string().required("User PIC name is required"),
-  userPicContanct: Yup.string().required("User PIC contact is required"),
-  userPicEmail: Yup.string()
-    .email("Invalid email format")
-    .required("User PIC email is required"),
+  // AREA 4
+  appInitialCode: yup.string().nullable(),
+  appInitialName: yup.string().nullable(),
+  backlogChange: yup.string().nullable(),
+  appAccessMedia: yup.string().nullable(),
+  appTypes: yup.string().nullable(),
+  appTypeCustom: yup.string().nullable(),
+  appRelatedness: yup.string().nullable(),
+  appRelatednessDesc: yup.string().nullable(),
+  appTransactionals: yup.string().nullable(),
+  appOperational24hrs: yup.string().nullable(),
+  appOperationalDays: yup.string().nullable(),
+  appOperationalHourOpen: yup.string().nullable(),
+  appOperationalHourClosed: yup.string().nullable(),
+  appLiveTargetDate: yup.string().nullable(),
 
-  workProgramCodeEx: Yup.string().required("External code is required"),
-  workProgramNameEx: Yup.string().required("External name is required"),
-  workProgramAccNameEx: Yup.string().required(
-    "External account name is required"
-  ),
-  workProgramAccNumberEx: Yup.string().required(
-    "External account number is required"
-  ),
-  workProgramAccCcUser: Yup.string().required("External CC user is required"),
-  workProgramBudgetUser: Yup.number().required("External budget is required"),
-  workProgramRealUsers: Yup.number().required(
-    "External realization is required"
-  ),
+  appEnvLocations: yup.string().nullable(),
+  appEnvLocationsOthers: yup.string().nullable(),
+  appPrivateAuth: yup.string().nullable(),
+  appHightAvailability: yup.string().nullable(),
+  appIntegrationOthersApps: yup.string().nullable(),
 
-  workProgramCodeInt: Yup.string().required("Internal code is required"),
-  workProgramNameInt: Yup.string().required("Internal name is required"),
-  workProgramAccNameInt: Yup.string().required(
-    "Internal account name is required"
-  ),
-  workProgramAccNumberInt: Yup.string().required(
-    "Internal account number is required"
-  ),
-  workProgramAccCcInt: Yup.string().required("Internal CC is required"),
-  workProgramBudgetInt: Yup.number().required("Internal budget is required"),
-  workProgramRealInt: Yup.number().required("Internal realization is required"),
+  note: yup.string().nullable(),
+  isDraft: yup.boolean().required(),
 
-  appInitialCode: Yup.string().required("App initial code is required"),
-  appInitialName: Yup.string().required("App initial name is required"),
-  backlogFeature: Yup.string().nullable(),
-
-  backlogDescription: Yup.string().nullable(),
-  backlogChange: Yup.string().nullable(),
-  note: Yup.string().nullable(),
-
-  involvedDivisionIds: Yup.array()
-    .of(Yup.string())
-    .required("Involved division IDs are required"),
-  senderDivisionId: Yup.string().required("Sender division ID is required"),
-
-  picAssignUsers: Yup.array().of(
-    Yup.object().shape({
-      userId: Yup.string().required("User ID is required"),
-      isChecked: Yup.mixed<"Y" | "N">()
-        .oneOf(["Y", "N"])
-        .required("isChecked is required"),
-    })
-  ),
-
-  backlogFeatures: Yup.array().of(
-    Yup.object().shape({
-      backlogId: Yup.string().nullable(),
-      backlogName: Yup.string().required("Backlog name is required"),
-      backlogDesc: Yup.string().nullable(),
-    })
-  ),
+  backlogFeatures: yup
+    .array()
+    .of(
+      yup.object({
+        backlogId: yup.string().nullable(),
+        backlogName: yup.string().required("Backlog name is required"),
+        backlogDesc: yup.string().nullable(),
+      })
+    )
+    .required(),
 });
 
 const initialValues: RequirementsInsertPayload = {
-  reffParentId: null,
-  requirementType: REQUIREMENT_TYPE_BRD,
+  // STG 1
+  reffParentId: "",
+  senderDivisionId: "",
+  requirementType: TYPE_REQ,
   reqNumber: "",
   reqNarative: "",
-  reqInititateDate: formatDateToYYYYMMDD(new Date()), // Will be parsed as Date later
-  reqAcceptedDate: formatDateToYYYYMMDD(new Date()),
-  reqStatus: REQUIREMENT_STATUS_NEW,
-  reqReviewStartDate: null,
-  isCarryOver: "N",
+  reqInititateDate: "",
+  reqAcceptedDate: null,
+  isCarryOver: "",
 
+  // STG 2 - AREA 1
+  assignedToDate: null,
   assignedFromId: "",
   assignedFromName: "",
-  assignedToId: null,
-  assignedToName: null,
-  assignedToDate: formatDateToYYYYMMDD(new Date()),
+  picAssignUsers: [{ userId: "" }],
 
+  // AREA 2
   userPicId: "",
+  userPicIdentityNumber: "",
   userPicName: "",
   userPicContanct: "",
   userPicEmail: "",
+  userPicDivisionId: "",
+  userPicGroupId: "",
 
-  workProgramCodeEx: "",
-  workProgramNameEx: "",
-  workProgramAccNameEx: "",
-  workProgramAccNumberEx: "",
-  workProgramAccCcUser: "",
-  workProgramBudgetUser: 0,
-  workProgramRealUsers: 0,
+  // AREA 3
+  workPrograms: [
+    // {
+    //   divisionId: "",
+    //   workProgramSource: "",
+    //   workProgramCode: "",
+    //   workProgramName: "",
+    //   workProgramAccName: "",
+    //   workProgramAccNumber: "",
+    //   workProgramAccCc: "",
+    //   workProgramBudget: 0,
+    //   workProgramReal: 0,
+    //   workProgramLeftovers: 0,
+    // },
+  ],
 
-  workProgramCodeInt: "",
-  workProgramNameInt: "",
-  workProgramAccNameInt: "",
-  workProgramAccNumberInt: "",
-  workProgramAccCcInt: "",
-  workProgramBudgetInt: 0,
-  workProgramRealInt: 0,
-
+  // AREA 4
   appInitialCode: "",
   appInitialName: "",
-  backlogFeature: null,
+  backlogChange: "",
+  appAccessMedia: "",
+  appTypes: "",
+  appTypeCustom: "",
+  appRelatedness: "",
+  appRelatednessDesc: "",
+  appTransactionals: "",
+  appOperational24hrs: "",
+  appOperationalDays: "",
+  appOperationalHourOpen: "",
+  appOperationalHourClosed: "",
+  appLiveTargetDate: null,
 
-  backlogDescription: null,
-  backlogChange: null,
-  note: null,
+  appEnvLocations: "",
+  appEnvLocationsOthers: "",
+  appPrivateAuth: "Y",
+  appHightAvailability: "Y",
+  appIntegrationOthersApps: "",
 
-  involvedDivisionIds: [],
-  senderDivisionId: "",
-  picAssignUsers: [],
-  backlogFeatures: [],
+  note: "",
+  isDraft: false,
+
+  backlogFeatures: [
+    {
+      backlogId: "",
+      backlogName: "",
+      backlogDesc: "",
+    },
+  ],
+};
+
+const workProgramsValidationSchema = yup.object({
+  divisionId: yup.string().required("Division ID is required"),
+  workProgramSource: yup
+    .string()
+    .oneOf(["INTERNAL", "EXTERNAL"], "Source must be INTERNAL or EXTERNAL")
+    .required("Work Program Source is required"),
+  workProgramCode: yup.string().nullable(),
+  workProgramName: yup.string().nullable(),
+  workProgramAccName: yup.string().nullable(),
+  workProgramAccNumber: yup.string().nullable(),
+  workProgramAccCc: yup.string().nullable(),
+  workProgramBudget: yup
+    .number()
+    .typeError("Budget must be a number")
+    .required("Budget is required")
+    .min(0, "Budget must be 0 or more"),
+  workProgramReal: yup
+    .number()
+    .typeError("Real must be a number")
+    .required("Real is required")
+    .min(0, "Real must be 0 or more"),
+});
+
+const workProgramsInitialValues: WorkProgramsPayload = {
+  divisionId: "",
+  workProgramSource: "", // Should be "INTERNAL" or "EXTERNAL"
+  workProgramCode: "",
+  workProgramName: "",
+  workProgramAccName: "",
+  workProgramAccNumber: "",
+  workProgramAccCc: "",
+  workProgramBudget: 0,
+  workProgramReal: 0,
 };
 
 function RequirementsBRDRegisterView() {
@@ -313,11 +405,12 @@ function RequirementsBRDRegisterView() {
   const [tokenData, setTokenData] = useState<string>("");
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
-  const { List, GetDetailById, InsertReq } = useRequirements();
+  const { InsertReq } = useRequirements();
   const { InsertMediaObjectByKey } = useMediaObject();
   const { ListConstantData } = useConstants();
   const { List: ListUsers } = useUsers();
-  const { List: ListDivisions } = useDivision();
+  const { List: ListOrganization } = useOrganization();
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
@@ -520,7 +613,7 @@ function RequirementsBRDRegisterView() {
 
   const logMissingRequiredFields = (
     values: Record<string, any>,
-    schema: Yup.ObjectSchema<any>
+    schema: yup.ObjectSchema<any>
   ) => {
     const schemaDesc = schema.describe();
 
@@ -558,7 +651,7 @@ function RequirementsBRDRegisterView() {
   const handleSaveData = async () => {
     setActionLoading(true);
     await delay(DELAY_MEDIUM);
-    if (DataAuth && DataAuth.teamMember) {
+    if (DataAuth && DataAuth.team) {
       await AddRequirement(formik.values);
     } else {
       showToast({
@@ -577,10 +670,11 @@ function RequirementsBRDRegisterView() {
     handleSearchUser("", "clear");
     setActiveStep(0);
     ResetDivisionState();
-    if (DataAuth && DataAuth.teamMember) {
+    if (DataAuth && DataAuth.team) {
       formik.resetForm({ values: formik.initialValues });
       // formik.setFieldValue("id", null);
     }
+    LoadDataDivision();
     // const GettingDataOption = async () => {
     //   const MaintenanceCategoryData: OptionListProps[] =
     //     await GetOptionDataServ("MAINTENANCE_CATEGORY");
@@ -601,7 +695,7 @@ function RequirementsBRDRegisterView() {
       limit: limit,
       page: 0,
       filterWhere: [],
-      fieldOrder: ["userFirstName"],
+      fieldOrder: ["nama"],
       orderDir: "asc",
     };
     const requestData = await ListUsers(PayloadList, tokenData);
@@ -634,13 +728,15 @@ function RequirementsBRDRegisterView() {
     setDivisionSearchText("");
   };
 
-  const [DataDivisions, setDataDivisions] = useState<DivisionResponse[]>([]);
-  const [DivisionSelected, setDivisionSelected] = useState<DivisionResponse[]>(
+  const [DataDivisions, setDataDivisions] = useState<OrganizationResponse[]>(
     []
   );
+  const [DivisionSelected, setDivisionSelected] = useState<
+    OrganizationResponse[]
+  >([]);
   const [DivisionSearchText, setDivisionSearchText] = useState<string>("");
   // Append function
-  const handleAddDivision = (division: DivisionResponse) => {
+  const handleAddDivision = (division: OrganizationResponse) => {
     // Prevent duplicates (optional)
     const exists = DivisionSelected.find((d) => d.id === division.id);
     if (!exists) {
@@ -666,12 +762,9 @@ function RequirementsBRDRegisterView() {
   const [AssignedFromUser, setAssignedFromUser] = useState<string>("");
   const handleAssignedFromUser = (user: UsersResponse | null) => {
     if (user) {
-      formik.setFieldValue("assignedFromId", user.userCode);
-      formik.setFieldValue(
-        "assignedFromName",
-        `${user.userFirstName} ${user.userLastName}`
-      );
-      handleSearchUser(user.userCode, "searchAssignedFromUser");
+      formik.setFieldValue("assignedFromId", user.userId);
+      formik.setFieldValue("assignedFromName", user.nama);
+      handleSearchUser(user.userId, "searchAssignedFromUser");
       console.log("Selected User Object:", user);
     } else {
       formik.setFieldValue("assignedFromId", null);
@@ -684,12 +777,9 @@ function RequirementsBRDRegisterView() {
   const [PICUser, setPICUser] = useState<string>("");
   const handlePICUser = (user: UsersResponse | null) => {
     if (user) {
-      formik.setFieldValue("userPicId", user.userCode);
-      formik.setFieldValue(
-        "userPicName",
-        `${user.userFirstName} ${user.userLastName}`
-      );
-      handleSearchUser(user.userCode, "searchPICUser");
+      formik.setFieldValue("userPicId", user.userId);
+      formik.setFieldValue("userPicName", user.nama);
+      handleSearchUser(user.userId, "searchPICUser");
     } else {
       formik.setFieldValue("userPicId", null);
       formik.setFieldValue("userPicName", null);
@@ -745,10 +835,9 @@ function RequirementsBRDRegisterView() {
   >([]);
 
   useEffect(() => {
-    const mappedPayload: ReqAssignUserPayload[] = ChoosedMemberProjects.map(
+    const mappedPayload: PICAssignUserPayload[] = ChoosedMemberProjects.map(
       (user) => ({
         userId: user.id,
-        isChecked: "N", // default
       })
     );
 
@@ -802,21 +891,68 @@ function RequirementsBRDRegisterView() {
     formik.setFieldValue("senderDivisionId", null);
   };
 
+  const [SelectedDivisionUserPIC, setSelectedDivisionUserPIC] =
+    useState<OptionListProps | null>(null);
+  const handleSelectedDivisionUserPIC = (data: OptionListProps) => {
+    setSelectedDivisionUserPIC(data);
+    const [nameOpt, codeOpt] = data.label.split("|").map((s) => s.trim());
+    formik.setFieldValue("userPicDivisionId", data.value);
+    formik.setFieldValue("userPicDivisionCode", nameOpt);
+    formik.setFieldValue("userPicDivisionName", codeOpt);
+
+    const dataDivisionGroup = GetDataDivisionGroup(
+      "",
+      data.value,
+      MAX_SIZE_TABLE
+    );
+
+    setSelectedGroupDivision(null);
+    formik.setFieldValue("userPicGroupId", null);
+    formik.setFieldValue("userPicGroupCode", null);
+    formik.setFieldValue("userPicGroupName", null);
+  };
+  const handleUnSelectedDivisionUserPIC = () => {
+    setSelectedDivisionUserPIC(null);
+    formik.setFieldValue("userPicDivisionId", null);
+    formik.setFieldValue("userPicDivisionCode", null);
+    formik.setFieldValue("userPicDivisionName", null);
+
+    setOptionGroupDivision([]);
+  };
+
+  const handleSelectedDivisionCustom = (
+    data: OptionListProps,
+    fieldData: string
+  ) => {
+    // setSelectedDivisionUserPIC(data);
+    formik.setFieldValue(fieldData, data.value);
+  };
+  const handleUnSelectedDivisionCustom = (fieldData: string) => {
+    // setSelectedDivisionUserPIC(null);
+    formik.setFieldValue(fieldData, null);
+  };
+
   const GetDataDivision = async (
     searchValue: string = "",
     limit: number = 1
-  ): Promise<DivisionResponse[]> => {
+  ): Promise<OrganizationResponse[]> => {
     setIsLoadingDivisionSelect(true);
     const PayloadList: PaggingListPayload = {
       search: searchValue,
       limit: limit,
       page: 0,
-      filterWhere: [],
-      fieldOrder: ["divisionName"],
+      filterWhere: [
+        {
+          field: "orgType",
+          operator: "=",
+          value: "DIVISION",
+        },
+      ],
+      fieldOrder: ["orgName"],
       orderDir: "asc",
     };
     const token: string = localStorage.getItem("tokenData") as string;
-    const requestData = await ListDivisions(PayloadList, token);
+    const requestData = await ListOrganization(PayloadList, token);
     const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
 
     if (isErrorResponse || !requestData) {
@@ -837,11 +973,11 @@ function RequirementsBRDRegisterView() {
         return [];
       }
 
-      const itemsData: DivisionResponse[] =
-        requestData.data as DivisionResponse[];
+      const itemsData: OrganizationResponse[] =
+        requestData.data as OrganizationResponse[];
 
       const mapOptionData: OptionListProps[] = itemsData.map((d) => ({
-        label: `${d.divisionName} (${d.divisionCode})`,
+        label: `${d.orgName} | ${d.orgType}`,
         value: d.id,
       }));
       setOptionDivision(mapOptionData);
@@ -856,6 +992,107 @@ function RequirementsBRDRegisterView() {
       const dataDivision = await GetDataDivision("", MAX_SIZE_TABLE);
     }
   };
+
+  const [IsLoadingGroupDivisionSelect, setIsLoadingGroupDivisionSelect] =
+    useState(false);
+  const [OptionGroupDivision, setOptionGroupDivision] = useState<
+    OptionListProps[]
+  >([]);
+  const [SelectedGroupDivision, setSelectedGroupDivision] =
+    useState<OptionListProps | null>(null);
+  const handleSelectedGroupDivision = (data: OptionListProps) => {
+    setSelectedGroupDivision(data);
+    const [nameOpt, codeOpt] = data.label.split("|").map((s) => s.trim());
+    formik.setFieldValue("userPicGroupId", data.value);
+    formik.setFieldValue("userPicGroupCode", codeOpt);
+    formik.setFieldValue("userPicGroupName", nameOpt);
+  };
+  const handleUnSelectedGroupDivision = () => {
+    setSelectedGroupDivision(null);
+    formik.setFieldValue("userPicGroupId", null);
+    formik.setFieldValue("userPicGroupCode", null);
+    formik.setFieldValue("userPicGroupName", null);
+  };
+
+  const GetDataDivisionGroup = async (
+    searchValue: string = "",
+    divisionId: string = "",
+    limit: number = 1
+  ): Promise<OrganizationResponse[]> => {
+    setIsLoadingGroupDivisionSelect(true);
+    const whereDataFilter: ListSearchByParam[] =
+      divisionId.length > 0
+        ? [
+            {
+              field: "parentId",
+              operator: "=",
+              value: divisionId || "",
+            },
+            {
+              field: "orgType",
+              operator: "=",
+              value: "GROUP",
+            },
+          ]
+        : [
+            {
+              field: "orgType",
+              operator: "=",
+              value: "GROUP",
+            },
+          ];
+    const PayloadList: PaggingListPayload = {
+      search: searchValue,
+      limit: limit,
+      page: 0,
+      filterWhere: whereDataFilter,
+      fieldOrder: ["orgName"],
+      orderDir: "asc",
+    };
+    const token: string = localStorage.getItem("tokenData") as string;
+    const requestData = await ListOrganization(PayloadList, token);
+    const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+
+    if (isErrorResponse || !requestData) {
+      showToast({
+        description: requestData?.message || RES_GENERIC_ERROR_MSG,
+        statusToast: "error",
+      });
+      setIsLoadingGroupDivisionSelect(false);
+      return [];
+    } else {
+      console.log(requestData);
+      if (requestData.data == null) {
+        showToast({
+          description: "Data return error",
+          statusToast: "error",
+        });
+        setIsLoadingGroupDivisionSelect(false);
+        return [];
+      }
+
+      const itemsData: OrganizationResponse[] =
+        requestData.data as OrganizationResponse[];
+
+      const mapOptionData: OptionListProps[] = itemsData.map((d) => ({
+        label: `${d.orgName} | ${d.orgType}`,
+        value: d.id,
+      }));
+      setOptionGroupDivision(mapOptionData);
+      setIsLoadingGroupDivisionSelect(false);
+
+      return itemsData;
+    }
+  };
+
+  // const LoadDataDivisionGroup = async () => {
+  //   const dividionReffId: string = formik.values.userPicDivisionId || "";
+  //   const dataDivisionGroup = await GetDataDivisionGroup(
+  //     "",
+  //     dividionReffId,
+  //     MAX_SIZE_TABLE
+  //   );
+  // };
 
   // End Division Select
 
@@ -1139,7 +1376,7 @@ function RequirementsBRDRegisterView() {
     { title: "Step 1", description: "Informasi Umum" },
     { title: "Step 2", description: "Penugasan Personil & User" },
     { title: "Step 3", description: "Program Kerja" },
-    { title: "Step 4", description: "Ringkasan Ruanglinkup" },
+    { title: "Step 4", description: "Ringkasan Ruanglingkup" },
     { title: "Step 5", description: "Lampiran" },
   ];
   const { activeStep, setActiveStep } = useSteps({
@@ -1156,6 +1393,162 @@ function RequirementsBRDRegisterView() {
   const goToPrev = async () => {
     if (activeStep > 0) {
       setActiveStep(activeStep - 1);
+    }
+  };
+
+  // WORK PROGRAM STATE
+  const [WorkProgramExt, setWorkProgramExt] = useState<string>("0");
+  const [WorkProgramInt, setWorkProgramInt] = useState<string>("0");
+
+  const internalWorkPrograms = formik.values.workPrograms
+    .map((item, index) => ({ ...item, originalIndex: index }))
+    .filter((x) => x.workProgramSource === "EXTERNAL");
+
+  const externalWorkPrograms = formik.values.workPrograms
+    .map((item, index) => ({ ...item, originalIndex: index }))
+    .filter((x) => x.workProgramSource === "INTERNAL");
+
+  // Handler
+  const HandleExternalChange = (val: string) => {
+    setWorkProgramExt(val);
+    if (val === "1") {
+      AddWorkProgram("EXTERNAL");
+      console.log("EXTERNAL");
+    } else {
+      const filtered = formik.values.workPrograms.filter(
+        (x) => x.workProgramSource !== "EXTERNAL"
+      );
+      formik.setFieldValue("workPrograms", filtered);
+    }
+  };
+
+  const HandleInternalRBBVal = (val: string) => {
+    setWorkProgramInt(val);
+    if (val === "1") {
+      AddWorkProgram("INTERNAL");
+      console.log("INTERNAL");
+    } else {
+      const filtered = formik.values.workPrograms.filter(
+        (p) => p.workProgramSource !== "INTERNAL"
+      );
+      formik.setFieldValue("workPrograms", filtered);
+    }
+  };
+
+  const AddWorkProgram = (SourceWP: "INTERNAL" | "EXTERNAL") => {
+    // Step 1: Clone the current array
+    const currentPrograms = [...formik.values.workPrograms];
+    // Step 2: Append the new item to the clone
+    const updatedPrograms = [
+      ...currentPrograms,
+      {
+        divisionId: SourceWP === "INTERNAL" ? DIVISION_ID_IT_BJB : "",
+        // divisionId: "",
+        workProgramSource: SourceWP,
+        workProgramCode: "",
+        workProgramName: "",
+        workProgramAccName: "",
+        workProgramAccNumber: "",
+        workProgramAccCc: "",
+        workProgramBudget: 0,
+        workProgramReal: 0,
+      },
+    ];
+    formik.setFieldValue("workPrograms", updatedPrograms);
+  };
+
+  const RemoveWorkProgram = (index: number) => {
+    const updated = [...formik.values.workPrograms];
+    updated.splice(index, 1);
+    formik.setFieldValue("workPrograms", updated);
+  };
+
+  // APP TYPES OPTIONS HANDLER
+
+  const [SelectedAppsTypes, setSelectedAppsTypes] = useState<string>("");
+
+  const handleAppysTypesCheckboxChange = (value: string) => {
+    const currentList = SelectedAppsTypes.split(",")
+      .map((item) => item.trim())
+      .filter(Boolean); // removes empty strings
+
+    let updatedList: string[];
+
+    if (currentList.includes(value)) {
+      updatedList = currentList.filter((item) => item !== value);
+    } else {
+      updatedList = [...currentList, value];
+    }
+
+    setSelectedAppsTypes(
+      updatedList.join(", ") + (updatedList.length > 0 ? "," : "")
+    );
+  };
+  const hasOtherAppsTypes = SelectedAppsTypes.split(",")
+    .map((s) => s.trim().toLowerCase())
+    .includes("other");
+
+  // END APP TYPES OPTIONS HANDLER
+
+  // APPS OPERATIONAL STATE
+  const [OperationalDays, setOperationalDays] = useState<string>("");
+
+  // END APPS OPERATIONAL STATE
+
+  // APP ENV LOC OPTIONS HANDLER
+
+  const [SelectedAppsEnvLoc, setSelectedAppsEnvLoc] = useState<string>("");
+
+  const handleAppysEnvLocCheckboxChange = (value: string) => {
+    const currentList = SelectedAppsEnvLoc.split(",")
+      .map((item) => item.trim())
+      .filter(Boolean); // removes empty strings
+
+    let updatedList: string[];
+
+    if (currentList.includes(value)) {
+      updatedList = currentList.filter((item) => item !== value);
+    } else {
+      updatedList = [...currentList, value];
+    }
+
+    setSelectedAppsEnvLoc(
+      updatedList.join(", ") + (updatedList.length > 0 ? "," : "")
+    );
+  };
+  const hasOtherEnvLocTypes = SelectedAppsEnvLoc.split(",")
+    .map((s) => s.trim().toLowerCase())
+    .includes("other");
+
+  // END APP ENV LOC OPTIONS HANDLER
+
+  useEffect(() => {
+    formik.setFieldValue("appTypes", SelectedAppsTypes);
+    formik.setFieldValue("appOperationalDays", OperationalDays);
+    formik.setFieldValue("appEnvLocations", SelectedAppsEnvLoc);
+    // if (formik.values.appOperational24hrs == APP_OPERATIONAL_OPTIONS[0]) {
+    //   formik.setFieldValue("appOperationalDays", "");
+    // }
+
+    if (!hasOtherAppsTypes) {
+      formik.setFieldValue("appRelatednessDesc", "");
+    }
+    if (!hasOtherEnvLocTypes) {
+      formik.setFieldValue("appEnvLocationsOthers", "");
+    }
+  }, [SelectedAppsTypes, OperationalDays, SelectedAppsEnvLoc]);
+
+  const handleQuickAddTagIntegratedApps = (tag: string) => {
+    const currentValue = formik.values.appIntegrationOthersApps || "";
+
+    const currentTags = currentValue
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
+
+    if (!currentTags.includes(tag)) {
+      const updated = [...currentTags, tag].join(", ");
+      formik.setFieldValue("appIntegrationOthersApps", updated);
     }
   };
 
@@ -1187,7 +1580,7 @@ function RequirementsBRDRegisterView() {
           <ModalBody w={"full"}>
             <Flex as={Stack} w={"full"}>
               <FormControl>
-                <FormLabel>Nama Fitur Aplikasi</FormLabel>
+                <FormLabel>Nama Fitur</FormLabel>
                 <Input
                   id="backlogFeatureName"
                   name="backlogFeatureName"
@@ -1223,6 +1616,42 @@ function RequirementsBRDRegisterView() {
               >
                 {FormMode == "Add" ? "Tambah" : "Ubah"} Fitur
               </Button>
+
+              <Divider py={1} />
+              <Text fontSize={"smaller"}>Tambah Cepat</Text>
+              <FormControl>
+                <FormLabel>Rekomendasi Fitur Umum</FormLabel>
+                <Flex as={Wrap} w={"full"}>
+                  {FeatureRecomentionsBacklogs.map((item, index) => {
+                    if (
+                      DataBackLogs.some(
+                        (x) => x.backlogName === item.featureName
+                      )
+                    ) {
+                      return null; // Skip if already exists
+                    } else {
+                      return (
+                        <Tag
+                          key={index}
+                          borderRadius="full"
+                          colorScheme="secondary"
+                          variant={"solid"}
+                          onClick={() => {
+                            setTextBackLogName(item.featureName);
+                            setTextBackLogDesc(item.featureDescription || "");
+                          }}
+                          px={3}
+                          cursor={"pointer"}
+                          _hover={{ bg: "secondary.700", color: "white" }}
+                        >
+                          <FiPlus />
+                          <TagLabel pl={1}>{item.featureName}</TagLabel>
+                        </Tag>
+                      );
+                    }
+                  })}
+                </Flex>
+              </FormControl>
             </Flex>
           </ModalBody>
           <ModalFooter></ModalFooter>
@@ -1271,18 +1700,19 @@ function RequirementsBRDRegisterView() {
               >
                 Ulang
               </Button> */}
-              <Button
+              {/* <Button
                 size={"lg"}
                 colorScheme={"green"}
                 leftIcon={<FiSave />}
-                type={"submit"}
+                // type={"submit"}
                 //   onClick={() => setSaveAsDraft(false)}
+                onClick={() => handleConfirmSaveData(formik.values)}
                 isLoading={ActionLoading}
                 isDisabled={activeStep !== steps.length - 1}
                 px={8}
               >
                 Simpan
-              </Button>
+              </Button> */}
             </Flex>
           </GridItem>
           <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 12 }} w={"full"}>
@@ -1296,10 +1726,47 @@ function RequirementsBRDRegisterView() {
                 <Flex w={"full"} as={Stack} spacing={4}>
                   <Flex w={"full"} as={Stack}>
                     <Stepper
+                      index={steps.length}
+                      orientation={"horizontal"}
+                      height={"full"}
+                      pb={4}
+                      overflowX={"auto"}
+                      display={{
+                        base: "flex",
+                        sm: "flex",
+                        md: "flex",
+                        lg: "none",
+                      }}
+                    >
+                      <Step>
+                        <StepIndicator>
+                          <StepStatus />
+                        </StepIndicator>
+
+                        <Box flexShrink="0">
+                          <StepTitle fontWeight={600}>
+                            {steps[activeStep].title} / {steps.length}
+                          </StepTitle>
+                          <StepDescription>
+                            {steps[activeStep].description}
+                          </StepDescription>
+                        </Box>
+
+                        <StepSeparator />
+                      </Step>
+                    </Stepper>
+                    <Stepper
                       index={activeStep}
                       orientation={"horizontal"}
-                      height={"100%"}
+                      height={"full"}
                       pb={4}
+                      overflowX={"auto"}
+                      display={{
+                        base: "none",
+                        sm: "none",
+                        md: "none",
+                        lg: "flex",
+                      }}
                     >
                       {steps.map((step, index) => (
                         <Step key={index}>
@@ -1325,21 +1792,12 @@ function RequirementsBRDRegisterView() {
 
                     {activeStep === 0 && (
                       <Flex as={Stack} w={"full"} spacing={5}>
-                        <InputGroupPanel
-                          headerTitle={`Informasi Umum ${TYPE_REQ}`}
-                        >
+                        <InputGroupPanel headerTitle={`Informasi Umum`}>
                           <Input
                             id="requirementType"
                             name="requirementType"
                             type="hidden"
                             value={formik.values.requirementType ?? ""}
-                            readOnly
-                          />
-                          <Input
-                            id="reqStatus"
-                            name="reqStatus"
-                            type="hidden"
-                            value={formik.values.reqStatus ?? ""}
                             readOnly
                           />
 
@@ -1355,7 +1813,7 @@ function RequirementsBRDRegisterView() {
                                 Divisi Pengirim
                               </FormLabel>
                               <Stack spacing={0}>
-                                <Select
+                                {/* <Select
                                   id={"senderDivisionId"}
                                   options={OptionDivision}
                                   isSearchable={true}
@@ -1375,6 +1833,16 @@ function RequirementsBRDRegisterView() {
                                     IsLoadingProcess || IsLoadingDivisionSelect
                                   }
                                   value={SelectedDivision}
+                                /> */}
+                                <InputSelectOptions
+                                  Id={"senderDivisionId"}
+                                  OptionData={OptionDivision}
+                                  SelectedData={SelectedDivision}
+                                  handleSelectedData={handleSelectedDivision}
+                                  handleUnSelectedData={
+                                    handleUnSelectedDivision
+                                  }
+                                  placeholder={"Pilih Divisi Pengirim"}
                                 />
                                 <FormErrorMessage>
                                   {formik.errors.senderDivisionId}
@@ -1390,7 +1858,7 @@ function RequirementsBRDRegisterView() {
                           >
                             <InputLayout>
                               <FormLabel h={"full"} mt={2}>
-                                Nomor {TYPE_REQ}
+                                Nomor Memo
                               </FormLabel>
                               <Stack spacing={0} h={"full"}>
                                 <RegistrationNumberInput
@@ -1421,7 +1889,7 @@ function RequirementsBRDRegisterView() {
                           >
                             <InputLayout>
                               <FormLabel h={"full"} mt={2}>
-                                Perihal {TYPE_REQ}
+                                Perihal
                               </FormLabel>
                               <Stack spacing={0} h={"full"}>
                                 <Textarea
@@ -1429,7 +1897,7 @@ function RequirementsBRDRegisterView() {
                                   name="reqNarative"
                                   onChange={formik.handleChange}
                                   defaultValue={formik.values.reqNarative ?? ""}
-                                  placeholder={`Perlihal ${TYPE_REQ}`}
+                                  placeholder={`Perlihal`}
                                   maxLength={300}
                                   isDisabled={ActionLoading}
                                 />
@@ -1449,7 +1917,7 @@ function RequirementsBRDRegisterView() {
                           >
                             <InputLayout>
                               <FormLabel h={"full"} mt={2}>
-                                Tanggal Inisiasi Memo
+                                Tanggal Memo
                               </FormLabel>
                               <Stack spacing={0} h={"full"}>
                                 <Input
@@ -1516,7 +1984,8 @@ function RequirementsBRDRegisterView() {
                                       new Date().toISOString(),
                                     formik.values.reqAcceptedDate ||
                                       new Date().toISOString()
-                                  )}
+                                  )}{" "}
+                                  Hari Kalendar
                                 </Text>
                                 <FormErrorMessage>
                                   {calculateDurationInDays(
@@ -1524,7 +1993,7 @@ function RequirementsBRDRegisterView() {
                                       new Date().toISOString(),
                                     formik.values.reqAcceptedDate ||
                                       new Date().toISOString()
-                                  ) < 0 && "Duration days cannot minus"}
+                                  ) < 0 && "Durasi tidak boleh negatif"}
                                 </FormErrorMessage>
                               </Stack>
                             </InputLayoutFull>
@@ -1569,6 +2038,7 @@ function RequirementsBRDRegisterView() {
                         </InputGroupPanel>
                       </Flex>
                     )}
+
                     {activeStep === 1 && (
                       <Flex as={Stack} w={"full"} spacing={5}>
                         <InputGroupPanel
@@ -1688,10 +2158,7 @@ function RequirementsBRDRegisterView() {
                                         key={index}
                                       >
                                         <Box>
-                                          <Avatar
-                                            name={dt.userFirstName}
-                                            src=""
-                                          />
+                                          <Avatar name={dt.nama} src="" />
                                         </Box>
                                         <Box>
                                           <Stack spacing={0}>
@@ -1699,8 +2166,7 @@ function RequirementsBRDRegisterView() {
                                               color={"gray.900"}
                                               fontWeight={600}
                                             >
-                                              {dt.userFirstName}{" "}
-                                              {dt.userLastName} ({dt.userCode})
+                                              {dt.nama} ({dt.userId})
                                             </Text>
                                             <Text
                                               fontWeight={500}
@@ -1708,7 +2174,7 @@ function RequirementsBRDRegisterView() {
                                               color={"gray.700"}
                                             >
                                               {dt.team?.teamName} |{" "}
-                                              {dt.teamRole?.teamRoleName}
+                                              {dt.teamRole?.specName}
                                             </Text>
                                           </Stack>
                                         </Box>
@@ -1783,10 +2249,7 @@ function RequirementsBRDRegisterView() {
                                               key={index}
                                             >
                                               <Box>
-                                                <Avatar
-                                                  name={dt.userFirstName}
-                                                  src=""
-                                                />
+                                                <Avatar name={dt.nama} src="" />
                                               </Box>
                                               <Box>
                                                 <Stack spacing={0}>
@@ -1794,9 +2257,7 @@ function RequirementsBRDRegisterView() {
                                                     color={"gray.900"}
                                                     fontWeight={600}
                                                   >
-                                                    {dt.userFirstName}{" "}
-                                                    {dt.userLastName} (
-                                                    {dt.userCode})
+                                                    {dt.nama} ({dt.userId})
                                                   </Text>
                                                   <Text
                                                     fontWeight={500}
@@ -1804,7 +2265,7 @@ function RequirementsBRDRegisterView() {
                                                     color={"secondary.700"}
                                                   >
                                                     {dt.team?.teamName} |{" "}
-                                                    {dt.teamRole?.teamRoleName}
+                                                    {dt.teamRole?.specName}
                                                   </Text>
                                                 </Stack>
                                               </Box>
@@ -1846,7 +2307,7 @@ function RequirementsBRDRegisterView() {
                         </InputGroupPanel>
 
                         <InputGroupPanel
-                          headerTitle={`Informasi User ${TYPE_REQ}`}
+                          headerTitle={`Informasi Person In Charge (PIC)`}
                         >
                           <FormControl
                             id="searchPICUser"
@@ -1855,7 +2316,7 @@ function RequirementsBRDRegisterView() {
                           >
                             <InputLayoutFull>
                               <FormLabel h={"full"} mt={2}>
-                                User PIC
+                                User ID
                               </FormLabel>
                               <Stack spacing={0} h={"full"}>
                                 <Input
@@ -1886,6 +2347,67 @@ function RequirementsBRDRegisterView() {
                           </FormControl>
 
                           <FormControl
+                            id="userPicIdentityNumber"
+                            isInvalid={
+                              formik.errors.userPicIdentityNumber ? true : false
+                            }
+                            isRequired
+                          >
+                            <InputLayout>
+                              <FormLabel h={"full"} mt={2}>
+                                NIK
+                              </FormLabel>
+                              <Stack spacing={0} h={"full"}>
+                                <IdentificationNumberInput
+                                  id="userPicIdentityNumber"
+                                  name="userPicIdentityNumber"
+                                  type="text"
+                                  onChange={formik.handleChange}
+                                  value={
+                                    formik.values.userPicIdentityNumber ?? ""
+                                  }
+                                  // placeholder={`xxx-xxxx-xxxx`}
+                                  minLength={9}
+                                  maxLength={10}
+                                  isDisabled={ActionLoading}
+                                  onlyNum={true}
+                                />
+                                <FormErrorMessage>
+                                  {formik.errors.userPicContanct}
+                                </FormErrorMessage>
+                              </Stack>
+                            </InputLayout>
+                          </FormControl>
+
+                          <FormControl
+                            id="userPicName"
+                            isInvalid={formik.errors.userPicName ? true : false}
+                            isRequired
+                          >
+                            <InputLayout>
+                              <FormLabel h={"full"} mt={2}>
+                                Nama Lengkap
+                              </FormLabel>
+                              <Stack spacing={0} h={"full"}>
+                                <Input
+                                  id="userPicName"
+                                  name="userPicName"
+                                  type="text"
+                                  onChange={formik.handleChange}
+                                  value={formik.values.userPicName ?? ""}
+                                  placeholder={`Nama Lengkap PIC`}
+                                  minLength={9}
+                                  maxLength={225}
+                                  isDisabled={true}
+                                />
+                                <FormErrorMessage>
+                                  {formik.errors.userPicContanct}
+                                </FormErrorMessage>
+                              </Stack>
+                            </InputLayout>
+                          </FormControl>
+
+                          <FormControl
                             id="userPicContanct"
                             isInvalid={
                               formik.errors.userPicContanct ? true : false
@@ -1894,15 +2416,25 @@ function RequirementsBRDRegisterView() {
                           >
                             <InputLayout>
                               <FormLabel h={"full"} mt={2}>
-                                Kontak PIC (Handphone)
+                                Nomor Handphone / Whatsapp
                               </FormLabel>
                               <Stack spacing={0} h={"full"}>
                                 <Input
                                   id="userPicContanct"
                                   name="userPicContanct"
                                   type="text"
-                                  onChange={formik.handleChange}
-                                  value={formik.values.userPicContanct ?? ""}
+                                  // onChange={formik.handleChange}
+                                  onChange={(e) => {
+                                    const onlyNums = e.target.value.replace(
+                                      /[^0-9]/g,
+                                      ""
+                                    );
+                                    formik.setFieldValue(
+                                      `userPicContanct`,
+                                      onlyNums
+                                    );
+                                  }}
+                                  value={formik.values.userPicContanct || "08"}
                                   placeholder={`No. Handphone (08xxxxxx)`}
                                   minLength={9}
                                   maxLength={13}
@@ -1936,7 +2468,7 @@ function RequirementsBRDRegisterView() {
                                   onChange={(val) =>
                                     formik.setFieldValue("userPicEmail", val)
                                   }
-                                  placeholder={`Alamat PIC Email (xxxx@bankbjb.co.id)`}
+                                  // placeholder={`Alamat PIC Email (xxxx@bankbjb.co.id)`}
                                   minLength={9}
                                   maxLength={50}
                                   isDisabled={ActionLoading}
@@ -1947,710 +2479,1828 @@ function RequirementsBRDRegisterView() {
                               </Stack>
                             </InputLayout>
                           </FormControl>
+
+                          <FormControl
+                            id={"userPicDivisionId"}
+                            isInvalid={
+                              formik.errors.userPicDivisionId ? true : false
+                            }
+                            isRequired
+                          >
+                            <InputLayout>
+                              <FormLabel h={"full"} mt={2}>
+                                Divisi
+                              </FormLabel>
+                              <Stack spacing={0}>
+                                {/* <Select
+                                  id={"userPicDivisionId"}
+                                  options={OptionDivision}
+                                  isSearchable={true}
+                                  onMenuOpen={async () => {
+                                    await LoadDataDivision();
+                                  }}
+                                  onChange={(e) => {
+                                    e
+                                      ? handleSelectedDivisionUserPIC({
+                                          label: e.label,
+                                          value: e.value,
+                                        })
+                                      : handleUnSelectedDivisionUserPIC();
+                                  }}
+                                  placeholder={"Pilih Divisi User PIC"}
+                                  isLoading={
+                                    IsLoadingProcess || IsLoadingDivisionSelect
+                                  }
+                                  value={SelectedDivisionUserPIC}
+                                /> */}
+                                <InputSelectOptions
+                                  Id={"userPicDivisionId"}
+                                  OptionData={OptionDivision}
+                                  SelectedData={SelectedDivisionUserPIC}
+                                  handleSelectedData={
+                                    handleSelectedDivisionUserPIC
+                                  }
+                                  handleUnSelectedData={
+                                    handleUnSelectedDivisionUserPIC
+                                  }
+                                  placeholder={"Pilih Divisi User PIC"}
+                                />
+                                <FormErrorMessage>
+                                  {formik.errors.userPicDivisionId}
+                                </FormErrorMessage>
+                              </Stack>
+                            </InputLayout>
+                          </FormControl>
+
+                          <FormControl
+                            id={"userPicGroupId"}
+                            isInvalid={
+                              formik.errors.userPicGroupId ? true : false
+                            }
+                            isRequired
+                          >
+                            <InputLayout>
+                              <FormLabel h={"full"} mt={2}>
+                                Grup
+                              </FormLabel>
+                              <Stack spacing={0}>
+                                {/* <Select
+                                  id={"userPicGroupId"}
+                                  options={OptionGroupDivision}
+                                  isSearchable={true}
+                                  onMenuOpen={async () => {
+                                    await LoadDataDivisionGroup();
+                                  }}
+                                  onChange={(e) => {
+                                    e
+                                      ? handleSelectedGroupDivision({
+                                          label: e.label,
+                                          value: e.value,
+                                        })
+                                      : handleUnSelectedGroupDivision();
+                                  }}
+                                  placeholder={"Pilih Grup User PIC"}
+                                  isLoading={
+                                    IsLoadingProcess ||
+                                    IsLoadingGroupDivisionSelect
+                                  }
+                                  value={SelectedGroupDivision}
+                                /> */}
+                                <InputSelectOptions
+                                  Id={"userPicGroupId"}
+                                  OptionData={OptionGroupDivision}
+                                  SelectedData={SelectedGroupDivision}
+                                  handleSelectedData={
+                                    handleSelectedGroupDivision
+                                  }
+                                  handleUnSelectedData={
+                                    handleUnSelectedGroupDivision
+                                  }
+                                  placeholder={"Pilih Grup User PIC"}
+                                />
+                                <FormErrorMessage>
+                                  {formik.errors.userPicGroupId}
+                                </FormErrorMessage>
+                              </Stack>
+                            </InputLayout>
+                          </FormControl>
                         </InputGroupPanel>
                       </Flex>
                     )}
+
                     {activeStep === 2 && (
                       <Flex as={Stack} w={"full"} spacing={5}>
                         <InputGroupPanel headerTitle={`Program Kerja User`}>
-                          <FormControl
-                            id="workProgramCodeEx"
-                            isInvalid={
-                              formik.errors.workProgramCodeEx ? true : false
-                            }
-                            isRequired
-                          >
+                          <FormControl>
                             <InputLayout>
                               <FormLabel h={"full"} mt={2}>
-                                Kode Program Kerja User
+                                Sudah Memiliki Proker Kerja ?
                               </FormLabel>
                               <Stack spacing={0} h={"full"}>
-                                <VersionCodeInput
-                                  id="workProgramCodeEx"
-                                  name="workProgramCodeEx"
-                                  type="text"
-                                  // onChange={formik.handleChange}
-                                  onChange={(val) =>
-                                    formik.setFieldValue(
-                                      "workProgramCodeEx",
-                                      val
-                                    )
-                                  }
-                                  value={formik.values.workProgramCodeEx ?? ""}
-                                  placeholder={`0.0.0.0`}
-                                  minLength={3}
-                                  isDisabled={ActionLoading}
-                                  useDoubleDigits={false}
-                                />
-                                <FormErrorMessage>
-                                  {formik.errors.workProgramCodeEx}
-                                </FormErrorMessage>
+                                <RadioGroup
+                                  onChange={(val) => HandleExternalChange(val)}
+                                  value={WorkProgramExt}
+                                >
+                                  <Flex w={"full"} as={HStack}>
+                                    <Radio value={"0"}>Tidak</Radio>
+                                    <Radio value={"1"}>Ada</Radio>
+                                  </Flex>
+                                </RadioGroup>
+                                <FormErrorMessage></FormErrorMessage>
                               </Stack>
                             </InputLayout>
                           </FormControl>
+                          {WorkProgramExt === "1" && (
+                            <Flex w={"full"} as={Stack}>
+                              {internalWorkPrograms.map((item, i) => {
+                                const index = item.originalIndex;
+                                const leftover =
+                                  formik.values.workPrograms[index]
+                                    .workProgramBudget -
+                                  formik.values.workPrograms[index]
+                                    .workProgramReal;
 
-                          <FormControl
-                            id="workProgramNameEx"
-                            isInvalid={
-                              formik.errors.workProgramNameEx ? true : false
-                            }
-                            isRequired
-                          >
-                            <InputLayoutFull>
-                              <FormLabel h={"full"} mt={2}>
-                                Nama Program Kerja User
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <Input
-                                  id="workProgramNameEx"
-                                  name="workProgramNameEx"
-                                  type="text"
-                                  onChange={formik.handleChange}
-                                  value={formik.values.workProgramNameEx ?? ""}
-                                  placeholder={`Nama Program Kerja User`}
-                                  minLength={3}
-                                  maxLength={150}
-                                  isDisabled={ActionLoading}
-                                />
-                                <FormErrorMessage>
-                                  {formik.errors.workProgramNameEx}
-                                </FormErrorMessage>
-                              </Stack>
-                            </InputLayoutFull>
-                          </FormControl>
+                                const leftoverColor =
+                                  leftover < 0
+                                    ? "red.500"
+                                    : leftover > 0
+                                    ? "green.500"
+                                    : colorMode === "light"
+                                    ? "black"
+                                    : "white";
+                                return (
+                                  <Flex w={"full"} as={Stack} key={index}>
+                                    <Divider key={index} />
+                                    <Flex
+                                      w={"full"}
+                                      as={HStack}
+                                      justifyContent={"space-between"}
+                                    >
+                                      <Text fontWeight={600}>
+                                        Proker Kerja - {index + 1}
+                                      </Text>
+                                      <Button
+                                        size={"md"}
+                                        variant={"ghost"}
+                                        colorScheme={"red"}
+                                        onClick={() => RemoveWorkProgram(index)}
+                                      >
+                                        <FaTrash />
+                                      </Button>
+                                    </Flex>
 
-                          <FormControl
-                            id="workProgramAccNameEx"
-                            isInvalid={
-                              formik.errors.workProgramAccNameEx ? true : false
-                            }
-                            isRequired
-                          >
-                            <InputLayoutFull>
-                              <FormLabel h={"full"} mt={2}>
-                                Nama Rekening User
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <Input
-                                  id="workProgramAccNameEx"
-                                  name="workProgramAccNameEx"
-                                  type="text"
-                                  onChange={formik.handleChange}
-                                  value={
-                                    formik.values.workProgramAccNameEx ?? ""
-                                  }
-                                  placeholder={`Nama Rekening User`}
-                                  minLength={3}
-                                  maxLength={150}
-                                  isDisabled={ActionLoading}
-                                />
-                                <FormErrorMessage>
-                                  {formik.errors.workProgramAccNameEx}
-                                </FormErrorMessage>
-                              </Stack>
-                            </InputLayoutFull>
-                          </FormControl>
+                                    <FormControl
+                                      id={`workProgramDivision-${index}`}
+                                      isInvalid={
+                                        typeof formik.errors.workPrograms?.[
+                                          index
+                                        ] === "object" &&
+                                        formik.errors.workPrograms?.[index]
+                                          ?.divisionId
+                                          ? true
+                                          : false
+                                      }
+                                      isRequired
+                                    >
+                                      <InputLayout>
+                                        <FormLabel h={"full"} mt={2}>
+                                          Divisi
+                                        </FormLabel>
+                                        <Stack spacing={0}>
+                                          <Select
+                                            id={`workProgramDivision-${index}`}
+                                            options={OptionDivision}
+                                            isSearchable={true}
+                                            onMenuOpen={async () => {
+                                              await LoadDataDivision();
+                                            }}
+                                            onChange={(e) => {
+                                              e
+                                                ? handleSelectedDivisionCustom(
+                                                    {
+                                                      label: e.label,
+                                                      value: e.value,
+                                                    },
+                                                    `workPrograms[${index}].divisionId`
+                                                  )
+                                                : handleUnSelectedDivisionCustom(
+                                                    `workPrograms[${index}].divisionId`
+                                                  );
+                                            }}
+                                            placeholder={"Pilih Divisi"}
+                                            isLoading={
+                                              IsLoadingProcess ||
+                                              IsLoadingDivisionSelect
+                                            }
+                                            value={OptionDivision.find(
+                                              (x) =>
+                                                x.value ==
+                                                formik.values.workPrograms[
+                                                  index
+                                                ].divisionId
+                                            )}
+                                          />
+                                          <FormErrorMessage>
+                                            {typeof formik.errors
+                                              .workPrograms?.[index] ===
+                                              "object" &&
+                                              formik.errors.workPrograms?.[
+                                                index
+                                              ]?.divisionId}
+                                          </FormErrorMessage>
+                                        </Stack>
+                                      </InputLayout>
+                                    </FormControl>
 
-                          <FormControl
-                            id="workProgramAccNumberEx"
-                            isInvalid={
-                              formik.errors.workProgramAccNumberEx
-                                ? true
-                                : false
-                            }
-                            isRequired
-                          >
-                            <InputLayout>
-                              <FormLabel h={"full"} mt={2}>
-                                Nomor Rekening User
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <Input
-                                  id="workProgramAccNumberEx"
-                                  name="workProgramAccNumberEx"
-                                  type="text"
-                                  onChange={(e) => {
-                                    const onlyNums = e.target.value.replace(
-                                      /[^0-9]/g,
-                                      ""
-                                    );
-                                    formik.setFieldValue(
-                                      "workProgramAccNumberEx",
-                                      onlyNums
-                                    );
-                                  }}
-                                  value={
-                                    formik.values.workProgramAccNumberEx ?? ""
-                                  }
-                                  placeholder={`Nomor Rekening User`}
-                                  minLength={4}
-                                  maxLength={6}
-                                  isDisabled={ActionLoading}
-                                />
-                                <FormErrorMessage>
-                                  {formik.errors.workProgramAccNumberEx}
-                                </FormErrorMessage>
-                              </Stack>
-                            </InputLayout>
-                          </FormControl>
+                                    <FormControl
+                                      id={`workProgramCodeEx-${index}`}
+                                      isInvalid={
+                                        typeof formik.errors.workPrograms?.[
+                                          index
+                                        ] === "object" &&
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramCode
+                                          ? true
+                                          : false
+                                      }
+                                      isRequired
+                                    >
+                                      <InputLayout>
+                                        <FormLabel h={"full"} mt={2}>
+                                          Kode Program Kerja
+                                        </FormLabel>
+                                        <Stack spacing={0} h={"full"}>
+                                          <VersionCodeInput
+                                            id={`workProgramCodeEx-${index}`}
+                                            name={`workProgramCodeEx-${index}`}
+                                            type="text"
+                                            onChange={(val) =>
+                                              formik.setFieldValue(
+                                                `workPrograms[${index}].workProgramCode`,
+                                                val
+                                              )
+                                            }
+                                            value={
+                                              formik.values.workPrograms[index]
+                                                .workProgramCode ?? ""
+                                            }
+                                            placeholder={`0.0.0.0`}
+                                            minLength={3}
+                                            isDisabled={ActionLoading}
+                                            useDoubleDigits={false}
+                                          />
+                                          <FormErrorMessage>
+                                            {typeof formik.errors
+                                              .workPrograms?.[index] ===
+                                              "object" &&
+                                              formik.errors.workPrograms?.[
+                                                index
+                                              ]?.workProgramCode}
+                                          </FormErrorMessage>
+                                        </Stack>
+                                      </InputLayout>
+                                    </FormControl>
 
-                          <FormControl
-                            id="workProgramAccCcUser"
-                            isInvalid={
-                              formik.errors.workProgramAccCcUser ? true : false
-                            }
-                            isRequired
-                          >
-                            <InputLayout>
-                              <FormLabel h={"full"} mt={2}>
-                                Kode CC User
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <Input
-                                  id="workProgramAccCcUser"
-                                  name="workProgramAccCcUser"
-                                  type="text"
-                                  onChange={(e) => {
-                                    const raw = e.target.value.replace(
-                                      /\D/g,
-                                      ""
-                                    ); // remove non-digits
-                                    formik.setFieldValue(
-                                      "workProgramAccCcUser",
-                                      raw
-                                    );
-                                  }}
-                                  value={
-                                    formik.values.workProgramAccCcUser ?? ""
-                                  }
-                                  placeholder="44444"
-                                  minLength={4}
-                                  maxLength={5}
-                                  isDisabled={ActionLoading}
-                                />
-                                <FormErrorMessage>
-                                  {formik.errors.workProgramAccCcUser}
-                                </FormErrorMessage>
-                              </Stack>
-                            </InputLayout>
-                          </FormControl>
+                                    <FormControl
+                                      id={`workProgramNameEx-${index}`}
+                                      isInvalid={
+                                        typeof formik.errors.workPrograms?.[
+                                          index
+                                        ] === "object" &&
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramName
+                                          ? true
+                                          : false
+                                      }
+                                      isRequired
+                                    >
+                                      <InputLayoutFull>
+                                        <FormLabel h={"full"} mt={2}>
+                                          Nama Program Kerja
+                                        </FormLabel>
+                                        <Stack spacing={0} h={"full"}>
+                                          <Input
+                                            id={`workProgramNameEx-${index}`}
+                                            name={`workProgramNameEx-${index}`}
+                                            type="text"
+                                            onChange={(e) =>
+                                              formik.setFieldValue(
+                                                `workPrograms[${index}].workProgramName`,
+                                                e.target.value
+                                              )
+                                            }
+                                            value={
+                                              formik.values.workPrograms[index]
+                                                .workProgramName ?? ""
+                                            }
+                                            placeholder={`Nama Program Kerja`}
+                                            minLength={3}
+                                            maxLength={150}
+                                            isDisabled={ActionLoading}
+                                          />
+                                          <FormErrorMessage>
+                                            {typeof formik.errors
+                                              .workPrograms?.[index] ===
+                                              "object" &&
+                                              formik.errors.workPrograms?.[
+                                                index
+                                              ]?.workProgramName}
+                                          </FormErrorMessage>
+                                        </Stack>
+                                      </InputLayoutFull>
+                                    </FormControl>
 
-                          <FormControl
-                            id="workProgramBudgetUser"
-                            isInvalid={
-                              formik.errors.workProgramBudgetUser ? true : false
-                            }
-                            isRequired
-                          >
-                            <InputLayout>
-                              <FormLabel h={"full"} mt={2}>
-                                Anggaran User (Rp.)
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <CurrencyInput
-                                  name="workProgramBudgetUser"
-                                  value={formik.values.workProgramBudgetUser}
-                                  onChange={formik.setFieldValue}
-                                />
-                                <FormErrorMessage>
-                                  {formik.errors.workProgramBudgetUser}
-                                </FormErrorMessage>
-                              </Stack>
-                            </InputLayout>
-                          </FormControl>
+                                    <FormControl
+                                      id={`workProgramAccNameEx-${index}`}
+                                      isInvalid={
+                                        typeof formik.errors.workPrograms?.[
+                                          index
+                                        ] === "object" &&
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramAccName
+                                          ? true
+                                          : false
+                                      }
+                                      isRequired
+                                    >
+                                      <InputLayoutFull>
+                                        <FormLabel h={"full"} mt={2}>
+                                          Nama Rekening
+                                        </FormLabel>
+                                        <Stack spacing={0} h={"full"}>
+                                          <Input
+                                            id="workProgramAccNameEx"
+                                            name="workProgramAccNameEx"
+                                            type="text"
+                                            onChange={(e) =>
+                                              formik.setFieldValue(
+                                                `workPrograms[${index}].workProgramAccName`,
+                                                e.target.value
+                                              )
+                                            }
+                                            value={
+                                              formik.values.workPrograms[index]
+                                                .workProgramAccName ?? ""
+                                            }
+                                            placeholder={`Nama Rekening`}
+                                            minLength={3}
+                                            maxLength={150}
+                                            isDisabled={ActionLoading}
+                                          />
+                                          <FormErrorMessage>
+                                            {typeof formik.errors
+                                              .workPrograms?.[index] ===
+                                              "object" &&
+                                              formik.errors.workPrograms?.[
+                                                index
+                                              ]?.workProgramAccName}
+                                          </FormErrorMessage>
+                                        </Stack>
+                                      </InputLayoutFull>
+                                    </FormControl>
 
-                          <FormControl
-                            id="workProgramRealUsers"
-                            isInvalid={
-                              formik.errors.workProgramRealUsers ? true : false
-                            }
-                            isRequired
-                          >
-                            <InputLayout>
-                              <FormLabel h={"full"} mt={2}>
-                                Realisasi (Rp.)
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <CurrencyInput
-                                  name="workProgramRealUsers"
-                                  value={formik.values.workProgramRealUsers}
-                                  onChange={formik.setFieldValue}
-                                />
-                                <FormErrorMessage>
-                                  {formik.errors.workProgramRealUsers}
-                                </FormErrorMessage>
-                              </Stack>
-                            </InputLayout>
-                          </FormControl>
+                                    <FormControl
+                                      id={`workProgramAccNumberEx-${index}`}
+                                      isInvalid={
+                                        typeof formik.errors.workPrograms?.[
+                                          index
+                                        ] === "object" &&
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramAccNumber
+                                          ? true
+                                          : false
+                                      }
+                                      isRequired
+                                    >
+                                      <InputLayout>
+                                        <FormLabel h={"full"} mt={2}>
+                                          Nomor Rekening
+                                        </FormLabel>
+                                        <Stack spacing={0} h={"full"}>
+                                          <Input
+                                            id="workProgramAccNumberEx"
+                                            name="workProgramAccNumberEx"
+                                            type="text"
+                                            onChange={(e) => {
+                                              const onlyNums =
+                                                e.target.value.replace(
+                                                  /[^0-9]/g,
+                                                  ""
+                                                );
+                                              formik.setFieldValue(
+                                                `workPrograms[${index}].workProgramAccNumber`,
+                                                onlyNums
+                                              );
+                                            }}
+                                            value={
+                                              formik.values.workPrograms[index]
+                                                .workProgramAccNumber ?? ""
+                                            }
+                                            placeholder={`Nomor Rekening`}
+                                            minLength={4}
+                                            maxLength={6}
+                                            isDisabled={ActionLoading}
+                                          />
+                                          <FormErrorMessage>
+                                            {typeof formik.errors
+                                              .workPrograms?.[index] ===
+                                              "object" &&
+                                              formik.errors.workPrograms?.[
+                                                index
+                                              ]?.workProgramAccNumber}
+                                          </FormErrorMessage>
+                                        </Stack>
+                                      </InputLayout>
+                                    </FormControl>
 
-                          <FormControl
-                            // isInvalid={
-                            //   formik.values.workProgramBudgetUser <
-                            //   formik.values.workProgramRealUsers
-                            // }
-                            color={nomCompColor(
-                              formik.values.workProgramBudgetUser -
-                                formik.values.workProgramRealUsers
-                            )}
-                          >
-                            <InputLayout>
-                              <FormLabel h={"full"} mt={2}>
-                                Sisa (Rp.)
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <CurrencyInput
-                                  name="leftOverExt"
-                                  value={
-                                    formik.values.workProgramBudgetUser -
-                                    formik.values.workProgramRealUsers
-                                  }
-                                  onChange={formik.setFieldValue}
-                                  isReadOnly
-                                />
-                              </Stack>
-                            </InputLayout>
-                          </FormControl>
+                                    <FormControl
+                                      id={`workProgramAccCcUser-${index}`}
+                                      isInvalid={
+                                        typeof formik.errors.workPrograms?.[
+                                          index
+                                        ] === "object" &&
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramAccCc
+                                          ? true
+                                          : false
+                                      }
+                                      isRequired
+                                    >
+                                      <InputLayout>
+                                        <FormLabel h={"full"} mt={2}>
+                                          Kode Cost Center
+                                        </FormLabel>
+                                        <Stack spacing={0} h={"full"}>
+                                          <Input
+                                            id="workProgramAccCcUser"
+                                            name="workProgramAccCcUser"
+                                            type="text"
+                                            onChange={(e) => {
+                                              const raw =
+                                                e.target.value.replace(
+                                                  /\D/g,
+                                                  ""
+                                                ); // remove non-digits
+                                              formik.setFieldValue(
+                                                `workPrograms[${index}].workProgramAccCc`,
+                                                raw
+                                              );
+                                            }}
+                                            value={
+                                              formik.values.workPrograms[index]
+                                                .workProgramAccCc ?? ""
+                                            }
+                                            placeholder="44444"
+                                            minLength={4}
+                                            maxLength={5}
+                                            isDisabled={ActionLoading}
+                                          />
+                                          <FormErrorMessage>
+                                            {typeof formik.errors
+                                              .workPrograms?.[index] ===
+                                              "object" &&
+                                              formik.errors.workPrograms?.[
+                                                index
+                                              ]?.workProgramAccCc}
+                                          </FormErrorMessage>
+                                        </Stack>
+                                      </InputLayout>
+                                    </FormControl>
+
+                                    <FormControl
+                                      id={`workProgramBudgetUser-${index}`}
+                                      isInvalid={
+                                        typeof formik.errors.workPrograms?.[
+                                          index
+                                        ] === "object" &&
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramBudget
+                                          ? true
+                                          : false
+                                      }
+                                      isRequired
+                                    >
+                                      <InputLayout>
+                                        <FormLabel h={"full"} mt={2}>
+                                          Anggaran (Rp.)
+                                        </FormLabel>
+                                        <Stack spacing={0} h={"full"}>
+                                          <CurrencyInput
+                                            name={`workProgramBudgetUser-${index}`}
+                                            value={
+                                              formik.values.workPrograms[index]
+                                                .workProgramBudget ?? ""
+                                            }
+                                            onChange={formik.setFieldValue}
+                                            fieldCustom={`workPrograms[${index}].workProgramBudget`}
+                                          />
+                                          <FormErrorMessage>
+                                            {typeof formik.errors
+                                              .workPrograms?.[index] ===
+                                              "object" &&
+                                              formik.errors.workPrograms?.[
+                                                index
+                                              ]?.workProgramBudget}
+                                          </FormErrorMessage>
+                                        </Stack>
+                                      </InputLayout>
+                                    </FormControl>
+
+                                    <FormControl
+                                      id={`workProgramRealUsers-${index}`}
+                                      isInvalid={
+                                        typeof formik.errors.workPrograms?.[
+                                          index
+                                        ] === "object" &&
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramReal
+                                          ? true
+                                          : false
+                                      }
+                                      isRequired
+                                    >
+                                      <InputLayout>
+                                        <FormLabel h={"full"} mt={2}>
+                                          Realisasi (Rp.)
+                                        </FormLabel>
+                                        <Stack spacing={0} h={"full"}>
+                                          <CurrencyInput
+                                            name={`workProgramRealUsers-${index}`}
+                                            value={
+                                              formik.values.workPrograms[index]
+                                                .workProgramReal ?? ""
+                                            }
+                                            onChange={formik.setFieldValue}
+                                            fieldCustom={`workPrograms[${index}].workProgramReal`}
+                                          />
+                                          <FormErrorMessage>
+                                            {typeof formik.errors
+                                              .workPrograms?.[index] ===
+                                              "object" &&
+                                              formik.errors.workPrograms?.[
+                                                index
+                                              ]?.workProgramReal}
+                                          </FormErrorMessage>
+                                        </Stack>
+                                      </InputLayout>
+                                    </FormControl>
+
+                                    <FormControl color={leftoverColor}>
+                                      <InputLayout>
+                                        <FormLabel h={"full"} mt={2}>
+                                          Sisa Anggaran (Rp.)
+                                        </FormLabel>
+                                        <Stack spacing={0} h={"full"}>
+                                          <CurrencyInput
+                                            name={`leftOverExt-${index}`}
+                                            value={
+                                              formik.values.workPrograms[index]
+                                                .workProgramBudget -
+                                              formik.values.workPrograms[index]
+                                                .workProgramReal
+                                            }
+                                            onChange={formik.setFieldValue}
+                                            isReadOnly
+                                          />
+                                        </Stack>
+                                      </InputLayout>
+                                    </FormControl>
+                                  </Flex>
+                                );
+                              })}
+                              <Flex w={"full"} justifyContent={"end"} pt={2}>
+                                <Button
+                                  onClick={() => AddWorkProgram("EXTERNAL")}
+                                  colorScheme={"yellow"}
+                                  leftIcon={<FiPlusSquare />}
+                                >
+                                  Tambah Proker Kerja
+                                </Button>
+                              </Flex>
+                            </Flex>
+                          )}
                         </InputGroupPanel>
                         <InputGroupPanel headerTitle={`Program Kerja IT`}>
-                          <FormControl
-                            id="workProgramCodeInt"
-                            isInvalid={
-                              formik.errors.workProgramCodeInt ? true : false
-                            }
-                            isRequired
-                          >
+                          <FormControl>
                             <InputLayout>
                               <FormLabel h={"full"} mt={2}>
-                                Kode Program Kerja IT
+                                Sudah Memiliki Proker Kerja ?
                               </FormLabel>
                               <Stack spacing={0} h={"full"}>
-                                <VersionCodeInput
-                                  id="workProgramCodeInt"
-                                  name="workProgramCodeInt"
-                                  type="text"
-                                  onChange={(val) =>
-                                    formik.setFieldValue(
-                                      "workProgramCodeInt",
-                                      val
-                                    )
-                                  }
-                                  value={formik.values.workProgramCodeInt ?? ""}
-                                  placeholder={`0.0.0.0`}
-                                  minLength={3}
-                                  isDisabled={ActionLoading}
-                                  useDoubleDigits={false}
-                                />
-                                <FormErrorMessage>
-                                  {formik.errors.workProgramCodeInt}
-                                </FormErrorMessage>
+                                <RadioGroup
+                                  onChange={(val) => HandleInternalRBBVal(val)}
+                                  value={WorkProgramInt}
+                                >
+                                  <Flex w={"full"} as={HStack}>
+                                    <Radio value={"0"}>Tidak</Radio>
+                                    <Radio value={"1"}>Ada</Radio>
+                                  </Flex>
+                                </RadioGroup>
+                                <FormErrorMessage></FormErrorMessage>
                               </Stack>
                             </InputLayout>
                           </FormControl>
+                          {WorkProgramInt === "1" && (
+                            <Flex w={"full"} as={Stack}>
+                              {externalWorkPrograms.map((item, i) => {
+                                const index = item.originalIndex;
+                                const leftover =
+                                  formik.values.workPrograms[index]
+                                    .workProgramBudget -
+                                  formik.values.workPrograms[index]
+                                    .workProgramReal;
 
-                          <FormControl
-                            id="workProgramNameInt"
-                            isInvalid={
-                              formik.errors.workProgramNameInt ? true : false
-                            }
-                            isRequired
-                          >
-                            <InputLayoutFull>
-                              <FormLabel h={"full"} mt={2}>
-                                Nama Program Kerja IT
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <Input
-                                  id="workProgramNameInt"
-                                  name="workProgramNameInt"
-                                  type="text"
-                                  onChange={formik.handleChange}
-                                  value={formik.values.workProgramNameInt ?? ""}
-                                  placeholder={`Nama Program Kerja IT`}
-                                  minLength={3}
-                                  maxLength={150}
-                                  isDisabled={ActionLoading}
-                                />
-                                <FormErrorMessage>
-                                  {formik.errors.workProgramNameInt}
-                                </FormErrorMessage>
-                              </Stack>
-                            </InputLayoutFull>
-                          </FormControl>
+                                const leftoverColor =
+                                  leftover < 0
+                                    ? "red.500"
+                                    : leftover > 0
+                                    ? "green.500"
+                                    : colorMode === "light"
+                                    ? "black"
+                                    : "white";
+                                return (
+                                  <Flex w={"full"} as={Stack} key={index}>
+                                    <Divider key={index} />
+                                    <Flex
+                                      w={"full"}
+                                      as={HStack}
+                                      justifyContent={"space-between"}
+                                    >
+                                      <Text fontWeight={600}>
+                                        Proker Kerja - {index + 1}
+                                      </Text>
+                                      <Button
+                                        size={"md"}
+                                        variant={"ghost"}
+                                        colorScheme={"red"}
+                                        onClick={() => RemoveWorkProgram(index)}
+                                      >
+                                        <FaTrash />
+                                      </Button>
+                                    </Flex>
 
-                          <FormControl
-                            id="workProgramAccNameInt"
-                            isInvalid={
-                              formik.errors.workProgramAccNameInt ? true : false
-                            }
-                            isRequired
-                          >
-                            <InputLayoutFull>
-                              <FormLabel h={"full"} mt={2}>
-                                Nama Rekening IT
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <Input
-                                  id="workProgramAccNameInt"
-                                  name="workProgramAccNameInt"
-                                  type="text"
-                                  onChange={formik.handleChange}
-                                  value={
-                                    formik.values.workProgramAccNameInt ?? ""
-                                  }
-                                  placeholder={`Nama Rekening IT`}
-                                  minLength={3}
-                                  maxLength={150}
-                                  isDisabled={ActionLoading}
-                                />
-                                <FormErrorMessage>
-                                  {formik.errors.workProgramAccNameInt}
-                                </FormErrorMessage>
-                              </Stack>
-                            </InputLayoutFull>
-                          </FormControl>
+                                    <FormControl
+                                      id={`workProgramDivision-${index}`}
+                                      isInvalid={
+                                        typeof formik.errors.workPrograms?.[
+                                          index
+                                        ] === "object" &&
+                                        formik.errors.workPrograms?.[index]
+                                          ?.divisionId
+                                          ? true
+                                          : false
+                                      }
+                                      isRequired
+                                    >
+                                      <InputLayout>
+                                        <FormLabel h={"full"} mt={2}>
+                                          Divisi
+                                        </FormLabel>
+                                        <Stack spacing={0}>
+                                          <Select
+                                            id={`workProgramDivision-${index}`}
+                                            options={OptionDivision}
+                                            isSearchable={true}
+                                            onMenuOpen={async () => {
+                                              await LoadDataDivision();
+                                            }}
+                                            onChange={(e) => {
+                                              e
+                                                ? handleSelectedDivisionCustom(
+                                                    {
+                                                      label: e.label,
+                                                      value: e.value,
+                                                    },
+                                                    `workPrograms[${index}].divisionId`
+                                                  )
+                                                : handleUnSelectedDivisionCustom(
+                                                    `workPrograms[${index}].divisionId`
+                                                  );
+                                            }}
+                                            placeholder={"Pilih Divisi"}
+                                            isLoading={
+                                              IsLoadingProcess ||
+                                              IsLoadingDivisionSelect
+                                            }
+                                            value={OptionDivision.find(
+                                              (x) =>
+                                                x.value ==
+                                                formik.values.workPrograms[
+                                                  index
+                                                ].divisionId
+                                            )}
+                                          />
+                                          <FormErrorMessage>
+                                            {typeof formik.errors
+                                              .workPrograms?.[index] ===
+                                              "object" &&
+                                              formik.errors.workPrograms?.[
+                                                index
+                                              ]?.divisionId}
+                                          </FormErrorMessage>
+                                        </Stack>
+                                      </InputLayout>
+                                    </FormControl>
 
-                          <FormControl
-                            id="workProgramAccNumberInt"
-                            isInvalid={
-                              formik.errors.workProgramAccNumberInt
-                                ? true
-                                : false
-                            }
-                            isRequired
-                          >
-                            <InputLayout>
-                              <FormLabel h={"full"} mt={2}>
-                                Nomor Rekening IT
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <Input
-                                  id="workProgramAccNumberInt"
-                                  name="workProgramAccNumberInt"
-                                  type="text"
-                                  onChange={(e) => {
-                                    const onlyNums = e.target.value.replace(
-                                      /[^0-9]/g,
-                                      ""
-                                    );
-                                    formik.setFieldValue(
-                                      "workProgramAccNumberInt",
-                                      onlyNums
-                                    );
-                                  }}
-                                  value={
-                                    formik.values.workProgramAccNumberInt ?? ""
-                                  }
-                                  placeholder={`Nomor Rekening IT`}
-                                  minLength={4}
-                                  maxLength={6}
-                                  isDisabled={ActionLoading}
-                                />
-                                <FormErrorMessage>
-                                  {formik.errors.workProgramAccNumberEx}
-                                </FormErrorMessage>
-                              </Stack>
-                            </InputLayout>
-                          </FormControl>
+                                    <FormControl
+                                      id={`workProgramCodeEx-${index}`}
+                                      isInvalid={
+                                        typeof formik.errors.workPrograms?.[
+                                          index
+                                        ] === "object" &&
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramCode
+                                          ? true
+                                          : false
+                                      }
+                                      isRequired
+                                    >
+                                      <InputLayout>
+                                        <FormLabel h={"full"} mt={2}>
+                                          Kode Program Kerja
+                                        </FormLabel>
+                                        <Stack spacing={0} h={"full"}>
+                                          <VersionCodeInput
+                                            id={`workProgramCodeEx-${index}`}
+                                            name={`workProgramCodeEx-${index}`}
+                                            type="text"
+                                            onChange={(val) =>
+                                              formik.setFieldValue(
+                                                `workPrograms[${index}].workProgramCode`,
+                                                val
+                                              )
+                                            }
+                                            value={
+                                              formik.values.workPrograms[index]
+                                                .workProgramCode ?? ""
+                                            }
+                                            placeholder={`0.0.0.0`}
+                                            minLength={3}
+                                            isDisabled={ActionLoading}
+                                            useDoubleDigits={false}
+                                          />
+                                          <FormErrorMessage>
+                                            {typeof formik.errors
+                                              .workPrograms?.[index] ===
+                                              "object" &&
+                                              formik.errors.workPrograms?.[
+                                                index
+                                              ]?.workProgramCode}
+                                          </FormErrorMessage>
+                                        </Stack>
+                                      </InputLayout>
+                                    </FormControl>
 
-                          <FormControl
-                            id="workProgramAccCcInt"
-                            isInvalid={
-                              formik.errors.workProgramAccCcInt ? true : false
-                            }
-                            isRequired
-                          >
-                            <InputLayout>
-                              <FormLabel h={"full"} mt={2}>
-                                Kode CC IT
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <Input
-                                  id="workProgramAccCcInt"
-                                  name="workProgramAccCcInt"
-                                  type="text"
-                                  onChange={(e) => {
-                                    const raw = e.target.value.replace(
-                                      /\D/g,
-                                      ""
-                                    ); // remove non-digits
-                                    formik.setFieldValue(
-                                      "workProgramAccCcInt",
-                                      raw
-                                    );
-                                  }}
-                                  value={
-                                    formik.values.workProgramAccCcInt ?? ""
-                                  }
-                                  placeholder="44444"
-                                  minLength={4}
-                                  maxLength={5}
-                                  isDisabled={ActionLoading}
-                                />
-                                <FormErrorMessage>
-                                  {formik.errors.workProgramAccCcUser}
-                                </FormErrorMessage>
-                              </Stack>
-                            </InputLayout>
-                          </FormControl>
+                                    <FormControl
+                                      id={`workProgramNameEx-${index}`}
+                                      isInvalid={
+                                        typeof formik.errors.workPrograms?.[
+                                          index
+                                        ] === "object" &&
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramName
+                                          ? true
+                                          : false
+                                      }
+                                      isRequired
+                                    >
+                                      <InputLayoutFull>
+                                        <FormLabel h={"full"} mt={2}>
+                                          Nama Program Kerja
+                                        </FormLabel>
+                                        <Stack spacing={0} h={"full"}>
+                                          <Input
+                                            id={`workProgramNameEx-${index}`}
+                                            name={`workProgramNameEx-${index}`}
+                                            type="text"
+                                            onChange={(e) =>
+                                              formik.setFieldValue(
+                                                `workPrograms[${index}].workProgramName`,
+                                                e.target.value
+                                              )
+                                            }
+                                            value={
+                                              formik.values.workPrograms[index]
+                                                .workProgramName ?? ""
+                                            }
+                                            placeholder={`Nama Program Kerja`}
+                                            minLength={3}
+                                            maxLength={150}
+                                            isDisabled={ActionLoading}
+                                          />
+                                          <FormErrorMessage>
+                                            {typeof formik.errors
+                                              .workPrograms?.[index] ===
+                                              "object" &&
+                                              formik.errors.workPrograms?.[
+                                                index
+                                              ]?.workProgramName}
+                                          </FormErrorMessage>
+                                        </Stack>
+                                      </InputLayoutFull>
+                                    </FormControl>
 
-                          <FormControl
-                            id="workProgramBudgetInt"
-                            isInvalid={
-                              formik.errors.workProgramBudgetInt ? true : false
-                            }
-                            isRequired
-                          >
-                            <InputLayout>
-                              <FormLabel h={"full"} mt={2}>
-                                Anggaran IT (Rp.)
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <CurrencyInput
-                                  name="workProgramBudgetInt"
-                                  value={formik.values.workProgramBudgetInt}
-                                  onChange={formik.setFieldValue}
-                                />
-                                <FormErrorMessage>
-                                  {formik.errors.workProgramBudgetInt}
-                                </FormErrorMessage>
-                              </Stack>
-                            </InputLayout>
-                          </FormControl>
+                                    <FormControl
+                                      id={`workProgramAccNameEx-${index}`}
+                                      isInvalid={
+                                        typeof formik.errors.workPrograms?.[
+                                          index
+                                        ] === "object" &&
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramAccName
+                                          ? true
+                                          : false
+                                      }
+                                      isRequired
+                                    >
+                                      <InputLayoutFull>
+                                        <FormLabel h={"full"} mt={2}>
+                                          Nama Rekening
+                                        </FormLabel>
+                                        <Stack spacing={0} h={"full"}>
+                                          <Input
+                                            id="workProgramAccNameEx"
+                                            name="workProgramAccNameEx"
+                                            type="text"
+                                            onChange={(e) =>
+                                              formik.setFieldValue(
+                                                `workPrograms[${index}].workProgramAccName`,
+                                                e.target.value
+                                              )
+                                            }
+                                            value={
+                                              formik.values.workPrograms[index]
+                                                .workProgramAccName ?? ""
+                                            }
+                                            placeholder={`Nama Rekening`}
+                                            minLength={3}
+                                            maxLength={150}
+                                            isDisabled={ActionLoading}
+                                          />
+                                          <FormErrorMessage>
+                                            {typeof formik.errors
+                                              .workPrograms?.[index] ===
+                                              "object" &&
+                                              formik.errors.workPrograms?.[
+                                                index
+                                              ]?.workProgramAccName}
+                                          </FormErrorMessage>
+                                        </Stack>
+                                      </InputLayoutFull>
+                                    </FormControl>
 
-                          <FormControl
-                            id="workProgramRealInt"
-                            isInvalid={
-                              formik.errors.workProgramRealInt ? true : false
-                            }
-                            isRequired
-                          >
-                            <InputLayout>
-                              <FormLabel h={"full"} mt={2}>
-                                Realisasi(Rp.)
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <CurrencyInput
-                                  name="workProgramRealInt"
-                                  value={formik.values.workProgramRealInt}
-                                  onChange={formik.setFieldValue}
-                                />
-                                <FormErrorMessage>
-                                  {formik.errors.workProgramRealInt}
-                                </FormErrorMessage>
-                              </Stack>
-                            </InputLayout>
-                          </FormControl>
+                                    <FormControl
+                                      id={`workProgramAccNumberEx-${index}`}
+                                      isInvalid={
+                                        typeof formik.errors.workPrograms?.[
+                                          index
+                                        ] === "object" &&
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramAccNumber
+                                          ? true
+                                          : false
+                                      }
+                                      isRequired
+                                    >
+                                      <InputLayout>
+                                        <FormLabel h={"full"} mt={2}>
+                                          Nomor Rekening
+                                        </FormLabel>
+                                        <Stack spacing={0} h={"full"}>
+                                          <Input
+                                            id="workProgramAccNumberEx"
+                                            name="workProgramAccNumberEx"
+                                            type="text"
+                                            onChange={(e) => {
+                                              const onlyNums =
+                                                e.target.value.replace(
+                                                  /[^0-9]/g,
+                                                  ""
+                                                );
+                                              formik.setFieldValue(
+                                                `workPrograms[${index}].workProgramAccNumber`,
+                                                onlyNums
+                                              );
+                                            }}
+                                            value={
+                                              formik.values.workPrograms[index]
+                                                .workProgramAccNumber ?? ""
+                                            }
+                                            placeholder={`Nomor Rekening`}
+                                            minLength={4}
+                                            maxLength={6}
+                                            isDisabled={ActionLoading}
+                                          />
+                                          <FormErrorMessage>
+                                            {typeof formik.errors
+                                              .workPrograms?.[index] ===
+                                              "object" &&
+                                              formik.errors.workPrograms?.[
+                                                index
+                                              ]?.workProgramAccNumber}
+                                          </FormErrorMessage>
+                                        </Stack>
+                                      </InputLayout>
+                                    </FormControl>
 
-                          <FormControl
-                            color={nomCompColor(
-                              formik.values.workProgramBudgetInt -
-                                formik.values.workProgramRealInt
-                            )}
-                          >
-                            <InputLayout>
-                              <FormLabel h={"full"} mt={2}>
-                                Sisa (Rp.)
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <CurrencyInput
-                                  name="leftverInt"
-                                  value={
-                                    formik.values.workProgramBudgetInt -
-                                    formik.values.workProgramRealInt
-                                  }
-                                  onChange={formik.setFieldValue}
-                                  isReadOnly
-                                />
-                              </Stack>
-                            </InputLayout>
-                          </FormControl>
+                                    <FormControl
+                                      id={`workProgramAccCcUser-${index}`}
+                                      isInvalid={
+                                        typeof formik.errors.workPrograms?.[
+                                          index
+                                        ] === "object" &&
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramAccCc
+                                          ? true
+                                          : false
+                                      }
+                                      isRequired
+                                    >
+                                      <InputLayout>
+                                        <FormLabel h={"full"} mt={2}>
+                                          Kode Cost Center
+                                        </FormLabel>
+                                        <Stack spacing={0} h={"full"}>
+                                          <Input
+                                            id="workProgramAccCcUser"
+                                            name="workProgramAccCcUser"
+                                            type="text"
+                                            onChange={(e) => {
+                                              const raw =
+                                                e.target.value.replace(
+                                                  /\D/g,
+                                                  ""
+                                                ); // remove non-digits
+                                              formik.setFieldValue(
+                                                `workPrograms[${index}].workProgramAccCc`,
+                                                raw
+                                              );
+                                            }}
+                                            value={
+                                              formik.values.workPrograms[index]
+                                                .workProgramAccCc ?? ""
+                                            }
+                                            placeholder="44444"
+                                            minLength={4}
+                                            maxLength={5}
+                                            isDisabled={ActionLoading}
+                                          />
+                                          <FormErrorMessage>
+                                            {typeof formik.errors
+                                              .workPrograms?.[index] ===
+                                              "object" &&
+                                              formik.errors.workPrograms?.[
+                                                index
+                                              ]?.workProgramAccCc}
+                                          </FormErrorMessage>
+                                        </Stack>
+                                      </InputLayout>
+                                    </FormControl>
+
+                                    <FormControl
+                                      id={`workProgramBudgetUser-${index}`}
+                                      isInvalid={
+                                        typeof formik.errors.workPrograms?.[
+                                          index
+                                        ] === "object" &&
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramBudget
+                                          ? true
+                                          : false
+                                      }
+                                      isRequired
+                                    >
+                                      <InputLayout>
+                                        <FormLabel h={"full"} mt={2}>
+                                          Anggaran (Rp.)
+                                        </FormLabel>
+                                        <Stack spacing={0} h={"full"}>
+                                          <CurrencyInput
+                                            name={`workProgramBudgetUser-${index}`}
+                                            value={
+                                              formik.values.workPrograms[index]
+                                                .workProgramBudget ?? ""
+                                            }
+                                            onChange={formik.setFieldValue}
+                                            fieldCustom={`workPrograms[${index}].workProgramBudget`}
+                                          />
+                                          <FormErrorMessage>
+                                            {typeof formik.errors
+                                              .workPrograms?.[index] ===
+                                              "object" &&
+                                              formik.errors.workPrograms?.[
+                                                index
+                                              ]?.workProgramBudget}
+                                          </FormErrorMessage>
+                                        </Stack>
+                                      </InputLayout>
+                                    </FormControl>
+
+                                    <FormControl
+                                      id={`workProgramRealUsers-${index}`}
+                                      isInvalid={
+                                        typeof formik.errors.workPrograms?.[
+                                          index
+                                        ] === "object" &&
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramReal
+                                          ? true
+                                          : false
+                                      }
+                                      isRequired
+                                    >
+                                      <InputLayout>
+                                        <FormLabel h={"full"} mt={2}>
+                                          Realisasi (Rp.)
+                                        </FormLabel>
+                                        <Stack spacing={0} h={"full"}>
+                                          <CurrencyInput
+                                            name={`workProgramRealUsers-${index}`}
+                                            value={
+                                              formik.values.workPrograms[index]
+                                                .workProgramReal ?? ""
+                                            }
+                                            onChange={formik.setFieldValue}
+                                            fieldCustom={`workPrograms[${index}].workProgramReal`}
+                                          />
+                                          <FormErrorMessage>
+                                            {typeof formik.errors
+                                              .workPrograms?.[index] ===
+                                              "object" &&
+                                              formik.errors.workPrograms?.[
+                                                index
+                                              ]?.workProgramReal}
+                                          </FormErrorMessage>
+                                        </Stack>
+                                      </InputLayout>
+                                    </FormControl>
+
+                                    <FormControl color={leftoverColor}>
+                                      <InputLayout>
+                                        <FormLabel h={"full"} mt={2}>
+                                          Sisa Anggaran (Rp.)
+                                        </FormLabel>
+                                        <Stack spacing={0} h={"full"}>
+                                          <CurrencyInput
+                                            name={`leftOverExt-${index}`}
+                                            value={
+                                              formik.values.workPrograms[index]
+                                                .workProgramBudget -
+                                              formik.values.workPrograms[index]
+                                                .workProgramReal
+                                            }
+                                            onChange={formik.setFieldValue}
+                                            isReadOnly
+                                          />
+                                        </Stack>
+                                      </InputLayout>
+                                    </FormControl>
+                                  </Flex>
+                                );
+                              })}
+                              <Flex w={"full"} justifyContent={"end"} pt={2}>
+                                <Button
+                                  onClick={() => AddWorkProgram("INTERNAL")}
+                                  colorScheme={"yellow"}
+                                  leftIcon={<FiPlusSquare />}
+                                >
+                                  Tambah Proker Kerja
+                                </Button>
+                              </Flex>
+                            </Flex>
+                          )}
                         </InputGroupPanel>
                       </Flex>
                     )}
+
                     {activeStep === 3 && (
-                      <Flex
-                        as={Stack}
-                        w={"full"}
-                        p={4}
-                        rounded={radiusStyle}
-                        border={"1px"}
-                        borderColor={
-                          colorMode == "light" ? "gray.200" : "gray.700"
-                        }
-                        spacing={5}
-                      >
-                        <Text fontWeight={600}>
-                          Ringkasan Ruanglinkup {TYPE_REQ}
-                        </Text>
-                        <Divider />
-
-                        <FormControl
-                          id="appInitialCode"
-                          isInvalid={
-                            formik.errors.appInitialCode ? true : false
-                          }
+                      <Flex as={Stack} w={"full"} spacing={5}>
+                        <InputGroupPanel
+                          headerTitle={`Ringkasan Ruanglingkup ${TYPE_REQ} | Aspek Bisnis`}
                         >
-                          <InputLayout>
-                            <FormLabel h={"full"} mt={2}>
-                              Inisial Aplikasi
-                            </FormLabel>
-                            <Stack spacing={0} h={"full"}>
-                              <Input
-                                id="appInitialCode"
-                                name="appInitialCode"
-                                type="text"
-                                onChange={formik.handleChange}
-                                value={formik.values.appInitialCode ?? ""}
-                                placeholder={`CMS / SISMON / dsb.`}
-                                minLength={3}
-                                maxLength={50}
-                                isDisabled={ActionLoading}
-                              />
-                              <FormErrorMessage>
-                                {formik.errors.appInitialCode}
-                              </FormErrorMessage>
-                            </Stack>
-                          </InputLayout>
-                        </FormControl>
+                          <Flex as={Stack} w={"full"} spacing={5}>
+                            <FormControl
+                              id="appInitialCode"
+                              isInvalid={
+                                formik.errors.appInitialCode ? true : false
+                              }
+                            >
+                              <InputLayout>
+                                <FormLabel h={"full"} mt={2}>
+                                  Inisial Aplikasi
+                                </FormLabel>
+                                <Stack spacing={0} h={"full"}>
+                                  <Input
+                                    id="appInitialCode"
+                                    name="appInitialCode"
+                                    type="text"
+                                    // onChange={formik.handleChange}
 
-                        <FormControl
-                          id="appInitialName"
-                          isInvalid={
-                            formik.errors.appInitialName ? true : false
-                          }
+                                    onChange={(e) => {
+                                      const onlyAlphabets =
+                                        e.target.value.replace(
+                                          /[^a-zA-Z]/g,
+                                          ""
+                                        );
+                                      formik.setFieldValue(
+                                        `appInitialCode`,
+                                        onlyAlphabets
+                                      );
+                                    }}
+                                    value={formik.values.appInitialCode ?? ""}
+                                    placeholder={`CMS / SISMON / dsb.`}
+                                    minLength={3}
+                                    maxLength={10}
+                                    isDisabled={ActionLoading}
+                                  />
+                                  <FormErrorMessage>
+                                    {formik.errors.appInitialCode}
+                                  </FormErrorMessage>
+                                </Stack>
+                              </InputLayout>
+                            </FormControl>
+
+                            <FormControl
+                              id="appInitialName"
+                              isInvalid={
+                                formik.errors.appInitialName ? true : false
+                              }
+                            >
+                              <InputLayoutFull>
+                                <FormLabel h={"full"} mt={2}>
+                                  Nama Aplikasi
+                                </FormLabel>
+                                <Stack spacing={0} h={"full"}>
+                                  <Input
+                                    id="appInitialName"
+                                    name="appInitialName"
+                                    type="text"
+                                    onChange={formik.handleChange}
+                                    value={formik.values.appInitialName ?? ""}
+                                    placeholder={`Nama Aplikasi`}
+                                    minLength={3}
+                                    maxLength={150}
+                                    isDisabled={ActionLoading}
+                                  />
+                                  <FormErrorMessage>
+                                    {formik.errors.appInitialName}
+                                  </FormErrorMessage>
+                                </Stack>
+                              </InputLayoutFull>
+                            </FormControl>
+
+                            <FormControl>
+                              <InputLayout>
+                                <FormLabel h={"full"} mt={2}>
+                                  Media Akses Aplikasi
+                                </FormLabel>
+                                <Stack spacing={0} h={"full"}>
+                                  <RadioGroup
+                                    onChange={(val) =>
+                                      formik.setFieldValue(
+                                        "appAccessMedia",
+                                        val
+                                      )
+                                    }
+                                    value={formik.values.appAccessMedia ?? ""}
+                                  >
+                                    <Flex w={"full"} as={HStack}>
+                                      <Radio value={APP_ACCESS_MEDIA_INTERNET}>
+                                        Internet
+                                      </Radio>
+                                      <Radio value={APP_ACCESS_MEDIA_INTRANET}>
+                                        Interanet (Local Network)
+                                      </Radio>
+                                    </Flex>
+                                  </RadioGroup>
+                                  <FormHelperText as={"i"} fontSize={"xs"}>
+                                    Pemilihan Kontektivitas Internet wajib
+                                    disertai Pentest dan pembelian SSL,
+                                    Divisi/Unit terkait dimohon menyiapkan
+                                    anggarannya.*
+                                  </FormHelperText>
+                                  <FormErrorMessage>
+                                    {formik.errors.appAccessMedia}
+                                  </FormErrorMessage>
+                                </Stack>
+                              </InputLayout>
+                            </FormControl>
+
+                            <FormControl>
+                              <InputLayoutFull>
+                                <FormLabel h={"full"} mt={2}>
+                                  Jenis Aplikasi
+                                </FormLabel>
+                                <Stack spacing={0} h={"full"}>
+                                  <Text
+                                    color={"gray.500"}
+                                    fontSize={"smaller"}
+                                    pb={1}
+                                  >
+                                    Base Aplikasi
+                                  </Text>
+                                  <CheckboxGroup>
+                                    <Grid
+                                      templateColumns="repeat(2, 1fr)"
+                                      gap={1}
+                                      w={"full"}
+                                    >
+                                      {APP_TYPE_OPTIONS.map((item, idx) => (
+                                        <GridItem
+                                          key={idx}
+                                          colSpan={{
+                                            base: 2,
+                                            sm: 2,
+                                            md: 1,
+                                            lg: 1,
+                                          }}
+                                          w={"full"}
+                                        >
+                                          <Checkbox
+                                            key={idx}
+                                            isChecked={SelectedAppsTypes.includes(
+                                              item
+                                            )}
+                                            onChange={() =>
+                                              handleAppysTypesCheckboxChange(
+                                                item
+                                              )
+                                            }
+                                          >
+                                            {item}
+                                          </Checkbox>
+                                        </GridItem>
+                                      ))}
+                                    </Grid>
+                                  </CheckboxGroup>
+                                  {hasOtherAppsTypes && (
+                                    <Flex as={Stack} w={"full"} pt={2}>
+                                      <Text>Input Lainnya</Text>
+                                      <OtherInputAppsStringSeparator
+                                        value={
+                                          formik.values.appTypeCustom || ""
+                                        }
+                                        onChange={(val) => {
+                                          formik.setFieldValue(
+                                            "appTypeCustom",
+                                            val
+                                          );
+                                        }}
+                                      />
+                                    </Flex>
+                                  )}
+                                </Stack>
+                              </InputLayoutFull>
+                            </FormControl>
+
+                            <FormControl>
+                              <InputLayoutFull>
+                                <FormLabel h={"full"} mt={2}>
+                                  Keterkaitan Aplikasi
+                                </FormLabel>
+                                <Stack spacing={0} h={"full"}>
+                                  <CheckboxGroup>
+                                    <Stack spacing={0} h={"full"}>
+                                      <RadioGroup
+                                        onChange={(val) =>
+                                          formik.setFieldValue(
+                                            "appRelatedness",
+                                            val
+                                          )
+                                        }
+                                        value={
+                                          formik.values.appRelatedness ?? ""
+                                        }
+                                      >
+                                        <Flex w={"full"} as={HStack}>
+                                          <Radio value={APP_RELATED_OPTIONS[0]}>
+                                            {APP_RELATED_OPTIONS[0]}
+                                          </Radio>
+
+                                          <Radio value={APP_RELATED_OPTIONS[1]}>
+                                            {APP_RELATED_OPTIONS[1]}
+                                          </Radio>
+                                        </Flex>
+                                      </RadioGroup>
+                                      {formik.values.appRelatedness ==
+                                        APP_RELATED_OPTIONS[1] && (
+                                        <Flex as={Stack} w={"full"} pt={2}>
+                                          <Text>Nama Regulator</Text>
+                                          <OtherInputAppsStringSeparator
+                                            value={
+                                              formik.values
+                                                .appRelatednessDesc || ""
+                                            }
+                                            onChange={(val) => {
+                                              formik.setFieldValue(
+                                                "appRelatednessDesc",
+                                                val
+                                              );
+                                            }}
+                                          />
+                                        </Flex>
+                                      )}
+                                      <FormHelperText as={"i"} fontSize={"xs"}>
+                                        Jika memilih "Regulator", harap di isi
+                                        dengan nama instansi.*
+                                      </FormHelperText>
+                                    </Stack>
+                                  </CheckboxGroup>
+                                </Stack>
+                              </InputLayoutFull>
+                            </FormControl>
+
+                            <FormControl>
+                              <InputLayout>
+                                <FormLabel h={"full"} mt={2}>
+                                  Kategori Aplikasi
+                                </FormLabel>
+                                <Stack spacing={0} h={"full"}>
+                                  <RadioGroup
+                                    onChange={(val) =>
+                                      formik.setFieldValue(
+                                        "appTransactionals",
+                                        val
+                                      )
+                                    }
+                                    value={
+                                      formik.values.appTransactionals ?? ""
+                                    }
+                                  >
+                                    <Flex w={"full"} as={HStack}>
+                                      {APP_TRANSACTIONAL_OPTIONS.map(
+                                        (item, idx) => (
+                                          <Radio key={idx} value={item}>
+                                            {item}
+                                          </Radio>
+                                        )
+                                      )}
+                                    </Flex>
+                                  </RadioGroup>
+                                  <FormErrorMessage>
+                                    {formik.errors.appTransactionals}
+                                  </FormErrorMessage>
+                                </Stack>
+                              </InputLayout>
+                            </FormControl>
+
+                            <FormControl>
+                              <InputLayoutFull>
+                                <FormLabel h={"full"} mt={2}>
+                                  Waktu Operasional Aplikasi
+                                </FormLabel>
+                                <Stack spacing={0} h={"full"}>
+                                  <RadioGroup
+                                    onChange={(val) => {
+                                      formik.setFieldValue(
+                                        "appOperational24hrs",
+                                        val
+                                      );
+                                      if (val === APP_OPERATIONAL_OPTIONS[0]) {
+                                        formik.setFieldValue(
+                                          "appOperationalDays",
+                                          fullDay.join(", ")
+                                        );
+                                        formik.setFieldValue(
+                                          "appOperationalHourOpen",
+                                          ""
+                                        );
+                                        formik.setFieldValue(
+                                          "appOperationalHourClosed",
+                                          ""
+                                        );
+                                      } else {
+                                        formik.setFieldValue(
+                                          "appOperationalDays",
+                                          ""
+                                        );
+                                      }
+                                    }}
+                                    value={
+                                      formik.values.appOperational24hrs ?? ""
+                                    }
+                                  >
+                                    <Flex w={"full"} as={HStack}>
+                                      {APP_OPERATIONAL_OPTIONS.map(
+                                        (item, idx) => (
+                                          <Radio key={idx} value={item}>
+                                            {item}
+                                          </Radio>
+                                        )
+                                      )}
+                                    </Flex>
+                                  </RadioGroup>
+
+                                  {formik.values.appOperational24hrs ==
+                                    APP_OPERATIONAL_OPTIONS[1] && (
+                                    <Flex as={Stack} w={"full"} py={2}>
+                                      <Text color={"secondary.500"}>
+                                        Pilih Hari
+                                      </Text>
+                                      <WeekdaySelector
+                                        value={OperationalDays}
+                                        onChange={setOperationalDays}
+                                      />
+                                      <Grid
+                                        templateColumns="repeat(2, 1fr)"
+                                        gap={4}
+                                        w={"full"}
+                                      >
+                                        <GridItem
+                                          colSpan={{
+                                            base: 2,
+                                            sm: 2,
+                                            md: 1,
+                                            lg: 1,
+                                          }}
+                                          w={"full"}
+                                        >
+                                          <Stack w={"full"}>
+                                            <Text color={"secondary.500"}>
+                                              Operasional Mulai
+                                            </Text>
+                                            <Input
+                                              type="time"
+                                              id="appOperationalHourOpen"
+                                              name="appOperationalHourOpen"
+                                              onChange={formik.handleChange}
+                                              value={
+                                                formik.values
+                                                  .appOperationalHourOpen
+                                                  ? formik.values.appOperationalHourOpen.slice(
+                                                      0,
+                                                      5
+                                                    ) // ensure HH:mm
+                                                  : ""
+                                              }
+                                            />
+                                          </Stack>
+                                        </GridItem>
+                                        <GridItem
+                                          colSpan={{
+                                            base: 2,
+                                            sm: 2,
+                                            md: 1,
+                                            lg: 1,
+                                          }}
+                                          w={"full"}
+                                        >
+                                          <Stack w={"full"}>
+                                            <Text color={"secondary.500"}>
+                                              Operasional Berakhir
+                                            </Text>
+                                            <Input
+                                              type="time"
+                                              id="appOperationalHourClosed"
+                                              name="appOperationalHourClosed"
+                                              onChange={formik.handleChange}
+                                              value={
+                                                formik.values
+                                                  .appOperationalHourClosed
+                                                  ? formik.values.appOperationalHourClosed.slice(
+                                                      0,
+                                                      5
+                                                    ) // ensure HH:mm
+                                                  : ""
+                                              }
+                                            />
+                                          </Stack>
+                                        </GridItem>
+                                      </Grid>
+                                    </Flex>
+                                  )}
+
+                                  <FormErrorMessage>
+                                    {formik.errors.appOperational24hrs}
+                                  </FormErrorMessage>
+                                </Stack>
+                              </InputLayoutFull>
+                            </FormControl>
+
+                            <FormControl
+                              id="appLiveTargetDate"
+                              isInvalid={
+                                formik.errors.appLiveTargetDate ? true : false
+                              }
+                              isRequired
+                            >
+                              <InputLayout>
+                                <FormLabel h={"full"} mt={2}>
+                                  Target Live
+                                </FormLabel>
+                                <Stack spacing={2} h={"full"}>
+                                  <Input
+                                    id="appLiveTargetDate"
+                                    name="appLiveTargetDate"
+                                    type="date"
+                                    onChange={formik.handleChange}
+                                    value={
+                                      formik.values.appLiveTargetDate ?? ""
+                                    }
+                                    isDisabled={ActionLoading}
+                                  />
+                                  {/* <Text px={2} fontWeight={600}>
+                                    {formik.values.appLiveTargetDate
+                                      ? getQuarterText(
+                                          formik.values.appLiveTargetDate
+                                        )
+                                      : "-"}
+                                  </Text> */}
+                                  <FormErrorMessage>
+                                    {formik.errors.appLiveTargetDate}
+                                  </FormErrorMessage>
+                                </Stack>
+                              </InputLayout>
+                            </FormControl>
+
+                            <FormControl
+                              id="appLiveTargetDateTerbilang"
+                              isRequired
+                            >
+                              <InputLayout>
+                                <FormLabel h={"full"} mt={2}>
+                                  Terbilang Target Live
+                                </FormLabel>
+                                <Stack spacing={2} h={"full"}>
+                                  <Text px={2} fontWeight={600}>
+                                    {formik.values.appLiveTargetDate
+                                      ? getQuarterText(
+                                          formik.values.appLiveTargetDate
+                                        )
+                                      : "-"}
+                                  </Text>
+                                </Stack>
+                              </InputLayout>
+                            </FormControl>
+
+                            <FormControl
+                              id="note"
+                              isInvalid={formik.errors.note ? true : false}
+                            >
+                              <InputLayoutFull>
+                                <FormLabel h={"full"} mt={2}>
+                                  Catatan
+                                </FormLabel>
+                                <Stack spacing={0} h={"full"}>
+                                  <Textarea
+                                    id="note"
+                                    name="note"
+                                    onChange={formik.handleChange}
+                                    defaultValue={formik.values.note ?? ""}
+                                    placeholder={`Catatan (Opsional)`}
+                                    maxLength={300}
+                                    isDisabled={ActionLoading}
+                                  />
+                                  <FormErrorMessage>
+                                    {formik.errors.note}
+                                  </FormErrorMessage>
+                                </Stack>
+                              </InputLayoutFull>
+                            </FormControl>
+
+                            <Divider />
+
+                            <FormControl id="backlogFeatures">
+                              <InputLayoutFull>
+                                <FormLabel h={"full"} mt={2}>
+                                  Fitur Aplikasi
+                                </FormLabel>
+                                <Stack spacing={2} h={"full"}>
+                                  <Flex
+                                    as={Stack}
+                                    w={"full"}
+                                    p={2}
+                                    border={"1px"}
+                                    borderColor={
+                                      colorMode == "light"
+                                        ? "gray.200"
+                                        : "gray.600"
+                                    }
+                                    boxShadow={"md"}
+                                    rounded={radiusStyle}
+                                  >
+                                    <Button
+                                      w={"full"}
+                                      leftIcon={<FiPlusCircle />}
+                                      colorScheme={"secondary"}
+                                      onClick={() => handleOpenForm()}
+                                    >
+                                      Tambah Fitur
+                                    </Button>
+
+                                    <TableComponentFull table={table} />
+                                  </Flex>
+                                </Stack>
+                              </InputLayoutFull>
+                            </FormControl>
+                          </Flex>
+                        </InputGroupPanel>
+                        <InputGroupPanel
+                          headerTitle={`Ringkasan Ruanglingkup ${TYPE_REQ} | Aspek Teknis`}
                         >
-                          <InputLayoutFull>
-                            <FormLabel h={"full"} mt={2}>
-                              Nama Aplikasi
-                            </FormLabel>
-                            <Stack spacing={0} h={"full"}>
-                              <Input
-                                id="appInitialName"
-                                name="appInitialName"
-                                type="text"
-                                onChange={formik.handleChange}
-                                value={formik.values.appInitialName ?? ""}
-                                placeholder={`Nama Aplikasi`}
-                                minLength={3}
-                                maxLength={150}
-                                isDisabled={ActionLoading}
-                              />
-                              <FormErrorMessage>
-                                {formik.errors.appInitialName}
-                              </FormErrorMessage>
-                            </Stack>
-                          </InputLayoutFull>
-                        </FormControl>
+                          <Flex as={Stack} w={"full"} spacing={5}>
+                            <FormControl>
+                              <InputLayoutFull>
+                                <FormLabel h={"full"} mt={2}>
+                                  Target Lokasi Server
+                                </FormLabel>
+                                <Stack spacing={0} h={"full"}>
+                                  <CheckboxGroup>
+                                    <Grid
+                                      templateColumns="repeat(2, 1fr)"
+                                      gap={1}
+                                      w={"full"}
+                                    >
+                                      {APP_ENV_LOCATION_OPTIONS.map(
+                                        (item, idx) => (
+                                          <GridItem
+                                            key={idx}
+                                            colSpan={{
+                                              base: 2,
+                                              sm: 2,
+                                              md: 1,
+                                              lg: 1,
+                                            }}
+                                            w={"full"}
+                                          >
+                                            <Checkbox
+                                              key={idx}
+                                              isChecked={SelectedAppsEnvLoc.includes(
+                                                item
+                                              )}
+                                              onChange={() =>
+                                                handleAppysEnvLocCheckboxChange(
+                                                  item
+                                                )
+                                              }
+                                            >
+                                              {item}
+                                            </Checkbox>
+                                          </GridItem>
+                                        )
+                                      )}
+                                    </Grid>
+                                  </CheckboxGroup>
+                                  {hasOtherEnvLocTypes && (
+                                    <Flex as={Stack} w={"full"} pt={2}>
+                                      <Text>Input Lainnya</Text>
+                                      <OtherInputAppsStringSeparator
+                                        value={
+                                          formik.values.appEnvLocationsOthers ||
+                                          ""
+                                        }
+                                        onChange={(val) => {
+                                          formik.setFieldValue(
+                                            "appEnvLocationsOthers",
+                                            val
+                                          );
+                                        }}
+                                      />
+                                    </Flex>
+                                  )}
+                                  <FormHelperText as={"i"} fontSize={"xs"}>
+                                    Jika server aplikasi ditempatkan di pihak
+                                    ketiga, harap cantumkan alamat lokasi
+                                    (Domain/Data Center).*
+                                  </FormHelperText>
+                                </Stack>
+                              </InputLayoutFull>
+                            </FormControl>
 
-                        <FormControl
-                          id="note"
-                          isInvalid={formik.errors.note ? true : false}
-                        >
-                          <InputLayoutFull>
-                            <FormLabel h={"full"} mt={2}>
-                              Catatan
-                            </FormLabel>
-                            <Stack spacing={0} h={"full"}>
-                              <Textarea
-                                id="note"
-                                name="note"
-                                onChange={formik.handleChange}
-                                defaultValue={formik.values.note ?? ""}
-                                placeholder={`Catatan (Opsional)`}
-                                maxLength={300}
-                                isDisabled={ActionLoading}
-                              />
-                              <FormErrorMessage>
-                                {formik.errors.note}
-                              </FormErrorMessage>
-                            </Stack>
-                          </InputLayoutFull>
-                        </FormControl>
+                            <FormControl>
+                              <InputLayout>
+                                <FormLabel h={"full"} mt={2}>
+                                  Otentikasi UIM Bank bjb
+                                </FormLabel>
+                                <Stack spacing={0} h={"full"}>
+                                  <RadioGroup
+                                    onChange={(val) =>
+                                      formik.setFieldValue(
+                                        "appPrivateAuth",
+                                        val
+                                      )
+                                    }
+                                    value={"Y"}
+                                  >
+                                    <Flex w={"full"} as={HStack}>
+                                      <Radio value={"Y"}>Ya</Radio>
+                                      <Radio value={"N"} isDisabled>
+                                        Tidak
+                                      </Radio>
+                                    </Flex>
+                                  </RadioGroup>
 
-                        <Divider />
+                                  <FormErrorMessage>
+                                    {formik.errors.appAccessMedia}
+                                  </FormErrorMessage>
+                                </Stack>
+                              </InputLayout>
+                            </FormControl>
 
-                        <FormControl
-                          id="backlogFeatures"
-                          isInvalid={
-                            formik.errors.backlogDescription ? true : false
-                          }
-                        >
-                          <InputLayoutFull>
-                            <FormLabel h={"full"} mt={2}>
-                              Fitur Aplikasi
-                            </FormLabel>
-                            <Stack spacing={2} h={"full"}>
-                              <Flex
-                                as={Stack}
-                                w={"full"}
-                                p={2}
-                                border={"1px"}
-                                borderColor={
-                                  colorMode == "light" ? "gray.200" : "gray.600"
-                                }
-                                boxShadow={"md"}
-                                rounded={radiusStyle}
-                              >
-                                <Button
-                                  w={"full"}
-                                  leftIcon={<FiPlusCircle />}
-                                  colorScheme={"secondary"}
-                                  onClick={() => handleOpenForm()}
-                                >
-                                  Tambah Fitur
-                                </Button>
+                            <FormControl>
+                              <InputLayout>
+                                <FormLabel h={"full"} mt={2}>
+                                  Keperluan High Availability
+                                </FormLabel>
+                                <Stack spacing={0} h={"full"}>
+                                  <RadioGroup
+                                    onChange={(val) =>
+                                      formik.setFieldValue(
+                                        "appHightAvailability",
+                                        val
+                                      )
+                                    }
+                                    value={
+                                      formik.values.appHightAvailability ?? ""
+                                    }
+                                  >
+                                    <Flex w={"full"} as={HStack}>
+                                      <Radio value={"Y"}>Ya</Radio>
+                                      <Radio value={"N"}>Tidak</Radio>
+                                    </Flex>
+                                  </RadioGroup>
 
-                                <TableComponentFull table={table} />
-                              </Flex>
-                              <FormErrorMessage>
-                                {formik.errors.backlogDescription}
-                              </FormErrorMessage>
-                            </Stack>
-                          </InputLayoutFull>
-                        </FormControl>
+                                  <FormErrorMessage>
+                                    {formik.errors.appAccessMedia}
+                                  </FormErrorMessage>
+                                </Stack>
+                              </InputLayout>
+                            </FormControl>
 
-                        {/* <FormControl
-                            id="divisionSeachText"
-                            isInvalid={formik.errors.involvedDivisionIds ? true : false}
-                          >
-                            <InputLayoutFull>
-                              <FormLabel h={"full"} mt={2}>
-                                Division Involved
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <Input
-                                  id="divisionSeachText"
-                                  name="divisionSeachText"
-                                  type="text"
-                                  onChange={(e) =>
-                                    setDivisionSearchText(e.target.value)
-                                  }
-                                  value={DivisionSearchText}
-                                  placeholder={`Search Divisions`}
-                                  // minLength={3}
-                                  maxLength={150}
-                                  isDisabled={ActionLoading}
-                                />
-                                <FormErrorMessage>
-                                  {formik.errors.involvedDivisionIds}
-                                </FormErrorMessage>
-        
-                                <DivisionListSearch
-                                  key={"divisionSeachText"}
-                                  divisionData={DataDivisions}
-                                  onDivisionSelect={handleAddDivision}
-                                />
-        
-                                <DivisionListSelected
-                                  key={"DivisionSelcted"}
-                                  divisionDataSelected={DivisionSelected}
-                                  onDivisionSelect={handleRemoveDivision}
-                                />
-                              </Stack>
-                            </InputLayoutFull>
-                          </FormControl> */}
+                            <FormControl>
+                              <InputLayoutFull>
+                                <FormLabel h={"full"} mt={2}>
+                                  Integrasi Dengan Aplikasi Lain
+                                </FormLabel>
+                                <Stack spacing={0} h={"full"}>
+                                  <InputTagsArea
+                                    name="appIntegrationOthersApps"
+                                    value={
+                                      formik.values.appIntegrationOthersApps ||
+                                      ""
+                                    }
+                                    onChange={(val) => {
+                                      formik.setFieldValue(
+                                        "appIntegrationOthersApps",
+                                        val
+                                      );
+                                    }}
+                                  />
+                                  <FormErrorMessage>
+                                    {formik.errors.appAccessMedia}
+                                  </FormErrorMessage>
+                                  <Divider py={1} />
+                                  <Text fontSize={"smaller"} py={2}>
+                                    Tambah Cepat
+                                  </Text>
+                                  <FormControl>
+                                    <FormLabel>
+                                      Rekomendasi Aplikasi Lain / Surrounding
+                                    </FormLabel>
+                                    <Flex as={Wrap} w={"full"}>
+                                      {APP_INTEGRATED_OTHER_APPS.filter(
+                                        (item) => {
+                                          const existingTags = (
+                                            formik.values
+                                              .appIntegrationOthersApps || ""
+                                          )
+                                            .split(",")
+                                            .map((t) => t.trim());
+
+                                          return !existingTags.includes(item);
+                                        }
+                                      ).map((item, index) => (
+                                        <Tag
+                                          key={index}
+                                          borderRadius="full"
+                                          colorScheme="secondary"
+                                          variant={"solid"}
+                                          px={3}
+                                          cursor={"pointer"}
+                                          _hover={{
+                                            bg: "secondary.700",
+                                            color: "white",
+                                          }}
+                                          onClick={() => {
+                                            handleQuickAddTagIntegratedApps(
+                                              item
+                                            );
+                                          }}
+                                        >
+                                          <FiPlus />
+                                          <TagLabel pl={1}>{item}</TagLabel>
+                                        </Tag>
+                                      ))}
+                                    </Flex>
+                                  </FormControl>
+                                </Stack>
+                              </InputLayoutFull>
+                            </FormControl>
+                          </Flex>
+                        </InputGroupPanel>
                       </Flex>
                     )}
+
                     {activeStep === 4 && (
                       <Flex
                         as={Stack}
@@ -2735,11 +4385,7 @@ function RequirementsBRDRegisterView() {
                                     )}
                                   </Td>
                                   <Td>
-                                    <Tooltip label={file.name} hasArrow>
-                                      <Text noOfLines={1} maxW="200px">
-                                        {file.name}
-                                      </Text>
-                                    </Tooltip>
+                                    <Text>{file.name}</Text>
                                   </Td>
                                   <Td isNumeric>
                                     <IconButton
@@ -2806,8 +4452,26 @@ function RequirementsBRDRegisterView() {
                         isDisabled={activeStep === steps.length - 1}
                         colorScheme="blue"
                         rightIcon={<FiArrowRight />}
+                        display={
+                          activeStep === steps.length - 1 ? "none" : "flex"
+                        }
                       >
                         Selanjutnya
+                      </Button>
+                      <Button
+                        colorScheme={"green"}
+                        leftIcon={<FiSave />}
+                        // type={"submit"}
+                        //   onClick={() => setSaveAsDraft(false)}
+                        onClick={() => handleConfirmSaveData(formik.values)}
+                        isLoading={ActionLoading}
+                        // isDisabled={activeStep !== steps.length - 1}
+                        display={
+                          activeStep === steps.length - 1 ? "flex" : "none"
+                        }
+                        px={8}
+                      >
+                        Simpan
                       </Button>
                     </Flex>
                   </Flex>

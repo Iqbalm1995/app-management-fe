@@ -15,18 +15,61 @@ import {
 import axiosInstance from "../utils/axiosInstance";
 import axios from "axios";
 import handleAxiosError from "../utils/handleAxiosError";
+import { UsersResponse } from "./useUsers";
 
 export interface TeamsResponse {
   id: string;
   teamCode: string;
   teamName: string;
-  teamDesc: string | null;
+  teamDesc?: string | null;
   isActive: string;
-  teamPict: string | null;
+  teamPict?: string | null;
   createdAt: string;
   createdBy: string;
-  teamUserMembers: TeamsUserMember[];
+  updatedAt?: string | null;
+  updatedBy?: string | null;
+  orgGroupId: string;
+  orgGroupCode: string;
+  directorate: TeamOrganization;
+  division: TeamOrganization;
+  group: TeamOrganization;
 }
+
+export interface TeamOrganization {
+  id: string;
+  orgType: string;
+  orgCode: string;
+  orgName: string;
+}
+
+export interface TeamInsertPayload {
+  teamCode: string;
+  teamName: string;
+  teamDesc: string | null;
+  isActive: string;
+  uploadPict: File | null;
+  orgGroupId: string;
+  orgGroupCode: string;
+}
+
+export interface TeamUpdatePayload {
+  id: string;
+  teamName: string;
+  teamDesc: string | null;
+  isActive: string;
+  uploadPict: File | null;
+  deletePict: boolean;
+  orgGroupId: string;
+  orgGroupCode: string;
+}
+
+export interface TeamMemberPayload {
+  userId: string;
+  teamId: string;
+  teamRoleId: string;
+}
+
+////////////////////////////////////////////////////////////
 
 export interface TeamsRoleMember {
   id: string;
@@ -110,23 +153,6 @@ export interface TeamMemberPayload {
   teamRoleId: string;
 }
 
-export interface TeamInsertPayload {
-  teamCode: string;
-  teamName: string;
-  teamDesc: string | null;
-  isActive: string;
-  uploadPict: File | null;
-}
-
-export interface TeamUpdatePayload {
-  id: string;
-  teamName: string;
-  teamDesc: string | null;
-  isActive: string;
-  uploadPict: File | null;
-  deletePict: boolean;
-}
-
 interface useTeamsServices {
   List: (
     payload: PaggingListPayload,
@@ -148,26 +174,11 @@ interface useTeamsServices {
     payload: TeamUpdatePayload,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
+
   ListMembers: (
     payload: PaggingListPayloadCustom,
     token: string
-  ) => Promise<ApiGenericResponse<TeamsUserMemberResponse[] | null> | null>;
-  ListRoleTeam: (
-    payload: PaggingListPayload,
-    token: string
-  ) => Promise<ApiGenericResponse<TeamRoleFullResponse[] | null> | null>;
-  InsertTeamRole: (
-    payload: TeamRoleInsertPayload,
-    token: string
-  ) => Promise<ApiGenericResponse<string | null> | null>;
-  UpdateTeamRole: (
-    payload: TeamRoleUpdatePayload,
-    token: string
-  ) => Promise<ApiGenericResponse<string | null> | null>;
-  DeleteTeamRole: (
-    id: string,
-    token: string
-  ) => Promise<ApiGenericResponse<string | null> | null>;
+  ) => Promise<ApiGenericResponse<UsersResponse[] | null> | null>;
   InsertTeamMember: (
     payload: TeamMemberPayload,
     token: string
@@ -176,10 +187,11 @@ interface useTeamsServices {
     payload: TeamMemberPayload,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
-  DeleteTeamMember: (
+  RemoveTeamMember: (
     payload: TeamMemberPayload,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
+
   isLoading: boolean;
   error: string | null;
 }
@@ -340,6 +352,9 @@ const useTeams = (): useTeamsServices => {
       formData.append("uploadPict", payload.uploadPict);
     }
 
+    formData.append("orgGroupId", payload.orgGroupId);
+    formData.append("orgGroupCode", payload.orgGroupCode);
+
     try {
       const response = await axiosInstance.post<
         ApiGenericResponse<string | null>
@@ -402,6 +417,9 @@ const useTeams = (): useTeamsServices => {
     // Boolean field handling - convert to string
     formData.append("deletePict", payload.deletePict.toString());
 
+    formData.append("orgGroupId", payload.orgGroupId);
+    formData.append("orgGroupCode", payload.orgGroupCode);
+
     try {
       const response = await axiosInstance.post<
         ApiGenericResponse<string | null>
@@ -436,182 +454,18 @@ const useTeams = (): useTeamsServices => {
   const ListMembers = async (
     payload: PaggingListPayloadCustom,
     token: string
-  ): Promise<ApiGenericResponse<TeamsUserMemberResponse[] | null> | null> => {
+  ): Promise<ApiGenericResponse<UsersResponse[] | null> | null> => {
     setIsLoading(true);
     setError(null);
     const UrlEndpoint: string = buildUrlPort(
       ENDPOINT_API_BASEURL,
       ENDPOINT_PORT_BASIC
     );
-    const PathEndpoint: string = "/v1/Teams/listMember";
+    const PathEndpoint: string = "/v1/Teams/member/list";
     try {
       const response = await axiosInstance.post<
-        ApiGenericResponse<TeamsUserMemberResponse[]>
+        ApiGenericResponse<UsersResponse[]>
       >(`${UrlEndpoint}${PathEndpoint}`, payload, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setIsLoading(false);
-      return response.data;
-    } catch (err) {
-      setIsLoading(false);
-      if (axios.isAxiosError(err)) {
-        const errorResponse = handleAxiosError(err);
-        setError(
-          err.response?.data?.message || "An error occurred during login."
-        );
-        return errorResponse;
-      } else {
-        setError("An unknown error occurred. Please try again.");
-        return {
-          statusCode: RES_CODE_SERVER_ERROR,
-          data: null,
-          message: "Error connect to api",
-          error: null,
-        };
-      }
-    }
-  };
-
-  const ListRoleTeam = async (
-    payload: PaggingListPayload,
-    token: string
-  ): Promise<ApiGenericResponse<TeamRoleFullResponse[] | null> | null> => {
-    setIsLoading(true);
-    setError(null);
-    const UrlEndpoint: string = buildUrlPort(
-      ENDPOINT_API_BASEURL,
-      ENDPOINT_PORT_BASIC
-    );
-    const PathEndpoint: string = "/v1/Teams/listTeamRole";
-    try {
-      const response = await axiosInstance.post<
-        ApiGenericResponse<TeamRoleFullResponse[]>
-      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setIsLoading(false);
-      return response.data;
-    } catch (err) {
-      setIsLoading(false);
-      if (axios.isAxiosError(err)) {
-        const errorResponse = handleAxiosError(err);
-        setError(
-          err.response?.data?.message || "An error occurred during login."
-        );
-        return errorResponse;
-      } else {
-        setError("An unknown error occurred. Please try again.");
-        return {
-          statusCode: RES_CODE_SERVER_ERROR,
-          data: null,
-          message: "Error connect to api",
-          error: null,
-        };
-      }
-    }
-  };
-
-  const InsertTeamRole = async (
-    payload: TeamRoleInsertPayload,
-    token: string
-  ): Promise<ApiGenericResponse<string | null> | null> => {
-    setIsLoading(true);
-    setError(null);
-    const UrlEndpoint: string = buildUrlPort(
-      ENDPOINT_API_BASEURL,
-      ENDPOINT_PORT_BASIC
-    );
-    const PathEndpoint: string = "/v1/Teams/insertTeamRole";
-    try {
-      const response = await axiosInstance.post<
-        ApiGenericResponse<string | null>
-      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setIsLoading(false);
-      return response.data;
-    } catch (err) {
-      setIsLoading(false);
-      if (axios.isAxiosError(err)) {
-        const errorResponse = handleAxiosError(err);
-        setError(
-          err.response?.data?.message || "An error occurred during login."
-        );
-        return errorResponse;
-      } else {
-        setError("An unknown error occurred. Please try again.");
-        return {
-          statusCode: RES_CODE_SERVER_ERROR,
-          data: null,
-          message: "Error connect to api",
-          error: null,
-        };
-      }
-    }
-  };
-
-  const UpdateTeamRole = async (
-    payload: TeamRoleUpdatePayload,
-    token: string
-  ): Promise<ApiGenericResponse<string | null> | null> => {
-    setIsLoading(true);
-    setError(null);
-    const UrlEndpoint: string = buildUrlPort(
-      ENDPOINT_API_BASEURL,
-      ENDPOINT_PORT_BASIC
-    );
-    const PathEndpoint: string = "/v1/Teams/updateTeamRole";
-    try {
-      const response = await axiosInstance.post<
-        ApiGenericResponse<string | null>
-      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setIsLoading(false);
-      return response.data;
-    } catch (err) {
-      setIsLoading(false);
-      if (axios.isAxiosError(err)) {
-        const errorResponse = handleAxiosError(err);
-        setError(
-          err.response?.data?.message || "An error occurred during login."
-        );
-        return errorResponse;
-      } else {
-        setError("An unknown error occurred. Please try again.");
-        return {
-          statusCode: RES_CODE_SERVER_ERROR,
-          data: null,
-          message: "Error connect to api",
-          error: null,
-        };
-      }
-    }
-  };
-
-  const DeleteTeamRole = async (
-    id: string,
-    token: string
-  ): Promise<ApiGenericResponse<string | null> | null> => {
-    setIsLoading(true);
-    setError(null);
-    const UrlEndpoint: string = buildUrlPort(
-      ENDPOINT_API_BASEURL,
-      ENDPOINT_PORT_BASIC
-    );
-    const PathEndpoint: string = `/v1/Teams/deleteTeamRole/${id}`;
-    try {
-      const response = await axiosInstance.delete<
-        ApiGenericResponse<string | null>
-      >(`${UrlEndpoint}${PathEndpoint}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -648,7 +502,8 @@ const useTeams = (): useTeamsServices => {
       ENDPOINT_API_BASEURL,
       ENDPOINT_PORT_BASIC
     );
-    const PathEndpoint: string = `/v1/Teams/insertMember`;
+    const PathEndpoint: string = "/v1/Teams/member/insert";
+
     try {
       const response = await axiosInstance.post<
         ApiGenericResponse<string | null>
@@ -689,7 +544,8 @@ const useTeams = (): useTeamsServices => {
       ENDPOINT_API_BASEURL,
       ENDPOINT_PORT_BASIC
     );
-    const PathEndpoint: string = `/v1/Teams/updateMember`;
+    const PathEndpoint: string = "/v1/Teams/member/update";
+
     try {
       const response = await axiosInstance.post<
         ApiGenericResponse<string | null>
@@ -720,7 +576,7 @@ const useTeams = (): useTeamsServices => {
     }
   };
 
-  const DeleteTeamMember = async (
+  const RemoveTeamMember = async (
     payload: TeamMemberPayload,
     token: string
   ): Promise<ApiGenericResponse<string | null> | null> => {
@@ -730,11 +586,12 @@ const useTeams = (): useTeamsServices => {
       ENDPOINT_API_BASEURL,
       ENDPOINT_PORT_BASIC
     );
-    const PathEndpoint: string = `/v1/Teams/deleteMember?UserId=${payload.userId}&TeamId=${payload.teamId}&TeamRoleId=${payload.teamRoleId}`;
+    const PathEndpoint: string = `/v1/Teams/member/delete`;
+
     try {
-      const response = await axiosInstance.delete<
+      const response = await axiosInstance.post<
         ApiGenericResponse<string | null>
-      >(`${UrlEndpoint}${PathEndpoint}`, {
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -768,13 +625,10 @@ const useTeams = (): useTeamsServices => {
     InsertTeams,
     UpdateTeams,
     ListMembers,
-    ListRoleTeam,
-    InsertTeamRole,
-    UpdateTeamRole,
-    DeleteTeamRole,
     InsertTeamMember,
     UpdateTeamMember,
-    DeleteTeamMember,
+    RemoveTeamMember,
+
     isLoading,
     error,
   };

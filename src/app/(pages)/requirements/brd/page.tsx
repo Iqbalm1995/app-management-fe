@@ -305,7 +305,7 @@ function ReuirementsBRDPage() {
             <Flex fontSize={"small"} as={Stack} spacing={0}>
               <Text>Divisi Pengirim :</Text>
               <Text fontWeight={600}>
-                {info.row.original.senderDivisionData.divisionName}
+                {info.row.original.senderDivisionName}
               </Text>
             </Flex>
           </Flex>
@@ -381,7 +381,7 @@ function ReuirementsBRDPage() {
     setStartDateFilter(startDate);
     setEndDateFilter(endDate);
 
-    if (DataAuth && DataAuth.teamMember && tokenData) {
+    if (DataAuth && DataAuth.team && tokenData) {
       const filterWhereData: ListSearchByParam[] = [
         {
           field: "requirementType",

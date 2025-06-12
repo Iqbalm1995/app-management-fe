@@ -734,7 +734,8 @@ export function separateRtRw(input: string): RtRwConversion {
 }
 
 export function truncateToTwoWords(text: string): string {
-  return text.split(" ").slice(0, 2).join(" ");
+  return text;
+  // return text.split(" ").slice(0, 2).join(" ");
 }
 
 export const TextStatusProps = ({
@@ -914,6 +915,19 @@ export function getPriorityFromMatrix(impact: string, urgency: string): string {
 
   // Remaining combinations fall to LOW
   return "LOW";
+}
+
+export function getQuarterText(dateInput: string | Date): string {
+  const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
+
+  if (isNaN(date.getTime())) return "Invalid Date";
+
+  const month = date.getMonth(); // 0 = January
+  const year = date.getFullYear();
+
+  const quarter = Math.floor(month / 3) + 1;
+
+  return `Triwulan ${quarter} - Tahun ${year}`;
 }
 
 export const monthSetMaster = [

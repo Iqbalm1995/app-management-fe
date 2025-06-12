@@ -170,7 +170,7 @@ const AppInfromationSection = () => {
   const handleUpdateData = async () => {
     setActionLoading(true);
     await delay(DELAY_MEDIUM);
-    if (DataAuth && DataAuth.teamMember && UpdatePayload) {
+    if (DataAuth && DataAuth.team && UpdatePayload) {
       await UpdateAppsServ();
       setIsEditMode(false);
     } else {
@@ -261,7 +261,7 @@ const AppInfromationSection = () => {
   };
 
   useEffect(() => {
-    if (DataAuth && DataAuth.teamMember && ProjectId && DataApps == null) {
+    if (DataAuth && DataAuth.team && ProjectId && DataApps == null) {
       setIsLoadingProcess(true);
       const GetDataList = async () => {
         const requestData = await GetDetailAppsByProjectId(
@@ -342,7 +342,7 @@ const AppInfromationSection = () => {
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (DataAuth && DataAuth.teamMember && DataApps) {
+    if (DataAuth && DataAuth.team && DataApps) {
       if (file) {
         if (file.type.startsWith("image/")) {
           const imageUrl = URL.createObjectURL(file); // Generate a URL for the image preview

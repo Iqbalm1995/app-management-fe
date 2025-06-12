@@ -243,10 +243,10 @@ function ProjectManagerPage() {
 
   useEffect(() => {
     setIsEditMode(false);
-    if (DataAuth && DataAuth.teamMember) {
+    if (DataAuth && DataAuth.team) {
       const PayloadList: PaggingListPayloadCustom = {
         search: globalFilter,
-        teamId: DataAuth.teamMember.id,
+        teamId: DataAuth.team.id,
         limit: pageSize,
         page: pageIndex,
         filterWhere: [],
@@ -381,9 +381,9 @@ function ProjectManagerPage() {
 
   const ModalForm = useDisclosure();
   const handleAddNew = () => {
-    if (DataAuth && DataAuth.teamMember) {
+    if (DataAuth && DataAuth.team) {
       handleResetForm();
-      formik.setFieldValue("teamId", DataAuth.teamMember.id);
+      formik.setFieldValue("teamId", DataAuth.team ? DataAuth.team.id : "");
       ModalForm.onOpen();
     } else {
       showToast({
@@ -412,7 +412,7 @@ function ProjectManagerPage() {
   const handleSaveData = async () => {
     setActionLoading(true);
     await delay(DELAY_MEDIUM);
-    if (DataAuth && DataAuth.teamMember && PayloadData) {
+    if (DataAuth && DataAuth.team && PayloadData) {
       await AddProjectNewServ(PayloadData);
     } else {
       showToast({
@@ -792,10 +792,10 @@ const TeamProfile = () => {
   const [image, setImage] = useState("/img/placeholder-header-sm.png");
   useEffect(() => {
     setIsLoadingProcess(true);
-    if (DataAuth && DataAuth.teamMember) {
+    if (DataAuth && DataAuth.team) {
       const GetDataList = async () => {
         const requestData = await GetDetailById(
-          DataAuth.teamMember.id,
+          DataAuth.team ? DataAuth.team.id : "",
           tokenData
         );
         const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
@@ -912,7 +912,7 @@ const TeamProfile = () => {
                   </Text>
                 </Flex>
                 <Spacer />
-                <Flex>
+                {/* <Flex>
                   {DataTeam && DataTeam.teamUserMembers.length > 0 && (
                     <AvatarGroup size="md" max={4}>
                       {DataTeam.teamUserMembers.map((dt, index) => (
@@ -923,7 +923,7 @@ const TeamProfile = () => {
                       ))}
                     </AvatarGroup>
                   )}
-                </Flex>
+                </Flex> */}
               </Flex>
             </Container>
           </Flex>

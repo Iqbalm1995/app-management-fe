@@ -8,19 +8,23 @@ interface CustomMaskedInputProps extends Omit<InputProps, "onChange"> {
 
 const formatInput = (input: string) => {
   const cleaned = input.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
-  const parts = {
-    part1: cleaned.slice(0, 4), // digits
-    part2: cleaned.slice(4, 7), // letters
-    part3: cleaned.slice(7, 10), // letters
-    part4: cleaned.slice(10, 11), // single letter
-    part5: cleaned.slice(11, 15), // 4-digit year
-  };
 
-  let formatted = parts.part1;
-  if (parts.part2) formatted += `/${parts.part2}`;
-  if (parts.part3) formatted += `-${parts.part3}`;
-  if (parts.part4) formatted += `/${parts.part4}`;
-  if (parts.part5) formatted += `/${parts.part5}`;
+  // Extract digits and letters separately
+  const digits = cleaned.replace(/[^0-9]/g, "");
+  const letters = cleaned.replace(/[^A-Z]/g, "");
+
+  // Build parts with proper validation
+  const part1 = digits.slice(0, 4); // Only digits
+  const part2 = letters.slice(0, 3); // Only letters
+  const part3 = letters.slice(3, 6); // Only letters
+  const part4 = letters.slice(6, 7); // Only 1 letter
+  const part5 = digits.slice(4, 8); // Only digits for year
+
+  let formatted = part1;
+  if (part2) formatted += `/${part2}`;
+  if (part3) formatted += `-${part3}`;
+  if (part4) formatted += `/${part4}`;
+  if (part5) formatted += `/${part5}`;
 
   return formatted;
 };

@@ -228,7 +228,7 @@ const AppsEnvirontmentSection = ({ AppsId }: { AppsId: string }) => {
   );
 
   useEffect(() => {
-    if (DataAuth && DataAuth.teamMember) {
+    if (DataAuth && DataAuth.team) {
       const PayloadList: PaggingListPayload = {
         search: globalFilter,
         limit: pageSize,
@@ -544,7 +544,7 @@ const AppsEnvirontmentSection = ({ AppsId }: { AppsId: string }) => {
   const ModalForm = useDisclosure();
 
   const handleAddNewAccount = () => {
-    if ((DataAuth && DataAuth.teamMember, AppsId)) {
+    if ((DataAuth && DataAuth.team, AppsId)) {
       setEditModeAccount(false);
       formikAccountENV.setFieldValue("id", null);
       formikAccountENV.setFieldValue("accountsName", "");
@@ -620,7 +620,7 @@ const AppsEnvirontmentSection = ({ AppsId }: { AppsId: string }) => {
       return;
     }
 
-    if ((DataAuth && DataAuth.teamMember, AppsId)) {
+    if ((DataAuth && DataAuth.team, AppsId)) {
       setEditModeAccount(false);
       const PayloadNewData: AppsEnvInsertPayload = {
         appsId: AppsId,
@@ -666,7 +666,7 @@ const AppsEnvirontmentSection = ({ AppsId }: { AppsId: string }) => {
   const DeleteDataEnv = async () => {
     setActionLoading(true);
     await delay(DELAY_MEDIUM);
-    if (DataAuth && DataAuth.teamMember && DetailEnv) {
+    if (DataAuth && DataAuth.team && DetailEnv) {
       await DeleteEnvDataServ(DetailEnv.id);
     } else {
       showToast({

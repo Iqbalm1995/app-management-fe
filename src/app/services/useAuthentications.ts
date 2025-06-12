@@ -15,6 +15,7 @@ import handleAxiosError from "../utils/handleAxiosError";
 export interface AuthenticationPayload {
   username: string;
   password: string;
+  uim: boolean;
 }
 
 export interface AuthenticationResponse {
@@ -22,19 +23,21 @@ export interface AuthenticationResponse {
   expiration: string;
 }
 
-export interface AuthDataTeamMemberResponse {
+export interface AuthDataTeamResponse {
   id: string;
   teamCode: string;
   teamName: string;
-  teamDesc: string;
-  isActive: string;
-  teamPict: string;
+  teamPict?: string | null;
+  orgGroupId?: string | null;
+  orgGroupCode?: string | null;
 }
 
 export interface AuthDataTeamRoleResponse {
   id: string;
-  teamRoleCode: string;
-  teamRoleName: string;
+  parentId?: string | null;
+  category: string;
+  specCode: string;
+  specName: string;
 }
 
 export interface AuthDataRoleResponse {
@@ -45,17 +48,34 @@ export interface AuthDataRoleResponse {
 
 export interface AuthDataResponse {
   id: string;
-  code: string;
-  firstName: string;
-  lastName: string;
-  username: string;
-  isActive: string;
-  profilePict: string;
-  userEmail: string;
-  userPhoneNumber: string;
-  teamMember: AuthDataTeamMemberResponse;
-  teamRole: AuthDataTeamRoleResponse;
-  role: AuthDataRoleResponse;
+  nrp: string;
+  nama: string;
+  nip: string;
+  userId: string;
+  kodeCabang?: string | null;
+  namaCabang?: string | null;
+  kodeInduk?: string | null;
+  namaInduk?: string | null;
+  kodeKanwil?: string | null;
+  namaKanwil?: string | null;
+  jabatan?: string | null;
+  email: string;
+  idFungsi?: string | null;
+  namaFungsi?: string | null;
+  kodePenempatan?: string | null;
+  namaPenempatan?: string | null;
+  idUim?: string | null;
+  costCentre?: string | null;
+  isApproval?: string | null;
+  kodeUnitKerja?: string | null;
+  namaUnitKerja?: string | null;
+  kodeJabatan?: string | null;
+  phoneNumber?: string | null;
+  userStatus: string;
+  profilePict?: string | null;
+
+  team?: AuthDataTeamResponse | null;
+  teamRole?: AuthDataTeamRoleResponse;
 }
 
 interface useAuthenticationsService {

@@ -26,9 +26,7 @@ import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useConstants from "@/app/services/useConstants";
 import useDivision, { DivisionResponse } from "@/app/services/useDivisions";
 import useRequirements, {
-  ReqAssignUserPayload,
   RequirementsResponse,
-  RequirementsUpdatePayload,
 } from "@/app/services/useRequirements";
 import useUsers, { UsersResponse } from "@/app/services/useUsers";
 
@@ -260,7 +258,7 @@ const RequirementDetailInfoSection = ({
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
 
-  const { GetDetailById, UpdateReq } = useRequirements();
+  const { GetDetailById } = useRequirements();
   const { ListConstantData } = useConstants();
   const { List: ListUsers } = useUsers();
   const { List: ListDivisions } = useDivision();
@@ -295,8 +293,8 @@ const RequirementDetailInfoSection = ({
   const [openConfirmUpdateDialog, setOpenConfirmUpdateDialog] = useState(false);
   const [questionMsgDialog, setQuestionMsgDialog] = useState<string>("");
   const [captionDialog, setCaptionDialog] = useState<string>("");
-  const [UpdatePayload, setUpdatePayload] =
-    useState<RequirementsUpdatePayload | null>(null);
+  // const [UpdatePayload, setUpdatePayload] =
+  //   useState<RequirementsUpdatePayload | null>(null);
 
   // useSteps setup with initial index 0
   const { activeStep, setActiveStep } = useSteps({
@@ -305,22 +303,22 @@ const RequirementDetailInfoSection = ({
   });
   const [progressPercentage, setProgressPercentage] = useState(0);
 
-  const formik = useFormik<RequirementsUpdatePayload>({
-    initialValues: initialValues,
-    validationSchema: FormSchemaUpdate,
-    validateOnChange: false,
-    validateOnBlur: false,
-    onSubmit: async (values) => {
-      //   await handleConfirmSaveData(values);
-      console.log(values);
-    },
-  });
+  // const formik = useFormik<RequirementsUpdatePayload>({
+  //   initialValues: initialValues,
+  //   validationSchema: FormSchemaUpdate,
+  //   validateOnChange: false,
+  //   validateOnBlur: false,
+  //   onSubmit: async (values) => {
+  //     //   await handleConfirmSaveData(values);
+  //     console.log(values);
+  //   },
+  // });
 
   useEffect(() => {
     LoadDataDivision();
     handleSearchUser("", "clear");
     ResetDivisionState();
-    if (DataAuth && DataAuth.teamMember && ReqData) {
+    if (DataAuth && DataAuth.team && ReqData) {
       formik.setFieldValue("id", ReqData.id);
       formik.setFieldValue("senderDivisionId", ReqData.senderDivisionId);
       setSelectedDivision({
@@ -689,12 +687,12 @@ const RequirementDetailInfoSection = ({
 
   //   Handle Save Data
 
-  const handleConfirmSaveData = async (data: RequirementsUpdatePayload) => {
-    setCaptionDialog("Confirm Save");
-    setQuestionMsgDialog(`Are you sure want update requirement info?`);
-    setOpenConfirmUpdateDialog(true);
-    setUpdatePayload(data);
-  };
+  // const handleConfirmSaveData = async (data: RequirementsUpdatePayload) => {
+  //   setCaptionDialog("Confirm Save");
+  //   setQuestionMsgDialog(`Are you sure want update requirement info?`);
+  //   setOpenConfirmUpdateDialog(true);
+  //   setUpdatePayload(data);
+  // };
 
   const handleConfirmSaveDataTrigger = () => {
     setOpenConfirmUpdateDialog(!openConfirmUpdateDialog);
@@ -703,7 +701,7 @@ const RequirementDetailInfoSection = ({
   const handleUpdateData = async () => {
     setActionLoading(true);
     await delay(DELAY_MEDIUM);
-    if (DataAuth && DataAuth.teamMember && UpdatePayload) {
+    if (DataAuth && DataAuth.team && UpdatePayload) {
       await UpdateReqServ();
       setIsEditMode(false);
     } else {
@@ -718,31 +716,30 @@ const RequirementDetailInfoSection = ({
   };
 
   const UpdateReqServ = async () => {
-    if (UpdatePayload) {
-      const requestData = await UpdateReq(UpdatePayload, tokenData);
-      const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
-
-      if (isErrorResponse || !requestData) {
-        showToast({
-          description: requestData?.message || RES_GENERIC_ERROR_MSG,
-          statusToast: "error",
-        });
-        setIsLoadingProcess(false);
-        setActionLoading(false);
-        return;
-      } else {
-        console.log(requestData);
-        showToast({
-          description: `Data project update successfully`,
-          statusToast: "success",
-        });
-        setIsLoadingProcess(false);
-        setActionLoading(false);
-        setIsEditMode(false);
-        RefreshAction();
-        return;
-      }
-    }
+    // if (UpdatePayload) {
+    //   const requestData = await UpdateReq(UpdatePayload, tokenData);
+    //   const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+    //   if (isErrorResponse || !requestData) {
+    //     showToast({
+    //       description: requestData?.message || RES_GENERIC_ERROR_MSG,
+    //       statusToast: "error",
+    //     });
+    //     setIsLoadingProcess(false);
+    //     setActionLoading(false);
+    //     return;
+    //   } else {
+    //     console.log(requestData);
+    //     showToast({
+    //       description: `Data project update successfully`,
+    //       statusToast: "success",
+    //     });
+    //     setIsLoadingProcess(false);
+    //     setActionLoading(false);
+    //     setIsEditMode(false);
+    //     RefreshAction();
+    //     return;
+    //   }
+    // }
   };
 
   // Assign To Multiple
@@ -752,16 +749,16 @@ const RequirementDetailInfoSection = ({
     UsersResponse[]
   >([]);
 
-  useEffect(() => {
-    const mappedPayload: ReqAssignUserPayload[] = ChoosedMemberProjects.map(
-      (user) => ({
-        userId: user.id,
-        isChecked: "N", // default
-      })
-    );
+  // useEffect(() => {
+  //   const mappedPayload: ReqAssignUserPayload[] = ChoosedMemberProjects.map(
+  //     (user) => ({
+  //       userId: user.id,
+  //       isChecked: "N", // default
+  //     })
+  //   );
 
-    formik.setFieldValue("picAssignUsers", mappedPayload);
-  }, [ChoosedMemberProjects]);
+  //   formik.setFieldValue("picAssignUsers", mappedPayload);
+  // }, [ChoosedMemberProjects]);
 
   const handleSearchUserAssign = async (textSearch: string) => {
     setDataUsers([]);
@@ -801,14 +798,14 @@ const RequirementDetailInfoSection = ({
   const [OptionDivision, setOptionDivision] = useState<OptionListProps[]>([]);
   const [SelectedDivision, setSelectedDivision] =
     useState<OptionListProps | null>(null);
-  const handleSelectedDivision = (data: OptionListProps) => {
-    setSelectedDivision(data);
-    formik.setFieldValue("senderDivisionId", data.value);
-  };
-  const handleUnSelectedDivision = () => {
-    setSelectedDivision(null);
-    formik.setFieldValue("senderDivisionId", null);
-  };
+  // const handleSelectedDivision = (data: OptionListProps) => {
+  //   setSelectedDivision(data);
+  //   formik.setFieldValue("senderDivisionId", data.value);
+  // };
+  // const handleUnSelectedDivision = () => {
+  //   setSelectedDivision(null);
+  //   formik.setFieldValue("senderDivisionId", null);
+  // };
 
   const GetDataDivision = async (
     searchValue: string = "",

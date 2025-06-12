@@ -555,7 +555,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                         bgGradient={
                           "linear(to-br, primary.500, secondary.500 40%, yellow.500)"
                         }
-                        name={DataAuth ? DataAuth.firstName : ""}
+                        name={DataAuth ? truncateToTwoWords(DataAuth.nama) : ""}
                         mr="2"
                       />
                       <Box
@@ -584,7 +584,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                         borderRadius={"xl"}
                         hasArrow
                         placement="left"
-                        label={DataAuth ? DataAuth.firstName : ""}
+                        label={DataAuth ? DataAuth.nama : ""}
                       >
                         <VStack
                           w={"full"}
@@ -601,16 +601,14 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                             fontSize={"sm"}
                             fontWeight={700}
                           >
-                            {truncateToTwoWords(
-                              DataAuth ? DataAuth.firstName : ""
-                            )}
+                            {truncateToTwoWords(DataAuth ? DataAuth.nama : "")}
                           </Text>
                           <Text
                             fontSize="xs"
                             color={useColorModeValue("gray.600", "gray.100")}
                           >
-                            {(DataAuth && DataAuth.teamRole?.teamRoleName) ||
-                              (DataAuth && DataAuth.role.roleName)}
+                            {(DataAuth && DataAuth.teamRole?.specName) ||
+                              (DataAuth && DataAuth.jabatan)}
                           </Text>
                         </VStack>
                       </Tooltip>
@@ -1053,30 +1051,25 @@ function AdditionalProfileBar({
             <Tooltip
               borderRadius={"xl"}
               hasArrow
-              label={
-                (DataAuth && DataAuth.teamMember.teamName) ||
-                (DataAuth && truncateToTwoWords(DataAuth.firstName)) ||
-                ""
-              }
+              label={DataAuth && DataAuth.team?.teamName}
             >
               <Avatar
                 size={"md"}
                 color={"white"}
                 name={
                   (DataAuth &&
-                    truncateToTwoWords(DataAuth.teamMember.teamName)) ||
-                  (DataAuth && truncateToTwoWords(DataAuth.firstName)) ||
+                    DataAuth.team &&
+                    truncateToTwoWords(DataAuth.team.teamName)) ||
                   ""
                 }
                 mr={LiteModeTrigger ? 0 : 2}
                 cursor={"pointer"}
                 src={
                   (DataAuth &&
+                    DataAuth.team &&
+                    DataAuth.team.teamPict &&
                     buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC) +
-                      DataAuth.teamMember.teamPict) ||
-                  (DataAuth &&
-                    buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC) +
-                      DataAuth.profilePict) ||
+                      DataAuth.team.teamPict) ||
                   ""
                 }
                 boxShadow={"md"}
@@ -1095,14 +1088,14 @@ function AdditionalProfileBar({
                   fontSize={"smaller"}
                   fontWeight={700}
                 >
-                  {DataAuth && truncateToTwoWords(DataAuth.firstName)}
+                  {DataAuth && truncateToTwoWords(DataAuth.nama)}
                 </Text>
                 <Text
                   fontSize="x-small"
                   color={useColorModeValue("primary.500", "primary.100")}
                 >
-                  {(DataAuth && DataAuth.teamRole?.teamRoleName) ||
-                    (DataAuth && DataAuth.role.roleName)}
+                  {(DataAuth && DataAuth.teamRole?.specName) ||
+                    (DataAuth && DataAuth.jabatan)}
                 </Text>
               </VStack>
             </Flex>
