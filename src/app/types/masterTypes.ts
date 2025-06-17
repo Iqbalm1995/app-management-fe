@@ -53,10 +53,52 @@ export interface ListSearchByParam {
   value: string;
 }
 
-export interface OptionListProps {
-  value: string;
-  label: string;
-}
+export const addParamFilter = (
+  list: ListSearchByParam[],
+  param: ListSearchByParam
+): ListSearchByParam[] => {
+  const isDuplicate = list.some(
+    (p) => p.field === param.field && p.operator === param.operator
+  );
+
+  return isDuplicate ? list : [...list, param];
+};
+
+export const addParamFilterUpdate = (
+  list: ListSearchByParam[],
+  param: ListSearchByParam
+): ListSearchByParam[] => {
+  // Find if a param with same field AND operator exists
+  const existing = list.find(
+    (p) => p.field === param.field && p.operator === param.operator
+  );
+
+  // If found and value is unchanged, return original list
+  if (existing && existing.value === param.value) {
+    return list;
+  }
+
+  // Otherwise, remove existing with same field+operator and append new param
+  const updatedList = list.filter(
+    (p) => !(p.field === param.field && p.operator === param.operator)
+  );
+
+  return [...updatedList, param];
+};
+
+export const removeParamFilter = (
+  list: ListSearchByParam[],
+  target: ListSearchByParam
+): ListSearchByParam[] => {
+  return list.filter(
+    (item) =>
+      !(
+        item.field === target.field &&
+        item.operator === target.operator &&
+        item.value === target.value
+      )
+  );
+};
 
 export interface ReturnStatus {
   label: string;
@@ -95,4 +137,31 @@ export interface FileDetails {
   extension: string;
   size: number;
   file: File; // Adding the file object itself for multipart upload
+}
+
+export interface OptionListProps {
+  value: string;
+  label: string;
+}
+
+// FILTER META DATA
+
+export interface FilterParamProps {
+  field: string;
+  operator: "%" | "=" | ">" | "<" | ">=" | "<=";
+  value: string;
+  filterType: "text" | "select" | "date";
+  filterLabel: string;
+  sourceListData?: OptionListProps[]; // for source data select
+}
+
+export interface SortDataProps {
+  field: string;
+  dir: "asc" | "desc";
+}
+
+export interface ColumnMetaCustom {
+  isFilterable?: boolean;
+  filterData?: FilterParamProps[];
+  sortData?: SortDataProps[];
 }

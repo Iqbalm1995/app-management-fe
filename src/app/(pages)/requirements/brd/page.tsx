@@ -31,8 +31,10 @@ import {
   REQ_STATUS_ALL,
   REQ_STATUS_APPROVED,
   REQ_STATUS_CANCELED,
+  REQ_STATUS_DRAFT,
   REQ_STATUS_IN_PROGRESS_REVIEW,
   REQ_STATUS_NEED_REVIEW,
+  REQ_STATUS_ON_HOLD,
   REQ_STATUS_REVIEW,
   REQUIREMENT_STATUS_NEW,
   REQUIREMENT_TYPE_BRD,
@@ -59,9 +61,13 @@ import useRequirements, {
 } from "@/app/services/useRequirements";
 import useUsers, { UsersResponse } from "@/app/services/useUsers";
 import {
+  addParamFilter,
+  addParamFilterUpdate,
+  ColumnMetaCustom,
   ListSearchByParam,
   OptionListProps,
   PaggingListPayload,
+  removeParamFilter,
 } from "@/app/types/masterTypes";
 import { ChevronDownIcon } from "@chakra-ui/icons";
 import {
@@ -81,7 +87,17 @@ import {
   GridItem,
   Heading,
   HStack,
-  Select,
+  IconButton,
+  Input,
+  Popover,
+  PopoverArrow,
+  PopoverBody,
+  PopoverCloseButton,
+  PopoverContent,
+  PopoverFooter,
+  PopoverHeader,
+  PopoverTrigger,
+  Portal,
   Spacer,
   Stack,
   Step,
@@ -93,8 +109,14 @@ import {
   StepStatus,
   StepTitle,
   Switch,
+  Table,
+  Tbody,
+  Td,
   Text,
   Textarea,
+  Th,
+  Thead,
+  Tr,
   useColorMode,
   useDisclosure,
   useSteps,
@@ -103,6 +125,7 @@ import {
 } from "@chakra-ui/react";
 import {
   ColumnDef,
+  flexRender,
   getCoreRowModel,
   getFacetedMinMaxValues,
   getFacetedUniqueValues,
@@ -111,7 +134,7 @@ import {
   PaginationState,
   useReactTable,
 } from "@tanstack/react-table";
-import { useFormik } from "formik";
+import { Formik, FormikState, useFormik } from "formik";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { redirect, useParams, usePathname } from "next/navigation";
@@ -121,6 +144,7 @@ import {
   FiArrowRight,
   FiChevronDown,
   FiChevronUp,
+  FiFilter,
   FiInfo,
   FiMinusCircle,
   FiPlusCircle,
@@ -130,6 +154,10 @@ import {
   FiXCircle,
 } from "react-icons/fi";
 import * as Yup from "yup";
+import { Select } from "chakra-react-select";
+import useOrganization, {
+  OrganizationResponse,
+} from "@/app/services/useOrganization";
 
 const TYPE_REQ: string = REQUIREMENT_TYPE_BRD;
 
@@ -140,6 +168,44 @@ const HeaderDataContent: HeaderContentProps = {
 
 // Motion-enhanced version of CardBody
 const MotionCardBody = motion(CardBody);
+
+interface CounterDataReqStatusProps {
+  statusName: string;
+  countData: number;
+}
+
+const DataCounterReqStatus: CounterDataReqStatusProps[] = [
+  {
+    statusName: REQ_STATUS_APPROVED,
+    countData: 0,
+  },
+  {
+    statusName: REQ_STATUS_IN_PROGRESS_REVIEW,
+    countData: 0,
+  },
+  {
+    statusName: REQ_STATUS_NEED_REVIEW,
+    countData: 0,
+  },
+  {
+    statusName: REQ_STATUS_DRAFT,
+    countData: 0,
+  },
+  {
+    statusName: REQ_STATUS_ON_HOLD,
+    countData: 0,
+  },
+  {
+    statusName: REQ_STATUS_CANCELED,
+    countData: 0,
+  },
+];
+
+const brdFilter: ListSearchByParam = {
+  field: "requirementType",
+  operator: "=",
+  value: TYPE_REQ,
+};
 
 function ReuirementsBRDPage() {
   // SetUp auth data on current page
@@ -152,7 +218,7 @@ function ReuirementsBRDPage() {
   const { List, GetDetailById, InsertReq } = useRequirements();
   const { ListConstantData } = useConstants();
   const { List: ListUsers } = useUsers();
-  const { List: ListDivisions } = useDivision();
+  const { List: ListOrganization } = useOrganization();
 
   // querter filter
   const currentYear = new Date().getFullYear();
@@ -204,10 +270,93 @@ function ReuirementsBRDPage() {
     [pageIndex, pageSize]
   );
 
+  // Division Option setup
+
+  const GetDataDivision = async (
+    searchValue: string = "",
+    limit: number = 1
+  ): Promise<OrganizationResponse[]> => {
+    setIsLoadingDivisionSelect(true);
+    const PayloadList: PaggingListPayload = {
+      search: searchValue,
+      limit: limit,
+      page: 0,
+      filterWhere: [
+        {
+          field: "orgType",
+          operator: "=",
+          value: "DIVISION",
+        },
+      ],
+      fieldOrder: ["orgName"],
+      orderDir: "asc",
+    };
+    const token: string = localStorage.getItem("tokenData") as string;
+    const requestData = await ListOrganization(PayloadList, token);
+    const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+
+    if (isErrorResponse || !requestData) {
+      showToast({
+        description: requestData?.message || RES_GENERIC_ERROR_MSG,
+        statusToast: "error",
+      });
+      setIsLoadingDivisionSelect(false);
+      return [];
+    } else {
+      console.log(requestData);
+      if (requestData.data == null) {
+        showToast({
+          description: "Data return error",
+          statusToast: "error",
+        });
+        setIsLoadingDivisionSelect(false);
+        return [];
+      }
+
+      const itemsData: OrganizationResponse[] =
+        requestData.data as OrganizationResponse[];
+
+      const mapOptionData: OptionListProps[] = itemsData.map((d) => ({
+        label: `${d.orgName} | ${d.orgType}`,
+        value: d.id,
+      }));
+      setOptionDivision(mapOptionData);
+      setIsLoadingDivisionSelect(false);
+
+      return itemsData;
+    }
+  };
+
+  const LoadDataDivision = async () => {
+    if (OptionDivision.length <= 0) {
+      const dataDivision = await GetDataDivision("", MAX_SIZE_TABLE);
+    }
+  };
+
+  const [IsLoadingDivisionSelect, setIsLoadingDivisionSelect] = useState(false);
+  const [OptionDivision, setOptionDivision] = useState<OptionListProps[]>([]);
+
   const RefreshAction = () => {
+    const filterWhereData: ListSearchByParam[] = addParamFilter([], brdFilter);
+    setParamFilter(filterWhereData);
     setTotalPageData(0);
     setDataReq([]);
     setRefreshData(RefreshData + 1);
+  };
+
+  const [ParamFilter, setParamFilter] = useState<ListSearchByParam[]>([]);
+
+  const handleFilterChange = (newFilters: ListSearchByParam[]) => {
+    console.log("handleFilterChange");
+    console.log(newFilters);
+
+    // Use reduce to merge all new filters at once
+    const updatedFilters = newFilters.reduce(
+      (acc, filter) => addParamFilterUpdate(acc, filter),
+      ParamFilter
+    );
+
+    setParamFilter(updatedFilters);
   };
 
   const columnsData = useMemo<ColumnDef<RequirementsResponse>[]>(
@@ -221,6 +370,10 @@ function ReuirementsBRDPage() {
         ),
         header: () => <Flex justifyContent={"center"}>No.</Flex>,
         footer: (props) => props.column.id,
+        // Custom variable
+        meta: {
+          isFilterable: false,
+        } as ColumnMetaCustom,
       },
       {
         accessorFn: (row) => row.reqNarative,
@@ -234,9 +387,15 @@ function ReuirementsBRDPage() {
             as={Stack}
             spacing={1}
           >
-            <Flex as={Stack} spacing={0}>
-              <Text fontWeight={600}>No. {info.row.original.reqNumber}</Text>
-              <Text>{info.row.original.reqNarative}</Text>
+            <Flex as={Stack} spacing={2}>
+              <Flex as={Stack} spacing={0}>
+                <Text fontWeight={600}>{info.row.original.reqNumber}</Text>
+                <Text>{info.row.original.reqNarative}</Text>
+              </Flex>
+              <Flex as={Stack} spacing={0}>
+                <Text fontWeight={600}>Divisi Pengirim :</Text>
+                <Text>{info.row.original.senderDivisionName}</Text>
+              </Flex>
               <Flex pt={2}>
                 {info.row.original.isCarryOver == "Y" && (
                   <Badge
@@ -255,6 +414,27 @@ function ReuirementsBRDPage() {
         ),
         header: () => <span>Perihal</span>,
         footer: (props) => props.column.id,
+        // Custom variable
+        meta: {
+          isFilterable: true,
+          filterData: [
+            {
+              field: "reqNarative",
+              operator: "=",
+              value: "",
+              filterType: "text",
+              filterLabel: "Cari Perihal",
+            },
+            {
+              field: "senderDivisionId",
+              operator: "=",
+              value: "",
+              filterType: "select",
+              filterLabel: "Cari Divisi Pengirim",
+              sourceListData: OptionDivision,
+            },
+          ],
+        } as ColumnMetaCustom,
       },
       {
         accessorFn: (row) => row.reqInititateDate,
@@ -292,6 +472,27 @@ function ReuirementsBRDPage() {
         ),
         header: () => <span>Tanggal</span>,
         footer: (props) => props.column.id,
+        // Custom variable
+        // Custom variable
+        meta: {
+          isFilterable: true,
+          filterData: [
+            {
+              field: "reqInititateDate",
+              operator: ">=",
+              value: "",
+              filterType: "date",
+              filterLabel: "Tgl. Inisiasi",
+            },
+            {
+              field: "reqInititateDate",
+              operator: "<=",
+              value: "",
+              filterType: "date",
+              filterLabel: "Tgl. Inisiasi",
+            },
+          ],
+        } as ColumnMetaCustom,
       },
       {
         accessorFn: (row) => row.assignedFromName,
@@ -312,6 +513,10 @@ function ReuirementsBRDPage() {
         ),
         header: () => <span>Penugasan</span>,
         footer: (props) => props.column.id,
+        // Custom variable
+        meta: {
+          isFilterable: false,
+        } as ColumnMetaCustom,
       },
       {
         accessorFn: (row) => row.reqStatus,
@@ -345,6 +550,10 @@ function ReuirementsBRDPage() {
         ),
         header: () => <span>Status</span>,
         footer: (props) => props.column.id,
+        // Custom variable
+        meta: {
+          isFilterable: false,
+        } as ColumnMetaCustom,
       },
       {
         accessorFn: (row) => row.id,
@@ -360,51 +569,74 @@ function ReuirementsBRDPage() {
         ),
         header: () => "",
         footer: (props) => props.column.id,
+        // Custom variable
+        meta: {
+          isFilterable: false,
+        },
       },
     ],
-    [ActionLoading, pageIndex, pageSize, colorMode]
+    [ActionLoading, pageIndex, pageSize, colorMode, OptionDivision, ParamFilter]
   );
 
   const [StartDateFilter, setStartDateFilter] = useState<Date>(new Date());
   const [EndDateFilter, setEndDateFilter] = useState<Date>(new Date());
+
+  // Set Onload Filter For Constant Filter
+  useEffect(() => {
+    LoadDataDivision();
+    addFilterData(brdFilter);
+  }, []);
+
+  const addFilterData = (data: ListSearchByParam) => {
+    const filterWhereData: ListSearchByParam[] = addParamFilterUpdate(
+      ParamFilter,
+      data
+    );
+
+    setParamFilter(filterWhereData);
+  };
+
+  const removeFilterData = (data: ListSearchByParam) => {
+    const filterWhereData: ListSearchByParam[] = removeParamFilter(
+      ParamFilter,
+      data
+    );
+
+    setParamFilter(filterWhereData);
+  };
 
   useEffect(() => {
     const { startDate, endDate } = getQuarterDateRange(
       selectedYear,
       selectedQuarter
     );
-    console.log("Selected Range (ISO):", {
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-    });
+    // console.log("Selected Range (ISO):", {
+    //   startDate: startDate.toISOString(),
+    //   endDate: endDate.toISOString(),
+    // });
 
     setStartDateFilter(startDate);
     setEndDateFilter(endDate);
 
+    // const brdFilter: ListSearchByParam = {
+    //   field: "requirementType",
+    //   operator: "=",
+    //   value: TYPE_REQ,
+    // };
+
     if (DataAuth && DataAuth.team && tokenData) {
-      const filterWhereData: ListSearchByParam[] = [
-        {
-          field: "requirementType",
-          operator: "=",
-          value: TYPE_REQ,
-        },
-        {
-          field: "reqInititateDate",
-          operator: ">=",
-          value: startDate.toISOString(),
-        },
-        {
-          field: "reqInititateDate",
-          operator: "<=",
-          value: endDate.toISOString(),
-        },
-      ];
+      // const filterWhereData: ListSearchByParam[] = addParamFilter(
+      //   ParamFilter,
+      //   brdFilter
+      // );
+
+      // setParamFilter(filterWhereData);
 
       const PayloadList: PaggingListPayload = {
         search: globalFilter,
         limit: pageSize,
         page: pageIndex,
-        filterWhere: filterWhereData,
+        filterWhere: ParamFilter,
         fieldOrder: ["createdAt"],
         orderDir: "desc",
       };
@@ -452,6 +684,7 @@ function ReuirementsBRDPage() {
     globalFilter,
     selectedYear,
     selectedQuarter,
+    ParamFilter,
   ]);
 
   const table = useReactTable({
@@ -477,6 +710,11 @@ function ReuirementsBRDPage() {
   // FILTER SHOW HIDE
   const [BoxFilter, setBoxFilter] = useState(false);
 
+  const [showAll, setShowAll] = useState(false);
+  const visibleItems = showAll
+    ? DataCounterReqStatus
+    : DataCounterReqStatus.slice(0, 3);
+
   return (
     <LayoutAdmin>
       <HeaderContent
@@ -493,20 +731,32 @@ function ReuirementsBRDPage() {
             justifyContent={"start"}
             pt={4}
           >
-            <BoxStatisticNumber
-              labelStd={REQ_STATUS_NEED_REVIEW}
-              numberStd={2}
-            />
-            <BoxStatisticNumber
-              labelStd={REQ_STATUS_IN_PROGRESS_REVIEW}
-              numberStd={8}
-            />
-            <BoxStatisticNumber labelStd={REQ_STATUS_APPROVED} numberStd={1} />
-            <BoxStatisticNumber labelStd={REQ_STATUS_CANCELED} numberStd={0} />
+            {visibleItems.map((dt, idx) => (
+              <BoxStatisticNumber
+                labelStd={dt.statusName}
+                numberStd={dt.countData}
+                key={idx}
+              />
+            ))}
+            {DataCounterReqStatus.length > 3 && (
+              <Button
+                w={"120px"}
+                h={"50px"}
+                bgGradient={"linear(to-br, secondary.500, secondary.800)"}
+                rounded={radiusStyle}
+                boxShadow={"md"}
+                colorScheme="blue"
+                size="sm"
+                leftIcon={showAll ? <FiChevronUp /> : <FiChevronDown />}
+                onClick={() => setShowAll(!showAll)}
+              >
+                {showAll ? "Sedikit" : "Semua"}
+              </Button>
+            )}
           </Flex>
         </GridItem>
         <GridItem colSpan={{ base: 12, sm: 12, md: 4, lg: 4 }} w={"full"}>
-          <Flex
+          {/* <Flex
             as={Wrap}
             w={"full"}
             justifyContent={"end"}
@@ -555,7 +805,7 @@ function ReuirementsBRDPage() {
                 <option value="4">Q4</option>
               </Select>
             </WrapItem>
-          </Flex>
+          </Flex> */}
         </GridItem>
         {/* <GridItem colSpan={{ base: 12, sm: 12, md: 3, lg: 3 }} w={"full"}>
           <Flex
@@ -578,68 +828,22 @@ function ReuirementsBRDPage() {
             </CardHeader>
             <CardBody>
               <Flex w={"full"} as={Stack} spacing={4}>
+                {/* <Box
+                  overflowY={"auto"}
+                  overflowX={"auto"}
+                  maxH={"350px"}
+                  p={2}
+                  bgColor={"gray.200"}
+                >
+                  <pre>{JSON.stringify(ParamFilter, null, 2)}</pre>
+                </Box> */}
                 {/* FILTER DATA */}
-                <Flex w={"full"}>
-                  <Card
-                    w={"full"}
-                    rounded={radiusStyle}
-                    bg={colorMode == "light" ? "gray.50" : "gray.900"}
-                    display={"none"}
-                  >
-                    <CardHeader>
-                      <Flex
-                        w={"full"}
-                        as={HStack}
-                        justifyContent={"space-between"}
-                      >
-                        <Heading as="h5" size="sm" w={"full"}>
-                          Filter Data
-                        </Heading>
-                        <Flex
-                          as={Wrap}
-                          justifyContent={"end"}
-                          px={0}
-                          w={"full"}
-                        >
-                          <Button
-                            size={"sm"}
-                            leftIcon={
-                              BoxFilter ? <FiChevronUp /> : <FiChevronDown />
-                            }
-                            onClick={() => setBoxFilter(!BoxFilter)}
-                          >
-                            {BoxFilter ? "Hide" : "Show"}
-                          </Button>
-                        </Flex>
-                      </Flex>
-                    </CardHeader>
-                    <AnimatePresence initial={false}>
-                      {BoxFilter && (
-                        <MotionCardBody
-                          key="filter"
-                          display="flex"
-                          flexDirection="column"
-                          overflow="hidden"
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{
-                            duration: 0.3,
-                            ease: [0.4, 0, 0.2, 1], // smooth cubic-bezier for accordion-like feel
-                          }}
-                        >
-                          <Text>Coming Soon</Text>
-                        </MotionCardBody>
-                      )}
-                    </AnimatePresence>
-                  </Card>
-                </Flex>
                 <Grid templateColumns="repeat(2, 1fr)" gap={5} w={"full"}>
                   <GridItem
                     colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }}
                     w={"full"}
                   >
-                    <Flex
+                    {/* <Flex
                       w={"full"}
                       justifyContent={"start"}
                       alignItems={"end"}
@@ -658,7 +862,7 @@ function ReuirementsBRDPage() {
                       <Text fontSize={"smaller"}>
                         {formatDateToDDMMYYYY(EndDateFilter)}
                       </Text>
-                    </Flex>
+                    </Flex> */}
                   </GridItem>
                   <GridItem
                     colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }}
@@ -691,7 +895,120 @@ function ReuirementsBRDPage() {
                 {IsLoadingProcess ? (
                   <LoadingMiniSignature />
                 ) : (
-                  <TableComponentFull table={table} />
+                  // <TableComponentFull table={table} />
+                  // TABLE NEW DESIGN
+                  <Flex overflowX={"auto"} w={"full"}>
+                    <Box
+                      overflow={"hidden"}
+                      border={"1px solid"}
+                      borderRadius={radiusStyle}
+                      borderColor={
+                        colorMode == "light" ? "gray.100" : "gray.600"
+                      }
+                      w={"full"}
+                      boxShadow={"md"}
+                    >
+                      <Table variant={"simple"} size={"sm"}>
+                        <Thead>
+                          {table.getHeaderGroups().map((headerGroup: any) => (
+                            <Tr
+                              key={headerGroup.id}
+                              bg={
+                                colorMode == "light"
+                                  ? "secondary.50"
+                                  : "gray.900"
+                              }
+                            >
+                              {headerGroup.headers.map(
+                                (header: any, hidx: number) => {
+                                  return (
+                                    <Th
+                                      py={3}
+                                      key={header.id}
+                                      colSpan={header.colSpan}
+                                      color={
+                                        colorMode == "light"
+                                          ? "secondary.800"
+                                          : "secondary.500"
+                                      }
+                                    >
+                                      <Flex
+                                        w={"full"}
+                                        as={HStack}
+                                        alignItems={"center"}
+                                        // justifyContent={"space-between"}
+                                      >
+                                        <Heading as="h5" size="sm">
+                                          {header.isPlaceholder ? null : (
+                                            <div>
+                                              {flexRender(
+                                                header.column.columnDef.header,
+                                                header.getContext()
+                                              )}
+                                              {/* <pre>
+                                                {JSON.stringify(
+                                                  header.column.columnDef.meta,
+                                                  null,
+                                                  2
+                                                )}
+                                              </pre> */}
+                                            </div>
+                                          )}
+                                        </Heading>
+                                        <FilterColumnTable
+                                          key={header.column.id}
+                                          filedDataKey={header.column.id}
+                                          metaCustom={
+                                            header.column.columnDef.meta
+                                          }
+                                          onFilterSubmit={handleFilterChange}
+                                        />
+                                      </Flex>
+                                    </Th>
+                                  );
+                                }
+                              )}
+                            </Tr>
+                          ))}
+                        </Thead>
+                        <Tbody>
+                          {table.getRowModel().rows.length > 0 ? (
+                            table
+                              .getRowModel()
+                              .rows.map((row: any, index: any) => {
+                                const startingNumber = index + 1;
+                                return (
+                                  <Tr key={row.id}>
+                                    {row.getVisibleCells().map((cell: any) => {
+                                      return (
+                                        <Td key={cell.id}>
+                                          {flexRender(
+                                            cell.column.columnDef.cell,
+                                            cell.getContext()
+                                          )}
+                                        </Td>
+                                      );
+                                    })}
+                                  </Tr>
+                                );
+                              })
+                          ) : (
+                            <Tr>
+                              <Td colSpan={table.options.columns.length + 1}>
+                                <Flex
+                                  justifyContent={"center"}
+                                  alignItems={"center"}
+                                  minH={"30vh"}
+                                >
+                                  Belum ada data
+                                </Flex>
+                              </Td>
+                            </Tr>
+                          )}
+                        </Tbody>
+                      </Table>
+                    </Box>
+                  </Flex>
                 )}
               </Flex>
             </CardBody>
@@ -702,6 +1019,220 @@ function ReuirementsBRDPage() {
   );
 }
 
+interface FilterColumnTableProps {
+  filedDataKey: string;
+  metaCustom?: ColumnMetaCustom;
+  onFilterSubmit?: (filters: ListSearchByParam[]) => void;
+}
+
+const buildInitialFilterValues = (
+  meta?: ColumnMetaCustom,
+  currentFilters?: ListSearchByParam[]
+): Record<string, string> => {
+  const result: Record<string, string> = {};
+
+  meta?.filterData?.forEach((fd) => {
+    const key = `${fd.field}_${fd.operator}`;
+    const existing = currentFilters?.find(
+      (f) => f.field === fd.field && f.operator === fd.operator
+    );
+    result[key] = existing?.value ?? fd.value ?? "";
+  });
+
+  return result;
+};
+
+const FilterColumnTable = ({
+  filedDataKey,
+  metaCustom,
+  onFilterSubmit,
+}: FilterColumnTableProps) => {
+  const initialValues = useMemo(
+    () => buildInitialFilterValues(metaCustom),
+    [metaCustom]
+  );
+
+  const [filterList, setFilterList] = useState<ListSearchByParam[]>([]);
+
+  const handleSubmit = (values: Record<string, string>) => {
+    const filters: ListSearchByParam[] =
+      metaCustom?.filterData
+        ?.map((fd) => {
+          const key = `${fd.field}_${fd.operator}`;
+          const value = values[key] ?? "";
+          return {
+            field: fd.field,
+            operator: fd.operator,
+            value,
+          };
+        })
+        .filter((f) => f.value?.trim() !== "") || []; // ✅ Only include non-empty values
+
+    // console.log("filters", filters);
+
+    setFilterList(filters);
+    onFilterSubmit?.(filters);
+  };
+
+  const handleReset = (
+    resetForm: (
+      nextState?: Partial<FormikState<Record<string, string>>>
+    ) => void
+  ) => {
+    resetForm();
+    setFilterList([]);
+    onFilterSubmit?.([]); // ✅ Clear in parent too
+  };
+
+  if (metaCustom == null) {
+    return;
+  } else {
+    if (metaCustom) {
+      if (metaCustom.isFilterable == false) {
+        return;
+      } else {
+        return (
+          <Popover id={filedDataKey}>
+            <PopoverTrigger>
+              <IconButton
+                variant={"ghost"}
+                colorScheme={"blue"}
+                aria-label={filedDataKey}
+                size="sm"
+                icon={<FiFilter />}
+              />
+            </PopoverTrigger>
+            <Portal>
+              <PopoverContent rounded={radiusStyle}>
+                <PopoverArrow />
+                <PopoverCloseButton />
+                <PopoverBody>
+                  <Flex as={Stack} w={"full"}>
+                    <Text fontWeight={600}>Filter Data</Text>
+                    <Divider />
+                    <Formik
+                      initialValues={initialValues}
+                      enableReinitialize={false} // ✅ prevents resetting when props change
+                      onSubmit={handleSubmit}
+                    >
+                      {({
+                        values,
+                        handleChange,
+                        handleSubmit,
+                        setFieldValue,
+                      }) => (
+                        <form onSubmit={handleSubmit}>
+                          {metaCustom.filterData?.map((ft, idx) => {
+                            const inputKey = `${ft.field}_${ft.operator}`;
+                            if (ft.filterType === "text") {
+                              return (
+                                <FormControl key={idx}>
+                                  <FormLabel>{ft.filterLabel} :</FormLabel>
+                                  <Input
+                                    id={inputKey}
+                                    name={inputKey}
+                                    type="text"
+                                    value={values[ft.field]}
+                                    onChange={handleChange}
+                                  />
+                                </FormControl>
+                              );
+                            }
+
+                            if (ft.filterType === "date") {
+                              return (
+                                <FormControl key={idx}>
+                                  <FormLabel>{ft.filterLabel} :</FormLabel>
+                                  <Input
+                                    id={inputKey}
+                                    name={inputKey}
+                                    type="date"
+                                    value={values[ft.field]}
+                                    onChange={handleChange}
+                                  />
+                                </FormControl>
+                              );
+                            }
+
+                            if (ft.filterType === "select") {
+                              return (
+                                <FormControl key={idx}>
+                                  <FormLabel>{ft.filterLabel} :</FormLabel>
+                                  <Select
+                                    id={inputKey}
+                                    name={inputKey}
+                                    options={ft.sourceListData}
+                                    value={
+                                      ft.sourceListData?.find(
+                                        (option) =>
+                                          option.value === values[inputKey]
+                                      ) || null
+                                    }
+                                    onChange={(selectedOption) => {
+                                      setFieldValue(
+                                        inputKey,
+                                        selectedOption?.value || ""
+                                      );
+                                    }}
+                                    isSearchable={true}
+                                    placeholder={"Pilih"}
+                                  />
+                                </FormControl>
+                              );
+                            }
+
+                            return null;
+                          })}
+
+                          <Flex
+                            as={HStack}
+                            justifyContent={"end"}
+                            w={"full"}
+                            pt={2}
+                          >
+                            {/* <Button
+                              size="sm"
+                              onClick={() => handleReset(resetForm)}
+                              leftIcon={<FiRefreshCcw />}
+                            >
+                              Reset
+                            </Button> */}
+                            <Button
+                              type="submit"
+                              size={"sm"}
+                              colorScheme={"secondary"}
+                              leftIcon={<FiFilter />}
+                            >
+                              Filter
+                            </Button>
+                          </Flex>
+                        </form>
+                      )}
+                    </Formik>
+                  </Flex>
+                  {/* <Box
+                    w={"full"}
+                    overflowY={"auto"}
+                    overflowX={"auto"}
+                    maxH={"350px"}
+                    p={2}
+                    bgColor={"gray.200"}
+                    fontSize={"xx-small"}
+                  >
+                    <pre>{JSON.stringify(filterList, null, 2)}</pre>
+                  </Box> */}
+                </PopoverBody>
+                {/* <PopoverFooter>This is the footer</PopoverFooter> */}
+              </PopoverContent>
+            </Portal>
+          </Popover>
+        );
+      }
+      return;
+    }
+  }
+};
+
 interface BoxStatisticNumberProps {
   labelStd: string;
   numberStd: number;
@@ -711,15 +1242,12 @@ const BoxStatisticNumber = ({
   labelStd,
   numberStd,
 }: BoxStatisticNumberProps) => {
-  const [isHovered, setIsHovered] = useState(false);
+  // const [isHovered, setIsHovered] = useState(false);
   return (
     <Flex
       w={"180px"}
       h={"50px"}
       bgGradient={"linear(to-br, secondary.500, secondary.800)"}
-      _hover={{
-        bgGradient: "linear(to-br, yellow.300, yellow.600)",
-      }}
       rounded={radiusStyle}
       boxShadow={"md"}
       as={HStack}
@@ -729,10 +1257,10 @@ const BoxStatisticNumber = ({
       px={5}
       py={2}
       cursor={"pointer"}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      transition="transform 0.3s ease-in-out"
-      transform={isHovered ? "translateY(-10px)" : "translateY(0)"}
+      // onMouseEnter={() => setIsHovered(true)}
+      // onMouseLeave={() => setIsHovered(false)}
+      // transition="transform 0.3s ease-in-out"
+      // transform={isHovered ? "translateY(-10px)" : "translateY(0)"}
       pos={"relative"}
       zIndex={2}
     >

@@ -622,8 +622,6 @@ export function TableComponent({ table }: any) {
   );
 }
 
-
-
 export function TableComponentHeadless({ table }: any) {
   return (
     <Flex overflowX={"auto"}>
