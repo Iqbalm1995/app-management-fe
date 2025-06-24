@@ -25,7 +25,7 @@ export interface RequirementApprovalDataResponse {
   approverUserId: string;
   approverUserCode: string;
   approverUserFirstName: string;
-  approverUserLastnameName: string;
+  approverUserLastnameName?: string | null;
   approverUserUsername: string;
   approverUserEmail: string;
   approverUserPhoneNumber: string;

@@ -33,6 +33,13 @@ import {
   BsChevronRight,
 } from "react-icons/bs";
 import { radiusStyle } from "../constants/applicationConstants";
+import {
+  FiChevronLeft,
+  FiChevronRight,
+  FiChevronsLeft,
+  FiChevronsRight,
+} from "react-icons/fi";
+import { useEffect, useState } from "react";
 
 export function ControlTableNum({ table }: any) {
   const pageCount = table.getPageCount();
@@ -149,6 +156,11 @@ export function ControlTableNum({ table }: any) {
 export function ControlTable({ table }: any) {
   const pageCount = table.getPageCount();
   const currentPage = table.getState().pagination.pageIndex + 1;
+  const [pageInput, setPageInput] = useState("");
+
+  useEffect(() => {
+    setPageInput(String(currentPage)); // sync input with current page
+  }, [currentPage]);
 
   // Create array for page numbers
   const visiblePages = Array.from(
@@ -165,7 +177,7 @@ export function ControlTable({ table }: any) {
     >
       <Grid templateColumns="repeat(12, 1fr)" gap={2} w={"full"}>
         <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}>
-          <HStack
+          <Flex
             gap="2"
             w={"full"}
             h={"full"}
@@ -176,36 +188,13 @@ export function ControlTable({ table }: any) {
               md: "start",
               lg: "start",
             }}
-            divider={<StackDivider borderColor="gray.300" />}
-            // bg={"red"}
-          >
-            <TableInputShowPage table={table} />
-            <>
-              <Text fontWeight={600}>Halaman </Text>
-              <Text> {table.getState().pagination.pageIndex + 1} </Text>/{" "}
-              <Text> {table.getPageCount()} </Text>
-            </>
-          </HStack>
-        </GridItem>
-        <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}>
-          <Flex
-            gap="2"
-            w={"full"}
-            h={"full"}
-            alignItems={"center"}
-            justifyContent={{
-              base: "center",
-              sm: "center",
-              md: "end",
-              lg: "end",
-            }}
           >
             <ButtonGroup
               size="sm"
               w={{ base: "full", sm: "full", md: "auto", lg: "auto" }}
-              isAttached
-              variant="outline"
-              colorScheme={"gray"}
+              isAttached={false}
+              variant={"ghost"}
+              colorScheme={"secondary"}
             >
               <Button
                 onClick={() => table.setPageIndex(0)}
@@ -213,7 +202,14 @@ export function ControlTable({ table }: any) {
                 minW="40px"
                 w={{ base: "full", sm: "full", md: "auto", lg: "auto" }}
               >
-                <BsChevronBarLeft />
+                <FiChevronsLeft />{" "}
+                <Text
+                  as={"span"}
+                  pl={1}
+                  display={{ base: "none", sm: "none", md: "none", lg: "flex" }}
+                >
+                  Awal
+                </Text>
               </Button>
               <Button
                 onClick={() => table.previousPage()}
@@ -221,7 +217,14 @@ export function ControlTable({ table }: any) {
                 minW="40px"
                 w={{ base: "full", sm: "full", md: "auto", lg: "auto" }}
               >
-                <BsChevronLeft />
+                <FiChevronLeft />
+                <Text
+                  as={"span"}
+                  pl={1}
+                  display={{ base: "none", sm: "none", md: "none", lg: "flex" }}
+                >
+                  Sebelumnya
+                </Text>
               </Button>
               {/* Page numbers */}
               {visiblePages.map((page) => (
@@ -230,12 +233,17 @@ export function ControlTable({ table }: any) {
                   onClick={() => table.setPageIndex(page - 1)}
                   isActive={currentPage === page}
                   minW="35px"
+                  _active={{
+                    bg: "secondary.500",
+                    color: "white",
+                  }}
                   display={{
                     base: "none",
                     sm: "none",
-                    md: "block",
+                    md: "none",
                     lg: "block",
                   }}
+                  rounded={"md"}
                 >
                   {page}
                 </Button>
@@ -246,7 +254,7 @@ export function ControlTable({ table }: any) {
                   display={{
                     base: "none",
                     sm: "none",
-                    md: "block",
+                    md: "none",
                     lg: "block",
                   }}
                 >
@@ -262,7 +270,7 @@ export function ControlTable({ table }: any) {
                   display={{
                     base: "none",
                     sm: "none",
-                    md: "block",
+                    md: "none",
                     lg: "block",
                   }}
                 >
@@ -275,7 +283,14 @@ export function ControlTable({ table }: any) {
                 minW="40px"
                 w={{ base: "full", sm: "full", md: "auto", lg: "auto" }}
               >
-                <BsChevronRight />
+                <Text
+                  as={"span"}
+                  pr={1}
+                  display={{ base: "none", sm: "none", md: "none", lg: "flex" }}
+                >
+                  Selanjutnya
+                </Text>
+                <FiChevronRight />
               </Button>
               <Button
                 onClick={() => table.setPageIndex(pageCount - 1)}
@@ -283,10 +298,203 @@ export function ControlTable({ table }: any) {
                 minW="40px"
                 w={{ base: "full", sm: "full", md: "auto", lg: "auto" }}
               >
-                <BsChevronBarRight />
+                <Text
+                  as={"span"}
+                  pr={1}
+                  display={{ base: "none", sm: "none", md: "none", lg: "flex" }}
+                >
+                  Akhir
+                </Text>
+                <FiChevronsRight />
               </Button>
             </ButtonGroup>
           </Flex>
+        </GridItem>
+        <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}>
+          <HStack
+            gap="2"
+            w={"full"}
+            h={"full"}
+            alignItems={"center"}
+            justifyContent={{
+              base: "center",
+              sm: "center",
+              md: "end",
+              lg: "end",
+            }}
+            divider={<StackDivider borderColor="gray.300" />}
+            // bg={"red"}
+          >
+            <Flex as={HStack}>
+              <Text fontWeight={600} color={"secondary.500"}>
+                Halaman
+              </Text>
+              <Input
+                type={"text"}
+                size="sm"
+                fontWeight={600}
+                color={"secondary.500"}
+                w={"50px"}
+                rounded={"6px"}
+                maxLength={3}
+                value={pageInput}
+                onChange={(e) => {
+                  const onlyNums = e.target.value.replace(/[^0-9]/g, "");
+                  setPageInput(onlyNums);
+                }}
+                onBlur={() => {
+                  const page = Number(pageInput);
+                  if (!isNaN(page) && page > 0 && page <= pageCount) {
+                    table.setPageIndex(page - 1);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    const page = Number(pageInput);
+                    if (!isNaN(page) && page > 0 && page <= pageCount) {
+                      table.setPageIndex(page - 1);
+                    }
+                  }
+                }}
+              />
+            </Flex>
+            <TableInputShowPage table={table} />
+          </HStack>
+        </GridItem>
+      </Grid>
+    </Flex>
+  );
+}
+
+export function ControlTableLite({ table }: any) {
+  const pageCount = table.getPageCount();
+  const currentPage = table.getState().pagination.pageIndex + 1;
+  const [pageInput, setPageInput] = useState("");
+
+  useEffect(() => {
+    setPageInput(String(currentPage)); // sync input with current page
+  }, [currentPage]);
+
+  // Create array for page numbers
+  const visiblePages = Array.from(
+    { length: Math.min(5, pageCount) },
+    (_, i) => i + 1
+  ); // Show first 5 pages for now
+  return (
+    <Flex
+      minWidth="max-content"
+      w={"full"}
+      justifyContent="center"
+      gap="2"
+      my={4}
+    >
+      <Grid templateColumns="repeat(12, 1fr)" gap={2} w={"full"}>
+        <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}>
+          <Flex
+            gap="2"
+            w={"full"}
+            h={"full"}
+            alignItems={"center"}
+            justifyContent={{
+              base: "center",
+              sm: "center",
+              md: "start",
+              lg: "start",
+            }}
+          >
+            <ButtonGroup
+              size="sm"
+              w={{ base: "full", sm: "full", md: "auto", lg: "auto" }}
+              isAttached={false}
+              variant={"ghost"}
+              colorScheme={"secondary"}
+            >
+              <Button
+                onClick={() => table.setPageIndex(0)}
+                isDisabled={!table.getCanPreviousPage()}
+                minW="40px"
+                w={{ base: "full", sm: "full", md: "auto", lg: "auto" }}
+              >
+                <FiChevronsLeft />
+              </Button>
+              <Button
+                onClick={() => table.previousPage()}
+                isDisabled={!table.getCanPreviousPage()}
+                minW="40px"
+                w={{ base: "full", sm: "full", md: "auto", lg: "auto" }}
+              >
+                <FiChevronLeft />
+              </Button>
+
+              <Button
+                onClick={() => table.nextPage()}
+                isDisabled={!table.getCanNextPage()}
+                minW="40px"
+                w={{ base: "full", sm: "full", md: "auto", lg: "auto" }}
+              >
+                <FiChevronRight />
+              </Button>
+              <Button
+                onClick={() => table.setPageIndex(pageCount - 1)}
+                isDisabled={!table.getCanNextPage()}
+                minW="40px"
+                w={{ base: "full", sm: "full", md: "auto", lg: "auto" }}
+              >
+                <FiChevronsRight />
+              </Button>
+            </ButtonGroup>
+          </Flex>
+        </GridItem>
+        <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}>
+          <HStack
+            gap="2"
+            w={"full"}
+            h={"full"}
+            alignItems={"center"}
+            justifyContent={{
+              base: "center",
+              sm: "center",
+              md: "end",
+              lg: "end",
+            }}
+            divider={<StackDivider borderColor="gray.300" />}
+            // bg={"red"}
+          >
+            <Flex as={HStack}>
+              <Text fontWeight={600} color={"secondary.500"}>
+                Halaman
+              </Text>
+              <Input
+                type={"text"}
+                size="sm"
+                fontWeight={600}
+                color={"secondary.500"}
+                w={"50px"}
+                rounded={"6px"}
+                maxLength={3}
+                value={pageInput}
+                onChange={(e) => {
+                  const onlyNums = e.target.value.replace(/[^0-9]/g, "");
+                  setPageInput(onlyNums);
+                }}
+                onBlur={() => {
+                  const page = Number(pageInput);
+                  if (!isNaN(page) && page > 0 && page <= pageCount) {
+                    table.setPageIndex(page - 1);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    const page = Number(pageInput);
+                    if (!isNaN(page) && page > 0 && page <= pageCount) {
+                      table.setPageIndex(page - 1);
+                    }
+                  }
+                }}
+              />
+            </Flex>
+            <TableInputShowPage table={table} />
+          </HStack>
         </GridItem>
       </Grid>
     </Flex>
@@ -448,7 +656,9 @@ export function TableInputShowPage({ table }: any) {
       gap="2"
       alignItems={"center"}
     >
-      <Text fontWeight={600}>Show</Text>
+      <Text fontWeight={600} color={"secondary.500"}>
+        Tampil
+      </Text>
       <Select
         size="sm"
         w={{
@@ -464,6 +674,8 @@ export function TableInputShowPage({ table }: any) {
         onChange={(e) => {
           table.setPageSize(Number(e.target.value));
         }}
+        color={"secondary.500"}
+        fontWeight={600}
       >
         {[5, 10, 20, 30, 40, 50].map((pageSize) => (
           <option key={pageSize} value={pageSize}>
@@ -731,18 +943,10 @@ export function TableComponentFull({ table }: any) {
 export function TableComponentFullSm({ table }: any) {
   return (
     <>
-      <Grid
-        templateColumns="repeat(2, 1fr)"
-        gap={5}
-        px={5}
-        py={2}
-        // bg={"red"}
-        w={"full"}
-      ></Grid>
       <Box pb={8} w={"full"}>
         <TableComponentSm table={table} />
         <Flex w={"full"} px={5} py={2}>
-          <ControlTableSmx table={table} />
+          <ControlTableLite table={table} />
         </Flex>
       </Box>
     </>
@@ -750,73 +954,83 @@ export function TableComponentFullSm({ table }: any) {
 }
 
 export function TableComponentSm({ table }: any) {
+  const { colorMode } = useColorMode();
   return (
     <Flex overflowX={"auto"}>
-      <Table
-        variant={"simple"}
-        // colorScheme="secondary"
-        borderTop={"1px"}
-        borderColor={"gray.100"}
-        colorScheme="gray"
-        size={"sm"}
+      <Box
+        overflow={"hidden"}
+        border={"1px solid"}
+        borderRadius={"md"}
+        borderColor={colorMode == "light" ? "gray.100" : "gray.600"}
+        w={"full"}
+        boxShadow={"md"}
       >
-        <Thead>
-          {table.getHeaderGroups().map((headerGroup: any) => (
-            <Tr key={headerGroup.id} bg={"secondary.50"}>
-              {headerGroup.headers.map((header: any) => {
-                return (
-                  <Th
-                    py={4}
-                    key={header.id}
-                    colSpan={header.colSpan}
-                    // fontWeight={800}
-                    color={"secondary.800"}
-                    // textAlign={"center"}
-                  >
-                    <Heading as="h5" size="xs">
-                      {header.isPlaceholder ? null : (
-                        <div>
-                          {flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                        </div>
-                      )}
-                    </Heading>
-                  </Th>
-                );
-              })}
-            </Tr>
-          ))}
-        </Thead>
-        <Tbody>
-          {table.getRowModel().rows.length > 0 ? (
-            table.getRowModel().rows.map((row: any, index: any) => {
-              const startingNumber = index + 1;
-              return (
-                <Tr key={row.id}>
-                  {row.getVisibleCells().map((cell: any) => {
-                    return (
-                      <Td key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
+        <Table
+          variant={"simple"}
+          // colorScheme="secondary"
+          colorScheme="gray"
+          size={"sm"}
+        >
+          <Thead>
+            {table.getHeaderGroups().map((headerGroup: any) => (
+              <Tr key={headerGroup.id} bg={"secondary.50"}>
+                {headerGroup.headers.map((header: any) => {
+                  return (
+                    <Th
+                      py={2}
+                      key={header.id}
+                      colSpan={header.colSpan}
+                      // fontWeight={800}
+                      color={"secondary.800"}
+                      // textAlign={"center"}
+                    >
+                      <Heading as="h5" size="xs">
+                        {header.isPlaceholder ? null : (
+                          <div>
+                            {flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                          </div>
                         )}
-                      </Td>
-                    );
-                  })}
-                </Tr>
-              );
-            })
-          ) : (
-            <Tr>
-              <Td colSpan={table.options.columns.length + 1}>
-                <Flex justifyContent={"center"}>Belum ada data</Flex>
-              </Td>
-            </Tr>
-          )}
-        </Tbody>
-      </Table>
+                      </Heading>
+                    </Th>
+                  );
+                })}
+              </Tr>
+            ))}
+          </Thead>
+          <Tbody>
+            {table.getRowModel().rows.length > 0 ? (
+              table.getRowModel().rows.map((row: any, index: any) => {
+                const startingNumber = index + 1;
+                return (
+                  <Tr key={row.id}>
+                    {row.getVisibleCells().map((cell: any) => {
+                      return (
+                        <Td key={cell.id}>
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </Td>
+                      );
+                    })}
+                  </Tr>
+                );
+              })
+            ) : (
+              <Tr>
+                <Td colSpan={table.options.columns.length + 1}>
+                  <Flex justifyContent={"center"} alignItems={"center"} py={4}>
+                    Belum ada data
+                  </Flex>
+                </Td>
+              </Tr>
+            )}
+          </Tbody>
+        </Table>
+      </Box>
     </Flex>
   );
 }

@@ -49,14 +49,14 @@ export interface PaggingListPayloadCustom {
 
 export interface ListSearchByParam {
   field: string;
-  operator: "%" | "=" | ">" | "<" | ">=" | "<=";
+  operator: "%" | "=" | "!=" | ">" | "<" | ">=" | "<=" | "like" | "not like";
   value: string;
 }
 
 export const addParamFilter = (
-  list: ListSearchByParam[],
-  param: ListSearchByParam
-): ListSearchByParam[] => {
+  list: ListSearchByParamProps[],
+  param: ListSearchByParamProps
+): ListSearchByParamProps[] => {
   const isDuplicate = list.some(
     (p) => p.field === param.field && p.operator === param.operator
   );
@@ -65,9 +65,9 @@ export const addParamFilter = (
 };
 
 export const addParamFilterUpdate = (
-  list: ListSearchByParam[],
-  param: ListSearchByParam
-): ListSearchByParam[] => {
+  list: ListSearchByParamProps[],
+  param: ListSearchByParamProps
+): ListSearchByParamProps[] => {
   // Find if a param with same field AND operator exists
   const existing = list.find(
     (p) => p.field === param.field && p.operator === param.operator
@@ -87,9 +87,9 @@ export const addParamFilterUpdate = (
 };
 
 export const removeParamFilter = (
-  list: ListSearchByParam[],
-  target: ListSearchByParam
-): ListSearchByParam[] => {
+  list: ListSearchByParamProps[],
+  target: ListSearchByParamProps
+): ListSearchByParamProps[] => {
   return list.filter(
     (item) =>
       !(
@@ -148,11 +148,18 @@ export interface OptionListProps {
 
 export interface FilterParamProps {
   field: string;
-  operator: "%" | "=" | ">" | "<" | ">=" | "<=";
+  operator: "%" | "=" | "!=" | ">" | "<" | ">=" | "<=" | "like" | "not like";
   value: string;
   filterType: "text" | "select" | "date";
   filterLabel: string;
   sourceListData?: OptionListProps[]; // for source data select
+}
+
+export interface ListSearchByParamProps {
+  field: string;
+  operator: "%" | "=" | "!=" | ">" | "<" | ">=" | "<=" | "like" | "not like";
+  value: string;
+  filterLabel: string;
 }
 
 export interface SortDataProps {

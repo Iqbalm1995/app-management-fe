@@ -18,6 +18,7 @@ import {
 } from "@/app/components/layoutContentBody";
 import LoadingMiniSignature from "@/app/components/loadingMini";
 import {
+  ControlTable,
   TableComponentFull,
   TableComponentFullHeadless,
 } from "@/app/components/tableComponents";
@@ -33,6 +34,7 @@ import {
   REQ_STATUS_CANCELED,
   REQ_STATUS_DRAFT,
   REQ_STATUS_IN_PROGRESS_REVIEW,
+  REQ_STATUS_LIST_OPTION,
   REQ_STATUS_NEED_REVIEW,
   REQ_STATUS_ON_HOLD,
   REQ_STATUS_REVIEW,
@@ -65,6 +67,7 @@ import {
   addParamFilterUpdate,
   ColumnMetaCustom,
   ListSearchByParam,
+  ListSearchByParamProps,
   OptionListProps,
   PaggingListPayload,
   removeParamFilter,
@@ -89,6 +92,8 @@ import {
   HStack,
   IconButton,
   Input,
+  ListItem,
+  OrderedList,
   Popover,
   PopoverArrow,
   PopoverBody,
@@ -138,7 +143,7 @@ import { Formik, FormikState, useFormik } from "formik";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { redirect, useParams, usePathname } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   FiArrowLeft,
   FiArrowRight,
@@ -151,6 +156,7 @@ import {
   FiPlusSquare,
   FiRefreshCcw,
   FiSave,
+  FiX,
   FiXCircle,
 } from "react-icons/fi";
 import * as Yup from "yup";
@@ -158,6 +164,7 @@ import { Select } from "chakra-react-select";
 import useOrganization, {
   OrganizationResponse,
 } from "@/app/services/useOrganization";
+import { map } from "framer-motion/client";
 
 const TYPE_REQ: string = REQUIREMENT_TYPE_BRD;
 
@@ -201,10 +208,11 @@ const DataCounterReqStatus: CounterDataReqStatusProps[] = [
   },
 ];
 
-const brdFilter: ListSearchByParam = {
+const brdFilter: ListSearchByParamProps = {
   field: "requirementType",
   operator: "=",
   value: TYPE_REQ,
+  filterLabel: "Tipe",
 };
 
 function ReuirementsBRDPage() {
@@ -317,7 +325,7 @@ function ReuirementsBRDPage() {
         requestData.data as OrganizationResponse[];
 
       const mapOptionData: OptionListProps[] = itemsData.map((d) => ({
-        label: `${d.orgName} | ${d.orgType}`,
+        label: `${d.orgName}`,
         value: d.id,
       }));
       setOptionDivision(mapOptionData);
@@ -337,16 +345,19 @@ function ReuirementsBRDPage() {
   const [OptionDivision, setOptionDivision] = useState<OptionListProps[]>([]);
 
   const RefreshAction = () => {
-    const filterWhereData: ListSearchByParam[] = addParamFilter([], brdFilter);
+    const filterWhereData: ListSearchByParamProps[] = addParamFilter(
+      [],
+      brdFilter
+    );
     setParamFilter(filterWhereData);
     setTotalPageData(0);
     setDataReq([]);
     setRefreshData(RefreshData + 1);
   };
 
-  const [ParamFilter, setParamFilter] = useState<ListSearchByParam[]>([]);
+  const [ParamFilter, setParamFilter] = useState<ListSearchByParamProps[]>([]);
 
-  const handleFilterChange = (newFilters: ListSearchByParam[]) => {
+  const handleFilterChange = (newFilters: ListSearchByParamProps[]) => {
     console.log("handleFilterChange");
     console.log(newFilters);
 
@@ -364,8 +375,8 @@ function ReuirementsBRDPage() {
       {
         accessorKey: "numbData",
         cell: (info) => (
-          <Flex justifyContent={"center"}>
-            {pageIndex * pageSize + info.row.index + 1}.
+          <Flex justifyContent={"center"} alignItems="flex-start" h={"full"}>
+            <Text>{pageIndex * pageSize + info.row.index + 1}.</Text>
           </Flex>
         ),
         header: () => <Flex justifyContent={"center"}>No.</Flex>,
@@ -393,8 +404,10 @@ function ReuirementsBRDPage() {
                 <Text>{info.row.original.reqNarative}</Text>
               </Flex>
               <Flex as={Stack} spacing={0}>
-                <Text fontWeight={600}>Divisi Pengirim :</Text>
-                <Text>{info.row.original.senderDivisionName}</Text>
+                <Text>Divisi Pengirim :</Text>
+                <Text fontWeight={600}>
+                  {info.row.original.senderDivisionName}
+                </Text>
               </Flex>
               <Flex pt={2}>
                 {info.row.original.isCarryOver == "Y" && (
@@ -420,17 +433,17 @@ function ReuirementsBRDPage() {
           filterData: [
             {
               field: "reqNarative",
-              operator: "=",
+              operator: "like",
               value: "",
               filterType: "text",
-              filterLabel: "Cari Perihal",
+              filterLabel: "Perihal",
             },
             {
               field: "senderDivisionId",
               operator: "=",
               value: "",
               filterType: "select",
-              filterLabel: "Cari Divisi Pengirim",
+              filterLabel: "Divisi Pengirim",
               sourceListData: OptionDivision,
             },
           ],
@@ -449,7 +462,7 @@ function ReuirementsBRDPage() {
             spacing={1}
           >
             <Flex fontSize={"small"} as={Stack} spacing={0}>
-              <Text>Inisiasi :</Text>
+              <Text>Memo Dibuat :</Text>
               <Text fontWeight={600}>
                 {info.row.original.reqInititateDate
                   ? stringToDateFormatedReverse(
@@ -459,7 +472,7 @@ function ReuirementsBRDPage() {
               </Text>
             </Flex>
             <Flex fontSize={"small"} as={Stack} spacing={0}>
-              <Text>Diterima :</Text>
+              <Text>Memo Diterima :</Text>
               <Text fontWeight={600}>
                 {info.row.original.reqAcceptedDate
                   ? stringToDateFormatedReverse(
@@ -473,7 +486,6 @@ function ReuirementsBRDPage() {
         header: () => <span>Tanggal</span>,
         footer: (props) => props.column.id,
         // Custom variable
-        // Custom variable
         meta: {
           isFilterable: true,
           filterData: [
@@ -482,14 +494,14 @@ function ReuirementsBRDPage() {
               operator: ">=",
               value: "",
               filterType: "date",
-              filterLabel: "Tgl. Inisiasi",
+              filterLabel: "Tgl. Awal Memo Dibuat",
             },
             {
               field: "reqInititateDate",
               operator: "<=",
               value: "",
               filterType: "date",
-              filterLabel: "Tgl. Inisiasi",
+              filterLabel: "Tgl. Akhir Memo Dibuat",
             },
           ],
         } as ColumnMetaCustom,
@@ -501,21 +513,81 @@ function ReuirementsBRDPage() {
           <Flex w={"full"} justifyContent={"center"} as={Stack} spacing={1}>
             <Flex fontSize={"small"} as={Stack} spacing={0}>
               <Text>Ditugaskan Oleh :</Text>
-              <Text fontWeight={600}>{info.row.original.assignedFromName}</Text>
+              <Text fontWeight={600} fontSize={"smaller"}>
+                {info.row.original.assignedFromName}
+              </Text>
             </Flex>
             <Flex fontSize={"small"} as={Stack} spacing={0}>
-              <Text>Divisi Pengirim :</Text>
-              <Text fontWeight={600}>
-                {info.row.original.senderDivisionName}
-              </Text>
+              <Text>Ditugaskan Ke :</Text>
+              {info.row.original.approvalDatas.map((x, idx) => (
+                <Text fontWeight={600} key={idx} fontSize={"smaller"}>
+                  {idx + 1}. {x.approverUserFirstName}{" "}
+                  {x.approverUserLastnameName}
+                </Text>
+              ))}
             </Flex>
           </Flex>
         ),
         header: () => <span>Penugasan</span>,
         footer: (props) => props.column.id,
         // Custom variable
+        // Custom variable
         meta: {
-          isFilterable: false,
+          isFilterable: true,
+          filterData: [
+            {
+              field: "assignedFromName",
+              operator: "like",
+              value: "",
+              filterType: "text",
+              filterLabel: "Ditugaskan Oleh",
+            },
+          ],
+        } as ColumnMetaCustom,
+      },
+      {
+        accessorFn: (row) => row.appInitialName,
+        id: "appInitialName",
+        cell: (info) => (
+          <Flex
+            w={"full"}
+            h={"full"}
+            justifyContent={"center"}
+            alignItems={"start"}
+            as={Stack}
+            spacing={1}
+          >
+            <Flex as={Stack} spacing={2}>
+              <Flex as={Stack} spacing={0}>
+                <Text fontWeight={600}>
+                  ({info.row.original.appInitialCode})
+                </Text>
+                <Text fontWeight={600}>{info.row.original.appInitialName}</Text>
+              </Flex>
+            </Flex>
+          </Flex>
+        ),
+        header: () => <span>Aplikasi</span>,
+        footer: (props) => props.column.id,
+        // Custom variable
+        meta: {
+          isFilterable: true,
+          filterData: [
+            {
+              field: "appInitialCode",
+              operator: "like",
+              value: "",
+              filterType: "text",
+              filterLabel: "Inisial Aplikasi",
+            },
+            {
+              field: "appInitialName",
+              operator: "like",
+              value: "",
+              filterType: "text",
+              filterLabel: "Nama Aplikasi",
+            },
+          ],
         } as ColumnMetaCustom,
       },
       {
@@ -552,7 +624,17 @@ function ReuirementsBRDPage() {
         footer: (props) => props.column.id,
         // Custom variable
         meta: {
-          isFilterable: false,
+          isFilterable: true,
+          filterData: [
+            {
+              field: "reqStatus",
+              operator: "=",
+              value: "",
+              filterType: "select",
+              filterLabel: "Status",
+              sourceListData: REQ_STATUS_LIST_OPTION,
+            },
+          ],
         } as ColumnMetaCustom,
       },
       {
@@ -587,8 +669,8 @@ function ReuirementsBRDPage() {
     addFilterData(brdFilter);
   }, []);
 
-  const addFilterData = (data: ListSearchByParam) => {
-    const filterWhereData: ListSearchByParam[] = addParamFilterUpdate(
+  const addFilterData = (data: ListSearchByParamProps) => {
+    const filterWhereData: ListSearchByParamProps[] = addParamFilterUpdate(
       ParamFilter,
       data
     );
@@ -596,8 +678,8 @@ function ReuirementsBRDPage() {
     setParamFilter(filterWhereData);
   };
 
-  const removeFilterData = (data: ListSearchByParam) => {
-    const filterWhereData: ListSearchByParam[] = removeParamFilter(
+  const removeFilterData = (data: ListSearchByParamProps) => {
+    const filterWhereData: ListSearchByParamProps[] = removeParamFilter(
       ParamFilter,
       data
     );
@@ -843,6 +925,65 @@ function ReuirementsBRDPage() {
                     colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }}
                     w={"full"}
                   >
+                    <Popover closeOnBlur={false} placement={"bottom"}>
+                      <PopoverTrigger>
+                        <Button size={"sm"} leftIcon={<FiFilter />}>
+                          Filter{" "}
+                          <Flex
+                            as={"span"}
+                            pl={1}
+                            display={ParamFilter.length > 0 ? "flex" : "none"}
+                            color={"secondary.500"}
+                            fontWeight={600}
+                          >
+                            ({ParamFilter.length})
+                          </Flex>
+                        </Button>
+                      </PopoverTrigger>
+                      <Portal>
+                        <PopoverContent width="auto" minW="xs">
+                          <PopoverBody>
+                            <Flex as={Stack} w={"full"}>
+                              <Text fontWeight={600}>Filter Data</Text>
+                              <Divider />
+
+                              <Stack spacing={2}>
+                                {ParamFilter.map((dt, idx) => (
+                                  <Flex
+                                    key={idx}
+                                    w={"full"}
+                                    alignItems="center"
+                                    as={HStack}
+                                    spacing={2}
+                                  >
+                                    <Text>
+                                      {dt.filterLabel} :{" "}
+                                      <Text as={"span"} fontWeight={600}>
+                                        {" "}
+                                        {dt.field === "senderDivisionId"
+                                          ? OptionDivision.find(
+                                              (opt) => opt.value === dt.value
+                                            )?.label || dt.value
+                                          : dt.value}
+                                      </Text>
+                                    </Text>
+                                    <Button
+                                      size={"xs"}
+                                      colorScheme={"red"}
+                                      justifyContent={"center"}
+                                      variant={"ghost"}
+                                      onClick={() => removeFilterData(dt)}
+                                    >
+                                      <FiX />
+                                    </Button>
+                                  </Flex>
+                                ))}
+                              </Stack>
+                            </Flex>
+                          </PopoverBody>
+                        </PopoverContent>
+                      </Portal>
+                    </Popover>
                     {/* <Flex
                       w={"full"}
                       justifyContent={"start"}
@@ -897,15 +1038,15 @@ function ReuirementsBRDPage() {
                 ) : (
                   // <TableComponentFull table={table} />
                   // TABLE NEW DESIGN
-                  <Flex overflowX={"auto"} w={"full"}>
-                    <Box
-                      overflow={"hidden"}
+                  <Box w={"full"}>
+                    <Flex
+                      overflowX={"auto"}
+                      w={"full"}
                       border={"1px solid"}
                       borderRadius={radiusStyle}
                       borderColor={
                         colorMode == "light" ? "gray.100" : "gray.600"
                       }
-                      w={"full"}
                       boxShadow={"md"}
                     >
                       <Table variant={"simple"} size={"sm"}>
@@ -1007,8 +1148,9 @@ function ReuirementsBRDPage() {
                           )}
                         </Tbody>
                       </Table>
-                    </Box>
-                  </Flex>
+                    </Flex>
+                    <ControlTable table={table} />
+                  </Box>
                 )}
               </Flex>
             </CardBody>
@@ -1022,12 +1164,12 @@ function ReuirementsBRDPage() {
 interface FilterColumnTableProps {
   filedDataKey: string;
   metaCustom?: ColumnMetaCustom;
-  onFilterSubmit?: (filters: ListSearchByParam[]) => void;
+  onFilterSubmit?: (filters: ListSearchByParamProps[]) => void;
 }
 
 const buildInitialFilterValues = (
   meta?: ColumnMetaCustom,
-  currentFilters?: ListSearchByParam[]
+  currentFilters?: ListSearchByParamProps[]
 ): Record<string, string> => {
   const result: Record<string, string> = {};
 
@@ -1052,10 +1194,10 @@ const FilterColumnTable = ({
     [metaCustom]
   );
 
-  const [filterList, setFilterList] = useState<ListSearchByParam[]>([]);
+  const [filterList, setFilterList] = useState<ListSearchByParamProps[]>([]);
 
   const handleSubmit = (values: Record<string, string>) => {
-    const filters: ListSearchByParam[] =
+    const filters: ListSearchByParamProps[] =
       metaCustom?.filterData
         ?.map((fd) => {
           const key = `${fd.field}_${fd.operator}`;
@@ -1064,6 +1206,7 @@ const FilterColumnTable = ({
             field: fd.field,
             operator: fd.operator,
             value,
+            filterLabel: fd.filterLabel,
           };
         })
         .filter((f) => f.value?.trim() !== "") || []; // ✅ Only include non-empty values

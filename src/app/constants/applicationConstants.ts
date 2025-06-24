@@ -1,4 +1,4 @@
-import { OptionListProps } from "../types/masterTypes";
+import { OptionData, OptionListProps } from "../types/masterTypes";
 
 // CONST DATA =------------------------------------------------------------------
 
@@ -177,6 +177,47 @@ export const REQ_STATUS_TEMPORARY_APPROVED: string = "TEMPORARY APPROVED";
 export const REQ_STATUS_APPROVED: string = "APPROVED";
 export const REQ_STATUS_ON_HOLD: string = "ON HOLD";
 export const REQ_STATUS_CANCELED: string = "CANCELED";
+
+export const REQ_STATUS_LIST: string[] = [
+  "DRAFT",
+  "NEEDS REVIEW",
+  "IN PROGRESS REVIEW",
+  "TEMPORARY APPROVED",
+  "APPROVED",
+  "ON HOLD",
+  "CANCELED",
+];
+
+export const REQ_STATUS_LIST_OPTION: OptionData[] = [
+  {
+    value: "DRAFT",
+    label: "DRAFT",
+  },
+  {
+    value: "NEEDS REVIEW",
+    label: "NEEDS REVIEW",
+  },
+  {
+    value: "IN PROGRESS REVIEW",
+    label: "IN PROGRESS REVIEW",
+  },
+  {
+    value: "TEMPORARY APPROVED",
+    label: "TEMPORARY APPROVED",
+  },
+  {
+    value: "APPROVED",
+    label: "APPROVED",
+  },
+  {
+    value: "ON HOLD",
+    label: "ON HOLD",
+  },
+  {
+    value: "CANCELED",
+    label: "CANCELED",
+  },
+];
 
 // appAccessMedi value
 export const APP_ACCESS_MEDIA_INTERNET: string = "INTERNET";

@@ -18,6 +18,7 @@ import LoadingMiniSignature from "@/app/components/loadingMini";
 import {
   TableComponentFull,
   TableComponentFullHeadless,
+  TableComponentFullSm,
 } from "@/app/components/tableComponents";
 import {
   allDaysString,
@@ -837,7 +838,7 @@ function RequirementsBRDRegisterView() {
   useEffect(() => {
     const mappedPayload: PICAssignUserPayload[] = ChoosedMemberProjects.map(
       (user) => ({
-        userId: user.id,
+        userId: user.userId,
       })
     );
 
@@ -4088,7 +4089,7 @@ function RequirementsBRDRegisterView() {
                                       Tambah Fitur
                                     </Button>
 
-                                    <TableComponentFull table={table} />
+                                    <TableComponentFullSm table={table} />
                                   </Flex>
                                 </Stack>
                               </InputLayoutFull>
