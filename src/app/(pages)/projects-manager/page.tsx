@@ -5,10 +5,12 @@ import {
   HeaderContent,
   HeaderContentProps,
 } from "@/app/components/headerContent";
+import LabelMaster from "@/app/components/labelMasterProps";
 import LayoutAdmin from "@/app/components/layoutAdmin";
 import { InputLayoutFull } from "@/app/components/layoutContentBody";
 import LoadingMiniSignature from "@/app/components/loadingMini";
 import {
+  ControlTable,
   TableComponentFull,
   TableComponentFullHeadless,
 } from "@/app/components/tableComponents";
@@ -16,27 +18,46 @@ import {
   DELAY_MEDIUM,
   ENDPOINT_API_BASEURL,
   ENDPOINT_PORT_BASIC,
+  GROUP_CONST_BRD_STATUS,
+  MAX_SIZE_TABLE,
   radiusStyle,
+  REQ_STATUS_LIST_OPTION,
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
 } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface, useAuth } from "@/app/context/AuthContext";
-import { buildUrlPort } from "@/app/helper/MasterHelper";
+import {
+  buildUrlPort,
+  stringToDateFormatedReverse,
+} from "@/app/helper/MasterHelper";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
+import useOrganization, {
+  OrganizationResponse,
+} from "@/app/services/useOrganization";
 import useProjects, {
   ProjectDataResponse,
   ProjectInsertPayload,
 } from "@/app/services/useProjects";
+import useRequirements, {
+  RequirementsResponse,
+} from "@/app/services/useRequirements";
 import useTeams, { TeamsResponse } from "@/app/services/useTeams";
 import {
+  addParamFilter,
+  addParamFilterUpdate,
+  ColumnMetaCustom,
+  ListSearchByParamProps,
   OptionListProps,
+  PaggingListPayload,
   PaggingListPayloadCustom,
+  removeParamFilter,
 } from "@/app/types/masterTypes";
 import { Search2Icon } from "@chakra-ui/icons";
 import {
   Avatar,
   AvatarGroup,
+  Badge,
   Box,
   Button,
   Card,
@@ -53,6 +74,7 @@ import {
   GridItem,
   Heading,
   HStack,
+  IconButton,
   Image,
   Input,
   InputGroup,
@@ -64,12 +86,27 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
+  Popover,
+  PopoverArrow,
+  PopoverBody,
+  PopoverCloseButton,
+  PopoverContent,
+  PopoverTrigger,
+  Portal,
+  Radio,
+  RadioGroup,
   Spacer,
   Spinner,
   Stack,
+  Table,
+  Tbody,
+  Td,
   Text,
   Textarea,
+  Th,
+  Thead,
   Tooltip,
+  Tr,
   useColorMode,
   useColorModeValue,
   useDisclosure,
@@ -78,6 +115,7 @@ import {
 } from "@chakra-ui/react";
 import {
   ColumnDef,
+  flexRender,
   getCoreRowModel,
   getFacetedMinMaxValues,
   getFacetedUniqueValues,
@@ -86,12 +124,15 @@ import {
   PaginationState,
   useReactTable,
 } from "@tanstack/react-table";
-import { useFormik } from "formik";
+import { Select } from "chakra-react-select";
+import { Formik, FormikState, useFormik } from "formik";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { FaCog } from "react-icons/fa";
 import {
   FiEdit,
+  FiFilter,
+  FiInfo,
   FiPlusSquare,
   FiRefreshCcw,
   FiSave,
@@ -112,6 +153,7 @@ function ProjectManagerPage() {
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
   const { List, GetDetailById, InsertProjects } = useProjects();
+  const { List: ListReq } = useRequirements();
 
   // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -144,7 +186,7 @@ function ProjectManagerPage() {
   const [globalFilter, setGlobalFilter] = useState<string>("");
   const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
     pageIndex: 0,
-    pageSize: 5,
+    pageSize: 3,
   });
   const [ActionLoading, setActionLoading] = useState(false);
   const [IsEditMode, setIsEditMode] = useState(false);
@@ -319,71 +361,10 @@ function ProjectManagerPage() {
     manualPagination: true,
   });
 
-  const projectValidationSchema = Yup.object().shape({
-    projectNo: Yup.string().nullable(), // Allow null for projectNo
-    projectCode: Yup.string().required("Project Code is required"),
-    projectName: Yup.string().required("Project Name is required"),
-    projectDesc: Yup.string().nullable(), // Optional field
-    note: Yup.string().nullable(), // Optional field
-    teamId: Yup.string().required("Team ID is required"),
-  });
-
-  const formik = useFormik<ProjectInsertPayload>({
-    initialValues: {
-      projectNo: null,
-      projectCode: "",
-      projectName: "",
-      projectDesc: null,
-      note: null,
-      teamId: "",
-    },
-    validationSchema: projectValidationSchema,
-    validateOnChange: false,
-    validateOnBlur: false,
-    onSubmit: async (values) => {
-      console.log(values);
-      await handleConfirmSaveData(values);
-    },
-  });
-
-  const AddProjectNewServ = async (data: ProjectInsertPayload) => {
-    const requestData = await InsertProjects(data, tokenData);
-    const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
-    if (isErrorResponse || !requestData) {
-      showToast({
-        description: requestData?.message || RES_GENERIC_ERROR_MSG,
-        statusToast: "error",
-      });
-      setActionLoading(false);
-      return;
-    } else {
-      console.log(requestData);
-      showToast({
-        description: "Adding data successfully",
-        statusToast: "success",
-      });
-      setActionLoading(false);
-      ModalForm.onClose();
-      RefreshAction();
-      handleResetForm();
-      return;
-    }
-  };
-
-  const handleResetForm = () => {
-    formik.setFieldValue("projectNo", null);
-    formik.setFieldValue("projectCode", "");
-    formik.setFieldValue("projectName", "");
-    formik.setFieldValue("projectDesc", null);
-    formik.setFieldValue("note", null);
-    formik.setFieldValue("teamId", "");
-  };
-
   const ModalForm = useDisclosure();
+
   const handleAddNew = () => {
     if (DataAuth && DataAuth.team) {
-      handleResetForm();
-      formik.setFieldValue("teamId", DataAuth.team ? DataAuth.team.id : "");
       ModalForm.onOpen();
     } else {
       showToast({
@@ -400,20 +381,14 @@ function ProjectManagerPage() {
     null
   );
 
-  const handleConfirmSaveData = (data: ProjectInsertPayload) => {
-    setCaptionDialog("Confirm Save Data");
-    setQuestionMsgDialog(
-      `Are you sure want to create new project "${data.projectName}"?`
-    );
-    setOpenConfirmDialog(true);
-    setPayloadData(data);
-  };
+  // await handleConfirmSaveData();
 
   const handleSaveData = async () => {
     setActionLoading(true);
     await delay(DELAY_MEDIUM);
-    if (DataAuth && DataAuth.team && PayloadData) {
-      await AddProjectNewServ(PayloadData);
+    if (DataAuth && DataAuth.team) {
+      // await AddProjectNewServ(PayloadData);
+      console.log("save");
     } else {
       showToast({
         description: "Data is invalid",
@@ -422,6 +397,12 @@ function ProjectManagerPage() {
       setActionLoading(false);
       setPayloadData(null);
     }
+  };
+
+  const handleConfirmSaveData = () => {
+    setCaptionDialog("Confirm Save Data");
+    setQuestionMsgDialog(`Are you sure want to create new project ?`);
+    setOpenConfirmDialog(true);
   };
 
   const handleDialogTrigger = () => {
@@ -436,191 +417,34 @@ function ProjectManagerPage() {
       />
 
       <Modal
-        size={"3xl"}
+        size={"6xl"}
         isOpen={ModalForm.isOpen}
         isCentered
         onClose={ModalForm.onClose}
       >
-        <form onSubmit={formik.handleSubmit} onReset={formik.handleReset}>
-          <ModalOverlay bg="blackAlpha.300" />
-          <ModalContent
-            rounded={radiusStyle}
-            m={2}
-            bg={useColorModeValue("white", "gray.900")}
-          >
-            <ModalHeader>Create New Project</ModalHeader>
-            <ModalCloseButton />
-            <ModalBody w={"full"}>
-              <Flex as={Stack} w={"full"} pt={4}>
-                <FormControl
-                  id="projectCode"
-                  isInvalid={formik.errors.projectCode ? true : false}
-                  isRequired
-                >
-                  <InputLayoutFull>
-                    <FormLabel h={"full"} mt={2}>
-                      Project Code
-                    </FormLabel>
-                    <Stack spacing={0}>
-                      <Input
-                        id="projectCode"
-                        name="projectCode"
-                        type="text"
-                        // onChange={(e) => {
-                        //   const uppercaseValue = e.target.value.toUpperCase();
-                        //   formik.setFieldValue("projectCode", uppercaseValue);
-                        // }}
-                        onChange={formik.handleChange}
-                        value={formik.values.projectCode ?? ""}
-                        placeholder="Project Code"
-                        minLength={3}
-                        maxLength={80}
-                        isReadOnly={ActionLoading}
-                      />
-                      <FormErrorMessage>
-                        {formik.errors.projectCode}
-                      </FormErrorMessage>
-                    </Stack>
-                  </InputLayoutFull>
-                </FormControl>
+        <ModalOverlay bg="blackAlpha.300" />
+        <ModalContent
+          rounded={radiusStyle}
+          m={2}
+          bg={useColorModeValue("white", "gray.900")}
+        >
+          <ModalHeader>Create New Project</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody w={"full"}>
+            <ModalRegisterProject />
+          </ModalBody>
 
-                <FormControl
-                  id="projectNo"
-                  isInvalid={formik.errors.projectNo ? true : false}
-                >
-                  <InputLayoutFull>
-                    <FormLabel h={"full"} mt={2}>
-                      Register No.
-                    </FormLabel>
-                    <Stack spacing={0}>
-                      <Input
-                        id="projectNo"
-                        name="projectNo"
-                        type="text"
-                        // onChange={(e) => {
-                        //   const uppercaseValue = e.target.value.toUpperCase();
-                        //   formik.setFieldValue("projectNo", uppercaseValue);
-                        // }}
-                        onChange={formik.handleChange}
-                        value={formik.values.projectNo ?? ""}
-                        placeholder="Register No. (Optional)"
-                        minLength={3}
-                        maxLength={80}
-                        isReadOnly={ActionLoading}
-                      />
-                      <FormHelperText>Can decide letter</FormHelperText>
-                      <FormErrorMessage>
-                        {formik.errors.projectNo}
-                      </FormErrorMessage>
-                    </Stack>
-                  </InputLayoutFull>
-                </FormControl>
-
-                <FormControl
-                  id="projectName"
-                  isInvalid={formik.errors.projectName ? true : false}
-                  isRequired
-                >
-                  <InputLayoutFull>
-                    <FormLabel h={"full"} mt={2}>
-                      Project Name
-                    </FormLabel>
-                    <Stack spacing={0}>
-                      <Input
-                        id="projectName"
-                        name="projectName"
-                        type="text"
-                        // onChange={(e) => {
-                        //   const uppercaseValue = e.target.value.toUpperCase();
-                        //   formik.setFieldValue("projectName", uppercaseValue);
-                        // }}
-                        onChange={formik.handleChange}
-                        value={formik.values.projectName ?? ""}
-                        placeholder="Project Name"
-                        minLength={3}
-                        maxLength={200}
-                        isReadOnly={ActionLoading}
-                      />
-                      <FormErrorMessage>
-                        {formik.errors.projectName}
-                      </FormErrorMessage>
-                    </Stack>
-                  </InputLayoutFull>
-                </FormControl>
-
-                <FormControl
-                  id="projectDesc"
-                  isInvalid={formik.errors.projectDesc ? true : false}
-                >
-                  <InputLayoutFull>
-                    <FormLabel h={"full"} mt={2}>
-                      Descriptions (Optional)
-                    </FormLabel>
-                    <Stack spacing={0}>
-                      <Textarea
-                        id="projectDesc"
-                        name="projectDesc"
-                        onChange={formik.handleChange}
-                        defaultValue={formik.values.projectDesc ?? ""}
-                        placeholder="Descriptions (Optional)"
-                        isReadOnly={ActionLoading}
-                      />
-                      <FormErrorMessage>
-                        {formik.errors.projectDesc}
-                      </FormErrorMessage>
-                    </Stack>
-                  </InputLayoutFull>
-                </FormControl>
-
-                <Divider />
-
-                <FormControl
-                  id="note"
-                  isInvalid={formik.errors.note ? true : false}
-                >
-                  <InputLayoutFull>
-                    <FormLabel h={"full"} mt={2}>
-                      Note (Optional)
-                    </FormLabel>
-                    <Stack spacing={0}>
-                      <Textarea
-                        id="note"
-                        name="note"
-                        onChange={formik.handleChange}
-                        defaultValue={formik.values.note ?? ""}
-                        placeholder="Note (Optional)"
-                        isReadOnly={ActionLoading}
-                      />
-                      <FormErrorMessage>{formik.errors.note}</FormErrorMessage>
-                    </Stack>
-                  </InputLayoutFull>
-                </FormControl>
-
-                {/* <pre>{JSON.stringify(formik.values, null, 2)}</pre> */}
-              </Flex>
-            </ModalBody>
-
-            <ModalFooter>
-              <Button
-                colorScheme={"gray"}
-                leftIcon={<FiX />}
-                mr={3}
-                onClick={ModalForm.onClose}
-                isLoading={ActionLoading}
-              >
-                Close
-              </Button>
-              <Button
-                leftIcon={<FiSave />}
-                type={"submit"}
-                colorScheme={"secondary"}
-                isLoading={ActionLoading}
-              >
-                Save
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </form>
+          <ModalFooter>
+            <Button
+              colorScheme={"gray"}
+              leftIcon={<FiX />}
+              onClick={ModalForm.onClose}
+              isLoading={ActionLoading}
+            >
+              Kembali
+            </Button>
+          </ModalFooter>
+        </ModalContent>
       </Modal>
 
       <ConfirmationDialog
@@ -933,6 +757,1033 @@ const TeamProfile = () => {
       </Box>
     </Flex>
   );
+};
+
+const brdFilter: ListSearchByParamProps = {
+  field: "requirementType",
+  operator: "=",
+  value: "BRD",
+  filterLabel: "Tipe",
+};
+
+const ModalRegisterProject = () => {
+  const showToast = useToastHelper();
+  const { colorMode } = useColorMode();
+  const { isAuthenticated, authData, goLogout } = useAuth();
+  const delay = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
+  const { List: ListReq } = useRequirements();
+  const { List: ListOrganization } = useOrganization();
+
+  // SetUp auth data on current page
+  const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
+  const [tokenData, setTokenData] = useState<string>("");
+
+  useEffect(() => {
+    const storedData = localStorage.getItem("authData");
+    const token: string = localStorage.getItem("tokenData") as string;
+
+    if (DataAuth == null) {
+      if (storedData) {
+        const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
+        const UserData: AuthDataResponse =
+          StorageAuth.dataLogin as AuthDataResponse;
+        setDataAuth(UserData);
+      }
+    }
+
+    if (token) {
+      setTokenData(token);
+    }
+  }, [DataAuth]);
+  // End SetUp auth data on current page
+
+  const [DataReq, setDataReq] = useState<RequirementsResponse[]>([]);
+  const [RefreshData, setRefreshData] = useState<number>(0);
+  const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
+  const [ActionLoading, setActionLoading] = useState(false);
+
+  const [totalPages, setTotalPageData] = useState<number>(0);
+  const [globalFilter, setGlobalFilter] = useState<string>("");
+  const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 5,
+  });
+
+  const pagination = useMemo(
+    () => ({
+      pageIndex,
+      pageSize,
+    }),
+    [pageIndex, pageSize]
+  );
+
+  // Division Option setup
+  const [IsLoadingDivisionSelect, setIsLoadingDivisionSelect] = useState(false);
+  const [OptionDivision, setOptionDivision] = useState<OptionListProps[]>([]);
+
+  const GetDataDivision = async (
+    searchValue: string = "",
+    limit: number = 1
+  ): Promise<OrganizationResponse[]> => {
+    setIsLoadingDivisionSelect(true);
+    const PayloadList: PaggingListPayload = {
+      search: searchValue,
+      limit: limit,
+      page: 0,
+      filterWhere: [
+        {
+          field: "orgType",
+          operator: "=",
+          value: "DIVISION",
+        },
+      ],
+      fieldOrder: ["orgName"],
+      orderDir: "asc",
+    };
+    const token: string = localStorage.getItem("tokenData") as string;
+    const requestData = await ListOrganization(PayloadList, token);
+    const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+
+    if (isErrorResponse || !requestData) {
+      showToast({
+        description: requestData?.message || RES_GENERIC_ERROR_MSG,
+        statusToast: "error",
+      });
+      setIsLoadingDivisionSelect(false);
+      return [];
+    } else {
+      console.log(requestData);
+      if (requestData.data == null) {
+        showToast({
+          description: "Data return error",
+          statusToast: "error",
+        });
+        setIsLoadingDivisionSelect(false);
+        return [];
+      }
+
+      const itemsData: OrganizationResponse[] =
+        requestData.data as OrganizationResponse[];
+
+      const mapOptionData: OptionListProps[] = itemsData.map((d) => ({
+        label: `${d.orgName}`,
+        value: d.id,
+      }));
+      setOptionDivision(mapOptionData);
+      setIsLoadingDivisionSelect(false);
+
+      return itemsData;
+    }
+  };
+
+  const LoadDataDivision = async () => {
+    if (OptionDivision.length <= 0) {
+      const dataDivision = await GetDataDivision("", MAX_SIZE_TABLE);
+    }
+  };
+
+  const [ParamFilter, setParamFilter] = useState<ListSearchByParamProps[]>([]);
+
+  const handleFilterChange = (newFilters: ListSearchByParamProps[]) => {
+    console.log("handleFilterChange");
+    console.log(newFilters);
+
+    // Use reduce to merge all new filters at once
+    const updatedFilters = newFilters.reduce(
+      (acc, filter) => addParamFilterUpdate(acc, filter),
+      ParamFilter
+    );
+
+    setParamFilter(updatedFilters);
+  };
+
+  const columnsData = useMemo<ColumnDef<RequirementsResponse>[]>(
+    () => [
+      {
+        accessorKey: "numbData",
+        cell: (info) => (
+          <Flex justifyContent={"center"} alignItems="flex-start" h={"full"}>
+            <Text>{pageIndex * pageSize + info.row.index + 1}.</Text>
+          </Flex>
+        ),
+        header: () => <Flex justifyContent={"center"}>No.</Flex>,
+        footer: (props) => props.column.id,
+        // Custom variable
+        meta: {
+          isFilterable: false,
+        } as ColumnMetaCustom,
+      },
+      {
+        accessorFn: (row) => row.reqNarative,
+        id: "reqNarative",
+        cell: (info) => (
+          <Flex
+            w={"full"}
+            h={"full"}
+            justifyContent={"center"}
+            alignItems={"start"}
+            as={Stack}
+            spacing={1}
+          >
+            <Flex as={Stack} spacing={2}>
+              <Flex as={Stack} spacing={0}>
+                <Text fontWeight={600}>{info.row.original.reqNumber}</Text>
+                <Text>{info.row.original.reqNarative}</Text>
+              </Flex>
+              <Flex as={Stack} spacing={0}>
+                <Text>Divisi Pengirim :</Text>
+                <Text fontWeight={600}>
+                  {info.row.original.senderDivisionName}
+                </Text>
+              </Flex>
+              <Flex pt={2}>
+                {info.row.original.isCarryOver == "Y" && (
+                  <Badge
+                    variant="solid"
+                    colorScheme="yellow"
+                    fontSize={"small"}
+                    rounded={radiusStyle}
+                    px={4}
+                  >
+                    CARRYOVER
+                  </Badge>
+                )}
+              </Flex>
+            </Flex>
+          </Flex>
+        ),
+        header: () => <span>Perihal</span>,
+        footer: (props) => props.column.id,
+        // Custom variable
+        meta: {
+          isFilterable: true,
+          filterData: [
+            {
+              field: "reqNarative",
+              operator: "like",
+              value: "",
+              filterType: "text",
+              filterLabel: "Perihal",
+            },
+            {
+              field: "senderDivisionId",
+              operator: "=",
+              value: "",
+              filterType: "select",
+              filterLabel: "Divisi Pengirim",
+              sourceListData: OptionDivision,
+            },
+          ],
+        } as ColumnMetaCustom,
+      },
+      {
+        accessorFn: (row) => row.reqInititateDate,
+        id: "reqInititateDate",
+        cell: (info) => (
+          <Flex
+            w={"full"}
+            h={"full"}
+            justifyContent={"center"}
+            alignItems={"start"}
+            as={Stack}
+            spacing={1}
+          >
+            <Flex fontSize={"small"} as={Stack} spacing={0}>
+              <Text>Memo Dibuat :</Text>
+              <Text fontWeight={600}>
+                {info.row.original.reqInititateDate
+                  ? stringToDateFormatedReverse(
+                      info.row.original.reqInititateDate
+                    )
+                  : "-"}
+              </Text>
+            </Flex>
+            <Flex fontSize={"small"} as={Stack} spacing={0}>
+              <Text>Memo Diterima :</Text>
+              <Text fontWeight={600}>
+                {info.row.original.reqAcceptedDate
+                  ? stringToDateFormatedReverse(
+                      info.row.original.reqAcceptedDate
+                    )
+                  : "-"}
+              </Text>
+            </Flex>
+          </Flex>
+        ),
+        header: () => <span>Tanggal</span>,
+        footer: (props) => props.column.id,
+        // Custom variable
+        meta: {
+          isFilterable: true,
+          filterData: [
+            {
+              field: "reqInititateDate",
+              operator: ">=",
+              value: "",
+              filterType: "date",
+              filterLabel: "Tgl. Awal Memo Dibuat",
+            },
+            {
+              field: "reqInititateDate",
+              operator: "<=",
+              value: "",
+              filterType: "date",
+              filterLabel: "Tgl. Akhir Memo Dibuat",
+            },
+          ],
+        } as ColumnMetaCustom,
+      },
+      {
+        accessorFn: (row) => row.assignedFromName,
+        id: "assigned",
+        cell: (info) => (
+          <Flex w={"full"} justifyContent={"center"} as={Stack} spacing={1}>
+            <Flex fontSize={"small"} as={Stack} spacing={0}>
+              <Text>Ditugaskan Oleh :</Text>
+              <Text fontWeight={600} fontSize={"smaller"}>
+                {info.row.original.assignedFromName}
+              </Text>
+            </Flex>
+            <Flex fontSize={"small"} as={Stack} spacing={0}>
+              <Text>Ditugaskan Ke :</Text>
+              {info.row.original.approvalDatas.map((x, idx) => (
+                <Text fontWeight={600} key={idx} fontSize={"smaller"}>
+                  {idx + 1}. {x.approverUserFirstName}{" "}
+                  {x.approverUserLastnameName}
+                </Text>
+              ))}
+            </Flex>
+          </Flex>
+        ),
+        header: () => <span>Penugasan</span>,
+        footer: (props) => props.column.id,
+        // Custom variable
+        // Custom variable
+        meta: {
+          isFilterable: true,
+          filterData: [
+            {
+              field: "assignedFromName",
+              operator: "like",
+              value: "",
+              filterType: "text",
+              filterLabel: "Ditugaskan Oleh",
+            },
+          ],
+        } as ColumnMetaCustom,
+      },
+      {
+        accessorFn: (row) => row.appInitialName,
+        id: "appInitialName",
+        cell: (info) => (
+          <Flex
+            w={"full"}
+            h={"full"}
+            justifyContent={"center"}
+            alignItems={"start"}
+            as={Stack}
+            spacing={1}
+          >
+            <Flex as={Stack} spacing={2}>
+              <Flex as={Stack} spacing={0}>
+                <Text fontWeight={600}>
+                  ({info.row.original.appInitialCode})
+                </Text>
+                <Text fontWeight={600}>{info.row.original.appInitialName}</Text>
+              </Flex>
+            </Flex>
+          </Flex>
+        ),
+        header: () => <span>Aplikasi</span>,
+        footer: (props) => props.column.id,
+        // Custom variable
+        meta: {
+          isFilterable: true,
+          filterData: [
+            {
+              field: "appInitialCode",
+              operator: "like",
+              value: "",
+              filterType: "text",
+              filterLabel: "Inisial Aplikasi",
+            },
+            {
+              field: "appInitialName",
+              operator: "like",
+              value: "",
+              filterType: "text",
+              filterLabel: "Nama Aplikasi",
+            },
+          ],
+        } as ColumnMetaCustom,
+      },
+      {
+        accessorFn: (row) => row.reqStatus,
+        id: "reqStatus",
+        cell: (info) => (
+          <Flex
+            w={"full"}
+            h={"full"}
+            justifyContent={"center"}
+            alignItems={"start"}
+            as={Stack}
+            spacing={1}
+          >
+            <Flex fontSize={"small"} as={Stack} spacing={1}>
+              {info.row.original.reqStatus ? (
+                <LabelMaster
+                  groupLabel={GROUP_CONST_BRD_STATUS}
+                  labelName={info.row.original.reqStatus}
+                />
+              ) : (
+                "-"
+              )}
+            </Flex>
+            <Text>
+              Next Step :
+              <Text as="span" fontWeight="bold" pl={1}>
+                {info.row.original.nextStep}
+              </Text>
+            </Text>
+          </Flex>
+        ),
+        header: () => <span>Status</span>,
+        footer: (props) => props.column.id,
+        // Custom variable
+        meta: {
+          isFilterable: true,
+          filterData: [
+            {
+              field: "reqStatus",
+              operator: "=",
+              value: "",
+              filterType: "select",
+              filterLabel: "Status",
+              sourceListData: REQ_STATUS_LIST_OPTION,
+            },
+          ],
+        } as ColumnMetaCustom,
+      },
+      {
+        accessorFn: (row) => row.id,
+        id: "id",
+        cell: (info) => (
+          <Flex w={"full"} justifyContent={"center"}>
+            <Link href={`brd/detail?reqId=${info.row.original.id}`}>
+              <Button leftIcon={<FiInfo />} colorScheme="secondary" size="sm">
+                Detail
+              </Button>
+            </Link>
+          </Flex>
+        ),
+        header: () => "",
+        footer: (props) => props.column.id,
+        // Custom variable
+        meta: {
+          isFilterable: false,
+        },
+      },
+    ],
+    [ActionLoading, pageIndex, pageSize, colorMode, OptionDivision, ParamFilter]
+  );
+
+  // Set Onload Filter For Constant Filter
+  useEffect(() => {
+    const brdStatusApprove: ListSearchByParamProps = {
+      field: "reqStatus",
+      operator: "=",
+      value: "APPROVED",
+      filterLabel: "Tipe",
+    };
+    LoadDataDivision();
+    // addFilterData(brdFilter);
+    addFilterData(brdStatusApprove);
+  }, []);
+
+  const addFilterData = (data: ListSearchByParamProps) => {
+    const filterWhereData: ListSearchByParamProps[] = addParamFilterUpdate(
+      ParamFilter,
+      data
+    );
+
+    setParamFilter(filterWhereData);
+  };
+
+  const removeFilterData = (data: ListSearchByParamProps) => {
+    const filterWhereData: ListSearchByParamProps[] = removeParamFilter(
+      ParamFilter,
+      data
+    );
+
+    setParamFilter(filterWhereData);
+  };
+
+  const [SelectedTypeReq, setSelectedTypeReq] = useState<string>("BRD");
+
+  useEffect(() => {
+    const brdFilterSelected: ListSearchByParamProps[] = [
+      {
+        field: "requirementType",
+        operator: "=",
+        value: SelectedTypeReq,
+        filterLabel: "Tipe",
+      },
+    ];
+    handleFilterChange(brdFilterSelected);
+  }, [SelectedTypeReq]);
+
+  useEffect(() => {
+    const brdStatusApproveStatic: ListSearchByParamProps = {
+      field: "reqStatus",
+      operator: "=",
+      value: "APPROVED",
+      filterLabel: "Tipe",
+    };
+    const filterWhereData: ListSearchByParamProps[] = addParamFilter(
+      ParamFilter,
+      brdStatusApproveStatic
+    );
+    if (DataAuth && DataAuth.team && tokenData) {
+      const PayloadList: PaggingListPayload = {
+        search: globalFilter,
+        limit: pageSize,
+        page: pageIndex,
+        filterWhere: filterWhereData,
+        fieldOrder: ["createdAt"],
+        orderDir: "desc",
+      };
+
+      setIsLoadingProcess(true);
+      const GetDataList = async () => {
+        const requestData = await ListReq(PayloadList, tokenData);
+        const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+
+        if (isErrorResponse || !requestData) {
+          showToast({
+            description: requestData?.message || RES_GENERIC_ERROR_MSG,
+            statusToast: "error",
+          });
+          setIsLoadingProcess(false);
+          return;
+        } else {
+          console.log(requestData);
+          if (requestData.data == null) {
+            showToast({
+              description: "Data return error",
+              statusToast: "error",
+            });
+            setIsLoadingProcess(false);
+            return;
+          }
+
+          const itemsData: RequirementsResponse[] =
+            requestData.data as RequirementsResponse[];
+          const totalData: number = requestData.countTotal as number;
+          const totalPages: number =
+            totalData > 0 ? Math.ceil(totalData / pageSize) : -1;
+          setDataReq(itemsData);
+          setTotalPageData(totalPages);
+          setIsLoadingProcess(false);
+        }
+      };
+      GetDataList();
+    }
+  }, [DataAuth, RefreshData, pageIndex, pageSize, globalFilter, ParamFilter]);
+
+  const table = useReactTable({
+    data: DataReq,
+    columns: columnsData,
+    pageCount: totalPages ?? 1,
+    state: {
+      globalFilter,
+      pagination,
+    },
+    onPaginationChange: setPagination,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    onGlobalFilterChange: setGlobalFilter,
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    getFacetedMinMaxValues: getFacetedMinMaxValues(),
+    debugTable: false,
+    manualFiltering: true,
+    manualPagination: true,
+  });
+
+  return (
+    <Flex as={Stack} w={"full"} pt={4}>
+      <FormControl>
+        <Grid templateColumns="repeat(2, 1fr)" gap={1} w={"full"}>
+          <GridItem
+            colSpan={{
+              base: 2,
+              sm: 2,
+              md: 1,
+              lg: 1,
+            }}
+            w={"full"}
+          >
+            <FormLabel h={"full"}>Sudah memiliki requirement</FormLabel>
+          </GridItem>
+          <GridItem
+            colSpan={{
+              base: 2,
+              sm: 2,
+              md: 1,
+              lg: 1,
+            }}
+            w={"full"}
+          >
+            <FormControl>
+              <RadioGroup
+                id={"isHaveReq"}
+                onChange={(val) => {
+                  // formik.setFieldValue("appPrivateAuth", val);
+                  console.log(val);
+                }}
+                value={"Y"}
+              >
+                <Flex w={"full"} as={HStack} justifyContent={"end"}>
+                  <Radio value={"Y"}>Ya</Radio>
+                  <Radio value={"N"} isDisabled>
+                    Tidak
+                  </Radio>
+                </Flex>
+              </RadioGroup>
+            </FormControl>
+          </GridItem>
+
+          <GridItem
+            colSpan={{
+              base: 2,
+              sm: 2,
+              md: 1,
+              lg: 1,
+            }}
+            w={"full"}
+          >
+            <FormLabel h={"full"}>Tipe Requirement</FormLabel>
+          </GridItem>
+
+          <GridItem
+            colSpan={{
+              base: 2,
+              sm: 2,
+              md: 1,
+              lg: 1,
+            }}
+            w={"full"}
+          >
+            <FormControl>
+              <RadioGroup
+                id={"FilterReqType"}
+                onChange={(val) => {
+                  // formik.setFieldValue("appPrivateAuth", val);
+                  console.log(val);
+                  setSelectedTypeReq(val);
+                }}
+                value={SelectedTypeReq}
+              >
+                <Flex w={"full"} as={HStack} justifyContent={"end"}>
+                  <Radio value={"BRD"}>BRD</Radio>
+                  <Radio value={"RFC"}>RFC</Radio>
+                </Flex>
+              </RadioGroup>
+            </FormControl>
+          </GridItem>
+
+          <GridItem colSpan={2} w={"full"}>
+            {/* <pre>{JSON.stringify(formik.values, null, 2)}</pre> */}
+          </GridItem>
+
+          <GridItem colSpan={2} w={"full"}>
+            <Popover closeOnBlur={false} placement={"bottom"}>
+              <PopoverTrigger>
+                <Button size={"sm"} leftIcon={<FiFilter />}>
+                  Filter{" "}
+                  <Flex
+                    as={"span"}
+                    pl={1}
+                    display={ParamFilter.length > 0 ? "flex" : "none"}
+                    color={"secondary.500"}
+                    fontWeight={600}
+                  >
+                    ({ParamFilter.length})
+                  </Flex>
+                </Button>
+              </PopoverTrigger>
+              <Portal>
+                <PopoverContent width="auto" minW="xs">
+                  <PopoverBody>
+                    <Flex as={Stack} w={"full"}>
+                      <Text fontWeight={600}>Filter Data</Text>
+                      <Divider />
+
+                      <Stack spacing={2}>
+                        {ParamFilter.map((dt, idx) => (
+                          <Flex
+                            key={idx}
+                            w={"full"}
+                            alignItems="center"
+                            as={HStack}
+                            spacing={2}
+                          >
+                            <Text>
+                              {dt.filterLabel} :{" "}
+                              <Text as={"span"} fontWeight={600}>
+                                {" "}
+                                {dt.field === "senderDivisionId"
+                                  ? OptionDivision.find(
+                                      (opt) => opt.value === dt.value
+                                    )?.label || dt.value
+                                  : dt.value}
+                              </Text>
+                            </Text>
+                            <Button
+                              size={"xs"}
+                              colorScheme={"red"}
+                              justifyContent={"center"}
+                              variant={"ghost"}
+                              onClick={() => removeFilterData(dt)}
+                            >
+                              <FiX />
+                            </Button>
+                          </Flex>
+                        ))}
+                      </Stack>
+                    </Flex>
+                  </PopoverBody>
+                </PopoverContent>
+              </Portal>
+            </Popover>
+          </GridItem>
+        </Grid>
+
+        <GridItem colSpan={2} w={"full"}>
+          {IsLoadingProcess ? (
+            <LoadingMiniSignature />
+          ) : (
+            // <TableComponentFull table={table} />
+            // TABLE NEW DESIGN
+            <Box w={"full"} pt={2}>
+              <Flex
+                overflowX={"auto"}
+                w={"full"}
+                border={"1px solid"}
+                borderRadius={radiusStyle}
+                borderColor={colorMode == "light" ? "gray.100" : "gray.600"}
+                boxShadow={"md"}
+              >
+                <Table variant={"simple"} size={"sm"}>
+                  <Thead>
+                    {table.getHeaderGroups().map((headerGroup: any) => (
+                      <Tr
+                        key={headerGroup.id}
+                        bg={colorMode == "light" ? "secondary.50" : "gray.900"}
+                      >
+                        {headerGroup.headers.map(
+                          (header: any, hidx: number) => {
+                            return (
+                              <Th
+                                py={3}
+                                key={header.id}
+                                colSpan={header.colSpan}
+                                color={
+                                  colorMode == "light"
+                                    ? "secondary.800"
+                                    : "secondary.500"
+                                }
+                              >
+                                <Flex
+                                  w={"full"}
+                                  as={HStack}
+                                  alignItems={"center"}
+                                  // justifyContent={"space-between"}
+                                >
+                                  <Heading as="h5" size="sm">
+                                    {header.isPlaceholder ? null : (
+                                      <div>
+                                        {flexRender(
+                                          header.column.columnDef.header,
+                                          header.getContext()
+                                        )}
+                                      </div>
+                                    )}
+                                  </Heading>
+                                  <FilterColumnTable
+                                    key={header.column.id}
+                                    filedDataKey={header.column.id}
+                                    metaCustom={header.column.columnDef.meta}
+                                    onFilterSubmit={handleFilterChange}
+                                  />
+                                </Flex>
+                              </Th>
+                            );
+                          }
+                        )}
+                      </Tr>
+                    ))}
+                  </Thead>
+                  <Tbody>
+                    {table.getRowModel().rows.length > 0 ? (
+                      table.getRowModel().rows.map((row: any, index: any) => {
+                        const startingNumber = index + 1;
+                        return (
+                          <Tr key={row.id}>
+                            {row.getVisibleCells().map((cell: any) => {
+                              return (
+                                <Td key={cell.id}>
+                                  {flexRender(
+                                    cell.column.columnDef.cell,
+                                    cell.getContext()
+                                  )}
+                                </Td>
+                              );
+                            })}
+                          </Tr>
+                        );
+                      })
+                    ) : (
+                      <Tr>
+                        <Td colSpan={table.options.columns.length + 1}>
+                          <Flex
+                            justifyContent={"center"}
+                            alignItems={"center"}
+                            minH={"30vh"}
+                          >
+                            Belum ada data
+                          </Flex>
+                        </Td>
+                      </Tr>
+                    )}
+                  </Tbody>
+                </Table>
+              </Flex>
+              <ControlTable table={table} />
+            </Box>
+          )}
+        </GridItem>
+      </FormControl>
+
+      {/* <pre>{JSON.stringify(formik.values, null, 2)}</pre> */}
+    </Flex>
+  );
+};
+
+interface FilterColumnTableProps {
+  filedDataKey: string;
+  metaCustom?: ColumnMetaCustom;
+  onFilterSubmit?: (filters: ListSearchByParamProps[]) => void;
+}
+
+const buildInitialFilterValues = (
+  meta?: ColumnMetaCustom,
+  currentFilters?: ListSearchByParamProps[]
+): Record<string, string> => {
+  const result: Record<string, string> = {};
+
+  meta?.filterData?.forEach((fd) => {
+    const key = `${fd.field}_${fd.operator}`;
+    const existing = currentFilters?.find(
+      (f) => f.field === fd.field && f.operator === fd.operator
+    );
+    result[key] = existing?.value ?? fd.value ?? "";
+  });
+
+  return result;
+};
+
+const FilterColumnTable = ({
+  filedDataKey,
+  metaCustom,
+  onFilterSubmit,
+}: FilterColumnTableProps) => {
+  const initialValues = useMemo(
+    () => buildInitialFilterValues(metaCustom),
+    [metaCustom]
+  );
+
+  const [filterList, setFilterList] = useState<ListSearchByParamProps[]>([]);
+
+  const handleSubmit = (values: Record<string, string>) => {
+    const filters: ListSearchByParamProps[] =
+      metaCustom?.filterData
+        ?.map((fd) => {
+          const key = `${fd.field}_${fd.operator}`;
+          const value = values[key] ?? "";
+          return {
+            field: fd.field,
+            operator: fd.operator,
+            value,
+            filterLabel: fd.filterLabel,
+          };
+        })
+        .filter((f) => f.value?.trim() !== "") || []; // ✅ Only include non-empty values
+
+    // console.log("filters", filters);
+
+    setFilterList(filters);
+    onFilterSubmit?.(filters);
+  };
+
+  const handleReset = (
+    resetForm: (
+      nextState?: Partial<FormikState<Record<string, string>>>
+    ) => void
+  ) => {
+    resetForm();
+    setFilterList([]);
+    onFilterSubmit?.([]); // ✅ Clear in parent too
+  };
+
+  if (metaCustom == null) {
+    return;
+  } else {
+    if (metaCustom) {
+      if (metaCustom.isFilterable == false) {
+        return;
+      } else {
+        return (
+          <Popover id={filedDataKey}>
+            <PopoverTrigger>
+              <IconButton
+                variant={"ghost"}
+                colorScheme={"blue"}
+                aria-label={filedDataKey}
+                size="sm"
+                icon={<FiFilter />}
+              />
+            </PopoverTrigger>
+            <Portal>
+              <PopoverContent rounded={radiusStyle}>
+                <PopoverArrow />
+                <PopoverCloseButton />
+                <PopoverBody>
+                  <Flex as={Stack} w={"full"}>
+                    <Text fontWeight={600}>Filter Data</Text>
+                    <Divider />
+                    <Formik
+                      initialValues={initialValues}
+                      enableReinitialize={false} // ✅ prevents resetting when props change
+                      onSubmit={handleSubmit}
+                    >
+                      {({
+                        values,
+                        handleChange,
+                        handleSubmit,
+                        setFieldValue,
+                      }) => (
+                        <form onSubmit={handleSubmit}>
+                          {metaCustom.filterData?.map((ft, idx) => {
+                            const inputKey = `${ft.field}_${ft.operator}`;
+                            if (ft.filterType === "text") {
+                              return (
+                                <FormControl key={idx}>
+                                  <FormLabel>{ft.filterLabel} :</FormLabel>
+                                  <Input
+                                    id={inputKey}
+                                    name={inputKey}
+                                    type="text"
+                                    value={values[ft.field]}
+                                    onChange={handleChange}
+                                  />
+                                </FormControl>
+                              );
+                            }
+
+                            if (ft.filterType === "date") {
+                              return (
+                                <FormControl key={idx}>
+                                  <FormLabel>{ft.filterLabel} :</FormLabel>
+                                  <Input
+                                    id={inputKey}
+                                    name={inputKey}
+                                    type="date"
+                                    value={values[ft.field]}
+                                    onChange={handleChange}
+                                  />
+                                </FormControl>
+                              );
+                            }
+
+                            if (ft.filterType === "select") {
+                              return (
+                                <FormControl key={idx}>
+                                  <FormLabel>{ft.filterLabel} :</FormLabel>
+                                  <Select
+                                    id={inputKey}
+                                    name={inputKey}
+                                    options={ft.sourceListData}
+                                    value={
+                                      ft.sourceListData?.find(
+                                        (option) =>
+                                          option.value === values[inputKey]
+                                      ) || null
+                                    }
+                                    onChange={(selectedOption) => {
+                                      setFieldValue(
+                                        inputKey,
+                                        selectedOption?.value || ""
+                                      );
+                                    }}
+                                    isSearchable={true}
+                                    placeholder={"Pilih"}
+                                  />
+                                </FormControl>
+                              );
+                            }
+
+                            return null;
+                          })}
+
+                          <Flex
+                            as={HStack}
+                            justifyContent={"end"}
+                            w={"full"}
+                            pt={2}
+                          >
+                            {/* <Button
+                              size="sm"
+                              onClick={() => handleReset(resetForm)}
+                              leftIcon={<FiRefreshCcw />}
+                            >
+                              Reset
+                            </Button> */}
+                            <Button
+                              type="submit"
+                              size={"sm"}
+                              colorScheme={"secondary"}
+                              leftIcon={<FiFilter />}
+                            >
+                              Filter
+                            </Button>
+                          </Flex>
+                        </form>
+                      )}
+                    </Formik>
+                  </Flex>
+                  {/* <Box
+                    w={"full"}
+                    overflowY={"auto"}
+                    overflowX={"auto"}
+                    maxH={"350px"}
+                    p={2}
+                    bgColor={"gray.200"}
+                    fontSize={"xx-small"}
+                  >
+                    <pre>{JSON.stringify(filterList, null, 2)}</pre>
+                  </Box> */}
+                </PopoverBody>
+                {/* <PopoverFooter>This is the footer</PopoverFooter> */}
+              </PopoverContent>
+            </Portal>
+          </Popover>
+        );
+      }
+      return;
+    }
+  }
 };
 
 export default ProjectManagerPage;
