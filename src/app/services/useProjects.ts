@@ -15,17 +15,54 @@ import {
 import axiosInstance from "../utils/axiosInstance";
 import axios from "axios";
 import handleAxiosError from "../utils/handleAxiosError";
-import { UsersFullResponse } from "./useUsers";
+import { UsersFullResponse, UsersResponse } from "./useUsers";
 
 export interface ProjectDataResponse {
   id: string;
-  projectNo: string | null;
+  projectNo: string;
   projectCode: string;
   projectName: string;
-  projectDesc: string | null;
+  projectDesc: string;
   projectStatus: string;
-  projectStatusPercentage: string;
   note: string | null;
+  projectCategory: string;
+  projectType: string;
+  projectRegisterDate: string | null;
+  projectClosedDate: string | null;
+  projectDurationDays: number;
+  projectStatusPercentage: number;
+  proOwnerDivisionId: string;
+  proOwnerDivisionCode: string;
+  proOwnerDivisionName: string;
+  proOwnerGroupId: string;
+  proOwnerGroupCode: string;
+  proOwnerGroupName: string;
+  proManageByDivisionId: string;
+  proManageByDivisionCode: string;
+  proManageByDivisionName: string;
+  proManageByGroupId: string;
+  proManageByGroupCode: string;
+  proManageByGroupName: string;
+  proManageByTeamId: string;
+  proManageByTeamCode: string;
+  proManageByTeamName: string;
+  reqParentId: string | null;
+  createdAt: string;
+  createdBy: string;
+  updatedAt: string | null;
+  updatedBy: string | null;
+  userAssignment: ProjectUserAssignmentResponse[];
+}
+
+export interface ProjectUserAssignmentResponse {
+  id: string;
+  projectId: string;
+  userSysId: string;
+  userId: string;
+  userData: UsersResponse;
+  userAssignStatus: string;
+  assignDate: string;
+  assignEndDate: string | null;
   createdAt: string;
   createdBy: string;
   updatedAt: string | null;

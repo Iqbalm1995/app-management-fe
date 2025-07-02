@@ -917,6 +917,23 @@ export function getPriorityFromMatrix(impact: string, urgency: string): string {
   return "LOW";
 }
 
+export function priorityColor(label: string): string {
+  const { colorMode } = useColorMode();
+  if (label == "LOW") {
+    return "green.500";
+  }
+  if (label == "MEDIUM") {
+    return "yellow.500";
+  }
+  if (label == "HIGH") {
+    return "orange.500";
+  }
+  if (label == "CRITICAL") {
+    return "red.500";
+  }
+  return colorMode == "light" ? "black" : "white";
+}
+
 export function getQuarterText(dateInput: string | Date): string {
   const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
 

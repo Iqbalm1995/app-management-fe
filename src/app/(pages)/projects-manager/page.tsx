@@ -14,6 +14,7 @@ import {
   TableComponentFull,
   TableComponentFullHeadless,
 } from "@/app/components/tableComponents";
+import { TableComponentWithFilterCTX } from "@/app/components/tableComponentV2";
 import {
   DELAY_MEDIUM,
   ENDPOINT_API_BASEURL,
@@ -130,6 +131,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { FaCog } from "react-icons/fa";
 import {
+  FiArrowRightCircle,
   FiEdit,
   FiFilter,
   FiInfo,
@@ -1170,9 +1172,15 @@ const ModalRegisterProject = () => {
         id: "id",
         cell: (info) => (
           <Flex w={"full"} justifyContent={"center"}>
-            <Link href={`brd/detail?reqId=${info.row.original.id}`}>
-              <Button leftIcon={<FiInfo />} colorScheme="secondary" size="sm">
-                Detail
+            <Link
+              href={`projects-manager/register?reqId=${info.row.original.id}`}
+            >
+              <Button
+                rightIcon={<FiArrowRightCircle />}
+                colorScheme="secondary"
+                size="sm"
+              >
+                Register
               </Button>
             </Link>
           </Flex>
@@ -1467,100 +1475,10 @@ const ModalRegisterProject = () => {
             // <TableComponentFull table={table} />
             // TABLE NEW DESIGN
             <Box w={"full"} pt={2}>
-              <Flex
-                overflowX={"auto"}
-                w={"full"}
-                border={"1px solid"}
-                borderRadius={radiusStyle}
-                borderColor={colorMode == "light" ? "gray.100" : "gray.600"}
-                boxShadow={"md"}
-              >
-                <Table variant={"simple"} size={"sm"}>
-                  <Thead>
-                    {table.getHeaderGroups().map((headerGroup: any) => (
-                      <Tr
-                        key={headerGroup.id}
-                        bg={colorMode == "light" ? "secondary.50" : "gray.900"}
-                      >
-                        {headerGroup.headers.map(
-                          (header: any, hidx: number) => {
-                            return (
-                              <Th
-                                py={3}
-                                key={header.id}
-                                colSpan={header.colSpan}
-                                color={
-                                  colorMode == "light"
-                                    ? "secondary.800"
-                                    : "secondary.500"
-                                }
-                              >
-                                <Flex
-                                  w={"full"}
-                                  as={HStack}
-                                  alignItems={"center"}
-                                  // justifyContent={"space-between"}
-                                >
-                                  <Heading as="h5" size="sm">
-                                    {header.isPlaceholder ? null : (
-                                      <div>
-                                        {flexRender(
-                                          header.column.columnDef.header,
-                                          header.getContext()
-                                        )}
-                                      </div>
-                                    )}
-                                  </Heading>
-                                  <FilterColumnTable
-                                    key={header.column.id}
-                                    filedDataKey={header.column.id}
-                                    metaCustom={header.column.columnDef.meta}
-                                    onFilterSubmit={handleFilterChange}
-                                  />
-                                </Flex>
-                              </Th>
-                            );
-                          }
-                        )}
-                      </Tr>
-                    ))}
-                  </Thead>
-                  <Tbody>
-                    {table.getRowModel().rows.length > 0 ? (
-                      table.getRowModel().rows.map((row: any, index: any) => {
-                        const startingNumber = index + 1;
-                        return (
-                          <Tr key={row.id}>
-                            {row.getVisibleCells().map((cell: any) => {
-                              return (
-                                <Td key={cell.id}>
-                                  {flexRender(
-                                    cell.column.columnDef.cell,
-                                    cell.getContext()
-                                  )}
-                                </Td>
-                              );
-                            })}
-                          </Tr>
-                        );
-                      })
-                    ) : (
-                      <Tr>
-                        <Td colSpan={table.options.columns.length + 1}>
-                          <Flex
-                            justifyContent={"center"}
-                            alignItems={"center"}
-                            minH={"30vh"}
-                          >
-                            Belum ada data
-                          </Flex>
-                        </Td>
-                      </Tr>
-                    )}
-                  </Tbody>
-                </Table>
-              </Flex>
-              <ControlTable table={table} />
+              <TableComponentWithFilterCTX
+                table={table}
+                handleFilterChange={handleFilterChange}
+              />
             </Box>
           )}
         </GridItem>
@@ -1569,221 +1487,6 @@ const ModalRegisterProject = () => {
       {/* <pre>{JSON.stringify(formik.values, null, 2)}</pre> */}
     </Flex>
   );
-};
-
-interface FilterColumnTableProps {
-  filedDataKey: string;
-  metaCustom?: ColumnMetaCustom;
-  onFilterSubmit?: (filters: ListSearchByParamProps[]) => void;
-}
-
-const buildInitialFilterValues = (
-  meta?: ColumnMetaCustom,
-  currentFilters?: ListSearchByParamProps[]
-): Record<string, string> => {
-  const result: Record<string, string> = {};
-
-  meta?.filterData?.forEach((fd) => {
-    const key = `${fd.field}_${fd.operator}`;
-    const existing = currentFilters?.find(
-      (f) => f.field === fd.field && f.operator === fd.operator
-    );
-    result[key] = existing?.value ?? fd.value ?? "";
-  });
-
-  return result;
-};
-
-const FilterColumnTable = ({
-  filedDataKey,
-  metaCustom,
-  onFilterSubmit,
-}: FilterColumnTableProps) => {
-  const initialValues = useMemo(
-    () => buildInitialFilterValues(metaCustom),
-    [metaCustom]
-  );
-
-  const [filterList, setFilterList] = useState<ListSearchByParamProps[]>([]);
-
-  const handleSubmit = (values: Record<string, string>) => {
-    const filters: ListSearchByParamProps[] =
-      metaCustom?.filterData
-        ?.map((fd) => {
-          const key = `${fd.field}_${fd.operator}`;
-          const value = values[key] ?? "";
-          return {
-            field: fd.field,
-            operator: fd.operator,
-            value,
-            filterLabel: fd.filterLabel,
-          };
-        })
-        .filter((f) => f.value?.trim() !== "") || []; // ✅ Only include non-empty values
-
-    // console.log("filters", filters);
-
-    setFilterList(filters);
-    onFilterSubmit?.(filters);
-  };
-
-  const handleReset = (
-    resetForm: (
-      nextState?: Partial<FormikState<Record<string, string>>>
-    ) => void
-  ) => {
-    resetForm();
-    setFilterList([]);
-    onFilterSubmit?.([]); // ✅ Clear in parent too
-  };
-
-  if (metaCustom == null) {
-    return;
-  } else {
-    if (metaCustom) {
-      if (metaCustom.isFilterable == false) {
-        return;
-      } else {
-        return (
-          <Popover id={filedDataKey}>
-            <PopoverTrigger>
-              <IconButton
-                variant={"ghost"}
-                colorScheme={"blue"}
-                aria-label={filedDataKey}
-                size="sm"
-                icon={<FiFilter />}
-              />
-            </PopoverTrigger>
-            <Portal>
-              <PopoverContent rounded={radiusStyle}>
-                <PopoverArrow />
-                <PopoverCloseButton />
-                <PopoverBody>
-                  <Flex as={Stack} w={"full"}>
-                    <Text fontWeight={600}>Filter Data</Text>
-                    <Divider />
-                    <Formik
-                      initialValues={initialValues}
-                      enableReinitialize={false} // ✅ prevents resetting when props change
-                      onSubmit={handleSubmit}
-                    >
-                      {({
-                        values,
-                        handleChange,
-                        handleSubmit,
-                        setFieldValue,
-                      }) => (
-                        <form onSubmit={handleSubmit}>
-                          {metaCustom.filterData?.map((ft, idx) => {
-                            const inputKey = `${ft.field}_${ft.operator}`;
-                            if (ft.filterType === "text") {
-                              return (
-                                <FormControl key={idx}>
-                                  <FormLabel>{ft.filterLabel} :</FormLabel>
-                                  <Input
-                                    id={inputKey}
-                                    name={inputKey}
-                                    type="text"
-                                    value={values[ft.field]}
-                                    onChange={handleChange}
-                                  />
-                                </FormControl>
-                              );
-                            }
-
-                            if (ft.filterType === "date") {
-                              return (
-                                <FormControl key={idx}>
-                                  <FormLabel>{ft.filterLabel} :</FormLabel>
-                                  <Input
-                                    id={inputKey}
-                                    name={inputKey}
-                                    type="date"
-                                    value={values[ft.field]}
-                                    onChange={handleChange}
-                                  />
-                                </FormControl>
-                              );
-                            }
-
-                            if (ft.filterType === "select") {
-                              return (
-                                <FormControl key={idx}>
-                                  <FormLabel>{ft.filterLabel} :</FormLabel>
-                                  <Select
-                                    id={inputKey}
-                                    name={inputKey}
-                                    options={ft.sourceListData}
-                                    value={
-                                      ft.sourceListData?.find(
-                                        (option) =>
-                                          option.value === values[inputKey]
-                                      ) || null
-                                    }
-                                    onChange={(selectedOption) => {
-                                      setFieldValue(
-                                        inputKey,
-                                        selectedOption?.value || ""
-                                      );
-                                    }}
-                                    isSearchable={true}
-                                    placeholder={"Pilih"}
-                                  />
-                                </FormControl>
-                              );
-                            }
-
-                            return null;
-                          })}
-
-                          <Flex
-                            as={HStack}
-                            justifyContent={"end"}
-                            w={"full"}
-                            pt={2}
-                          >
-                            {/* <Button
-                              size="sm"
-                              onClick={() => handleReset(resetForm)}
-                              leftIcon={<FiRefreshCcw />}
-                            >
-                              Reset
-                            </Button> */}
-                            <Button
-                              type="submit"
-                              size={"sm"}
-                              colorScheme={"secondary"}
-                              leftIcon={<FiFilter />}
-                            >
-                              Filter
-                            </Button>
-                          </Flex>
-                        </form>
-                      )}
-                    </Formik>
-                  </Flex>
-                  {/* <Box
-                    w={"full"}
-                    overflowY={"auto"}
-                    overflowX={"auto"}
-                    maxH={"350px"}
-                    p={2}
-                    bgColor={"gray.200"}
-                    fontSize={"xx-small"}
-                  >
-                    <pre>{JSON.stringify(filterList, null, 2)}</pre>
-                  </Box> */}
-                </PopoverBody>
-                {/* <PopoverFooter>This is the footer</PopoverFooter> */}
-              </PopoverContent>
-            </Portal>
-          </Popover>
-        );
-      }
-      return;
-    }
-  }
 };
 
 export default ProjectManagerPage;
