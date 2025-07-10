@@ -16,6 +16,7 @@ import axiosInstance from "../utils/axiosInstance";
 import axios from "axios";
 import handleAxiosError from "../utils/handleAxiosError";
 import { UsersFullResponse, UsersResponse } from "./useUsers";
+import { ApplicationMasterShortResponse } from "./useApps";
 
 export interface ProjectDataResponse {
   id: string;
@@ -52,6 +53,7 @@ export interface ProjectDataResponse {
   updatedAt: string | null;
   updatedBy: string | null;
   userAssignment: ProjectUserAssignmentResponse[];
+  appsProject: ApplicationMasterShortResponse;
 }
 
 export interface ProjectUserAssignmentResponse {
@@ -70,12 +72,26 @@ export interface ProjectUserAssignmentResponse {
 }
 
 export interface ProjectInsertPayload {
-  projectNo: string | null;
-  projectCode: string;
+  // id: string;
+  projectNo?: string | null;
   projectName: string;
-  projectDesc: string | null;
-  note: string | null;
-  teamId: string;
+  projectDesc?: string | null;
+  note?: string | null;
+  projectCategory: string;
+  projectType: string;
+  projectRegisterDate: string;
+  projectClosedDate: string;
+  proOwnerDivisionId?: string | null;
+  proOwnerGroupId?: string | null;
+  proManageByDivisionId?: string | null;
+  proManageByGroupId?: string | null;
+  proManageByTeamId?: string | null;
+  reqParentId?: string | null;
+  userAssigns: ProjectUserInsertPayload[];
+}
+
+export interface ProjectUserInsertPayload {
+  userId: string;
 }
 
 export interface ProjectUpdatePayload {
@@ -584,7 +600,7 @@ const useProjects = (): useProjectsServices => {
       ENDPOINT_API_BASEURL,
       ENDPOINT_PORT_BASIC
     );
-    const PathEndpoint: string = "/v1/Projects/insert";
+    const PathEndpoint: string = "/v1/Projects/register";
 
     try {
       const response = await axiosInstance.post<

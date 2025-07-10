@@ -159,8 +159,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   FiArrowLeft,
   FiArrowRight,
+  FiCheckCircle,
   FiChevronDown,
   FiChevronUp,
+  FiCornerDownLeft,
+  FiExternalLink,
   FiInfo,
   FiMinusCircle,
   FiPlus,
@@ -190,6 +193,7 @@ import InputSelectOptions from "@/app/components/inputProps/inputSelectOptions";
 import useOrganization, {
   OrganizationResponse,
 } from "@/app/services/useOrganization";
+import useApps, { ApplicationMasterResponse } from "@/app/services/useApps";
 
 const TYPE_REQ: string = REQUIREMENT_TYPE_BRD;
 
@@ -296,7 +300,7 @@ const initialValues: RequirementsInsertPayload = {
   reqNarative: "",
   reqInititateDate: "",
   reqAcceptedDate: null,
-  isCarryOver: "",
+  isCarryOver: "N",
 
   // STG 2 - AREA 1
   assignedToDate: null,
@@ -412,6 +416,7 @@ function RequirementsBRDRegisterView() {
   const { List: ListUsers } = useUsers();
   const { List: ListOrganization } = useOrganization();
   const [isClient, setIsClient] = useState(false);
+  const { List: ListApps } = useApps();
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
@@ -1552,6 +1557,83 @@ function RequirementsBRDRegisterView() {
       formik.setFieldValue("appIntegrationOthersApps", updated);
     }
   };
+
+  // Choose Aplication existing
+  const [ListDataAplicationExisting, setListDataAplicationExisting] = useState<
+    ApplicationMasterResponse[]
+  >([]);
+  const [ApplicationExistingChoosed, setApplicationExistingChoosed] =
+    useState<ApplicationMasterResponse | null>(null);
+
+  const GetDataApplications = async (
+    searchValue: string = "",
+    limit: number = 1
+  ) => {
+    setIsLoadingGroupDivisionSelect(true);
+    const PayloadList: PaggingListPayload = {
+      search: searchValue,
+      limit: limit,
+      page: 0,
+      filterWhere: [],
+      fieldOrder: ["appShortName"],
+      orderDir: "asc",
+    };
+    const token: string = localStorage.getItem("tokenData") as string;
+    const requestData = await ListApps(PayloadList, token);
+    const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+
+    if (isErrorResponse || !requestData) {
+      showToast({
+        description: requestData?.message || RES_GENERIC_ERROR_MSG,
+        statusToast: "error",
+      });
+      return;
+    } else {
+      console.log(requestData);
+      if (requestData.data == null) {
+        showToast({
+          description: "Data return error",
+          statusToast: "error",
+        });
+        return;
+      }
+
+      const itemsData: ApplicationMasterResponse[] =
+        requestData.data as ApplicationMasterResponse[];
+
+      setListDataAplicationExisting(itemsData);
+
+      return;
+    }
+  };
+
+  const SelectedApp = (data: ApplicationMasterResponse) => {
+    setApplicationExistingChoosed(data);
+    // appInitialCode
+    // appInitialName
+    formik.setFieldValue("appInitialCode", data.appCode);
+    formik.setFieldValue("appInitialName", data.appName);
+  };
+
+  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+
+  const handleChangeAppCode = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const onlyAlphabets = e.target.value
+      .replace(/[^a-zA-Z ]/g, "")
+      .toUpperCase();
+    formik.setFieldValue("appInitialCode", onlyAlphabets);
+
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      if (onlyAlphabets.length >= 2) {
+        GetDataApplications(onlyAlphabets, 4);
+      } else {
+        setListDataAplicationExisting([]);
+        formik.setFieldValue("appInitialName", "");
+      }
+    }, 300);
+  };
+  // End - Choose Aplication existing
 
   return (
     <LayoutAdmin>
@@ -3141,7 +3223,7 @@ function RequirementsBRDRegisterView() {
                                     </Flex>
 
                                     <FormControl
-                                      id={`workProgramDivision-${index}`}
+                                      id={`workProgramDivisionIT-${index}`}
                                       isInvalid={
                                         typeof formik.errors.workPrograms?.[
                                           index
@@ -3159,9 +3241,10 @@ function RequirementsBRDRegisterView() {
                                         </FormLabel>
                                         <Stack spacing={0}>
                                           <Select
-                                            id={`workProgramDivision-${index}`}
+                                            id={`workProgramDivisionIT-${index}`}
                                             options={OptionDivision}
                                             isSearchable={true}
+                                            isDisabled={true}
                                             onMenuOpen={async () => {
                                               await LoadDataDivision();
                                             }}
@@ -3204,7 +3287,7 @@ function RequirementsBRDRegisterView() {
                                     </FormControl>
 
                                     <FormControl
-                                      id={`workProgramCodeEx-${index}`}
+                                      id={`workProgramCodeIT-${index}`}
                                       isInvalid={
                                         typeof formik.errors.workPrograms?.[
                                           index
@@ -3222,8 +3305,8 @@ function RequirementsBRDRegisterView() {
                                         </FormLabel>
                                         <Stack spacing={0} h={"full"}>
                                           <VersionCodeInput
-                                            id={`workProgramCodeEx-${index}`}
-                                            name={`workProgramCodeEx-${index}`}
+                                            id={`workProgramCodeIT-${index}`}
+                                            name={`workProgramCodeIT-${index}`}
                                             type="text"
                                             onChange={(val) =>
                                               formik.setFieldValue(
@@ -3253,7 +3336,7 @@ function RequirementsBRDRegisterView() {
                                     </FormControl>
 
                                     <FormControl
-                                      id={`workProgramNameEx-${index}`}
+                                      id={`workProgramNameIT-${index}`}
                                       isInvalid={
                                         typeof formik.errors.workPrograms?.[
                                           index
@@ -3271,8 +3354,8 @@ function RequirementsBRDRegisterView() {
                                         </FormLabel>
                                         <Stack spacing={0} h={"full"}>
                                           <Input
-                                            id={`workProgramNameEx-${index}`}
-                                            name={`workProgramNameEx-${index}`}
+                                            id={`workProgramNameIT-${index}`}
+                                            name={`workProgramNameIT-${index}`}
                                             type="text"
                                             onChange={(e) =>
                                               formik.setFieldValue(
@@ -3302,7 +3385,7 @@ function RequirementsBRDRegisterView() {
                                     </FormControl>
 
                                     <FormControl
-                                      id={`workProgramAccNameEx-${index}`}
+                                      id={`workProgramAccNameIT-${index}`}
                                       isInvalid={
                                         typeof formik.errors.workPrograms?.[
                                           index
@@ -3320,8 +3403,8 @@ function RequirementsBRDRegisterView() {
                                         </FormLabel>
                                         <Stack spacing={0} h={"full"}>
                                           <Input
-                                            id="workProgramAccNameEx"
-                                            name="workProgramAccNameEx"
+                                            id="workProgramAccNameIT"
+                                            name="workProgramAccNameIT"
                                             type="text"
                                             onChange={(e) =>
                                               formik.setFieldValue(
@@ -3351,7 +3434,7 @@ function RequirementsBRDRegisterView() {
                                     </FormControl>
 
                                     <FormControl
-                                      id={`workProgramAccNumberEx-${index}`}
+                                      id={`workProgramAccNumberIT-${index}`}
                                       isInvalid={
                                         typeof formik.errors.workPrograms?.[
                                           index
@@ -3369,8 +3452,8 @@ function RequirementsBRDRegisterView() {
                                         </FormLabel>
                                         <Stack spacing={0} h={"full"}>
                                           <Input
-                                            id="workProgramAccNumberEx"
-                                            name="workProgramAccNumberEx"
+                                            id="workProgramAccNumberIT"
+                                            name="workProgramAccNumberIT"
                                             type="text"
                                             onChange={(e) => {
                                               const onlyNums =
@@ -3405,7 +3488,7 @@ function RequirementsBRDRegisterView() {
                                     </FormControl>
 
                                     <FormControl
-                                      id={`workProgramAccCcUser-${index}`}
+                                      id={`workProgramAccCcUserIT-${index}`}
                                       isInvalid={
                                         typeof formik.errors.workPrograms?.[
                                           index
@@ -3423,8 +3506,8 @@ function RequirementsBRDRegisterView() {
                                         </FormLabel>
                                         <Stack spacing={0} h={"full"}>
                                           <Input
-                                            id="workProgramAccCcUser"
-                                            name="workProgramAccCcUser"
+                                            id="workProgramAccCcUserIT"
+                                            name="workProgramAccCcUserIT"
                                             type="text"
                                             onChange={(e) => {
                                               const raw =
@@ -3459,7 +3542,7 @@ function RequirementsBRDRegisterView() {
                                     </FormControl>
 
                                     <FormControl
-                                      id={`workProgramBudgetUser-${index}`}
+                                      id={`workProgramBudgetUserIT-${index}`}
                                       isInvalid={
                                         typeof formik.errors.workPrograms?.[
                                           index
@@ -3477,7 +3560,7 @@ function RequirementsBRDRegisterView() {
                                         </FormLabel>
                                         <Stack spacing={0} h={"full"}>
                                           <CurrencyInput
-                                            name={`workProgramBudgetUser-${index}`}
+                                            name={`workProgramBudgetUserIT-${index}`}
                                             value={
                                               formik.values.workPrograms[index]
                                                 .workProgramBudget ?? ""
@@ -3498,7 +3581,7 @@ function RequirementsBRDRegisterView() {
                                     </FormControl>
 
                                     <FormControl
-                                      id={`workProgramRealUsers-${index}`}
+                                      id={`workProgramRealUsersIT-${index}`}
                                       isInvalid={
                                         typeof formik.errors.workPrograms?.[
                                           index
@@ -3516,7 +3599,7 @@ function RequirementsBRDRegisterView() {
                                         </FormLabel>
                                         <Stack spacing={0} h={"full"}>
                                           <CurrencyInput
-                                            name={`workProgramRealUsers-${index}`}
+                                            name={`workProgramRealUsersIT-${index}`}
                                             value={
                                               formik.values.workPrograms[index]
                                                 .workProgramReal ?? ""
@@ -3543,7 +3626,7 @@ function RequirementsBRDRegisterView() {
                                         </FormLabel>
                                         <Stack spacing={0} h={"full"}>
                                           <CurrencyInput
-                                            name={`leftOverExt-${index}`}
+                                            name={`leftOverExtIT-${index}`}
                                             value={
                                               formik.values.workPrograms[index]
                                                 .workProgramBudget -
@@ -3591,29 +3674,95 @@ function RequirementsBRDRegisterView() {
                                   Inisial Aplikasi
                                 </FormLabel>
                                 <Stack spacing={0} h={"full"}>
-                                  <Input
-                                    id="appInitialCode"
-                                    name="appInitialCode"
-                                    type="text"
-                                    // onChange={formik.handleChange}
-
-                                    onChange={(e) => {
-                                      const onlyAlphabets =
-                                        e.target.value.replace(
-                                          /[^a-zA-Z]/g,
-                                          ""
-                                        );
-                                      formik.setFieldValue(
-                                        `appInitialCode`,
-                                        onlyAlphabets
-                                      );
-                                    }}
-                                    value={formik.values.appInitialCode ?? ""}
-                                    placeholder={`CMS / SISMON / dsb.`}
-                                    minLength={3}
-                                    maxLength={10}
-                                    isDisabled={ActionLoading}
-                                  />
+                                  <Flex
+                                    w="full"
+                                    justifyContent="start"
+                                    alignItems="center"
+                                    gap={4}
+                                  >
+                                    <Input
+                                      id="appInitialCode"
+                                      name="appInitialCode"
+                                      type="text"
+                                      w={"50%"}
+                                      onChange={handleChangeAppCode}
+                                      value={formik.values.appInitialCode ?? ""}
+                                      placeholder={`CMS / SISMON / dsb.`}
+                                      minLength={3}
+                                      maxLength={10}
+                                      isDisabled={ActionLoading}
+                                    />
+                                    {formik.values.appInitialCode &&
+                                      formik.values.appInitialCode.length > 2 &&
+                                      ListDataAplicationExisting.length <=
+                                        0 && (
+                                        <HStack color={"secondary.500"}>
+                                          <Text fontWeight={600} as={"span"}>
+                                            Aplikasi Baru
+                                          </Text>
+                                          <FiCheckCircle />
+                                        </HStack>
+                                      )}
+                                  </Flex>
+                                  <Box
+                                    w={"full"}
+                                    py={2}
+                                    px={4}
+                                    mt={2}
+                                    bgColor={"gray.200"}
+                                    rounded={radiusStyle}
+                                    as={Wrap}
+                                    display={
+                                      ListDataAplicationExisting.length > 0
+                                        ? "block"
+                                        : "none"
+                                    }
+                                  >
+                                    <Heading as="h4" size="sm">
+                                      Aplikasi Existing
+                                    </Heading>
+                                    <Flex w="full" overflowX="auto">
+                                      <HStack spacing={4} minW="max-content">
+                                        {/* APP LIST */}
+                                        {ListDataAplicationExisting.length >
+                                          0 &&
+                                          ListDataAplicationExisting.map(
+                                            (ap, idx) => (
+                                              <AppicationShowCase
+                                                key={idx}
+                                                dataApp={ap}
+                                                SelectedApp={SelectedApp}
+                                                isActive={
+                                                  formik.values
+                                                    .appInitialCode ==
+                                                  ap.appCode
+                                                }
+                                              />
+                                            )
+                                          )}
+                                      </HStack>
+                                    </Flex>
+                                  </Box>
+                                  <Box
+                                    w={"full"}
+                                    overflowY={"auto"}
+                                    overflowX={"auto"}
+                                    h={"350px"}
+                                    p={4}
+                                    mt={2}
+                                    bgColor={"gray.200"}
+                                    rounded={radiusStyle}
+                                    display={"none"}
+                                  >
+                                    <Text fontWeight={600}>Data Apps</Text>
+                                    <pre>
+                                      {JSON.stringify(
+                                        ListDataAplicationExisting,
+                                        null,
+                                        2
+                                      )}
+                                    </pre>
+                                  </Box>
                                   <FormErrorMessage>
                                     {formik.errors.appInitialCode}
                                   </FormErrorMessage>
@@ -4485,5 +4634,69 @@ function RequirementsBRDRegisterView() {
     </LayoutAdmin>
   );
 }
+
+interface AppicationShowCaseProps {
+  dataApp: ApplicationMasterResponse;
+  SelectedApp: (data: ApplicationMasterResponse) => void;
+  isActive?: boolean;
+}
+
+const AppicationShowCase = ({
+  dataApp,
+  SelectedApp,
+  isActive = false,
+}: AppicationShowCaseProps) => {
+  const [isHovered, setIsHovered] = useState(false);
+  return (
+    <Flex
+      as={HStack}
+      p={2}
+      pl={2}
+      pr={4}
+      bg={isActive ? "yellow.300" : "secondary.200"}
+      color={"gray.800"}
+      alignItems={"center"}
+      rounded={"full"} // Make it pill-shaped like a tag
+      cursor={"pointer"}
+      boxShadow={"md"}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      _hover={{
+        bg: "yellow.300",
+      }}
+      _active={{
+        bg: "yellow.600",
+      }}
+      transition="background-color 0.3s ease, color 0.3s ease"
+      zIndex={99}
+      onClick={() => SelectedApp(dataApp)}
+    >
+      <Box
+        bgColor="secondary.500"
+        color="white"
+        p={2}
+        w="44px"
+        h="44px"
+        rounded="full"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        textAlign="center"
+        fontSize="md"
+        fontWeight="bold"
+        overflow="hidden"
+        textOverflow="ellipsis"
+        whiteSpace="nowrap"
+        flexShrink={0}
+      >
+        {dataApp.appCode}
+      </Box>
+
+      <Text userSelect="none" fontWeight={600} fontSize={"small"}>
+        {dataApp.appName}
+      </Text>
+    </Flex>
+  );
+};
 
 export default RequirementsBRDRegisterView;

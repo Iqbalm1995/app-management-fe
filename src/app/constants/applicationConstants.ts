@@ -2,8 +2,7 @@ import { OptionData, OptionListProps } from "../types/masterTypes";
 
 // CONST DATA =------------------------------------------------------------------
 
-export const DIVISION_ID_IT_BJB: string =
-  "c16c8808-f096-4a42-ac0b-3e7b8cc1c813";
+export const DIVISION_ID_IT_BJB: string = "8922E4AD-8183-B61B-34D1-CF629361D";
 
 // CONST DATA =------------------------------------------------------------------
 
@@ -238,6 +237,34 @@ export const APP_RELATED_OPTIONS = ["NON-REGULATOR", "REGULATOR"];
 export const APP_TRANSACTIONAL_OPTIONS = ["TRANSACTIONAL", "NON-REGULATOR"];
 
 export const APP_OPERATIONAL_OPTIONS = ["24-HOUR", "NO"];
+
+export const MAINTENANCE_TYPE_OPTIONS = ["BUG FIXING", "TOOLS", "FEATURE"];
+
+export const MAINTENANCE_CATEGORY_OPTIONS = [
+  "ECHANCEMENT",
+  "CORRECTIVE",
+  "IMPROVEMENT",
+  "ADDITION",
+];
+
+export const PROJEC_CATEGORY_OPTIONS = [
+  "TRANSACTIONAL",
+  "REPORT",
+  "JASA",
+  "OPERASIONAL",
+  "MONITORING",
+  "LAINNYA",
+];
+
+export const PROJEC_TYPE_OPTIONS = [
+  "INTERNAL DEVELOPMENT",
+  "EXTERNAL DEVELOPMENT",
+  "JOIN DEVELOPMENT",
+  "PENGADAAN",
+  "LAINNYA",
+];
+
+export const ENV_SIDE_OPTIONS = ["ALL SIDE", "BACKEND", "FRONTEND"];
 
 export const shortDay = ["S", "M", "T", "W", "T", "F", "S"];
 export const fullDay = [

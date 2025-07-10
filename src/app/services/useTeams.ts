@@ -35,6 +35,15 @@ export interface TeamsResponse {
   group: TeamOrganization;
 }
 
+export interface TeamsShortResponse {
+  id: string;
+  teamCode: string;
+  teamName: string;
+  teamPict?: string | null;
+  orgGroupId: string;
+  orgGroupCode: string;
+}
+
 export interface TeamOrganization {
   id: string;
   orgType: string;

@@ -284,8 +284,35 @@ export interface BacklogUpdatePayload {
   reffId: string | null;
 }
 
+export function mapBacklogArrayToUpdatePayload(
+  dataArray: BacklogDataResponse[]
+): BacklogUpdatePayload[] {
+  return dataArray.map((data) => ({
+    id: data.id,
+    backlogName: data.backlogName,
+    backlogDesc: data.backlogDesc,
+    envSide: data.envSide,
+    maintenanceCategory: data.maintenanceCategory,
+    maintenanceType: data.maintenanceType,
+    rppb: data.rppb,
+    licensing: data.licensing,
+    backogRegistered: data.backogRegistered,
+    backlogStartdate: data.backlogStartdate,
+    backlogEnddate: data.backlogEnddate,
+    urgency: data.urgency,
+    impact: data.impact,
+    priority: data.priority,
+    developmentStatus: data.developmentStatus,
+    reffId: data.reffId,
+  }));
+}
+
 interface useRequirements {
   List: (
+    payload: PaggingListPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<RequirementsResponse[] | null> | null>;
+  ListUnregistProject: (
     payload: PaggingListPayload,
     token: string
   ) => Promise<ApiGenericResponse<RequirementsResponse[] | null> | null>;
@@ -312,6 +339,10 @@ interface useRequirements {
   ) => Promise<ApiGenericResponse<string | null> | null>;
   UpdateBacklog: (
     payload: BacklogUpdatePayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  UpdateBacklogBatch: (
+    payload: BacklogUpdatePayload[],
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
   DeleteBacklog: (
@@ -341,6 +372,47 @@ const useRequirements = (): useRequirements => {
       ENDPOINT_PORT_BASIC
     );
     const PathEndpoint: string = "/v1/Requirement/list";
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<RequirementsResponse[]>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const ListUnregistProject = async (
+    payload: PaggingListPayload,
+    token: string
+  ): Promise<ApiGenericResponse<RequirementsResponse[] | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/Requirement/list-unregister-project";
     try {
       const response = await axiosInstance.post<
         ApiGenericResponse<RequirementsResponse[]>
@@ -617,6 +689,47 @@ const useRequirements = (): useRequirements => {
     }
   };
 
+  const UpdateBacklogBatch = async (
+    payload: BacklogUpdatePayload[],
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Requirement/backlog/update-batch`;
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
   const DeleteBacklog = async (
     id: string,
     token: string
@@ -701,12 +814,14 @@ const useRequirements = (): useRequirements => {
 
   return {
     List,
+    ListUnregistProject,
     GetDetailById,
     InsertReq,
     ListBacklog,
     GetDetailBacklogById,
     InsertBacklog,
     UpdateBacklog,
+    UpdateBacklogBatch,
     DeleteBacklog,
     ListReqMedia,
     isLoading,

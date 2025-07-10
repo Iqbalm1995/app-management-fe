@@ -44,6 +44,7 @@ import useRequirements, {
   RequirementsResponse,
 } from "@/app/services/useRequirements";
 import useTeams, { TeamsResponse } from "@/app/services/useTeams";
+import { UsersResponse } from "@/app/services/useUsers";
 import {
   addParamFilter,
   addParamFilterUpdate,
@@ -155,7 +156,7 @@ function ProjectManagerPage() {
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
   const { List, GetDetailById, InsertProjects } = useProjects();
-  const { List: ListReq } = useRequirements();
+  const { ListUnregistProject: ListReq } = useRequirements();
 
   // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -188,7 +189,7 @@ function ProjectManagerPage() {
   const [globalFilter, setGlobalFilter] = useState<string>("");
   const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
     pageIndex: 0,
-    pageSize: 3,
+    pageSize: 5,
   });
   const [ActionLoading, setActionLoading] = useState(false);
   const [IsEditMode, setIsEditMode] = useState(false);
@@ -224,6 +225,32 @@ function ProjectManagerPage() {
                 {pageIndex * pageSize + info.row.index + 1}.
               </Heading>
             </Flex>
+            <Box
+              bgColor="secondary.500"
+              color="white"
+              p={2}
+              ml={1}
+              mr={3}
+              w="44px"
+              h="44px"
+              rounded="full"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              textAlign="center"
+              fontSize={
+                info.row.original.appsProject.appShortName.length > 4
+                  ? "xs"
+                  : "sm"
+              }
+              fontWeight="bold"
+              overflow="hidden"
+              textOverflow="ellipsis"
+              whiteSpace="nowrap"
+              flexShrink={0}
+            >
+              {info.row.original.appsProject.appShortName}
+            </Box>
             <Grid templateColumns="repeat(12, 1fr)" gap={4} w={"full"}>
               <GridItem
                 colSpan={{ base: 12, sm: 12, md: 8, lg: 8 }}
@@ -261,6 +288,11 @@ function ProjectManagerPage() {
                   h={"full"}
                   w={"full"}
                 >
+                  <AvatarGroup size={"sm"} max={4}>
+                    {info.row.original.userAssignment.map((u, idx) => (
+                      <Avatar key={idx} name={u.userData.nama} />
+                    ))}
+                  </AvatarGroup>
                   <Link
                     href={`projects-manager/detail?projectId=${info.row.original.id}`}
                   >
@@ -465,7 +497,10 @@ function ProjectManagerPage() {
           <Flex as={Stack} w={"full"}>
             <TeamProfile />
             <Grid templateColumns="repeat(12, 1fr)" gap={5}>
-              <GridItem colSpan={{ base: 12, sm: 12, md: 9, lg: 9 }} w={"full"}>
+              <GridItem
+                colSpan={{ base: 12, sm: 12, md: 12, lg: 12 }}
+                w={"full"}
+              >
                 <Flex as={Stack} w={"full"} spacing={2} pb={5}>
                   <Grid
                     templateColumns="repeat(2, 1fr)"
@@ -542,37 +577,6 @@ function ProjectManagerPage() {
                   </VStack>
                 </Flex>
               </GridItem>
-              <GridItem colSpan={{ base: 12, sm: 12, md: 3, lg: 3 }} w={"full"}>
-                <Flex
-                  w={"full"}
-                  as={VStack}
-                  spacing={7}
-                  justifyContent={"start"}
-                  alignItems={"start"}
-                  //   rounded={radiusStyle}
-                  bgColor={colorMode == "light" ? "white" : "gray.800"}
-                  //   boxShadow={"lg"}
-                  borderLeft={"1px"}
-                  borderColor={colorMode == "light" ? "gray.300" : "gray.600"}
-                  minH={"60vh"}
-                  p={5}
-                  mt={5}
-                >
-                  <Flex
-                    w={"full"}
-                    justifyContent={"start"}
-                    alignItems={"center"}
-                    as={HStack}
-                    spacing={2}
-                    color={"gray.800"}
-                  >
-                    <FaCog size={16} />
-                    <Text fontWeight={600} fontSize={18}>
-                      Options
-                    </Text>
-                  </Flex>
-                </Flex>
-              </GridItem>
             </Grid>
           </Flex>
         </CardBody>
@@ -583,7 +587,7 @@ function ProjectManagerPage() {
 
 const TeamProfile = () => {
   const showToast = useToastHelper();
-  const { GetDetailById } = useTeams();
+  const { GetDetailById, ListMembers } = useTeams();
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -611,6 +615,7 @@ const TeamProfile = () => {
   // End SetUp auth data on current page
 
   const [DataTeam, setDataTeam] = useState<TeamsResponse | null>(null);
+  const [DataTeamMembers, setDataTeamMembers] = useState<UsersResponse[]>([]);
   const [RefreshData, setRefreshData] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(true);
   const [ActionLoading, setActionLoading] = useState(false);
@@ -619,7 +624,7 @@ const TeamProfile = () => {
   useEffect(() => {
     setIsLoadingProcess(true);
     if (DataAuth && DataAuth.team) {
-      const GetDataList = async () => {
+      const GetDataTeam = async () => {
         const requestData = await GetDetailById(
           DataAuth.team ? DataAuth.team.id : "",
           tokenData
@@ -657,6 +662,44 @@ const TeamProfile = () => {
         }
       };
 
+      const PayloadList: PaggingListPayloadCustom = {
+        search: "",
+        teamId: DataAuth.team.id,
+        limit: 0,
+        page: MAX_SIZE_TABLE,
+        filterWhere: [],
+        fieldOrder: ["nama"],
+        orderDir: "asc",
+      };
+
+      setIsLoadingProcess(true);
+      const GetDataList = async () => {
+        const requestData = await ListMembers(PayloadList, tokenData);
+        const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+
+        if (isErrorResponse || !requestData) {
+          showToast({
+            description: requestData?.message || RES_GENERIC_ERROR_MSG,
+            statusToast: "error",
+          });
+          return;
+        } else {
+          console.log(requestData);
+          if (requestData.data == null) {
+            showToast({
+              description: "Data return error",
+              statusToast: "error",
+            });
+            return;
+          }
+
+          const itemsData: UsersResponse[] =
+            requestData.data as UsersResponse[];
+          setDataTeamMembers(itemsData);
+        }
+      };
+
+      GetDataTeam();
       GetDataList();
     }
   }, [DataAuth, RefreshData]);
@@ -717,39 +760,49 @@ const TeamProfile = () => {
                   />
                 </Box>
                 <Flex
-                  //   bg={"red"}
-                  //   maxW={"280px"}
                   alignItems={"start"}
                   color={"white"}
                   as={Stack}
-                  pt={6}
+                  pt={5}
                   spacing={1}
                 >
                   <Heading as="h2" size="xl">
                     {DataTeam?.teamName}
                   </Heading>
-                  <Text
-                    fontWeight={550}
-                    fontSize={"xl"}
-                    textStyle={"italic"}
-                    as={"i"}
+                  <Flex
+                    alignItems={"start"}
+                    color={"white"}
+                    as={Stack}
+                    spacing={0}
                   >
-                    #{DataTeam?.teamCode}
-                  </Text>
+                    <Text
+                      fontWeight={600}
+                      fontSize={"md"}
+                      textStyle={"italic"}
+                      as={"i"}
+                      lineHeight={1}
+                    >
+                      {DataTeam?.division.orgName}
+                    </Text>
+                    <Text
+                      fontWeight={500}
+                      fontSize={"md"}
+                      textStyle={"italic"}
+                      as={"i"}
+                      lineHeight={1.5}
+                    >
+                      {DataTeam?.group.orgName}
+                    </Text>
+                  </Flex>
                 </Flex>
                 <Spacer />
-                {/* <Flex>
-                  {DataTeam && DataTeam.teamUserMembers.length > 0 && (
-                    <AvatarGroup size="md" max={4}>
-                      {DataTeam.teamUserMembers.map((dt, index) => (
-                        <Avatar
-                          key={index}
-                          name={`${dt.userFirstName} ${dt.userLastName}`}
-                        />
-                      ))}
-                    </AvatarGroup>
-                  )}
-                </Flex> */}
+                <Flex>
+                  <AvatarGroup size="md" max={4}>
+                    {DataTeamMembers.map((dt, index) => (
+                      <Avatar key={index} name={`${dt.nama}`} />
+                    ))}
+                  </AvatarGroup>
+                </Flex>
               </Flex>
             </Container>
           </Flex>
@@ -774,7 +827,7 @@ const ModalRegisterProject = () => {
   const { isAuthenticated, authData, goLogout } = useAuth();
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
-  const { List: ListReq } = useRequirements();
+  const { ListUnregistProject: ListReq } = useRequirements();
   const { List: ListOrganization } = useOrganization();
 
   // SetUp auth data on current page

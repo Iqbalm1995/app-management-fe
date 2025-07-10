@@ -188,14 +188,14 @@ const LinkItems: LinkItemProps[] = [
       // },
     ],
   },
-  {
-    name: "Memo",
-    icon: CiMemoPad,
-    link: "/memos",
-    role: ["admin"],
-    menuID: "1",
-    children: [],
-  },
+  // {
+  //   name: "Memo",
+  //   icon: CiMemoPad,
+  //   link: "/memos",
+  //   role: ["admin"],
+  //   menuID: "1",
+  //   children: [],
+  // },
   // {
   //   name: "Apps",
   //   icon: FiPlayCircle,
@@ -465,7 +465,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
           </DrawerContent>
         </Drawer>
         <Flex
-          transition="0.2s ease"
+          transition="0.5s ease"
           position="fixed"
           top={scrollY > 0 ? 2 : 0}
           left={0}
@@ -478,7 +478,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
           <Flex
             w={"full"}
             px={{ base: 4, md: 4 }}
-            transition="0.2s ease"
+            transition="0.5s ease"
             height="20"
             alignItems="center"
             backdropFilter={"blur(20px)"} // Apply Gaussian blur in light mode
@@ -705,6 +705,7 @@ const SidebarContent = ({
   }, []);
   return (
     <Box
+      transition="0.5s ease"
       p={2}
       w={{ base: "full", md: LiteModeTrigger ? "95px" : WIDTH_SIDEBAR }}
       pos="fixed"

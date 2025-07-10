@@ -15,139 +15,120 @@ import {
 import axiosInstance from "../utils/axiosInstance";
 import axios from "axios";
 import handleAxiosError from "../utils/handleAxiosError";
-import { OrganizationShortResponse } from "./useOrganization";
-import { TeamsShortResponse } from "./useTeams";
 
-export interface UsersResponse {
+export interface ApplicationMasterResponse {
   id: string;
-  nrp: string;
-  nama: string;
-  nip: string;
-  userId: string;
-  kodeCabang?: string | null;
-  namaCabang?: string | null;
-  kodeInduk?: string | null;
-  namaInduk?: string | null;
-  kodeKanwil?: string | null;
-  namaKanwil?: string | null;
-  jabatan?: string | null;
-  email: string;
-  idFungsi?: string | null;
-  namaFungsi?: string | null;
-  kodePenempatan?: string | null;
-  namaPenempatan?: string | null;
-  idUim?: string | null;
-  costCentre?: string | null;
-  isApproval?: string | null;
-  kodeUnitKerja?: string | null;
-  namaUnitKerja?: string | null;
-  kodeJabatan?: string | null;
-  phoneNumber?: string | null;
-  userStatus: string;
-  profilePict?: string | null;
-  lastSync?: string | null;
+  appCode: string;
+  appShortName: string;
+  appName: string;
+  appsDesc?: string | null;
+  note?: string | null;
+  iconApps?: string | null;
+  appsStatus: string;
+  appOwnerDivisionId?: string | null;
+  appOwnerDivisionCode?: string | null;
+  appOwnerDivisionName?: string | null;
+  appOwnerGroupId?: string | null;
+  appOwnerGroupCode?: string | null;
+  appOwnerGroupName?: string | null;
+  appManageByDivisionId?: string | null;
+  appManageByDivisionCode?: string | null;
+  appManageByDivisionName?: string | null;
+  appManageByGroupId?: string | null;
+  appManageByGroupCode?: string | null;
+  appManageByGroupName?: string | null;
+  appManageByTeamId?: string | null;
+  appManageByTeamCode?: string | null;
+  appManageByTeamName?: string | null;
+  reqParentId?: string | null;
   createdAt: string;
   createdBy: string;
   updatedAt?: string | null;
   updatedBy?: string | null;
-  team: UserTeamResponse | null;
-  teamRole: UserTeamRoleResponse | null;
 }
 
-export interface UsersFullResponse {
+export interface ApplicationMasterShortResponse {
   id: string;
-  userCode: string;
-  userFirstName: string;
-  userLastName: string;
-  username: string;
-  isActive: string;
-  profilePict: string | null;
-  lastLogin: string | null;
-  divisionId: string | null;
-  createdAt: string;
-  createdBy: string;
-  userEmail: string | null;
-  userPhoneNumber: string | null;
-  role: UserRoleResponse;
-  team: UserTeamResponse | null;
-  teamRole: UserTeamRoleResponse | null;
+  appCode: string;
+  appShortName: string;
+  appName: string;
+  iconApps?: string | null;
+  appsStatus: string;
+  reqParentId?: string | null;
 }
 
-export interface UserRoleResponse {
+export interface ApplicationMasterUpdateDataPayload {
   id: string;
-  roleCode: string;
-  roleName: string;
+  appShortName: string;
+  appName: string;
+  appsDesc?: string | null;
+  note?: string | null;
+  appOwnerDivisionId?: string | null;
+  appOwnerGroupId?: string | null;
+  appManageByDivisionId?: string | null;
+  appManageByGroupId?: string | null;
+  appManageByTeamId?: string | null;
+  reqParentId?: string | null;
 }
 
-export interface UserTeamResponse {
+export interface ApplicationMasterUpdatePictPayload {
   id: string;
-  teamCode: string;
-  teamName: string;
-  teamPict?: string | null;
-  orgGroupId?: string | null;
-  orgGroupCode?: string | null;
+  uploadPict?: File | null;
 }
 
-export interface UserTeamRoleResponse {
+export interface ApplicationMasterUpdateStatusPayload {
   id: string;
-  parentId?: string | null;
-  category: string;
-  specCode: string;
-  specName: string;
-  specDesc?: string | null;
-  createdAt?: string | null;
-  createdBy?: string | null;
+  appsStatus: string;
 }
 
-export interface UserOrganizationResponse {
-  division: OrganizationShortResponse;
-  group?: OrganizationShortResponse | null;
-  team?: TeamsShortResponse | null;
-}
-
-interface useUsersServices {
+interface useAppsServices {
   List: (
     payload: PaggingListPayload,
     token: string
-  ) => Promise<ApiGenericResponse<UsersResponse[] | null> | null>;
+  ) => Promise<ApiGenericResponse<ApplicationMasterResponse[] | null> | null>;
   GetDetailById: (
-    id: string,
+    appId: string,
     token: string
-  ) => Promise<ApiGenericResponse<UsersResponse | null> | null>;
-  GetDetailByUserId: (
-    UserId: string,
+  ) => Promise<ApiGenericResponse<ApplicationMasterResponse | null> | null>;
+  GetDetailByInitial: (
+    initial: string,
     token: string
-  ) => Promise<ApiGenericResponse<UsersResponse | null> | null>;
-  GetDetailOrgById: (
-    id: string,
+  ) => Promise<ApiGenericResponse<ApplicationMasterResponse | null> | null>;
+  UpdateData: (
+    payload: ApplicationMasterUpdateDataPayload,
     token: string
-  ) => Promise<ApiGenericResponse<UserOrganizationResponse | null> | null>;
-  GetDetailOrgByUserId: (
-    UserId: string,
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  UpdatePict: (
+    payload: ApplicationMasterUpdatePictPayload,
     token: string
-  ) => Promise<ApiGenericResponse<UserOrganizationResponse | null> | null>;
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  UpdateStatus: (
+    payload: ApplicationMasterUpdateStatusPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+
   isLoading: boolean;
   error: string | null;
 }
 
-const useUsers = (): useUsersServices => {
+const useApps = (): useAppsServices => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   const List = async (
     payload: PaggingListPayload,
     token: string
-  ): Promise<ApiGenericResponse<UsersResponse[] | null> | null> => {
+  ): Promise<ApiGenericResponse<ApplicationMasterResponse[] | null> | null> => {
     setIsLoading(true);
     setError(null);
     const UrlEndpoint: string = buildUrlPort(
       ENDPOINT_API_BASEURL,
       ENDPOINT_PORT_BASIC
     );
-    const PathEndpoint: string = "/v1/Users/integrated/list";
+    const PathEndpoint: string = "/v1/Application/list";
     try {
       const response = await axiosInstance.post<
-        ApiGenericResponse<UsersResponse[]>
+        ApiGenericResponse<ApplicationMasterResponse[]>
       >(`${UrlEndpoint}${PathEndpoint}`, payload, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -176,19 +157,19 @@ const useUsers = (): useUsersServices => {
   };
 
   const GetDetailById = async (
-    id: string,
+    appId: string,
     token: string
-  ): Promise<ApiGenericResponse<UsersResponse | null> | null> => {
+  ): Promise<ApiGenericResponse<ApplicationMasterResponse | null> | null> => {
     setIsLoading(true);
     setError(null);
     const UrlEndpoint: string = buildUrlPort(
       ENDPOINT_API_BASEURL,
       ENDPOINT_PORT_BASIC
     );
-    const PathEndpoint: string = `/v1/Users/integrated/${id}`;
+    const PathEndpoint: string = `/v1/Application/${appId}`;
     try {
       const response = await axiosInstance.get<
-        ApiGenericResponse<UsersResponse>
+        ApiGenericResponse<ApplicationMasterResponse>
       >(`${UrlEndpoint}${PathEndpoint}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -216,20 +197,20 @@ const useUsers = (): useUsersServices => {
     }
   };
 
-  const GetDetailByUserId = async (
-    UserId: string,
+  const GetDetailByInitial = async (
+    initial: string,
     token: string
-  ): Promise<ApiGenericResponse<UsersResponse | null> | null> => {
+  ): Promise<ApiGenericResponse<ApplicationMasterResponse | null> | null> => {
     setIsLoading(true);
     setError(null);
     const UrlEndpoint: string = buildUrlPort(
       ENDPOINT_API_BASEURL,
       ENDPOINT_PORT_BASIC
     );
-    const PathEndpoint: string = `/v1/Users/integrated/user-id/${UserId}`;
+    const PathEndpoint: string = `/v1/Application/initial/${initial}`;
     try {
       const response = await axiosInstance.get<
-        ApiGenericResponse<UsersResponse>
+        ApiGenericResponse<ApplicationMasterResponse>
       >(`${UrlEndpoint}${PathEndpoint}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -257,21 +238,21 @@ const useUsers = (): useUsersServices => {
     }
   };
 
-  const GetDetailOrgById = async (
-    id: string,
+  const UpdateData = async (
+    payload: ApplicationMasterUpdateDataPayload,
     token: string
-  ): Promise<ApiGenericResponse<UserOrganizationResponse | null> | null> => {
+  ): Promise<ApiGenericResponse<string | null> | null> => {
     setIsLoading(true);
     setError(null);
     const UrlEndpoint: string = buildUrlPort(
       ENDPOINT_API_BASEURL,
       ENDPOINT_PORT_BASIC
     );
-    const PathEndpoint: string = `/v1/Users/integrated/organization/user/${id}`;
+    const PathEndpoint: string = `/v1/Application/update`;
     try {
-      const response = await axiosInstance.get<
-        ApiGenericResponse<UserOrganizationResponse>
-      >(`${UrlEndpoint}${PathEndpoint}`, {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -298,21 +279,73 @@ const useUsers = (): useUsersServices => {
     }
   };
 
-  const GetDetailOrgByUserId = async (
-    id: string,
+  const UpdatePict = async (
+    payload: ApplicationMasterUpdatePictPayload,
     token: string
-  ): Promise<ApiGenericResponse<UserOrganizationResponse | null> | null> => {
+  ): Promise<ApiGenericResponse<string | null> | null> => {
     setIsLoading(true);
     setError(null);
     const UrlEndpoint: string = buildUrlPort(
       ENDPOINT_API_BASEURL,
       ENDPOINT_PORT_BASIC
     );
-    const PathEndpoint: string = `/v1/Users/integrated/organization/user-id/${id}`;
+    const PathEndpoint: string = "/v1/Application/update/pict";
+
+    // Create FormData and append payload fields
+
+    const formData = new FormData();
+    formData.append("Id", payload.id);
+    // Only append if uploadPict is not null
+    if (payload.uploadPict !== null && payload.uploadPict !== undefined) {
+      formData.append("uploadPict", payload.uploadPict);
+    }
+
     try {
-      const response = await axiosInstance.get<
-        ApiGenericResponse<UserOrganizationResponse>
-      >(`${UrlEndpoint}${PathEndpoint}`, {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const UpdateStatus = async (
+    payload: ApplicationMasterUpdateStatusPayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Application/update/pict`;
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -342,12 +375,13 @@ const useUsers = (): useUsersServices => {
   return {
     List,
     GetDetailById,
-    GetDetailByUserId,
-    GetDetailOrgById,
-    GetDetailOrgByUserId,
+    GetDetailByInitial,
+    UpdateData,
+    UpdatePict,
+    UpdateStatus,
     isLoading,
     error,
   };
 };
 
-export default useUsers;
+export default useApps;

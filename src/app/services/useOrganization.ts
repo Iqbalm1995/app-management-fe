@@ -24,6 +24,13 @@ export interface OrganizationResponse {
   createdBy: string;
 }
 
+export interface OrganizationShortResponse {
+  id: string;
+  orgType: string;
+  orgCode: string;
+  orgName: string;
+}
+
 interface useOrganizationServices {
   // DIVISION
   List: (

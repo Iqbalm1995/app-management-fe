@@ -12,6 +12,7 @@ interface InputSelectProps {
   handleSelectedData: (selected: OptionListProps) => void;
   handleUnSelectedData: () => void;
   placeholder: string;
+  isDisable?: boolean;
 }
 
 export default function InputSelectOptions({
@@ -21,6 +22,7 @@ export default function InputSelectOptions({
   handleSelectedData,
   handleUnSelectedData,
   placeholder = "Pilih Data",
+  isDisable = false,
 }: InputSelectProps) {
   const [isClient, setIsClient] = useState(false);
 
@@ -48,6 +50,7 @@ export default function InputSelectOptions({
         placeholder={placeholder}
         // isLoading={IsLoadingDivisionSelect}
         value={SelectedData}
+        isDisabled={isDisable}
       />
     </>
   );
