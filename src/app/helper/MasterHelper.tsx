@@ -84,6 +84,26 @@ export function formatDateInput(inputDate: string): string {
   return `${day}-${month}-${year}`;
 }
 
+export function formatDateInputCustom(
+  dateString: string,
+  sparator: "-" | "|" | "/"
+): string {
+  // Parse the date string into a Date object
+  const date = new Date(dateString);
+
+  // Extract day, month, year, hours, and minutes
+  const day = date.getDate().toString().padStart(2, "0"); // Pad with '0' if necessary
+  const month = (date.getMonth() + 1).toString().padStart(2, "0"); // Months are zero-indexed, so add 1
+  const year = date.getFullYear();
+  const hours = date.getHours().toString().padStart(2, "0"); // Pad with '0' if necessary
+  const minutes = date.getMinutes().toString().padStart(2, "0"); // Pad with '0' if necessary
+
+  // Format the date and time into the desired format
+  const formattedDate = `${day}${sparator}${month}${sparator}${year}`;
+
+  return formattedDate;
+}
+
 export function formatDateReverse(inputDate: string): string {
   try {
     const parts = inputDate.split("-");
@@ -120,6 +140,16 @@ export function formatToRupiah(number: number): string {
   const formatter = new Intl.NumberFormat("id-ID", {
     style: "currency",
     currency: "IDR",
+    minimumFractionDigits: 0,
+  });
+
+  return formatter.format(number);
+}
+
+export function formatToRupiahRp(number: number): string {
+  const formatter = new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "Rp. ",
     minimumFractionDigits: 0,
   });
 

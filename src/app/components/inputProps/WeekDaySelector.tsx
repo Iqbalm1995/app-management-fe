@@ -1,3 +1,5 @@
+"use client";
+
 import { fullDay, shortDay } from "@/app/constants/applicationConstants";
 import { HStack, Button } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
@@ -9,7 +11,7 @@ interface WeekdaySelectorProps {
   onChange?: (val: string) => void;
 }
 
-export default function WeekdaySelector({
+export function WeekdaySelector({
   value = "",
   onChange,
 }: WeekdaySelectorProps) {
@@ -55,6 +57,38 @@ export default function WeekdaySelector({
             variant={active ? "solid" : "outline"}
             colorScheme={active ? "secondary" : "gray"}
             onClick={() => toggleDay(day)}
+          >
+            {shortDay[i]}
+          </Button>
+        );
+      })}
+    </HStack>
+  );
+}
+
+export function WeekdayView({ valueData = "" }: { valueData: string }) {
+  // split the incoming string once, trim empty parts
+  const [selected, setSelected] = useState<string[]>(
+    valueData
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean)
+  );
+
+  return (
+    <HStack spacing={2}>
+      {fullDay.map((day, i) => {
+        const active = selected.includes(day);
+        return (
+          <Button
+            key={day}
+            size="sm"
+            borderRadius="full"
+            w="32px"
+            h="32px"
+            p={0}
+            variant={active ? "solid" : "outline"}
+            colorScheme={active ? "secondary" : "gray"}
           >
             {shortDay[i]}
           </Button>

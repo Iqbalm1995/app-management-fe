@@ -185,7 +185,6 @@ import EmailInputMask from "@/app/components/inputProps/emailInputMask";
 import VersionCodeInput from "@/app/components/inputProps/versionInput";
 import { FaTrashAlt } from "react-icons/fa";
 import OtherInputAppsStringSeparator from "@/app/components/inputProps/InputMultiTags";
-import WeekdaySelector from "@/app/components/inputProps/WeekDaySelector";
 import InputTagsArea from "@/app/components/inputProps/InputMultiTagsArea";
 import { FeatureRecomentionsBacklogs } from "@/app/helper/FeatureDataRecomendations";
 import IdentificationNumberInput from "@/app/components/inputProps/IdentificationNumberInput";
@@ -194,6 +193,7 @@ import useOrganization, {
   OrganizationResponse,
 } from "@/app/services/useOrganization";
 import useApps, { ApplicationMasterResponse } from "@/app/services/useApps";
+import { WeekdaySelector } from "@/app/components/inputProps/WeekDaySelector";
 
 const TYPE_REQ: string = REQUIREMENT_TYPE_BRD;
 

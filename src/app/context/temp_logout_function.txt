@@ -1,0 +1,53 @@
+  const handleLogout = async () => {
+    setLoading(true);
+    setTimeout(() => {
+      const authData: AuthDataModelInterface = {
+        dataLogin: null,
+        dataAuth: null,
+        statusLogin: STATUS_LOGIN_OFF,
+      };
+      
+      // Clear auth data
+      localStorage.setItem("authData", JSON.stringify(authData));
+      localStorage.setItem("tokenData", "");
+      
+      // Clear team data from localStorage
+      // First get the current auth data to extract team ID if available
+      const storedData = localStorage.getItem("authData");
+      if (storedData) {
+        try {
+          const currentAuthData: AuthDataModelInterface = JSON.parse(storedData);
+          if (currentAuthData.dataLogin && 
+              (currentAuthData.dataLogin as any).team && 
+              (currentAuthData.dataLogin as any).team.id) {
+            const teamId = (currentAuthData.dataLogin as any).team.id;
+            
+            // Remove team data
+            localStorage.removeItem(`teamData_${teamId}`);
+            localStorage.removeItem(`teamData_${teamId}_timestamp`);
+            
+            console.log(`Cleared team data for team ID: ${teamId}`);
+          }
+        } catch (error) {
+          console.error("Error clearing team data from localStorage:", error);
+        }
+      }
+      
+      // Clear any other potential team data by scanning localStorage
+      try {
+        // Find and remove all items that start with "teamData_"
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('teamData_')) {
+            localStorage.removeItem(key);
+            console.log(`Removed localStorage item: ${key}`);
+          }
+        });
+      } catch (error) {
+        console.error("Error scanning localStorage for team data:", error);
+      }
+      
+      setAuthData(authData);
+      setLoading(false);
+      redirect(LINK_MENU_ROOT);
+    }, DELAY_LOW);
+  };
