@@ -13,6 +13,7 @@ import {
   boardInProgressLabel,
   boardInReview,
   boardToDoLabel,
+  MAX_SIZE_TABLE,
   radiusStyle,
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
@@ -29,7 +30,11 @@ import useProjects, { ProjectDataResponse } from "@/app/services/useProjects";
 import useRequirements, {
   BacklogDataResponse,
 } from "@/app/services/useRequirements";
-import useTasks, { TaskBoardViewModel } from "@/app/services/useTasks";
+import useTasks, {
+  TaskBoardViewModel,
+  TaskViewModel,
+} from "@/app/services/useTasks";
+import { PaggingListPayload } from "@/app/types/masterTypes";
 import {
   Avatar,
   AvatarGroup,
@@ -121,7 +126,7 @@ function KanbanBacklogPage() {
 
   const { GetDetailById: GetDetailProjectById } = useProjects();
   const { GetDetailBacklogById } = useRequirements();
-  const { ListTasksBoard, ListTasksBoardPaged } = useTasks();
+  const { ListTasksBoard, ListTasksBoardPaged, ListTasksPaged } = useTasks();
 
   // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -168,6 +173,7 @@ function KanbanBacklogPage() {
     null
   );
   const [DataBoard, setDataBoard] = useState<TaskBoardViewModel[]>([]);
+  const [DataTasks, setDataTasks] = useState<TaskViewModel[]>([]);
   const [RefreshData, setRefreshData] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
 
@@ -270,16 +276,72 @@ function KanbanBacklogPage() {
             requestTaskBoard.data as TaskBoardViewModel[];
 
           setDataBoard(itemsData);
+
           // setHeaderContentState({
           //   titleName: `Project Detail #${itemsData.projectCode}`,
           //   breadCrumb: ["Home", "Project Manager", itemsData.projectCode],
           // });
+
+          setIsLoadingProcess(false);
+        }
+      };
+      const GetListTasks = async () => {
+        // LOAD BACKLOGS DATA
+        const PayloadGetTaskList: PaggingListPayload = {
+          search: "",
+          limit: MAX_SIZE_TABLE,
+          page: 0,
+          filterWhere: [
+            {
+              field: "backlogId",
+              operator: "=",
+              value: backlogId,
+            },
+          ],
+          fieldOrder: ["indexTask"],
+          orderDir: "asc",
+        };
+        const requestTaskBoard = await ListTasksPaged(
+          PayloadGetTaskList,
+          tokenData
+        );
+        const isErrorResponse = requestTaskBoard?.statusCode !== RES_CODE_OK;
+
+        if (isErrorResponse || !requestTaskBoard) {
+          showToast({
+            description: requestTaskBoard?.message || RES_GENERIC_ERROR_MSG,
+            statusToast: "error",
+          });
+          setIsLoadingProcess(false);
+          return;
+        } else {
+          console.log(requestTaskBoard);
+          if (requestTaskBoard.data == null) {
+            showToast({
+              description: "Data return error",
+              statusToast: "error",
+            });
+            setIsLoadingProcess(false);
+            return;
+          }
+
+          const itemsData: TaskViewModel[] =
+            requestTaskBoard.data as TaskViewModel[];
+
+          setDataTasks(itemsData);
+
+          // setHeaderContentState({
+          //   titleName: `Project Detail #${itemsData.projectCode}`,
+          //   breadCrumb: ["Home", "Project Manager", itemsData.projectCode],
+          // });
+
           setIsLoadingProcess(false);
         }
       };
       GetDetailProject();
       GetDetailBacklog();
       GetListTaskKanban();
+      GetListTasks();
     }
   }, [DataAuth, RefreshData, projectId, backlogId]);
 

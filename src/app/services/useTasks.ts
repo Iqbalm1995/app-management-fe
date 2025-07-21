@@ -15,8 +15,16 @@ import {
 import axiosInstance from "../utils/axiosInstance";
 import axios from "axios";
 import handleAxiosError from "../utils/handleAxiosError";
-import { UsersResponse } from "./useUsers";
+import { UserShortResponse, UsersResponse } from "./useUsers";
 import { MediaObjectResponse } from "./useMediaObject";
+
+export interface TaskItemViewModel {
+  id: string;
+  taskId: string;
+  taskItemName: string;
+  isDone: string;
+  createdAt: string;
+}
 
 export interface TaskBoardViewModel {
   id: string;
@@ -34,6 +42,34 @@ export interface TaskBoardViewModel {
   updatedBy?: string | null;
 }
 
+export interface TaskViewModel {
+  id: string;
+  projectId?: string | null;
+  taskCode: string;
+  taskName: string;
+  taskDesc?: string | null;
+  taskPriority: string;
+  startDate?: string | null;
+  endDate?: string | null;
+  isArchived?: string | null;
+  indexTask: number;
+  isCompleted: string;
+  percentageStatus: number;
+  backlogId?: string | null;
+  boardId: string;
+  boardCodeStage: string;
+  boardName: string;
+  boardIndexStage: number;
+  taskPoint: number;
+  createdAt: string;
+  createdBy: string;
+  updatedAt?: string | null;
+  updatedBy?: string | null;
+  assignUsers: UserShortResponse[];
+  userCreated: UserShortResponse | null;
+  taskItems: TaskItemViewModel[];
+}
+
 interface useTasks {
   // TASK BOARD
   ListTasksBoardPaged: (
@@ -44,6 +80,12 @@ interface useTasks {
     backlogId: string,
     token: string
   ) => Promise<ApiGenericResponse<TaskBoardViewModel[] | null> | null>;
+
+  // TASKS
+  ListTasksPaged: (
+    payload: PaggingListPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<TaskViewModel[] | null> | null>;
 
   isLoading: boolean;
   error: string | null;
@@ -135,9 +177,51 @@ const useTasks = (): useTasks => {
     }
   };
 
+  const ListTasksPaged = async (
+    payload: PaggingListPayload,
+    token: string
+  ): Promise<ApiGenericResponse<TaskViewModel[] | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/Task/paged-list-task";
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<TaskViewModel[]>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
   return {
     ListTasksBoardPaged,
     ListTasksBoard,
+    ListTasksPaged,
     isLoading,
     error,
   };

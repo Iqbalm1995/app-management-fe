@@ -54,6 +54,20 @@ export interface UsersResponse {
   teamRole: UserTeamRoleResponse | null;
 }
 
+export interface UserShortResponse {
+  id: string;
+  nrp: string;
+  nama: string;
+  nip: string;
+  userId: string;
+  email: string;
+  kodeUnitKerja?: string | null;
+  namaUnitKerja?: string | null;
+  kodeJabatan?: string | null;
+  jabatan?: string | null;
+  profilePict?: string | null;
+}
+
 export interface UsersFullResponse {
   id: string;
   userCode: string;
