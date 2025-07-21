@@ -151,7 +151,7 @@ const projectsInsertBindModelSchema = yup.object({
   projectRegisterDate: yup
     .string()
     .required("Project Register Date is required"),
-  projectClosedDate: yup.string().required("Project Closed Date is required"),
+  projectClosedDate: yup.string().nullable(),
   proOwnerDivisionId: yup.string().nullable(),
   proOwnerGroupId: yup.string().nullable(),
   proManageByDivisionId: yup.string().nullable(),
@@ -1618,7 +1618,7 @@ function FormRegisterProjectView() {
                       </InputLayout>
                     </FormControl>
 
-                    <FormControl
+                    {/* <FormControl
                       id="projectClosedDate"
                       isInvalid={formik.errors.projectClosedDate ? true : false}
                       isRequired
@@ -1641,9 +1641,9 @@ function FormRegisterProjectView() {
                           </FormErrorMessage>
                         </Stack>
                       </InputLayout>
-                    </FormControl>
+                    </FormControl> */}
 
-                    <FormControl
+                    {/* <FormControl
                       id="projDateDuration"
                       isInvalid={
                         calculateDurationInDays(
@@ -1678,7 +1678,7 @@ function FormRegisterProjectView() {
                           </FormErrorMessage>
                         </Stack>
                       </InputLayoutFull>
-                    </FormControl>
+                    </FormControl> */}
 
                     <FormControl
                       id="note"

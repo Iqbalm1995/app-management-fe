@@ -63,3 +63,19 @@ export const InputLayoutFull = ({ children }: { children: ReactNode }) => {
     </Grid>
   );
 };
+
+export const InputLayoutFullHalf = ({ children }: { children: ReactNode }) => {
+  return (
+    <Grid
+      templateColumns={{
+        base: "1fr",
+        md: "50% 50%",
+      }}
+      alignItems="center"
+      justifyContent={"start"}
+      w="full"
+    >
+      {children}
+    </Grid>
+  );
+};

@@ -13,23 +13,40 @@ import LayoutAdmin from "@/app/components/layoutAdmin";
 import {
   InputLayout,
   InputLayoutFull,
+  InputLayoutFullHalf,
 } from "@/app/components/layoutContentBody";
 import LoadingMiniSignature from "@/app/components/loadingMini";
-import { TableComponentWithFilterCTX } from "@/app/components/tableComponentV2";
 import {
+  TableComponentWithFilterCTX,
+  TableComponentWithFilterCTXNoBorder,
+} from "@/app/components/tableComponentV2";
+import {
+  ENDPOINT_API_BASEURL_OBJECT,
+  ENDPOINT_PORT_BASIC_OBJECT,
   MAX_SIZE_TABLE,
   radiusStyle,
+  REQ_STATUS_APPROVED,
+  REQ_STATUS_CANCELED,
+  REQ_STATUS_NEED_REVIEW,
+  REQ_STATUS_ON_HOLD,
+  REQ_STATUS_TEMPORARY_APPROVED,
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
 } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import {
+  buildUrlPort,
   formatDateInputCustom,
   formatToRupiah,
   getQuarterText,
+  ImagePreviewSM,
+  joinFieldValues,
+  renderFileIconSTR,
+  SummaryStatusReq,
 } from "@/app/helper/MasterHelper";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
+import { MediaObjectResponse } from "@/app/services/useMediaObject";
 import useRequirements, {
   BacklogDataResponse,
   RequirementsResponse,
@@ -37,8 +54,11 @@ import useRequirements, {
 } from "@/app/services/useRequirements";
 import {
   ColumnMetaCustom,
+  ListSearchByParam,
   ListSearchByParamProps,
   PaggingListPayload,
+  PaggingListPayloadCustom,
+  StepsProps,
 } from "@/app/types/masterTypes";
 
 import {
@@ -82,10 +102,18 @@ import {
   ModalHeader,
   ModalCloseButton,
   ModalBody,
+  Textarea,
+  RadioGroup,
+  Radio,
 } from "@chakra-ui/react";
 import {
   ColumnDef,
   getCoreRowModel,
+  getFacetedMinMaxValues,
+  getFacetedUniqueValues,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  PaginationState,
   useReactTable,
 } from "@tanstack/react-table";
 import { u } from "framer-motion/client";
@@ -97,6 +125,8 @@ import {
   FiArrowLeft,
   FiArrowRight,
   FiCpu,
+  FiDownload,
+  FiEye,
   FiFileText,
   FiInfo,
   FiRefreshCcw,
@@ -116,7 +146,7 @@ function BrdDetailView() {
   const { colorMode } = useColorMode();
   const [PageMode, setPageMode] = useState<string>(PAGE_MODE);
 
-  const { GetDetailById, ListBacklog } = useRequirements();
+  const { GetDetailById, ListBacklog, ListReqMedia } = useRequirements();
 
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
@@ -158,12 +188,6 @@ function BrdDetailView() {
 
   const [DataRequirement, setDataRequirement] =
     useState<RequirementsResponse | null>(null);
-  const [WorkProgramExternal, setWorkProgramExternal] = useState<
-    RequirementWorkProgramDataResponse[]
-  >([]);
-  const [WorkProgramInternal, setWorkProgramInternal] = useState<
-    RequirementWorkProgramDataResponse[]
-  >([]);
   const [RefreshData, setRefreshData] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(true);
 
@@ -175,6 +199,8 @@ function BrdDetailView() {
   const [DataBacklogsRequirement, setDataBacklogsRequirement] = useState<
     BacklogDataResponse[]
   >([]);
+
+  const [DataFileReq, setDataFileReq] = useState<MediaObjectResponse[]>([]);
 
   const columnsDataBacklogs = useMemo<ColumnDef<BacklogDataResponse>[]>(
     () => [
@@ -337,17 +363,6 @@ function BrdDetailView() {
 
           setDataRequirement(itemsData);
 
-          const internalWorkPrograms = itemsData.workPrograms
-            .map((item, index) => ({ ...item, originalIndex: index }))
-            .filter((x) => x.workProgramSource === "INTERNAL");
-
-          const externalWorkPrograms = itemsData.workPrograms
-            .map((item, index) => ({ ...item, originalIndex: index }))
-            .filter((x) => x.workProgramSource === "EXTERNAL");
-
-          setWorkProgramInternal(internalWorkPrograms);
-          setWorkProgramExternal(externalWorkPrograms);
-
           setHeaderContentState({
             titleName: `${itemsData.requirementType} Detail #${itemsData.reqNumber}`,
             breadCrumb: [
@@ -388,6 +403,50 @@ function BrdDetailView() {
             setDataBacklogsRequirement(itemsDatabacklogs);
           }
 
+          // fileAttachment Load
+
+          const PayloadAttachmentList: PaggingListPayloadCustom = {
+            search: "",
+            reqId: itemsData.id,
+            limit: MAX_SIZE_TABLE,
+            page: 0,
+            filterWhere: [],
+            fieldOrder: ["createdAt"],
+            orderDir: "desc",
+          };
+
+          const requestDataAttachments = await ListReqMedia(
+            PayloadAttachmentList,
+            tokenData
+          );
+          const isErrorResponseAttch =
+            requestDataAttachments?.statusCode !== RES_CODE_OK;
+
+          if (isErrorResponseAttch || !requestDataAttachments) {
+            showToast({
+              description:
+                requestDataAttachments?.message || RES_GENERIC_ERROR_MSG,
+              statusToast: "error",
+            });
+            setIsLoadingProcess(false);
+            return;
+          } else {
+            console.log(requestDataAttachments);
+            if (requestDataAttachments.data == null) {
+              showToast({
+                description: "Data return error",
+                statusToast: "error",
+              });
+              setIsLoadingProcess(false);
+              return;
+            }
+
+            const itemsDataAttch: MediaObjectResponse[] =
+              requestDataAttachments.data as MediaObjectResponse[];
+
+            setDataFileReq(itemsDataAttch);
+          }
+
           setIsLoadingProcess(false);
         }
 
@@ -418,12 +477,12 @@ function BrdDetailView() {
   });
 
   // step setup
-  const steps = [
+  const steps: StepsProps[] = [
     { title: "Step 1", description: "Informasi Umum" },
     { title: "Step 2", description: "Penugasan Personil & User" },
     { title: "Step 3", description: "Program Kerja" },
     { title: "Step 4", description: "Ringkasan Ruanglingkup" },
-    { title: "Step 5", description: "Lampiran" },
+    { title: "Step 5", description: "Lampiran & Approval" },
     { title: "Step 6", description: "BRD Acceptance" },
   ];
 
@@ -446,6 +505,18 @@ function BrdDetailView() {
   };
 
   // end step setup
+
+  // Update status Reuirements
+  const [StatusRequirement, setStatusRequirement] = useState<string | null>(
+    null
+  );
+  const [ApprovalNote, setApprovalNote] = useState<string | null>(null);
+
+  const ActionApprovalChangeStatus = () => {
+    console.log("Action Approval");
+  };
+
+  // End - Update status Reuirements
 
   return (
     <LayoutAdmin>
@@ -596,517 +667,31 @@ function BrdDetailView() {
                     {/* Only render step content when client-side mounted */}
                     {activeStep === 0 && (
                       <Flex as={Stack} w={"full"} spacing={5}>
-                        <InputGroupPanel
-                          headerTitle={steps[activeStep].description}
-                        >
-                          <FormControl>
-                            <InputLayoutFull>
-                              <FormLabel h={"full"} mt={2}>
-                                Divisi Pengirim
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <Text>
-                                  {DataRequirement.senderDivisionName}
-                                </Text>
-                              </Stack>
-                            </InputLayoutFull>
-                          </FormControl>
-
-                          <FormControl>
-                            <InputLayoutFull>
-                              <FormLabel h={"full"} mt={2}>
-                                Nomor Memo
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <Text>{DataRequirement.reqNumber}</Text>
-                              </Stack>
-                            </InputLayoutFull>
-                          </FormControl>
-
-                          <FormControl>
-                            <InputLayoutFull>
-                              <FormLabel h={"full"} mt={2}>
-                                Perihal
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <Text>{DataRequirement.reqNarative}</Text>
-                              </Stack>
-                            </InputLayoutFull>
-                          </FormControl>
-
-                          <Box my={5} />
-
-                          <FormControl>
-                            <InputLayoutFull>
-                              <FormLabel h={"full"} mt={2}>
-                                Tanggal Memo
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <Text>
-                                  {DataRequirement.reqInititateDate != null
-                                    ? formatDateInputCustom(
-                                        DataRequirement.reqInititateDate,
-                                        "/"
-                                      )
-                                    : "-"}
-                                </Text>
-                              </Stack>
-                            </InputLayoutFull>
-                          </FormControl>
-
-                          <FormControl>
-                            <InputLayoutFull>
-                              <FormLabel h={"full"} mt={2}>
-                                Tanggal Memo Diterima
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <Text>
-                                  {DataRequirement.reqAcceptedDate != null
-                                    ? formatDateInputCustom(
-                                        DataRequirement.reqAcceptedDate,
-                                        "/"
-                                      )
-                                    : "-"}
-                                </Text>
-                              </Stack>
-                            </InputLayoutFull>
-                          </FormControl>
-
-                          <FormControl>
-                            <InputLayoutFull>
-                              <FormLabel h={"full"} mt={2}>
-                                Durasi Memo
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <Text>
-                                  {DataRequirement.reqDurationDay} Hari kalender
-                                </Text>
-                              </Stack>
-                            </InputLayoutFull>
-                          </FormControl>
-
-                          <FormControl>
-                            <InputLayoutFull>
-                              <FormLabel h={"full"} as={"i"} mt={2}>
-                                CarryOver
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <Text>
-                                  {DataRequirement.isCarryOver == "Y"
-                                    ? "YA"
-                                    : "TIDAK"}
-                                </Text>
-                              </Stack>
-                            </InputLayoutFull>
-                          </FormControl>
-                        </InputGroupPanel>
+                        <ReqInfoGeneralSectionView
+                          DataRequirement={DataRequirement}
+                          steps={steps}
+                          activeStep={activeStep}
+                        />
                       </Flex>
                     )}
 
                     {activeStep === 1 && (
                       <Flex as={Stack} w={"full"} spacing={5}>
-                        <InputGroupPanel
-                          headerTitle={`Penugasa Personil ${DataRequirement.requirementType}`}
-                        >
-                          <FormControl>
-                            <InputLayoutFull>
-                              <FormLabel h={"full"} mt={2}>
-                                Tanggal Ditugaskan
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <Text>
-                                  {DataRequirement.assignedToDate != null
-                                    ? formatDateInputCustom(
-                                        DataRequirement.assignedToDate,
-                                        "/"
-                                      )
-                                    : "-"}
-                                </Text>
-                              </Stack>
-                            </InputLayoutFull>
-                          </FormControl>
-
-                          <FormControl>
-                            <InputLayoutFull>
-                              <FormLabel h={"full"} mt={2}>
-                                Ditugaskan Oleh
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <Text>
-                                  {`${DataRequirement.assignedFromName} (${DataRequirement.assignedFromId})`}
-                                </Text>
-                              </Stack>
-                            </InputLayoutFull>
-                          </FormControl>
-
-                          <FormControl>
-                            <InputLayoutFull>
-                              <FormLabel h={"full"} mt={2}>
-                                Ditugaskan Ke
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <OrderedList>
-                                  {DataRequirement.approvalDatas.map(
-                                    (ua, idx) => (
-                                      <ListItem key={idx}>
-                                        {`${ua.approverUserFirstName} (${ua.approverUserCode})`}
-                                      </ListItem>
-                                    )
-                                  )}
-                                </OrderedList>
-                              </Stack>
-                            </InputLayoutFull>
-                          </FormControl>
-                        </InputGroupPanel>
-
-                        <InputGroupPanel
-                          headerTitle={`Informasi Person In Charge (PIC)`}
-                        >
-                          <FormControl>
-                            <InputLayoutFull>
-                              <FormLabel h={"full"} mt={2}>
-                                User ID
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <Text>{DataRequirement.userPicId}</Text>
-                              </Stack>
-                            </InputLayoutFull>
-                          </FormControl>
-
-                          <FormControl>
-                            <InputLayoutFull>
-                              <FormLabel h={"full"} mt={2}>
-                                NIK
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <Text>
-                                  {DataRequirement.userPicIdentityNumber}
-                                </Text>
-                              </Stack>
-                            </InputLayoutFull>
-                          </FormControl>
-
-                          <FormControl>
-                            <InputLayoutFull>
-                              <FormLabel h={"full"} mt={2}>
-                                Nama Lengkap
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <Text>{DataRequirement.userPicName}</Text>
-                              </Stack>
-                            </InputLayoutFull>
-                          </FormControl>
-
-                          <FormControl>
-                            <InputLayoutFull>
-                              <FormLabel h={"full"} mt={2}>
-                                No Handphne / Whatsapp
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <Text>{DataRequirement.userPicContanct}</Text>
-                              </Stack>
-                            </InputLayoutFull>
-                          </FormControl>
-
-                          <FormControl>
-                            <InputLayoutFull>
-                              <FormLabel h={"full"} mt={2}>
-                                Alamat E-Mail internal Bank bjb
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <Text>{DataRequirement.userPicEmail}</Text>
-                              </Stack>
-                            </InputLayoutFull>
-                          </FormControl>
-
-                          <FormControl>
-                            <InputLayoutFull>
-                              <FormLabel h={"full"} mt={2}>
-                                Lokasi Kerja
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <Text>
-                                  Divisi :
-                                  <Text pl={2} as={"span"} fontWeight={600}>
-                                    {DataRequirement.userPicDivisionName}
-                                  </Text>
-                                </Text>
-                                <Text>
-                                  Group :
-                                  <Text pl={2} as={"span"} fontWeight={600}>
-                                    {DataRequirement.userPicGroupName}
-                                  </Text>
-                                </Text>
-                              </Stack>
-                            </InputLayoutFull>
-                          </FormControl>
-                        </InputGroupPanel>
+                        <ReqInfoPersonelSectionView
+                          DataRequirement={DataRequirement}
+                          steps={steps}
+                          activeStep={activeStep}
+                        />
                       </Flex>
                     )}
 
                     {activeStep === 2 && (
                       <Flex as={Stack} w={"full"} spacing={5}>
-                        <InputGroupPanel headerTitle={`Program Kerja External`}>
-                          {WorkProgramExternal.length > 0 ? (
-                            <>
-                              {WorkProgramExternal.map((wp, idx) => (
-                                <Flex
-                                  w={"full"}
-                                  key={idx}
-                                  as={Stack}
-                                  spacing={5}
-                                >
-                                  <Heading as="h4" size="md" pb={5}>
-                                    Program Kerja - {idx + 1}
-                                  </Heading>
-
-                                  <FormControl>
-                                    <InputLayoutFull>
-                                      <FormLabel h={"full"} mt={2}>
-                                        Divisi
-                                      </FormLabel>
-                                      <Stack spacing={0} h={"full"}>
-                                        <Text>{wp.divisionName}</Text>
-                                      </Stack>
-                                    </InputLayoutFull>
-                                  </FormControl>
-
-                                  <FormControl>
-                                    <InputLayoutFull>
-                                      <FormLabel h={"full"} mt={2}>
-                                        Kode Program Kerja
-                                      </FormLabel>
-                                      <Stack spacing={0} h={"full"}>
-                                        <Text>{wp.workProgramCode}</Text>
-                                      </Stack>
-                                    </InputLayoutFull>
-                                  </FormControl>
-
-                                  <FormControl>
-                                    <InputLayoutFull>
-                                      <FormLabel h={"full"} mt={2}>
-                                        Nama Program Kerja
-                                      </FormLabel>
-                                      <Stack spacing={0} h={"full"}>
-                                        <Text>{wp.workProgramName}</Text>
-                                      </Stack>
-                                    </InputLayoutFull>
-                                  </FormControl>
-
-                                  <FormControl>
-                                    <InputLayoutFull>
-                                      <FormLabel h={"full"} mt={2}>
-                                        Nama Akun Rekening
-                                      </FormLabel>
-                                      <Stack spacing={0} h={"full"}>
-                                        <Text>{wp.workProgramAccName}</Text>
-                                      </Stack>
-                                    </InputLayoutFull>
-                                  </FormControl>
-
-                                  <FormControl>
-                                    <InputLayoutFull>
-                                      <FormLabel h={"full"} mt={2}>
-                                        Nomor Rekening
-                                      </FormLabel>
-                                      <Stack spacing={0} h={"full"}>
-                                        <Text>{wp.workProgramAccNumber}</Text>
-                                      </Stack>
-                                    </InputLayoutFull>
-                                  </FormControl>
-
-                                  <FormControl>
-                                    <InputLayoutFull>
-                                      <FormLabel h={"full"} mt={2}>
-                                        Kode Cost Center
-                                      </FormLabel>
-                                      <Stack spacing={0} h={"full"}>
-                                        <Text>{wp.workProgramAccCc}</Text>
-                                      </Stack>
-                                    </InputLayoutFull>
-                                  </FormControl>
-
-                                  <FormControl>
-                                    <InputLayoutFull>
-                                      <FormLabel h={"full"} mt={2}>
-                                        Anggaran (Rp.)
-                                      </FormLabel>
-                                      <Stack spacing={0} h={"full"}>
-                                        <Text>
-                                          {formatToRupiah(wp.workProgramBudget)}
-                                        </Text>
-                                      </Stack>
-                                    </InputLayoutFull>
-                                  </FormControl>
-
-                                  <FormControl>
-                                    <InputLayoutFull>
-                                      <FormLabel h={"full"} mt={2}>
-                                        Realisasi (Rp.)
-                                      </FormLabel>
-                                      <Stack spacing={0} h={"full"}>
-                                        <Text>
-                                          {formatToRupiah(wp.workProgramReal)}
-                                        </Text>
-                                      </Stack>
-                                    </InputLayoutFull>
-                                  </FormControl>
-
-                                  <FormControl>
-                                    <InputLayoutFull>
-                                      <FormLabel h={"full"} mt={2}>
-                                        Sisa Anggaran (Rp.)
-                                      </FormLabel>
-                                      <Stack spacing={0} h={"full"}>
-                                        <Text>
-                                          {formatToRupiah(
-                                            wp.workProgramLeftovers
-                                          )}
-                                        </Text>
-                                      </Stack>
-                                    </InputLayoutFull>
-                                  </FormControl>
-                                </Flex>
-                              ))}
-                            </>
-                          ) : (
-                            <CustomPanelAlert type={"info"}>
-                              <FiInfo size={70} />
-                              <Text>Program kerja tidak ada.</Text>
-                            </CustomPanelAlert>
-                          )}
-                        </InputGroupPanel>
-
-                        <InputGroupPanel headerTitle={`Program Kerja IT`}>
-                          {WorkProgramInternal.length > 0 ? (
-                            <>
-                              {WorkProgramInternal.map((wp, idx) => (
-                                <Flex
-                                  w={"full"}
-                                  key={idx}
-                                  as={Stack}
-                                  spacing={5}
-                                >
-                                  <Heading as="h4" size="md" pb={5}>
-                                    Program Kerja - {idx + 1}
-                                  </Heading>
-
-                                  <FormControl>
-                                    <InputLayoutFull>
-                                      <FormLabel h={"full"} mt={2}>
-                                        Divisi
-                                      </FormLabel>
-                                      <Stack spacing={0} h={"full"}>
-                                        <Text>{wp.divisionName}</Text>
-                                      </Stack>
-                                    </InputLayoutFull>
-                                  </FormControl>
-
-                                  <FormControl>
-                                    <InputLayoutFull>
-                                      <FormLabel h={"full"} mt={2}>
-                                        Kode Program Kerja
-                                      </FormLabel>
-                                      <Stack spacing={0} h={"full"}>
-                                        <Text>{wp.workProgramCode}</Text>
-                                      </Stack>
-                                    </InputLayoutFull>
-                                  </FormControl>
-
-                                  <FormControl>
-                                    <InputLayoutFull>
-                                      <FormLabel h={"full"} mt={2}>
-                                        Nama Program Kerja
-                                      </FormLabel>
-                                      <Stack spacing={0} h={"full"}>
-                                        <Text>{wp.workProgramName}</Text>
-                                      </Stack>
-                                    </InputLayoutFull>
-                                  </FormControl>
-
-                                  <FormControl>
-                                    <InputLayoutFull>
-                                      <FormLabel h={"full"} mt={2}>
-                                        Nama Akun Rekening
-                                      </FormLabel>
-                                      <Stack spacing={0} h={"full"}>
-                                        <Text>{wp.workProgramAccName}</Text>
-                                      </Stack>
-                                    </InputLayoutFull>
-                                  </FormControl>
-
-                                  <FormControl>
-                                    <InputLayoutFull>
-                                      <FormLabel h={"full"} mt={2}>
-                                        Nomor Rekening
-                                      </FormLabel>
-                                      <Stack spacing={0} h={"full"}>
-                                        <Text>{wp.workProgramAccNumber}</Text>
-                                      </Stack>
-                                    </InputLayoutFull>
-                                  </FormControl>
-
-                                  <FormControl>
-                                    <InputLayoutFull>
-                                      <FormLabel h={"full"} mt={2}>
-                                        Kode Cost Center
-                                      </FormLabel>
-                                      <Stack spacing={0} h={"full"}>
-                                        <Text>{wp.workProgramAccCc}</Text>
-                                      </Stack>
-                                    </InputLayoutFull>
-                                  </FormControl>
-
-                                  <FormControl>
-                                    <InputLayoutFull>
-                                      <FormLabel h={"full"} mt={2}>
-                                        Anggaran (Rp.)
-                                      </FormLabel>
-                                      <Stack spacing={0} h={"full"}>
-                                        <Text>
-                                          {formatToRupiah(wp.workProgramBudget)}
-                                        </Text>
-                                      </Stack>
-                                    </InputLayoutFull>
-                                  </FormControl>
-
-                                  <FormControl>
-                                    <InputLayoutFull>
-                                      <FormLabel h={"full"} mt={2}>
-                                        Realisasi (Rp.)
-                                      </FormLabel>
-                                      <Stack spacing={0} h={"full"}>
-                                        <Text>
-                                          {formatToRupiah(wp.workProgramReal)}
-                                        </Text>
-                                      </Stack>
-                                    </InputLayoutFull>
-                                  </FormControl>
-
-                                  <FormControl>
-                                    <InputLayoutFull>
-                                      <FormLabel h={"full"} mt={2}>
-                                        Sisa Anggaran (Rp.)
-                                      </FormLabel>
-                                      <Stack spacing={0} h={"full"}>
-                                        <Text>
-                                          {formatToRupiah(
-                                            wp.workProgramLeftovers
-                                          )}
-                                        </Text>
-                                      </Stack>
-                                    </InputLayoutFull>
-                                  </FormControl>
-                                </Flex>
-                              ))}
-                            </>
-                          ) : (
-                            <CustomPanelAlert type={"info"}>
-                              <FiInfo size={70} />
-                              <Text>Program kerja tidak ada.</Text>
-                            </CustomPanelAlert>
-                          )}
-                        </InputGroupPanel>
+                        <ReqInfoWorkProgramsView
+                          DataRequirement={DataRequirement}
+                          steps={steps}
+                          activeStep={activeStep}
+                        />
                       </Flex>
                     )}
 
@@ -1399,22 +984,158 @@ function BrdDetailView() {
                         <InputGroupPanel
                           headerTitle={steps[activeStep].description}
                         >
-                          <Heading as="h4" size="md">
-                            Section {activeStep}
-                          </Heading>
+                          {/* <ReqAttachmentView
+                            RefreshData={RefreshData}
+                            ReqData={DataRequirement}
+                            RefreshAction={RefreshAction}
+                          /> */}
+                          <ReqInfoSummaryFileAttachmentsView
+                            DataRequirement={DataRequirement}
+                            DataAttachment={DataFileReq}
+                            steps={steps}
+                            activeStep={activeStep}
+                          />
+                        </InputGroupPanel>
+
+                        <InputGroupPanel headerTitle={"Update Status"}>
+                          <FormControl>
+                            <InputLayoutFull>
+                              <FormLabel h={"full"} mt={2}>
+                                Status Action
+                              </FormLabel>
+                              <Stack spacing={0} h={"full"}>
+                                <RadioGroup
+                                  onChange={setStatusRequirement}
+                                  value={StatusRequirement || ""}
+                                >
+                                  <Wrap spacing={5}>
+                                    <Box
+                                      bg={"green.200"}
+                                      _hover={{
+                                        bg: "green.400",
+                                      }}
+                                      py={2}
+                                      px={4}
+                                      rounded={"md"}
+                                      color={"green.800"}
+                                      fontWeight={600}
+                                    >
+                                      <Radio value={REQ_STATUS_APPROVED}>
+                                        {REQ_STATUS_APPROVED}
+                                      </Radio>
+                                    </Box>
+                                    <Box
+                                      bg={"teal.200"}
+                                      _hover={{
+                                        bg: "teal.400",
+                                      }}
+                                      py={2}
+                                      px={4}
+                                      rounded={"md"}
+                                      color={"teal.800"}
+                                      fontWeight={600}
+                                    >
+                                      <Radio
+                                        value={REQ_STATUS_TEMPORARY_APPROVED}
+                                      >
+                                        {REQ_STATUS_TEMPORARY_APPROVED}
+                                      </Radio>
+                                    </Box>
+
+                                    <Box
+                                      bg={"yellow.200"}
+                                      _hover={{
+                                        bg: "yellow.400",
+                                      }}
+                                      py={2}
+                                      px={4}
+                                      rounded={"md"}
+                                      color={"yellow.800"}
+                                      fontWeight={600}
+                                    >
+                                      <Radio value={REQ_STATUS_ON_HOLD}>
+                                        {REQ_STATUS_ON_HOLD}
+                                      </Radio>
+                                    </Box>
+                                    <Box
+                                      bg={"red.200"}
+                                      _hover={{
+                                        bg: "red.400",
+                                      }}
+                                      py={2}
+                                      px={4}
+                                      rounded={"md"}
+                                      color={"red.800"}
+                                      fontWeight={600}
+                                    >
+                                      <Radio value={REQ_STATUS_CANCELED}>
+                                        {REQ_STATUS_CANCELED}
+                                      </Radio>
+                                    </Box>
+                                  </Wrap>
+                                </RadioGroup>
+                              </Stack>
+                            </InputLayoutFull>
+                          </FormControl>
+
+                          <FormControl>
+                            <InputLayoutFull>
+                              <FormLabel h={"full"} mt={2}>
+                                Catatan
+                              </FormLabel>
+                              <Stack spacing={0} h={"full"}>
+                                <Textarea
+                                  id="reqNote"
+                                  name="reqNote"
+                                  // onChange={formik.handleChange}
+                                  // defaultValue={formik.values.projectDesc ?? ""}
+                                  placeholder={`Catatan (Opsional)`}
+                                  maxLength={300}
+                                  // isDisabled={ActionLoading}
+                                />
+                              </Stack>
+                            </InputLayoutFull>
+                          </FormControl>
                         </InputGroupPanel>
                       </Flex>
                     )}
 
                     {activeStep === 5 && (
                       <Flex as={Stack} w={"full"} spacing={5}>
-                        <InputGroupPanel
-                          headerTitle={steps[activeStep].description}
-                        >
-                          <Heading as="h4" size="md">
-                            Section {activeStep}
-                          </Heading>
+                        <ReqInfoGeneralSectionView
+                          DataRequirement={DataRequirement}
+                          steps={steps}
+                          activeStep={activeStep}
+                        />
+                        <ReqInfoPersonelSectionView
+                          DataRequirement={DataRequirement}
+                          steps={steps}
+                          activeStep={activeStep}
+                        />
+                        <ReqInfoWorkProgramsView
+                          DataRequirement={DataRequirement}
+                          steps={steps}
+                          activeStep={activeStep}
+                        />
+                        <ReqInfoSummaryBacklogsView
+                          DataRequirement={DataRequirement}
+                          DataBacklogs={DataBacklogsRequirement}
+                          steps={steps}
+                          activeStep={activeStep}
+                        />
+                        <InputGroupPanel headerTitle={`Lampiran`}>
+                          <ReqInfoSummaryFileAttachmentsViewSimple
+                            DataRequirement={DataRequirement}
+                            DataAttachment={DataFileReq}
+                            steps={steps}
+                            activeStep={activeStep}
+                          />
                         </InputGroupPanel>
+                        <ReqInfoAcceptanceView
+                          DataRequirement={DataRequirement}
+                          steps={steps}
+                          activeStep={activeStep}
+                        />
                       </Flex>
                     )}
 
@@ -1450,7 +1171,7 @@ function BrdDetailView() {
                       p={4}
                       bgColor={"gray.200"}
                       rounded={radiusStyle}
-                      display={"block"}
+                      display={"none"}
                     >
                       <Text fontWeight={600}>Data Requirement</Text>
                       <pre>{JSON.stringify(DataRequirement, null, 2)}</pre>
@@ -1484,5 +1205,1210 @@ function BrdDetailView() {
     </LayoutAdmin>
   );
 }
+
+interface ReqSectionProps {
+  DataRequirement: RequirementsResponse;
+  DataBacklogs?: BacklogDataResponse[];
+  DataAttachment?: MediaObjectResponse[];
+  steps: StepsProps[];
+  activeStep: number;
+}
+
+const ReqInfoGeneralSectionView = ({
+  DataRequirement,
+  steps,
+  activeStep,
+}: ReqSectionProps) => {
+  return (
+    <InputGroupPanel headerTitle={steps[activeStep].description}>
+      <FormControl>
+        <InputLayoutFull>
+          <FormLabel h={"full"} mt={2}>
+            Divisi Pengirim
+          </FormLabel>
+          <Stack spacing={0} h={"full"}>
+            <Text>{DataRequirement.senderDivisionName}</Text>
+          </Stack>
+        </InputLayoutFull>
+      </FormControl>
+
+      <FormControl>
+        <InputLayoutFull>
+          <FormLabel h={"full"} mt={2}>
+            Nomor Memo
+          </FormLabel>
+          <Stack spacing={0} h={"full"}>
+            <Text>{DataRequirement.reqNumber}</Text>
+          </Stack>
+        </InputLayoutFull>
+      </FormControl>
+
+      <FormControl>
+        <InputLayoutFull>
+          <FormLabel h={"full"} mt={2}>
+            Perihal
+          </FormLabel>
+          <Stack spacing={0} h={"full"}>
+            <Text>{DataRequirement.reqNarative}</Text>
+          </Stack>
+        </InputLayoutFull>
+      </FormControl>
+
+      <Box my={5} />
+
+      <FormControl>
+        <InputLayoutFull>
+          <FormLabel h={"full"} mt={2}>
+            Tanggal Memo
+          </FormLabel>
+          <Stack spacing={0} h={"full"}>
+            <Text>
+              {DataRequirement.reqInititateDate != null
+                ? formatDateInputCustom(DataRequirement.reqInititateDate, "/")
+                : "-"}
+            </Text>
+          </Stack>
+        </InputLayoutFull>
+      </FormControl>
+
+      <FormControl>
+        <InputLayoutFull>
+          <FormLabel h={"full"} mt={2}>
+            Tanggal Memo Diterima
+          </FormLabel>
+          <Stack spacing={0} h={"full"}>
+            <Text>
+              {DataRequirement.reqAcceptedDate != null
+                ? formatDateInputCustom(DataRequirement.reqAcceptedDate, "/")
+                : "-"}
+            </Text>
+          </Stack>
+        </InputLayoutFull>
+      </FormControl>
+
+      <FormControl>
+        <InputLayoutFull>
+          <FormLabel h={"full"} mt={2}>
+            Durasi Memo
+          </FormLabel>
+          <Stack spacing={0} h={"full"}>
+            <Text>{DataRequirement.reqDurationDay} Hari kalender</Text>
+          </Stack>
+        </InputLayoutFull>
+      </FormControl>
+
+      <FormControl>
+        <InputLayoutFull>
+          <FormLabel h={"full"} as={"i"} mt={2}>
+            CarryOver
+          </FormLabel>
+          <Stack spacing={0} h={"full"}>
+            <Text>{DataRequirement.isCarryOver == "Y" ? "YA" : "TIDAK"}</Text>
+          </Stack>
+        </InputLayoutFull>
+      </FormControl>
+    </InputGroupPanel>
+  );
+};
+
+const ReqInfoPersonelSectionView = ({
+  DataRequirement,
+  steps,
+  activeStep,
+}: ReqSectionProps) => {
+  return (
+    <>
+      <InputGroupPanel
+        headerTitle={`Penugasa Personil ${DataRequirement.requirementType}`}
+      >
+        <FormControl>
+          <InputLayoutFull>
+            <FormLabel h={"full"} mt={2}>
+              Tanggal Ditugaskan
+            </FormLabel>
+            <Stack spacing={0} h={"full"}>
+              <Text>
+                {DataRequirement.assignedToDate != null
+                  ? formatDateInputCustom(DataRequirement.assignedToDate, "/")
+                  : "-"}
+              </Text>
+            </Stack>
+          </InputLayoutFull>
+        </FormControl>
+
+        <FormControl>
+          <InputLayoutFull>
+            <FormLabel h={"full"} mt={2}>
+              Ditugaskan Oleh
+            </FormLabel>
+            <Stack spacing={0} h={"full"}>
+              <Text>
+                {`${DataRequirement.assignedFromName} (${DataRequirement.assignedFromId})`}
+              </Text>
+            </Stack>
+          </InputLayoutFull>
+        </FormControl>
+
+        <FormControl>
+          <InputLayoutFull>
+            <FormLabel h={"full"} mt={2}>
+              Ditugaskan Ke
+            </FormLabel>
+            <Stack spacing={0} h={"full"}>
+              <OrderedList>
+                {DataRequirement.approvalDatas.map((ua, idx) => (
+                  <ListItem key={idx}>
+                    {`${ua.approverUserFirstName} (${ua.approverUserCode})`}
+                  </ListItem>
+                ))}
+              </OrderedList>
+            </Stack>
+          </InputLayoutFull>
+        </FormControl>
+      </InputGroupPanel>
+
+      <InputGroupPanel headerTitle={`Informasi Person In Charge (PIC)`}>
+        <FormControl>
+          <InputLayoutFull>
+            <FormLabel h={"full"} mt={2}>
+              User ID
+            </FormLabel>
+            <Stack spacing={0} h={"full"}>
+              <Text>{DataRequirement.userPicId}</Text>
+            </Stack>
+          </InputLayoutFull>
+        </FormControl>
+
+        <FormControl>
+          <InputLayoutFull>
+            <FormLabel h={"full"} mt={2}>
+              NIK
+            </FormLabel>
+            <Stack spacing={0} h={"full"}>
+              <Text>{DataRequirement.userPicIdentityNumber}</Text>
+            </Stack>
+          </InputLayoutFull>
+        </FormControl>
+
+        <FormControl>
+          <InputLayoutFull>
+            <FormLabel h={"full"} mt={2}>
+              Nama Lengkap
+            </FormLabel>
+            <Stack spacing={0} h={"full"}>
+              <Text>{DataRequirement.userPicName}</Text>
+            </Stack>
+          </InputLayoutFull>
+        </FormControl>
+
+        <FormControl>
+          <InputLayoutFull>
+            <FormLabel h={"full"} mt={2}>
+              No Handphne / Whatsapp
+            </FormLabel>
+            <Stack spacing={0} h={"full"}>
+              <Text>{DataRequirement.userPicContanct}</Text>
+            </Stack>
+          </InputLayoutFull>
+        </FormControl>
+
+        <FormControl>
+          <InputLayoutFull>
+            <FormLabel h={"full"} mt={2}>
+              Alamat E-Mail internal Bank bjb
+            </FormLabel>
+            <Stack spacing={0} h={"full"}>
+              <Text>{DataRequirement.userPicEmail}</Text>
+            </Stack>
+          </InputLayoutFull>
+        </FormControl>
+
+        <FormControl>
+          <InputLayoutFull>
+            <FormLabel h={"full"} mt={2}>
+              Lokasi Kerja
+            </FormLabel>
+            <Stack spacing={0} h={"full"}>
+              <Text>
+                Divisi :
+                <Text pl={2} as={"span"} fontWeight={600}>
+                  {DataRequirement.userPicDivisionName}
+                </Text>
+              </Text>
+              <Text>
+                Group :
+                <Text pl={2} as={"span"} fontWeight={600}>
+                  {DataRequirement.userPicGroupName}
+                </Text>
+              </Text>
+            </Stack>
+          </InputLayoutFull>
+        </FormControl>
+      </InputGroupPanel>
+    </>
+  );
+};
+
+const ReqInfoWorkProgramsView = ({
+  DataRequirement,
+  steps,
+  activeStep,
+}: ReqSectionProps) => {
+  const [WorkProgramExternal, setWorkProgramExternal] = useState<
+    RequirementWorkProgramDataResponse[]
+  >([]);
+  const [WorkProgramInternal, setWorkProgramInternal] = useState<
+    RequirementWorkProgramDataResponse[]
+  >([]);
+
+  useEffect(() => {
+    if (
+      DataRequirement.workPrograms != null &&
+      DataRequirement.workPrograms.length > 0
+    ) {
+      const internalWorkPrograms = DataRequirement.workPrograms
+        .map((item, index) => ({ ...item, originalIndex: index }))
+        .filter((x) => x.workProgramSource === "INTERNAL");
+
+      const externalWorkPrograms = DataRequirement.workPrograms
+        .map((item, index) => ({ ...item, originalIndex: index }))
+        .filter((x) => x.workProgramSource === "EXTERNAL");
+
+      setWorkProgramInternal(internalWorkPrograms);
+      setWorkProgramExternal(externalWorkPrograms);
+    }
+  }, [DataRequirement]);
+
+  return (
+    <>
+      <InputGroupPanel headerTitle={`Program Kerja External`}>
+        {WorkProgramExternal.length > 0 ? (
+          <>
+            {WorkProgramExternal.map((wp, idx) => (
+              <Flex w={"full"} key={idx} as={Stack} spacing={5}>
+                <Heading as="h4" size="md" pb={5}>
+                  Program Kerja - {idx + 1}
+                </Heading>
+
+                <FormControl>
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Divisi
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Text>{wp.divisionName}</Text>
+                    </Stack>
+                  </InputLayoutFull>
+                </FormControl>
+
+                <FormControl>
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Kode Program Kerja
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Text>{wp.workProgramCode}</Text>
+                    </Stack>
+                  </InputLayoutFull>
+                </FormControl>
+
+                <FormControl>
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Nama Program Kerja
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Text>{wp.workProgramName}</Text>
+                    </Stack>
+                  </InputLayoutFull>
+                </FormControl>
+
+                <FormControl>
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Nama Akun Rekening
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Text>{wp.workProgramAccName}</Text>
+                    </Stack>
+                  </InputLayoutFull>
+                </FormControl>
+
+                <FormControl>
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Nomor Rekening
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Text>{wp.workProgramAccNumber}</Text>
+                    </Stack>
+                  </InputLayoutFull>
+                </FormControl>
+
+                <FormControl>
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Kode Cost Center
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Text>{wp.workProgramAccCc}</Text>
+                    </Stack>
+                  </InputLayoutFull>
+                </FormControl>
+
+                <FormControl>
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Anggaran (Rp.)
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Text>{formatToRupiah(wp.workProgramBudget)}</Text>
+                    </Stack>
+                  </InputLayoutFull>
+                </FormControl>
+
+                <FormControl>
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Realisasi (Rp.)
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Text>{formatToRupiah(wp.workProgramReal)}</Text>
+                    </Stack>
+                  </InputLayoutFull>
+                </FormControl>
+
+                <FormControl>
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Sisa Anggaran (Rp.)
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Text>{formatToRupiah(wp.workProgramLeftovers)}</Text>
+                    </Stack>
+                  </InputLayoutFull>
+                </FormControl>
+              </Flex>
+            ))}
+          </>
+        ) : (
+          <Heading as="h5" size="sm">
+            Program kerja tidak ada.
+          </Heading>
+        )}
+      </InputGroupPanel>
+
+      <InputGroupPanel headerTitle={`Program Kerja IT`}>
+        {WorkProgramInternal.length > 0 ? (
+          <>
+            {WorkProgramInternal.map((wp, idx) => (
+              <Flex w={"full"} key={idx} as={Stack} spacing={5}>
+                <Heading as="h4" size="md" pb={5}>
+                  Program Kerja - {idx + 1}
+                </Heading>
+
+                <FormControl>
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Divisi
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Text>{wp.divisionName}</Text>
+                    </Stack>
+                  </InputLayoutFull>
+                </FormControl>
+
+                <FormControl>
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Kode Program Kerja
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Text>{wp.workProgramCode}</Text>
+                    </Stack>
+                  </InputLayoutFull>
+                </FormControl>
+
+                <FormControl>
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Nama Program Kerja
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Text>{wp.workProgramName}</Text>
+                    </Stack>
+                  </InputLayoutFull>
+                </FormControl>
+
+                <FormControl>
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Nama Akun Rekening
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Text>{wp.workProgramAccName}</Text>
+                    </Stack>
+                  </InputLayoutFull>
+                </FormControl>
+
+                <FormControl>
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Nomor Rekening
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Text>{wp.workProgramAccNumber}</Text>
+                    </Stack>
+                  </InputLayoutFull>
+                </FormControl>
+
+                <FormControl>
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Kode Cost Center
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Text>{wp.workProgramAccCc}</Text>
+                    </Stack>
+                  </InputLayoutFull>
+                </FormControl>
+
+                <FormControl>
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Anggaran (Rp.)
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Text>{formatToRupiah(wp.workProgramBudget)}</Text>
+                    </Stack>
+                  </InputLayoutFull>
+                </FormControl>
+
+                <FormControl>
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Realisasi (Rp.)
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Text>{formatToRupiah(wp.workProgramReal)}</Text>
+                    </Stack>
+                  </InputLayoutFull>
+                </FormControl>
+
+                <FormControl>
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Sisa Anggaran (Rp.)
+                    </FormLabel>
+                    <Stack spacing={0} h={"full"}>
+                      <Text>{formatToRupiah(wp.workProgramLeftovers)}</Text>
+                    </Stack>
+                  </InputLayoutFull>
+                </FormControl>
+              </Flex>
+            ))}
+          </>
+        ) : (
+          <Heading as="h5" size="sm">
+            Program kerja tidak ada.
+          </Heading>
+        )}
+      </InputGroupPanel>
+    </>
+  );
+};
+
+const ReqInfoSummaryBacklogsView = ({
+  DataRequirement,
+  DataBacklogs,
+  steps,
+  activeStep,
+}: ReqSectionProps) => {
+  return (
+    <>
+      <InputGroupPanel
+        headerTitle={`Ringkasan Ruanglingkup ${DataRequirement.requirementType} | Aspek Bisnis`}
+      >
+        <FormControl>
+          <InputLayoutFull>
+            <FormLabel h={"full"} mt={2}>
+              Inisial Aplikasi
+            </FormLabel>
+            <Stack spacing={0} h={"full"}>
+              <Text>{DataRequirement.appInitialCode}</Text>
+            </Stack>
+          </InputLayoutFull>
+        </FormControl>
+
+        <FormControl>
+          <InputLayoutFull>
+            <FormLabel h={"full"} mt={2}>
+              Nama Aplikasi
+            </FormLabel>
+            <Stack spacing={0} h={"full"}>
+              <Text>{DataRequirement.appInitialName}</Text>
+            </Stack>
+          </InputLayoutFull>
+        </FormControl>
+
+        <FormControl>
+          <InputLayoutFull>
+            <FormLabel h={"full"} mt={2}>
+              Media Akses Aplikasi
+            </FormLabel>
+            <Stack spacing={0} h={"full"}>
+              <Text>{DataRequirement.appAccessMedia}</Text>
+            </Stack>
+          </InputLayoutFull>
+        </FormControl>
+
+        <FormControl>
+          <InputLayoutFull>
+            <FormLabel h={"full"} mt={2}>
+              Jenis Aplikasi
+            </FormLabel>
+            <Stack spacing={2} h={"full"}>
+              <Text>{DataRequirement.appTypes}</Text>
+              {DataRequirement.appTypeCustom && (
+                <Text>
+                  Lainnya :{" "}
+                  <Text pl={2} as={"span"} fontWeight={600}>
+                    {DataRequirement.appTypeCustom}
+                  </Text>
+                </Text>
+              )}
+            </Stack>
+          </InputLayoutFull>
+        </FormControl>
+
+        <FormControl>
+          <InputLayoutFull>
+            <FormLabel h={"full"} mt={2}>
+              Keterkaitan Aplikasi
+            </FormLabel>
+            <Stack spacing={2} h={"full"}>
+              <Text>{DataRequirement.appRelatedness}</Text>
+              {DataRequirement.appTypeCustom && (
+                <Text>
+                  Lainnya :{" "}
+                  <Text pl={2} as={"span"} fontWeight={600}>
+                    {DataRequirement.appRelatednessDesc}
+                  </Text>
+                </Text>
+              )}
+            </Stack>
+          </InputLayoutFull>
+        </FormControl>
+
+        <FormControl>
+          <InputLayoutFull>
+            <FormLabel h={"full"} mt={2}>
+              Kategori Aplikasi
+            </FormLabel>
+            <Stack spacing={0} h={"full"}>
+              <Text>{DataRequirement.appTransactionals}</Text>
+            </Stack>
+          </InputLayoutFull>
+        </FormControl>
+
+        <FormControl>
+          <InputLayoutFull>
+            <FormLabel h={"full"} mt={2}>
+              Waktu Operasional Aplikasi
+            </FormLabel>
+            <Stack spacing={2} h={"full"}>
+              <Text>
+                24 Jam :{" "}
+                <Text pl={2} as={"span"} fontWeight={600}>
+                  {DataRequirement.appOperational24hrs == null
+                    ? "-"
+                    : DataRequirement.appOperational24hrs == "NO"
+                    ? "TIDAK"
+                    : "YA"}
+                </Text>
+              </Text>
+
+              {DataRequirement.appOperationalDays != null ? (
+                <>
+                  <Flex as={HStack}>
+                    <Text>Hari : </Text>
+                    <WeekdayView
+                      valueData={DataRequirement.appOperationalDays}
+                    />
+                  </Flex>
+                </>
+              ) : (
+                "-"
+              )}
+
+              {DataRequirement.appOperational24hrs != "24-HOUR" && (
+                <Text>
+                  Jam Buka :{" "}
+                  <Text pl={2} as={"span"} fontWeight={600}>
+                    {DataRequirement.appOperationalHourOpen}
+                  </Text>
+                </Text>
+              )}
+              {DataRequirement.appOperational24hrs != "24-HOUR" && (
+                <Text>
+                  Jam Tutup :{" "}
+                  <Text pl={2} as={"span"} fontWeight={600}>
+                    {DataRequirement.appOperationalHourClosed}
+                  </Text>
+                </Text>
+              )}
+            </Stack>
+          </InputLayoutFull>
+        </FormControl>
+
+        <FormControl>
+          <InputLayoutFull>
+            <FormLabel h={"full"} mt={2}>
+              Target Live
+            </FormLabel>
+            <Stack spacing={0} h={"full"}>
+              <Text>
+                {DataRequirement.appLiveTargetDate != null
+                  ? formatDateInputCustom(
+                      DataRequirement.appLiveTargetDate,
+                      "/"
+                    )
+                  : "-"}
+              </Text>
+            </Stack>
+          </InputLayoutFull>
+        </FormControl>
+
+        <FormControl>
+          <InputLayoutFull>
+            <FormLabel h={"full"} mt={2}>
+              Terbilang Target Live
+            </FormLabel>
+            <Stack spacing={0} h={"full"}>
+              <Text>
+                {" "}
+                {DataRequirement.appLiveTargetDate != null
+                  ? getQuarterText(DataRequirement.appLiveTargetDate)
+                  : "-"}
+              </Text>
+            </Stack>
+          </InputLayoutFull>
+        </FormControl>
+
+        <FormControl>
+          <InputLayoutFull>
+            <FormLabel h={"full"} mt={2}>
+              Catatan
+            </FormLabel>
+            <Stack spacing={0} h={"full"}>
+              <Text>{DataRequirement.note}</Text>
+            </Stack>
+          </InputLayoutFull>
+        </FormControl>
+
+        <FormControl>
+          <InputLayoutFull>
+            <FormLabel h={"full"} mt={2}>
+              Fitur Aplikasi{" "}
+              {DataBacklogs != null && `(${DataBacklogs.length})`}
+            </FormLabel>
+            <Stack spacing={0} h={"full"}>
+              <Text as={"p"} fontWeight={600}>
+                {DataBacklogs != null
+                  ? DataBacklogs.length >= 0
+                    ? joinFieldValues(DataBacklogs, "backlogName", ", ")
+                    : ""
+                  : "-"}
+              </Text>
+            </Stack>
+          </InputLayoutFull>
+        </FormControl>
+      </InputGroupPanel>
+
+      <InputGroupPanel
+        headerTitle={`Ringkasan Ruanglingkup ${DataRequirement.requirementType} | Aspek Teknis`}
+      >
+        <FormControl>
+          <InputLayoutFull>
+            <FormLabel h={"full"} mt={2}>
+              Target Lokasi Server
+            </FormLabel>
+            <Stack spacing={0} h={"full"}>
+              <Text>{DataRequirement.appEnvLocations}</Text>
+              {DataRequirement.appEnvLocationsOthers && (
+                <Text>
+                  Lainnya :{" "}
+                  <Text pl={2} as={"span"} fontWeight={600}>
+                    {DataRequirement.appEnvLocationsOthers}
+                  </Text>
+                </Text>
+              )}
+            </Stack>
+          </InputLayoutFull>
+        </FormControl>
+
+        <FormControl>
+          <InputLayoutFull>
+            <FormLabel h={"full"} mt={2}>
+              Otentikasi UIM Bank bjb
+            </FormLabel>
+            <Stack spacing={0} h={"full"}>
+              <Text>
+                {DataRequirement.appPrivateAuth != null
+                  ? DataRequirement.appPrivateAuth == "Y"
+                    ? "YA"
+                    : "TIDAK"
+                  : "-"}
+              </Text>
+            </Stack>
+          </InputLayoutFull>
+        </FormControl>
+
+        <FormControl>
+          <InputLayoutFull>
+            <FormLabel h={"full"} mt={2}>
+              Keperluan High Availability
+            </FormLabel>
+            <Stack spacing={0} h={"full"}>
+              <Text>
+                {DataRequirement.appHightAvailability != null
+                  ? DataRequirement.appHightAvailability == "Y"
+                    ? "YA"
+                    : "TIDAK"
+                  : "-"}
+              </Text>
+            </Stack>
+          </InputLayoutFull>
+        </FormControl>
+
+        <FormControl>
+          <InputLayoutFull>
+            <FormLabel h={"full"} mt={2}>
+              Integrasi dengan aplikasi lain
+            </FormLabel>
+            <Stack spacing={0} h={"full"}>
+              <Text>{DataRequirement.appIntegrationOthersApps}</Text>
+            </Stack>
+          </InputLayoutFull>
+        </FormControl>
+      </InputGroupPanel>
+    </>
+  );
+};
+
+const ReqInfoSummaryFileAttachmentsView = ({
+  DataRequirement,
+  DataAttachment,
+  steps,
+  activeStep,
+}: ReqSectionProps) => {
+  const showToast = useToastHelper();
+  const { colorMode } = useColorMode();
+
+  const UrlEndpoint: string = buildUrlPort(
+    ENDPOINT_API_BASEURL_OBJECT,
+    ENDPOINT_PORT_BASIC_OBJECT
+  );
+
+  const columnsData = useMemo<ColumnDef<MediaObjectResponse>[]>(
+    () => [
+      {
+        accessorKey: "numbData",
+        cell: (info) => (
+          <Flex justifyContent={"center"}>{info.row.index + 1}.</Flex>
+        ),
+        header: () => <Flex justifyContent={"center"}>No.</Flex>,
+        footer: (props) => props.column.id,
+      },
+      {
+        accessorFn: (row) => row.objectData,
+        id: "objectData",
+        cell: (info) => (
+          <Flex justifyContent={"center"}>
+            {[".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg"].some(
+              (ext) =>
+                info.row.original.objectExtension
+                  .trim()
+                  .toLowerCase()
+                  .endsWith(ext)
+            ) ? (
+              <ImagePreviewSM
+                data={{
+                  id: info.row.original.id,
+                  alt: info.row.original.objectRawName,
+                  name: info.row.original.objectRawName,
+                  src: info.row.original.objectFullPath,
+                  extension: info.row.original.objectExtension.trim(),
+                  // size:info.row.original.objectSize
+                }}
+              />
+            ) : (
+              <Box
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                boxSize="50px"
+              >
+                {renderFileIconSTR(info.row.original.objectExtension.trim())}
+              </Box>
+            )}
+          </Flex>
+        ),
+        header: () => <Flex justifyContent={"center"}></Flex>,
+        footer: (props) => props.column.id,
+      },
+      {
+        accessorFn: (row) => row.objectCode,
+        id: "objectCode",
+        cell: (info) => (
+          <Stack spacing={0}>
+            <Text fontWeight={600}>{info.row.original.objectRawName}</Text>
+            {/* <Link href={info.row.original.objectFullPath}> */}
+            {/* <Text>{info.row.original.objectData}</Text> */}
+            {/* </Link> */}
+            <Text
+              fontWeight={600}
+              fontSize={"xx-small"}
+              color={"secondary.700"}
+            >
+              {info.row.original.objectCode}
+            </Text>
+          </Stack>
+        ),
+        header: () => <span>Nama File</span>,
+        footer: (props) => props.column.id,
+      },
+      {
+        accessorFn: (row) => row.objectSize,
+        id: "objectSize",
+        cell: (info) => (
+          <Text fontWeight={500}>{info.row.original.objectSize} KB</Text>
+        ),
+        header: () => <span>Ukuran</span>,
+        footer: (props) => props.column.id,
+      },
+      {
+        accessorFn: (row) => row.objectExtension,
+        id: "objectExtension",
+        cell: (info) => (
+          <Text fontWeight={500}>
+            {info.row.original.objectExtension.replace(".", "")}
+          </Text>
+        ),
+        header: () => <span>Tipe</span>,
+        footer: (props) => props.column.id,
+      },
+      {
+        accessorFn: (row) => row.id,
+        id: "id",
+        cell: (info) => (
+          <Flex w={"full"} as={Wrap} justifyContent={"start"}>
+            <Link
+              href={`${UrlEndpoint}${info.row.original.objectData}`}
+              target="_blank"
+            >
+              <Button
+                size={"sm"}
+                colorScheme={"blue"}
+                leftIcon={<FiDownload />}
+              >
+                Unggah
+              </Button>
+            </Link>
+            {info.row.original.objectExtension.replace(".", "").trim() ==
+              "pdf" && (
+              <Button
+                size={"sm"}
+                colorScheme={"blue"}
+                onClick={() => {
+                  handleOpenPreview(
+                    `${UrlEndpoint}${info.row.original.objectData}`
+                  );
+                }}
+                leftIcon={<FiEye />}
+              >
+                Pratinjau
+              </Button>
+            )}
+
+            {/* <Button
+                size={"sm"}
+                colorScheme={"red"}
+                onClick={() => handleConfirmDeleteData(info.row.original)}
+                isLoading={ActionLoading}
+              >
+                <FiTrash2 />
+              </Button> */}
+          </Flex>
+        ),
+        header: () => (
+          <Flex w={"full"} justifyContent={"center"}>
+            Aksi
+          </Flex>
+        ),
+        footer: (props) => props.column.id,
+      },
+    ],
+    []
+  );
+
+  const table = useReactTable({
+    data: DataAttachment || [],
+    columns: columnsData,
+
+    getCoreRowModel: getCoreRowModel(),
+    debugTable: false,
+    manualFiltering: false,
+    manualPagination: false,
+  });
+
+  // FORM
+  const ModalForm = useDisclosure();
+
+  // MODAL PREVIEW
+  const ModalPreview = useDisclosure();
+  const [UrlFilePDF, setUrlFilePDF] = useState<string>("");
+
+  const handleOpenPreview = (urlData: string) => {
+    setUrlFilePDF(urlData);
+    ModalPreview.onOpen();
+  };
+
+  return (
+    <>
+      <Flex w={"full"} as={Stack} spacing={4}>
+        {/* PREVIEW */}
+        <Modal
+          size={"6xl"}
+          isOpen={ModalPreview.isOpen}
+          isCentered
+          onClose={ModalPreview.onClose}
+          closeOnOverlayClick={true}
+          scrollBehavior={"inside"}
+        >
+          <ModalOverlay bg="blackAlpha.300" />
+          <ModalContent
+            rounded={radiusStyle}
+            m={2}
+            bg={colorMode == "light" ? "white" : "gray.900"}
+          >
+            <ModalHeader>{`Pratinjau File`}</ModalHeader>
+            <ModalCloseButton />
+            <ModalBody w={"full"}>
+              <Flex as={Stack} w={"full"}>
+                {/* <Text>{UrlFilePDF}</Text> */}
+                <iframe
+                  src={`/api/proxy-pdf?url=${encodeURIComponent(UrlFilePDF)}`}
+                  width="100%"
+                  height="600px"
+                  style={{ border: "none" }}
+                />
+                {/* <ExcelViewer
+                        fileUrl={`/api/proxy-pdf?url=${encodeURIComponent(UrlFilePDF)}`}
+                      /> */}
+              </Flex>
+            </ModalBody>
+          </ModalContent>
+        </Modal>
+
+        <TableComponentWithFilterCTX table={table} />
+      </Flex>
+    </>
+  );
+};
+
+const ReqInfoSummaryFileAttachmentsViewSimple = ({
+  DataRequirement,
+  DataAttachment,
+  steps,
+  activeStep,
+}: ReqSectionProps) => {
+  const { colorMode } = useColorMode();
+
+  const columnsData = useMemo<ColumnDef<MediaObjectResponse>[]>(
+    () => [
+      {
+        accessorFn: (row) => row.objectData,
+        id: "objectData",
+        cell: (info) => (
+          <Flex
+            justifyContent={"left"}
+            alignItems={"center"}
+            as={HStack}
+            spacing={3}
+          >
+            {[".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg"].some(
+              (ext) =>
+                info.row.original.objectExtension
+                  .trim()
+                  .toLowerCase()
+                  .endsWith(ext)
+            ) ? (
+              <ImagePreviewSM
+                data={{
+                  id: info.row.original.id,
+                  alt: info.row.original.objectRawName,
+                  name: info.row.original.objectRawName,
+                  src: info.row.original.objectFullPath,
+                  extension: info.row.original.objectExtension.trim(),
+                  // size:info.row.original.objectSize
+                }}
+              />
+            ) : (
+              <Box
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                boxSize="50px"
+              >
+                {renderFileIconSTR(info.row.original.objectExtension.trim())}
+              </Box>
+            )}
+            <Text fontWeight={600}>{info.row.original.objectRawName}</Text>
+          </Flex>
+        ),
+        header: () => <Flex justifyContent={"center"}></Flex>,
+        footer: (props) => props.column.id,
+      },
+    ],
+    []
+  );
+
+  const table = useReactTable({
+    data: DataAttachment || [],
+    columns: columnsData,
+
+    getCoreRowModel: getCoreRowModel(),
+    debugTable: false,
+    manualFiltering: false,
+    manualPagination: true,
+  });
+
+  return (
+    <>
+      <Flex w={"full"} as={Stack} spacing={4}>
+        <TableComponentWithFilterCTXNoBorder table={table} />
+      </Flex>
+    </>
+  );
+};
+
+const ReqInfoAcceptanceView = ({
+  DataRequirement,
+  steps,
+  activeStep,
+}: ReqSectionProps) => {
+  return (
+    <>
+      <InputGroupPanel headerTitle={"Former BRD Acceptance"}>
+        <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"}>
+          <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }} w={"full"}>
+            <Flex as={Stack} w={"full"} spacing={5}>
+              <FormControl>
+                <InputLayoutFullHalf>
+                  <FormLabel h={"full"} mt={2}>
+                    Tanggal Mulai Review
+                  </FormLabel>
+                  <Stack spacing={0} h={"full"}>
+                    <Text>
+                      {DataRequirement.reqReviewStartDate != null
+                        ? formatDateInputCustom(
+                            DataRequirement.reqReviewStartDate,
+                            "/"
+                          )
+                        : "-"}
+                    </Text>
+                  </Stack>
+                </InputLayoutFullHalf>
+              </FormControl>
+
+              <FormControl>
+                <InputLayoutFullHalf>
+                  <FormLabel h={"full"} mt={2}>
+                    Tanggal Selesai Review
+                  </FormLabel>
+                  <Stack spacing={0} h={"full"}>
+                    <Text>
+                      {DataRequirement.reqReviewEndDate != null
+                        ? formatDateInputCustom(
+                            DataRequirement.reqReviewEndDate,
+                            "/"
+                          )
+                        : "-"}
+                    </Text>
+                  </Stack>
+                </InputLayoutFullHalf>
+              </FormControl>
+
+              <FormControl>
+                <InputLayoutFullHalf>
+                  <FormLabel h={"full"} mt={2}>
+                    Durasi Review
+                  </FormLabel>
+                  <Stack spacing={0} h={"full"}>
+                    <Text>
+                      {DataRequirement.reqReviewDurationDay} Hari kalender
+                    </Text>
+                  </Stack>
+                </InputLayoutFullHalf>
+              </FormControl>
+
+              <FormControl>
+                <InputLayoutFullHalf>
+                  <FormLabel h={"full"} mt={2}>
+                    Direview Oleh
+                  </FormLabel>
+                  <Stack spacing={0} h={"full"}>
+                    <OrderedList>
+                      {DataRequirement.approvalDatas.map((ua, idx) => (
+                        <ListItem key={idx}>
+                          {`${ua.approverUserFirstName} (${ua.approverUserCode})`}
+                        </ListItem>
+                      ))}
+                    </OrderedList>
+                  </Stack>
+                </InputLayoutFullHalf>
+              </FormControl>
+
+              <FormControl>
+                <InputLayoutFullHalf>
+                  <FormLabel h={"full"} mt={2}>
+                    Diapprove Oleh
+                  </FormLabel>
+                  <Stack spacing={0} h={"full"}>
+                    <Text>-</Text>
+                  </Stack>
+                </InputLayoutFullHalf>
+              </FormControl>
+            </Flex>
+          </GridItem>
+          <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }} w={"full"}>
+            <Flex as={Stack} w={"full"} spacing={5}>
+              <FormControl>
+                <InputLayoutFull>
+                  <FormLabel h={"full"} mt={2}>
+                    Catatan
+                  </FormLabel>
+                  <Stack spacing={0} h={"full"}>
+                    <Text>-</Text>
+                  </Stack>
+                </InputLayoutFull>
+              </FormControl>
+            </Flex>
+          </GridItem>
+          <GridItem
+            colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}
+            w={"full"}
+          ></GridItem>
+          <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }} w={"full"}>
+            <Flex as={Stack} w={"full"} spacing={5}>
+              <SummaryStatusReq status={DataRequirement.reqStatus || "-"} />
+            </Flex>
+          </GridItem>
+        </Grid>
+      </InputGroupPanel>
+    </>
+  );
+};
 
 export default BrdDetailView;

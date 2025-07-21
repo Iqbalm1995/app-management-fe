@@ -9,6 +9,8 @@ import LayoutAdmin from "@/app/components/layoutAdmin";
 import LoadingMiniSignature from "@/app/components/loadingMini";
 import {
   DELAY_MEDIUM,
+  PROJEC_CATEGORY_OPTIONS,
+  PROJEC_TYPE_OPTIONS,
   radiusStyle,
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
@@ -60,6 +62,7 @@ import {
   StepTitle,
   StepDescription,
   StepSeparator,
+  Select as SelectC,
 } from "@chakra-ui/react";
 import { Select } from "chakra-react-select";
 import { useFormik } from "formik";
@@ -90,6 +93,8 @@ import AppInfromationSection from "./apps/appViewSection";
 import AppChangeLogSection from "./apps/appLogsViewSection";
 import AppsEnvirontmentSection from "./apps/appsEnvViewSection";
 import ProjectFeatureView from "./projectFeaturesView";
+import { calculateDurationInDays } from "@/app/helper/MasterHelper";
+import { InputLayoutFullHalf } from "@/app/components/layoutContentBody";
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Detail",
@@ -116,10 +121,23 @@ const OptionDataProjectStatus: OptionListProps[] = [
 ];
 
 const FormSchemaEditProject = Yup.object().shape({
-  projectName: Yup.string().required("Required"),
-  projectStatus: Yup.string().required("Required"),
-  projectStatusPercentage: Yup.string().required("Required"),
-  teamId: Yup.string().required("Required"),
+  id: Yup.string().required("ID is required"),
+  projectNo: Yup.string().required("Project Number is required"),
+  projectName: Yup.string()
+    .required("Project Name is required")
+    .min(3, "Minimum 3 characters")
+    .max(100, "Maximum 100 characters"),
+  projectDesc: Yup.string().nullable(),
+  note: Yup.string().nullable(),
+  projectCategory: Yup.string().required("Project Category is required"),
+  projectType: Yup.string().required("Project Type is required"),
+  projectRegisterDate: Yup.string().nullable(),
+  projectClosedDate: Yup.string().nullable(),
+  proOwnerDivisionId: Yup.string().nullable(),
+  proOwnerGroupId: Yup.string().nullable(),
+  proManageByDivisionId: Yup.string().nullable(),
+  proManageByGroupId: Yup.string().nullable(),
+  proManageByTeamId: Yup.string().nullable(),
 });
 
 function ProjectManagerDetail() {
@@ -219,6 +237,21 @@ function ProjectManagerDetail() {
         titleName={HeaderContentState.titleName}
         breadCrumb={HeaderContentState.breadCrumb}
       />
+
+      <Box
+        w={"full"}
+        overflowY={"auto"}
+        overflowX={"auto"}
+        maxH={"350px"}
+        p={4}
+        bgColor={"gray.200"}
+        rounded={radiusStyle}
+        display={"none"}
+      >
+        <Text fontWeight={600}>Data Project</Text>
+        <pre>{JSON.stringify(DataProject, null, 2)}</pre>
+      </Box>
+
       <Link href={"/projects-manager"}>
         <Button leftIcon={<FiArrowLeft />}>Back</Button>
       </Link>
@@ -267,36 +300,20 @@ function ProjectManagerDetail() {
               }}
               isDisabled={!DataProject}
             >
-              <FiPlayCircle /> <Text pl={1}>Application Info</Text>
-            </Tab>
-            <Tab
-              rounded={radiusStyle}
-              px={6}
-              _selected={{
-                color: "white",
-                bg: "primary.500",
-                boxShadow: "md",
-              }}
-              isDisabled={!DataProject}
-            >
               <FiShare /> <Text pl={1}>Projects Attachments</Text>
             </Tab>
           </TabList>
           <TabPanels pt={8}>
             {/* PROJECT INFO */}
             <TabPanel px={0}>
-              <ProjectInfoSection projectId={projectId} />
+              <Suspense>
+                <ProjectInfoSection projectId={projectId} />
+              </Suspense>
             </TabPanel>
             {/* FEATURES */}
             <TabPanel px={0}>
               <Suspense>
                 <ProjectFeatureView DataProject={DataProject} />
-              </Suspense>
-            </TabPanel>
-            {/* APPLICATION INFO */}
-            <TabPanel px={0}>
-              <Suspense>
-                <AppsInfoDetail DataProject={DataProject} />
               </Suspense>
             </TabPanel>
             {/* ATTACHMENTS */}
@@ -316,8 +333,26 @@ const stepsProgress = [
   { title: "Deployment", description: "Go live" },
 ];
 
+export const initialProjectUpdateValues: ProjectUpdatePayload = {
+  id: "",
+  projectNo: "",
+  projectName: "",
+  projectDesc: null,
+  note: null,
+  projectCategory: "",
+  projectType: "",
+  projectRegisterDate: null,
+  projectClosedDate: null,
+  proOwnerDivisionId: null,
+  proOwnerGroupId: null,
+  proManageByDivisionId: null,
+  proManageByGroupId: null,
+  proManageByTeamId: null,
+};
+
 const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
   const showToast = useToastHelper();
+  const { colorMode } = useColorMode();
 
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
@@ -354,9 +389,6 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
   const [ActionLoading, setActionLoading] = useState(false);
   const [IsEditMode, setIsEditMode] = useState(false);
-  const [DataOptions1, setDataOptions1] = useState<OptionListProps[]>(
-    OptionDataProjectStatus
-  );
 
   const [openConfirmUpdateDialog, setOpenConfirmUpdateDialog] = useState(false);
   const [questionMsgDialog, setQuestionMsgDialog] = useState<string>("");
@@ -365,16 +397,7 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
     useState<ProjectUpdatePayload | null>(null);
 
   const formik = useFormik<ProjectUpdatePayload>({
-    initialValues: {
-      id: "",
-      projectNo: "",
-      projectName: "",
-      projectDesc: "",
-      projectStatus: "NEW",
-      projectStatusPercentage: "0",
-      note: "",
-      teamId: "",
-    },
+    initialValues: initialProjectUpdateValues,
     validationSchema: FormSchemaEditProject,
     validateOnChange: false,
     validateOnBlur: false,
@@ -444,17 +467,6 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
     setRefreshData(RefreshData + 1);
   };
 
-  const [SelectedOption1, setSelectedOption1] =
-    useState<OptionListProps | null>(null);
-  const handleSelectedOption = (data: OptionListProps) => {
-    setSelectedOption1(data);
-    formik.setFieldValue("projectStatus", data.value);
-  };
-  const handleUnselectedOption = () => {
-    setSelectedOption1(null);
-    formik.setFieldValue("projectStatus", "NEW");
-  };
-
   useEffect(() => {
     if (DataAuth && DataAuth.team && projectId) {
       setIsLoadingProcess(true);
@@ -488,16 +500,34 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
           formik.setFieldValue("projectNo", itemsData.projectNo);
           formik.setFieldValue("projectName", itemsData.projectName);
           formik.setFieldValue("projectDesc", itemsData.projectDesc);
-          formik.setFieldValue("projectStatus", itemsData.projectStatus);
           formik.setFieldValue("note", itemsData.note);
-          formik.setFieldValue("teamId", DataAuth.team ? DataAuth.team.id : "");
-
-          const selectedStatus = DataOptions1.find(
-            (x) => x.value == itemsData.projectStatus
+          formik.setFieldValue("projectCategory", itemsData.projectCategory);
+          formik.setFieldValue("projectType", itemsData.projectType);
+          formik.setFieldValue(
+            "projectRegisterDate",
+            itemsData.projectRegisterDate
           );
-          if (selectedStatus) {
-            handleSelectedOption(selectedStatus);
-          }
+          formik.setFieldValue(
+            "projectClosedDate",
+            itemsData.projectClosedDate
+          );
+          formik.setFieldValue(
+            "proOwnerDivisionId",
+            itemsData.proOwnerDivisionId
+          );
+          formik.setFieldValue("proOwnerGroupId", itemsData.proOwnerGroupId);
+          formik.setFieldValue(
+            "proManageByDivisionId",
+            itemsData.proManageByDivisionId
+          );
+          formik.setFieldValue(
+            "proManageByGroupId",
+            itemsData.proManageByGroupId
+          );
+          formik.setFieldValue(
+            "proManageByTeamId",
+            itemsData.proManageByTeamId
+          );
 
           setDataProject(itemsData);
           setIsLoadingProcess(false);
@@ -540,19 +570,17 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
               >
                 <CardHeader pb={1}>
                   <Flex justifyContent={"space-between"}>
-                    <Heading as="h5" size="sm">
+                    <Heading as="h5" size="md">
                       Summary
                     </Heading>
                     <Flex as={Wrap} justifyContent={"end"} px={0}>
-                      <Button
+                      {/* <Button
                         rounded={"3xl"}
                         size={"sm"}
                         rightIcon={<BsKanban />}
-                        //   onClick={() => RefreshAction()}
-                        // isLoading={ActionLoading}
                       >
                         Go to Kanban
-                      </Button>
+                      </Button> */}
                     </Flex>
                   </Flex>
                 </CardHeader>
@@ -575,7 +603,7 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
                 <Flex
                   as={Stack}
                   w={"full"}
-                  divider={<StackDivider borderColor="gray.200" />}
+                  // divider={<StackDivider borderColor="gray.200" />}
                   spacing={6}
                   px={4}
                 >
@@ -631,36 +659,50 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
                       </Button>
                     </Flex>
                   </Flex>
-                  <Flex minH={"420px"} as={Stack} py={4} px={2}>
+                  <Flex
+                    minH={"420px"}
+                    as={Stack}
+                    py={4}
+                    px={2}
+                    divider={<StackDivider borderColor="gray.200" />}
+                  >
                     <FormControl
                       id="projectNo"
                       isInvalid={formik.errors.projectNo ? true : false}
                       isRequired
                     >
-                      <FormLabel fontWeight={600} h={"full"}>
-                        Project No.
-                      </FormLabel>
-                      <Stack spacing={0}>
-                        <Input
-                          id="projectNo"
-                          name="projectNo"
-                          type="text"
-                          onChange={(e) => {
-                            const uppercaseValue = e.target.value.toUpperCase(); // Convert to uppercase
-                            formik.setFieldValue("projectNo", uppercaseValue); // Update Formik's value
-                          }}
-                          value={formik.values.projectNo ?? ""}
-                          placeholder="Project No."
-                          readOnly={!IsEditMode}
-                          variant={IsEditMode ? "outline" : "unstyled"}
-                          minLength={3}
-                          maxLength={80}
-                          isDisabled={ActionLoading}
-                        />
-                        <FormErrorMessage>
-                          {formik.errors.projectNo}
-                        </FormErrorMessage>
-                      </Stack>
+                      <InputLayoutFullHalf>
+                        <FormLabel
+                          fontWeight={600}
+                          h={"full"}
+                          display="flex"
+                          alignItems="center"
+                        >
+                          Nomor Project
+                        </FormLabel>
+                        <Stack spacing={0}>
+                          <Input
+                            id="projectNo"
+                            name="projectNo"
+                            type="text"
+                            onChange={(e) => {
+                              const uppercaseValue =
+                                e.target.value.toUpperCase(); // Convert to uppercase
+                              formik.setFieldValue("projectNo", uppercaseValue); // Update Formik's value
+                            }}
+                            value={formik.values.projectNo ?? ""}
+                            placeholder="Project No."
+                            readOnly={!IsEditMode}
+                            variant={IsEditMode ? "outline" : "unstyled"}
+                            minLength={3}
+                            maxLength={80}
+                            isDisabled={ActionLoading}
+                          />
+                          <FormErrorMessage>
+                            {formik.errors.projectNo}
+                          </FormErrorMessage>
+                        </Stack>
+                      </InputLayoutFullHalf>
                     </FormControl>
 
                     <FormControl
@@ -668,113 +710,334 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
                       isInvalid={formik.errors.projectName ? true : false}
                       isRequired
                     >
-                      <FormLabel fontWeight={600} h={"full"}>
-                        Project Name
-                      </FormLabel>
-                      <Stack spacing={0}>
-                        <Input
-                          id="projectName"
-                          name="projectName"
-                          type="text"
-                          onChange={(e) => {
-                            const uppercaseValue = e.target.value.toUpperCase(); // Convert to uppercase
-                            formik.setFieldValue("projectName", uppercaseValue); // Update Formik's value
-                          }}
-                          value={formik.values.projectName ?? ""}
-                          placeholder="Project Name"
-                          readOnly={!IsEditMode}
-                          variant={IsEditMode ? "outline" : "unstyled"}
-                          minLength={3}
-                          maxLength={80}
-                          isDisabled={ActionLoading}
-                        />
-                        <FormErrorMessage>
-                          {formik.errors.projectName}
-                        </FormErrorMessage>
-                      </Stack>
+                      <InputLayoutFullHalf>
+                        <FormLabel
+                          fontWeight={600}
+                          h={"full"}
+                          display="flex"
+                          alignItems="center"
+                        >
+                          Nama Project
+                        </FormLabel>
+                        <Stack spacing={0}>
+                          <Input
+                            id="projectName"
+                            name="projectName"
+                            type="text"
+                            onChange={(e) => {
+                              const uppercaseValue =
+                                e.target.value.toUpperCase(); // Convert to uppercase
+                              formik.setFieldValue(
+                                "projectName",
+                                uppercaseValue
+                              ); // Update Formik's value
+                            }}
+                            value={formik.values.projectName ?? ""}
+                            placeholder="Project Name"
+                            readOnly={!IsEditMode}
+                            variant={IsEditMode ? "outline" : "unstyled"}
+                            minLength={3}
+                            maxLength={80}
+                            isDisabled={ActionLoading}
+                          />
+                          <FormErrorMessage>
+                            {formik.errors.projectName}
+                          </FormErrorMessage>
+                        </Stack>
+                      </InputLayoutFullHalf>
                     </FormControl>
 
                     <FormControl
                       id="projectDesc"
                       isInvalid={formik.errors.projectDesc ? true : false}
                     >
-                      <FormLabel fontWeight={600} h={"full"}>
-                        Project Descriptions
-                      </FormLabel>
-                      <Stack spacing={0}>
-                        <Textarea
-                          id="projectDesc"
-                          name="projectDesc"
-                          onChange={(e) => {
-                            formik.setFieldValue("projectDesc", e.target.value);
-                          }}
-                          readOnly={!IsEditMode}
-                          variant={IsEditMode ? "outline" : "unstyled"}
-                          defaultValue={formik.values.projectDesc ?? ""}
-                          placeholder="Project Descriptions"
-                          isDisabled={ActionLoading}
-                        ></Textarea>
-                        <FormErrorMessage>
-                          {formik.errors.projectDesc}
-                        </FormErrorMessage>
-                      </Stack>
+                      <InputLayoutFullHalf>
+                        <FormLabel
+                          fontWeight={600}
+                          h={"full"}
+                          display="flex"
+                          alignItems="center"
+                        >
+                          Deskripsi Project
+                        </FormLabel>
+                        <Stack spacing={0}>
+                          <Textarea
+                            id="projectDesc"
+                            name="projectDesc"
+                            onChange={(e) => {
+                              formik.setFieldValue(
+                                "projectDesc",
+                                e.target.value
+                              );
+                            }}
+                            readOnly={!IsEditMode}
+                            variant={IsEditMode ? "outline" : "unstyled"}
+                            defaultValue={formik.values.projectDesc ?? ""}
+                            placeholder="Project Descriptions"
+                            isDisabled={ActionLoading}
+                            minH={"30px"}
+                          ></Textarea>
+                          <FormErrorMessage>
+                            {formik.errors.projectDesc}
+                          </FormErrorMessage>
+                        </Stack>
+                      </InputLayoutFullHalf>
+                    </FormControl>
+
+                    <FormControl
+                      id="projectCategory"
+                      isInvalid={formik.errors.projectCategory ? true : false}
+                      isRequired
+                    >
+                      <InputLayoutFullHalf>
+                        <FormLabel
+                          fontWeight={600}
+                          h={"full"}
+                          display="flex"
+                          alignItems="center"
+                        >
+                          Karakteristik Project
+                        </FormLabel>
+                        <Stack spacing={0} h={"full"}>
+                          <SelectC
+                            value={formik.values.projectCategory}
+                            id="projectCategory"
+                            name="projectCategory"
+                            onChange={(e) => {
+                              formik.setFieldValue(
+                                `projectCategory`,
+                                e.target.value
+                              );
+                            }}
+                            placeholder="Select Karakteristik Project"
+                            variant={IsEditMode ? "outline" : "unstyled"}
+                            pointerEvents={!IsEditMode ? "none" : "auto"} // disable interaction
+                            tabIndex={!IsEditMode ? -1 : undefined} // prevent tabbing
+                            cursor={!IsEditMode ? "default" : "pointer"} // keep consistent cursor
+                            color={
+                              colorMode === "light"
+                                ? "gray.800"
+                                : "whiteAlpha.900"
+                            }
+                            bg="transparent"
+                          >
+                            {PROJEC_CATEGORY_OPTIONS.map((option) => (
+                              <option key={option} value={option}>
+                                {option}
+                              </option>
+                            ))}
+                          </SelectC>
+                        </Stack>
+                      </InputLayoutFullHalf>
+                    </FormControl>
+
+                    <FormControl
+                      id="projectType"
+                      isInvalid={formik.errors.projectType ? true : false}
+                      isRequired
+                    >
+                      <InputLayoutFullHalf>
+                        <FormLabel
+                          fontWeight={600}
+                          h={"full"}
+                          display="flex"
+                          alignItems="center"
+                        >
+                          Tipe Project
+                        </FormLabel>
+                        <Stack spacing={0} h={"full"}>
+                          <SelectC
+                            value={formik.values.projectType}
+                            id="projectType"
+                            name="projectType"
+                            onChange={(e) => {
+                              formik.setFieldValue(
+                                `projectType`,
+                                e.target.value
+                              );
+                            }}
+                            placeholder="Select Tipe Project"
+                            variant={IsEditMode ? "outline" : "unstyled"}
+                            pointerEvents={!IsEditMode ? "none" : "auto"} // disable interaction
+                            tabIndex={!IsEditMode ? -1 : undefined} // prevent tabbing
+                            cursor={!IsEditMode ? "default" : "pointer"} // keep consistent cursor
+                            color={
+                              colorMode === "light"
+                                ? "gray.800"
+                                : "whiteAlpha.900"
+                            }
+                            bg="transparent"
+                          >
+                            {PROJEC_TYPE_OPTIONS.map((option) => (
+                              <option key={option} value={option}>
+                                {option}
+                              </option>
+                            ))}
+                          </SelectC>
+                        </Stack>
+                      </InputLayoutFullHalf>
+                    </FormControl>
+
+                    <FormControl
+                      id="projectRegisterDate"
+                      isInvalid={
+                        formik.errors.projectRegisterDate ? true : false
+                      }
+                      isRequired
+                    >
+                      <InputLayoutFullHalf>
+                        <FormLabel
+                          fontWeight={600}
+                          h={"full"}
+                          display="flex"
+                          alignItems="center"
+                        >
+                          Tanggal Register Project
+                        </FormLabel>
+                        <Stack spacing={0} h={"full"}>
+                          <Input
+                            id="projectRegisterDate"
+                            name="projectRegisterDate"
+                            type="date"
+                            onChange={formik.handleChange}
+                            value={
+                              formik.values.projectRegisterDate
+                                ? formik.values.projectRegisterDate.split(
+                                    "T"
+                                  )[0]
+                                : ""
+                            }
+                            isReadOnly={!IsEditMode}
+                            variant={IsEditMode ? "outline" : "unstyled"}
+                            isDisabled={ActionLoading}
+                          />
+                          <FormErrorMessage>
+                            {formik.errors.projectRegisterDate}
+                          </FormErrorMessage>
+                        </Stack>
+                      </InputLayoutFullHalf>
+                    </FormControl>
+
+                    <FormControl
+                      id="projectClosedDate"
+                      isInvalid={formik.errors.projectClosedDate ? true : false}
+                      isRequired
+                    >
+                      <InputLayoutFullHalf>
+                        <FormLabel
+                          fontWeight={600}
+                          h={"full"}
+                          display="flex"
+                          alignItems="center"
+                        >
+                          Tanggal Closed Project
+                        </FormLabel>
+                        <Stack spacing={0} h={"full"}>
+                          {formik.values.projectClosedDate != null ? (
+                            <>
+                              <Input
+                                id="projectClosedDate"
+                                name="projectClosedDate"
+                                type="date"
+                                isReadOnly={true}
+                                variant={"unstyled"}
+                                isDisabled={true}
+                              />
+                              <FormErrorMessage>
+                                {formik.errors.projectClosedDate}
+                              </FormErrorMessage>
+                            </>
+                          ) : (
+                            <Text px={2} fontWeight={600}>
+                              ON GOING
+                            </Text>
+                          )}
+                        </Stack>
+                      </InputLayoutFullHalf>
+                    </FormControl>
+
+                    <FormControl
+                      id="projDateDuration"
+                      isInvalid={
+                        calculateDurationInDays(
+                          formik.values.projectRegisterDate ??
+                            new Date().toISOString().slice(0, 10),
+                          formik.values.projectClosedDate ??
+                            new Date().toISOString().slice(0, 10)
+                        ) < 0
+                      }
+                    >
+                      <InputLayoutFullHalf>
+                        <FormLabel
+                          fontWeight={600}
+                          h="full"
+                          display="flex"
+                          alignItems="center"
+                        >
+                          Durasi Project
+                        </FormLabel>
+                        <Stack spacing={0} h="full">
+                          {formik.values.projectClosedDate != null ? (
+                            <>
+                              <Text px={2} fontWeight={600}>
+                                {calculateDurationInDays(
+                                  formik.values.projectRegisterDate ??
+                                    new Date().toISOString().slice(0, 10),
+                                  formik.values.projectClosedDate ??
+                                    new Date().toISOString().slice(0, 10)
+                                )}{" "}
+                                Hari Kalendar (CLOSED)
+                              </Text>
+                              <FormErrorMessage>
+                                {calculateDurationInDays(
+                                  formik.values.projectRegisterDate ??
+                                    new Date().toISOString().slice(0, 10),
+                                  formik.values.projectClosedDate ??
+                                    new Date().toISOString().slice(0, 10)
+                                ) < 0 && "Durasi tidak boleh negatif"}
+                              </FormErrorMessage>
+                            </>
+                          ) : (
+                            <Text px={2} fontWeight={600}>
+                              ON GOING
+                            </Text>
+                          )}
+                        </Stack>
+                      </InputLayoutFullHalf>
                     </FormControl>
 
                     <FormControl
                       id="note"
                       isInvalid={formik.errors.note ? true : false}
                     >
-                      <FormLabel fontWeight={600} h={"full"}>
-                        Note
-                      </FormLabel>
-                      <Stack spacing={0}>
-                        <Textarea
-                          id="note"
-                          name="note"
-                          onChange={(e) => {
-                            formik.setFieldValue("note", e.target.value);
-                          }}
-                          readOnly={!IsEditMode}
-                          variant={IsEditMode ? "outline" : "unstyled"}
-                          defaultValue={formik.values.note ?? ""}
-                          placeholder="Notes"
-                          isDisabled={ActionLoading}
-                        ></Textarea>
-                        <FormErrorMessage>
-                          {formik.errors.note}
-                        </FormErrorMessage>
-                      </Stack>
-                    </FormControl>
-
-                    <FormControl
-                      id={"projectStatus"}
-                      isInvalid={formik.errors.projectStatus ? true : false}
-                      isRequired
-                    >
-                      <FormLabel fontWeight={600} h={"full"}>
-                        Project Status
-                      </FormLabel>
-                      <Stack spacing={0}>
-                        <Select
-                          id={"projectStatus"}
-                          options={DataOptions1}
-                          isSearchable={true}
-                          onChange={(e) => {
-                            e
-                              ? handleSelectedOption({
-                                  label: e.label,
-                                  value: e.value,
-                                })
-                              : handleUnselectedOption();
-                          }}
-                          value={SelectedOption1}
-                          variant={IsEditMode ? "outline" : "unstyled"}
-                          isReadOnly={!IsEditMode}
-                        />
-                        <FormErrorMessage>
-                          {formik.errors.projectStatus}
-                        </FormErrorMessage>
-                      </Stack>
+                      <InputLayoutFullHalf>
+                        <FormLabel
+                          fontWeight={600}
+                          h={"full"}
+                          display="flex"
+                          alignItems="center"
+                        >
+                          Note
+                        </FormLabel>
+                        <Stack spacing={0}>
+                          <Textarea
+                            id="note"
+                            name="note"
+                            onChange={(e) => {
+                              formik.setFieldValue("note", e.target.value);
+                            }}
+                            readOnly={!IsEditMode}
+                            variant={IsEditMode ? "outline" : "unstyled"}
+                            defaultValue={formik.values.note ?? ""}
+                            placeholder="Notes"
+                            isDisabled={ActionLoading}
+                            minH={"30px"}
+                          ></Textarea>
+                          <FormErrorMessage>
+                            {formik.errors.note}
+                          </FormErrorMessage>
+                        </Stack>
+                      </InputLayoutFullHalf>
                     </FormControl>
 
                     {/* <p>Project ID: {projectId}</p> */}
@@ -782,62 +1045,6 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
                       {/* <pre>{JSON.stringify(formik.values, null, 2)}</pre> */}
                     </Box>
                   </Flex>
-                  {/* Stepper Progress */}
-                  <Box w={"full"}>
-                    <Flex
-                      w={"full"}
-                      as={HStack}
-                      justifyContent={"space-between"}
-                      pb={4}
-                    >
-                      <Heading as="h5" size="sm" w={"full"}>
-                        Progression - (70%)
-                      </Heading>
-                    </Flex>
-                    <Progress
-                      colorScheme={"secondary"}
-                      hasStripe
-                      value={70}
-                      rounded={radiusStyle}
-                      my={3}
-                    />
-                    <Flex
-                      w={"full"}
-                      p={4}
-                      minH={"80px"}
-                      justifyContent={"start"}
-                      alignItems={"center"}
-                      rounded={radiusStyle}
-                      border={"1px"}
-                      borderColor={"gray.200"}
-                      boxShadow={"md"}
-                      overflowX={"auto"}
-                    >
-                      {/* STEPPER */}
-                      <Stepper index={activeStep} w={"full"}>
-                        {stepsProgress.map((step, index) => (
-                          <Step key={index}>
-                            <StepIndicator>
-                              <StepStatus
-                                complete={<StepIcon />}
-                                incomplete={<StepNumber />}
-                                active={<StepNumber />}
-                              />
-                            </StepIndicator>
-
-                            <Box flexShrink="0">
-                              <StepTitle>{step.title}</StepTitle>
-                              <StepDescription>
-                                {step.description}
-                              </StepDescription>
-                            </Box>
-
-                            <StepSeparator />
-                          </Step>
-                        ))}
-                      </Stepper>
-                    </Flex>
-                  </Box>
                 </Flex>
               </form>
             )}

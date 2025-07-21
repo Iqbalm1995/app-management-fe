@@ -80,7 +80,7 @@ export interface ProjectInsertPayload {
   projectCategory: string;
   projectType: string;
   projectRegisterDate: string;
-  projectClosedDate: string;
+  projectClosedDate?: string | null;
   proOwnerDivisionId?: string | null;
   proOwnerGroupId?: string | null;
   proManageByDivisionId?: string | null;
@@ -96,13 +96,19 @@ export interface ProjectUserInsertPayload {
 
 export interface ProjectUpdatePayload {
   id: string;
-  projectNo: string | null;
+  projectNo: string;
   projectName: string;
   projectDesc: string | null;
-  projectStatus: string;
-  projectStatusPercentage: string;
   note: string | null;
-  teamId: string;
+  projectCategory: string;
+  projectType: string;
+  projectRegisterDate: string | null;
+  projectClosedDate: string | null;
+  proOwnerDivisionId: string | null;
+  proOwnerGroupId: string | null;
+  proManageByDivisionId: string | null;
+  proManageByGroupId: string | null;
+  proManageByTeamId: string | null;
 }
 
 export interface ProjectUpdatePICPayload {

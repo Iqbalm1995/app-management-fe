@@ -5,6 +5,8 @@ import {
   AlertTitle,
   Badge,
   Box,
+  Flex,
+  HStack,
   Icon,
   Image,
   Modal,
@@ -22,6 +24,7 @@ import { radiusStyle } from "../constants/applicationConstants";
 import { AiFillFileExcel, AiFillFilePdf, AiFillFileWord } from "react-icons/ai";
 import { FaFileAlt } from "react-icons/fa";
 import { AttachmentProps } from "../types/masterTypes";
+import { FiAlertTriangle, FiClock, FiXCircle } from "react-icons/fi";
 
 // capitalize each word string
 export function capitalizeWords(str: string) {
@@ -1113,4 +1116,105 @@ export const renderFileIconSTR = (extFile: string) => {
     default:
       return <Icon as={FaFileAlt} w={8} h={8} color="gray.500" />;
   }
+};
+
+export function joinFieldValues<T>(
+  data: T[],
+  field: keyof T,
+  separator: string = ", "
+): string {
+  return data.map((item) => String(item[field])).join(separator);
+}
+
+// Define color map
+export const statusColorMap: Record<string, { bg: string; color: string }> = {
+  DRAFT: { bg: "gray.200", color: "gray.800" },
+  "NEEDS REVIEW": { bg: "purple.200", color: "purple.800" },
+  "IN PROGRESS REVIEW": { bg: "blue.200", color: "blue.800" },
+  "TEMPORARY APPROVED": { bg: "teal.200", color: "teal.800" },
+  APPROVED: { bg: "green.200", color: "green.800" },
+  "ON HOLD": { bg: "orange.200", color: "orange.800" },
+  CANCELED: { bg: "red.200", color: "red.800" },
+};
+
+export const SummaryStatusReq = ({ status }: { status: string }) => {
+  const colors = statusColorMap[status] ?? {
+    bg: "gray.100",
+    color: "gray.700",
+  };
+
+  return (
+    <Flex
+      bg={colors.bg}
+      py={4}
+      rounded={radiusStyle}
+      color={colors.color}
+      fontWeight={600}
+      fontSize={"larger"}
+      justifyContent={"center"}
+    >
+      <Text>{status}</Text>
+    </Flex>
+  );
+};
+
+export function getProjectHealthRating(
+  percentage: number
+): "A" | "B" | "C" | "D" | "E" {
+  if (percentage === 100) return "A";
+  if (percentage >= 81 && percentage <= 99) return "B";
+  if (percentage >= 36 && percentage <= 80) return "C";
+  if (percentage >= 1 && percentage <= 35) return "D";
+  return "E"; // covers 0 and invalid negative input
+}
+
+interface DeadlineStatusTagProps {
+  deadline: string; // format: YYYY-MM-DD or ISO string
+  remindBeforeDays?: number; // default: 7 days
+}
+
+export const DeadlineStatusTag: React.FC<DeadlineStatusTagProps> = ({
+  deadline,
+  remindBeforeDays = 7,
+}) => {
+  const now = new Date();
+  const deadlineDate = new Date(deadline);
+  if (isNaN(deadlineDate.getTime())) {
+    return <Text color="red.500">Invalid Date</Text>;
+  }
+
+  const msPerDay = 1000 * 60 * 60 * 24;
+  const diffInDays = Math.floor(
+    (deadlineDate.getTime() - now.getTime()) / msPerDay
+  );
+
+  // Format date as "DD MMM YYYY"
+  const formattedDate = deadlineDate.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+
+  let icon = FiClock;
+  let color = "gray.500";
+  let label = formattedDate;
+
+  if (diffInDays < 0) {
+    icon = FiXCircle;
+    color = "red.500";
+    label = `Terlambat (${formattedDate})`;
+  } else if (diffInDays <= remindBeforeDays) {
+    icon = FiAlertTriangle;
+    color = "orange.500";
+    label = `Segera (${formattedDate})`;
+  }
+
+  return (
+    <HStack spacing={1} color={color}>
+      <Icon as={icon} />
+      <Text fontSize="sm" fontWeight="semibold">
+        {label}
+      </Text>
+    </HStack>
+  );
 };

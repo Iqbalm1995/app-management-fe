@@ -312,6 +312,54 @@ export function TableInputShowPageCTX({ table }: any) {
   );
 }
 
+export function TableComponentWithFilterCTXNoBorder({
+  table,
+  handleFilterChange,
+}: any) {
+  const { colorMode } = useColorMode();
+  return (
+    <Box w={"full"}>
+      <Flex overflowX={"auto"} w={"full"}>
+        <Table variant={"unstyled"} size={"sm"}>
+          <Tbody>
+            {table.getRowModel().rows.length > 0 ? (
+              table.getRowModel().rows.map((row: any, index: any) => {
+                const startingNumber = index + 1;
+                return (
+                  <Tr key={row.id}>
+                    {row.getVisibleCells().map((cell: any) => {
+                      return (
+                        <Td key={cell.id}>
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </Td>
+                      );
+                    })}
+                  </Tr>
+                );
+              })
+            ) : (
+              <Tr>
+                <Td colSpan={table.options.columns.length + 1}>
+                  <Flex
+                    justifyContent={"center"}
+                    alignItems={"center"}
+                    minH={"30vh"}
+                  >
+                    Belum ada data
+                  </Flex>
+                </Td>
+              </Tr>
+            )}
+          </Tbody>
+        </Table>
+      </Flex>
+    </Box>
+  );
+}
+
 export function TableComponentWithFilterCTX({
   table,
   handleFilterChange,

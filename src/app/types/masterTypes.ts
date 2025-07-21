@@ -40,6 +40,7 @@ export interface PaggingListPayloadCustom {
   search: string;
   teamId?: string | null;
   reqId?: string | null;
+  backlogId?: string | null;
   limit: number;
   page: number;
   filterWhere: ListSearchByParam[];
@@ -171,4 +172,9 @@ export interface ColumnMetaCustom {
   isFilterable?: boolean;
   filterData?: FilterParamProps[];
   sortData?: SortDataProps[];
+}
+
+export interface StepsProps {
+  title: string;
+  description: string;
 }

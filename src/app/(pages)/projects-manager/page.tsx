@@ -625,22 +625,27 @@ const TeamProfile = () => {
     setIsLoadingProcess(true);
     if (DataAuth && DataAuth.team && DataAuth.team.id) {
       const teamId = DataAuth.team.id; // Store the ID to avoid repeated null checks
-      
+
       const GetDataTeam = async () => {
         // Check if team data exists in localStorage and is not expired
         const storedTeamData = localStorage.getItem(`teamData_${teamId}`);
-        const storedTeamTimestamp = localStorage.getItem(`teamData_${teamId}_timestamp`);
+        const storedTeamTimestamp = localStorage.getItem(
+          `teamData_${teamId}_timestamp`
+        );
         const currentTime = new Date().getTime();
         const CACHE_EXPIRATION = 30 * 60 * 1000; // 30 minutes in milliseconds
-        
+
         // Check if we have valid cached data
-        if (storedTeamData && storedTeamTimestamp && 
-            (currentTime - parseInt(storedTeamTimestamp) < CACHE_EXPIRATION) && 
-            RefreshData === 0) {
+        if (
+          storedTeamData &&
+          storedTeamTimestamp &&
+          currentTime - parseInt(storedTeamTimestamp) < CACHE_EXPIRATION &&
+          RefreshData === 0
+        ) {
           try {
             const parsedTeamData: TeamsResponse = JSON.parse(storedTeamData);
             setDataTeam(parsedTeamData);
-            
+
             if (parsedTeamData.teamPict != null) {
               setImage(
                 buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC) +
@@ -659,7 +664,7 @@ const TeamProfile = () => {
           await fetchTeamDataFromAPI();
         }
       };
-      
+
       // Function to fetch team data from API and save to localStorage
       const fetchTeamDataFromAPI = async () => {
         const requestData = await GetDetailById(teamId, tokenData);
@@ -685,15 +690,21 @@ const TeamProfile = () => {
           }
 
           const itemsData: TeamsResponse = requestData.data as TeamsResponse;
-          
+
           // Save to localStorage with timestamp
           try {
-            localStorage.setItem(`teamData_${teamId}`, JSON.stringify(itemsData));
-            localStorage.setItem(`teamData_${teamId}_timestamp`, new Date().getTime().toString());
+            localStorage.setItem(
+              `teamData_${teamId}`,
+              JSON.stringify(itemsData)
+            );
+            localStorage.setItem(
+              `teamData_${teamId}_timestamp`,
+              new Date().getTime().toString()
+            );
           } catch (error) {
             console.error("Error saving team data to localStorage:", error);
           }
-          
+
           setDataTeam(itemsData);
           setIsLoadingProcess(false);
           if (itemsData.teamPict != null) {
@@ -735,7 +746,8 @@ const TeamProfile = () => {
             return;
           }
 
-          const itemsData: UsersResponse[] = requestData.data as UsersResponse[];
+          const itemsData: UsersResponse[] =
+            requestData.data as UsersResponse[];
           setDataTeamMembers(itemsData);
         }
       };

@@ -19,7 +19,12 @@ import useProjects, {
   ProjectFeatureInsertPayload,
   ProjectFeatureResponse,
 } from "@/app/services/useProjects";
-import { OptionListProps, PaggingListPayload } from "@/app/types/masterTypes";
+import {
+  ColumnMetaCustom,
+  ListSearchByParamProps,
+  OptionListProps,
+  PaggingListPayload,
+} from "@/app/types/masterTypes";
 import {
   Box,
   Button,
@@ -36,7 +41,12 @@ import {
   GridItem,
   Heading,
   HStack,
+  IconButton,
   Input,
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuList,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -71,6 +81,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   FiChevronDown,
   FiChevronUp,
+  FiEye,
+  FiMoreVertical,
   FiPlusSquare,
   FiRefreshCcw,
   FiSave,
@@ -80,13 +92,24 @@ import * as Yup from "yup";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   colorProgression,
+  DeadlineStatusTag,
+  formatDateInputCustom,
   getPriorityFromMatrix,
   getRandomNumber,
+  priorityColor,
 } from "@/app/helper/MasterHelper";
 import LoadingMiniSignature from "@/app/components/loadingMini";
 import { TableComponentFull } from "@/app/components/tableComponents";
 import { InputLayoutFull } from "@/app/components/layoutContentBody";
 import { Select } from "chakra-react-select";
+import useRequirements, {
+  BacklogDataResponse,
+  RequirementsResponse,
+} from "@/app/services/useRequirements";
+import { TableComponentWithFilterCTX } from "@/app/components/tableComponentV2";
+import { HamburgerIcon } from "@chakra-ui/icons";
+import { BsKanban } from "react-icons/bs";
+import Link from "next/link";
 
 const FormSchemaFeatures = Yup.object().shape({
   projectId: Yup.string().required("Required"),
@@ -118,25 +141,22 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
   const searchParams = useSearchParams();
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
-  const {
-    ListProjectFeatures,
-    GetDetailProjectFeatureById,
-    InsertProjectFeature,
-    UpdateProjectFeature,
-    DeleteProjectFeature,
-  } = useProjects();
-  const {
-    ListConstantData,
-    GetDetailConstantDataById,
-    InsertConstantData,
-    UpdateConstantData,
-    DeleteConstantData,
-  } = useConstants();
 
+  const {
+    GetDetailById: GetReqDetail,
+    ListBacklog,
+    UpdateBacklogBatch,
+  } = useRequirements();
+
+  // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
-  const storedData = localStorage.getItem("authData");
-  const tokenData: string = localStorage.getItem("tokenData") as string;
+  const [tokenData, setTokenData] = useState<string>("");
+  const [ActionLoading, setActionLoading] = useState(false);
+
   useEffect(() => {
+    const storedData = localStorage.getItem("authData");
+    const token: string = localStorage.getItem("tokenData") as string;
+
     if (DataAuth == null) {
       if (storedData) {
         const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
@@ -145,21 +165,11 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
         setDataAuth(UserData);
       }
     }
-  }, [DataAuth]);
 
-  const [ProjectId, setProjectId] = useState<string | null>(null);
-  useEffect(() => {
-    const projectId = searchParams.get("projectId");
-    if (projectId) {
-      setProjectId(projectId);
+    if (token) {
+      setTokenData(token);
     }
-  }, [searchParams]);
-
-  const [DataFeatures, setDataFeatures] = useState<ProjectFeatureResponse[]>(
-    []
-  );
-  const [RefreshData, setRefreshData] = useState<number>(0);
-  const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
+  }, [DataAuth]);
 
   const [totalPages, setTotalPageData] = useState<number>(0);
   const [globalFilter, setGlobalFilter] = useState<string>("");
@@ -167,7 +177,6 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
     pageIndex: 0,
     pageSize: 5,
   });
-  const [ActionLoading, setActionLoading] = useState(false);
 
   const pagination = useMemo(
     () => ({
@@ -177,269 +186,16 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
     [pageIndex, pageSize]
   );
 
-  // Option Data Setup
-  // MAINTENANCE CATEGORY
-  const [OptionMaintenanceCategory, setOptionMaintenanceCategory] = useState<
-    OptionListProps[]
+  const [RefreshData, setRefreshData] = useState<number>(0);
+  // Requirement Data
+  const [DataRequirement, setDataRequirement] =
+    useState<RequirementsResponse | null>(null);
+  const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
+  // GetServiceListBacklog
+  const [IsloadingBacklogs, setIsloadingBacklogs] = useState(false);
+  const [DataBacklogsRequirement, setDataBacklogsRequirement] = useState<
+    BacklogDataResponse[]
   >([]);
-  const [SelectedMaintenanceCategory, setSelectedMaintenanceCategory] =
-    useState<OptionListProps | null>(null);
-  const handleSelectedMaintenanceCategory = (data: OptionListProps) => {
-    setSelectedMaintenanceCategory(data);
-    formik.setFieldValue("maintenanceCategory", data.value);
-  };
-  const handleUnSelectedMaintenanceCategory = () => {
-    setSelectedMaintenanceCategory(null);
-    formik.setFieldValue("maintenanceCategory", null);
-  };
-
-  // MAINTENANCE TYPE
-  const [OptionMaintenanceType, setOptionMaintenanceType] = useState<
-    OptionListProps[]
-  >([]);
-  const [SelectedMaintenanceType, setSelectedMaintenanceType] =
-    useState<OptionListProps | null>(null);
-  const handleSelectedMaintenanceType = (data: OptionListProps) => {
-    setSelectedMaintenanceType(data);
-    formik.setFieldValue("maintenanceType", data.value);
-  };
-  const handleUnSelectedMaintenanceType = () => {
-    setSelectedMaintenanceType(null);
-    formik.setFieldValue("maintenanceType", null);
-  };
-
-  // DEVELOPMENT STATUS
-
-  const ClearOptionData = () => {
-    setOptionMaintenanceCategory([]);
-    setOptionMaintenanceType([]);
-  };
-
-  const GetOptionDataServ = async (key: string): Promise<OptionListProps[]> => {
-    ClearOptionData();
-    const PayloadList: PaggingListPayload = {
-      search: "",
-      limit: MAX_SIZE_TABLE,
-      page: 0,
-      filterWhere: [
-        {
-          field: "groupCode",
-          operator: "=",
-          value: key || "",
-        },
-      ],
-      fieldOrder: ["createdAt"],
-      orderDir: "desc",
-    };
-
-    const requestData = await ListConstantData(PayloadList, tokenData);
-    const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
-
-    if (isErrorResponse || !requestData) {
-      showToast({
-        description: requestData?.message || RES_GENERIC_ERROR_MSG,
-        statusToast: "error",
-      });
-      setIsLoadingProcess(false);
-      setActionLoading(false);
-      return [];
-    } else {
-      if (requestData.data == null) {
-        showToast({
-          description: "Load option data return error, try again letter",
-          statusToast: "error",
-        });
-        setIsLoadingProcess(false);
-        setActionLoading(false);
-        return [];
-      }
-
-      const itemsData: ConstantDataResponse[] =
-        requestData.data as ConstantDataResponse[];
-
-      if (itemsData.length > 0) {
-        const OptionData: OptionListProps[] = itemsData.map((dt) => ({
-          label: dt.label,
-          value: dt.value,
-        }));
-
-        setIsLoadingProcess(false);
-        setActionLoading(false);
-        return OptionData;
-      }
-
-      setIsLoadingProcess(false);
-      setActionLoading(false);
-      return [];
-    }
-  };
-
-  useEffect(() => {
-    if (tokenData) {
-      const GettingDataOption = async () => {
-        const MaintenanceCategoryData: OptionListProps[] =
-          await GetOptionDataServ("MAINTENANCE_CATEGORY");
-        const MaintenanceTypeData: OptionListProps[] = await GetOptionDataServ(
-          "MAINTENANCE_TYPE"
-        );
-        setOptionMaintenanceCategory(MaintenanceCategoryData);
-        setOptionMaintenanceType(MaintenanceTypeData);
-      };
-      GettingDataOption();
-    }
-  }, []);
-
-  // End Option Data
-
-  const columnsData = useMemo<ColumnDef<ProjectFeatureResponse>[]>(
-    () => [
-      {
-        accessorFn: (row) => row.featureName,
-        id: "featureName",
-        cell: (info) => <Flex>{info.row.original.featureName}</Flex>,
-        header: () => <span>Feature Name</span>,
-        footer: (props) => props.column.id,
-      },
-    ],
-    [ActionLoading, pageIndex, pageSize, colorMode]
-  );
-
-  useEffect(() => {
-    if (DataAuth && DataAuth.team) {
-      const PayloadList: PaggingListPayload = {
-        search: globalFilter,
-        limit: pageSize,
-        page: pageIndex,
-        filterWhere: [
-          {
-            field: "projectId",
-            operator: "=",
-            value: ProjectId || "-",
-          },
-        ],
-        fieldOrder: ["createdAt"],
-        orderDir: "desc",
-      };
-
-      setIsLoadingProcess(true);
-      const GetDataList = async () => {
-        const requestData = await ListProjectFeatures(PayloadList, tokenData);
-        const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
-
-        if (isErrorResponse || !requestData) {
-          showToast({
-            description: requestData?.message || RES_GENERIC_ERROR_MSG,
-            statusToast: "error",
-          });
-          setIsLoadingProcess(false);
-          return;
-        } else {
-          console.log(requestData);
-          if (requestData.data == null) {
-            showToast({
-              description: "Data return error",
-              statusToast: "error",
-            });
-            setIsLoadingProcess(false);
-            return;
-          }
-
-          const itemsData: ProjectFeatureResponse[] =
-            requestData.data as ProjectFeatureResponse[];
-          const totalData: number = requestData.countTotal as number;
-          const totalPages: number =
-            totalData > 0 ? Math.ceil(totalData / pageSize) : -1;
-          setDataFeatures(itemsData);
-          setTotalPageData(totalPages);
-          setIsLoadingProcess(false);
-        }
-      };
-      GetDataList();
-    }
-  }, [DataAuth, RefreshData, pageIndex, pageSize, globalFilter, ProjectId]);
-
-  const RefreshAction = () => {
-    setTotalPageData(0);
-    setDataFeatures([]);
-    setRefreshData(RefreshData + 1);
-  };
-
-  const table = useReactTable({
-    data: DataFeatures,
-    columns: columnsData,
-    pageCount: totalPages ?? 1,
-    state: {
-      globalFilter,
-      pagination,
-    },
-    onPaginationChange: setPagination,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    onGlobalFilterChange: setGlobalFilter,
-    getFacetedUniqueValues: getFacetedUniqueValues(),
-    getFacetedMinMaxValues: getFacetedMinMaxValues(),
-    debugTable: false,
-    manualFiltering: true,
-    manualPagination: true,
-  });
-
-  const formik = useFormik<ProjectFeatureInsertPayload>({
-    initialValues: {
-      projectId: "",
-      featureName: "",
-      featureDesc: null,
-      featureSide: null,
-      maintenanceCategory: null,
-      maintenanceType: null,
-      rppb: "0",
-      licensing: "0",
-      featureStartDate: null,
-      featureEndDate: null,
-      urgency: "NOT YET",
-      impact: "NOT YET",
-      priority: "NOT YET",
-      developmentStatus: "NOT STARTED",
-    },
-    validationSchema: FormSchemaFeatures,
-    validateOnChange: false,
-    validateOnBlur: false,
-    onSubmit: async (values) => {
-      // console.log(values);
-      if (ProjectId == null) {
-        showToast({
-          description: "Project ID is invalid",
-          statusToast: "error",
-        });
-        setActionLoading(false);
-        return;
-      } else {
-        console.log("oakwoakwokaw");
-      }
-    },
-  });
-
-  const ModalForm = useDisclosure();
-  const handleAddNew = () => {
-    if ((DataAuth && DataAuth.team, ProjectId)) {
-      // formik.setFieldValue("id", null);
-      formik.setFieldValue("projectId", ProjectId);
-      // formik.setFieldValue("logTitle", "");
-      // formik.setFieldValue("categoryChange", "INFO");
-      // formik.setFieldValue("changeDate", generateTimestamp());
-      // formik.setFieldValue("logCode", generateUniqueCode("LG"));
-      // formik.setFieldValue("logDesc", "");
-      ModalForm.onOpen();
-    } else {
-      showToast({
-        description: "Project ID is invalid",
-        statusToast: "error",
-      });
-    }
-  };
-
-  // FILTER SHOW HIDE
-  const [BoxFilter, setBoxFilter] = useState(true);
 
   // PROGRESS REPORT
   const [OverallProgress, setOverallProgress] = useState<number>(0);
@@ -451,34 +207,141 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
     setProgressColor(colorProgress);
   }, [RefreshData]);
 
-  // Priority config
-  useEffect(() => {
-    const priorityData = getPriorityFromMatrix(
-      formik.values.impact || "",
-      formik.values.urgency || ""
-    );
-    formik.setFieldValue("priority", priorityData);
-  }, [formik.values]);
-
-  return (
-    <Flex w={"full"} as={Stack} spacing={6}>
-      <Flex w={"full"} as={HStack} justifyContent={"space-between"}>
-        <Heading as="h5" size="md" w={"full"}>
-          Data Project Features
-        </Heading>
-
-        <Flex
-          w={"full"}
-          as={HStack}
-          justifyContent={"start"}
-          alignItems={"end"}
-        >
-          <Button variant={"ghost"} size={"sm"} onClick={() => RefreshAction()}>
-            <FiRefreshCcw />
-          </Button>
-          <Flex w={"full"} as={Stack}>
-            <Text fontSize={"smaller"} fontWeight={600} as={"i"}>
-              Overall Progression - {OverallProgress.toString()}%
+  const columnsData = useMemo<ColumnDef<BacklogDataResponse>[]>(
+    () => [
+      {
+        accessorKey: "numbData",
+        cell: (info) => (
+          <Flex justifyContent={"center"} alignItems="flex-start" h={"full"}>
+            <Text>{info.row.index + 1}.</Text>
+          </Flex>
+        ),
+        header: () => <Flex justifyContent={"center"}>No.</Flex>,
+        footer: (props) => props.column.id,
+        // Custom variable
+        meta: {
+          isFilterable: false,
+        } as ColumnMetaCustom,
+      },
+      {
+        accessorFn: (row) => row.backlogCode,
+        id: "backlogCode",
+        cell: (info) => (
+          <Flex
+            w={"full"}
+            h={"full"}
+            justifyContent={"center"}
+            alignItems={"start"}
+            as={Stack}
+            spacing={0}
+          >
+            <Text fontWeight={600}>{info.row.original.backlogName}</Text>
+            <Text as={"p"} fontSize={"smaller"}>
+              {info.row.original.backlogDesc}
+            </Text>
+          </Flex>
+        ),
+        header: () => <span>Nama Fitur</span>,
+        footer: (props) => props.column.id,
+        // Custom variable
+        meta: {
+          isFilterable: false,
+        } as ColumnMetaCustom,
+      },
+      {
+        accessorFn: (row) => row.backlogEnddate,
+        id: "backlogEnddate",
+        cell: (info) => (
+          <Flex
+            w={"full"}
+            h={"full"}
+            justifyContent={"center"}
+            alignItems={"start"}
+            as={Stack}
+            spacing={1}
+          >
+            <Text fontWeight={600}>
+              {info.row.original.backlogEnddate != null ? (
+                <DeadlineStatusTag
+                  deadline={info.row.original.backlogEnddate}
+                  remindBeforeDays={10}
+                />
+              ) : (
+                "-"
+              )}
+            </Text>
+          </Flex>
+        ),
+        header: () => <span>Deadline</span>,
+        footer: (props) => props.column.id,
+        // Custom variable
+        meta: {
+          isFilterable: false,
+        } as ColumnMetaCustom,
+      },
+      {
+        accessorFn: (row) => row.priority,
+        id: "priority",
+        cell: (info) => (
+          <Flex
+            w={"full"}
+            h={"full"}
+            justifyContent={"center"}
+            alignItems={"start"}
+            as={Stack}
+            spacing={1}
+          >
+            <Text
+              fontWeight={600}
+              color={priorityColor(info.row.original.priority)}
+            >
+              {info.row.original.priority}
+            </Text>
+          </Flex>
+        ),
+        header: () => <span>Priority</span>,
+        footer: (props) => props.column.id,
+        // Custom variable
+        meta: {
+          isFilterable: false,
+        } as ColumnMetaCustom,
+      },
+      {
+        accessorFn: (row) => row.developmentStatus,
+        id: "developmentStatus",
+        cell: (info) => (
+          <Flex
+            w={"full"}
+            h={"full"}
+            justifyContent={"center"}
+            alignItems={"start"}
+            as={Stack}
+            spacing={1}
+          >
+            <Text fontWeight={600}>{info.row.original.developmentStatus}</Text>
+          </Flex>
+        ),
+        header: () => <span>Status</span>,
+        footer: (props) => props.column.id,
+        // Custom variable
+        meta: {
+          isFilterable: false,
+        } as ColumnMetaCustom,
+      },
+      {
+        accessorFn: (row) => row.backlogStartdate,
+        id: "devProgression",
+        cell: (info) => (
+          <Flex
+            w={"full"}
+            h={"full"}
+            justifyContent={"center"}
+            alignItems={"center"}
+            as={Stack}
+            spacing={0}
+          >
+            <Text fontSize={"smaller"} textAlign={"center"} fontWeight={600}>
+              {OverallProgress.toString()}%
             </Text>
             <Progress
               colorScheme={ProgressColor}
@@ -486,472 +349,248 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
               value={OverallProgress}
               w={"full"}
               rounded={radiusStyle}
+              size={"sm"}
             />
           </Flex>
-        </Flex>
-      </Flex>
-      <Flex w={"full"}>
-        <Card
-          w={"full"}
-          rounded={radiusStyle}
-          bg={colorMode == "light" ? "gray.50" : "gray.900"}
-        >
-          <CardHeader>
-            <Flex w={"full"} as={HStack} justifyContent={"space-between"}>
-              <Heading as="h5" size="sm" w={"full"}>
-                Filter Data
-              </Heading>
-              <Flex as={Wrap} justifyContent={"end"} px={0} w={"full"}>
-                <Button
-                  size={"sm"}
-                  leftIcon={BoxFilter ? <FiChevronUp /> : <FiChevronDown />}
-                  onClick={() => setBoxFilter(!BoxFilter)}
-                >
-                  {BoxFilter ? "Hide" : "Show"}
-                </Button>
+        ),
+        header: () => <span>Progress</span>,
+        footer: (props) => props.column.id,
+        // Custom variable
+        meta: {
+          isFilterable: false,
+        } as ColumnMetaCustom,
+      },
+      {
+        accessorFn: (row) => row.id,
+        id: "id",
+        cell: (info) => (
+          <Flex w={"full"} justifyContent={"center"} as={Wrap}>
+            <Link href={`/kanban-view`}>
+              <Button size={"xs"} colorScheme={"purple"} leftIcon={<FiEye />}>
+                Preview
+              </Button>
+            </Link>
+            <Link
+              href={`/kanban?projectId=${DataProject?.id}&backlogId=${info.row.original.id}`}
+            >
+              <Button size={"xs"} colorScheme={"gray"} leftIcon={<BsKanban />}>
+                Go To Kanban
+              </Button>
+            </Link>
+          </Flex>
+        ),
+        header: () => <span>Action</span>,
+        footer: (props) => props.column.id,
+        // Custom variable
+        meta: {
+          isFilterable: false,
+        },
+      },
+    ],
+    [colorMode, OverallProgress, ProgressColor, DataProject]
+  );
+
+  // Load Requirements
+  useEffect(() => {
+    if (DataAuth && DataAuth.team && DataProject && DataProject.reqParentId) {
+      // LOAD REQ DATA
+      const GetDataRequirement = async () => {
+        setIsLoadingProcess(true);
+        const requestData = await GetReqDetail(
+          DataProject.reqParentId || "",
+          tokenData
+        );
+        const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+        if (isErrorResponse || !requestData) {
+          showToast({
+            description: requestData?.message || RES_GENERIC_ERROR_MSG,
+            statusToast: "error",
+          });
+          setIsLoadingProcess(false);
+          return;
+        } else {
+          if (requestData.data == null) {
+            showToast({
+              description: "Data return error",
+              statusToast: "error",
+            });
+            setIsLoadingProcess(false);
+            return;
+          }
+          const itemsData: RequirementsResponse =
+            requestData.data as RequirementsResponse;
+          setDataRequirement(itemsData);
+          setIsLoadingProcess(false);
+        }
+      };
+
+      // LOAD BACKLOGS DATA
+      const PayloadGetBacklogList: PaggingListPayload = {
+        search: globalFilter,
+        limit: MAX_SIZE_TABLE,
+        page: 0,
+        filterWhere: [
+          {
+            field: "reqId",
+            operator: "=",
+            value: DataProject.reqParentId,
+          },
+        ],
+        fieldOrder: ["backlogName"],
+        orderDir: "asc",
+      };
+      const GetDataBacklogsList = async () => {
+        setIsLoadingProcess(true);
+        const requestData = await ListBacklog(PayloadGetBacklogList, tokenData);
+        const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+        if (isErrorResponse || !requestData) {
+          showToast({
+            description: requestData?.message || RES_GENERIC_ERROR_MSG,
+            statusToast: "error",
+          });
+          setIsLoadingProcess(false);
+          return;
+        } else {
+          if (requestData.data == null) {
+            showToast({
+              description: "Data return error",
+              statusToast: "error",
+            });
+            setIsLoadingProcess(false);
+            return;
+          }
+          const itemsData: BacklogDataResponse[] =
+            requestData.data as BacklogDataResponse[];
+          setDataBacklogsRequirement(itemsData);
+          setIsLoadingProcess(false);
+        }
+      };
+      GetDataRequirement();
+      GetDataBacklogsList();
+    }
+  }, [DataAuth, RefreshData, DataProject, globalFilter]);
+
+  // auto page
+  const tableBacklogs = useReactTable({
+    data: DataBacklogsRequirement,
+    columns: columnsData,
+    getCoreRowModel: getCoreRowModel(),
+    debugTable: false,
+    manualFiltering: false,
+    manualPagination: false,
+  });
+
+  const handleFilterChange = (newFilters: ListSearchByParamProps[]) => {
+    console.log("handleFilterChange");
+    console.log(newFilters);
+    // not implemented
+  };
+
+  const RefreshAction = () => {
+    setGlobalFilter("");
+    setDataRequirement(null);
+    setDataBacklogsRequirement([]);
+    setRefreshData(RefreshData + 1);
+  };
+
+  return (
+    <Flex w={"full"} as={Stack} spacing={6}>
+      {DataProject == null ? (
+        <Heading as="h4" size="md">
+          Data Invalid
+        </Heading>
+      ) : (
+        <>
+          <Flex w={"full"} as={HStack} justifyContent={"space-between"}>
+            <Heading as="h5" size="md" w={"full"}>
+              Data Project Features
+            </Heading>
+
+            <Flex
+              w={"full"}
+              as={HStack}
+              justifyContent={"start"}
+              alignItems={"end"}
+            >
+              <Flex w={"full"} as={Stack}>
+                <Text fontSize={"smaller"} fontWeight={600} as={"i"}>
+                  Overall Progression - {OverallProgress.toString()}%
+                </Text>
+                <Progress
+                  colorScheme={ProgressColor}
+                  hasStripe
+                  value={OverallProgress}
+                  w={"full"}
+                  rounded={radiusStyle}
+                />
               </Flex>
             </Flex>
-          </CardHeader>
-          <AnimatePresence initial={false}>
-            {BoxFilter && (
-              <MotionCardBody
-                key="filter"
-                display="flex"
-                flexDirection="column"
-                overflow="hidden"
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{
-                  duration: 0.3,
-                  ease: [0.4, 0, 0.2, 1], // smooth cubic-bezier for accordion-like feel
-                }}
+          </Flex>
+          <Flex w={"full"} as={HStack} justifyContent={"space-between"}>
+            <Flex as={HStack}>
+              <Input
+                id="backlogSearch"
+                name="backlogSearch"
+                type="text"
+                value={globalFilter}
+                onChange={(e) => setGlobalFilter(e.target.value)}
+                placeholder={`Cari Fitur`}
+                minLength={3}
+                maxLength={150}
+              />
+            </Flex>
+            <Flex as={Wrap} justifyContent={"end"} px={0} w={"full"}>
+              <Button
+                leftIcon={<FiRefreshCcw />}
+                onClick={() => RefreshAction()}
               >
-                <Text>Coming Soon</Text>
-              </MotionCardBody>
+                Refresh
+              </Button>
+            </Flex>
+          </Flex>
+
+          {/* TABLE DATA */}
+          <Flex as={Stack} w={"full"} spacing={5}>
+            {IsLoadingProcess ? (
+              <LoadingMiniSignature />
+            ) : (
+              <TableComponentWithFilterCTX
+                table={tableBacklogs}
+                handleFilterChange={handleFilterChange}
+              />
             )}
-          </AnimatePresence>
-        </Card>
-      </Flex>
-      <Flex w={"full"} p={2} as={HStack} justifyContent={"end"}>
-        <Flex as={Wrap} justifyContent={"end"} px={0} w={"full"}>
-          <Button
-            size={"sm"}
-            leftIcon={<FiRefreshCcw />}
-            onClick={() => RefreshAction()}
-          >
-            Refresh
-          </Button>
-          <Button
-            size={"sm"}
-            colorScheme={"secondary"}
-            leftIcon={<FiPlusSquare />}
-            onClick={() => handleAddNew()}
-            isLoading={ActionLoading}
-          >
-            Add New Feature
-          </Button>
-        </Flex>
-      </Flex>
-      <Flex as={Stack} w={"full"}>
-        {IsLoadingProcess ? (
-          <LoadingMiniSignature />
-        ) : (
-          <TableComponentFull table={table} />
-        )}
-      </Flex>
-      {/* MODAL */}
-      <Modal
-        size={"4xl"}
-        isOpen={ModalForm.isOpen}
-        isCentered
-        onClose={ModalForm.onClose}
-        scrollBehavior={"inside"}
-      >
-        <form onSubmit={formik.handleSubmit} onReset={formik.handleReset}>
-          <ModalOverlay bg="blackAlpha.300" />
-          <ModalContent
+          </Flex>
+
+          {/* ------------ DEBUG DATA ------------------ */}
+
+          <Box
+            w={"full"}
+            overflowY={"auto"}
+            overflowX={"auto"}
+            maxH={"350px"}
+            p={4}
+            bgColor={"gray.200"}
             rounded={radiusStyle}
-            m={2}
-            bg={colorMode == "light" ? "white" : "gray.900"}
+            display={"none"}
           >
-            <ModalHeader>Add New Feature</ModalHeader>
-            <ModalCloseButton />
-            <ModalBody w={"full"}>
-              <Flex as={Stack} w={"full"} pt={4} spacing={4}>
-                <Input
-                  id="projectId"
-                  name="projectId"
-                  type="hidden"
-                  value={formik.values.projectId ?? ""}
-                  readOnly
-                />
-                {/* <Input id="xxx" name="xxx" type="datetime-local" /> */}
-
-                <FormControl
-                  id="featureName"
-                  isInvalid={formik.errors.featureName ? true : false}
-                  isRequired
-                >
-                  <InputLayoutFull>
-                    <FormLabel h={"full"} mt={2}>
-                      Feature Name
-                    </FormLabel>
-                    <Stack spacing={0} h={"full"}>
-                      <Input
-                        id="featureName"
-                        name="featureName"
-                        type="text"
-                        onChange={formik.handleChange}
-                        value={formik.values.featureName ?? ""}
-                        placeholder="Feature Name"
-                        minLength={3}
-                        maxLength={150}
-                        isDisabled={ActionLoading}
-                      />
-                      <FormErrorMessage>
-                        {formik.errors.featureName}
-                      </FormErrorMessage>
-                    </Stack>
-                  </InputLayoutFull>
-                </FormControl>
-
-                <FormControl
-                  id="featureDesc"
-                  isInvalid={formik.errors.featureDesc ? true : false}
-                >
-                  <InputLayoutFull>
-                    <FormLabel h={"full"} mt={2}>
-                      Descriptions
-                    </FormLabel>
-                    <Stack spacing={0}>
-                      <Textarea
-                        id="featureDesc"
-                        name="featureDesc"
-                        onChange={formik.handleChange}
-                        defaultValue={formik.values.featureDesc ?? ""}
-                        placeholder="Descriptions"
-                        isDisabled={ActionLoading}
-                      />
-                      <FormErrorMessage>
-                        {formik.errors.featureDesc}
-                      </FormErrorMessage>
-                    </Stack>
-                  </InputLayoutFull>
-                </FormControl>
-
-                <FormControl
-                  id={"maintenanceCategory"}
-                  isInvalid={formik.errors.maintenanceCategory ? true : false}
-                  isRequired
-                >
-                  <InputLayoutFull>
-                    <FormLabel h={"full"} mt={2}>
-                      Maintenance Category
-                    </FormLabel>
-                    <Stack spacing={0}>
-                      <Select
-                        id={"maintenanceCategory"}
-                        options={OptionMaintenanceCategory}
-                        isSearchable={true}
-                        onChange={(e) => {
-                          e
-                            ? handleSelectedMaintenanceCategory({
-                                label: e.label,
-                                value: e.value,
-                              })
-                            : handleUnSelectedMaintenanceCategory();
-                        }}
-                        isLoading={IsLoadingProcess}
-                        value={SelectedMaintenanceCategory}
-                      />
-                      <FormErrorMessage>
-                        {formik.errors.maintenanceCategory}
-                      </FormErrorMessage>
-                    </Stack>
-                  </InputLayoutFull>
-                </FormControl>
-
-                <FormControl
-                  id={"maintenanceType"}
-                  isInvalid={formik.errors.maintenanceType ? true : false}
-                  isRequired
-                >
-                  <InputLayoutFull>
-                    <FormLabel h={"full"} mt={2}>
-                      Maintenance Type
-                    </FormLabel>
-                    <Stack spacing={0}>
-                      <Select
-                        id={"maintenanceType"}
-                        options={OptionMaintenanceType}
-                        isSearchable={true}
-                        onChange={(e) => {
-                          e
-                            ? handleSelectedMaintenanceType({
-                                label: e.label,
-                                value: e.value,
-                              })
-                            : handleUnSelectedMaintenanceType();
-                        }}
-                        isLoading={IsLoadingProcess}
-                        value={SelectedMaintenanceType}
-                      />
-                      <FormErrorMessage>
-                        {formik.errors.maintenanceType}
-                      </FormErrorMessage>
-                    </Stack>
-                  </InputLayoutFull>
-                </FormControl>
-
-                <FormControl
-                  id={"rppb"}
-                  isInvalid={formik.errors.rppb ? true : false}
-                  isRequired
-                >
-                  <InputLayoutFull>
-                    <FormLabel h={"full"} mt={2}>
-                      RPPB
-                    </FormLabel>
-                    <Stack spacing={0}>
-                      <Switch
-                        id="rppb"
-                        size={"lg"}
-                        isChecked={formik.values.rppb === "1"}
-                        onChange={(e) => {
-                          formik.setFieldValue(
-                            "rppb",
-                            e.target.checked ? "1" : "0"
-                          );
-                        }}
-                        isDisabled={ActionLoading}
-                      />
-                      <FormErrorMessage>{formik.errors.rppb}</FormErrorMessage>
-                    </Stack>
-                  </InputLayoutFull>
-                </FormControl>
-
-                <FormControl
-                  id={"licensing"}
-                  isInvalid={formik.errors.licensing ? true : false}
-                  isRequired
-                >
-                  <InputLayoutFull>
-                    <FormLabel h={"full"} mt={2}>
-                      Licensing
-                    </FormLabel>
-                    <Stack spacing={0}>
-                      <Switch
-                        id="licensing"
-                        size={"lg"}
-                        isChecked={formik.values.licensing === "1"}
-                        onChange={(e) => {
-                          formik.setFieldValue(
-                            "licensing",
-                            e.target.checked ? "1" : "0"
-                          );
-                        }}
-                        isDisabled={ActionLoading}
-                      />
-                      <FormErrorMessage>
-                        {formik.errors.licensing}
-                      </FormErrorMessage>
-                    </Stack>
-                  </InputLayoutFull>
-                </FormControl>
-
-                <FormControl
-                  id="featureStartDate"
-                  isInvalid={formik.errors.featureStartDate ? true : false}
-                  isRequired
-                >
-                  <InputLayoutFull>
-                    <FormLabel h={"full"} mt={2}>
-                      Start Date
-                    </FormLabel>
-                    <Stack spacing={0} h={"full"}>
-                      <Input
-                        id="featureStartDate"
-                        name="featureStartDate"
-                        type="datetime-local"
-                        onChange={formik.handleChange}
-                        value={formik.values.featureStartDate ?? ""}
-                        isDisabled={ActionLoading}
-                      />
-                      <FormErrorMessage>
-                        {formik.errors.featureStartDate}
-                      </FormErrorMessage>
-                    </Stack>
-                  </InputLayoutFull>
-                </FormControl>
-
-                <FormControl
-                  id="featureEndDate"
-                  isInvalid={formik.errors.featureEndDate ? true : false}
-                  isRequired
-                >
-                  <InputLayoutFull>
-                    <FormLabel h={"full"} mt={2}>
-                      End Date
-                    </FormLabel>
-                    <Stack spacing={0} h={"full"}>
-                      <Input
-                        id="featureEndDate"
-                        name="featureEndDate"
-                        type="datetime-local"
-                        onChange={formik.handleChange}
-                        value={formik.values.featureEndDate ?? ""}
-                        isDisabled={ActionLoading}
-                      />
-                      <FormErrorMessage>
-                        {formik.errors.featureEndDate}
-                      </FormErrorMessage>
-                    </Stack>
-                  </InputLayoutFull>
-                </FormControl>
-
-                <Flex w={"full"} as={Stack} spacing={4}>
-                  <Heading as="h5" size="sm">
-                    (sm) In love with React & Next
-                  </Heading>
-                  <Divider />
-                  <FormControl
-                    id="urgency"
-                    isInvalid={formik.errors.urgency ? true : false}
-                    isRequired
-                  >
-                    <InputLayoutFull>
-                      <FormLabel h={"full"} mt={2}>
-                        Urgency
-                      </FormLabel>
-                      <Stack spacing={0} h={"full"}>
-                        <ButtonGroup size="md" isAttached variant={"solid"}>
-                          {LocalPrioritiesOptions.map((opt) =>
-                            opt.categories.includes("URGENCY_STATUS") ? (
-                              <Button
-                                key={opt.value}
-                                colorScheme={
-                                  formik.values.urgency === opt.value
-                                    ? opt.colorScheme
-                                    : "gray"
-                                }
-                                onClick={() =>
-                                  formik.setFieldValue("urgency", opt.value)
-                                }
-                              >
-                                {opt.label}
-                              </Button>
-                            ) : null
-                          )}
-                        </ButtonGroup>
-                        <FormErrorMessage>
-                          {formik.errors.urgency}
-                        </FormErrorMessage>
-                      </Stack>
-                    </InputLayoutFull>
-                  </FormControl>
-
-                  <FormControl
-                    id="impact"
-                    isInvalid={formik.errors.impact ? true : false}
-                    isRequired
-                  >
-                    <InputLayoutFull>
-                      <FormLabel h={"full"} mt={2}>
-                        Impact
-                      </FormLabel>
-                      <Stack spacing={0} h={"full"}>
-                        <ButtonGroup size="md" isAttached variant={"solid"}>
-                          {LocalPrioritiesOptions.map((opt) =>
-                            opt.categories.includes("IMPACT_STATUS") ? (
-                              <Button
-                                key={opt.value}
-                                colorScheme={
-                                  formik.values.impact === opt.value
-                                    ? opt.colorScheme
-                                    : "gray"
-                                }
-                                onClick={() =>
-                                  formik.setFieldValue("impact", opt.value)
-                                }
-                              >
-                                {opt.label}
-                              </Button>
-                            ) : null
-                          )}
-                        </ButtonGroup>
-                        <FormErrorMessage>
-                          {formik.errors.impact}
-                        </FormErrorMessage>
-                      </Stack>
-                    </InputLayoutFull>
-                  </FormControl>
-
-                  <FormControl
-                    id="priority"
-                    isInvalid={formik.errors.priority ? true : false}
-                    isRequired
-                  >
-                    <InputLayoutFull>
-                      <FormLabel h={"full"} mt={2}>
-                        Priority
-                      </FormLabel>
-                      <Stack spacing={0} h={"full"}>
-                        <ButtonGroup size="md" isAttached variant={"solid"}>
-                          {LocalPrioritiesOptions.map((opt) =>
-                            opt.categories.includes("PRIORITY_STATUS") &&
-                            opt.value == formik.values.priority ? (
-                              <Button
-                                key={opt.value}
-                                colorScheme={
-                                  formik.values.impact === opt.value
-                                    ? opt.colorScheme
-                                    : "gray"
-                                }
-                                onClick={() =>
-                                  formik.setFieldValue("impact", opt.value)
-                                }
-                              >
-                                {opt.label}
-                              </Button>
-                            ) : null
-                          )}
-                        </ButtonGroup>
-                      </Stack>
-                    </InputLayoutFull>
-                  </FormControl>
-                </Flex>
-
-                <Box overflowY={"auto"}>
-                  {/* <pre>{JSON.stringify(formik.values, null, 2)}</pre> */}
-                </Box>
-              </Flex>
-            </ModalBody>
-            <ModalFooter>
-              <Flex w={"full"} justifyContent={"end"} as={HStack}>
-                <Button
-                  size={"md"}
-                  colorScheme={"gray"}
-                  leftIcon={<FiXCircle />}
-                  onClick={() => ModalForm.onClose()}
-                  isLoading={ActionLoading}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  size={"md"}
-                  colorScheme={"green"}
-                  leftIcon={<FiSave />}
-                  type={"submit"}
-                  isLoading={ActionLoading}
-                >
-                  Save
-                </Button>
-              </Flex>
-            </ModalFooter>
-          </ModalContent>
-        </form>
-      </Modal>
+            <Text fontWeight={600}>Data Requirement</Text>
+            <pre>{JSON.stringify(DataRequirement, null, 2)}</pre>
+          </Box>
+          <Box
+            w={"full"}
+            overflowY={"auto"}
+            overflowX={"auto"}
+            maxH={"350px"}
+            p={4}
+            bgColor={"gray.200"}
+            rounded={radiusStyle}
+            display={"none"}
+          >
+            <Text fontWeight={600}>Data Project</Text>
+            <pre>{JSON.stringify(DataProject, null, 2)}</pre>
+          </Box>
+        </>
+      )}
     </Flex>
   );
 };
