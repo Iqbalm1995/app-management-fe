@@ -400,39 +400,140 @@ function KanbanBacklogPage() {
           spacing={5}
           w={"full"}
           justifyContent={"start"}
-          // bg={"red"}
+          alignItems={"start"}
+          overflowX="auto"
+          pb={4}
         >
           {DataBoard.length > 0
-            ? DataBoard.map((t, idx) => (
+            ? DataBoard.map((board, idx) => (
                 <Flex
-                  key={idx}
+                  key={board.id}
                   as={Stack}
                   direction="column"
                   spacing={4}
                   width={"320px"}
+                  minWidth={"320px"}
                   bg={"white"}
                   rounded={radiusStyle}
                   boxShadow={"md"}
                   p={5}
-                  // w={{ base: "full", sm: "full", md: "320px", lg: "320px" }}
-                  // minH={"75vh"}
                   // onDragOver={handleDragOver}
                   // onDrop={(e) => handleDrop("toDo", e)}
                   // onDragLeave={handleDragLeave}
                   transition="all 0.3s ease"
                   border={isHovered ? "2px dashed blue" : "none"}
                 >
-                  <Heading size="md">{t.boardName}</Heading>
+                  <Heading size="md">{board.boardName}</Heading>
 
-                  {/* <Flex
-                    w={"full"}
-                    h={"50vh"}
-                    justifyContent={"center"}
-                    alignItems={"center"}
-                    display={isLoading ? "flex" : "none"}
+                  {/* Task container */}
+                  <Flex
+                    as={VStack}
+                    spacing={3}
+                    align="stretch"
+                    minH="200px"
+                    maxH="calc(75vh - 100px)"
+                    overflowY="auto"
+                    w="full"
                   >
-                    <Spinner />
-                  </Flex> */}
+                    {/* Filter tasks by boardId and map them */}
+                    {DataTasks &&
+                      DataTasks.filter((task) => task.boardId === board.id).map(
+                        (task) => (
+                          <Card
+                            key={task.id}
+                            size="sm"
+                            variant="outline"
+                            boxShadow="sm"
+                            _hover={{ boxShadow: "md" }}
+                            cursor="pointer"
+                          >
+                            <CardBody p={3}>
+                              <VStack align="start" spacing={2}>
+                                <Text fontWeight="medium">{task.taskName}</Text>
+
+                                {/* Task metadata */}
+                                <HStack w="full" justify="space-between">
+                                  <Badge
+                                    colorScheme={
+                                      task.taskPriority === "HIGH"
+                                        ? "red"
+                                        : task.taskPriority === "MEDIUM"
+                                        ? "orange"
+                                        : "green"
+                                    }
+                                  >
+                                    {task.taskPriority}
+                                  </Badge>
+                                  <Text fontSize="xs" color="gray.500">
+                                    {task.taskCode}
+                                  </Text>
+                                </HStack>
+
+                                {/* Task progress */}
+                                {task.percentageStatus > 0 && (
+                                  <Box
+                                    w="full"
+                                    h="4px"
+                                    bg="gray.100"
+                                    borderRadius="full"
+                                  >
+                                    <Box
+                                      h="100%"
+                                      w={`${task.percentageStatus}%`}
+                                      bg="blue.400"
+                                      borderRadius="full"
+                                    />
+                                  </Box>
+                                )}
+
+                                {/* Task assignees (if available) */}
+                                {task.assignUsers &&
+                                  task.assignUsers.length > 0 && (
+                                    <AvatarGroup size="xs" max={3}>
+                                      {task.assignUsers.map((user) => (
+                                        <Avatar
+                                          key={user.id}
+                                          name={user.nama}
+                                          src={user.profilePict || undefined}
+                                        />
+                                      ))}
+                                    </AvatarGroup>
+                                  )}
+                              </VStack>
+                            </CardBody>
+                          </Card>
+                        )
+                      )}
+
+                    {/* Empty state when no tasks */}
+                    {(!DataTasks ||
+                      DataTasks.filter((task) => task.boardId === board.id)
+                        .length === 0) && (
+                      <Flex
+                        h="100px"
+                        w="full"
+                        justify="center"
+                        align="center"
+                        border="1px dashed"
+                        borderColor="gray.200"
+                        borderRadius={radiusStyle}
+                      >
+                        <Text color="gray.400">No tasks</Text>
+                      </Flex>
+                    )}
+                  </Flex>
+
+                  {/* Add task button - only show in TO DO board */}
+                  {board.boardName === "TO DO" && (
+                    <Button
+                      leftIcon={<FaPlus />}
+                      variant="ghost"
+                      size="sm"
+                      justifyContent="flex-start"
+                    >
+                      Add task
+                    </Button>
+                  )}
                 </Flex>
               ))
             : "NO BOARD"}
