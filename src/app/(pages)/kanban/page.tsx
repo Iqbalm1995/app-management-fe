@@ -24,7 +24,11 @@ import {
   TASK_BOARD_STATUS_CODE_TODO,
 } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
-import { generateUUIDV1, truncateText } from "@/app/helper/MasterHelper";
+import {
+  convertToCustomDateFormat,
+  generateUUIDV1,
+  truncateText,
+} from "@/app/helper/MasterHelper";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useProjects, { ProjectDataResponse } from "@/app/services/useProjects";
@@ -115,7 +119,13 @@ import {
   FaGripVertical,
   FaPlus,
 } from "react-icons/fa6";
-import { FiArrowLeft } from "react-icons/fi";
+import {
+  FiArrowLeft,
+  FiCheckCircle,
+  FiList,
+  FiLoader,
+  FiNavigation,
+} from "react-icons/fi";
 import { LuGrip } from "react-icons/lu";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -968,10 +978,9 @@ function DraggableTaskCard({
 
       if (response?.statusCode === RES_CODE_OK && response.data) {
         setTaskItems(response.data);
-        
+
         // Calculate progress percentage based on loaded task items
         updateTaskProgress(response.data);
-      
       } else {
         console.error("Failed to fetch task items:", response?.message);
         setTaskItems([]);
@@ -1132,10 +1141,10 @@ function DraggableTaskCard({
           const updatedItems = prevItems.map((item) =>
             item.id === itemId ? { ...item, isDone: newStatus } : item
           );
-          
+
           // Calculate new progress percentage
           updateTaskProgress(updatedItems);
-          
+
           return updatedItems;
         });
 
@@ -1219,10 +1228,10 @@ function DraggableTaskCard({
         // Update local state
         setTaskItems((prevItems) => {
           const updatedItems = prevItems.filter((item) => item.id !== itemId);
-          
+
           // Calculate new progress percentage
           updateTaskProgress(updatedItems);
-          
+
           return updatedItems;
         });
 
@@ -1427,19 +1436,19 @@ function DraggableTaskCard({
       setIsArchiving(false);
     }
   };
-  
+
   // Calculate and update task progress based on completed task items
   const updateTaskProgress = async (items: TaskItemResponse[]) => {
     if (!detailedTask || items.length === 0) return;
-    
+
     // Calculate percentage of completed items
     const totalItems = items.length;
-    const completedItems = items.filter(item => item.isDone === "Y").length;
+    const completedItems = items.filter((item) => item.isDone === "Y").length;
     const progressPercentage = Math.round((completedItems / totalItems) * 100);
-    
+
     // Only update if the percentage has changed
     if (progressPercentage === detailedTask.percentageStatus) return;
-    
+
     try {
       // Create update payload
       const updatePayload: TaskUpdatePayload = {
@@ -1450,22 +1459,23 @@ function DraggableTaskCard({
         taskPriority: detailedTask.taskPriority,
         indexTask: detailedTask.indexTask,
         taskPoint: detailedTask.taskPoint,
-        percentageStatus: progressPercentage
+        percentageStatus: progressPercentage,
       };
-      
+
       // Add optional fields if they exist
-      if (detailedTask.startDate) updatePayload.startDate = detailedTask.startDate;
+      if (detailedTask.startDate)
+        updatePayload.startDate = detailedTask.startDate;
       if (detailedTask.endDate) updatePayload.endDate = detailedTask.endDate;
-      
+
       const response = await UpdateTask(updatePayload, getToken());
-      
+
       if (response?.statusCode === RES_CODE_OK) {
         // Update local state
         setDetailedTask({
           ...detailedTask,
-          percentageStatus: progressPercentage
+          percentageStatus: progressPercentage,
         });
-        
+
         console.log(`Task progress updated to ${progressPercentage}%`);
       } else {
         console.error("Failed to update task progress:", response?.message);
@@ -1478,12 +1488,12 @@ function DraggableTaskCard({
   // Handle updating task priority
   const handleUpdatePriority = async (newPriority: string) => {
     if (!detailedTask) return;
-    
+
     // If priority is the same, no need to update
     if (newPriority === detailedTask.taskPriority) return;
-    
+
     setIsLoadingDetails(true);
-    
+
     try {
       // Create update payload
       const updatePayload: TaskUpdatePayload = {
@@ -1495,25 +1505,26 @@ function DraggableTaskCard({
         indexTask: detailedTask.indexTask,
         taskPoint: detailedTask.taskPoint,
       };
-      
+
       // Add optional fields if they exist
-      if (detailedTask.startDate) updatePayload.startDate = detailedTask.startDate;
+      if (detailedTask.startDate)
+        updatePayload.startDate = detailedTask.startDate;
       if (detailedTask.endDate) updatePayload.endDate = detailedTask.endDate;
-      
+
       const response = await UpdateTask(updatePayload, getToken());
-      
+
       if (response?.statusCode === RES_CODE_OK) {
         // Update local state
         setDetailedTask({
           ...detailedTask,
-          taskPriority: newPriority
+          taskPriority: newPriority,
         });
-        
+
         showToast({
           description: "Task priority updated successfully",
           statusToast: "success",
         });
-        
+
         // Refresh the kanban board
         if (window.refreshKanbanData) {
           window.refreshKanbanData();
@@ -1598,14 +1609,15 @@ function DraggableTaskCard({
           bg={isRecentlyMoved ? "blue.50" : undefined}
           borderColor={isRecentlyMoved ? "blue.300" : undefined}
           transition="all 0.3s ease"
+          rounded={radiusStyle}
         >
-          <CardBody p={3}>
+          <CardBody px={3}>
             <VStack align="start" spacing={2}>
-              <Text fontWeight="medium">{task.taskName}</Text>
-
               {/* Task metadata */}
               <HStack w="full" justify="space-between">
                 <Badge
+                  rounded={"md"}
+                  px={2}
                   colorScheme={
                     task.taskPriority === "HIGH"
                       ? "red"
@@ -1618,10 +1630,28 @@ function DraggableTaskCard({
                 >
                   {task.taskPriority}
                 </Badge>
-                <Text fontSize="xs" color="gray.500">
-                  {task.taskCode}
-                </Text>
               </HStack>
+              <Text fontWeight={600} fontSize={"medium"}>
+                {task.taskName}
+              </Text>
+
+              <Text
+                fontSize={"smaller"}
+                lineHeight={0.9}
+                color={"gray"}
+                fontWeight={600}
+              >
+                Last Update
+                <Text fontWeight={500} lineHeight={1.4}>
+                  {task.updatedAt == null
+                    ? convertToCustomDateFormat(task.createdAt)
+                    : convertToCustomDateFormat(task.updatedAt)}
+                </Text>
+              </Text>
+
+              <Text fontSize={"small"} color={"gray"} as={"p"}>
+                {truncateText(task.taskDesc, 100)}
+              </Text>
 
               {/* Task progress */}
               {task.percentageStatus > 0 && (
@@ -1665,7 +1695,14 @@ function DraggableTaskCard({
         <ModalContent rounded={radiusStyle} py={4} m={2}>
           <ModalCloseButton />
           {detailedTask && (
-            <Box width="full" px={6} pt={2} pb={4} borderBottomWidth="1px" borderColor="gray.200">
+            <Box
+              width="full"
+              px={6}
+              pt={2}
+              pb={4}
+              borderBottomWidth="1px"
+              borderColor="gray.200"
+            >
               <Badge
                 colorScheme={
                   detailedTask.taskPriority === "HIGH"
@@ -2174,27 +2211,29 @@ function DraggableTaskCard({
                             </Badge>
                           </MenuButton>
                           <MenuList>
-                            <MenuItem 
+                            <MenuItem
                               onClick={() => handleUpdatePriority("LOW")}
                               icon={<Badge colorScheme="green">LOW</Badge>}
                             >
                               Low Priority
                             </MenuItem>
-                            <MenuItem 
+                            <MenuItem
                               onClick={() => handleUpdatePriority("MEDIUM")}
                               icon={<Badge colorScheme="orange">MEDIUM</Badge>}
                             >
                               Medium Priority
                             </MenuItem>
-                            <MenuItem 
+                            <MenuItem
                               onClick={() => handleUpdatePriority("HIGH")}
                               icon={<Badge colorScheme="red">HIGH</Badge>}
                             >
                               High Priority
                             </MenuItem>
-                            <MenuItem 
+                            <MenuItem
                               onClick={() => handleUpdatePriority("CRITICAL")}
-                              icon={<Badge colorScheme="purple">CRITICAL</Badge>}
+                              icon={
+                                <Badge colorScheme="purple">CRITICAL</Badge>
+                              }
                             >
                               Critical Priority
                             </MenuItem>
@@ -3121,7 +3160,38 @@ function KanbanBacklogPage() {
                     onPositionedMove={handleMoveTaskInternal}
                     setDropPreview={setDropPreview}
                   >
-                    <Heading size="md">{board.boardName}</Heading>
+                    <Flex as={HStack} spacing={2}>
+                      {board.boardName === "TO DO" ? (
+                        <FiList size={"1.3em"} />
+                      ) : board.boardName === "IN PROGRESS" ? (
+                        <FiLoader size={"1.3em"} />
+                      ) : board.boardName === "IN REVIEW" ? (
+                        <FiNavigation size={"1.3em"} />
+                      ) : board.boardName === "DONE" ? (
+                        <FiCheckCircle size={"1.3em"} />
+                      ) : (
+                        ""
+                      )}
+                      <Badge
+                        fontSize={"medium"}
+                        fontWeight={600}
+                        px={3}
+                        rounded={"md"}
+                        colorScheme={
+                          board.boardName === "TO DO"
+                            ? "gray"
+                            : board.boardName === "IN PROGRESS"
+                            ? "blue"
+                            : board.boardName === "IN REVIEW"
+                            ? "purple"
+                            : board.boardName === "DONE"
+                            ? "green"
+                            : "gray"
+                        }
+                      >
+                        {board.boardName}
+                      </Badge>
+                    </Flex>
 
                     {/* Task container */}
                     <VStack
