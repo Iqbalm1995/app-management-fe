@@ -1044,6 +1044,11 @@ function DraggableTaskCard({
           description: "Task name updated successfully",
           statusToast: "success",
         });
+        
+        // Refresh the kanban board
+        if (window.refreshKanbanData) {
+          window.refreshKanbanData();
+        }
       } else {
         showToast({
           description: response?.message || "Failed to update task name",
@@ -1099,6 +1104,11 @@ function DraggableTaskCard({
           description: "Task description updated successfully",
           statusToast: "success",
         });
+        
+        // Refresh the kanban board
+        if (window.refreshKanbanData) {
+          window.refreshKanbanData();
+        }
       } else {
         showToast({
           description: response?.message || "Failed to update task description",
@@ -1477,6 +1487,10 @@ function DraggableTaskCard({
         });
 
         console.log(`Task progress updated to ${progressPercentage}%`);
+        // Refresh the kanban board
+        if (window.refreshKanbanData) {
+          window.refreshKanbanData();
+        }
       } else {
         console.error("Failed to update task progress:", response?.message);
       }
