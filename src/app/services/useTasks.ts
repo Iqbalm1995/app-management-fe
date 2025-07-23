@@ -99,6 +99,7 @@ export interface TaskUpdatePayload {
   endDate?: string;
   indexTask: number;
   taskPoint: number;
+  percentageStatus?: number;
 }
 
 export interface TaskArchivePayload {
