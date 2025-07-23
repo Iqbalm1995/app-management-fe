@@ -103,6 +103,7 @@ import {
 } from "@chakra-ui/react";
 import {
   ChevronDownIcon,
+  CheckIcon,
   CalendarIcon,
   EditIcon,
   DeleteIcon,
@@ -122,9 +123,14 @@ import {
 import {
   FiArrowLeft,
   FiCheckCircle,
+  FiCheckSquare,
   FiList,
   FiLoader,
+  FiMessageSquare,
   FiNavigation,
+  FiPaperclip,
+  FiPlusCircle,
+  FiShare2,
 } from "react-icons/fi";
 import { LuGrip } from "react-icons/lu";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
@@ -1044,7 +1050,7 @@ function DraggableTaskCard({
           description: "Task name updated successfully",
           statusToast: "success",
         });
-        
+
         // Refresh the kanban board
         if (window.refreshKanbanData) {
           window.refreshKanbanData();
@@ -1104,7 +1110,7 @@ function DraggableTaskCard({
           description: "Task description updated successfully",
           statusToast: "success",
         });
-        
+
         // Refresh the kanban board
         if (window.refreshKanbanData) {
           window.refreshKanbanData();
@@ -1651,12 +1657,12 @@ function DraggableTaskCard({
 
               <Text
                 fontSize={"smaller"}
-                lineHeight={0.9}
+                lineHeight={1.3}
                 color={"gray"}
                 fontWeight={600}
               >
                 Last Update
-                <Text fontWeight={500} lineHeight={1.4}>
+                <Text fontWeight={500}>
                   {task.updatedAt == null
                     ? convertToCustomDateFormat(task.createdAt)
                     : convertToCustomDateFormat(task.updatedAt)}
@@ -1691,6 +1697,31 @@ function DraggableTaskCard({
                   ))}
                 </AvatarGroup>
               )}
+
+              <Flex as={HStack} w={"full"} justifyContent={"end"}>
+                {/* Task coment count (if available) */}
+                <HStack spacing={1} alignItems="center">
+                  <Icon as={FiMessageSquare} color="gray.600" boxSize={4} />
+                  <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                    0
+                  </Text>
+                </HStack>
+                {/* Task item count (if available) */}
+                {task.taskItems && task.taskItems.length > 0 && (
+                  <HStack spacing={1} alignItems="center">
+                    <Icon as={FiCheckSquare} color="gray.600" boxSize={4} />
+                    <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                      {
+                        task.taskItems.filter((item) => item.isDone === "Y")
+                          .length
+                      }
+                      /{task.taskItems.length}
+                    </Text>
+                  </HStack>
+                )}
+                {/* Share task */}
+                {/* <Icon as={FiShare2} color="gray.600" boxSize={4} /> */}
+              </Flex>
             </VStack>
           </CardBody>
         </Card>
@@ -1708,34 +1739,6 @@ function DraggableTaskCard({
         <ModalOverlay />
         <ModalContent rounded={radiusStyle} py={4} m={2}>
           <ModalCloseButton />
-          {detailedTask && (
-            <Box
-              width="full"
-              px={6}
-              pt={2}
-              pb={4}
-              borderBottomWidth="1px"
-              borderColor="gray.200"
-            >
-              <Badge
-                colorScheme={
-                  detailedTask.taskPriority === "HIGH"
-                    ? "red"
-                    : detailedTask.taskPriority === "MEDIUM"
-                    ? "orange"
-                    : detailedTask.taskPriority === "CRITICAL"
-                    ? "purple"
-                    : "green"
-                }
-                rounded={radiusStyle}
-                px={2}
-                py={1}
-                fontSize="sm"
-              >
-                {detailedTask.taskPriority} PRIORITY
-              </Badge>
-            </Box>
-          )}
           <ModalBody>
             {isLoadingDetails ? (
               <Flex justify="center" align="center" p={10}>
@@ -1743,6 +1746,175 @@ function DraggableTaskCard({
               </Flex>
             ) : detailedTask ? (
               <Grid templateColumns="repeat(12, 1fr)" gap={5} w="full">
+                <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 12 }}>
+                  <Flex pt={2} alignItems={"center"} as={HStack} spacing={4}>
+                    {/* Status with Board Selection using Menu */}
+                    <HStack>
+                      <Menu>
+                        <MenuButton
+                          as={Button}
+                          rightIcon={<ChevronDownIcon />}
+                          size="md"
+                          variant="outline"
+                          width="full"
+                          textAlign="left"
+                          isLoading={isLoadingDetails}
+                          color={"secondary.500"}
+                        >
+                          {detailedTask?.boardName || "Select Board"}
+                        </MenuButton>
+                        <MenuList fontWeight={600}>
+                          {(window.kanbanBoards || []).map((board) => (
+                            <MenuItem
+                              fontWeight={600}
+                              key={board.id}
+                              isDisabled={board.id === detailedTask.boardId}
+                              onClick={() => {
+                                const newBoardId = board.id;
+                                if (newBoardId === detailedTask.boardId) return;
+
+                                // Use local loading state
+                                setIsLoadingDetails(true);
+
+                                // Get boards from the parent component's context
+                                const boards = window.kanbanBoards || [];
+                                const targetBoard = boards.find(
+                                  (b) => b.id === newBoardId
+                                );
+
+                                if (targetBoard) {
+                                  // Use the global moveTaskFunction instead of directly calling MoveTask
+                                  if (window.moveTaskFunction) {
+                                    window
+                                      .moveTaskFunction(
+                                        detailedTask.id,
+                                        newBoardId,
+                                        0
+                                      )
+                                      .then((success) => {
+                                        if (success) {
+                                          // Update the detailed task with new board info
+                                          setDetailedTask({
+                                            ...detailedTask,
+                                            boardId: newBoardId,
+                                            boardName: targetBoard.boardName,
+                                            boardIndexStage:
+                                              targetBoard.indexStage,
+                                            boardCodeStage:
+                                              targetBoard.boardCodeStage,
+                                          });
+
+                                          // Notify the parent component to refresh data
+                                          if (window.refreshKanbanData) {
+                                            window.refreshKanbanData();
+                                          }
+
+                                          showToast({
+                                            description: `Task moved to ${targetBoard.boardName}`,
+                                            statusToast: "success",
+                                          });
+                                        } else {
+                                          showToast({
+                                            description: "Failed to move task",
+                                            statusToast: "error",
+                                          });
+                                        }
+                                      })
+                                      .catch((error) => {
+                                        console.error(
+                                          "Error moving task:",
+                                          error
+                                        );
+                                        showToast({
+                                          description:
+                                            "An error occurred while moving the task",
+                                          statusToast: "error",
+                                        });
+                                      })
+                                      .finally(() => {
+                                        setIsLoadingDetails(false);
+                                      });
+                                  } else {
+                                    showToast({
+                                      description:
+                                        "Move task function not available",
+                                      statusToast: "error",
+                                    });
+                                    setIsLoadingDetails(false);
+                                  }
+                                }
+                              }}
+                            >
+                              {board.boardName}
+                            </MenuItem>
+                          ))}
+                        </MenuList>
+                      </Menu>
+                      {isLoadingDetails && <Spinner size="sm" ml={2} />}
+                    </HStack>
+                    {/* Priority */}
+                    <HStack>
+                      <Menu>
+                        <MenuButton
+                          as={Button}
+                          rightIcon={<ChevronDownIcon />}
+                          size={"md"}
+                          variant="ghost"
+                          width="full"
+                          textAlign="left"
+                          isLoading={isLoadingDetails}
+                        >
+                          <Badge
+                            colorScheme={
+                              detailedTask.taskPriority === "HIGH"
+                                ? "red"
+                                : detailedTask.taskPriority === "MEDIUM"
+                                ? "orange"
+                                : detailedTask.taskPriority === "CRITICAL"
+                                ? "purple"
+                                : "green"
+                            }
+                            fontSize={"large"}
+                            rounded={"md"}
+                            px={3}
+                            py={1}
+                            mr={2}
+                          >
+                            {detailedTask.taskPriority}
+                          </Badge>
+                        </MenuButton>
+                        <MenuList>
+                          <MenuItem
+                            onClick={() => handleUpdatePriority("LOW")}
+                            icon={<Badge colorScheme="green">LOW</Badge>}
+                          >
+                            Low Priority
+                          </MenuItem>
+                          <MenuItem
+                            onClick={() => handleUpdatePriority("MEDIUM")}
+                            icon={<Badge colorScheme="orange">MEDIUM</Badge>}
+                          >
+                            Medium Priority
+                          </MenuItem>
+                          <MenuItem
+                            onClick={() => handleUpdatePriority("HIGH")}
+                            icon={<Badge colorScheme="red">HIGH</Badge>}
+                          >
+                            High Priority
+                          </MenuItem>
+                          <MenuItem
+                            onClick={() => handleUpdatePriority("CRITICAL")}
+                            icon={<Badge colorScheme="purple">CRITICAL</Badge>}
+                          >
+                            Critical Priority
+                          </MenuItem>
+                        </MenuList>
+                      </Menu>
+                      {isLoadingDetails && <Spinner size="sm" ml={2} />}
+                    </HStack>
+                  </Flex>
+                </GridItem>
+
                 <GridItem colSpan={{ base: 12, sm: 12, md: 8, lg: 8 }}>
                   <Flex
                     w="full"
@@ -1956,7 +2128,7 @@ function DraggableTaskCard({
                       )}
 
                       {/* Add new task item */}
-                      <Box px={4} w="full" mt={2}>
+                      <Box px={4} w="full" my={4}>
                         <form onSubmit={handleAddTaskItem}>
                           <InputGroup size="sm">
                             <Input
@@ -1966,40 +2138,59 @@ function DraggableTaskCard({
                                 setNewTaskItemName(e.target.value)
                               }
                               pr="4.5rem"
+                              variant={"unstyled"}
                             />
-                            <InputRightElement width="4.5rem">
-                              <Button
-                                h="1.75rem"
-                                size="sm"
-                                type="submit"
-                                isDisabled={!newTaskItemName.trim()}
-                                isLoading={isAddingTaskItem}
-                              >
-                                Add
-                              </Button>
-                            </InputRightElement>
+                            <Button
+                              h="1.75rem"
+                              size="sm"
+                              type="submit"
+                              colorScheme="secondary"
+                              isDisabled={!newTaskItemName.trim()}
+                              isLoading={isAddingTaskItem}
+                            >
+                              Tambah
+                            </Button>
                           </InputGroup>
                         </form>
                       </Box>
                     </Box>
 
                     {/* Attachments */}
-                    <Wrap spacing={2}>
-                      {Array.isArray(sampleAttachments) &&
-                        sampleAttachments.map((image, index) => (
-                          <WrapItem key={index}>
-                            <ImagePreview
-                              id={image.id || `attachment-${index}`}
-                              name={image.name}
-                              alt={image.alt}
-                              src={image.src}
-                            />
-                          </WrapItem>
-                        ))}
-                      <WrapItem>
-                        <ImageAddMore />
-                      </WrapItem>
-                    </Wrap>
+                    <Box w="full">
+                      <Flex
+                        w="full"
+                        justifyContent="space-between"
+                        as={HStack}
+                        spacing={2}
+                        color="gray.500"
+                        mb={3}
+                      >
+                        <HStack>
+                          <FiPaperclip size={16} />
+                          <Text fontWeight={600} fontSize={18}>
+                            Attachment
+                          </Text>
+                        </HStack>
+                        {isLoadingTaskItems && <Spinner size="sm" />}
+                      </Flex>
+
+                      <Wrap spacing={2}>
+                        {Array.isArray(sampleAttachments) &&
+                          sampleAttachments.map((image, index) => (
+                            <WrapItem key={index}>
+                              <ImagePreview
+                                id={image.id || `attachment-${index}`}
+                                name={image.name}
+                                alt={image.alt}
+                                src={image.src}
+                              />
+                            </WrapItem>
+                          ))}
+                        <WrapItem>
+                          <ImageAddMore />
+                        </WrapItem>
+                      </Wrap>
+                    </Box>
 
                     <HorizontalFadeDivider />
 
@@ -2061,12 +2252,11 @@ function DraggableTaskCard({
                     spacing={7}
                     justifyContent="start"
                     alignItems="start"
-                    rounded={radiusStyle}
-                    bgColor="primary.100"
-                    boxShadow="lg"
+                    // rounded={radiusStyle}
+                    // bgColor="primary.100"
+                    // boxShadow="lg"
                     minH="60vh"
-                    p={5}
-                    mt={5}
+                    px={5}
                   >
                     <Flex
                       w="full"
@@ -2077,185 +2267,9 @@ function DraggableTaskCard({
                     >
                       <FaCog size={16} />
                       <Text fontWeight={600} fontSize={18}>
-                        Task Details
+                        Detail Task
                       </Text>
                     </Flex>
-
-                    {/* Status with Board Selection using Menu */}
-                    <Box w="full">
-                      <Text fontSize="sm" color="gray.500" mb={1}>
-                        Status
-                      </Text>
-                      <HStack>
-                        <Menu>
-                          <MenuButton
-                            as={Button}
-                            rightIcon={<ChevronDownIcon />}
-                            size="sm"
-                            variant="outline"
-                            width="full"
-                            textAlign="left"
-                            isLoading={isLoadingDetails}
-                          >
-                            {detailedTask?.boardName || "Select Board"}
-                          </MenuButton>
-                          <MenuList>
-                            {(window.kanbanBoards || []).map((board) => (
-                              <MenuItem
-                                key={board.id}
-                                isDisabled={board.id === detailedTask.boardId}
-                                onClick={() => {
-                                  const newBoardId = board.id;
-                                  if (newBoardId === detailedTask.boardId)
-                                    return;
-
-                                  // Use local loading state
-                                  setIsLoadingDetails(true);
-
-                                  // Get boards from the parent component's context
-                                  const boards = window.kanbanBoards || [];
-                                  const targetBoard = boards.find(
-                                    (b) => b.id === newBoardId
-                                  );
-
-                                  if (targetBoard) {
-                                    // Use the global moveTaskFunction instead of directly calling MoveTask
-                                    if (window.moveTaskFunction) {
-                                      window
-                                        .moveTaskFunction(
-                                          detailedTask.id,
-                                          newBoardId,
-                                          0
-                                        )
-                                        .then((success) => {
-                                          if (success) {
-                                            // Update the detailed task with new board info
-                                            setDetailedTask({
-                                              ...detailedTask,
-                                              boardId: newBoardId,
-                                              boardName: targetBoard.boardName,
-                                              boardIndexStage:
-                                                targetBoard.indexStage,
-                                              boardCodeStage:
-                                                targetBoard.boardCodeStage,
-                                            });
-
-                                            // Notify the parent component to refresh data
-                                            if (window.refreshKanbanData) {
-                                              window.refreshKanbanData();
-                                            }
-
-                                            showToast({
-                                              description: `Task moved to ${targetBoard.boardName}`,
-                                              statusToast: "success",
-                                            });
-                                          } else {
-                                            showToast({
-                                              description:
-                                                "Failed to move task",
-                                              statusToast: "error",
-                                            });
-                                          }
-                                        })
-                                        .catch((error) => {
-                                          console.error(
-                                            "Error moving task:",
-                                            error
-                                          );
-                                          showToast({
-                                            description:
-                                              "An error occurred while moving the task",
-                                            statusToast: "error",
-                                          });
-                                        })
-                                        .finally(() => {
-                                          setIsLoadingDetails(false);
-                                        });
-                                    } else {
-                                      showToast({
-                                        description:
-                                          "Move task function not available",
-                                        statusToast: "error",
-                                      });
-                                      setIsLoadingDetails(false);
-                                    }
-                                  }
-                                }}
-                              >
-                                {board.boardName}
-                              </MenuItem>
-                            ))}
-                          </MenuList>
-                        </Menu>
-                        {isLoadingDetails && <Spinner size="sm" ml={2} />}
-                      </HStack>
-                    </Box>
-
-                    {/* Priority */}
-                    <Box w="full">
-                      <Text fontSize="sm" color="gray.500" mb={1}>
-                        Priority
-                      </Text>
-                      <HStack>
-                        <Menu>
-                          <MenuButton
-                            as={Button}
-                            rightIcon={<ChevronDownIcon />}
-                            size="sm"
-                            variant="outline"
-                            width="full"
-                            textAlign="left"
-                            isLoading={isLoadingDetails}
-                          >
-                            <Badge
-                              colorScheme={
-                                detailedTask.taskPriority === "HIGH"
-                                  ? "red"
-                                  : detailedTask.taskPriority === "MEDIUM"
-                                  ? "orange"
-                                  : detailedTask.taskPriority === "CRITICAL"
-                                  ? "purple"
-                                  : "green"
-                              }
-                              rounded={radiusStyle}
-                              px={2}
-                              mr={2}
-                            >
-                              {detailedTask.taskPriority}
-                            </Badge>
-                          </MenuButton>
-                          <MenuList>
-                            <MenuItem
-                              onClick={() => handleUpdatePriority("LOW")}
-                              icon={<Badge colorScheme="green">LOW</Badge>}
-                            >
-                              Low Priority
-                            </MenuItem>
-                            <MenuItem
-                              onClick={() => handleUpdatePriority("MEDIUM")}
-                              icon={<Badge colorScheme="orange">MEDIUM</Badge>}
-                            >
-                              Medium Priority
-                            </MenuItem>
-                            <MenuItem
-                              onClick={() => handleUpdatePriority("HIGH")}
-                              icon={<Badge colorScheme="red">HIGH</Badge>}
-                            >
-                              High Priority
-                            </MenuItem>
-                            <MenuItem
-                              onClick={() => handleUpdatePriority("CRITICAL")}
-                              icon={
-                                <Badge colorScheme="purple">CRITICAL</Badge>
-                              }
-                            >
-                              Critical Priority
-                            </MenuItem>
-                          </MenuList>
-                        </Menu>
-                        {isLoadingDetails && <Spinner size="sm" ml={2} />}
-                      </HStack>
-                    </Box>
 
                     {/* Assignees */}
                     <Box w="full">
@@ -2296,7 +2310,7 @@ function DraggableTaskCard({
                         Timeline
                       </Text>
                       <VStack align="start" spacing={2}>
-                        {detailedTask.startDate && (
+                        {detailedTask.startDate ? (
                           <HStack>
                             <Text fontSize="xs" fontWeight="bold" w="80px">
                               Start Date:
@@ -2307,6 +2321,10 @@ function DraggableTaskCard({
                               ).toLocaleDateString()}
                             </Text>
                           </HStack>
+                        ) : (
+                          <Text fontSize={"md"} fontWeight={600}>
+                            -
+                          </Text>
                         )}
                         {detailedTask.endDate && (
                           <HStack>
@@ -2346,7 +2364,7 @@ function DraggableTaskCard({
                     {/* Created Info */}
                     <Box w="full">
                       <Text fontSize="sm" color="gray.500" mb={1}>
-                        Created By
+                        Dibuat Oleh
                       </Text>
                       {detailedTask.userCreated ? (
                         <HStack>
@@ -2371,8 +2389,10 @@ function DraggableTaskCard({
                       </Text>
                     </Box>
 
+                    <HorizontalFadeDivider />
+
                     {/* Actions */}
-                    <Box w="full" mt={4}>
+                    <Box w="full">
                       <Button
                         size={"sm"}
                         w={"full"}
@@ -2384,6 +2404,19 @@ function DraggableTaskCard({
                         Archive Task
                       </Button>
                     </Box>
+
+                    <Flex
+                      w="full"
+                      justifyContent="start"
+                      as={HStack}
+                      spacing={2}
+                      color="gray.800"
+                    >
+                      <FaCog size={16} />
+                      <Text fontWeight={600} fontSize={18}>
+                        Aktivitas Task
+                      </Text>
+                    </Flex>
                   </Flex>
                 </GridItem>
               </Grid>
