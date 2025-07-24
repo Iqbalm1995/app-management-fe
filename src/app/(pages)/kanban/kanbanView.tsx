@@ -417,6 +417,7 @@ interface DraggableTaskCardProps {
   onMoveTask: (taskId: string, boardId: string) => void;
   onPositionedMove?: (taskId: string, boardId: string, index: number) => void;
   isRecentlyMoved?: boolean;
+  DataProject?: ProjectDataResponse | null;
 }
 
 interface DroppableTaskItem {
@@ -895,6 +896,7 @@ function DraggableTaskCard({
   task,
   onMoveTask,
   isRecentlyMoved = false,
+  DataProject,
 }: DraggableTaskCardProps) {
   const dragRef = useRef<HTMLDivElement>(null);
   const [{ isDragging }, drag] = useDrag<
@@ -1682,7 +1684,23 @@ function DraggableTaskCard({
               <Text fontWeight={600} fontSize={"medium"}>
                 {task.taskName}
               </Text>
-
+              {/* Project Information */}
+              {DataProject && (
+                <Text
+                  fontSize={"xs"}
+                  color={"blue.600"}
+                  fontWeight={500}
+                  bg={"blue.50"}
+                  px={2}
+                  py={1}
+                  rounded={"md"}
+                  border={"1px solid"}
+                  borderColor={"blue.200"}
+                  display={"none"}
+                >
+                  📋 {DataProject.projectName}
+                </Text>
+              )}
               <Text
                 fontSize={"smaller"}
                 lineHeight={1.3}
@@ -3462,6 +3480,7 @@ function KanbanBacklogPage() {
                                 isRecentlyMoved={
                                   task.id === recentlyMovedTaskId
                                 }
+                                DataProject={DataProject}
                               />
 
                               {/* Show drop preview indicator if needed */}
