@@ -785,10 +785,13 @@ function RequirementsBRDRegisterView() {
     if (user) {
       formik.setFieldValue("userPicId", user.userId);
       formik.setFieldValue("userPicName", user.nama);
+      formik.setFieldValue("userPicIdentityNumber", user.nip);
+      //userPicIdentityNumber
       handleSearchUser(user.userId, "searchPICUser");
     } else {
       formik.setFieldValue("userPicId", null);
       formik.setFieldValue("userPicName", null);
+      formik.setFieldValue("userPicIdentityNumber", null);
       handleSearchUser("", "searchPICUser");
     }
   };

@@ -172,7 +172,7 @@ export const initialProjectsInsertValues: ProjectInsertPayload = {
   projectCategory: "", // Required
   projectType: "", // Required
   projectRegisterDate: "", // Optional
-  projectClosedDate: "", // Optional
+  projectClosedDate: null, // Optional
   proOwnerDivisionId: "", // Optional
   proOwnerGroupId: "", // Optional
   proManageByDivisionId: "", // Optional
@@ -1193,26 +1193,26 @@ function FormRegisterProjectView() {
       errorSum++;
     }
 
-    if (!formik.values.projectClosedDate) {
-      showToast({
-        description: "Tanggal Closed Project masih kosong",
-        statusToast: "warning",
-      });
-      errorSum++;
-    }
+    // if (!formik.values.projectClosedDate) {
+    //   showToast({
+    //     description: "Tanggal Closed Project masih kosong",
+    //     statusToast: "warning",
+    //   });
+    //   errorSum++;
+    // }
 
-    if (
-      calculateDurationInDays(
-        formik.values.projectRegisterDate || new Date().toISOString(),
-        formik.values.projectClosedDate || new Date().toISOString()
-      ) < 0
-    ) {
-      showToast({
-        description: "Durasi Project tidak boleh minus",
-        statusToast: "warning",
-      });
-      errorSum++;
-    }
+    // if (
+    //   calculateDurationInDays(
+    //     formik.values.projectRegisterDate || new Date().toISOString(),
+    //     formik.values.projectClosedDate || new Date().toISOString()
+    //   ) < 0
+    // ) {
+    //   showToast({
+    //     description: "Durasi Project tidak boleh minus",
+    //     statusToast: "warning",
+    //   });
+    //   errorSum++;
+    // }
 
     if (ChoosedMemberProjects.length <= 0) {
       showToast({
