@@ -100,6 +100,8 @@ import {
   InputGroup,
   InputRightElement,
   Icon,
+  ButtonGroup,
+  InputLeftElement,
 } from "@chakra-ui/react";
 import {
   ChevronDownIcon,
@@ -124,18 +126,25 @@ import {
   FiArrowLeft,
   FiCheckCircle,
   FiCheckSquare,
+  FiCircle,
+  FiFilter,
   FiList,
   FiLoader,
   FiMessageSquare,
   FiNavigation,
   FiPaperclip,
   FiPlusCircle,
+  FiRefreshCcw,
+  FiSearch,
   FiShare2,
+  FiTrello,
 } from "react-icons/fi";
 import { LuGrip } from "react-icons/lu";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { UserShortResponse } from "@/app/services/useUsers";
+import { GoFilter } from "react-icons/go";
+import { MdOutlineSort } from "react-icons/md";
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Kanban",
@@ -819,10 +828,22 @@ const AddTaskForm: React.FC<AddTaskProps> = ({
       <Button
         leftIcon={<FaPlus />}
         variant="ghost"
-        size="sm"
         justifyContent="flex-start"
         onClick={handleAddClick}
         width="full"
+        bg={"white"}
+        rounded={radiusStyle}
+        boxShadow={"sm"}
+        px={5}
+        py={4}
+        _hover={{
+          bgColor: "secondary.200",
+          color: "secondary.800",
+        }}
+        _active={{
+          color: "secondary.800",
+          bgColor: "transparent",
+        }}
       >
         Add task
       </Button>
@@ -830,7 +851,14 @@ const AddTaskForm: React.FC<AddTaskProps> = ({
   }
 
   return (
-    <Card size="sm" variant="outline" boxShadow="sm" mb={2}>
+    <Card
+      size="sm"
+      variant="outline"
+      boxShadow="sm"
+      mb={2}
+      bg={"white"}
+      rounded={radiusStyle}
+    >
       <CardBody p={3}>
         <VStack spacing={3} align="stretch">
           <Input
@@ -840,7 +868,7 @@ const AddTaskForm: React.FC<AddTaskProps> = ({
             onChange={(e) => setTaskName(e.target.value)}
             onKeyDown={handleKeyDown}
             autoFocus
-            size="sm"
+            size="md"
           />
           <HStack spacing={2} justify="flex-end">
             <Button size="xs" onClick={handleCancel} variant="ghost">
@@ -1737,9 +1765,24 @@ function DraggableTaskCard({
         size="5xl"
       >
         <ModalOverlay />
-        <ModalContent rounded={radiusStyle} py={4} m={2}>
+        <ModalContent rounded={radiusStyle}>
+          <Flex
+            w={"full"}
+            minH={"50px"}
+            bgGradient={"linear(to-br, secondary.500, secondary.600)"}
+            roundedTop={radiusStyle}
+            justifyContent={"center"}
+            alignItems={"center"}
+            color={"white"}
+          >
+            <Box>
+              <Heading as="h4" size="md">
+                {detailedTask ? detailedTask.taskName : "TASK"}
+              </Heading>
+            </Box>
+          </Flex>
           <ModalCloseButton />
-          <ModalBody>
+          <ModalBody p={4} m={2}>
             {isLoadingDetails ? (
               <Flex justify="center" align="center" p={10}>
                 <Spinner size="xl" />
@@ -1925,11 +1968,13 @@ function DraggableTaskCard({
                   >
                     <Flex
                       w="full"
-                      as={VStack}
-                      alignItems="start"
+                      as={HStack}
+                      alignItems="center"
                       justifyContent="start"
                       spacing={2}
+                      color={"gray.700"}
                     >
+                      <FiCircle size={16} />
                       {/* Editable Task Name */}
                       {isEditingName ? (
                         <Box w="full" position="relative">
@@ -1970,14 +2015,10 @@ function DraggableTaskCard({
                           {detailedTask.taskName}
                         </Text>
                       )}
-
-                      <Text fontSize="sm" color="gray.500">
-                        {detailedTask.taskCode}
-                      </Text>
                     </Flex>
 
                     {/* Date Range Picker */}
-                    <Box mt={2} mb={3}>
+                    <Box>
                       <Popover placement="bottom-start" closeOnBlur={false}>
                         <PopoverTrigger>
                           <Button
@@ -2003,7 +2044,11 @@ function DraggableTaskCard({
                               : "Set dates"}
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent p={4} width="300px">
+                        <PopoverContent
+                          p={4}
+                          width="300px"
+                          rounded={radiusStyle}
+                        >
                           <PopoverArrow />
                           <PopoverCloseButton />
                           <PopoverHeader fontWeight="semibold">
@@ -2078,7 +2123,7 @@ function DraggableTaskCard({
                         justifyContent="space-between"
                         as={HStack}
                         spacing={2}
-                        color="gray.500"
+                        color={"gray.700"}
                         mb={2}
                       >
                         <HStack>
@@ -2162,7 +2207,7 @@ function DraggableTaskCard({
                         justifyContent="space-between"
                         as={HStack}
                         spacing={2}
-                        color="gray.500"
+                        color={"gray.700"}
                         mb={3}
                       >
                         <HStack>
@@ -2200,7 +2245,7 @@ function DraggableTaskCard({
                       justifyContent="start"
                       as={HStack}
                       spacing={2}
-                      color="gray.500"
+                      color={"gray.700"}
                     >
                       <FaCommentDots size={16} />
                       <Text fontWeight={600} fontSize={18}>
@@ -2263,7 +2308,7 @@ function DraggableTaskCard({
                       justifyContent="start"
                       as={HStack}
                       spacing={2}
-                      color="gray.800"
+                      color={"gray.700"}
                     >
                       <FaCog size={16} />
                       <Text fontWeight={600} fontSize={18}>
@@ -2392,7 +2437,7 @@ function DraggableTaskCard({
                     <HorizontalFadeDivider />
 
                     {/* Actions */}
-                    <Box w="full">
+                    <Flex as={Stack} w="full">
                       <Button
                         size={"sm"}
                         w={"full"}
@@ -2401,16 +2446,24 @@ function DraggableTaskCard({
                         onClick={() => handleArchiveTask(detailedTask.id)}
                         isLoading={isArchiving}
                       >
-                        Archive Task
+                        Archive
                       </Button>
-                    </Box>
+                      <Button
+                        size={"sm"}
+                        w={"full"}
+                        colorScheme={"blue"}
+                        leftIcon={<Icon as={FiShare2} />}
+                      >
+                        Share
+                      </Button>
+                    </Flex>
 
                     <Flex
                       w="full"
                       justifyContent="start"
                       as={HStack}
                       spacing={2}
-                      color="gray.800"
+                      color={"gray.700"}
                     >
                       <FaCog size={16} />
                       <Text fontWeight={600} fontSize={18}>
@@ -2609,10 +2662,6 @@ const DroppableBoard: React.FC<DroppableBoardProps> = ({
       spacing={4}
       width={"320px"}
       minWidth={"320px"}
-      bg={"white"}
-      rounded={radiusStyle}
-      boxShadow={"md"}
-      p={5}
       transition="all 0.3s ease"
       border={isOver ? "2px dashed blue" : "none"}
     >
@@ -2640,6 +2689,9 @@ function KanbanBacklogPage() {
     CreateSimpleTask,
     MoveTask,
   } = useTasks();
+
+  // toggle for edit mode or view mode
+  const [EditMode, setEditMode] = useState<"1" | "0">("1");
 
   // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -2707,6 +2759,8 @@ function KanbanBacklogPage() {
   const [DataTasks, setDataTasks] = useState<TaskViewModel[]>([]);
   const [RefreshData, setRefreshData] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
+
+  const [SerachTasks, setSerachTasks] = useState<string>("");
 
   const [isHovered, setIsHovered] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -2887,6 +2941,7 @@ function KanbanBacklogPage() {
           setIsLoadingProcess(false);
         }
       };
+
       const GetDetailBacklog = async () => {
         const requestData = await GetDetailBacklogById(backlogId, tokenData);
         const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
@@ -2916,6 +2971,7 @@ function KanbanBacklogPage() {
           setIsLoadingProcess(false);
         }
       };
+
       const GetListTaskKanban = async () => {
         const requestTaskBoard = await ListTasksBoard(backlogId, tokenData);
         const isErrorResponse = requestTaskBoard?.statusCode !== RES_CODE_OK;
@@ -2945,10 +3001,11 @@ function KanbanBacklogPage() {
           setIsLoadingProcess(false);
         }
       };
+
       const GetListTasks = async () => {
         // LOAD BACKLOGS DATA
         const PayloadGetTaskList: PaggingListPayload = {
-          search: "",
+          search: SerachTasks,
           limit: MAX_SIZE_TABLE,
           page: 0,
           filterWhere: [
@@ -3011,7 +3068,7 @@ function KanbanBacklogPage() {
       GetListTaskKanban();
       GetListTasks();
     }
-  }, [DataAuth, RefreshData, projectId, backlogId]);
+  }, [DataAuth, RefreshData, SerachTasks, projectId, backlogId]);
 
   // Clear drop preview when dragging ends
   useEffect(() => {
@@ -3127,6 +3184,7 @@ function KanbanBacklogPage() {
   }, [RefreshData]);
 
   const RefreshAction = () => {
+    setSerachTasks("");
     setRefreshData(RefreshData + 1);
   };
 
@@ -3154,7 +3212,7 @@ function KanbanBacklogPage() {
       )}
 
       <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"}>
-        <GridItem colSpan={{ base: 12, sm: 12, md: 8, lg: 8 }} w={"full"}>
+        <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }} w={"full"}>
           <Flex
             w={"full"}
             as={Wrap}
@@ -3162,7 +3220,7 @@ function KanbanBacklogPage() {
             overflowX={"auto"}
             justifyContent={"start"}
           >
-            <Link href={`/projects-manager/`}>
+            <Link href={`/projects-manager/detail?projectId=${projectId}`}>
               <Button size={"lg"} leftIcon={<FiArrowLeft />}>
                 Kembali
               </Button>
@@ -3170,19 +3228,138 @@ function KanbanBacklogPage() {
           </Flex>
         </GridItem>
 
-        <GridItem colSpan={{ base: 12, sm: 12, md: 4, lg: 4 }} w={"full"}>
-          {/* <Flex
-            as={Stack}
-            w={"full"}
-            justifyContent={"end"}
-            alignItems={"center"}
-            spacing={0}
-          >
-            <Text>Project Id : {projectId}</Text>
-            <Text>Backlog Id : {backlogId}</Text>
-          </Flex> */}
+        <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }} w={"full"}>
+          <Flex w={"full"} justifyContent={"end"} h={"full"}>
+            <Button size={"lg"} colorScheme="secondary">
+              {EditMode ? "Edit Mode" : "View Mode"}
+            </Button>
+          </Flex>
         </GridItem>
       </Grid>
+
+      <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 12 }} w={"full"}>
+        <Flex
+          as={HStack}
+          w={"full"}
+          px={4}
+          py={3}
+          rounded={radiusStyle}
+          bgColor={"white"}
+          boxShadow={"sm"}
+          justifyContent={"space-between"}
+        >
+          <Flex as={HStack}>
+            <ButtonGroup isAttached variant="outline">
+              <Flex
+                as={Button}
+                px={3}
+                py={2}
+                cursor={"pointer"}
+                _hover={{
+                  bgColor: "secondary.200",
+                  color: "secondary.500",
+                }}
+                _active={{
+                  color: "secondary.500",
+                  bgColor: "transparent",
+                }}
+                isActive={true}
+                leftIcon={<FiTrello />}
+              >
+                Board
+              </Flex>
+              <Flex
+                as={Button}
+                px={3}
+                py={2}
+                cursor={"pointer"}
+                _hover={{
+                  bgColor: "secondary.200",
+                  color: "secondary.500",
+                }}
+                _active={{
+                  color: "secondary.500",
+                  bgColor: "transparent",
+                }}
+                isActive={false}
+                leftIcon={<FiList />}
+              >
+                List
+              </Flex>
+            </ButtonGroup>
+
+            <Box>
+              <InputGroup>
+                <InputLeftElement pointerEvents="none">
+                  <FiSearch color="gray.300" />
+                </InputLeftElement>
+                <Input
+                  id="serachTask"
+                  name="serachTask"
+                  type="text"
+                  onChange={(e) => {
+                    setSerachTasks(e.target.value);
+                  }}
+                  value={SerachTasks}
+                  placeholder={`Cari Task`}
+                />
+              </InputGroup>
+            </Box>
+          </Flex>
+          <Flex as={HStack}>
+            <Flex
+              as={Button}
+              variant="outline"
+              px={3}
+              py={2}
+              cursor={"pointer"}
+              _hover={{
+                bgColor: "secondary.200",
+                color: "secondary.500",
+              }}
+              _active={{
+                color: "secondary.500",
+                bgColor: "transparent",
+              }}
+              isActive={false}
+              leftIcon={<GoFilter />}
+            >
+              Filter
+            </Flex>
+            <Flex
+              as={Button}
+              variant="outline"
+              px={3}
+              py={2}
+              cursor={"pointer"}
+              _hover={{
+                bgColor: "secondary.200",
+                color: "secondary.500",
+              }}
+              _active={{
+                color: "secondary.500",
+                bgColor: "transparent",
+              }}
+              isActive={false}
+              leftIcon={<MdOutlineSort />}
+            >
+              Sort By
+            </Flex>
+            <Flex
+              as={Button}
+              variant="outline"
+              px={3}
+              py={2}
+              cursor={"pointer"}
+              colorScheme={"secondary"}
+              leftIcon={<FiRefreshCcw />}
+              onClick={() => RefreshAction()}
+            >
+              Refresh
+            </Flex>
+          </Flex>
+        </Flex>
+      </GridItem>
 
       <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 12 }} w={"full"}>
         <DndProvider backend={HTML5Backend}>
@@ -3193,7 +3370,7 @@ function KanbanBacklogPage() {
             justifyContent={"start"}
             alignItems={"start"}
             overflowX="auto"
-            pb={4}
+            py={2}
           >
             {DataBoard.length > 0
               ? DataBoard.map((board) => (
@@ -3207,7 +3384,15 @@ function KanbanBacklogPage() {
                     onPositionedMove={handleMoveTaskInternal}
                     setDropPreview={setDropPreview}
                   >
-                    <Flex as={HStack} spacing={2}>
+                    <Flex
+                      as={HStack}
+                      spacing={2}
+                      bg={"white"}
+                      rounded={radiusStyle}
+                      boxShadow={"sm"}
+                      px={5}
+                      py={3}
+                    >
                       {board.boardName === "TO DO" ? (
                         <FiList size={"1.3em"} />
                       ) : board.boardName === "IN PROGRESS" ? (
@@ -3248,6 +3433,10 @@ function KanbanBacklogPage() {
                       maxH="calc(75vh - 100px)"
                       overflowY="auto"
                       w="full"
+                      bg={"white"}
+                      rounded={radiusStyle}
+                      boxShadow={"sm"}
+                      p={5}
                     >
                       {/* If this is the first task and we have a drop preview for this board at the beginning */}
                       {dropPreview &&
