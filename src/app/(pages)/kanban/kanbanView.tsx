@@ -31,6 +31,7 @@ import {
 } from "@/app/helper/MasterHelper";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
+
 import useProjects, { ProjectDataResponse } from "@/app/services/useProjects";
 import useRequirements, {
   BacklogDataResponse,
@@ -45,8 +46,11 @@ import useTasks, {
   TaskItemUpdatePayload,
   TaskItemResponse,
   TaskArchivePayload,
+  TaskCommentResponse,
+  TaskCommentInsertPayload,
+  TaskCommentUpdatePayload,
 } from "@/app/services/useTasks";
-import { PaggingListPayload } from "@/app/types/masterTypes";
+import { PaggingListPayload, ListSearchByParam } from "@/app/types/masterTypes";
 import {
   Avatar,
   AvatarGroup,
@@ -115,7 +119,15 @@ import { u } from "framer-motion/client";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { FaCheckCircle, FaCog, FaArchive } from "react-icons/fa";
+import {
+  FaCheckCircle,
+  FaCog,
+  FaArchive,
+  FaSync,
+  FaEdit,
+  FaTrash,
+  FaUsers,
+} from "react-icons/fa";
 import {
   FaCommentDots,
   FaEllipsisVertical,
@@ -142,9 +154,21 @@ import {
 import { LuGrip } from "react-icons/lu";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { UserShortResponse } from "@/app/services/useUsers";
+import { UserShortResponse, UsersResponse } from "@/app/services/useUsers";
 import { GoFilter } from "react-icons/go";
 import { MdOutlineSort } from "react-icons/md";
+
+// Complete auth data structure interfaces
+interface AuthTokenResponse {
+  apiKey: string;
+  expiration: string;
+}
+
+interface CompleteAuthDataResponse {
+  dataLogin: AuthDataResponse;
+  dataAuth: AuthTokenResponse;
+  statusLogin: string;
+}
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Kanban",
@@ -457,21 +481,6 @@ interface AttachmentProps {
   size?: string;
 }
 
-// Interface for comments
-interface TaskCommentProps {
-  id: string;
-  text: string;
-  date: string;
-  user: TaskCommentUserProps;
-  attachment: AttachmentProps[];
-}
-
-interface TaskCommentUserProps {
-  id: string;
-  name: string;
-  avatar?: string | null;
-}
-
 // Image Preview Component
 const ImagePreview = ({ name, alt, src }: AttachmentProps) => {
   const ImageModalDisc = useDisclosure();
@@ -641,13 +650,37 @@ const ImageAddMore = () => {
 };
 
 // Task Comment Component
-const TaskComment = ({ dataComments }: { dataComments: TaskCommentProps }) => {
+const TaskComment = ({
+  dataComments,
+  currentUserId,
+  isEditing,
+  editedText,
+  isUpdating,
+  isDeleting,
+  onStartEdit,
+  onCancelEdit,
+  onUpdateComment,
+  onDeleteComment,
+  onEditTextChange,
+}: {
+  dataComments: TaskCommentResponse;
+  currentUserId?: string;
+  isEditing: boolean;
+  editedText: string;
+  isUpdating: boolean;
+  isDeleting: boolean;
+  onStartEdit: (commentId: string, currentText: string) => void;
+  onCancelEdit: () => void;
+  onUpdateComment: (commentId: string) => void;
+  onDeleteComment: (commentId: string) => void;
+  onEditTextChange: (text: string) => void;
+}) => {
   const limitText: number = 100;
   const [limitTextState, setlimitTextState] = useState<number>(limitText);
 
   const handleShowMore = () => {
-    if (dataComments.text.length > limitTextState) {
-      setlimitTextState(dataComments.text.length);
+    if ((dataComments.comCaptions || "").length > limitTextState) {
+      setlimitTextState((dataComments.comCaptions || "").length);
     } else {
       setlimitTextState(limitText);
     }
@@ -664,8 +697,8 @@ const TaskComment = ({ dataComments }: { dataComments: TaskCommentProps }) => {
     >
       <Avatar
         size="md"
-        name={dataComments.user.name}
-        src={dataComments.user.avatar || undefined}
+        name={dataComments.userCreated.nama}
+        src={dataComments.userCreated.profilePict || undefined}
       />
       <Flex as={VStack} spacing={1} alignItems="start" w="full" pl={3}>
         <Flex
@@ -676,39 +709,108 @@ const TaskComment = ({ dataComments }: { dataComments: TaskCommentProps }) => {
         >
           <Flex as={Wrap} spacing={2}>
             <Text fontWeight={600} fontSize={15}>
-              {dataComments.user.name}
+              {dataComments.userCreated.nama}
             </Text>
             <Text fontSize={12} color="gray.500" alignSelf="center">
-              {dataComments.date}
+              {convertToCustomDateFormat(dataComments.createdAt)}
             </Text>
           </Flex>
-          <Button size="sm" variant="ghost">
-            <FaEllipsisVertical />
-          </Button>
+          {/* Show menu only if user owns the comment */}
+          {currentUserId === dataComments.userCreated.id && (
+            <Menu>
+              <MenuButton
+                as={Button}
+                size="sm"
+                variant="ghost"
+                isLoading={isDeleting}
+                isDisabled={isUpdating}
+              >
+                <FaEllipsisVertical />
+              </MenuButton>
+              <MenuList>
+                <MenuItem
+                  icon={<FaEdit />}
+                  onClick={() =>
+                    onStartEdit(dataComments.id, dataComments.comCaptions || "")
+                  }
+                  isDisabled={isEditing || isUpdating || isDeleting}
+                >
+                  Edit Comment
+                </MenuItem>
+                <MenuItem
+                  icon={<FaTrash />}
+                  color="red.500"
+                  onClick={() => onDeleteComment(dataComments.id)}
+                  isDisabled={isEditing || isUpdating || isDeleting}
+                >
+                  Delete Comment
+                </MenuItem>
+              </MenuList>
+            </Menu>
+          )}
         </Flex>
-        <Text as="p" fontSize={15}>
-          {truncateText(dataComments.text, limitTextState)}
-        </Text>
-        {limitText < dataComments.text.length && (
-          <Button
-            size="sm"
-            variant="link"
-            colorScheme="primary"
-            onClick={() => handleShowMore()}
-          >
-            {dataComments.text.length === limitTextState
-              ? "Hide Less"
-              : "Show More"}
-          </Button>
-        )}
-        {dataComments.attachment.length > 0 && (
-          <Wrap spacing={2} pt={2}>
-            {dataComments.attachment.map((attc, index) => (
-              <WrapItem key={index}>
-                <ImagePreview {...attc} />
-              </WrapItem>
-            ))}
-          </Wrap>
+
+        {/* Comment text or edit input */}
+        {isEditing ? (
+          <VStack w="full" spacing={2} align="stretch">
+            <Textarea
+              value={editedText}
+              onChange={(e) => onEditTextChange(e.target.value)}
+              placeholder="Edit your comment..."
+              size="sm"
+              resize="vertical"
+              minH="60px"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                  e.preventDefault();
+                  onUpdateComment(dataComments.id);
+                } else if (e.key === "Escape") {
+                  e.preventDefault();
+                  onCancelEdit();
+                }
+              }}
+            />
+            <Text fontSize="xs" color="gray.500" textAlign="right">
+              Press Ctrl+Enter to save, Esc to cancel
+            </Text>
+            <HStack spacing={2} justify="flex-end">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={onCancelEdit}
+                isDisabled={isUpdating}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                colorScheme="blue"
+                onClick={() => onUpdateComment(dataComments.id)}
+                isLoading={isUpdating}
+                isDisabled={!editedText.trim() || isUpdating}
+              >
+                Save
+              </Button>
+            </HStack>
+          </VStack>
+        ) : (
+          <>
+            <Text as="p" fontSize={15}>
+              {truncateText(dataComments.comCaptions || "", limitTextState)}
+            </Text>
+            {limitText < (dataComments.comCaptions || "").length && (
+              <Button
+                size="sm"
+                variant="link"
+                colorScheme="primary"
+                onClick={() => handleShowMore()}
+              >
+                {(dataComments.comCaptions || "").length === limitTextState
+                  ? "Hide Less"
+                  : "Show More"}
+              </Button>
+            )}
+          </>
         )}
       </Flex>
     </Flex>
@@ -928,6 +1030,10 @@ function DraggableTaskCard({
     DeleteTaskItem,
     ListTaskItems,
     ArchiveTask,
+    ListTaskCommentsPaged,
+    CreateTaskComment,
+    UpdateTaskComment,
+    DeleteTaskComment,
   } = useTasks();
 
   // States for inline editing
@@ -938,12 +1044,101 @@ function DraggableTaskCard({
   const [isSaving, setIsSaving] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
 
+  // Comments state management
+  const [taskComments, setTaskComments] = useState<TaskCommentResponse[]>([]);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
+  const [commentsPage, setCommentsPage] = useState(0);
+
+  // Add comment state
+  const [newComment, setNewComment] = useState("");
+  const [isAddingComment, setIsAddingComment] = useState(false);
+
+  // Edit comment state
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editedCommentText, setEditedCommentText] = useState("");
+  const [isUpdatingComment, setIsUpdatingComment] = useState(false);
+
+  // Delete comment state
+  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(
+    null
+  );
+  const {
+    isOpen: isAssignModalOpen,
+    onOpen: onAssignModalOpen,
+    onClose: onAssignModalClose,
+  } = useDisclosure();
+  const [UsersAssignTask, setUsersAssignTask] = useState<UsersResponse[]>([]);
+  const [hasMoreComments, setHasMoreComments] = useState(true);
+  const commentsPageSize = 5;
+
   // Refs for auto-focus
   const nameInputRef = useRef<HTMLInputElement>(null);
   const descTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Get token from localStorage
   const getToken = () => localStorage.getItem("tokenData") as string;
+
+  // Auth utility functions
+  const getCompleteAuthData = (): CompleteAuthDataResponse | null => {
+    try {
+      const storedData = localStorage.getItem("authData");
+      return storedData ? JSON.parse(storedData) : null;
+    } catch (error) {
+      console.error("Error parsing auth data:", error);
+      return null;
+    }
+  };
+
+  const getCurrentUser = (): AuthDataResponse | null => {
+    const authData = getCompleteAuthData();
+    return authData?.dataLogin || null;
+  };
+
+  const getAuthToken = (): AuthTokenResponse | null => {
+    const authData = getCompleteAuthData();
+    return authData?.dataAuth || null;
+  };
+
+  const isUserLoggedIn = (): boolean => {
+    const authData = getCompleteAuthData();
+    return authData?.statusLogin === "logged_in";
+  };
+
+  // Additional auth utility functions
+  const getCurrentUserName = (): string => {
+    const user = getCurrentUser();
+    return user?.nama || "Unknown User";
+  };
+
+  const getCurrentUserAvatar = (): string | undefined => {
+    const user = getCurrentUser();
+    return user?.profilePict || undefined;
+  };
+
+  const getCurrentUserEmail = (): string => {
+    const user = getCurrentUser();
+    return user?.email || "";
+  };
+
+  const getCurrentUserTeam = (): string => {
+    const user = getCurrentUser();
+    return user?.team?.teamName || "No Team";
+  };
+
+  // Debug function to log complete auth data (for development)
+  const logAuthData = () => {
+    const completeAuth = getCompleteAuthData();
+    const currentUser = getCurrentUser();
+    const authToken = getAuthToken();
+
+    console.log("Complete Auth Data:", completeAuth);
+    console.log("Current User:", currentUser);
+    console.log("Auth Token:", authToken);
+    console.log("Is Logged In:", isUserLoggedIn());
+    console.log("User Name:", getCurrentUserName());
+    console.log("User Email:", getCurrentUserEmail());
+    console.log("User Team:", getCurrentUserTeam());
+  };
 
   const sampleAttachments = [
     {
@@ -1460,7 +1655,7 @@ function DraggableTaskCard({
         });
 
         // Close the modal
-        onClose();
+        handleModalClose();
 
         // Refresh the kanban board
         if (window.refreshKanbanData) {
@@ -1483,7 +1678,249 @@ function DraggableTaskCard({
     }
   };
 
-  // Calculate and update task progress based on completed task items
+  // Load task comments with pagination
+  const loadTaskComments = async (
+    taskId: string,
+    page: number = 0,
+    append: boolean = false
+  ) => {
+    if (!taskId) return;
+
+    setIsLoadingComments(true);
+    try {
+      const token = getToken();
+      const payload: PaggingListPayload = {
+        page: page,
+        limit: commentsPageSize,
+        search: "",
+        filterWhere: [
+          {
+            field: "taskId",
+            value: taskId,
+            operator: "=",
+          },
+        ],
+        fieldOrder: ["createdAt"],
+        orderDir: "desc",
+      };
+
+      const response = await ListTaskCommentsPaged(payload, token);
+
+      if (
+        response?.statusCode === RES_CODE_OK &&
+        response.data &&
+        Array.isArray(response.data)
+      ) {
+        const comments = response.data as TaskCommentResponse[];
+        if (append) {
+          setTaskComments((prev) => [...prev, ...comments]);
+        } else {
+          setTaskComments(comments);
+        }
+
+        // Check if there are more comments to load
+        setHasMoreComments(comments.length === commentsPageSize);
+
+        // Update current page state
+        if (!append) {
+          setCommentsPage(page);
+        }
+      } else {
+        if (!append) {
+          setTaskComments([]);
+        }
+        setHasMoreComments(false);
+      }
+    } catch (error) {
+      console.error("Error loading task comments:", error);
+      if (!append) {
+        setTaskComments([]);
+      }
+      setHasMoreComments(false);
+    } finally {
+      setIsLoadingComments(false);
+    }
+  };
+
+  // Refresh comments for current task
+  const refreshTaskComments = () => {
+    if (detailedTask?.id) {
+      loadTaskComments(detailedTask.id, 0, false);
+    }
+  };
+
+  // Add new comment
+  const handleAddComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!detailedTask?.id || !newComment.trim()) return;
+
+    setIsAddingComment(true);
+    try {
+      const token = getToken();
+      const payload: TaskCommentInsertPayload = {
+        taskId: detailedTask.id,
+        comCaptions: newComment.trim(),
+      };
+
+      const response = await CreateTaskComment(payload, token);
+
+      if (response?.statusCode === RES_CODE_OK) {
+        // Clear the input
+        setNewComment("");
+
+        // Refresh comments to show the new comment
+        refreshTaskComments();
+
+        showToast({
+          description: "Comment added successfully",
+          statusToast: "success",
+        });
+      } else {
+        showToast({
+          description: response?.message || "Failed to add comment",
+          statusToast: "error",
+        });
+      }
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      showToast({
+        description: "An error occurred while adding comment",
+        statusToast: "error",
+      });
+    } finally {
+      setIsAddingComment(false);
+    }
+  };
+
+  // Start editing a comment
+  const handleStartEditComment = (commentId: string, currentText: string) => {
+    setEditingCommentId(commentId);
+    setEditedCommentText(currentText);
+  };
+
+  // Cancel editing a comment
+  const handleCancelEditComment = () => {
+    setEditingCommentId(null);
+    setEditedCommentText("");
+  };
+
+  // Update a comment
+  const handleUpdateComment = async (commentId: string) => {
+    if (!editedCommentText.trim()) return;
+
+    setIsUpdatingComment(true);
+    try {
+      const token = getToken();
+      const payload: TaskCommentUpdatePayload = {
+        id: commentId,
+        comCaptions: editedCommentText.trim(),
+      };
+
+      const response = await UpdateTaskComment(payload, token);
+
+      if (response?.statusCode === RES_CODE_OK) {
+        // Update the comment in local state
+        setTaskComments((prev) =>
+          prev.map((comment) =>
+            comment.id === commentId
+              ? { ...comment, comCaptions: editedCommentText.trim() }
+              : comment
+          )
+        );
+
+        // Clear edit state
+        setEditingCommentId(null);
+        setEditedCommentText("");
+
+        showToast({
+          description: "Comment updated successfully",
+          statusToast: "success",
+        });
+      } else {
+        showToast({
+          description: response?.message || "Failed to update comment",
+          statusToast: "error",
+        });
+      }
+    } catch (error) {
+      console.error("Error updating comment:", error);
+      showToast({
+        description: "An error occurred while updating comment",
+        statusToast: "error",
+      });
+    } finally {
+      setIsUpdatingComment(false);
+    }
+  };
+
+  // Delete a comment with confirmation
+  const handleDeleteComment = async (commentId: string) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this comment? This action cannot be undone."
+    );
+    if (!confirmed) return;
+
+    setDeletingCommentId(commentId);
+    try {
+      const token = getToken();
+      const response = await DeleteTaskComment(commentId, token);
+
+      if (response?.statusCode === RES_CODE_OK) {
+        // Remove the comment from local state
+        setTaskComments((prev) =>
+          prev.filter((comment) => comment.id !== commentId)
+        );
+
+        showToast({
+          description: "Comment deleted successfully",
+          statusToast: "success",
+        });
+      } else {
+        showToast({
+          description: response?.message || "Failed to delete comment",
+          statusToast: "error",
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      showToast({
+        description: "An error occurred while deleting comment",
+        statusToast: "error",
+      });
+    } finally {
+      setDeletingCommentId(null);
+    }
+  };
+
+  // Load more comments
+  const loadMoreComments = async () => {
+    if (!detailedTask?.id || isLoadingComments || !hasMoreComments) return;
+
+    const nextPage = commentsPage + 1;
+    setCommentsPage(nextPage);
+    await loadTaskComments(detailedTask.id, nextPage, true);
+  };
+
+  // Reset comments state when modal opens
+  const resetCommentsState = () => {
+    setTaskComments([]);
+    setCommentsPage(0);
+    setHasMoreComments(true);
+    setIsLoadingComments(false);
+    setNewComment("");
+    setIsAddingComment(false);
+    setEditingCommentId(null);
+    setEditedCommentText("");
+    setIsUpdatingComment(false);
+    setDeletingCommentId(null);
+  };
+
+  // Handle modal close cleanup
+  const handleModalClose = () => {
+    resetCommentsState();
+    onClose();
+  }; // Calculate and update task progress based on completed task items
   const updateTaskProgress = async (items: TaskItemResponse[]) => {
     if (!detailedTask || items.length === 0) return;
 
@@ -1619,6 +2056,10 @@ function DraggableTaskCard({
 
           // Fetch task items
           fetchTaskItems(task.id);
+
+          // Reset and load comments
+          resetCommentsState();
+          loadTaskComments(task.id);
         } else {
           // If API call fails, use the current task data
           setDetailedTask(task);
@@ -1744,29 +2185,37 @@ function DraggableTaskCard({
                 </AvatarGroup>
               )}
 
-              <Flex as={HStack} w={"full"} justifyContent={"end"}>
-                {/* Task coment count (if available) */}
-                <HStack spacing={1} alignItems="center">
-                  <Icon as={FiMessageSquare} color="gray.600" boxSize={4} />
-                  <Text fontSize="sm" color="gray.600" fontWeight="medium">
-                    0
-                  </Text>
-                </HStack>
-                {/* Task item count (if available) */}
-                {task.taskItems && task.taskItems.length > 0 && (
+              <Flex
+                as={HStack}
+                w={"full"}
+                justifyContent={"space-between"}
+                mt={2}
+              >
+                <Flex as={HStack} w={"full"} justifyContent={"start"}>
+                  {/* Task coment count (if available) */}
                   <HStack spacing={1} alignItems="center">
-                    <Icon as={FiCheckSquare} color="gray.600" boxSize={4} />
+                    <Icon as={FiMessageSquare} color="gray.600" boxSize={4} />
                     <Text fontSize="sm" color="gray.600" fontWeight="medium">
-                      {
-                        task.taskItems.filter((item) => item.isDone === "Y")
-                          .length
-                      }
-                      /{task.taskItems.length}
+                      0
                     </Text>
                   </HStack>
-                )}
-                {/* Share task */}
-                {/* <Icon as={FiShare2} color="gray.600" boxSize={4} /> */}
+                  {/* Task item count (if available) */}
+                  {task.taskItems && task.taskItems.length > 0 && (
+                    <HStack spacing={1} alignItems="center">
+                      <Icon as={FiCheckSquare} color="gray.600" boxSize={4} />
+                      <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                        {
+                          task.taskItems.filter((item) => item.isDone === "Y")
+                            .length
+                        }
+                        /{task.taskItems.length}
+                      </Text>
+                    </HStack>
+                  )}
+                  {/* Share task */}
+                  {/* <Icon as={FiShare2} color="gray.600" boxSize={4} /> */}
+                </Flex>
+                <Flex as={HStack} w={"full"} justifyContent={"end"}></Flex>
               </Flex>
             </VStack>
           </CardBody>
@@ -1776,7 +2225,7 @@ function DraggableTaskCard({
       {/* Task Detail Modal */}
       <Modal
         isCentered
-        onClose={onClose}
+        onClose={handleModalClose}
         isOpen={isOpen}
         motionPreset="slideInBottom"
         scrollBehavior="inside"
@@ -2035,8 +2484,8 @@ function DraggableTaskCard({
                       )}
                     </Flex>
 
-                    {/* Date Range Picker */}
-                    <Box>
+                    {/* Date Range Picker and Assign Task */}
+                    <HStack spacing={2}>
                       <Popover placement="bottom-start" closeOnBlur={false}>
                         <PopoverTrigger>
                           <Button
@@ -2084,7 +2533,19 @@ function DraggableTaskCard({
                           </PopoverBody>
                         </PopoverContent>
                       </Popover>
-                    </Box>
+
+                      {/* Assign Task Button */}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        leftIcon={<FaUsers />}
+                        onClick={() => {
+                          onAssignModalOpen();
+                        }}
+                      >
+                        Assign Task
+                      </Button>
+                    </HStack>
 
                     {/* Editable Task Description */}
                     {isEditingDesc ? (
@@ -2218,8 +2679,10 @@ function DraggableTaskCard({
                       </Box>
                     </Box>
 
-                    {/* Attachments */}
-                    <Box w="full">
+                    <Box mb={10}></Box>
+
+                    {/* Attachments - Temorary Hide Feature*/}
+                    <Box w="full" display={"none"}>
                       <Flex
                         w="full"
                         justifyContent="space-between"
@@ -2238,7 +2701,7 @@ function DraggableTaskCard({
                       </Flex>
 
                       <Wrap spacing={2}>
-                        {Array.isArray(sampleAttachments) &&
+                        {/* {Array.isArray(sampleAttachments) &&
                           sampleAttachments.map((image, index) => (
                             <WrapItem key={index}>
                               <ImagePreview
@@ -2248,7 +2711,7 @@ function DraggableTaskCard({
                                 src={image.src}
                               />
                             </WrapItem>
-                          ))}
+                          ))} */}
                         <WrapItem>
                           <ImageAddMore />
                         </WrapItem>
@@ -2260,50 +2723,149 @@ function DraggableTaskCard({
                     {/* Comments Section */}
                     <Flex
                       w="full"
-                      justifyContent="start"
+                      justifyContent="space-between"
+                      alignItems="center"
                       as={HStack}
                       spacing={2}
                       color={"gray.700"}
                     >
-                      <FaCommentDots size={16} />
-                      <Text fontWeight={600} fontSize={18}>
-                        Comments ({sampleComments.length})
-                      </Text>
+                      <Flex as={HStack} spacing={2} alignItems="center">
+                        <FaCommentDots size={16} />
+                        <Text fontWeight={600} fontSize={18}>
+                          Comments ({taskComments.length})
+                        </Text>
+                        {isLoadingComments && <Spinner size="sm" />}
+                      </Flex>
+
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        colorScheme="blue"
+                        leftIcon={<FaSync />}
+                        onClick={refreshTaskComments}
+                        isLoading={isLoadingComments}
+                        isDisabled={isLoadingComments}
+                      >
+                        Refresh
+                      </Button>
                     </Flex>
 
                     {/* Add Comment */}
-                    <Flex
-                      w="full"
-                      justifyContent="start"
-                      as={HStack}
-                      spacing={4}
-                      color="gray.500"
-                      p={2}
-                    >
+                    <Box as="form" onSubmit={handleAddComment} w="full">
                       <Flex
-                        justifyContent="center"
-                        alignItems="center"
-                        as={VStack}
-                        spacing={2}
+                        w="full"
+                        justifyContent="start"
+                        as={HStack}
+                        spacing={4}
+                        color="gray.500"
+                        p={2}
+                        alignItems="flex-start"
                       >
-                        <Avatar
-                          size="md"
-                          name={detailedTask.userCreated?.nama || "User"}
-                          src={
-                            detailedTask.userCreated?.profilePict || undefined
-                          }
-                        />
+                        <Flex
+                          justifyContent="center"
+                          alignItems="center"
+                          as={VStack}
+                          spacing={2}
+                        >
+                          <Avatar
+                            size="md"
+                            name={getCurrentUserName()}
+                            src={getCurrentUserAvatar()}
+                          />
+                        </Flex>
+                        <VStack w="full" spacing={2} align="stretch">
+                          <Textarea
+                            placeholder="Add a comment..."
+                            rounded={radiusStyle}
+                            value={newComment}
+                            onChange={(e) => setNewComment(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (
+                                e.key === "Enter" &&
+                                (e.ctrlKey || e.metaKey)
+                              ) {
+                                e.preventDefault();
+                                if (newComment.trim()) {
+                                  handleAddComment(e as any);
+                                }
+                              }
+                            }}
+                            isDisabled={isAddingComment}
+                            minH="80px"
+                            resize="vertical"
+                          />
+                          <Text
+                            fontSize="xs"
+                            color="gray.400"
+                            textAlign="right"
+                          >
+                            Press Ctrl+Enter to submit
+                          </Text>
+                          <Flex justifyContent="flex-end" gap={2}>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setNewComment("")}
+                              isDisabled={isAddingComment || !newComment.trim()}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              size="sm"
+                              colorScheme="blue"
+                              type="submit"
+                              isLoading={isAddingComment}
+                              isDisabled={!newComment.trim()}
+                              loadingText="Adding..."
+                            >
+                              Add Comment
+                            </Button>
+                          </Flex>
+                        </VStack>
                       </Flex>
-                      <Textarea
-                        placeholder="Add a comment"
-                        rounded={radiusStyle}
-                      />
-                    </Flex>
+                    </Box>
 
                     {/* Comments */}
-                    {sampleComments.map((comment, index) => (
-                      <TaskComment key={index} dataComments={comment} />
+                    {taskComments.map((comment, index) => (
+                      <TaskComment
+                        key={comment.id}
+                        dataComments={comment}
+                        currentUserId={getCurrentUser()?.id}
+                        isEditing={editingCommentId === comment.id}
+                        editedText={editedCommentText}
+                        isUpdating={isUpdatingComment}
+                        isDeleting={deletingCommentId === comment.id}
+                        onStartEdit={handleStartEditComment}
+                        onCancelEdit={handleCancelEditComment}
+                        onUpdateComment={handleUpdateComment}
+                        onDeleteComment={handleDeleteComment}
+                        onEditTextChange={setEditedCommentText}
+                      />
                     ))}
+
+                    {/* Load More Comments Button */}
+                    {hasMoreComments && (
+                      <Flex w="full" justifyContent="center" pt={2}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={loadMoreComments}
+                          isLoading={isLoadingComments}
+                          loadingText="Loading..."
+                        >
+                          Load More Comments
+                        </Button>
+                      </Flex>
+                    )}
+
+                    {/* No Comments Message */}
+                    {!isLoadingComments && taskComments.length === 0 && (
+                      <Flex w="full" justifyContent="center" py={4}>
+                        <Text color="gray.500" fontSize="sm">
+                          No comments yet. Be the first to comment!
+                        </Text>
+                      </Flex>
+                    )}
                   </Flex>
                 </GridItem>
 
@@ -2497,6 +3059,37 @@ function DraggableTaskCard({
               </Flex>
             )}
           </ModalBody>
+        </ModalContent>
+      </Modal>
+
+      {/* Assign Task Modal */}
+      <Modal
+        isOpen={isAssignModalOpen}
+        onClose={onAssignModalClose}
+        size="2xl"
+        isCentered
+        closeOnOverlayClick={false}
+      >
+        <ModalOverlay backdropFilter="blur(10px)" />
+        <ModalContent rounded={radiusStyle}>
+          <ModalHeader>Assign Task</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"}>
+              <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }} w={"full"}>
+                <Text>Left Side</Text>
+              </GridItem>
+              <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }} w={"full"}>
+                <Text>Right Side</Text>
+              </GridItem>
+            </Grid>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="ghost" mr={3} onClick={onAssignModalClose}>
+              Cancel
+            </Button>
+            <Button colorScheme="blue">Save</Button>
+          </ModalFooter>
         </ModalContent>
       </Modal>
     </>
