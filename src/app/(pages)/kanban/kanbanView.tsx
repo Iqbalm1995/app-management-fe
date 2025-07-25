@@ -49,6 +49,7 @@ import useTasks, {
   TaskCommentResponse,
   TaskCommentInsertPayload,
   TaskCommentUpdatePayload,
+  AssignUsersTaskPayload,
 } from "@/app/services/useTasks";
 import { PaggingListPayload, ListSearchByParam } from "@/app/types/masterTypes";
 import {
@@ -106,6 +107,7 @@ import {
   Icon,
   ButtonGroup,
   InputLeftElement,
+  Tooltip,
 } from "@chakra-ui/react";
 import {
   ChevronDownIcon,
@@ -1100,6 +1102,125 @@ function DraggableTaskCard({
     );
     setChoosedMemberProjects(updatedProjects);
   };
+
+  // Handle saving assigned users
+  const handleSaveAssignedUsers = async () => {
+    if (!detailedTask) {
+      showToast({
+        description: "No task selected",
+        statusToast: "error",
+      });
+      return;
+    }
+
+    setIsSavingAssignments(true);
+
+    try {
+      // Prepare the payload for AssignUsersTask
+      const assignPayload: AssignUsersTaskPayload = {
+        taskId: detailedTask.id,
+        usersData: ChoosedMemberProjects.map((user) => ({
+          userId: user.userId,
+        })),
+      };
+
+      console.log("Assigning users with payload:", assignPayload);
+
+      // Call the API to assign users
+      const response = await AssignUsersTask(assignPayload, getToken());
+
+      if (response?.statusCode === RES_CODE_OK) {
+        showToast({
+          description: "Users assigned successfully",
+          statusToast: "success",
+        });
+
+        // Update the detailed task with new assigned users
+        if (detailedTask) {
+          const updatedAssignUsers = ChoosedMemberProjects.map((user) => ({
+            id: user.id,
+            nrp: user.nrp,
+            nama: user.nama,
+            nip: user.nip,
+            userId: user.userId,
+            jabatan: user.jabatan,
+            email: user.email,
+            kodeUnitKerja: user.kodeUnitKerja,
+            namaUnitKerja: user.namaUnitKerja,
+            kodeJabatan: user.kodeJabatan,
+            profilePict: user.profilePict,
+          }));
+
+          setDetailedTask({
+            ...detailedTask,
+            assignUsers: updatedAssignUsers,
+          });
+        }
+
+        // Refresh the kanban board to show updated assignments
+        if (window.refreshKanbanData) {
+          window.refreshKanbanData();
+        }
+
+        // Close the assign modal
+        onAssignModalClose();
+      } else {
+        showToast({
+          description: response?.message || "Failed to assign users",
+          statusToast: "error",
+        });
+      }
+    } catch (error) {
+      console.error("Error assigning users:", error);
+      showToast({
+        description: "An error occurred while assigning users",
+        statusToast: "error",
+      });
+    } finally {
+      setIsSavingAssignments(false);
+    }
+  };
+
+  // Handle assign modal close with unsaved changes check
+  const handleAssignModalClose = () => {
+    // Check if there are unsaved changes
+    const currentAssignedIds = (detailedTask?.assignUsers || [])
+      .map((user) => user.id)
+      .sort();
+    const selectedIds = ChoosedMemberProjects.map((user) => user.id).sort();
+
+    const hasUnsavedChanges =
+      JSON.stringify(currentAssignedIds) !== JSON.stringify(selectedIds);
+
+    if (hasUnsavedChanges && !isSavingAssignments) {
+      const confirmClose = window.confirm(
+        "You have unsaved changes. Are you sure you want to close without saving?"
+      );
+      if (!confirmClose) {
+        return;
+      }
+    }
+
+    // Reset search state
+    setSearchUserInput("");
+    setDataUsers([]);
+
+    // Close modal
+    onAssignModalClose();
+  };
+
+  // Check if there are unsaved changes
+  const hasUnsavedAssignmentChanges = () => {
+    if (!detailedTask) return false;
+
+    const currentAssignedIds = (detailedTask.assignUsers || [])
+      .map((user) => user.id)
+      .sort();
+    const selectedIds = ChoosedMemberProjects.map((user) => user.id).sort();
+
+    return JSON.stringify(currentAssignedIds) !== JSON.stringify(selectedIds);
+  };
+
   const [detailedTask, setDetailedTask] = useState<TaskViewModel | null>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [newTaskItemName, setNewTaskItemName] = useState("");
@@ -1119,6 +1240,7 @@ function DraggableTaskCard({
     CreateTaskComment,
     UpdateTaskComment,
     DeleteTaskComment,
+    AssignUsersTask,
   } = useTasks();
 
   // States for inline editing
@@ -1143,6 +1265,12 @@ function DraggableTaskCard({
   const [editedCommentText, setEditedCommentText] = useState("");
   const [isUpdatingComment, setIsUpdatingComment] = useState(false);
 
+  // State for saving assignments
+  const [isSavingAssignments, setIsSavingAssignments] = useState(false);
+
+  const [hasMoreComments, setHasMoreComments] = useState(true);
+  const commentsPageSize = 5;
+
   // Delete comment state
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(
     null
@@ -1153,8 +1281,30 @@ function DraggableTaskCard({
     onClose: onAssignModalClose,
   } = useDisclosure();
 
-  const [hasMoreComments, setHasMoreComments] = useState(true);
-  const commentsPageSize = 5;
+  // Handle keyboard shortcuts in assign modal
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (isAssignModalOpen && event.ctrlKey && event.key === "s") {
+        event.preventDefault();
+        if (!isSavingAssignments && hasUnsavedAssignmentChanges()) {
+          handleSaveAssignedUsers();
+        }
+      }
+    };
+
+    if (isAssignModalOpen) {
+      document.addEventListener("keydown", handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [
+    isAssignModalOpen,
+    isSavingAssignments,
+    ChoosedMemberProjects,
+    detailedTask,
+  ]);
 
   // Refs for auto-focus
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -2311,23 +2461,28 @@ function DraggableTaskCard({
               >
                 <Flex as={HStack} w={"full"} justifyContent={"start"}>
                   {/* Task coment count (if available) */}
-                  <HStack spacing={1} alignItems="center">
-                    <Icon as={FiMessageSquare} color="gray.600" boxSize={4} />
-                    <Text fontSize="sm" color="gray.600" fontWeight="medium">
-                      0
-                    </Text>
-                  </HStack>
+                  {task.countCommnetTask > 0 && (
+                    <HStack spacing={1} alignItems="center">
+                      <Icon as={FiMessageSquare} color="gray.600" boxSize={4} />
+                      <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                        {task.countCommnetTask}
+                      </Text>
+                    </HStack>
+                  )}
                   {/* Task item count (if available) */}
-                  {task.taskItems && task.taskItems.length > 0 && (
+                  {task.countTaskItem > 0 && (
                     <HStack spacing={1} alignItems="center">
                       <Icon as={FiCheckSquare} color="gray.600" boxSize={4} />
                       <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                        {task.countTaskItemDone}/{task.countTaskItem}
+                      </Text>
+                      {/* <Text fontSize="sm" color="gray.600" fontWeight="medium">
                         {
                           task.taskItems.filter((item) => item.isDone === "Y")
                             .length
                         }
                         /{task.taskItems.length}
-                      </Text>
+                      </Text> */}
                     </HStack>
                   )}
                   {/* Share task */}
@@ -2336,15 +2491,33 @@ function DraggableTaskCard({
                 <Flex as={HStack} w={"full"} justifyContent={"end"} spacing={1}>
                   {/* Task assignees (if available) */}
                   {task.assignUsers && task.assignUsers.length > 0 && (
-                    <AvatarGroup size="sm" max={4}>
-                      {task.assignUsers.map((user: UserShortResponse) => (
-                        <Avatar
-                          key={user.id}
-                          name={user.nama}
-                          src={user.profilePict || undefined}
-                        />
-                      ))}
-                    </AvatarGroup>
+                    <Tooltip
+                      hasArrow
+                      label={
+                        <Box>
+                          {task.assignUsers.map(
+                            (user: UserShortResponse, index: number) => (
+                              <Text key={index} fontSize="x-small">
+                                {user.nama}
+                              </Text>
+                            )
+                          )}
+                        </Box>
+                      }
+                      bg="secondary.500"
+                      color="white"
+                      borderRadius={"md"}
+                    >
+                      <AvatarGroup size="sm" max={4}>
+                        {task.assignUsers.map((user: UserShortResponse) => (
+                          <Avatar
+                            key={user.id}
+                            name={user.nama}
+                            src={user.profilePict || undefined}
+                          />
+                        ))}
+                      </AvatarGroup>
+                    </Tooltip>
                   )}
                 </Flex>
               </Flex>
@@ -2671,6 +2844,9 @@ function DraggableTaskCard({
                         variant="outline"
                         leftIcon={<FaUsers />}
                         onClick={() => {
+                          // Clear search state when opening modal
+                          setSearchUserInput("");
+                          setDataUsers([]);
                           onAssignModalOpen();
                         }}
                       >
@@ -3196,14 +3372,28 @@ function DraggableTaskCard({
       {/* Assign Task Modal */}
       <Modal
         isOpen={isAssignModalOpen}
-        onClose={onAssignModalClose}
+        onClose={handleAssignModalClose}
         size="2xl"
         isCentered
         closeOnOverlayClick={false}
       >
         <ModalOverlay backdropFilter="blur(10px)" />
         <ModalContent rounded={radiusStyle}>
-          <ModalHeader>Assign Task</ModalHeader>
+          <ModalHeader>
+            <HStack spacing={2} justify="space-between" w="full">
+              <HStack spacing={2}>
+                <Text>Assign Task</Text>
+                {hasUnsavedAssignmentChanges() && (
+                  <Badge colorScheme="orange" fontSize="xs">
+                    Unsaved Changes
+                  </Badge>
+                )}
+              </HStack>
+              <Badge colorScheme="blue" fontSize="sm">
+                {ChoosedMemberProjects.length} Selected
+              </Badge>
+            </HStack>
+          </ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"}>
@@ -3331,10 +3521,31 @@ function DraggableTaskCard({
             </Grid>
           </ModalBody>
           <ModalFooter>
-            <Button variant="ghost" mr={3} onClick={onAssignModalClose}>
-              Cancel
-            </Button>
-            <Button colorScheme="blue">Save</Button>
+            <HStack spacing={2} w="full" justify="space-between">
+              <Text fontSize="xs" color="gray.500">
+                Press Ctrl+S to save quickly
+              </Text>
+              <HStack spacing={2}>
+                <Button
+                  variant="ghost"
+                  onClick={handleAssignModalClose}
+                  isDisabled={isSavingAssignments}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  colorScheme="blue"
+                  onClick={handleSaveAssignedUsers}
+                  isLoading={isSavingAssignments}
+                  loadingText="Saving..."
+                  isDisabled={
+                    !hasUnsavedAssignmentChanges() || isSavingAssignments
+                  }
+                >
+                  Save Assignments
+                </Button>
+              </HStack>
+            </HStack>
           </ModalFooter>
         </ModalContent>
       </Modal>
@@ -4088,7 +4299,7 @@ function KanbanBacklogPage() {
 
         <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }} w={"full"}>
           <Flex w={"full"} justifyContent={"end"} h={"full"}>
-            <Button size={"lg"} colorScheme="secondary">
+            <Button size={"lg"} colorScheme="secondary" display={"none"}>
               {EditMode ? "Edit Mode" : "View Mode"}
             </Button>
           </Flex>

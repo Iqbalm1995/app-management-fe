@@ -82,6 +82,10 @@ export interface TaskViewModel {
   boardName: string;
   boardIndexStage: number;
   taskPoint: number;
+  countCommnetTask: number;
+  countTaskItem: number;
+  countTaskItemDone: number;
+  countTaskAttachment: number;
   createdAt: string;
   createdBy: string;
   updatedAt?: string | null;
@@ -515,10 +519,15 @@ const useTasks = (): useTasks => {
   ): Promise<ApiGenericResponse<TaskCommentResponse[] | null> | null> => {
     setIsLoading(true);
     setError(null);
-    const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
     const PathEndpoint: string = `/v1/Task/list-task-comments?taskId=${taskId}`;
     try {
-      const response = await axiosInstance.get<ApiGenericResponse<TaskCommentResponse[]>>(`${UrlEndpoint}${PathEndpoint}`, {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<TaskCommentResponse[]>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setIsLoading(false);
@@ -527,11 +536,19 @@ const useTasks = (): useTasks => {
       setIsLoading(false);
       if (axios.isAxiosError(err)) {
         const errorResponse = handleAxiosError(err);
-        setError(err.response?.data?.message || "An error occurred while fetching task comments.");
+        setError(
+          err.response?.data?.message ||
+            "An error occurred while fetching task comments."
+        );
         return errorResponse;
       } else {
         setError("An unknown error occurred. Please try again.");
-        return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: "Error connect to api", error: null };
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
       }
     }
   };
@@ -542,10 +559,15 @@ const useTasks = (): useTasks => {
   ): Promise<ApiGenericResponse<TaskCommentResponse | null> | null> => {
     setIsLoading(true);
     setError(null);
-    const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
     const PathEndpoint: string = `/v1/Task/detail-task-comment/id/${taskCommentId}`;
     try {
-      const response = await axiosInstance.get<ApiGenericResponse<TaskCommentResponse>>(`${UrlEndpoint}${PathEndpoint}`, {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<TaskCommentResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setIsLoading(false);
@@ -554,11 +576,19 @@ const useTasks = (): useTasks => {
       setIsLoading(false);
       if (axios.isAxiosError(err)) {
         const errorResponse = handleAxiosError(err);
-        setError(err.response?.data?.message || "An error occurred while fetching task comment details.");
+        setError(
+          err.response?.data?.message ||
+            "An error occurred while fetching task comment details."
+        );
         return errorResponse;
       } else {
         setError("An unknown error occurred. Please try again.");
-        return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: "Error connect to api", error: null };
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
       }
     }
   };
@@ -569,10 +599,15 @@ const useTasks = (): useTasks => {
   ): Promise<ApiGenericResponse<string | null> | null> => {
     setIsLoading(true);
     setError(null);
-    const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
     const PathEndpoint: string = `/v1/Task/create-task-comment`;
     try {
-      const response = await axiosInstance.post<ApiGenericResponse<string | null>>(`${UrlEndpoint}${PathEndpoint}`, payload, {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setIsLoading(false);
@@ -581,11 +616,19 @@ const useTasks = (): useTasks => {
       setIsLoading(false);
       if (axios.isAxiosError(err)) {
         const errorResponse = handleAxiosError(err);
-        setError(err.response?.data?.message || "An error occurred while creating task comment.");
+        setError(
+          err.response?.data?.message ||
+            "An error occurred while creating task comment."
+        );
         return errorResponse;
       } else {
         setError("An unknown error occurred. Please try again.");
-        return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: "Error connect to api", error: null };
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
       }
     }
   };
@@ -596,10 +639,15 @@ const useTasks = (): useTasks => {
   ): Promise<ApiGenericResponse<string | null> | null> => {
     setIsLoading(true);
     setError(null);
-    const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
     const PathEndpoint: string = `/v1/Task/update-task-comment`;
     try {
-      const response = await axiosInstance.post<ApiGenericResponse<string | null>>(`${UrlEndpoint}${PathEndpoint}`, payload, {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setIsLoading(false);
@@ -608,11 +656,19 @@ const useTasks = (): useTasks => {
       setIsLoading(false);
       if (axios.isAxiosError(err)) {
         const errorResponse = handleAxiosError(err);
-        setError(err.response?.data?.message || "An error occurred while updating task comment.");
+        setError(
+          err.response?.data?.message ||
+            "An error occurred while updating task comment."
+        );
         return errorResponse;
       } else {
         setError("An unknown error occurred. Please try again.");
-        return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: "Error connect to api", error: null };
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
       }
     }
   };
@@ -623,10 +679,15 @@ const useTasks = (): useTasks => {
   ): Promise<ApiGenericResponse<string | null> | null> => {
     setIsLoading(true);
     setError(null);
-    const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
     const PathEndpoint: string = `/v1/Task/delete-task-comment/id/${taskCommentId}`;
     try {
-      const response = await axiosInstance.delete<ApiGenericResponse<string | null>>(`${UrlEndpoint}${PathEndpoint}`, {
+      const response = await axiosInstance.delete<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setIsLoading(false);
@@ -635,11 +696,19 @@ const useTasks = (): useTasks => {
       setIsLoading(false);
       if (axios.isAxiosError(err)) {
         const errorResponse = handleAxiosError(err);
-        setError(err.response?.data?.message || "An error occurred while deleting task comment.");
+        setError(
+          err.response?.data?.message ||
+            "An error occurred while deleting task comment."
+        );
         return errorResponse;
       } else {
         setError("An unknown error occurred. Please try again.");
-        return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: "Error connect to api", error: null };
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
       }
     }
   };
@@ -1088,7 +1157,8 @@ const useTasks = (): useTasks => {
       if (axios.isAxiosError(err)) {
         const errorResponse = handleAxiosError(err);
         setError(
-          err.response?.data?.message || "An error occurred while assigning users to task."
+          err.response?.data?.message ||
+            "An error occurred while assigning users to task."
         );
         return errorResponse;
       } else {
