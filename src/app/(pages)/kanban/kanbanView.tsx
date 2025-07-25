@@ -154,7 +154,10 @@ import {
 import { LuGrip } from "react-icons/lu";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { UserShortResponse, UsersResponse } from "@/app/services/useUsers";
+import useUsers, {
+  UserShortResponse,
+  UsersResponse,
+} from "@/app/services/useUsers";
 import { GoFilter } from "react-icons/go";
 import { MdOutlineSort } from "react-icons/md";
 
@@ -860,6 +863,7 @@ const AddTaskForm: React.FC<AddTaskProps> = ({
   const [taskName, setTaskName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { CreateSimpleTask } = useTasks();
+  const { List: ListUsers } = useUsers();
   const showToast = useToastHelper();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -1013,8 +1017,89 @@ function DraggableTaskCard({
     }),
   });
 
+  const { List: ListUsers } = useUsers();
+
+  // SetUp auth data on current page
+  const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
+  const [tokenData, setTokenData] = useState<string>("");
+  const [ActionLoading, setActionLoading] = useState(false);
+
+  useEffect(() => {
+    const storedData = localStorage.getItem("authData");
+    const token: string = localStorage.getItem("tokenData") as string;
+
+    if (DataAuth == null) {
+      if (storedData) {
+        const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
+        const UserData: AuthDataResponse =
+          StorageAuth.dataLogin as AuthDataResponse;
+        setDataAuth(UserData);
+      }
+    }
+
+    if (token) {
+      setTokenData(token);
+    }
+  }, [DataAuth]);
+  // End SetUp auth data on current page
+
   // Add state and handlers for the detail modal
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const [SearchUserInput, setSearchUserInput] = useState<string>("");
+  const [DataUsers, setDataUsers] = useState<UsersResponse[]>([]);
+  const [ChoosedMemberProjects, setChoosedMemberProjects] = useState<
+    UsersResponse[]
+  >([]);
+
+  const GetDataUser = async (
+    searchValue: string,
+    limit: number = 3
+  ): Promise<UsersResponse[]> => {
+    const PayloadList: PaggingListPayload = {
+      search: searchValue,
+      limit: limit,
+      page: 0,
+      filterWhere: [],
+      fieldOrder: ["nama"],
+      orderDir: "asc",
+    };
+    const requestData = await ListUsers(PayloadList, tokenData);
+    const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+
+    if (isErrorResponse || !requestData) {
+      return [];
+    } else {
+      if (requestData.data == null) {
+        return [];
+      }
+      const itemsData: UsersResponse[] = requestData.data as UsersResponse[];
+      return itemsData;
+    }
+  };
+
+  const handleSearchUserAssign = async (textSearch: string) => {
+    setDataUsers([]);
+    setSearchUserInput(textSearch);
+    if (textSearch.length >= 2) {
+      const ListUserData: UsersResponse[] = await GetDataUser(textSearch, 3);
+      setDataUsers(ListUserData);
+    } else if (textSearch.length <= 0) {
+      setDataUsers([]);
+    }
+  };
+
+  const handleAddUserAssign = (data: UsersResponse) => {
+    setChoosedMemberProjects([...ChoosedMemberProjects, data]);
+    setDataUsers([]);
+    setSearchUserInput("");
+  };
+
+  const handleRemoveUserAssign = (id: string) => {
+    const updatedProjects = ChoosedMemberProjects.filter(
+      (project) => project.id !== id
+    );
+    setChoosedMemberProjects(updatedProjects);
+  };
   const [detailedTask, setDetailedTask] = useState<TaskViewModel | null>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [newTaskItemName, setNewTaskItemName] = useState("");
@@ -1067,7 +1152,7 @@ function DraggableTaskCard({
     onOpen: onAssignModalOpen,
     onClose: onAssignModalClose,
   } = useDisclosure();
-  const [UsersAssignTask, setUsersAssignTask] = useState<UsersResponse[]>([]);
+
   const [hasMoreComments, setHasMoreComments] = useState(true);
   const commentsPageSize = 5;
 
@@ -2139,7 +2224,7 @@ function DraggableTaskCard({
                   borderColor={"blue.200"}
                   display={"none"}
                 >
-                  📋 {DataProject.projectName}
+                  {DataProject.projectName}
                 </Text>
               )}
               <Text
@@ -2173,7 +2258,7 @@ function DraggableTaskCard({
               )}
 
               {/* Task assignees (if available) */}
-              {task.assignUsers && task.assignUsers.length > 0 && (
+              {/* {task.assignUsers && task.assignUsers.length > 0 && (
                 <AvatarGroup size="xs" max={3}>
                   {task.assignUsers.map((user: UserShortResponse) => (
                     <Avatar
@@ -2183,7 +2268,7 @@ function DraggableTaskCard({
                     />
                   ))}
                 </AvatarGroup>
-              )}
+              )} */}
 
               <Flex
                 as={HStack}
@@ -2215,7 +2300,18 @@ function DraggableTaskCard({
                   {/* Share task */}
                   {/* <Icon as={FiShare2} color="gray.600" boxSize={4} /> */}
                 </Flex>
-                <Flex as={HStack} w={"full"} justifyContent={"end"}></Flex>
+                <Flex as={HStack} w={"full"} justifyContent={"end"} spacing={1}>
+                  {ChoosedMemberProjects &&
+                    ChoosedMemberProjects.length > 0 &&
+                    ChoosedMemberProjects.map((user) => (
+                      <Avatar
+                        size="xs"
+                        name={user.nama}
+                        src={user.profilePict || undefined}
+                        key={user.id}
+                      />
+                    ))}
+                </Flex>
               </Flex>
             </VStack>
           </CardBody>
@@ -2869,7 +2965,6 @@ function DraggableTaskCard({
                   </Flex>
                 </GridItem>
 
-                {/* Right Sidebar */}
                 <GridItem colSpan={{ base: 12, sm: 12, md: 4, lg: 4 }}>
                   <Flex
                     w="full"
@@ -2901,10 +2996,10 @@ function DraggableTaskCard({
                       <Text fontSize="sm" color="gray.500" mb={1}>
                         Assigned To
                       </Text>
-                      {detailedTask.assignUsers &&
-                      detailedTask.assignUsers.length > 0 ? (
+                      {ChoosedMemberProjects &&
+                      ChoosedMemberProjects.length > 0 ? (
                         <Wrap>
-                          {detailedTask.assignUsers.map((user) => (
+                          {ChoosedMemberProjects.map((user) => (
                             <WrapItem key={user.id}>
                               <HStack
                                 p={2}
@@ -2991,6 +3086,7 @@ function DraggableTaskCard({
                       <Text fontSize="sm" color="gray.500" mb={1}>
                         Dibuat Oleh
                       </Text>
+
                       {detailedTask.userCreated ? (
                         <HStack>
                           <Avatar
@@ -3077,10 +3173,125 @@ function DraggableTaskCard({
           <ModalBody>
             <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"}>
               <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }} w={"full"}>
-                <Text>Left Side</Text>
+                <VStack spacing={4} align="stretch">
+                  <Box>
+                    <Text fontWeight="semibold" mb={2}>
+                      Search Users
+                    </Text>
+                    <Input
+                      placeholder="Search by name or ID..."
+                      value={SearchUserInput}
+                      onChange={(e) => handleSearchUserAssign(e.target.value)}
+                    />
+                  </Box>
+
+                  {/* Search Results */}
+                  <Box>
+                    {DataUsers.length > 0 && (
+                      <VStack spacing={2} align="stretch">
+                        {DataUsers.map((user) => {
+                          const isAlreadyAssigned = ChoosedMemberProjects.find(
+                            (assignedUser) => assignedUser.id === user.id
+                          );
+                          return (
+                            <Flex
+                              key={user.id}
+                              p={3}
+                              bg="gray.50"
+                              borderRadius="md"
+                              align="center"
+                              justify="space-between"
+                            >
+                              <HStack spacing={3}>
+                                <Avatar
+                                  size="sm"
+                                  name={user.nama}
+                                  src={user.profilePict || undefined}
+                                />
+                                <Box>
+                                  <Text fontWeight="medium">{user.nama}</Text>
+                                  <Text fontSize="sm" color="gray.600">
+                                    {user.email}
+                                  </Text>
+                                </Box>
+                              </HStack>
+                              <Button
+                                size="sm"
+                                colorScheme="blue"
+                                isDisabled={!!isAlreadyAssigned}
+                                leftIcon={<FaPlus />}
+                                onClick={() => handleAddUserAssign(user)}
+                              >
+                                {isAlreadyAssigned ? "Added" : "Add"}
+                              </Button>
+                            </Flex>
+                          );
+                        })}
+                      </VStack>
+                    )}
+                  </Box>
+                </VStack>
               </GridItem>
               <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }} w={"full"}>
-                <Text>Right Side</Text>
+                <VStack spacing={4} align="stretch">
+                  <Box>
+                    <Text fontWeight="semibold" mb={2}>
+                      Assigned Users ({ChoosedMemberProjects.length})
+                    </Text>
+                  </Box>
+
+                  {/* Assigned Users List */}
+                  <Box>
+                    {ChoosedMemberProjects.length <= 0 ? (
+                      <Flex
+                        w="full"
+                        justifyContent="center"
+                        alignItems="center"
+                        minH="100px"
+                        bg="gray.50"
+                        borderRadius="md"
+                      >
+                        <Text color="gray.500">No users assigned yet</Text>
+                      </Flex>
+                    ) : (
+                      <VStack spacing={2} align="stretch">
+                        {ChoosedMemberProjects.map((user) => (
+                          <Flex
+                            key={user.id}
+                            p={3}
+                            bg="blue.50"
+                            borderRadius="md"
+                            align="center"
+                            justify="space-between"
+                          >
+                            <HStack spacing={3}>
+                              <Avatar
+                                size="sm"
+                                name={user.nama}
+                                src={user.profilePict || undefined}
+                              />
+                              <Box>
+                                <Text fontWeight="medium">{user.nama}</Text>
+                                <Text fontSize="sm" color="gray.600">
+                                  {user.email}
+                                </Text>
+                              </Box>
+                            </HStack>
+                            <Button
+                              size="sm"
+                              colorScheme="red"
+                              variant="ghost"
+                              leftIcon={<FaTrash />}
+                              onClick={() => handleRemoveUserAssign(user.id)}
+                            >
+                              Remove
+                            </Button>
+                          </Flex>
+                        ))}
+                      </VStack>
+                    )}
+                  </Box>
+                </VStack>
               </GridItem>
             </Grid>
           </ModalBody>
@@ -3300,6 +3511,7 @@ function KanbanBacklogPage() {
     CreateSimpleTask,
     MoveTask,
   } = useTasks();
+  const { List: ListUsers } = useUsers();
 
   // toggle for edit mode or view mode
   const [EditMode, setEditMode] = useState<"1" | "0">("1");
