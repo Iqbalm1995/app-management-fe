@@ -150,6 +150,13 @@ export interface TaskAssignMemberPayload {
   userIDs: string[];
 }
 
+export interface AssignUsersTaskPayload {
+  taskId: string;
+  usersData: {
+    userId: string;
+  }[];
+}
+
 interface useTasks {
   // TASK BOARD
   ListTasksBoardPaged: (
@@ -236,6 +243,10 @@ interface useTasks {
   ) => Promise<ApiGenericResponse<string | null> | null>;
   MoveTask: (
     payload: TaskMovePayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  AssignUsersTask: (
+    payload: AssignUsersTaskPayload,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
 
@@ -1051,6 +1062,47 @@ const useTasks = (): useTasks => {
     }
   };
 
+  const AssignUsersTask = async (
+    payload: AssignUsersTaskPayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Task/task-assign-user`;
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred while assigning users to task."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
   return {
     ListTasksBoardPaged,
     ListTasksBoard,
@@ -1073,6 +1125,7 @@ const useTasks = (): useTasks => {
     DeleteTaskItem,
     ArchiveTask,
     MoveTask,
+    AssignUsersTask,
     isLoading,
     error,
   };

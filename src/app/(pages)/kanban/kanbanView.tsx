@@ -2139,6 +2139,52 @@ function DraggableTaskCard({
         if (response?.statusCode === RES_CODE_OK && response.data) {
           setDetailedTask(response.data);
 
+          // Populate ChoosedMemberProjects with current assignUsers
+          if (
+            response.data.assignUsers &&
+            response.data.assignUsers.length > 0
+          ) {
+            const assignedUsers: UsersResponse[] =
+              response.data.assignUsers.map((user) => ({
+                id: user.id,
+                nrp: user.nrp,
+                nama: user.nama,
+                nip: user.nip,
+                userId: user.userId,
+                kodeCabang: null,
+                namaCabang: null,
+                kodeInduk: null,
+                namaInduk: null,
+                kodeKanwil: null,
+                namaKanwil: null,
+                jabatan: user.jabatan,
+                email: user.email,
+                idFungsi: null,
+                namaFungsi: null,
+                kodePenempatan: null,
+                namaPenempatan: null,
+                idUim: null,
+                costCentre: null,
+                isApproval: null,
+                kodeUnitKerja: user.kodeUnitKerja,
+                namaUnitKerja: user.namaUnitKerja,
+                kodeJabatan: user.kodeJabatan,
+                phoneNumber: null,
+                userStatus: "1", // Default active status
+                profilePict: user.profilePict,
+                lastSync: null,
+                createdAt: new Date().toISOString(), // Default current date
+                createdBy: "system", // Default value
+                updatedAt: null,
+                updatedBy: null,
+                team: null,
+                teamRole: null,
+              }));
+            setChoosedMemberProjects(assignedUsers);
+          } else {
+            setChoosedMemberProjects([]);
+          }
+
           // Fetch task items
           fetchTaskItems(task.id);
 
@@ -2257,19 +2303,6 @@ function DraggableTaskCard({
                 </Box>
               )}
 
-              {/* Task assignees (if available) */}
-              {/* {task.assignUsers && task.assignUsers.length > 0 && (
-                <AvatarGroup size="xs" max={3}>
-                  {task.assignUsers.map((user: UserShortResponse) => (
-                    <Avatar
-                      key={user.id}
-                      name={user.nama}
-                      src={user.profilePict || undefined}
-                    />
-                  ))}
-                </AvatarGroup>
-              )} */}
-
               <Flex
                 as={HStack}
                 w={"full"}
@@ -2301,16 +2334,18 @@ function DraggableTaskCard({
                   {/* <Icon as={FiShare2} color="gray.600" boxSize={4} /> */}
                 </Flex>
                 <Flex as={HStack} w={"full"} justifyContent={"end"} spacing={1}>
-                  {ChoosedMemberProjects &&
-                    ChoosedMemberProjects.length > 0 &&
-                    ChoosedMemberProjects.map((user) => (
-                      <Avatar
-                        size="xs"
-                        name={user.nama}
-                        src={user.profilePict || undefined}
-                        key={user.id}
-                      />
-                    ))}
+                  {/* Task assignees (if available) */}
+                  {task.assignUsers && task.assignUsers.length > 0 && (
+                    <AvatarGroup size="sm" max={4}>
+                      {task.assignUsers.map((user: UserShortResponse) => (
+                        <Avatar
+                          key={user.id}
+                          name={user.nama}
+                          src={user.profilePict || undefined}
+                        />
+                      ))}
+                    </AvatarGroup>
+                  )}
                 </Flex>
               </Flex>
             </VStack>
