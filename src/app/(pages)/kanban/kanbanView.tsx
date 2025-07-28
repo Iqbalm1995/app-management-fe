@@ -18,6 +18,7 @@ import {
   radiusStyle,
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
+  AUTO_SAVE_DELAY,
   TASK_BOARD_STATUS_CODE_DONE,
   TASK_BOARD_STATUS_CODE_INPROGRESS,
   TASK_BOARD_STATUS_CODE_REVIEW,
@@ -319,7 +320,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
         </Button>
         <Button
           size="sm"
-          colorScheme="blue"
+          colorScheme={isSaving ? "yellow" : "blue"}
           onClick={handleSave}
           isLoading={isSaving}
         >
@@ -392,7 +393,7 @@ const TaskItemRow: React.FC<TaskItemRowProps> = ({
       <Checkbox
         isChecked={item.isDone === "Y"}
         onChange={() => onToggle(item.id, item.isDone === "Y" ? "N" : "Y")}
-        colorScheme="blue"
+        colorScheme={item.isDone === "Y" ? "green" : "blue"}
         mr={2}
       />
 
@@ -796,7 +797,7 @@ const TaskComment = ({
               </Button>
               <Button
                 size="sm"
-                colorScheme="blue"
+                colorScheme={isUpdating ? "yellow" : "blue"}
                 onClick={() => onUpdateComment(dataComments.id)}
                 isLoading={isUpdating}
                 isDisabled={!editedText.trim() || isUpdating}
@@ -992,7 +993,7 @@ const AddTaskForm: React.FC<AddTaskProps> = ({
             </Button>
             <Button
               size="xs"
-              colorScheme="blue"
+              colorScheme={isSubmitting ? "yellow" : "blue"}
               onClick={handleSubmit}
               isLoading={isSubmitting}
               isDisabled={!taskName.trim()}
@@ -2480,14 +2481,14 @@ function DraggableTaskCard({
                     fontSize="xs"
                     colorScheme="gray"
                     variant="outline"
-                    // display={"none"}
+                    display={"none"}
                   >
                     API: {task.indexTask}
                   </Badge>
                   {getEffectiveIndex && localTaskIndices && (
                     <HStack spacing={1}>
                       <Badge
-                        // display={"none"}
+                        display={"none"}
                         rounded={"md"}
                         px={2}
                         fontSize="xs"
@@ -4025,6 +4026,7 @@ function KanbanBacklogPage() {
   const [DataTasks, setDataTasks] = useState<TaskViewModel[]>([]);
   const [RefreshData, setRefreshData] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
   // LOCAL INDEX MANAGEMENT - Track local indices separately from API indices
   const [localTaskIndices, setLocalTaskIndices] = useState<Map<string, number>>(
     new Map()
@@ -4043,7 +4045,9 @@ function KanbanBacklogPage() {
 
   // Initialize local indices based on sorted order of tasks
   const initializeLocalIndices = (tasks: TaskViewModel[]) => {
-    console.log("🔧 Initializing local indices using actual API indexTask values...");
+    console.log(
+      "🔧 Initializing local indices using actual API indexTask values..."
+    );
     console.log("🔧 Input tasks count:", tasks.length);
 
     // Clear existing local indices first
@@ -4094,6 +4098,82 @@ function KanbanBacklogPage() {
     );
     console.log("✅ Local indices map:", Array.from(newLocalIndices.entries()));
   };
+  // Semi-automated save: Auto-save after ${AUTO_SAVE_DELAY / 1000} seconds of inactivity
+  useEffect(() => {
+    // Only trigger if there are pending changes
+    if (pendingTaskChanges.length === 0) {
+      return;
+    }
+
+    console.log(
+      `⏰ SEMI-AUTO SAVE: ${
+        pendingTaskChanges.length
+      } pending changes detected, starting ${
+        AUTO_SAVE_DELAY / 1000
+      }-second timer...`
+    );
+
+    // Set a 3-second timer
+    const autoSaveTimer = setTimeout(async () => {
+      console.log(
+        `🚀 SEMI-AUTO SAVE: ${
+          AUTO_SAVE_DELAY / 1000
+        } seconds of inactivity, triggering auto-save...`
+      );
+
+      if (!tokenData) {
+        console.error(
+          "❌ SEMI-AUTO SAVE: No token available, keeping manual save option"
+        );
+        return;
+      }
+
+      try {
+        setIsAutoSaving(true);
+        console.log("📤 SEMI-AUTO SAVE: Attempting to save pending changes...");
+
+        const saveResult = await sendPendingChangesToAPI();
+        console.log("✅ SEMI-AUTO SAVE: Save result:", saveResult);
+
+        if (saveResult && saveResult.length > 0) {
+          showToast({
+            description: `Auto-saved ${saveResult.length} task changes after ${
+              AUTO_SAVE_DELAY / 1000
+            } seconds`,
+            statusToast: "success",
+          });
+          console.log(
+            "✅ SEMI-AUTO SAVE: Successfully saved changes automatically"
+          );
+
+          // Refresh task list after successful save
+          console.log("🔄 SEMI-AUTO SAVE: Refreshing task list...");
+          setRefreshData((prev) => prev + 1);
+        }
+
+        setIsAutoSaving(false);
+      } catch (error) {
+        console.error("❌ SEMI-AUTO SAVE: Failed, keeping manual save option");
+        console.error("❌ SEMI-AUTO SAVE Error details:", error);
+
+        showToast({
+          description: `Auto-save failed after ${
+            AUTO_SAVE_DELAY / 1000
+          } seconds. Please use the Save Changes button.`,
+          statusToast: "warning",
+        });
+
+        setIsAutoSaving(false);
+      }
+    }, AUTO_SAVE_DELAY); // Auto-save delay from constants
+
+    // Cleanup function: cancel timer if component unmounts or dependencies change
+    return () => {
+      console.log("🔄 SEMI-AUTO SAVE: Timer reset due to new changes");
+      clearTimeout(autoSaveTimer);
+    };
+  }, [pendingTaskChanges.length, tokenData]); // Re-run when pending changes count changes
+
   // PENDING CHANGES MANAGEMENT FUNCTIONS
 
   // Add or update a task change in pending changes
@@ -4260,7 +4340,7 @@ function KanbanBacklogPage() {
     );
     if (pendingTaskChanges.length === 0) {
       console.log("📭 No pending changes to send");
-      return;
+      return []; // Return empty array instead of undefined
     }
 
     console.log(
@@ -4730,13 +4810,9 @@ function KanbanBacklogPage() {
       setTimeout(() => {
         getPendingChangesSummary();
       }, 100);
-      console.log("🚨 DEBUG: About to set auto-save timeout...");
+
       console.log(
-        "🚨 DEBUG: Current pendingTaskChanges before timeout:",
-        pendingTaskChanges.length
-      );
-      console.log(
-        "✅ Task moved locally. Use Save Changes button to persist to API."
+        "✅ Task moved locally. Auto-save will be triggered from addPendingTaskChange."
       );
 
       return true;
@@ -5097,6 +5173,8 @@ function KanbanBacklogPage() {
             description: requestTaskBoard?.message || RES_GENERIC_ERROR_MSG,
             statusToast: "error",
           });
+          setIsLoadingProcess(false);
+          return;
         } else {
           console.log(requestTaskBoard);
           if (requestTaskBoard.data == null) {
@@ -5321,10 +5399,9 @@ function KanbanBacklogPage() {
               ✅ Ready for API Integration
             </Text>
             <Text fontSize="xs" color="green.600">
-              • {pendingTaskChanges.length} task
-              {pendingTaskChanges.length !== 1 ? "s" : ""} ready to be moved •
-              Batch processing will send all changes in one request • Each
-              change contains: taskId, boardId, indexTask, indexStage
+              • {pendingTaskChanges.length} task Batch processing will send all
+              changes in one request • Each change contains: taskId, boardId,
+              indexTask, indexStage
             </Text>
           </Box>
         )}
@@ -5359,13 +5436,17 @@ function KanbanBacklogPage() {
                 Kembali
               </Button>
             </Link>
+          </Flex>
+        </GridItem>
 
-            {/* MANUAL SAVE BUTTON: Show when there are pending changes */}
+        <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }} w={"full"}>
+          <Flex w={"full"} as={HStack} justifyContent={"end"} h={"full"}>
+            {/* MANUAL SAVE BUTTON: Show when there are pending changes or auto-save failed */}
             {pendingTaskChanges.length > 0 && (
               <Button
-                size="sm"
-                colorScheme="blue"
-                leftIcon={<FiSave />}
+                size="lg"
+                colorScheme={isAutoSaving ? "yellow" : "blue"}
+                leftIcon={isAutoSaving ? <Spinner size="sm" /> : <FiSave />}
                 onClick={async () => {
                   console.log("💾 Manual save button clicked");
                   try {
@@ -5376,16 +5457,17 @@ function KanbanBacklogPage() {
                   }
                 }}
                 ml={3}
+                isDisabled={isAutoSaving}
               >
-                Save {pendingTaskChanges.length} Change
-                {pendingTaskChanges.length !== 1 ? "s" : ""}
+                {isAutoSaving
+                  ? `Auto-saving ${pendingTaskChanges.length} change${
+                      pendingTaskChanges.length !== 1 ? "s" : ""
+                    }...`
+                  : `${pendingTaskChanges.length} Change${
+                      pendingTaskChanges.length !== 1 ? "s" : ""
+                    } (Auto-save in ${AUTO_SAVE_DELAY / 1000}s)`}
               </Button>
             )}
-          </Flex>
-        </GridItem>
-
-        <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }} w={"full"}>
-          <Flex w={"full"} justifyContent={"end"} h={"full"}>
             <Button size={"lg"} colorScheme="secondary" display={"none"}>
               {EditMode ? "Edit Mode" : "View Mode"}
             </Button>
