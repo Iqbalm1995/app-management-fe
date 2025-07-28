@@ -150,7 +150,6 @@ import {
   FiPaperclip,
   FiPlusCircle,
   FiRefreshCcw,
-  FiSave,
   FiSearch,
   FiShare2,
   FiTrello,
@@ -1059,7 +1058,7 @@ function DraggableTaskCard({
 
   // Add state and handlers for the detail modal
   const { isOpen, onOpen, onClose } = useDisclosure();
-
+  
   // Listen for drag position updates
   useEffect(() => {
     const handleDragPositionUpdate = (event: CustomEvent) => {
@@ -1067,15 +1066,9 @@ function DraggableTaskCard({
         setDragPosition(event.detail.position);
       }
     };
-    window.addEventListener(
-      "dragPositionUpdate",
-      handleDragPositionUpdate as EventListener
-    );
+    window.addEventListener('dragPositionUpdate', handleDragPositionUpdate as EventListener);
     return () => {
-      window.removeEventListener(
-        "dragPositionUpdate",
-        handleDragPositionUpdate as EventListener
-      );
+      window.removeEventListener('dragPositionUpdate', handleDragPositionUpdate as EventListener);
     };
   }, [task.id]);
   const [SearchUserInput, setSearchUserInput] = useState<string>("");
@@ -1272,7 +1265,6 @@ function DraggableTaskCard({
     UpdateTaskComment,
     DeleteTaskComment,
     AssignUsersTask,
-    MoveTask,
   } = useTasks();
 
   // States for inline editing
@@ -2402,11 +2394,7 @@ function DraggableTaskCard({
         className="task-card"
         data-task-id={task.id}
         data-index={task.indexTask}
-        style={{
-          opacity: isDragging ? 0.5 : 1,
-          cursor: "move",
-          position: "relative",
-        }}
+        style={{ opacity: isDragging ? 0.5 : 1, cursor: "move", position: "relative" }}
         onClick={handleCardClick}
       >
         {/* Drag Position Tooltip */}
@@ -2442,8 +2430,7 @@ function DraggableTaskCard({
           >
             Position {dragPosition}
           </Box>
-        )}{" "}
-        <Card
+        )}        <Card
           size="sm"
           variant="outline"
           boxShadow={isRecentlyMoved ? "md" : "sm"}
@@ -2472,6 +2459,7 @@ function DraggableTaskCard({
                 >
                   {task.taskPriority}
                 </Badge>
+                
                 {/* Index Display - API vs Local */}
                 <HStack spacing={1}>
                   <Badge
@@ -2480,27 +2468,23 @@ function DraggableTaskCard({
                     fontSize="xs"
                     colorScheme="gray"
                     variant="outline"
-                    // display={"none"}
                   >
                     API: {task.indexTask}
                   </Badge>
                   {getEffectiveIndex && localTaskIndices && (
                     <HStack spacing={1}>
                       <Badge
-                        // display={"none"}
                         rounded={"md"}
                         px={2}
                         fontSize="xs"
                         colorScheme={
                           localTaskIndices.has(task.id) ? "blue" : "gray"
                         }
-                        variant={
-                          localTaskIndices.has(task.id) ? "solid" : "outline"
-                        }
+                        variant={localTaskIndices.has(task.id) ? "solid" : "outline"}
                       >
                         Local: {getEffectiveIndex(task)}
                       </Badge>
-
+                      
                       {/* Up/Down Arrow Buttons */}
                       <VStack spacing={0}>
                         <IconButton
@@ -2538,8 +2522,7 @@ function DraggableTaskCard({
                       </VStack>
                     </HStack>
                   )}
-                </HStack>{" "}
-              </HStack>
+                </HStack>              </HStack>
               <Text fontWeight={600} fontSize={"medium"}>
                 {task.taskName}
               </Text>
@@ -2597,6 +2580,11 @@ function DraggableTaskCard({
                 mt={2}
               >
                 <Flex as={HStack} w={"full"} justifyContent={"start"}>
+                  {/* SEE INDEX */}
+                  {/* Task coment count (if available) */}
+                  <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                    IDX : {task.indexTask}
+                  </Text>
                   {task.countCommnetTask > 0 && (
                     <HStack spacing={1} alignItems="center">
                       <Icon as={FiMessageSquare} color="gray.600" boxSize={4} />
@@ -3701,20 +3689,16 @@ const DroppableBoard: React.FC<DroppableBoardProps> = ({
   setDropPreview,
 }) => {
   const dropRef = useRef<HTMLDivElement>(null);
-
+  
   // Helper function to sort tasks by effective index
-  const getSortedBoardTasks = (
-    boardTasks: TaskViewModel[]
-  ): TaskViewModel[] => {
+  const getSortedBoardTasks = (boardTasks: TaskViewModel[]): TaskViewModel[] => {
     if (getEffectiveIndex) {
-      return [...boardTasks].sort(
-        (a, b) => getEffectiveIndex(a) - getEffectiveIndex(b)
-      );
+      return [...boardTasks].sort((a, b) => getEffectiveIndex(a) - getEffectiveIndex(b));
     }
     // Fallback to API index if getEffectiveIndex is not available
     return [...boardTasks].sort((a, b) => a.indexTask - b.indexTask);
   };
-
+  
   const [{ isOver }, drop] = useDrop<
     DroppableTaskItem,
     unknown,
@@ -3783,25 +3767,22 @@ const DroppableBoard: React.FC<DroppableBoardProps> = ({
             beforeTaskId: boardTasks[insertPosition]?.id || null,
             afterTaskId: boardTasks[insertPosition - 1]?.id || null,
           });
-          // Dispatch position update event for tooltip
-          let displayPosition = 1;
-          if (insertPosition === -1) {
-            displayPosition = boardTasks.length + 1;
-          } else if (insertPosition === 0) {
-            displayPosition = 1;
-          } else {
-            displayPosition = insertPosition + 1;
-          }
-
-          window.dispatchEvent(
-            new CustomEvent("dragPositionUpdate", {
-              detail: {
-                taskId: item.id,
-                position: displayPosition,
-              },
-            })
-          );
+        // Dispatch position update event for tooltip
+        let displayPosition = 1;
+        if (insertPosition === -1) {
+          displayPosition = boardTasks.length + 1;
+        } else if (insertPosition === 0) {
+          displayPosition = 1;
+        } else {
+          displayPosition = insertPosition + 1;
         }
+
+        window.dispatchEvent(new CustomEvent('dragPositionUpdate', {
+          detail: {
+            taskId: item.id,
+            position: displayPosition
+          }
+        }));        }
       }
     },
     drop: (item, monitor) => {
@@ -3848,7 +3829,7 @@ const DroppableBoard: React.FC<DroppableBoardProps> = ({
         if (insertPosition === -1) {
           // Dropping at the end
           if (boardTasks.length > 0) {
-            const lastTaskEffectiveIndex = getEffectiveIndex
+            const lastTaskEffectiveIndex = getEffectiveIndex 
               ? getEffectiveIndex(boardTasks[boardTasks.length - 1])
               : boardTasks[boardTasks.length - 1].indexTask;
             insertIndex = lastTaskEffectiveIndex + 10;
@@ -3859,35 +3840,30 @@ const DroppableBoard: React.FC<DroppableBoardProps> = ({
         } else if (insertPosition === 0) {
           // Dropping at the beginning
           if (boardTasks[0]) {
-            const firstTaskEffectiveIndex = getEffectiveIndex
+            const firstTaskEffectiveIndex = getEffectiveIndex 
               ? getEffectiveIndex(boardTasks[0])
               : boardTasks[0].indexTask;
-            insertIndex =
-              firstTaskEffectiveIndex > 10
-                ? Math.floor(firstTaskEffectiveIndex / 2)
-                : 5; // Ensure we have space before first task
+            insertIndex = firstTaskEffectiveIndex > 10 
+              ? Math.floor(firstTaskEffectiveIndex / 2)
+              : 5; // Ensure we have space before first task
           } else {
             insertIndex = 10;
           }
-          console.log(
-            `🎯 Dropping at BEGINNING, calculated index: ${insertIndex}`
-          );
+          console.log(`🎯 Dropping at BEGINNING, calculated index: ${insertIndex}`);
         } else {
           // Dropping in the middle - use the midpoint between effective indices
           const prevTask = boardTasks[insertPosition - 1];
           const nextTask = boardTasks[insertPosition];
-
-          const prevEffectiveIndex = getEffectiveIndex
+          
+          const prevEffectiveIndex = getEffectiveIndex 
             ? getEffectiveIndex(prevTask)
             : prevTask.indexTask;
-          const nextEffectiveIndex = getEffectiveIndex
+          const nextEffectiveIndex = getEffectiveIndex 
             ? getEffectiveIndex(nextTask)
             : nextTask.indexTask;
-
-          insertIndex = Math.floor(
-            (prevEffectiveIndex + nextEffectiveIndex) / 2
-          );
-
+            
+          insertIndex = Math.floor((prevEffectiveIndex + nextEffectiveIndex) / 2);
+          
           // Ensure we have a valid index (not the same as existing ones)
           if (insertIndex <= prevEffectiveIndex) {
             insertIndex = prevEffectiveIndex + 1;
@@ -3895,7 +3871,7 @@ const DroppableBoard: React.FC<DroppableBoardProps> = ({
           if (insertIndex >= nextEffectiveIndex) {
             insertIndex = nextEffectiveIndex - 1;
           }
-
+          
           console.log(
             `🎯 Dropping in MIDDLE, calculated index: ${insertIndex} (between effective ${prevEffectiveIndex} and ${nextEffectiveIndex})`
           );
@@ -4026,15 +4002,11 @@ function KanbanBacklogPage() {
   const [RefreshData, setRefreshData] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
   // LOCAL INDEX MANAGEMENT - Track local indices separately from API indices
-  const [localTaskIndices, setLocalTaskIndices] = useState<Map<string, number>>(
-    new Map()
-  );
+  const [localTaskIndices, setLocalTaskIndices] = useState<Map<string, number>>(new Map());
 
   // PENDING CHANGES MANAGEMENT - Track all task changes before sending to API
-  const [pendingTaskChanges, setPendingTaskChanges] = useState<
-    TaskMovePayload[]
-  >([]);
-
+  const [pendingTaskChanges, setPendingTaskChanges] = useState<TaskMovePayload[]>([]);
+  
   // Helper function to get effective index (local if exists, otherwise API index)
   const getEffectiveIndex = (task: TaskViewModel): number => {
     const localIndex = localTaskIndices.get(task.id);
@@ -4043,15 +4015,10 @@ function KanbanBacklogPage() {
 
   // Initialize local indices based on sorted order of tasks
   const initializeLocalIndices = (tasks: TaskViewModel[]) => {
-    console.log("🔧 Initializing local indices using actual API indexTask values...");
-    console.log("🔧 Input tasks count:", tasks.length);
-
-    // Clear existing local indices first
-    console.log("🧹 Clearing existing local indices...");
-    setLocalTaskIndices(new Map());
-
+    console.log("🔧 Initializing local indices based on sorted task order...");
+    
     const newLocalIndices = new Map<string, number>();
-
+    
     // Group tasks by board
     const tasksByBoard = tasks.reduce((acc, task) => {
       if (!acc[task.boardId]) {
@@ -4060,61 +4027,39 @@ function KanbanBacklogPage() {
       acc[task.boardId].push(task);
       return acc;
     }, {} as Record<string, TaskViewModel[]>);
-
+    
     // For each board, sort tasks by their API index and assign local indices
     Object.entries(tasksByBoard).forEach(([boardId, boardTasks]) => {
       // Sort tasks by their API index (ascending)
-      const sortedTasks = [...boardTasks].sort(
-        (a, b) => a.indexTask - b.indexTask
-      );
-
-      console.log(
-        `📋 Board ${boardId}: Initializing ${sortedTasks.length} tasks`
-      );
-      console.log(
-        `📋 Board ${boardId} API indices:`,
-        sortedTasks.map((t) => `${t.taskName}=${t.indexTask}`)
-      );
-
-      // Use the actual API indexTask as the local index (no conversion)
-      sortedTasks.forEach((task) => {
-        const apiIndex = task.indexTask;
-        newLocalIndices.set(task.id, apiIndex);
-
+      const sortedTasks = [...boardTasks].sort((a, b) => a.indexTask - b.indexTask);
+      
+      console.log(`📋 Board ${boardId}: Initializing ${sortedTasks.length} tasks`);
+      
+      // Assign local indices based on sorted position
+      sortedTasks.forEach((task, index) => {
+        // Use a spacing of 10 between tasks for future insertions
+        const localIndex = (index + 1) * 10;
+        newLocalIndices.set(task.id, localIndex);
+        
         console.log(
-          `  📌 Task "${task.taskName}" (${task.id}): API=${apiIndex} → Local=${apiIndex} (same)`
+          `  📌 Task "${task.taskName}" (${task.id}): API=${task.indexTask} → Local=${localIndex}`
         );
       });
-    }); // Close the Object.entries forEach loop
-
+    });
+    
     setLocalTaskIndices(newLocalIndices);
+    
+    console.log(`✅ Local indices initialized for ${newLocalIndices.size} tasks`);
 
-    console.log(
-      `✅ Local indices initialized for ${newLocalIndices.size} tasks using actual API values`
-    );
-    console.log("✅ Local indices map:", Array.from(newLocalIndices.entries()));
-  };
   // PENDING CHANGES MANAGEMENT FUNCTIONS
-
+  
   // Add or update a task change in pending changes
-  const addPendingTaskChange = (
-    taskId: string,
-    boardId: string,
-    newIndex: number
-  ) => {
-    console.log("🚨 DEBUG: addPendingTaskChange CALLED!");
-    console.log("🚨 DEBUG: Parameters:", { taskId, boardId, newIndex });
-    const task = DataTasks.find((t) => t.id === taskId);
+  const addPendingTaskChange = (taskId: string, boardId: string, newIndex: number) => {
+    const task = DataTasks.find(t => t.id === taskId);
     if (!task) return;
 
-    const board = DataBoard.find((b) => b.id === boardId);
+    const board = DataBoard.find(b => b.id === boardId);
     if (!board) return;
-
-    console.log("🚨 DEBUG: Creating TaskMovePayload with:");
-    console.log("🚨 DEBUG: - id:", taskId);
-    console.log("🚨 DEBUG: - boardId:", boardId);
-    console.log("🚨 DEBUG: - indexTask (new):", newIndex);
-    console.log("🚨 DEBUG: - indexStage:", board.indexStage);
 
     const taskMovePayload: TaskMovePayload = {
       id: taskId,
@@ -4123,45 +4068,36 @@ function KanbanBacklogPage() {
       indexStage: board.indexStage,
     };
 
-    setPendingTaskChanges((prevChanges) => {
+    setPendingTaskChanges(prevChanges => {
       // Remove existing change for this task if it exists
-      const filteredChanges = prevChanges.filter(
-        (change) => change.id !== taskId
-      );
-
+      const filteredChanges = prevChanges.filter(change => change.id !== taskId);
+      
       // Add the new change
       const updatedChanges = [...filteredChanges, taskMovePayload];
-
-      console.log(
-        `📝 Added pending change for task ${taskId}:`,
-        taskMovePayload
-      );
+      
+      console.log(`📝 Added pending change for task ${taskId}:`, taskMovePayload);
       console.log(`📋 Total pending changes: ${updatedChanges.length}`);
-
+      
       return updatedChanges;
     });
   };
 
   // Generate all necessary task changes to maintain proper index alignment
-  const generateAlignmentChanges = (
-    boardId: string,
-    excludeTaskId?: string
-  ) => {
+  const generateAlignmentChanges = (boardId: string, excludeTaskId?: string) => {
     console.log(`🔧 Generating alignment changes for board ${boardId}...`);
-
-    const boardTasks = getTasksSortedByEffectiveIndex(boardId).filter(
-      (task) => task.id !== excludeTaskId
-    );
-
-    const board = DataBoard.find((b) => b.id === boardId);
+    
+    const boardTasks = getTasksSortedByEffectiveIndex(boardId)
+      .filter(task => task.id !== excludeTaskId);
+    
+    const board = DataBoard.find(b => b.id === boardId);
     if (!board) return [];
 
     const alignmentChanges: TaskMovePayload[] = [];
-
+    
     boardTasks.forEach((task, index) => {
       const expectedIndex = (index + 1) * 10; // 10, 20, 30, etc.
       const currentEffectiveIndex = getEffectiveIndex(task);
-
+      
       // Only create change if the index needs to be updated
       if (currentEffectiveIndex !== expectedIndex) {
         const taskMovePayload: TaskMovePayload = {
@@ -4170,42 +4106,37 @@ function KanbanBacklogPage() {
           indexTask: expectedIndex,
           indexStage: board.indexStage,
         };
-
+        
         alignmentChanges.push(taskMovePayload);
-
+        
         console.log(
           `  📌 Task "${task.taskName}" (${task.id}): ${currentEffectiveIndex} → ${expectedIndex}`
         );
       }
     });
-
-    console.log(
-      `✅ Generated ${alignmentChanges.length} alignment changes for board ${boardId}`
-    );
+    
+    console.log(`✅ Generated ${alignmentChanges.length} alignment changes for board ${boardId}`);
     return alignmentChanges;
   };
 
   // Add alignment changes for all affected tasks in a board
-  const addBoardAlignmentChanges = (
-    boardId: string,
-    excludeTaskId?: string
-  ) => {
+  const addBoardAlignmentChanges = (boardId: string, excludeTaskId?: string) => {
     const alignmentChanges = generateAlignmentChanges(boardId, excludeTaskId);
-
+    
     if (alignmentChanges.length > 0) {
-      setPendingTaskChanges((prevChanges) => {
+      setPendingTaskChanges(prevChanges => {
         // Remove existing changes for tasks that will be realigned
-        const taskIdsToRealign = alignmentChanges.map((change) => change.id);
+        const taskIdsToRealign = alignmentChanges.map(change => change.id);
         const filteredChanges = prevChanges.filter(
-          (change) => !taskIdsToRealign.includes(change.id)
+          change => !taskIdsToRealign.includes(change.id)
         );
-
+        
         // Add all alignment changes
         const updatedChanges = [...filteredChanges, ...alignmentChanges];
-
+        
         console.log(`📋 Added ${alignmentChanges.length} alignment changes`);
         console.log(`📋 Total pending changes: ${updatedChanges.length}`);
-
+        
         return updatedChanges;
       });
     }
@@ -4214,17 +4145,13 @@ function KanbanBacklogPage() {
   // Clear all pending changes
   const clearPendingChanges = () => {
     console.log("🧹 Clearing all pending changes");
-    console.log("🚨 DEBUG: clearPendingChanges CALLED!");
-    console.log("🚨 DEBUG: Stack trace:", new Error().stack);
     setPendingTaskChanges([]);
   };
 
   // Get pending changes summary for debugging
   const getPendingChangesSummary = () => {
-    console.log(
-      `📊 PENDING CHANGES SUMMARY (${pendingTaskChanges.length} changes):`
-    );
-
+    console.log(`📊 PENDING CHANGES SUMMARY (${pendingTaskChanges.length} changes):`);
+    
     const changesByBoard = pendingTaskChanges.reduce((acc, change) => {
       if (!acc[change.boardId]) {
         acc[change.boardId] = [];
@@ -4232,19 +4159,15 @@ function KanbanBacklogPage() {
       acc[change.boardId].push(change);
       return acc;
     }, {} as Record<string, TaskMovePayload[]>);
-
+    
     Object.entries(changesByBoard).forEach(([boardId, changes]) => {
-      const board = DataBoard.find((b) => b.id === boardId);
-      console.log(
-        `  📋 Board ${board?.boardName || boardId}: ${changes.length} changes`
-      );
-
-      changes.forEach((change) => {
-        const task = DataTasks.find((t) => t.id === change.id);
+      const board = DataBoard.find(b => b.id === boardId);
+      console.log(`  📋 Board ${board?.boardName || boardId}: ${changes.length} changes`);
+      
+      changes.forEach(change => {
+        const task = DataTasks.find(t => t.id === change.id);
         console.log(
-          `    📌 Task "${task?.taskName || change.id}": index=${
-            change.indexTask
-          }`
+          `    📌 Task "${task?.taskName || change.id}": index=${change.indexTask}`
         );
       });
     });
@@ -4252,20 +4175,12 @@ function KanbanBacklogPage() {
 
   // Send all pending changes to API
   const sendPendingChangesToAPI = async () => {
-    console.log("🚨 DEBUG: sendPendingChangesToAPI CALLED!");
-    console.log("🚨 DEBUG: pendingTaskChanges:", pendingTaskChanges);
-    console.log(
-      "🚨 DEBUG: pendingTaskChanges.length:",
-      pendingTaskChanges.length
-    );
     if (pendingTaskChanges.length === 0) {
       console.log("📭 No pending changes to send");
       return;
     }
 
-    console.log(
-      `🚀 Sending ${pendingTaskChanges.length} pending changes to API...`
-    );
+    console.log(`🚀 Sending ${pendingTaskChanges.length} pending changes to API...`);
     getPendingChangesSummary();
 
     const results = [];
@@ -4276,29 +4191,17 @@ function KanbanBacklogPage() {
     for (const change of pendingTaskChanges) {
       try {
         console.log(`📤 Sending change for task ${change.id}:`, change);
-        console.log("🚨 DEBUG: About to call MoveTask...");
-        console.log("🚨 DEBUG: tokenData:", tokenData);
-        console.log("🚨 DEBUG: MoveTask function:", typeof MoveTask);
-
+        
         const response = await MoveTask(change, tokenData);
-
-        console.log("🚨 DEBUG: MoveTask response:", response);
-
+        
         if (response?.statusCode === RES_CODE_OK) {
           console.log(`✅ Successfully updated task ${change.id}`);
           successCount++;
           results.push({ taskId: change.id, success: true, response });
         } else {
-          console.error(
-            `❌ Failed to update task ${change.id}:`,
-            response?.message
-          );
+          console.error(`❌ Failed to update task ${change.id}:`, response?.message);
           errorCount++;
-          results.push({
-            taskId: change.id,
-            success: false,
-            error: response?.message,
-          });
+          results.push({ taskId: change.id, success: false, error: response?.message });
         }
       } catch (error) {
         console.error(`❌ Error updating task ${change.id}:`, error);
@@ -4335,38 +4238,26 @@ function KanbanBacklogPage() {
     clearPendingChanges();
 
     // Refresh task data to get latest state from server
-    console.log("🔄 Refreshing data after API save...");
-    setRefreshData((prev) => prev + 1);
+    setRefreshData(prev => prev + 1);
 
     return results;
-  };
-  // GET LOCAL CHANGES - Get all tasks that have local index changes
-  const getLocalChanges = (): Array<{
-    taskId: string;
-    localIndex: number;
-    apiIndex: number;
-  }> => {
-    const changes: Array<{
-      taskId: string;
-      localIndex: number;
-      apiIndex: number;
-    }> = [];
 
+  // GET LOCAL CHANGES - Get all tasks that have local index changes
+  const getLocalChanges = (): Array<{taskId: string, localIndex: number, apiIndex: number}> => {
+    const changes: Array<{taskId: string, localIndex: number, apiIndex: number}> = [];
+    
     localTaskIndices.forEach((localIndex, taskId) => {
-      const task = DataTasks.find((t) => t.id === taskId);
+      const task = DataTasks.find(t => t.id === taskId);
       if (task && task.indexTask !== localIndex) {
         changes.push({
           taskId: taskId,
           localIndex: localIndex,
-          apiIndex: task.indexTask,
+          apiIndex: task.indexTask
         });
       }
     });
-
-    console.log(
-      `📊 Found ${changes.length} tasks with local changes:`,
-      changes
-    );
+    
+    console.log(`📊 Found ${changes.length} tasks with local changes:`, changes);
     return changes;
   };
 
@@ -4375,12 +4266,13 @@ function KanbanBacklogPage() {
     setLocalTaskIndices(new Map());
     console.log(`🧹 Local index changes cleared`);
   };
+  };
 
   // Helper function to get tasks sorted by effective index
   const getTasksSortedByEffectiveIndex = (boardId: string): TaskViewModel[] => {
-    return DataTasks.filter((task) => task.boardId === boardId).sort(
-      (a, b) => getEffectiveIndex(a) - getEffectiveIndex(b)
-    );
+    return DataTasks
+      .filter(task => task.boardId === boardId)
+      .sort((a, b) => getEffectiveIndex(a) - getEffectiveIndex(b));
   };
   const [SerachTasks, setSerachTasks] = useState<string>("");
 
@@ -4537,43 +4429,39 @@ function KanbanBacklogPage() {
     movedTaskId: string,
     newPosition: number
   ): void => {
-    console.log(
-      `🔄 REORDERING BOARD: ${boardId}, moving task ${movedTaskId} to position ${newPosition}`
-    );
-
+    console.log(`🔄 REORDERING BOARD: ${boardId}, moving task ${movedTaskId} to position ${newPosition}`);
+    
     // Get all tasks in the board (excluding the moved task)
-    const boardTasks = DataTasks.filter(
-      (task) => task.boardId === boardId && task.id !== movedTaskId
-    ).sort((a, b) => getEffectiveIndex(a) - getEffectiveIndex(b));
-
+    const boardTasks = DataTasks
+      .filter(task => task.boardId === boardId && task.id !== movedTaskId)
+      .sort((a, b) => getEffectiveIndex(a) - getEffectiveIndex(b));
+    
     // If newPosition is -1, it means the task is being removed from this board
     if (newPosition === -1) {
-      console.log(
-        `📋 Removing task ${movedTaskId} from board ${boardId}, reordering remaining tasks`
-      );
-
+      console.log(`📋 Removing task ${movedTaskId} from board ${boardId}, reordering remaining tasks`);
+      
       // Update local indices for remaining tasks
-      setLocalTaskIndices((prevIndices) => {
+      setLocalTaskIndices(prevIndices => {
         const newIndices = new Map(prevIndices);
-
+        
         boardTasks.forEach((task, index) => {
           const newIndex = (index + 1) * 10; // Use spacing of 10
           newIndices.set(task.id, newIndex);
           console.log(`  ${index}: ${task.taskName} -> index ${newIndex}`);
         });
-
+        
         // Remove the moved task from local indices if it was there
         newIndices.delete(movedTaskId);
-
+        
         return newIndices;
       });
-
+      
       console.log(`✅ Board ${boardId} cleanup complete`);
       return;
     }
-
+    
     // Get the moved task
-    const movedTask = DataTasks.find((task) => task.id === movedTaskId);
+    const movedTask = DataTasks.find(task => task.id === movedTaskId);
     if (!movedTask) {
       console.error(`❌ Moved task ${movedTaskId} not found`);
       return;
@@ -4584,17 +4472,17 @@ function KanbanBacklogPage() {
     newOrderedTasks.splice(newPosition, 0, movedTask);
 
     console.log(`📋 New task order for board ${boardId}:`);
-
+    
     // Update local indices for all tasks in this board
-    setLocalTaskIndices((prevIndices) => {
+    setLocalTaskIndices(prevIndices => {
       const newIndices = new Map(prevIndices);
-
+      
       newOrderedTasks.forEach((task, index) => {
         const newIndex = (index + 1) * 10; // Use spacing of 10
         newIndices.set(task.id, newIndex);
         console.log(`  ${index}: ${task.taskName} -> index ${newIndex}`);
       });
-
+      
       return newIndices;
     });
 
@@ -4608,15 +4496,7 @@ function KanbanBacklogPage() {
     newBoardId: string,
     newIndex?: number
   ): boolean => {
-    console.log("🚨 DEBUG: handleMoveTaskLocal CALLED!");
-    console.log("🚨 DEBUG: Parameters:", { taskId, newBoardId, newIndex });
-    console.log(
-      "🚨 DEBUG: Current pendingTaskChanges length:",
-      pendingTaskChanges.length
-    );
-    console.log(
-      `🔄 LOCAL MOVE: Task ${taskId} to board ${newBoardId} at index ${newIndex}`
-    );
+    console.log(`🔄 LOCAL MOVE: Task ${taskId} to board ${newBoardId} at index ${newIndex}`);
 
     try {
       // Find the task and target board
@@ -4634,23 +4514,21 @@ function KanbanBacklogPage() {
       // Calculate target position in the board
       let targetPosition = 0;
       let finalIndex = newIndex;
-
+      
       if (typeof newIndex === "number") {
         // Use provided index
         const boardTasks = getTasksSortedByEffectiveIndex(newBoardId);
-        const tasksBeforeIndex = boardTasks.filter(
-          (task) => task.id !== taskId && getEffectiveIndex(task) < newIndex
+        const tasksBeforeIndex = boardTasks.filter(task => 
+          task.id !== taskId && getEffectiveIndex(task) < newIndex
         );
         targetPosition = tasksBeforeIndex.length;
-        console.log(
-          `📍 Calculated position ${targetPosition} from index ${newIndex}`
-        );
+        console.log(`📍 Calculated position ${targetPosition} from index ${newIndex}`);
       } else {
         // Default to end of board and calculate appropriate index
         const boardTasks = getTasksSortedByEffectiveIndex(newBoardId);
-        const filteredTasks = boardTasks.filter((task) => task.id !== taskId);
+        const filteredTasks = boardTasks.filter(task => task.id !== taskId);
         targetPosition = filteredTasks.length;
-
+        
         // Calculate index for end position
         if (filteredTasks.length === 0) {
           finalIndex = 10; // First task
@@ -4658,28 +4536,18 @@ function KanbanBacklogPage() {
           const lastTask = filteredTasks[filteredTasks.length - 1];
           finalIndex = getEffectiveIndex(lastTask) + 10;
         }
-
-        console.log(
-          `📍 Default position: ${targetPosition} (end of board), index: ${finalIndex}`
-        );
+        
+        console.log(`📍 Default position: ${targetPosition} (end of board), index: ${finalIndex}`);
       }
 
       // Update local task indices immediately for visual feedback
-      setLocalTaskIndices((prevIndices) => {
+      setLocalTaskIndices(prevIndices => {
         const newIndices = new Map(prevIndices);
         newIndices.set(taskId, finalIndex!);
         return newIndices;
       });
 
       // Add the main task change to pending changes
-      console.log(
-        "🚨 DEBUG: About to add pending change with finalIndex:",
-        finalIndex
-      );
-      console.log("🚨 DEBUG: Task being moved:", taskToMove?.taskName);
-      console.log("🚨 DEBUG: Target board:", targetBoard?.boardName);
-      console.log("🚨 DEBUG: Original task index:", taskToMove?.indexTask);
-      console.log("🚨 DEBUG: New calculated index:", finalIndex);
       addPendingTaskChange(taskId, newBoardId, finalIndex!);
 
       // Update task's board if moving to different board
@@ -4698,9 +4566,9 @@ function KanbanBacklogPage() {
             return task;
           });
         });
-
+        
         console.log(`📋 Task moved from ${originalBoardId} to ${newBoardId}`);
-
+        
         // Add alignment changes for both boards
         addBoardAlignmentChanges(newBoardId, taskId);
         addBoardAlignmentChanges(originalBoardId, taskId);
@@ -4717,51 +4585,41 @@ function KanbanBacklogPage() {
 
       // Show different messages for same board vs cross board moves
       if (isSameBoard) {
-        console.log(
-          `✅ LOCAL MOVE: Task reordered within ${targetBoard.boardName} at position ${targetPosition}`
-        );
+        console.log(`✅ LOCAL MOVE: Task reordered within ${targetBoard.boardName} at position ${targetPosition}`);
       } else {
-        console.log(
-          `✅ LOCAL MOVE: Task moved to ${targetBoard.boardName} at position ${targetPosition}`
-        );
+        console.log(`✅ LOCAL MOVE: Task moved to ${targetBoard.boardName} at position ${targetPosition}`);
       }
 
       // Show pending changes summary
       setTimeout(() => {
         getPendingChangesSummary();
       }, 100);
-      console.log("🚨 DEBUG: About to set auto-save timeout...");
-      console.log(
-        "🚨 DEBUG: Current pendingTaskChanges before timeout:",
-        pendingTaskChanges.length
-      );
-      console.log(
-        "✅ Task moved locally. Use Save Changes button to persist to API."
-      );
-
+      
       return true;
+
     } catch (error) {
       console.error("❌ LOCAL MOVE ERROR:", error);
       return false;
     }
   };
 
+
   // MOVE TASK UP - Move task one position up in the same board
   const handleMoveTaskUp = (taskId: string) => {
-    const task = DataTasks.find((t) => t.id === taskId);
+    const task = DataTasks.find(t => t.id === taskId);
     if (!task) return;
 
     // Get all tasks in the same board sorted by effective index
     const boardTasks = getTasksSortedByEffectiveIndex(task.boardId);
-    const currentIndex = boardTasks.findIndex((t) => t.id === taskId);
-
+    const currentIndex = boardTasks.findIndex(t => t.id === taskId);
+    
     // Cant move up if already at the top
     if (currentIndex <= 0) return;
-
+    
     const taskAbove = boardTasks[currentIndex - 1];
     const currentEffectiveIndex = getEffectiveIndex(task);
     const aboveEffectiveIndex = getEffectiveIndex(taskAbove);
-
+    
     // Calculate new index to place task above the previous task
     let newIndex: number;
     if (currentIndex === 1) {
@@ -4771,10 +4629,8 @@ function KanbanBacklogPage() {
       // Moving between two tasks
       const taskAboveAbove = boardTasks[currentIndex - 2];
       const aboveAboveEffectiveIndex = getEffectiveIndex(taskAboveAbove);
-      newIndex = Math.floor(
-        (aboveAboveEffectiveIndex + aboveEffectiveIndex) / 2
-      );
-
+      newIndex = Math.floor((aboveAboveEffectiveIndex + aboveEffectiveIndex) / 2);
+      
       // Ensure we have a valid index
       if (newIndex <= aboveAboveEffectiveIndex) {
         newIndex = aboveAboveEffectiveIndex + 1;
@@ -4783,29 +4639,27 @@ function KanbanBacklogPage() {
         newIndex = aboveEffectiveIndex - 1;
       }
     }
-
-    console.log(
-      `🔼 Moving task ${taskId} UP: ${currentEffectiveIndex} → ${newIndex}`
-    );
+    
+    console.log(`🔼 Moving task ${taskId} UP: ${currentEffectiveIndex} → ${newIndex}`);
     handleMoveTaskLocal(taskId, task.boardId, newIndex);
   };
 
   // MOVE TASK DOWN - Move task one position down in the same board
   const handleMoveTaskDown = (taskId: string) => {
-    const task = DataTasks.find((t) => t.id === taskId);
+    const task = DataTasks.find(t => t.id === taskId);
     if (!task) return;
 
     // Get all tasks in the same board sorted by effective index
     const boardTasks = getTasksSortedByEffectiveIndex(task.boardId);
-    const currentIndex = boardTasks.findIndex((t) => t.id === taskId);
-
+    const currentIndex = boardTasks.findIndex(t => t.id === taskId);
+    
     // Cant move down if already at the bottom
     if (currentIndex >= boardTasks.length - 1) return;
-
+    
     const taskBelow = boardTasks[currentIndex + 1];
     const currentEffectiveIndex = getEffectiveIndex(task);
     const belowEffectiveIndex = getEffectiveIndex(taskBelow);
-
+    
     // Calculate new index to place task below the next task
     let newIndex: number;
     if (currentIndex === boardTasks.length - 2) {
@@ -4815,10 +4669,8 @@ function KanbanBacklogPage() {
       // Moving between two tasks
       const taskBelowBelow = boardTasks[currentIndex + 2];
       const belowBelowEffectiveIndex = getEffectiveIndex(taskBelowBelow);
-      newIndex = Math.floor(
-        (belowEffectiveIndex + belowBelowEffectiveIndex) / 2
-      );
-
+      newIndex = Math.floor((belowEffectiveIndex + belowBelowEffectiveIndex) / 2);
+      
       // Ensure we have a valid index
       if (newIndex <= belowEffectiveIndex) {
         newIndex = belowEffectiveIndex + 1;
@@ -4827,10 +4679,8 @@ function KanbanBacklogPage() {
         newIndex = belowBelowEffectiveIndex - 1;
       }
     }
-
-    console.log(
-      `🔽 Moving task ${taskId} DOWN: ${currentEffectiveIndex} → ${newIndex}`
-    );
+    
+    console.log(`🔽 Moving task ${taskId} DOWN: ${currentEffectiveIndex} → ${newIndex}`);
     handleMoveTaskLocal(taskId, task.boardId, newIndex);
   };
   // IMPROVED INDEX CALCULATION for precise positioning
@@ -4872,18 +4722,14 @@ function KanbanBacklogPage() {
     // If inserting in the middle
     const prevTask = boardTasks[insertPosition - 1];
     const nextTask = boardTasks[insertPosition];
-
+    
     if (prevTask && nextTask) {
       const gap = nextTask.indexTask - prevTask.indexTask;
-
+      
       if (gap > 2) {
         // Enough space, use midpoint
-        const newIndex = Math.floor(
-          (prevTask.indexTask + nextTask.indexTask) / 2
-        );
-        console.log(
-          `📍 Middle insertion with gap ${gap}, using index: ${newIndex}`
-        );
+        const newIndex = Math.floor((prevTask.indexTask + nextTask.indexTask) / 2);
+        console.log(`📍 Middle insertion with gap ${gap}, using index: ${newIndex}`);
         return newIndex;
       } else {
         // Not enough space, use fallback
@@ -4914,16 +4760,16 @@ function KanbanBacklogPage() {
         } else {
           console.log(requestData);
           if (requestData.data == null) {
+  };            
             showToast({
-              description: "Data return error",
               statusToast: "error",
             });
             setIsLoadingProcess(false);
             return;
           }
 
-          const itemsData: ProjectDataResponse = requestData!
-            .data as ProjectDataResponse;
+          const itemsData: ProjectDataResponse =
+            requestData.data as ProjectDataResponse;
 
           setDataProject(itemsData);
           setIsLoadingProcess(false);
@@ -5065,7 +4911,7 @@ function KanbanBacklogPage() {
       const GetListTasks = async () => {
         console.log("🔄 Refreshing ONLY task list (optimized)...");
         setIsLoadingProcess(true);
-
+        
         const PayloadGetTaskList: PaggingListPayload = {
           search: SerachTasks,
           limit: MAX_SIZE_TABLE,
@@ -5085,11 +4931,8 @@ function KanbanBacklogPage() {
           fieldOrder: ["indexTask"],
           orderDir: "asc",
         };
-
-        const requestTaskBoard = await ListTasksPaged(
-          PayloadGetTaskList,
-          tokenData
-        );
+        
+        const requestTaskBoard = await ListTasksPaged(PayloadGetTaskList, tokenData);
         const isErrorResponse = requestTaskBoard?.statusCode !== RES_CODE_OK;
 
         if (isErrorResponse || !requestTaskBoard) {
@@ -5105,8 +4948,7 @@ function KanbanBacklogPage() {
               statusToast: "error",
             });
           } else {
-            const itemsData: TaskViewModel[] =
-              requestTaskBoard.data as TaskViewModel[];
+            const itemsData: TaskViewModel[] = requestTaskBoard.data as TaskViewModel[];
 
             console.log("✅ Task positions after refresh:");
             itemsData.forEach((task) => {
@@ -5121,7 +4963,7 @@ function KanbanBacklogPage() {
         }
         setIsLoadingProcess(false);
       };
-
+      
       GetListTasks();
     }
   }, [DataAuth, RefreshData, SerachTasks, projectId, backlogId, tokenData]);
@@ -5251,84 +5093,6 @@ function KanbanBacklogPage() {
         breadCrumb={HeaderDataContent.breadCrumb}
       />
 
-      {/* DEBUG: API Payload Preview - Data Ready to Send */}
-      <Box
-        w={"full"}
-        overflowY={"auto"}
-        overflowX={"auto"}
-        maxH={"350px"}
-        p={4}
-        bgColor={"blue.50"}
-        rounded={radiusStyle}
-        display={"none"}
-        mb={4}
-        border="2px solid"
-        borderColor="blue.300"
-      >
-        <Text fontWeight={600} mb={2} color="blue.700">
-          📤 API Payload Preview - Ready to Send ({pendingTaskChanges.length}{" "}
-          changes)
-        </Text>
-        <Text fontSize="sm" color="gray.600" mb={3}>
-          This data will be sent to the API when batch processing is triggered
-        </Text>
-        <pre
-          style={{
-            fontSize: "12px",
-            lineHeight: "1.4",
-            backgroundColor: "white",
-            padding: "12px",
-            borderRadius: "6px",
-            border: "1px solid #e2e8f0",
-          }}
-        >
-          {pendingTaskChanges.length > 0
-            ? JSON.stringify(
-                {
-                  endpoint: "/api/tasks/batch-move",
-                  method: "POST",
-                  payload: {
-                    changes: pendingTaskChanges,
-                    timestamp: new Date().toISOString(),
-                    totalChanges: pendingTaskChanges.length,
-                  },
-                },
-                null,
-                2
-              )
-            : JSON.stringify(
-                {
-                  status: "No pending changes",
-                  message: "Drag and drop tasks to see API payload data here",
-                  endpoint: "/api/tasks/batch-move",
-                  method: "POST",
-                },
-                null,
-                2
-              )}
-        </pre>
-
-        {pendingTaskChanges.length > 0 && (
-          <Box
-            mt={3}
-            p={3}
-            bg="green.50"
-            rounded="md"
-            border="1px solid"
-            borderColor="green.200"
-          >
-            <Text fontSize="sm" fontWeight={600} color="green.700" mb={1}>
-              ✅ Ready for API Integration
-            </Text>
-            <Text fontSize="xs" color="green.600">
-              • {pendingTaskChanges.length} task
-              {pendingTaskChanges.length !== 1 ? "s" : ""} ready to be moved •
-              Batch processing will send all changes in one request • Each
-              change contains: taskId, boardId, indexTask, indexStage
-            </Text>
-          </Box>
-        )}
-      </Box>
       {IsLoadingProcess && (
         <Flex
           position="fixed"
@@ -5359,29 +5123,21 @@ function KanbanBacklogPage() {
                 Kembali
               </Button>
             </Link>
-
-            {/* MANUAL SAVE BUTTON: Show when there are pending changes */}
+            
+            {/* Pending Changes Indicator */}
             {pendingTaskChanges.length > 0 && (
               <Button
-                size="sm"
-                colorScheme="blue"
-                leftIcon={<FiSave />}
-                onClick={async () => {
-                  console.log("💾 Manual save button clicked");
-                  try {
-                    const saveResult = await sendPendingChangesToAPI();
-                    console.log("💾 Manual save result:", saveResult);
-                  } catch (error) {
-                    console.error("❌ Manual save error:", error);
-                  }
-                }}
+                size="lg"
+                colorScheme="orange"
+                variant="outline"
+                leftIcon={<EditIcon />}
+                onClick={sendPendingChangesToAPI}
                 ml={3}
               >
-                Save {pendingTaskChanges.length} Change
-                {pendingTaskChanges.length !== 1 ? "s" : ""}
+                Save Changes ({pendingTaskChanges.length})
               </Button>
             )}
-          </Flex>
+            </Flex>
         </GridItem>
 
         <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }} w={"full"}>
@@ -5393,301 +5149,304 @@ function KanbanBacklogPage() {
         </GridItem>
       </Grid>
       <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"}>
-        <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 12 }} w={"full"}>
-          <Flex
-            as={HStack}
-            w={"full"}
-            px={4}
-            py={3}
-            rounded={radiusStyle}
-            bgColor={"white"}
-            boxShadow={"sm"}
-            justifyContent={"space-between"}
-          >
-            <Flex as={HStack}>
-              <ButtonGroup isAttached variant="outline">
-                <Flex
-                  as={Button}
-                  px={3}
-                  py={2}
-                  cursor={"pointer"}
-                  _hover={{
-                    bgColor: "secondary.200",
-                    color: "secondary.500",
-                  }}
-                  _active={{
-                    color: "secondary.500",
-                    bgColor: "transparent",
-                  }}
-                  isActive={true}
-                  leftIcon={<FiTrello />}
-                >
-                  Board
-                </Flex>
-                <Flex
-                  as={Button}
-                  px={3}
-                  py={2}
-                  cursor={"pointer"}
-                  _hover={{
-                    bgColor: "secondary.200",
-                    color: "secondary.500",
-                  }}
-                  _active={{
-                    color: "secondary.500",
-                    bgColor: "transparent",
-                  }}
-                  isActive={false}
-                  leftIcon={<FiList />}
-                >
-                  List
-                </Flex>
-              </ButtonGroup>
 
-              <Box>
-                <InputGroup>
-                  <InputLeftElement pointerEvents="none">
-                    <FiSearch color="gray.300" />
-                  </InputLeftElement>
-                  <Input
-                    id="serachTask"
-                    name="serachTask"
-                    type="text"
-                    onChange={(e) => {
-                      setSerachTasks(e.target.value);
-                    }}
-                    value={SerachTasks}
-                    placeholder={`Cari Task`}
-                  />
-                </InputGroup>
-              </Box>
+      <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 12 }} w={"full"}>
+        <Flex
+          as={HStack}
+          w={"full"}
+          px={4}
+          py={3}
+          rounded={radiusStyle}
+          bgColor={"white"}
+          boxShadow={"sm"}
+          justifyContent={"space-between"}
+        >
+          <Flex as={HStack}>
+            <ButtonGroup isAttached variant="outline">
+              <Flex
+                as={Button}
+                px={3}
+                py={2}
+                cursor={"pointer"}
+                _hover={{
+                  bgColor: "secondary.200",
+                  color: "secondary.500",
+                }}
+                _active={{
+                  color: "secondary.500",
+                  bgColor: "transparent",
+                }}
+                isActive={true}
+                leftIcon={<FiTrello />}
+              >
+                Board
+              </Flex>
+              <Flex
+                as={Button}
+                px={3}
+                py={2}
+                cursor={"pointer"}
+                _hover={{
+                  bgColor: "secondary.200",
+                  color: "secondary.500",
+                }}
+                _active={{
+                  color: "secondary.500",
+                  bgColor: "transparent",
+                }}
+                isActive={false}
+                leftIcon={<FiList />}
+              >
+                List
+              </Flex>
+            </ButtonGroup>
+
+            <Box>
+              <InputGroup>
+                <InputLeftElement pointerEvents="none">
+                  <FiSearch color="gray.300" />
+                </InputLeftElement>
+                <Input
+                  id="serachTask"
+                  name="serachTask"
+                  type="text"
+                  onChange={(e) => {
+                    setSerachTasks(e.target.value);
+                  }}
+                  value={SerachTasks}
+                  placeholder={`Cari Task`}
+                />
+              </InputGroup>
+            </Box>
+          </Flex>
+          <Flex as={HStack}>
+            <Flex
+              as={Button}
+              variant="outline"
+              px={3}
+              py={2}
+              cursor={"pointer"}
+              _hover={{
+                bgColor: "secondary.200",
+                color: "secondary.500",
+              }}
+              _active={{
+                color: "secondary.500",
+                bgColor: "transparent",
+              }}
+              isActive={false}
+              leftIcon={<GoFilter />}
+            >
+              Filter
             </Flex>
-            <Flex as={HStack}>
-              <Flex
-                as={Button}
-                variant="outline"
-                px={3}
-                py={2}
-                cursor={"pointer"}
-                _hover={{
-                  bgColor: "secondary.200",
-                  color: "secondary.500",
-                }}
-                _active={{
-                  color: "secondary.500",
-                  bgColor: "transparent",
-                }}
-                isActive={false}
-                leftIcon={<GoFilter />}
-              >
-                Filter
-              </Flex>
-              <Flex
-                as={Button}
-                variant="outline"
-                px={3}
-                py={2}
-                cursor={"pointer"}
-                _hover={{
-                  bgColor: "secondary.200",
-                  color: "secondary.500",
-                }}
-                _active={{
-                  color: "secondary.500",
-                  bgColor: "transparent",
-                }}
-                isActive={false}
-                leftIcon={<MdOutlineSort />}
-              >
-                Sort By
-              </Flex>
-              <Flex
-                as={Button}
-                variant="outline"
-                px={3}
-                py={2}
-                cursor={"pointer"}
-                colorScheme={"secondary"}
-                leftIcon={<FiRefreshCcw />}
-                onClick={() => RefreshAction()}
-              >
-                Refresh
-              </Flex>
+            <Flex
+              as={Button}
+              variant="outline"
+              px={3}
+              py={2}
+              cursor={"pointer"}
+              _hover={{
+                bgColor: "secondary.200",
+                color: "secondary.500",
+              }}
+              _active={{
+                color: "secondary.500",
+                bgColor: "transparent",
+              }}
+              isActive={false}
+              leftIcon={<MdOutlineSort />}
+            >
+              Sort By
+            </Flex>
+            <Flex
+              as={Button}
+              variant="outline"
+              px={3}
+              py={2}
+              cursor={"pointer"}
+              colorScheme={"secondary"}
+              leftIcon={<FiRefreshCcw />}
+              onClick={() => RefreshAction()}
+            >
+              Refresh
             </Flex>
           </Flex>
-        </GridItem>
+        </Flex>
+      </GridItem>
 
-        <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 12 }} w={"full"}>
-          <DndProvider backend={HTML5Backend}>
-            <Flex
-              as={HStack}
-              spacing={5}
-              w={"full"}
-              justifyContent={"start"}
-              alignItems={"start"}
-              overflowX="auto"
-              py={2}
-            >
-              {DataBoard.length > 0
-                ? DataBoard.map((board) => (
-                    <DroppableBoard
-                      key={board.id}
-                      board={board}
-                      tasks={DataTasks.filter(
-                        (task) => task.boardId === board.id
-                      )}
-                      onMoveTask={handleMoveTask}
-                      onPositionedMove={handleMoveTaskLocal}
-                      getEffectiveIndex={getEffectiveIndex}
-                      setDropPreview={setDropPreview}
+      <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 12 }} w={"full"}>
+        <DndProvider backend={HTML5Backend}>
+          <Flex
+            as={HStack}
+            spacing={5}
+            w={"full"}
+            justifyContent={"start"}
+            alignItems={"start"}
+            overflowX="auto"
+            py={2}
+          >
+            {DataBoard.length > 0
+              ? DataBoard.map((board) => (
+                  <DroppableBoard
+                    key={board.id}
+                    board={board}
+                    tasks={DataTasks.filter(
+                      (task) => task.boardId === board.id
+                    )}
+                    onMoveTask={handleMoveTask}
+                    onPositionedMove={handleMoveTaskLocal}
+                    getEffectiveIndex={getEffectiveIndex}
+                    setDropPreview={setDropPreview}
+                  >
+                    <Flex
+                      as={HStack}
+                      spacing={2}
+                      bg={"white"}
+                      rounded={radiusStyle}
+                      boxShadow={"sm"}
+                      px={5}
+                      py={3}
                     >
-                      <Flex
-                        as={HStack}
-                        spacing={2}
-                        bg={"white"}
-                        rounded={radiusStyle}
-                        boxShadow={"sm"}
-                        px={5}
-                        py={3}
+                      {board.boardName === "TO DO" ? (
+                        <FiList size={"1.3em"} />
+                      ) : board.boardName === "IN PROGRESS" ? (
+                        <FiLoader size={"1.3em"} />
+                      ) : board.boardName === "IN REVIEW" ? (
+                        <FiNavigation size={"1.3em"} />
+                      ) : board.boardName === "DONE" ? (
+                        <FiCheckCircle size={"1.3em"} />
+                      ) : (
+                        ""
+                      )}
+                      <Badge
+                        fontSize={"medium"}
+                        fontWeight={600}
+                        px={3}
+                        rounded={"md"}
+                        colorScheme={
+                          board.boardName === "TO DO"
+                            ? "gray"
+                            : board.boardName === "IN PROGRESS"
+                            ? "blue"
+                            : board.boardName === "IN REVIEW"
+                            ? "purple"
+                            : board.boardName === "DONE"
+                            ? "green"
+                            : "gray"
+                        }
                       >
-                        {board.boardName === "TO DO" ? (
-                          <FiList size={"1.3em"} />
-                        ) : board.boardName === "IN PROGRESS" ? (
-                          <FiLoader size={"1.3em"} />
-                        ) : board.boardName === "IN REVIEW" ? (
-                          <FiNavigation size={"1.3em"} />
-                        ) : board.boardName === "DONE" ? (
-                          <FiCheckCircle size={"1.3em"} />
-                        ) : (
-                          ""
-                        )}
-                        <Badge
-                          fontSize={"medium"}
-                          fontWeight={600}
-                          px={3}
-                          rounded={"md"}
-                          colorScheme={
-                            board.boardName === "TO DO"
-                              ? "gray"
-                              : board.boardName === "IN PROGRESS"
-                              ? "blue"
-                              : board.boardName === "IN REVIEW"
-                              ? "purple"
-                              : board.boardName === "DONE"
-                              ? "green"
-                              : "gray"
-                          }
-                        >
-                          {board.boardName}
-                        </Badge>
-                      </Flex>
+                        {board.boardName}
+                      </Badge>
+                    </Flex>
 
-                      {/* Task container */}
-                      <VStack
-                        spacing={3}
-                        align="stretch"
-                        minH="200px"
-                        maxH="calc(75vh - 100px)"
-                        overflowY="auto"
-                        w="full"
-                        bg={"white"}
-                        rounded={radiusStyle}
-                        boxShadow={"sm"}
-                        p={5}
-                      >
-                        {/* If this is the first task and we have a drop preview for this board at the beginning */}
-                        {dropPreview &&
+                    {/* Task container */}
+                    <VStack
+                      spacing={3}
+                      align="stretch"
+                      minH="200px"
+                      maxH="calc(75vh - 100px)"
+                      overflowY="auto"
+                      w="full"
+                      bg={"white"}
+                      rounded={radiusStyle}
+                      boxShadow={"sm"}
+                      p={5}
+                    >
+                      {/* If this is the first task and we have a drop preview for this board at the beginning */}
+                      {dropPreview &&
+                        dropPreview.boardId === board.id &&
+                        dropPreview.beforeTaskId ===
+                          (getTasksSortedByEffectiveIndex(board.id)
+                            .length > 0
+                            ? DataTasks.filter(
+                                (task) => task.boardId === board.id
+                              )[0].id
+                            : null) && <DropPreviewIndicator />}
+
+                      {/* Filter tasks by boardId, sort by indexTask, and map them */}
+                      {DataTasks &&
+                        getTasksSortedByEffectiveIndex(board.id)
+                          
+                          .map((task, index, sortedTasks) => (
+                            <React.Fragment key={task.id}>
+                              <DraggableTaskCard
+                                task={task}
+                                onMoveTask={handleMoveTask}
+                                onPositionedMove={handleMoveTaskLocal}
+                    getEffectiveIndex={getEffectiveIndex}
+                                isRecentlyMoved={
+                                  task.id === recentlyMovedTaskId
+                                }
+                                DataProject={DataProject}
+                                localTaskIndices={localTaskIndices}
+                                onMoveUp={handleMoveTaskUp}
+                                onMoveDown={handleMoveTaskDown}
+                              />
+
+                              {/* Show drop preview indicator if needed */}
+                              {dropPreview &&
+                                dropPreview.boardId === board.id &&
+                                ((dropPreview.beforeTaskId === task.id &&
+                                  index > 0) ||
+                                  (dropPreview.afterTaskId === task.id &&
+                                    index < sortedTasks.length - 1)) && (
+                                  <DropPreviewIndicator />
+                                )}
+                            </React.Fragment>
+                          ))}
+
+                      {/* If this is an empty board or we're dropping at the end */}
+                      {(getTasksSortedByEffectiveIndex(board.id)
+                        .length === 0 ||
+                        (dropPreview &&
                           dropPreview.boardId === board.id &&
-                          dropPreview.beforeTaskId ===
-                            (getTasksSortedByEffectiveIndex(board.id).length > 0
-                              ? DataTasks.filter(
-                                  (task) => task.boardId === board.id
-                                )[0].id
-                              : null) && <DropPreviewIndicator />}
-
-                        {/* Filter tasks by boardId, sort by indexTask, and map them */}
-                        {DataTasks &&
-                          getTasksSortedByEffectiveIndex(board.id).map(
-                            (task, index, sortedTasks) => (
-                              <React.Fragment key={task.id}>
-                                <DraggableTaskCard
-                                  task={task}
-                                  onMoveTask={handleMoveTask}
-                                  onPositionedMove={handleMoveTaskLocal}
-                                  getEffectiveIndex={getEffectiveIndex}
-                                  isRecentlyMoved={
-                                    task.id === recentlyMovedTaskId
-                                  }
-                                  DataProject={DataProject}
-                                  localTaskIndices={localTaskIndices}
-                                  onMoveUp={handleMoveTaskUp}
-                                  onMoveDown={handleMoveTaskDown}
-                                />
-
-                                {/* Show drop preview indicator if needed */}
-                                {dropPreview &&
-                                  dropPreview.boardId === board.id &&
-                                  ((dropPreview.beforeTaskId === task.id &&
-                                    index > 0) ||
-                                    (dropPreview.afterTaskId === task.id &&
-                                      index < sortedTasks.length - 1)) && (
-                                    <DropPreviewIndicator />
-                                  )}
-                              </React.Fragment>
+                          dropPreview.afterTaskId ===
+                            DataTasks.filter(
+                              (task) => task.boardId === board.id
                             )
+                              
+                              .slice(-1)[0]?.id)) && (
+                        <Box>
+                          {dropPreview && dropPreview.boardId === board.id && (
+                            <DropPreviewIndicator />
                           )}
 
-                        {/* If this is an empty board or we're dropping at the end */}
-                        {(getTasksSortedByEffectiveIndex(board.id).length ===
-                          0 ||
-                          (dropPreview &&
-                            dropPreview.boardId === board.id &&
-                            dropPreview.afterTaskId ===
-                              DataTasks.filter(
-                                (task) => task.boardId === board.id
-                              ).slice(-1)[0]?.id)) && (
-                          <Box>
-                            {dropPreview &&
-                              dropPreview.boardId === board.id && (
-                                <DropPreviewIndicator />
-                              )}
-
-                            {/* Empty state when no tasks */}
-                            {(!DataTasks ||
-                              DataTasks.filter(
-                                (task) => task.boardId === board.id
-                              ).length === 0) && (
-                              <Flex
-                                h="100px"
-                                w="full"
-                                justify="center"
-                                align="center"
-                                border="1px dashed"
-                                borderColor="gray.200"
-                                borderRadius={radiusStyle}
-                              >
-                                <Text color="gray.400">No tasks</Text>
-                              </Flex>
-                            )}
-                          </Box>
-                        )}
-                      </VStack>
-
-                      {/* Add task button - only show in TO DO board */}
-                      {board.boardName === "TO DO" && (
-                        <AddTaskForm
-                          boardId={board.id}
-                          projectId={projectId || ""}
-                          backlogId={backlogId || ""}
-                          onTaskAdded={handleTaskCreated}
-                        />
+                          {/* Empty state when no tasks */}
+                          {(!DataTasks ||
+                            DataTasks.filter(
+                              (task) => task.boardId === board.id
+                            ).length === 0) && (
+                            <Flex
+                              h="100px"
+                              w="full"
+                              justify="center"
+                              align="center"
+                              border="1px dashed"
+                              borderColor="gray.200"
+                              borderRadius={radiusStyle}
+                            >
+                              <Text color="gray.400">No tasks</Text>
+                            </Flex>
+                          )}
+                        </Box>
                       )}
-                    </DroppableBoard>
-                  ))
-                : "NO BOARD"}
-            </Flex>
-          </DndProvider>
-        </GridItem>
+                    </VStack>
+
+                    {/* Add task button - only show in TO DO board */}
+                    {board.boardName === "TO DO" && (
+                      <AddTaskForm
+                        boardId={board.id}
+                        projectId={projectId || ""}
+                        backlogId={backlogId || ""}
+                        onTaskAdded={handleTaskCreated}
+                      />
+                    )}
+                  </DroppableBoard>
+                ))
+              : "NO BOARD"}
+          </Flex>
+        </DndProvider>
+      </GridItem>
       </Grid>
     </LayoutAdmin>
   );

@@ -134,7 +134,7 @@ export interface TaskArchivePayload {
 export interface TaskMovePayload {
   id: string;
   boardId: string;
-  indexTask: number;
+  indexTask: number; //  New Index order
   indexStage?: number;
 }
 
