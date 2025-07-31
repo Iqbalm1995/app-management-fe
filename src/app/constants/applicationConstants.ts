@@ -2,7 +2,23 @@ import { OptionData, OptionListProps } from "../types/masterTypes";
 
 // CONST DATA =------------------------------------------------------------------
 
+// ORGANIZATION CATEGORIE GROUP
+
+export const ORG_CATEGORY_KEY_DIRECTORATE: string = "DIRECTORATE";
+export const ORG_CATEGORY_KEY_DIVISION: string = "DIVISION";
+export const ORG_CATEGORY_KEY_GROUP: string = "GROUP";
+
+export const DIRECTORATE_ID_IT_BJB: string =
+  "BD4C8AE4-BF61-5C96-B5A7-60A921553";
 export const DIVISION_ID_IT_BJB: string = "8922E4AD-8183-B61B-34D1-CF629361D";
+export const SELECTED_OPTION_DIRECTORATE: OptionListProps = {
+  label: `DIREKTORAT IT & TRANSACTION BANKING | ${ORG_CATEGORY_KEY_DIRECTORATE}`,
+  value: DIRECTORATE_ID_IT_BJB,
+};
+export const SELECTED_OPTION_DIVISION: OptionListProps = {
+  label: `DIVISI INFORMATION TECHNOLOGY | ${ORG_CATEGORY_KEY_DIVISION}`,
+  value: DIVISION_ID_IT_BJB,
+};
 
 // CONST DATA =------------------------------------------------------------------
 
@@ -21,16 +37,16 @@ export const boardDoneLabel: string = "done";
 // TASK BOARD LABEL STATUS
 
 export const TASK_BOARD_STATUS_CODE_TODO = "TODO";
-export const TASK_BOARD_STATUS_NAME_TODO = "To Do";
+export const TASK_BOARD_STATUS_NAME_TODO = "TO DO";
 
 export const TASK_BOARD_STATUS_CODE_INPROGRESS = "INPROGRESS";
-export const TASK_BOARD_STATUS_NAME_INPROGRESS = "In Progress";
+export const TASK_BOARD_STATUS_NAME_INPROGRESS = "IN PROGRESS";
 
 export const TASK_BOARD_STATUS_CODE_REVIEW = "REVIEW";
-export const TASK_BOARD_STATUS_NAME_REVIEW = "Review";
+export const TASK_BOARD_STATUS_NAME_REVIEW = "IN REVIEW";
 
 export const TASK_BOARD_STATUS_CODE_DONE = "DONE";
-export const TASK_BOARD_STATUS_NAME_DONE = "Done";
+export const TASK_BOARD_STATUS_NAME_DONE = "DONE";
 
 // LOGIN STATUS
 export const STATUS_LOGIN_ON: string = "logged_in";
@@ -46,6 +62,9 @@ export const DELAY_LONG: number = 3000;
 export const DELAY_LOAD_DATA: number = 0;
 export const DELAY_LOAD_TABLE: number = 1000;
 export const DELAY_ACTION: number = 500;
+
+// AUTO-SAVE DELAY
+export const AUTO_SAVE_DELAY: number = 200; // 3 seconds for semi-automated save
 
 export const MAX_SIZE_TABLE: number = 999999;
 

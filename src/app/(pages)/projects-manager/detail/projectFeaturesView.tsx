@@ -15,6 +15,7 @@ import useConstants, {
 } from "@/app/services/useConstants";
 import useProjects, {
   AppsLogsResponse,
+  ProjectBacklogProgressionResponse,
   ProjectDataResponse,
   ProjectFeatureInsertPayload,
   ProjectFeatureResponse,
@@ -56,6 +57,7 @@ import {
   ModalOverlay,
   Progress,
   Stack,
+  StackDivider,
   Switch,
   Text,
   Textarea,
@@ -148,6 +150,8 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
     UpdateBacklogBatch,
   } = useRequirements();
 
+  const { GetProjectBacklogProgression } = useProjects();
+
   // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
@@ -198,14 +202,21 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
   >([]);
 
   // PROGRESS REPORT
+
+  const [ProjectBacklogProgression, setProjectBacklogProgression] =
+    useState<ProjectBacklogProgressionResponse>({
+      totalBacklogs: 0,
+      progressionBacklog: 0,
+      totalBacklogsDone: 0,
+    });
   const [OverallProgress, setOverallProgress] = useState<number>(0);
   const [ProgressColor, setProgressColor] = useState<string>("red");
-  useEffect(() => {
-    const randomNumber = getRandomNumber(0, 100);
-    setOverallProgress(randomNumber);
-    const colorProgress = colorProgression(randomNumber);
-    setProgressColor(colorProgress);
-  }, [RefreshData]);
+  // useEffect(() => {
+  //   const randomNumber = getRandomNumber(0, 100);
+  //   setOverallProgress(randomNumber);
+  //   const colorProgress = colorProgression(randomNumber);
+  //   setProgressColor(colorProgress);
+  // }, [RefreshData]);
 
   const columnsData = useMemo<ColumnDef<BacklogDataResponse>[]>(
     () => [
@@ -341,12 +352,14 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
             spacing={0}
           >
             <Text fontSize={"smaller"} textAlign={"center"} fontWeight={600}>
-              {OverallProgress.toString()}%
+              {info.row.original.progressionPercentage.toString()}%
             </Text>
             <Progress
-              colorScheme={ProgressColor}
+              colorScheme={colorProgression(
+                info.row.original.progressionPercentage
+              )}
               hasStripe
-              value={OverallProgress}
+              value={info.row.original.progressionPercentage}
               w={"full"}
               rounded={radiusStyle}
               size={"sm"}
@@ -439,6 +452,7 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
         fieldOrder: ["backlogName"],
         orderDir: "asc",
       };
+
       const GetDataBacklogsList = async () => {
         setIsLoadingProcess(true);
         const requestData = await ListBacklog(PayloadGetBacklogList, tokenData);
@@ -465,8 +479,39 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
           setIsLoadingProcess(false);
         }
       };
+
+      // Load Backlog Progression
+      const GetProgression = async () => {
+        const requestData = await GetProjectBacklogProgression(
+          DataProject.id || "",
+          tokenData
+        );
+        const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+        if (isErrorResponse || !requestData) {
+          showToast({
+            description: requestData?.message || RES_GENERIC_ERROR_MSG,
+            statusToast: "error",
+          });
+          setIsLoadingProcess(false);
+          return;
+        } else {
+          if (requestData.data == null) {
+            showToast({
+              description: "Data return error",
+              statusToast: "error",
+            });
+            setIsLoadingProcess(false);
+            return;
+          }
+          const itemsData: ProjectBacklogProgressionResponse =
+            requestData.data as ProjectBacklogProgressionResponse;
+          setProjectBacklogProgression(itemsData);
+        }
+      };
+
       GetDataRequirement();
       GetDataBacklogsList();
+      GetProgression();
     }
   }, [DataAuth, RefreshData, DataProject, globalFilter]);
 
@@ -513,13 +558,29 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
               alignItems={"end"}
             >
               <Flex w={"full"} as={Stack}>
-                <Text fontSize={"smaller"} fontWeight={600} as={"i"}>
-                  Overall Progression - {OverallProgress.toString()}%
-                </Text>
+                <HStack
+                  divider={<StackDivider borderColor="gray.200" />}
+                  w={"full"}
+                >
+                  <Text fontSize={"smaller"} fontWeight={600}>
+                    Overall Progression -{" "}
+                    {ProjectBacklogProgression.progressionBacklog.toString()} %
+                  </Text>
+
+                  <Text fontSize={"smaller"} fontWeight={500}>
+                    {ProjectBacklogProgression.totalBacklogsDone}
+                    <Text as={"span"} fontWeight={600} ml={1}>
+                      / {ProjectBacklogProgression.totalBacklogs} Feature Done
+                    </Text>
+                  </Text>
+                </HStack>
+
                 <Progress
-                  colorScheme={ProgressColor}
+                  colorScheme={colorProgression(
+                    ProjectBacklogProgression.progressionBacklog
+                  )}
                   hasStripe
-                  value={OverallProgress}
+                  value={ProjectBacklogProgression.progressionBacklog}
                   w={"full"}
                   rounded={radiusStyle}
                 />

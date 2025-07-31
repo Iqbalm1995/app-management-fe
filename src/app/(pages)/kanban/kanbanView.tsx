@@ -23,6 +23,8 @@ import {
   TASK_BOARD_STATUS_CODE_INPROGRESS,
   TASK_BOARD_STATUS_CODE_REVIEW,
   TASK_BOARD_STATUS_CODE_TODO,
+  TASK_BOARD_STATUS_NAME_TODO,
+  TASK_BOARD_STATUS_NAME_DONE,
 } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import {
@@ -51,6 +53,7 @@ import useTasks, {
   TaskCommentInsertPayload,
   TaskCommentUpdatePayload,
   AssignUsersTaskPayload,
+  GenerateTaskBoardPayload,
 } from "@/app/services/useTasks";
 import { PaggingListPayload, ListSearchByParam } from "@/app/types/masterTypes";
 import {
@@ -109,6 +112,11 @@ import {
   ButtonGroup,
   InputLeftElement,
   Tooltip,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
+  CardFooter,
 } from "@chakra-ui/react";
 import {
   ChevronDownIcon,
@@ -139,11 +147,13 @@ import {
   FaPlus,
 } from "react-icons/fa6";
 import {
+  FiAlertCircle,
   FiArrowLeft,
   FiCheckCircle,
   FiCheckSquare,
   FiCircle,
   FiFilter,
+  FiInbox,
   FiList,
   FiLoader,
   FiMessageSquare,
@@ -2454,6 +2464,7 @@ function DraggableTaskCard({
           transition="all 0.3s ease"
           rounded={radiusStyle}
         >
+          {/* <Flex w={"full"} bg={"orange.300"} h={"10px"}></Flex> */}
           <CardBody px={3}>
             <VStack align="start" spacing={2}>
               {/* Task metadata */}
@@ -2660,6 +2671,27 @@ function DraggableTaskCard({
               </Flex>
             </VStack>
           </CardBody>
+          {task.percentageStatus < 100 &&
+            task.boardName == TASK_BOARD_STATUS_NAME_DONE && (
+              <CardFooter
+                bg={"orange.300"}
+                h={"5px"}
+                roundedBottom={radiusStyle}
+              >
+                <Flex
+                  as={HStack}
+                  w={"full"}
+                  color={"orange.700"}
+                  px={3}
+                  justifyContent={"center"}
+                >
+                  <FiAlertCircle size={".8em"} />
+                  <Text lineHeight={0} fontSize={"small"}>
+                    Warning
+                  </Text>
+                </Flex>
+              </CardFooter>
+            )}
         </Card>
       </div>
 
@@ -2874,6 +2906,27 @@ function DraggableTaskCard({
                     justifyContent="start"
                     alignItems="start"
                   >
+                    {detailedTask.percentageStatus < 100 &&
+                      detailedTask.boardName == TASK_BOARD_STATUS_NAME_DONE && (
+                        <Alert
+                          status={"warning"}
+                          variant={"subtle"}
+                          flexDirection={"column"}
+                          alignItems={"center"}
+                          justifyContent={"center"}
+                          textAlign={"center"}
+                          // height={"180px"}
+                          rounded={radiusStyle}
+                          py={5}
+                        >
+                          <AlertIcon boxSize="35px" mr={0} />
+                          <AlertDescription maxWidth={"sm"} mt={3}>
+                            Task tidak dianggap berhasil jika seluruh checklist
+                            belum terselesaikan, meskipun telah berada di board
+                            'DONE'
+                          </AlertDescription>
+                        </Alert>
+                      )}
                     <Flex
                       w="full"
                       as={HStack}
@@ -2924,7 +2977,6 @@ function DraggableTaskCard({
                         </Text>
                       )}
                     </Flex>
-
                     {/* Date Range Picker and Assign Task */}
                     <HStack spacing={2}>
                       <Popover placement="bottom-start" closeOnBlur={false}>
@@ -2990,7 +3042,6 @@ function DraggableTaskCard({
                         Assign Task
                       </Button>
                     </HStack>
-
                     {/* Editable Task Description */}
                     {isEditingDesc ? (
                       <Box w="full" position="relative">
@@ -3038,7 +3089,6 @@ function DraggableTaskCard({
                         )}
                       </Box>
                     )}
-
                     {/* Task Items (Checklist) */}
                     <Box mt={4}>
                       <Flex
@@ -3122,9 +3172,7 @@ function DraggableTaskCard({
                         </form>
                       </Box>
                     </Box>
-
                     <Box mb={10}></Box>
-
                     {/* Attachments - Temorary Hide Feature*/}
                     <Box w="full" display={"none"}>
                       <Flex
@@ -3161,9 +3209,7 @@ function DraggableTaskCard({
                         </WrapItem>
                       </Wrap>
                     </Box>
-
                     <HorizontalFadeDivider />
-
                     {/* Comments Section */}
                     <Flex
                       w="full"
@@ -3193,7 +3239,6 @@ function DraggableTaskCard({
                         Refresh
                       </Button>
                     </Flex>
-
                     {/* Add Comment */}
                     <Box as="form" onSubmit={handleAddComment} w="full">
                       <Flex
@@ -3268,7 +3313,6 @@ function DraggableTaskCard({
                         </VStack>
                       </Flex>
                     </Box>
-
                     {/* Comments */}
                     {taskComments.map((comment, index) => (
                       <TaskComment
@@ -3286,7 +3330,6 @@ function DraggableTaskCard({
                         onEditTextChange={setEditedCommentText}
                       />
                     ))}
-
                     {/* Load More Comments Button */}
                     {hasMoreComments && (
                       <Flex w="full" justifyContent="center" pt={2}>
@@ -3301,7 +3344,6 @@ function DraggableTaskCard({
                         </Button>
                       </Flex>
                     )}
-
                     {/* No Comments Message */}
                     {!isLoadingComments && taskComments.length === 0 && (
                       <Flex w="full" justifyContent="center" py={4}>
@@ -3954,6 +3996,7 @@ function KanbanBacklogPage() {
     ListTasksPaged,
     CreateSimpleTask,
     MoveTask,
+    GenerateKanbanBoard,
   } = useTasks();
   const { List: ListUsers } = useUsers();
 
@@ -3980,6 +4023,53 @@ function KanbanBacklogPage() {
   const handleTaskCreated = () => {
     // Trigger a refresh of the tasks
     setRefreshData(RefreshData + 1);
+  };
+
+  // GENERATE KANBAN BOARD HANDLER
+  const handleGenerateKanbanBoard = async () => {
+    if (!tokenData || !backlogId || !projectId) {
+      showToast({
+        description: "Missing required data to generate Kanban board",
+        statusToast: "error",
+      });
+      return;
+    }
+
+    try {
+      console.log("🚀 GENERATE KANBAN: Starting board generation...");
+
+      const payload: GenerateTaskBoardPayload = {
+        backlogId: backlogId,
+        projectId: projectId,
+      };
+
+      const response = await GenerateKanbanBoard(payload, tokenData);
+
+      if (response && response.statusCode === RES_CODE_OK) {
+        console.log("✅ GENERATE KANBAN: Board generated successfully");
+
+        showToast({
+          description: "Kanban board berhasil dibuat!",
+          statusToast: "success",
+        });
+
+        // Refresh the kanban board data
+        console.log("🔄 GENERATE KANBAN: Refreshing board data...");
+        setRefreshData((prev) => prev + 1);
+      } else {
+        console.error("❌ GENERATE KANBAN: Failed to generate board");
+        showToast({
+          description: response?.message || "Failed to generate Kanban board",
+          statusToast: "error",
+        });
+      }
+    } catch (error) {
+      console.error("❌ GENERATE KANBAN: Error during generation:", error);
+      showToast({
+        description: "An error occurred while generating the Kanban board",
+        statusToast: "error",
+      });
+    }
   };
 
   useEffect(() => {
@@ -4136,12 +4226,12 @@ function KanbanBacklogPage() {
         console.log("✅ SEMI-AUTO SAVE: Save result:", saveResult);
 
         if (saveResult && saveResult.length > 0) {
-          showToast({
-            description: `Auto-saved ${saveResult.length} task changes after ${
-              AUTO_SAVE_DELAY / 1000
-            } seconds`,
-            statusToast: "success",
-          });
+          // showToast({
+          //   description: `Auto-saved ${saveResult.length} task changes after ${
+          //     AUTO_SAVE_DELAY / 1000
+          //   } seconds`,
+          //   statusToast: "success",
+          // });
           console.log(
             "✅ SEMI-AUTO SAVE: Successfully saved changes automatically"
           );
@@ -4977,6 +5067,11 @@ function KanbanBacklogPage() {
     if (DataAuth && DataAuth.team && projectId && backlogId) {
       setIsLoadingProcess(true);
       const GetDetailProject = async () => {
+        if (!projectId) {
+          console.error("❌ Cannot load project data: projectId is null");
+          return;
+        }
+
         const requestData = await GetDetailProjectById(projectId, tokenData);
         const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
 
@@ -5007,6 +5102,11 @@ function KanbanBacklogPage() {
       };
 
       const GetDetailBacklog = async () => {
+        if (!backlogId) {
+          console.error("❌ Cannot load backlog data: backlogId is null");
+          return;
+        }
+
         const requestData = await GetDetailBacklogById(backlogId, tokenData);
         const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
 
@@ -5031,12 +5131,22 @@ function KanbanBacklogPage() {
           const itemsData: BacklogDataResponse =
             requestData.data as BacklogDataResponse;
 
+          setHeaderContentState({
+            titleName: `KANBAN | ${itemsData.backlogName}`,
+            breadCrumb: ["Home", "Kanban", `Feature ${itemsData.backlogName}`],
+          });
+
           setDataBacklog(itemsData);
           setIsLoadingProcess(false);
         }
       };
 
       const GetListTaskKanban = async () => {
+        if (!backlogId) {
+          console.error("❌ Cannot load board data: backlogId is null");
+          return;
+        }
+
         const requestTaskBoard = await ListTasksBoard(backlogId, tokenData);
         const isErrorResponse = requestTaskBoard?.statusCode !== RES_CODE_OK;
 
@@ -5139,9 +5249,35 @@ function KanbanBacklogPage() {
   useEffect(() => {
     if (DataAuth && DataAuth.team && projectId && backlogId && tokenData) {
       const GetListTasks = async () => {
-        console.log("🔄 Refreshing ONLY task list (optimized)...");
+        console.log("🔄 Refreshing task list and board data (optimized)...");
         setIsLoadingProcess(true);
 
+        // First refresh board data
+        if (backlogId && tokenData) {
+          try {
+            const requestTaskBoard = await ListTasksBoard(backlogId, tokenData);
+            if (
+              requestTaskBoard?.statusCode === RES_CODE_OK &&
+              requestTaskBoard.data
+            ) {
+              const itemsData: TaskBoardViewModel[] =
+                requestTaskBoard.data as TaskBoardViewModel[];
+              console.log(
+                "✅ Board data refreshed:",
+                itemsData.length,
+                "boards"
+              );
+              setDataBoard(itemsData);
+            } else {
+              console.log("📋 No board data available");
+              setDataBoard([]);
+            }
+          } catch (error) {
+            console.error("❌ Failed to refresh board data:", error);
+          }
+        }
+
+        // Then refresh task data
         const PayloadGetTaskList: PaggingListPayload = {
           search: SerachTasks,
           limit: MAX_SIZE_TABLE,
@@ -5325,8 +5461,8 @@ function KanbanBacklogPage() {
   return (
     <LayoutAdmin>
       <HeaderContent
-        titleName={HeaderDataContent.titleName}
-        breadCrumb={HeaderDataContent.breadCrumb}
+        titleName={HeaderContentState.titleName}
+        breadCrumb={HeaderContentState.breadCrumb}
       />
 
       {/* DEBUG: API Payload Preview - Data Ready to Send */}
@@ -5589,6 +5725,25 @@ function KanbanBacklogPage() {
                 px={3}
                 py={2}
                 cursor={"pointer"}
+                _hover={{
+                  bgColor: "secondary.200",
+                  color: "secondary.500",
+                }}
+                _active={{
+                  color: "secondary.500",
+                  bgColor: "transparent",
+                }}
+                isActive={false}
+                leftIcon={<FiInbox />}
+              >
+                Archived
+              </Flex>
+              <Flex
+                as={Button}
+                variant="outline"
+                px={3}
+                py={2}
+                cursor={"pointer"}
                 colorScheme={"secondary"}
                 leftIcon={<FiRefreshCcw />}
                 onClick={() => RefreshAction()}
@@ -5610,163 +5765,197 @@ function KanbanBacklogPage() {
               overflowX="auto"
               py={2}
             >
-              {DataBoard.length > 0
-                ? DataBoard.map((board) => (
-                    <DroppableBoard
-                      key={board.id}
-                      board={board}
-                      tasks={DataTasks.filter(
-                        (task) => task.boardId === board.id
-                      )}
-                      onMoveTask={handleMoveTask}
-                      onPositionedMove={handleMoveTaskLocal}
-                      getEffectiveIndex={getEffectiveIndex}
-                      setDropPreview={setDropPreview}
+              {DataBoard.length > 0 ? (
+                DataBoard.map((board) => (
+                  <DroppableBoard
+                    key={board.id}
+                    board={board}
+                    tasks={DataTasks.filter(
+                      (task) => task.boardId === board.id
+                    )}
+                    onMoveTask={handleMoveTask}
+                    onPositionedMove={handleMoveTaskLocal}
+                    getEffectiveIndex={getEffectiveIndex}
+                    setDropPreview={setDropPreview}
+                  >
+                    <Flex
+                      as={HStack}
+                      spacing={2}
+                      bg={"white"}
+                      rounded={radiusStyle}
+                      boxShadow={"sm"}
+                      px={5}
+                      py={3}
                     >
-                      <Flex
-                        as={HStack}
-                        spacing={2}
-                        bg={"white"}
-                        rounded={radiusStyle}
-                        boxShadow={"sm"}
-                        px={5}
-                        py={3}
+                      {board.boardName === "TO DO" ? (
+                        <FiList size={"1.3em"} />
+                      ) : board.boardName === "IN PROGRESS" ? (
+                        <FiLoader size={"1.3em"} />
+                      ) : board.boardName === "IN REVIEW" ? (
+                        <FiNavigation size={"1.3em"} />
+                      ) : board.boardName === "DONE" ? (
+                        <FiCheckCircle size={"1.3em"} />
+                      ) : (
+                        ""
+                      )}
+                      <Badge
+                        fontSize={"medium"}
+                        fontWeight={600}
+                        px={3}
+                        rounded={"md"}
+                        colorScheme={
+                          board.boardName === "TO DO"
+                            ? "gray"
+                            : board.boardName === "IN PROGRESS"
+                            ? "blue"
+                            : board.boardName === "IN REVIEW"
+                            ? "purple"
+                            : board.boardName === "DONE"
+                            ? "green"
+                            : "gray"
+                        }
                       >
-                        {board.boardName === "TO DO" ? (
-                          <FiList size={"1.3em"} />
-                        ) : board.boardName === "IN PROGRESS" ? (
-                          <FiLoader size={"1.3em"} />
-                        ) : board.boardName === "IN REVIEW" ? (
-                          <FiNavigation size={"1.3em"} />
-                        ) : board.boardName === "DONE" ? (
-                          <FiCheckCircle size={"1.3em"} />
-                        ) : (
-                          ""
+                        {board.boardName}
+                      </Badge>
+                    </Flex>
+
+                    {/* Task container */}
+                    <VStack
+                      spacing={3}
+                      align="stretch"
+                      minH="200px"
+                      maxH="calc(75vh - 100px)"
+                      overflowY="auto"
+                      w="full"
+                      bg={"white"}
+                      rounded={radiusStyle}
+                      boxShadow={"sm"}
+                      p={5}
+                    >
+                      {/* If this is the first task and we have a drop preview for this board at the beginning */}
+                      {dropPreview &&
+                        dropPreview.boardId === board.id &&
+                        dropPreview.beforeTaskId ===
+                          (getTasksSortedByEffectiveIndex(board.id).length > 0
+                            ? DataTasks.filter(
+                                (task) => task.boardId === board.id
+                              )[0].id
+                            : null) && <DropPreviewIndicator />}
+
+                      {/* Filter tasks by boardId, sort by indexTask, and map them */}
+                      {DataTasks &&
+                        getTasksSortedByEffectiveIndex(board.id).map(
+                          (task, index, sortedTasks) => (
+                            <React.Fragment key={task.id}>
+                              <DraggableTaskCard
+                                task={task}
+                                onMoveTask={handleMoveTask}
+                                onPositionedMove={handleMoveTaskLocal}
+                                getEffectiveIndex={getEffectiveIndex}
+                                isRecentlyMoved={
+                                  task.id === recentlyMovedTaskId
+                                }
+                                DataProject={DataProject}
+                                localTaskIndices={localTaskIndices}
+                                onMoveUp={handleMoveTaskUp}
+                                onMoveDown={handleMoveTaskDown}
+                              />
+
+                              {/* Show drop preview indicator if needed */}
+                              {dropPreview &&
+                                dropPreview.boardId === board.id &&
+                                ((dropPreview.beforeTaskId === task.id &&
+                                  index > 0) ||
+                                  (dropPreview.afterTaskId === task.id &&
+                                    index < sortedTasks.length - 1)) && (
+                                  <DropPreviewIndicator />
+                                )}
+                            </React.Fragment>
+                          )
                         )}
-                        <Badge
-                          fontSize={"medium"}
-                          fontWeight={600}
-                          px={3}
-                          rounded={"md"}
-                          colorScheme={
-                            board.boardName === "TO DO"
-                              ? "gray"
-                              : board.boardName === "IN PROGRESS"
-                              ? "blue"
-                              : board.boardName === "IN REVIEW"
-                              ? "purple"
-                              : board.boardName === "DONE"
-                              ? "green"
-                              : "gray"
-                          }
-                        >
-                          {board.boardName}
-                        </Badge>
-                      </Flex>
 
-                      {/* Task container */}
-                      <VStack
-                        spacing={3}
-                        align="stretch"
-                        minH="200px"
-                        maxH="calc(75vh - 100px)"
-                        overflowY="auto"
-                        w="full"
-                        bg={"white"}
-                        rounded={radiusStyle}
-                        boxShadow={"sm"}
-                        p={5}
-                      >
-                        {/* If this is the first task and we have a drop preview for this board at the beginning */}
-                        {dropPreview &&
+                      {/* If this is an empty board or we're dropping at the end */}
+                      {(getTasksSortedByEffectiveIndex(board.id).length === 0 ||
+                        (dropPreview &&
                           dropPreview.boardId === board.id &&
-                          dropPreview.beforeTaskId ===
-                            (getTasksSortedByEffectiveIndex(board.id).length > 0
-                              ? DataTasks.filter(
-                                  (task) => task.boardId === board.id
-                                )[0].id
-                              : null) && <DropPreviewIndicator />}
-
-                        {/* Filter tasks by boardId, sort by indexTask, and map them */}
-                        {DataTasks &&
-                          getTasksSortedByEffectiveIndex(board.id).map(
-                            (task, index, sortedTasks) => (
-                              <React.Fragment key={task.id}>
-                                <DraggableTaskCard
-                                  task={task}
-                                  onMoveTask={handleMoveTask}
-                                  onPositionedMove={handleMoveTaskLocal}
-                                  getEffectiveIndex={getEffectiveIndex}
-                                  isRecentlyMoved={
-                                    task.id === recentlyMovedTaskId
-                                  }
-                                  DataProject={DataProject}
-                                  localTaskIndices={localTaskIndices}
-                                  onMoveUp={handleMoveTaskUp}
-                                  onMoveDown={handleMoveTaskDown}
-                                />
-
-                                {/* Show drop preview indicator if needed */}
-                                {dropPreview &&
-                                  dropPreview.boardId === board.id &&
-                                  ((dropPreview.beforeTaskId === task.id &&
-                                    index > 0) ||
-                                    (dropPreview.afterTaskId === task.id &&
-                                      index < sortedTasks.length - 1)) && (
-                                    <DropPreviewIndicator />
-                                  )}
-                              </React.Fragment>
-                            )
+                          dropPreview.afterTaskId ===
+                            DataTasks.filter(
+                              (task) => task.boardId === board.id
+                            ).slice(-1)[0]?.id)) && (
+                        <Box>
+                          {dropPreview && dropPreview.boardId === board.id && (
+                            <DropPreviewIndicator />
                           )}
 
-                        {/* If this is an empty board or we're dropping at the end */}
-                        {(getTasksSortedByEffectiveIndex(board.id).length ===
-                          0 ||
-                          (dropPreview &&
-                            dropPreview.boardId === board.id &&
-                            dropPreview.afterTaskId ===
-                              DataTasks.filter(
-                                (task) => task.boardId === board.id
-                              ).slice(-1)[0]?.id)) && (
-                          <Box>
-                            {dropPreview &&
-                              dropPreview.boardId === board.id && (
-                                <DropPreviewIndicator />
-                              )}
-
-                            {/* Empty state when no tasks */}
-                            {(!DataTasks ||
-                              DataTasks.filter(
-                                (task) => task.boardId === board.id
-                              ).length === 0) && (
-                              <Flex
-                                h="100px"
-                                w="full"
-                                justify="center"
-                                align="center"
-                                border="1px dashed"
-                                borderColor="gray.200"
-                                borderRadius={radiusStyle}
-                              >
-                                <Text color="gray.400">No tasks</Text>
-                              </Flex>
-                            )}
-                          </Box>
-                        )}
-                      </VStack>
-
-                      {/* Add task button - only show in TO DO board */}
-                      {board.boardName === "TO DO" && (
-                        <AddTaskForm
-                          boardId={board.id}
-                          projectId={projectId || ""}
-                          backlogId={backlogId || ""}
-                          onTaskAdded={handleTaskCreated}
-                        />
+                          {/* Empty state when no tasks */}
+                          {(!DataTasks ||
+                            DataTasks.filter(
+                              (task) => task.boardId === board.id
+                            ).length === 0) && (
+                            <Flex
+                              h="100px"
+                              w="full"
+                              justify="center"
+                              align="center"
+                              border="1px dashed"
+                              borderColor="gray.200"
+                              borderRadius={radiusStyle}
+                            >
+                              <Text color="gray.400">No tasks</Text>
+                            </Flex>
+                          )}
+                        </Box>
                       )}
-                    </DroppableBoard>
-                  ))
-                : "NO BOARD"}
+                    </VStack>
+
+                    {/* Add task button - only show in TO DO board */}
+                    {board.boardName === "TO DO" && (
+                      <AddTaskForm
+                        boardId={board.id}
+                        projectId={projectId || ""}
+                        backlogId={backlogId || ""}
+                        onTaskAdded={handleTaskCreated}
+                      />
+                    )}
+                  </DroppableBoard>
+                ))
+              ) : (
+                <Flex
+                  bg="white"
+                  w="full"
+                  rounded={radiusStyle}
+                  boxShadow="sm"
+                  py={20}
+                  px={8}
+                  direction="column"
+                  align="center"
+                  justify="center"
+                  minH="400px"
+                >
+                  <Text
+                    fontSize="lg"
+                    color="gray.500"
+                    textAlign="center"
+                    mb={6}
+                    fontWeight="medium"
+                  >
+                    Fitur ini belum mempunyai Kanban Board
+                  </Text>
+                  <Button
+                    colorScheme="blue"
+                    size="lg"
+                    onClick={handleGenerateKanbanBoard}
+                    isLoading={IsLoadingProcess}
+                    loadingText="Membuat Kanban..."
+                    px={8}
+                    py={6}
+                    fontSize="md"
+                    fontWeight="semibold"
+                  >
+                    Buat Kanban
+                  </Button>
+                </Flex>
+              )}
             </Flex>
           </DndProvider>
         </GridItem>

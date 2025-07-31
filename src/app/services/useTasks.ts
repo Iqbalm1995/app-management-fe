@@ -161,6 +161,20 @@ export interface AssignUsersTaskPayload {
   }[];
 }
 
+export interface GenerateTaskBoardPayload {
+  backlogId: string;
+  projectId: string;
+}
+
+export interface TasksCountResponse {
+  all: number;
+  toDo: number;
+  inProgress: number;
+  inReview: number;
+  done: number;
+  archived: number;
+}
+
 interface useTasks {
   // TASK BOARD
   ListTasksBoardPaged: (
@@ -172,6 +186,19 @@ interface useTasks {
     token: string
   ) => Promise<ApiGenericResponse<TaskBoardViewModel[] | null> | null>;
 
+  CountTaskByBacklogId: (
+    backlogId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<TasksCountResponse | null> | null>;
+  CountTaskByProjectId: (
+    projectId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<TasksCountResponse | null> | null>;
+
+  GenerateKanbanBoard: (
+    payload: GenerateTaskBoardPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
   // TASKS
   ListTasksPaged: (
     payload: PaggingListPayload,
@@ -332,6 +359,130 @@ const useTasks = (): useTasks => {
         const errorResponse = handleAxiosError(err);
         setError(
           err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const CountTaskByBacklogId = async (
+    backlogId: string,
+    token: string
+  ): Promise<ApiGenericResponse<TasksCountResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Task/tasks-count-by-backlog?backlogId=${backlogId}`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<TasksCountResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message ||
+            "An error occurred while fetching task item details."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const CountTaskByProjectId = async (
+    projectId: string,
+    token: string
+  ): Promise<ApiGenericResponse<TasksCountResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Task/tasks-count-by-project?projectId=${projectId}`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<TasksCountResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message ||
+            "An error occurred while fetching task item details."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const GenerateKanbanBoard = async (
+    payload: GenerateTaskBoardPayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Task/generate-task-board`;
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message ||
+            "An error occurred while creating task comment."
         );
         return errorResponse;
       } else {
@@ -1176,6 +1327,9 @@ const useTasks = (): useTasks => {
   return {
     ListTasksBoardPaged,
     ListTasksBoard,
+    CountTaskByBacklogId,
+    CountTaskByProjectId,
+    GenerateKanbanBoard,
     ListTasksPaged,
     ListTaskItemsPaged,
     ListTaskItems,

@@ -31,6 +31,7 @@ import {
   APP_TRANSACTIONAL_OPTIONS,
   APP_TYPE_OPTIONS,
   DELAY_MEDIUM,
+  DIRECTORATE_ID_IT_BJB,
   DIVISION_ID_IT_BJB,
   fullDay,
   GROUP_CONST_BRD_STATUS,
@@ -38,12 +39,17 @@ import {
   MAX_SIZE_TABLE,
   MEDIA_KEY_REQUIREMENT,
   NEXT_STEP_ACTION_REVIEW,
+  ORG_CATEGORY_KEY_DIRECTORATE,
+  ORG_CATEGORY_KEY_DIVISION,
+  ORG_CATEGORY_KEY_GROUP,
   radiusStyle,
   REQ_STATUS_REVIEW,
   REQUIREMENT_STATUS_NEW,
   REQUIREMENT_TYPE_BRD,
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
+  SELECTED_OPTION_DIRECTORATE,
+  SELECTED_OPTION_DIVISION,
 } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import {
@@ -75,11 +81,16 @@ import useUsers, { UsersResponse } from "@/app/services/useUsers";
 import {
   FileDetails,
   ListSearchByParam,
+  OptionDivisionDynamic,
   OptionListProps,
   PaggingListPayload,
 } from "@/app/types/masterTypes";
 import { ChevronDownIcon, RepeatIcon } from "@chakra-ui/icons";
 import {
+  Alert,
+  AlertDescription,
+  AlertIcon,
+  AlertTitle,
   Avatar,
   Badge,
   Box,
@@ -204,12 +215,14 @@ const HeaderDataContent: HeaderContentProps = {
 
 const FormSchema = yup.object().shape({
   // STG 1
+  isHaveMemo: yup.string().required("Have Memo is required"),
   reffParentId: yup.string().nullable(),
-  senderDivisionId: yup.string().required("Sender Division ID is required"),
+  senderDirectorateId: yup.string().nullable(),
+  senderDivisionId: yup.string().nullable(),
   requirementType: yup.string().required("Requirement Type is required"),
   reqNumber: yup.string().required("Requirement Number is required"),
   reqNarative: yup.string().required("Requirement Narrative is required"),
-  reqInititateDate: yup.string().required("Initiation Date is required"),
+  reqInititateDate: yup.string().nullable(),
   reqAcceptedDate: yup.string().nullable(),
   isCarryOver: yup.string().required("IsCarryOver is required"),
 
@@ -232,6 +245,7 @@ const FormSchema = yup.object().shape({
   userPicName: yup.string().nullable(),
   userPicContanct: yup.string().nullable(),
   userPicEmail: yup.string().email().nullable(),
+  userPicDirectorateId: yup.string().nullable(),
   userPicDivisionId: yup.string().nullable(),
   userPicGroupId: yup.string().nullable(),
 
@@ -240,7 +254,9 @@ const FormSchema = yup.object().shape({
     .array()
     .of(
       yup.object({
+        directorateId: yup.string().required(),
         divisionId: yup.string().required(),
+        groupId: yup.string().nullable(),
         workProgramSource: yup.string().required(),
         workProgramCode: yup.string().nullable(),
         workProgramName: yup.string().nullable(),
@@ -257,6 +273,13 @@ const FormSchema = yup.object().shape({
   // AREA 4
   appInitialCode: yup.string().nullable(),
   appInitialName: yup.string().nullable(),
+
+  appTargetUsers: yup.string().required("App Target User is required"),
+  appAccessFrontsiteDns: yup.string().nullable(),
+  appAccessFrontsiteIp: yup.string().nullable(),
+  appAccessBacksiteDns: yup.string().nullable(),
+  appAccessBacksiteIp: yup.string().nullable(),
+
   backlogChange: yup.string().nullable(),
   appAccessMedia: yup.string().nullable(),
   appTypes: yup.string().nullable(),
@@ -293,60 +316,57 @@ const FormSchema = yup.object().shape({
 
 const initialValues: RequirementsInsertPayload = {
   // STG 1
-  reffParentId: "",
-  senderDivisionId: "",
+  isHaveMemo: "Y",
+  reffParentId: null,
+  senderDirectorateId: null,
+  senderDivisionId: null,
   requirementType: TYPE_REQ,
   reqNumber: "",
   reqNarative: "",
-  reqInititateDate: "",
+  reqInititateDate: null,
   reqAcceptedDate: null,
   isCarryOver: "N",
 
   // STG 2 - AREA 1
   assignedToDate: null,
-  assignedFromId: "",
-  assignedFromName: "",
+  assignedFromId: null,
+  assignedFromName: null,
   picAssignUsers: [{ userId: "" }],
 
   // AREA 2
-  userPicId: "",
-  userPicIdentityNumber: "",
-  userPicName: "",
-  userPicContanct: "",
-  userPicEmail: "",
-  userPicDivisionId: "",
-  userPicGroupId: "",
+  userPicId: null,
+  userPicIdentityNumber: null,
+  userPicName: null,
+  userPicContanct: null,
+  userPicEmail: null,
+  userPicDirectorateId: null,
+  userPicDivisionId: null,
+  userPicGroupId: null,
 
   // AREA 3
-  workPrograms: [
-    // {
-    //   divisionId: "",
-    //   workProgramSource: "",
-    //   workProgramCode: "",
-    //   workProgramName: "",
-    //   workProgramAccName: "",
-    //   workProgramAccNumber: "",
-    //   workProgramAccCc: "",
-    //   workProgramBudget: 0,
-    //   workProgramReal: 0,
-    //   workProgramLeftovers: 0,
-    // },
-  ],
+  workPrograms: [],
 
   // AREA 4
-  appInitialCode: "",
-  appInitialName: "",
-  backlogChange: "",
-  appAccessMedia: "",
-  appTypes: "",
-  appTypeCustom: "",
-  appRelatedness: "",
-  appRelatednessDesc: "",
-  appTransactionals: "",
-  appOperational24hrs: "",
-  appOperationalDays: "",
-  appOperationalHourOpen: "",
-  appOperationalHourClosed: "",
+  appInitialCode: null,
+  appInitialName: null,
+
+  appTargetUsers: "INTERNAL",
+  appAccessFrontsiteDns: null,
+  appAccessFrontsiteIp: null,
+  appAccessBacksiteDns: null,
+  appAccessBacksiteIp: null,
+
+  backlogChange: null,
+  appAccessMedia: null,
+  appTypes: null,
+  appTypeCustom: null,
+  appRelatedness: null,
+  appRelatednessDesc: null,
+  appTransactionals: null,
+  appOperational24hrs: null,
+  appOperationalDays: null,
+  appOperationalHourOpen: null,
+  appOperationalHourClosed: null,
   appLiveTargetDate: null,
 
   appEnvLocations: "",
@@ -365,41 +385,6 @@ const initialValues: RequirementsInsertPayload = {
       backlogDesc: "",
     },
   ],
-};
-
-const workProgramsValidationSchema = yup.object({
-  divisionId: yup.string().required("Division ID is required"),
-  workProgramSource: yup
-    .string()
-    .oneOf(["INTERNAL", "EXTERNAL"], "Source must be INTERNAL or EXTERNAL")
-    .required("Work Program Source is required"),
-  workProgramCode: yup.string().nullable(),
-  workProgramName: yup.string().nullable(),
-  workProgramAccName: yup.string().nullable(),
-  workProgramAccNumber: yup.string().nullable(),
-  workProgramAccCc: yup.string().nullable(),
-  workProgramBudget: yup
-    .number()
-    .typeError("Budget must be a number")
-    .required("Budget is required")
-    .min(0, "Budget must be 0 or more"),
-  workProgramReal: yup
-    .number()
-    .typeError("Real must be a number")
-    .required("Real is required")
-    .min(0, "Real must be 0 or more"),
-});
-
-const workProgramsInitialValues: WorkProgramsPayload = {
-  divisionId: "",
-  workProgramSource: "", // Should be "INTERNAL" or "EXTERNAL"
-  workProgramCode: "",
-  workProgramName: "",
-  workProgramAccName: "",
-  workProgramAccNumber: "",
-  workProgramAccCc: "",
-  workProgramBudget: 0,
-  workProgramReal: 0,
 };
 
 function RequirementsBRDRegisterView() {
@@ -678,18 +663,8 @@ function RequirementsBRDRegisterView() {
     ResetDivisionState();
     if (DataAuth && DataAuth.team) {
       formik.resetForm({ values: formik.initialValues });
-      // formik.setFieldValue("id", null);
     }
-    LoadDataDivision();
-    // const GettingDataOption = async () => {
-    //   const MaintenanceCategoryData: OptionListProps[] =
-    //     await GetOptionDataServ("MAINTENANCE_CATEGORY");
-    //   const MaintenanceTypeData: OptionListProps[] = await GetOptionDataServ(
-    //     "MAINTENANCE_TYPE"
-    //   );
-    //   setOptionDivision(MaintenanceCategoryData);
-    // };
-    // GettingDataOption();
+    LoadDataDirectorate(); // >>> LOAD DATA DIRECTORATE
   }, [RefreshData]);
 
   const GetDataUser = async (
@@ -863,6 +838,7 @@ function RequirementsBRDRegisterView() {
       setDataUsers([]);
     }
   };
+
   const handleAddUserAssign = (data: UsersResponse) => {
     setChoosedMemberProjects([...ChoosedMemberProjects, data]); // Add new item to the state
     setDataUsers([]);
@@ -887,76 +863,17 @@ function RequirementsBRDRegisterView() {
   // Division Select
 
   // Option Data Setup
-  const [IsLoadingDivisionSelect, setIsLoadingDivisionSelect] = useState(false);
-  const [OptionDivision, setOptionDivision] = useState<OptionListProps[]>([]);
-  const [SelectedDivision, setSelectedDivision] =
-    useState<OptionListProps | null>(null);
-  const handleSelectedDivision = (data: OptionListProps) => {
-    setSelectedDivision(data);
-    formik.setFieldValue("senderDivisionId", data.value);
-  };
-  const handleUnSelectedDivision = () => {
-    setSelectedDivision(null);
-    formik.setFieldValue("senderDivisionId", null);
-  };
 
-  const [SelectedDivisionUserPIC, setSelectedDivisionUserPIC] =
-    useState<OptionListProps | null>(null);
-  const handleSelectedDivisionUserPIC = (data: OptionListProps) => {
-    setSelectedDivisionUserPIC(data);
-    const [nameOpt, codeOpt] = data.label.split("|").map((s) => s.trim());
-    formik.setFieldValue("userPicDivisionId", data.value);
-    formik.setFieldValue("userPicDivisionCode", nameOpt);
-    formik.setFieldValue("userPicDivisionName", codeOpt);
-
-    const dataDivisionGroup = GetDataDivisionGroup(
-      "",
-      data.value,
-      MAX_SIZE_TABLE
-    );
-
-    setSelectedGroupDivision(null);
-    formik.setFieldValue("userPicGroupId", null);
-    formik.setFieldValue("userPicGroupCode", null);
-    formik.setFieldValue("userPicGroupName", null);
-  };
-  const handleUnSelectedDivisionUserPIC = () => {
-    setSelectedDivisionUserPIC(null);
-    formik.setFieldValue("userPicDivisionId", null);
-    formik.setFieldValue("userPicDivisionCode", null);
-    formik.setFieldValue("userPicDivisionName", null);
-
-    setOptionGroupDivision([]);
-  };
-
-  const handleSelectedDivisionCustom = (
-    data: OptionListProps,
-    fieldData: string
-  ) => {
-    // setSelectedDivisionUserPIC(data);
-    formik.setFieldValue(fieldData, data.value);
-  };
-  const handleUnSelectedDivisionCustom = (fieldData: string) => {
-    // setSelectedDivisionUserPIC(null);
-    formik.setFieldValue(fieldData, null);
-  };
-
-  const GetDataDivision = async (
+  const GetDataMasterOrg = async (
     searchValue: string = "",
-    limit: number = 1
+    limit: number = 1,
+    whereData: ListSearchByParam[]
   ): Promise<OrganizationResponse[]> => {
-    setIsLoadingDivisionSelect(true);
     const PayloadList: PaggingListPayload = {
       search: searchValue,
       limit: limit,
       page: 0,
-      filterWhere: [
-        {
-          field: "orgType",
-          operator: "=",
-          value: "DIVISION",
-        },
-      ],
+      filterWhere: whereData,
       fieldOrder: ["orgName"],
       orderDir: "asc",
     };
@@ -969,7 +886,6 @@ function RequirementsBRDRegisterView() {
         description: requestData?.message || RES_GENERIC_ERROR_MSG,
         statusToast: "error",
       });
-      setIsLoadingDivisionSelect(false);
       return [];
     } else {
       console.log(requestData);
@@ -978,130 +894,189 @@ function RequirementsBRDRegisterView() {
           description: "Data return error",
           statusToast: "error",
         });
-        setIsLoadingDivisionSelect(false);
         return [];
       }
 
       const itemsData: OrganizationResponse[] =
         requestData.data as OrganizationResponse[];
 
-      const mapOptionData: OptionListProps[] = itemsData.map((d) => ({
-        label: `${d.orgName} | ${d.orgType}`,
-        value: d.id,
-      }));
-      setOptionDivision(mapOptionData);
-      setIsLoadingDivisionSelect(false);
+      // Template Mapping
+      // const mapOptionData: OptionListProps[] = itemsData.map((d) => ({
+      //   label: `${d.orgName} | ${d.orgType}`,
+      //   value: d.id,
+      // }));
 
       return itemsData;
     }
   };
 
-  const LoadDataDivision = async () => {
-    if (OptionDivision.length <= 0) {
-      const dataDivision = await GetDataDivision("", MAX_SIZE_TABLE);
+  // directorate
+
+  const [SelectedDirectorateIT, setSelectedDirectorateIT] =
+    useState<OptionListProps>(SELECTED_OPTION_DIRECTORATE);
+  const [IsLoadingDirectorateSelect, setIsLoadingDirectorateSelect] =
+    useState(false);
+  const [OptionDirectorate, setOptionDirectorate] = useState<OptionListProps[]>(
+    []
+  );
+
+  const LoadDataDirectorate = async () => {
+    if (OptionDirectorate.length <= 0) {
+      setIsLoadingDirectorateSelect(true);
+      const whereParam: ListSearchByParam[] = [
+        {
+          field: "orgType",
+          operator: "=",
+          value: ORG_CATEGORY_KEY_DIRECTORATE,
+        },
+      ];
+
+      const dataDivision = await GetDataMasterOrg(
+        "",
+        MAX_SIZE_TABLE,
+        whereParam
+      );
+
+      const mapOptionData: OptionListProps[] = dataDivision.map((d) => ({
+        label: `${d.orgName} | ${d.orgType}`,
+        value: d.id,
+      }));
+
+      setOptionDirectorate(mapOptionData);
+      setIsLoadingDirectorateSelect(false);
     }
   };
+
+  const handleSelectedCustom = (data: OptionListProps, fieldData: string) => {
+    formik.setFieldValue(fieldData, data.value);
+  };
+
+  const handleUnSelectedCustom = (fieldData: string) => {
+    formik.setFieldValue(fieldData, null);
+  };
+
+  // division
+  const [SelectedDivisionSender, setSelectedDivisionSender] =
+    useState<OptionListProps | null>(null);
+
+  const [SelectedDivisionPIC, setSelectedDivisionPIC] =
+    useState<OptionListProps | null>(null);
+
+  const [SelectedDivisionWPInternal, setSelectedDivisionWPInternal] = useState<
+    OptionDivisionDynamic[]
+  >([]);
+
+  const [SelectedDivisionWPExternal, setSelectedDivisionWPExternal] = useState<
+    OptionDivisionDynamic[]
+  >([]);
+
+  const [IsLoadingDivisionSelect, setIsLoadingDivisionSelect] = useState(false);
+  const [OptionDivision, setOptionDivision] = useState<OptionListProps[]>([]);
+  const [SelectedDivision, setSelectedDivision] =
+    useState<OptionListProps | null>(null);
+
+  const LoadDataDivisionCustom = async (directorateId: string) => {
+    if (directorateId.length > 0) {
+      setIsLoadingDivisionSelect(true);
+      // let whereParam: ListSearchByParam[] = [];
+      const whereParam: ListSearchByParam[] = [
+        {
+          field: "parentId",
+          operator: "=",
+          value: directorateId,
+        },
+        {
+          field: "orgType",
+          operator: "=",
+          value: ORG_CATEGORY_KEY_DIVISION,
+        },
+      ];
+
+      const dataDivision = await GetDataMasterOrg(
+        "",
+        MAX_SIZE_TABLE,
+        whereParam
+      );
+
+      const mapOptionData: OptionListProps[] = dataDivision.map((d) => ({
+        label: `${d.orgName} | ${d.orgType}`,
+        value: d.id,
+      }));
+
+      setOptionDivision(mapOptionData);
+      setIsLoadingDivisionSelect(false);
+    }
+    // else {
+    //   whereParam = [
+    //     {
+    //       field: "orgType",
+    //       operator: "=",
+    //       value: "DIVISION",
+    //     },
+    //   ];
+    // }
+  };
+
+  // Group Org
+
+  const [SelectedGroupOrgPIC, setSelectedGroupOrgPIC] =
+    useState<OptionListProps | null>(null);
+
+  const [SelectedGroupWPInternal, setSelectedGroupWPInternal] = useState<
+    OptionDivisionDynamic[]
+  >([]);
+
+  const [SelectedGroupWPExternal, setSelectedGroupWPExternal] = useState<
+    OptionDivisionDynamic[]
+  >([]);
 
   const [IsLoadingGroupDivisionSelect, setIsLoadingGroupDivisionSelect] =
     useState(false);
   const [OptionGroupDivision, setOptionGroupDivision] = useState<
     OptionListProps[]
   >([]);
-  const [SelectedGroupDivision, setSelectedGroupDivision] =
-    useState<OptionListProps | null>(null);
-  const handleSelectedGroupDivision = (data: OptionListProps) => {
-    setSelectedGroupDivision(data);
-    const [nameOpt, codeOpt] = data.label.split("|").map((s) => s.trim());
-    formik.setFieldValue("userPicGroupId", data.value);
-    formik.setFieldValue("userPicGroupCode", codeOpt);
-    formik.setFieldValue("userPicGroupName", nameOpt);
-  };
-  const handleUnSelectedGroupDivision = () => {
-    setSelectedGroupDivision(null);
-    formik.setFieldValue("userPicGroupId", null);
-    formik.setFieldValue("userPicGroupCode", null);
-    formik.setFieldValue("userPicGroupName", null);
-  };
 
-  const GetDataDivisionGroup = async (
-    searchValue: string = "",
-    divisionId: string = "",
-    limit: number = 1
-  ): Promise<OrganizationResponse[]> => {
-    setIsLoadingGroupDivisionSelect(true);
-    const whereDataFilter: ListSearchByParam[] =
-      divisionId.length > 0
-        ? [
-            {
-              field: "parentId",
-              operator: "=",
-              value: divisionId || "",
-            },
-            {
-              field: "orgType",
-              operator: "=",
-              value: "GROUP",
-            },
-          ]
-        : [
-            {
-              field: "orgType",
-              operator: "=",
-              value: "GROUP",
-            },
-          ];
-    const PayloadList: PaggingListPayload = {
-      search: searchValue,
-      limit: limit,
-      page: 0,
-      filterWhere: whereDataFilter,
-      fieldOrder: ["orgName"],
-      orderDir: "asc",
-    };
-    const token: string = localStorage.getItem("tokenData") as string;
-    const requestData = await ListOrganization(PayloadList, token);
-    const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+  const LoadDataGroupOrgCustom = async (divisionId: string) => {
+    if (divisionId.length > 0) {
+      setIsLoadingGroupDivisionSelect(true);
+      // let whereParam: ListSearchByParam[] = [];
+      const whereParam: ListSearchByParam[] = [
+        {
+          field: "parentId",
+          operator: "=",
+          value: divisionId,
+        },
+        {
+          field: "orgType",
+          operator: "=",
+          value: ORG_CATEGORY_KEY_GROUP,
+        },
+      ];
 
-    if (isErrorResponse || !requestData) {
-      showToast({
-        description: requestData?.message || RES_GENERIC_ERROR_MSG,
-        statusToast: "error",
-      });
-      setIsLoadingGroupDivisionSelect(false);
-      return [];
-    } else {
-      console.log(requestData);
-      if (requestData.data == null) {
-        showToast({
-          description: "Data return error",
-          statusToast: "error",
-        });
-        setIsLoadingGroupDivisionSelect(false);
-        return [];
-      }
+      const dataDivision = await GetDataMasterOrg(
+        "",
+        MAX_SIZE_TABLE,
+        whereParam
+      );
 
-      const itemsData: OrganizationResponse[] =
-        requestData.data as OrganizationResponse[];
-
-      const mapOptionData: OptionListProps[] = itemsData.map((d) => ({
+      const mapOptionData: OptionListProps[] = dataDivision.map((d) => ({
         label: `${d.orgName} | ${d.orgType}`,
         value: d.id,
       }));
+
       setOptionGroupDivision(mapOptionData);
       setIsLoadingGroupDivisionSelect(false);
-
-      return itemsData;
     }
+    // else {
+    //   whereParam = [
+    //     {
+    //       field: "orgType",
+    //       operator: "=",
+    //       value: "DIVISION",
+    //     },
+    //   ];
+    // }
   };
-
-  // const LoadDataDivisionGroup = async () => {
-  //   const dividionReffId: string = formik.values.userPicDivisionId || "";
-  //   const dataDivisionGroup = await GetDataDivisionGroup(
-  //     "",
-  //     dividionReffId,
-  //     MAX_SIZE_TABLE
-  //   );
-  // };
 
   // End Division Select
 
@@ -1382,12 +1357,14 @@ function RequirementsBRDRegisterView() {
   // End Attachment Setup
 
   const steps = [
-    { title: "Step 1", description: "Informasi Umum" },
-    { title: "Step 2", description: "Penugasan Personil & User" },
-    { title: "Step 3", description: "Program Kerja" },
-    { title: "Step 4", description: "Ringkasan Ruanglingkup" },
-    { title: "Step 5", description: "Lampiran" },
+    { title: "Step 1", description: "Memo Pengantar" },
+    { title: "Step 2", description: "Informasi Umum" },
+    { title: "Step 3", description: "Penugasan Personil & User" },
+    { title: "Step 4", description: "Program Kerja" },
+    { title: "Step 5", description: "Ringkasan Ruanglingkup" },
+    { title: "Step 6", description: "Lampiran" },
   ];
+
   const { activeStep, setActiveStep } = useSteps({
     index: 0,
     count: steps.length,
@@ -1447,11 +1424,16 @@ function RequirementsBRDRegisterView() {
   const AddWorkProgram = (SourceWP: "INTERNAL" | "EXTERNAL") => {
     // Step 1: Clone the current array
     const currentPrograms = [...formik.values.workPrograms];
+
+    const nextIndex = currentPrograms.length;
+
     // Step 2: Append the new item to the clone
     const updatedPrograms = [
       ...currentPrograms,
       {
+        directorateId: SourceWP === "INTERNAL" ? DIRECTORATE_ID_IT_BJB : "",
         divisionId: SourceWP === "INTERNAL" ? DIVISION_ID_IT_BJB : "",
+        groupId: null,
         // divisionId: "",
         workProgramSource: SourceWP,
         workProgramCode: "",
@@ -1463,12 +1445,39 @@ function RequirementsBRDRegisterView() {
         workProgramReal: 0,
       },
     ];
+
+    if (SourceWP == "INTERNAL") {
+      setSelectedDivisionWPInternal((prev) => [
+        ...prev,
+        {
+          indexData: nextIndex,
+          OptionData: SELECTED_OPTION_DIVISION,
+        },
+      ]);
+    }
+
     formik.setFieldValue("workPrograms", updatedPrograms);
   };
 
   const RemoveWorkProgram = (index: number) => {
     const updated = [...formik.values.workPrograms];
+
     updated.splice(index, 1);
+
+    setSelectedDivisionWPInternal((prev) =>
+      prev.filter((item) => item.indexData !== index)
+    );
+    setSelectedGroupWPInternal((prev) =>
+      prev.filter((item) => item.indexData !== index)
+    );
+
+    setSelectedDivisionWPExternal((prev) =>
+      prev.filter((item) => item.indexData !== index)
+    );
+    setSelectedGroupWPExternal((prev) =>
+      prev.filter((item) => item.indexData !== index)
+    );
+
     formik.setFieldValue("workPrograms", updated);
   };
 
@@ -1638,6 +1647,10 @@ function RequirementsBRDRegisterView() {
   };
   // End - Choose Aplication existing
 
+  // APP MEDIA AKSES
+  const [MediaAksesPublic, setMediaAksesPublic] = useState(false);
+  const [MediaAksesIntranet, setMediaAksesIntranet] = useState(false);
+
   return (
     <LayoutAdmin>
       <HeaderContent
@@ -1752,6 +1765,7 @@ function RequirementsBRDRegisterView() {
         questionMsg={questionMsgDialog}
         captionMsg={captionDialog}
       />
+
       <form onSubmit={formik.handleSubmit} onReset={formik.handleReset}>
         <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"}>
           <GridItem colSpan={{ base: 12, sm: 12, md: 8, lg: 8 }} w={"full"}>
@@ -1878,7 +1892,110 @@ function RequirementsBRDRegisterView() {
 
                     {activeStep === 0 && (
                       <Flex as={Stack} w={"full"} spacing={5}>
+                        <InputGroupPanel headerTitle={`Memo Pengantar`}>
+                          <Flex w={"full"} alignItems={"center"} minH={"15vh"}>
+                            <FormControl
+                              id={"isHaveMemo"}
+                              isInvalid={
+                                formik.errors.senderDivisionId ? true : false
+                              }
+                              isRequired={true}
+                            >
+                              <InputLayout>
+                                <FormLabel h={"full"} mt={2}>
+                                  Sudah Memiliki Memo Pengantar
+                                </FormLabel>
+                                <Stack spacing={0} h={"full"}>
+                                  <RadioGroup
+                                    onChange={(val) => {
+                                      formik.setFieldValue("isHaveMemo", val);
+                                      if (val == "N") {
+                                        // formik.resetForm();
+                                        // set rest value if the choosed not have memo
+                                        formik.setFieldValue(
+                                          "reffParentId",
+                                          null
+                                        );
+                                        setSelectedDivision(null);
+                                        formik.setFieldValue(
+                                          "senderDivisionId",
+                                          null
+                                        );
+                                        formik.setFieldValue(
+                                          "senderDivisionCode",
+                                          null
+                                        );
+                                        formik.setFieldValue(
+                                          "senderDivisionName",
+                                          null
+                                        );
+                                        formik.setFieldValue("reqNumber", "-");
+                                        formik.setFieldValue(
+                                          "reqNarative",
+                                          "-"
+                                        );
+                                        formik.setFieldValue(
+                                          "reqInititateDate",
+                                          null
+                                        );
+                                        formik.setFieldValue(
+                                          "reqAcceptedDate",
+                                          null
+                                        );
+                                        formik.setFieldValue(
+                                          "isCarryOver",
+                                          "N"
+                                        );
+                                      }
+                                    }}
+                                    value={formik.values.isHaveMemo ?? "Y"}
+                                  >
+                                    <Flex w={"full"} as={HStack} spacing={8}>
+                                      <Radio value={"Y"}>Sudah</Radio>
+                                      <Radio value={"N"}>Belum</Radio>
+                                    </Flex>
+                                  </RadioGroup>
+                                  <FormHelperText as={"i"} fontSize={"xs"}>
+                                    Jika belum memiliki Memo pengantar, ada
+                                    benerapa informasi yang akan inputkan lain
+                                    waktu jika Memo pengantar sudah ada.*
+                                  </FormHelperText>
+                                  <FormErrorMessage>
+                                    {formik.errors.appAccessMedia}
+                                  </FormErrorMessage>
+                                </Stack>
+                              </InputLayout>
+                            </FormControl>
+                          </Flex>
+                        </InputGroupPanel>
+                      </Flex>
+                    )}
+
+                    {activeStep === 1 && (
+                      <Flex as={Stack} w={"full"} spacing={5}>
                         <InputGroupPanel headerTitle={`Informasi Umum`}>
+                          {formik.values.isHaveMemo == "N" && (
+                            <Alert
+                              status="info"
+                              variant="subtle"
+                              flexDirection="column"
+                              alignItems="center"
+                              justifyContent="center"
+                              textAlign="center"
+                              mb={8}
+                              py={8}
+                              rounded={radiusStyle}
+                            >
+                              <AlertIcon boxSize="40px" mr={0} />
+
+                              <AlertDescription maxWidth="sm" mt={4}>
+                                Informasi umum tidak dapat diisi karena memo
+                                pengantar belum ada. Tapi dapat diisi kembali
+                                pada saat project berjalan.
+                              </AlertDescription>
+                            </Alert>
+                          )}
+
                           <Input
                             id="requirementType"
                             name="requirementType"
@@ -1888,47 +2005,98 @@ function RequirementsBRDRegisterView() {
                           />
 
                           <FormControl
-                            id={"senderDivisionId"}
+                            id={"senderDirectorateId"}
                             isInvalid={
-                              formik.errors.senderDivisionId ? true : false
+                              formik.errors.senderDirectorateId ? true : false
                             }
-                            isRequired
+                            isRequired={formik.values.isHaveMemo == "Y"}
                           >
                             <InputLayout>
                               <FormLabel h={"full"} mt={2}>
                                 Divisi Pengirim
                               </FormLabel>
                               <Stack spacing={0}>
-                                {/* <Select
-                                  id={"senderDivisionId"}
-                                  options={OptionDivision}
+                                <Select
+                                  id={`senderDirectorateId`}
+                                  options={OptionDirectorate}
                                   isSearchable={true}
-                                  onMenuOpen={async () => {
-                                    await LoadDataDivision();
-                                  }}
                                   onChange={(e) => {
-                                    e
-                                      ? handleSelectedDivision({
-                                          label: e.label,
-                                          value: e.value,
-                                        })
-                                      : handleUnSelectedDivision();
+                                    if (e) {
+                                      const selected = {
+                                        label: e.label,
+                                        value: e.value,
+                                      };
+                                      handleSelectedCustom(
+                                        selected,
+                                        "senderDirectorateId"
+                                      );
+                                    } else {
+                                      handleUnSelectedCustom(
+                                        "senderDirectorateId"
+                                      );
+                                    }
+                                  }}
+                                  placeholder={"Pilih Directorate Pengirim"}
+                                  isDisabled={formik.values.isHaveMemo == "N"}
+                                  value={OptionDirectorate.find(
+                                    (x) =>
+                                      x.value ==
+                                      formik.values.senderDirectorateId
+                                  )}
+                                />
+                                <FormErrorMessage>
+                                  {formik.errors.senderDivisionId}
+                                </FormErrorMessage>
+                              </Stack>
+                            </InputLayout>
+                          </FormControl>
+
+                          <FormControl
+                            id={"senderDivisionId"}
+                            isInvalid={
+                              formik.errors.senderDivisionId ? true : false
+                            }
+                            isRequired={formik.values.isHaveMemo == "Y"}
+                          >
+                            <InputLayout>
+                              <FormLabel h={"full"} mt={2}>
+                                Divisi Pengirim
+                              </FormLabel>
+                              <Stack spacing={0}>
+                                <Select
+                                  id={`senderDivisionId`}
+                                  options={OptionDivision}
+                                  onMenuOpen={async () => {
+                                    setOptionDivision([]);
+                                    await LoadDataDivisionCustom(
+                                      formik.values.senderDirectorateId || ""
+                                    );
+                                  }}
+                                  isSearchable={true}
+                                  onChange={(e) => {
+                                    if (e) {
+                                      const selected = {
+                                        label: e.label,
+                                        value: e.value,
+                                      };
+
+                                      handleSelectedCustom(
+                                        selected,
+                                        "senderDivisionId"
+                                      );
+                                      setSelectedDivisionSender(selected);
+                                      setSelectedDivision(selected);
+                                    } else {
+                                      handleUnSelectedCustom(
+                                        "senderDivisionId"
+                                      );
+                                      setSelectedDivisionSender(null);
+                                      setSelectedDivision(null);
+                                    }
                                   }}
                                   placeholder={"Pilih Divisi Pengirim"}
-                                  isLoading={
-                                    IsLoadingProcess || IsLoadingDivisionSelect
-                                  }
-                                  value={SelectedDivision}
-                                /> */}
-                                <InputSelectOptions
-                                  Id={"senderDivisionId"}
-                                  OptionData={OptionDivision}
-                                  SelectedData={SelectedDivision}
-                                  handleSelectedData={handleSelectedDivision}
-                                  handleUnSelectedData={
-                                    handleUnSelectedDivision
-                                  }
-                                  placeholder={"Pilih Divisi Pengirim"}
+                                  isDisabled={formik.values.isHaveMemo == "N"}
+                                  value={SelectedDivisionSender}
                                 />
                                 <FormErrorMessage>
                                   {formik.errors.senderDivisionId}
@@ -1940,7 +2108,7 @@ function RequirementsBRDRegisterView() {
                           <FormControl
                             id="reqNumber"
                             isInvalid={formik.errors.reqNumber ? true : false}
-                            isRequired
+                            isRequired={formik.values.isHaveMemo == "Y"}
                           >
                             <InputLayout>
                               <FormLabel h={"full"} mt={2}>
@@ -1959,7 +2127,10 @@ function RequirementsBRDRegisterView() {
                                   placeholder={`0000/XXX-XXX/X/YYYY`}
                                   minLength={3}
                                   maxLength={22}
-                                  isDisabled={ActionLoading}
+                                  isDisabled={
+                                    ActionLoading ||
+                                    formik.values.isHaveMemo == "N"
+                                  }
                                 />
                                 <FormErrorMessage>
                                   {formik.errors.reqNumber}
@@ -1971,7 +2142,7 @@ function RequirementsBRDRegisterView() {
                           <FormControl
                             id="reqNarative"
                             isInvalid={formik.errors.reqNarative ? true : false}
-                            isRequired
+                            isRequired={formik.values.isHaveMemo == "Y"}
                           >
                             <InputLayout>
                               <FormLabel h={"full"} mt={2}>
@@ -1985,7 +2156,10 @@ function RequirementsBRDRegisterView() {
                                   defaultValue={formik.values.reqNarative ?? ""}
                                   placeholder={`Perlihal`}
                                   maxLength={300}
-                                  isDisabled={ActionLoading}
+                                  isDisabled={
+                                    ActionLoading ||
+                                    formik.values.isHaveMemo == "N"
+                                  }
                                 />
                                 <FormErrorMessage>
                                   {formik.errors.reqNumber}
@@ -1999,7 +2173,7 @@ function RequirementsBRDRegisterView() {
                             isInvalid={
                               formik.errors.reqInititateDate ? true : false
                             }
-                            isRequired
+                            isRequired={formik.values.isHaveMemo == "Y"}
                           >
                             <InputLayout>
                               <FormLabel h={"full"} mt={2}>
@@ -2012,7 +2186,10 @@ function RequirementsBRDRegisterView() {
                                   type="date"
                                   onChange={formik.handleChange}
                                   value={formik.values.reqInititateDate ?? ""}
-                                  isDisabled={ActionLoading}
+                                  isDisabled={
+                                    ActionLoading ||
+                                    formik.values.isHaveMemo == "N"
+                                  }
                                 />
                                 <FormErrorMessage>
                                   {formik.errors.reqInititateDate}
@@ -2026,7 +2203,7 @@ function RequirementsBRDRegisterView() {
                             isInvalid={
                               formik.errors.reqAcceptedDate ? true : false
                             }
-                            isRequired
+                            isRequired={formik.values.isHaveMemo == "Y"}
                           >
                             <InputLayout>
                               <FormLabel h={"full"} mt={2}>
@@ -2039,7 +2216,10 @@ function RequirementsBRDRegisterView() {
                                   type="date"
                                   onChange={formik.handleChange}
                                   value={formik.values.reqAcceptedDate ?? ""}
-                                  isDisabled={ActionLoading}
+                                  isDisabled={
+                                    ActionLoading ||
+                                    formik.values.isHaveMemo == "N"
+                                  }
                                 />
                                 <FormErrorMessage>
                                   {formik.errors.reqAcceptedDate}
@@ -2088,7 +2268,7 @@ function RequirementsBRDRegisterView() {
                           <FormControl
                             id="isCarryOver"
                             isInvalid={formik.errors.isCarryOver ? true : false}
-                            isRequired
+                            isRequired={formik.values.isHaveMemo == "Y"}
                           >
                             <InputLayout>
                               <FormLabel h={"full"} mt={2} as={"i"}>
@@ -2113,7 +2293,10 @@ function RequirementsBRDRegisterView() {
                                       e.target.checked ? "Y" : "N"
                                     );
                                   }}
-                                  isDisabled={ActionLoading}
+                                  isDisabled={
+                                    ActionLoading ||
+                                    formik.values.isHaveMemo == "N"
+                                  }
                                 />
                                 <FormErrorMessage>
                                   {formik.errors.isCarryOver}
@@ -2125,7 +2308,7 @@ function RequirementsBRDRegisterView() {
                       </Flex>
                     )}
 
-                    {activeStep === 1 && (
+                    {activeStep === 2 && (
                       <Flex as={Stack} w={"full"} spacing={5}>
                         <InputGroupPanel
                           headerTitle={`Penugasan Personil ${TYPE_REQ}`}
@@ -2567,6 +2750,52 @@ function RequirementsBRDRegisterView() {
                           </FormControl>
 
                           <FormControl
+                            id={"userPicDirectorateId"}
+                            isInvalid={
+                              formik.errors.userPicDirectorateId ? true : false
+                            }
+                            isRequired
+                          >
+                            <InputLayout>
+                              <FormLabel h={"full"} mt={2}>
+                                Direktorat PIC
+                              </FormLabel>
+                              <Stack spacing={0}>
+                                <Select
+                                  id={`senderDirectorateId`}
+                                  options={OptionDirectorate}
+                                  isSearchable={true}
+                                  onChange={(e) => {
+                                    if (e) {
+                                      const selected = {
+                                        label: e.label,
+                                        value: e.value,
+                                      };
+                                      handleSelectedCustom(
+                                        selected,
+                                        "userPicDirectorateId"
+                                      );
+                                    } else {
+                                      handleUnSelectedCustom(
+                                        "userPicDirectorateId"
+                                      );
+                                    }
+                                  }}
+                                  placeholder={"Pilih Directorate PIC"}
+                                  value={OptionDirectorate.find(
+                                    (x) =>
+                                      x.value ==
+                                      formik.values.userPicDirectorateId
+                                  )}
+                                />
+                                <FormErrorMessage>
+                                  {formik.errors.senderDivisionId}
+                                </FormErrorMessage>
+                              </Stack>
+                            </InputLayout>
+                          </FormControl>
+
+                          <FormControl
                             id={"userPicDivisionId"}
                             isInvalid={
                               formik.errors.userPicDivisionId ? true : false
@@ -2575,41 +2804,42 @@ function RequirementsBRDRegisterView() {
                           >
                             <InputLayout>
                               <FormLabel h={"full"} mt={2}>
-                                Divisi
+                                Divisi PIC
                               </FormLabel>
                               <Stack spacing={0}>
-                                {/* <Select
-                                  id={"userPicDivisionId"}
+                                <Select
+                                  id={`userPicDivisionId`}
                                   options={OptionDivision}
                                   isSearchable={true}
                                   onMenuOpen={async () => {
-                                    await LoadDataDivision();
+                                    setOptionDivision([]);
+                                    await LoadDataDivisionCustom(
+                                      formik.values.userPicDirectorateId || ""
+                                    );
                                   }}
                                   onChange={(e) => {
-                                    e
-                                      ? handleSelectedDivisionUserPIC({
-                                          label: e.label,
-                                          value: e.value,
-                                        })
-                                      : handleUnSelectedDivisionUserPIC();
+                                    if (e) {
+                                      const selected = {
+                                        label: e.label,
+                                        value: e.value,
+                                      };
+                                      handleSelectedCustom(
+                                        selected,
+                                        "userPicDivisionId"
+                                      );
+                                      setSelectedDivisionPIC(selected);
+                                    } else {
+                                      handleUnSelectedCustom(
+                                        "userPicDivisionId"
+                                      );
+                                      setSelectedDivisionPIC(null);
+                                    }
                                   }}
-                                  placeholder={"Pilih Divisi User PIC"}
+                                  placeholder={"Pilih Divisi PIC"}
                                   isLoading={
                                     IsLoadingProcess || IsLoadingDivisionSelect
                                   }
-                                  value={SelectedDivisionUserPIC}
-                                /> */}
-                                <InputSelectOptions
-                                  Id={"userPicDivisionId"}
-                                  OptionData={OptionDivision}
-                                  SelectedData={SelectedDivisionUserPIC}
-                                  handleSelectedData={
-                                    handleSelectedDivisionUserPIC
-                                  }
-                                  handleUnSelectedData={
-                                    handleUnSelectedDivisionUserPIC
-                                  }
-                                  placeholder={"Pilih Divisi User PIC"}
+                                  value={SelectedDivisionPIC}
                                 />
                                 <FormErrorMessage>
                                   {formik.errors.userPicDivisionId}
@@ -2623,46 +2853,44 @@ function RequirementsBRDRegisterView() {
                             isInvalid={
                               formik.errors.userPicGroupId ? true : false
                             }
-                            isRequired
                           >
                             <InputLayout>
                               <FormLabel h={"full"} mt={2}>
-                                Grup
+                                Grup PIC
                               </FormLabel>
                               <Stack spacing={0}>
-                                {/* <Select
-                                  id={"userPicGroupId"}
+                                <Select
+                                  id={`userPicGroupId`}
                                   options={OptionGroupDivision}
                                   isSearchable={true}
                                   onMenuOpen={async () => {
-                                    await LoadDataDivisionGroup();
+                                    setOptionGroupDivision([]);
+                                    await LoadDataGroupOrgCustom(
+                                      formik.values.userPicDivisionId || ""
+                                    );
                                   }}
                                   onChange={(e) => {
-                                    e
-                                      ? handleSelectedGroupDivision({
-                                          label: e.label,
-                                          value: e.value,
-                                        })
-                                      : handleUnSelectedGroupDivision();
+                                    if (e) {
+                                      const selected = {
+                                        label: e.label,
+                                        value: e.value,
+                                      };
+                                      handleSelectedCustom(
+                                        selected,
+                                        "userPicGroupId"
+                                      );
+                                      setSelectedGroupOrgPIC(selected);
+                                    } else {
+                                      handleUnSelectedCustom("userPicGroupId");
+                                      setSelectedGroupOrgPIC(null);
+                                    }
                                   }}
-                                  placeholder={"Pilih Grup User PIC"}
+                                  placeholder={"Pilih Divisi PIC"}
                                   isLoading={
                                     IsLoadingProcess ||
                                     IsLoadingGroupDivisionSelect
                                   }
-                                  value={SelectedGroupDivision}
-                                /> */}
-                                <InputSelectOptions
-                                  Id={"userPicGroupId"}
-                                  OptionData={OptionGroupDivision}
-                                  SelectedData={SelectedGroupDivision}
-                                  handleSelectedData={
-                                    handleSelectedGroupDivision
-                                  }
-                                  handleUnSelectedData={
-                                    handleUnSelectedGroupDivision
-                                  }
-                                  placeholder={"Pilih Grup User PIC"}
+                                  value={SelectedGroupOrgPIC}
                                 />
                                 <FormErrorMessage>
                                   {formik.errors.userPicGroupId}
@@ -2674,7 +2902,7 @@ function RequirementsBRDRegisterView() {
                       </Flex>
                     )}
 
-                    {activeStep === 2 && (
+                    {activeStep === 3 && (
                       <Flex as={Stack} w={"full"} spacing={5}>
                         <InputGroupPanel headerTitle={`Program Kerja User`}>
                           <FormControl>
@@ -2698,7 +2926,7 @@ function RequirementsBRDRegisterView() {
                           </FormControl>
                           {WorkProgramExt === "1" && (
                             <Flex w={"full"} as={Stack}>
-                              {internalWorkPrograms.map((item, i) => {
+                              {internalWorkPrograms.map((item) => {
                                 const index = item.originalIndex;
                                 const leftover =
                                   formik.values.workPrograms[index]
@@ -2714,6 +2942,7 @@ function RequirementsBRDRegisterView() {
                                     : colorMode === "light"
                                     ? "black"
                                     : "white";
+
                                 return (
                                   <Flex w={"full"} as={Stack} key={index}>
                                     <Divider key={index} />
@@ -2736,6 +2965,72 @@ function RequirementsBRDRegisterView() {
                                     </Flex>
 
                                     <FormControl
+                                      id={`workProgramDirectorate-${index}`}
+                                      isInvalid={
+                                        typeof formik.errors.workPrograms?.[
+                                          index
+                                        ] === "object" &&
+                                        formik.errors.workPrograms?.[index]
+                                          ?.divisionId
+                                          ? true
+                                          : false
+                                      }
+                                      isRequired
+                                    >
+                                      <InputLayout>
+                                        <FormLabel h={"full"} mt={2}>
+                                          Direktorat
+                                        </FormLabel>
+                                        <Stack spacing={0}>
+                                          {/* DIRECTORATE */}
+                                          <Select
+                                            id={`workProgramDirectorate-${index}`}
+                                            options={OptionDirectorate}
+                                            isSearchable={true}
+                                            onChange={(e) => {
+                                              if (e) {
+                                                const selected = {
+                                                  label: e.label,
+                                                  value: e.value,
+                                                };
+
+                                                handleSelectedCustom(
+                                                  selected,
+                                                  `workPrograms[${index}].directorateId`
+                                                );
+                                              } else {
+                                                handleUnSelectedCustom(
+                                                  `workPrograms[${index}].directorateId`
+                                                );
+                                              }
+                                            }}
+                                            placeholder={"Pilih Directorate"}
+                                            isLoading={
+                                              IsLoadingProcess ||
+                                              IsLoadingDirectorateSelect
+                                            }
+                                            value={OptionDirectorate.find(
+                                              (x) =>
+                                                x.value ==
+                                                formik.values.workPrograms[
+                                                  index
+                                                ].directorateId
+                                            )}
+                                          />
+
+                                          <FormErrorMessage>
+                                            {typeof formik.errors
+                                              .workPrograms?.[index] ===
+                                              "object" &&
+                                              formik.errors.workPrograms?.[
+                                                index
+                                              ]?.directorateId}
+                                          </FormErrorMessage>
+                                        </Stack>
+                                      </InputLayout>
+                                    </FormControl>
+
+                                    <FormControl
                                       id={`workProgramDivision-${index}`}
                                       isInvalid={
                                         typeof formik.errors.workPrograms?.[
@@ -2753,39 +3048,153 @@ function RequirementsBRDRegisterView() {
                                           Divisi
                                         </FormLabel>
                                         <Stack spacing={0}>
+                                          {/* DIVISION */}
                                           <Select
                                             id={`workProgramDivision-${index}`}
                                             options={OptionDivision}
                                             isSearchable={true}
                                             onMenuOpen={async () => {
-                                              await LoadDataDivision();
+                                              setOptionDivision([]);
+                                              await LoadDataDivisionCustom(
+                                                formik.values.workPrograms[
+                                                  index
+                                                ].directorateId || ""
+                                              );
                                             }}
                                             onChange={(e) => {
-                                              e
-                                                ? handleSelectedDivisionCustom(
+                                              if (e) {
+                                                const selected = {
+                                                  label: e.label,
+                                                  value: e.value,
+                                                };
+
+                                                handleSelectedCustom(
+                                                  selected,
+                                                  `workPrograms[${index}].divisionId`
+                                                );
+                                                setSelectedDivisionWPExternal(
+                                                  (prev) => [
+                                                    ...prev,
                                                     {
-                                                      label: e.label,
-                                                      value: e.value,
+                                                      indexData: index,
+                                                      OptionData: selected,
                                                     },
-                                                    `workPrograms[${index}].divisionId`
-                                                  )
-                                                : handleUnSelectedDivisionCustom(
-                                                    `workPrograms[${index}].divisionId`
-                                                  );
+                                                  ]
+                                                );
+                                              } else {
+                                                handleUnSelectedCustom(
+                                                  `workPrograms[${index}].divisionId`
+                                                );
+                                                setSelectedDivisionWPExternal(
+                                                  (prev) =>
+                                                    prev.filter(
+                                                      (item) =>
+                                                        item.indexData !== index
+                                                    )
+                                                );
+                                              }
                                             }}
                                             placeholder={"Pilih Divisi"}
                                             isLoading={
                                               IsLoadingProcess ||
                                               IsLoadingDivisionSelect
                                             }
-                                            value={OptionDivision.find(
-                                              (x) =>
-                                                x.value ==
+                                            value={
+                                              SelectedDivisionWPExternal.find(
+                                                (x) => x.indexData == index
+                                              )?.OptionData
+                                            }
+                                          />
+
+                                          <FormErrorMessage>
+                                            {typeof formik.errors
+                                              .workPrograms?.[index] ===
+                                              "object" &&
+                                              formik.errors.workPrograms?.[
+                                                index
+                                              ]?.divisionId}
+                                          </FormErrorMessage>
+                                        </Stack>
+                                      </InputLayout>
+                                    </FormControl>
+
+                                    <FormControl
+                                      id={`workProgramGroupDivision-${index}`}
+                                      isInvalid={
+                                        typeof formik.errors.workPrograms?.[
+                                          index
+                                        ] === "object" &&
+                                        formik.errors.workPrograms?.[index]
+                                          ?.groupId
+                                          ? true
+                                          : false
+                                      }
+                                    >
+                                      <InputLayout>
+                                        <FormLabel h={"full"} mt={2}>
+                                          Group
+                                        </FormLabel>
+                                        <Stack spacing={0}>
+                                          {/* GROUP */}
+                                          <Select
+                                            id={`workProgramGroupDivision-${index}`}
+                                            options={OptionGroupDivision}
+                                            isSearchable={true}
+                                            onMenuOpen={async () => {
+                                              setOptionGroupDivision([]);
+                                              await LoadDataGroupOrgCustom(
                                                 formik.values.workPrograms[
                                                   index
-                                                ].divisionId
-                                            )}
+                                                ].divisionId || ""
+                                              );
+                                            }}
+                                            onChange={(e) => {
+                                              if (e) {
+                                                const selected = {
+                                                  label: e.label,
+                                                  value: e.value,
+                                                };
+
+                                                handleSelectedCustom(
+                                                  selected,
+                                                  `workPrograms[${index}].groupId`
+                                                );
+                                                setSelectedGroupWPExternal(
+                                                  (prev) => [
+                                                    ...prev,
+                                                    {
+                                                      indexData: index,
+                                                      OptionData: selected,
+                                                    },
+                                                  ]
+                                                );
+                                              } else {
+                                                handleUnSelectedCustom(
+                                                  `workPrograms[${index}].groupId`
+                                                );
+                                                setSelectedGroupWPExternal(
+                                                  (prev) =>
+                                                    prev.filter(
+                                                      (item) =>
+                                                        item.indexData !== index
+                                                    )
+                                                );
+                                              }
+                                            }}
+                                            placeholder={
+                                              "Pilih Group (Opsional)"
+                                            }
+                                            isLoading={
+                                              IsLoadingProcess ||
+                                              IsLoadingGroupDivisionSelect
+                                            }
+                                            value={
+                                              SelectedGroupWPExternal.find(
+                                                (x) => x.indexData == index
+                                              )?.OptionData
+                                            }
                                           />
+
                                           <FormErrorMessage>
                                             {typeof formik.errors
                                               .workPrograms?.[index] ===
@@ -3188,7 +3597,7 @@ function RequirementsBRDRegisterView() {
                           </FormControl>
                           {WorkProgramInt === "1" && (
                             <Flex w={"full"} as={Stack}>
-                              {externalWorkPrograms.map((item, i) => {
+                              {externalWorkPrograms.map((item) => {
                                 const index = item.originalIndex;
                                 const leftover =
                                   formik.values.workPrograms[index]
@@ -3226,6 +3635,77 @@ function RequirementsBRDRegisterView() {
                                     </Flex>
 
                                     <FormControl
+                                      id={`workProgramDirectorateIT-${index}`}
+                                      isInvalid={
+                                        typeof formik.errors.workPrograms?.[
+                                          index
+                                        ] === "object" &&
+                                        formik.errors.workPrograms?.[index]
+                                          ?.directorateId
+                                          ? true
+                                          : false
+                                      }
+                                      isRequired
+                                    >
+                                      <InputLayout>
+                                        <FormLabel h={"full"} mt={2}>
+                                          Direktorat
+                                        </FormLabel>
+                                        <Stack spacing={0}>
+                                          {/* DIRECTORATE */}
+                                          <Select
+                                            id={`workProgramDirectorateIT-${index}`}
+                                            options={OptionDirectorate}
+                                            // isSearchable={true}
+                                            // onChange={(e) => {
+                                            //   if (e) {
+                                            //     const selected = {
+                                            //       label: e.label,
+                                            //       value: e.value,
+                                            //     };
+
+                                            //     handleSelectedCustom(
+                                            //       selected,
+                                            //       `workPrograms[${index}].directorateId`
+                                            //     );
+                                            //     setSelectedDirectorate(
+                                            //       selected
+                                            //     );
+                                            //   } else {
+                                            //     handleUnSelectedCustom(
+                                            //       `workPrograms[${index}].directorateId`
+                                            //     );
+                                            //     setSelectedDirectorate(null);
+                                            //   }
+                                            // }}
+                                            isDisabled={true}
+                                            placeholder={"Pilih Directorate"}
+                                            isLoading={
+                                              IsLoadingProcess ||
+                                              IsLoadingDirectorateSelect
+                                            }
+                                            value={OptionDirectorate.find(
+                                              (x) =>
+                                                x.value ==
+                                                formik.values.workPrograms[
+                                                  index
+                                                ].directorateId
+                                            )}
+                                          />
+
+                                          <FormErrorMessage>
+                                            {typeof formik.errors
+                                              .workPrograms?.[index] ===
+                                              "object" &&
+                                              formik.errors.workPrograms?.[
+                                                index
+                                              ]?.directorateId}
+                                          </FormErrorMessage>
+                                        </Stack>
+                                      </InputLayout>
+                                    </FormControl>
+
+                                    <FormControl
                                       id={`workProgramDivisionIT-${index}`}
                                       isInvalid={
                                         typeof formik.errors.workPrograms?.[
@@ -3243,40 +3723,155 @@ function RequirementsBRDRegisterView() {
                                           Divisi
                                         </FormLabel>
                                         <Stack spacing={0}>
+                                          {/* DIVISION */}
                                           <Select
                                             id={`workProgramDivisionIT-${index}`}
                                             options={OptionDivision}
                                             isSearchable={true}
+                                            // onMenuOpen={async () => {
+                                            //   setOptionDivision([]);
+                                            //   await LoadDataDivisionCustom(
+                                            //     formik.values.workPrograms[
+                                            //       index
+                                            //     ].directorateId || ""
+                                            //   );
+                                            // }}
+                                            // onChange={(e) => {
+                                            //   if (e) {
+                                            //     const selected = {
+                                            //       label: e.label,
+                                            //       value: e.value,
+                                            //     };
+
+                                            //     handleSelectedCustom(
+                                            //       selected,
+                                            //       `workPrograms[${index}].divisionId`
+                                            //     );
+                                            //     setSelectedDivisionWPInternal(
+                                            //       (prev) => [
+                                            //         ...prev,
+                                            //         {
+                                            //           indexData: index,
+                                            //           OptionData: selected,
+                                            //         },
+                                            //       ]
+                                            //     );
+                                            //   } else {
+                                            //     handleUnSelectedCustom(
+                                            //       `workPrograms[${index}].divisionId`
+                                            //     );
+                                            //     setSelectedDivisionWPInternal(
+                                            //       (prev) =>
+                                            //         prev.filter(
+                                            //           (item) =>
+                                            //             item.indexData !== index
+                                            //         )
+                                            //     );
+                                            //   }
+                                            // }}
+
                                             isDisabled={true}
-                                            onMenuOpen={async () => {
-                                              await LoadDataDivision();
-                                            }}
-                                            onChange={(e) => {
-                                              e
-                                                ? handleSelectedDivisionCustom(
-                                                    {
-                                                      label: e.label,
-                                                      value: e.value,
-                                                    },
-                                                    `workPrograms[${index}].divisionId`
-                                                  )
-                                                : handleUnSelectedDivisionCustom(
-                                                    `workPrograms[${index}].divisionId`
-                                                  );
-                                            }}
                                             placeholder={"Pilih Divisi"}
                                             isLoading={
                                               IsLoadingProcess ||
                                               IsLoadingDivisionSelect
                                             }
-                                            value={OptionDivision.find(
-                                              (x) =>
-                                                x.value ==
+                                            value={
+                                              SelectedDivisionWPInternal.find(
+                                                (x) => x.indexData == index
+                                              )?.OptionData
+                                            }
+                                          />
+
+                                          <FormErrorMessage>
+                                            {typeof formik.errors
+                                              .workPrograms?.[index] ===
+                                              "object" &&
+                                              formik.errors.workPrograms?.[
+                                                index
+                                              ]?.divisionId}
+                                          </FormErrorMessage>
+                                        </Stack>
+                                      </InputLayout>
+                                    </FormControl>
+
+                                    <FormControl
+                                      id={`workProgramGroupDivisionIT-${index}`}
+                                      isInvalid={
+                                        typeof formik.errors.workPrograms?.[
+                                          index
+                                        ] === "object" &&
+                                        formik.errors.workPrograms?.[index]
+                                          ?.groupId
+                                          ? true
+                                          : false
+                                      }
+                                    >
+                                      <InputLayout>
+                                        <FormLabel h={"full"} mt={2}>
+                                          Group
+                                        </FormLabel>
+                                        <Stack spacing={0}>
+                                          {/* GROUP */}
+                                          <Select
+                                            id={`workProgramGroupDivisionIT-${index}`}
+                                            options={OptionGroupDivision}
+                                            isSearchable={true}
+                                            onMenuOpen={async () => {
+                                              setOptionGroupDivision([]);
+                                              await LoadDataGroupOrgCustom(
                                                 formik.values.workPrograms[
                                                   index
-                                                ].divisionId
-                                            )}
+                                                ].divisionId || ""
+                                              );
+                                            }}
+                                            onChange={(e) => {
+                                              if (e) {
+                                                const selected = {
+                                                  label: e.label,
+                                                  value: e.value,
+                                                };
+
+                                                handleSelectedCustom(
+                                                  selected,
+                                                  `workPrograms[${index}].groupId`
+                                                );
+                                                setSelectedGroupWPInternal(
+                                                  (prev) => [
+                                                    ...prev,
+                                                    {
+                                                      indexData: index,
+                                                      OptionData: selected,
+                                                    },
+                                                  ]
+                                                );
+                                              } else {
+                                                handleUnSelectedCustom(
+                                                  `workPrograms[${index}].groupId`
+                                                );
+                                                setSelectedGroupWPInternal(
+                                                  (prev) =>
+                                                    prev.filter(
+                                                      (item) =>
+                                                        item.indexData !== index
+                                                    )
+                                                );
+                                              }
+                                            }}
+                                            placeholder={
+                                              "Pilih Group (Opsional)"
+                                            }
+                                            isLoading={
+                                              IsLoadingProcess ||
+                                              IsLoadingGroupDivisionSelect
+                                            }
+                                            value={
+                                              SelectedGroupWPInternal.find(
+                                                (x) => x.indexData == index
+                                              )?.OptionData
+                                            }
                                           />
+
                                           <FormErrorMessage>
                                             {typeof formik.errors
                                               .workPrograms?.[index] ===
@@ -3660,7 +4255,7 @@ function RequirementsBRDRegisterView() {
                       </Flex>
                     )}
 
-                    {activeStep === 3 && (
+                    {activeStep === 4 && (
                       <Flex as={Stack} w={"full"} spacing={5}>
                         <InputGroupPanel
                           headerTitle={`Ringkasan Ruanglingkup ${TYPE_REQ} | Aspek Bisnis`}
@@ -3802,13 +4397,51 @@ function RequirementsBRDRegisterView() {
                               </InputLayoutFull>
                             </FormControl>
 
-                            <FormControl>
+                            <Divider />
+
+                            <FormControl
+                              id="appTargetUsers"
+                              isInvalid={
+                                formik.errors.appTargetUsers ? true : false
+                              }
+                            >
                               <InputLayout>
+                                <FormLabel h={"full"} mt={2}>
+                                  Target Pengguna
+                                </FormLabel>
+                                <Stack spacing={0} h={"full"}>
+                                  <RadioGroup
+                                    onChange={(val) =>
+                                      formik.setFieldValue(
+                                        "appTargetUsers",
+                                        val
+                                      )
+                                    }
+                                    value={formik.values.appTargetUsers ?? ""}
+                                  >
+                                    <Flex w={"full"} as={HStack}>
+                                      <Radio value={"EXTERNAL"}>
+                                        EXTERNAL (NASABAH)
+                                      </Radio>
+                                      <Radio value={"INTERNAL"}>
+                                        INTERNAL (BANK)
+                                      </Radio>
+                                    </Flex>
+                                  </RadioGroup>
+                                  <FormErrorMessage>
+                                    {formik.errors.appTargetUsers}
+                                  </FormErrorMessage>
+                                </Stack>
+                              </InputLayout>
+                            </FormControl>
+
+                            <FormControl>
+                              <InputLayoutFull>
                                 <FormLabel h={"full"} mt={2}>
                                   Media Akses Aplikasi
                                 </FormLabel>
                                 <Stack spacing={0} h={"full"}>
-                                  <RadioGroup
+                                  {/* <RadioGroup
                                     onChange={(val) =>
                                       formik.setFieldValue(
                                         "appAccessMedia",
@@ -3825,7 +4458,87 @@ function RequirementsBRDRegisterView() {
                                         Interanet (Local Network)
                                       </Radio>
                                     </Flex>
-                                  </RadioGroup>
+                                  </RadioGroup> */}
+                                  <Grid
+                                    templateColumns="repeat(2, 1fr)"
+                                    gap={3}
+                                    w={"full"}
+                                  >
+                                    <GridItem
+                                      colSpan={{
+                                        base: 2,
+                                        sm: 2,
+                                        md: 1,
+                                        lg: 1,
+                                      }}
+                                      w={"full"}
+                                    >
+                                      <Flex w={"full"} as={Stack}>
+                                        <Checkbox
+                                          isChecked={MediaAksesPublic}
+                                          onChange={(e) => {
+                                            setMediaAksesPublic(
+                                              !MediaAksesPublic
+                                            );
+                                            console.log(e);
+                                          }}
+                                        >
+                                          Internet (Publik)
+                                        </Checkbox>
+                                        <Input
+                                          id="appAccessFrontsiteDns"
+                                          name="appAccessFrontsiteDns"
+                                          type="text"
+                                          onChange={formik.handleChange}
+                                          value={
+                                            formik.values
+                                              .appAccessFrontsiteDns ?? ""
+                                          }
+                                          placeholder={`https://`}
+                                          minLength={5}
+                                          maxLength={150}
+                                          isDisabled={!MediaAksesPublic}
+                                        />
+                                      </Flex>
+                                    </GridItem>
+                                    <GridItem
+                                      colSpan={{
+                                        base: 2,
+                                        sm: 2,
+                                        md: 1,
+                                        lg: 1,
+                                      }}
+                                      w={"full"}
+                                    >
+                                      <Flex w={"full"} as={Stack}>
+                                        <Checkbox
+                                          isChecked={MediaAksesIntranet}
+                                          onChange={(e) => {
+                                            setMediaAksesIntranet(
+                                              !MediaAksesIntranet
+                                            );
+                                            console.log(e);
+                                          }}
+                                        >
+                                          Intranet (Untuk BackOffice Bank)
+                                        </Checkbox>
+                                        <Input
+                                          id="appAccessBacksiteIp"
+                                          name="appAccessBacksiteIp"
+                                          type="text"
+                                          onChange={formik.handleChange}
+                                          value={
+                                            formik.values.appAccessBacksiteIp ??
+                                            ""
+                                          }
+                                          placeholder={`http://`}
+                                          minLength={5}
+                                          maxLength={150}
+                                          isDisabled={!MediaAksesIntranet}
+                                        />
+                                      </Flex>
+                                    </GridItem>
+                                  </Grid>
                                   <FormHelperText as={"i"} fontSize={"xs"}>
                                     Pemilihan Kontektivitas Internet wajib
                                     disertai Pentest dan pembelian SSL,
@@ -3836,7 +4549,7 @@ function RequirementsBRDRegisterView() {
                                     {formik.errors.appAccessMedia}
                                   </FormErrorMessage>
                                 </Stack>
-                              </InputLayout>
+                              </InputLayoutFull>
                             </FormControl>
 
                             <FormControl>
@@ -4454,7 +5167,7 @@ function RequirementsBRDRegisterView() {
                       </Flex>
                     )}
 
-                    {activeStep === 4 && (
+                    {activeStep === 5 && (
                       <Flex
                         as={Stack}
                         w={"full"}

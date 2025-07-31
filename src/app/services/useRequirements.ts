@@ -68,16 +68,20 @@ export interface RequirementWorkProgramDataResponse {
 export interface RequirementsResponse {
   // STG 1
   id: string;
+  isHaveMemo: string;
   requirementType: string;
   reqStatus?: string | null;
   nextStep?: string | null;
   reffParentId?: string | null;
-  senderDivisionId: string;
+  senderDirectorateId?: string | null;
+  senderDirectorateCode?: string | null;
+  senderDirectorateName?: string | null;
+  senderDivisionId?: string | null;
   senderDivisionCode?: string | null;
   senderDivisionName?: string | null;
   reqNumber: string;
   reqNarative: string;
-  reqInititateDate: string;
+  reqInititateDate?: string | null;
   reqAcceptedDate?: string | null;
   reqDurationDay: number;
   isCarryOver: string;
@@ -97,6 +101,10 @@ export interface RequirementsResponse {
   userPicName?: string | null;
   userPicContanct?: string | null;
   userPicEmail?: string | null;
+
+  userPicDirectorateId?: string | null;
+  userPicDirectorateCode?: string | null;
+  userPicDirectorateName?: string | null;
   userPicDivisionId?: string | null;
   userPicDivisionCode?: string | null;
   userPicDivisionName?: string | null;
@@ -110,6 +118,13 @@ export interface RequirementsResponse {
   // STG 4 - APP INFORMATION
   appInitialCode?: string | null;
   appInitialName?: string | null;
+
+  appTargetUsers: string;
+  appAccessFrontsiteDns?: string | null;
+  appAccessFrontsiteIp?: string | null;
+  appAccessBacksiteDns?: string | null;
+  appAccessBacksiteIp?: string | null;
+
   backlogFeature?: string | null;
   backlogDescription?: string | null;
   backlogChange?: string | null;
@@ -145,7 +160,9 @@ export interface PICAssignUserPayload {
 }
 
 export interface WorkProgramsPayload {
+  directorateId: string;
   divisionId: string;
+  groupId?: string | null;
   workProgramSource: string; // INTERNAL / EXTERNAL
   workProgramCode?: string | null;
   workProgramName?: string | null;
@@ -165,12 +182,14 @@ export interface ReqBacklogPayload {
 
 export interface RequirementsInsertPayload {
   // STG 1
+  isHaveMemo: string;
   reffParentId?: string | null;
-  senderDivisionId: string;
+  senderDirectorateId?: string | null;
+  senderDivisionId?: string | null;
   requirementType: string;
   reqNumber: string;
   reqNarative: string;
-  reqInititateDate: string;
+  reqInititateDate?: string | null;
   reqAcceptedDate?: string | null;
   isCarryOver: string;
 
@@ -188,6 +207,7 @@ export interface RequirementsInsertPayload {
   userPicName?: string | null;
   userPicContanct?: string | null;
   userPicEmail?: string | null;
+  userPicDirectorateId?: string | null;
   userPicDivisionId?: string | null;
   userPicGroupId?: string | null;
 
@@ -197,6 +217,13 @@ export interface RequirementsInsertPayload {
   // AREA 4
   appInitialCode?: string | null;
   appInitialName?: string | null;
+
+  appTargetUsers: string;
+  appAccessFrontsiteDns?: string | null;
+  appAccessFrontsiteIp?: string | null;
+  appAccessBacksiteDns?: string | null;
+  appAccessBacksiteIp?: string | null;
+
   backlogChange?: string | null;
   appAccessMedia?: string | null;
   appTypes?: string | null;
@@ -239,6 +266,7 @@ export interface BacklogDataResponse {
   impact: string;
   priority: string;
   developmentStatus: string;
+  progressionPercentage: number;
   reffId: string | null;
   createdAt: string | null;
   createdBy: string;

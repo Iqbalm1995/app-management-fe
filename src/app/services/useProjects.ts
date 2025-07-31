@@ -341,6 +341,12 @@ export interface ProjectFeatureUpdatePayload {
   developmentStatus: string | null;
 }
 
+export interface ProjectBacklogProgressionResponse {
+  totalBacklogs: number;
+  totalBacklogsDone: number;
+  progressionBacklog: number;
+}
+
 interface useProjectsServices {
   List: (
     payload: PaggingListPayload,
@@ -505,6 +511,11 @@ interface useProjectsServices {
     id: string,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
+
+  GetProjectBacklogProgression: (
+    projectId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<ProjectBacklogProgressionResponse | null> | null>;
 
   isLoading: boolean;
   error: string | null;
@@ -2135,6 +2146,47 @@ const useProjects = (): useProjectsServices => {
     }
   };
 
+  const GetProjectBacklogProgression = async (
+    projectId: string,
+    token: string
+  ): Promise<ApiGenericResponse<ProjectBacklogProgressionResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Projects/project-backlog-progressions?projectId=${projectId}`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<ProjectBacklogProgressionResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
   return {
     List,
     GetDetailById,
@@ -2176,6 +2228,8 @@ const useProjects = (): useProjectsServices => {
     InsertProjectFeature,
     UpdateProjectFeature,
     DeleteProjectFeature,
+
+    GetProjectBacklogProgression,
 
     isLoading,
     error,

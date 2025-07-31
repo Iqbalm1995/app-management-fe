@@ -97,7 +97,7 @@ import { calculateDurationInDays } from "@/app/helper/MasterHelper";
 import { InputLayoutFullHalf } from "@/app/components/layoutContentBody";
 
 const HeaderDataContent: HeaderContentProps = {
-  titleName: "Detail",
+  titleName: "Project Detail",
   breadCrumb: ["Home", "Project Manager", "Detail"],
 };
 
@@ -221,7 +221,7 @@ function ProjectManagerDetail() {
 
           setDataProject(itemsData);
           setHeaderContentState({
-            titleName: `Project Detail #${itemsData.projectCode}`,
+            titleName: `Project Detail`,
             breadCrumb: ["Home", "Project Manager", itemsData.projectCode],
           });
           setIsLoadingProcess(false);
@@ -571,7 +571,7 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
                 <CardHeader pb={1}>
                   <Flex justifyContent={"space-between"}>
                     <Heading as="h5" size="md">
-                      Summary
+                      Ringkasan
                     </Heading>
                     <Flex as={Wrap} justifyContent={"end"} px={0}>
                       {/* <Button
@@ -609,7 +609,7 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
                 >
                   <Flex w={"full"} as={HStack} justifyContent={"space-between"}>
                     <Heading as="h5" size="md" w={"full"}>
-                      Project Information #{DataProject?.projectCode}
+                      Project Information
                     </Heading>
                     <Flex as={Wrap} justifyContent={"end"} px={0} w={"full"}>
                       <Button

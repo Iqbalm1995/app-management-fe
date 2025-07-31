@@ -27,6 +27,7 @@ import useProjects, {
   ProjectUpdatePICPayload,
   ProjectUserAssignmentResponse,
 } from "@/app/services/useProjects";
+import useTasks, { TasksCountResponse } from "@/app/services/useTasks";
 import useUsers, {
   UsersFullResponse,
   UsersResponse,
@@ -110,12 +111,47 @@ const ProjectSummary = ({ data, refreshActionMain }: ProjectSummaryProps) => {
   // End SetUp auth data on current page
 
   const { ListPIC, UpdatePIC } = useProjects();
+  const { CountTaskByProjectId } = useTasks();
   const { List: ListUsers, GetDetailById: GetUserById } = useUsers();
   const [RefreshData, setRefreshData] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
 
   const [BoardData, setBoardData] = useState<any>(null);
   const [MemberProjects, setMemberProjects] = useState<UsersResponse[]>([]);
+  const [TaskCountProject, setTaskCountProject] = useState<TasksCountResponse>({
+    all: 0,
+    toDo: 0,
+    inProgress: 0,
+    inReview: 0,
+    done: 0,
+    archived: 0,
+  });
+
+  const GetTaskCountProject = async (projectId: string) => {
+    const requestData = await CountTaskByProjectId(projectId, tokenData);
+    const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+
+    if (isErrorResponse || !requestData) {
+      showToast({
+        description: requestData?.message || RES_GENERIC_ERROR_MSG,
+        statusToast: "error",
+      });
+      return;
+    } else {
+      console.log(requestData);
+      if (requestData.data == null) {
+        showToast({
+          description: "Data return error",
+          statusToast: "error",
+        });
+        return;
+      }
+
+      const itemsData: TasksCountResponse =
+        requestData.data as TasksCountResponse;
+      setTaskCountProject(itemsData);
+    }
+  };
 
   const RefreshAction = () => {
     setMemberProjects([]);
@@ -129,6 +165,12 @@ const ProjectSummary = ({ data, refreshActionMain }: ProjectSummaryProps) => {
       if (memberDataProject.length > 0) {
         const newMembers = memberDataProject.map((mp) => mp.userData);
         setMemberProjects((prev) => [...prev, ...newMembers]);
+      }
+      if (data.id) {
+        const FetchDatas = async () => {
+          await GetTaskCountProject(data.id);
+        };
+        FetchDatas();
       }
     }
   }, [DataAuth, data, RefreshData]);
@@ -384,13 +426,13 @@ const ProjectSummary = ({ data, refreshActionMain }: ProjectSummaryProps) => {
                 px={5}
                 mt={-4}
               >
-                <Flex as={Stack} spacing={0}>
+                <Flex as={Stack} spacing={1.5} my={2}>
                   <Text
                     fontSize={"small"}
                     fontWeight={500}
                     textAlign={"center"}
                   >
-                    Task Created
+                    Semua Task
                   </Text>
                   <Text
                     lineHeight={0.9}
@@ -398,16 +440,16 @@ const ProjectSummary = ({ data, refreshActionMain }: ProjectSummaryProps) => {
                     fontWeight={600}
                     textAlign={"center"}
                   >
-                    112
+                    {TaskCountProject.all}
                   </Text>
                 </Flex>
-                <Flex as={Stack} spacing={0}>
+                <Flex as={Stack} spacing={1.5} my={2}>
                   <Text
                     fontSize={"small"}
                     fontWeight={500}
                     textAlign={"center"}
                   >
-                    Task OnProgress
+                    Task In Progress
                   </Text>
                   <Text
                     lineHeight={0.9}
@@ -415,10 +457,27 @@ const ProjectSummary = ({ data, refreshActionMain }: ProjectSummaryProps) => {
                     fontWeight={600}
                     textAlign={"center"}
                   >
-                    4
+                    {TaskCountProject.inProgress}
                   </Text>
                 </Flex>
-                <Flex as={Stack} spacing={0}>
+                <Flex as={Stack} spacing={1.5} my={2} display={"none"}>
+                  <Text
+                    fontSize={"small"}
+                    fontWeight={500}
+                    textAlign={"center"}
+                  >
+                    Task In Review
+                  </Text>
+                  <Text
+                    lineHeight={0.9}
+                    fontSize={"2xl"}
+                    fontWeight={600}
+                    textAlign={"center"}
+                  >
+                    {TaskCountProject.inReview}
+                  </Text>
+                </Flex>
+                <Flex as={Stack} spacing={1.5} my={2}>
                   <Text
                     fontSize={"small"}
                     fontWeight={500}
@@ -432,7 +491,7 @@ const ProjectSummary = ({ data, refreshActionMain }: ProjectSummaryProps) => {
                     fontWeight={600}
                     textAlign={"center"}
                   >
-                    53
+                    {TaskCountProject.done}
                   </Text>
                 </Flex>
               </Flex>

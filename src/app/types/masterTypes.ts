@@ -27,6 +27,11 @@ export interface ResSizePaging {
   totalItems: number;
 }
 
+export interface OptionDivisionDynamic {
+  indexData: number;
+  OptionData: OptionListProps;
+}
+
 export interface PaggingListPayload {
   search: string;
   limit: number;
