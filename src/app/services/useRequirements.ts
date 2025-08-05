@@ -274,6 +274,9 @@ export interface BacklogDataResponse {
   developmentStatus: string;
   progressionPercentage: number;
   reffId: string | null;
+  version: string;
+  isLive: string;
+  appsId: string;
   createdAt: string | null;
   createdBy: string;
   updatedAt: string | null;
