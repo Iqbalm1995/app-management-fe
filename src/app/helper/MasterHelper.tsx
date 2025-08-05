@@ -14,6 +14,7 @@ import {
   ModalCloseButton,
   ModalContent,
   ModalOverlay,
+  Stack,
   Text,
   useColorMode,
   useDisclosure,
@@ -1216,5 +1217,37 @@ export const DeadlineStatusTag: React.FC<DeadlineStatusTagProps> = ({
         {label}
       </Text>
     </HStack>
+  );
+};
+
+export const NoMemoAlertTextCenter = () => {
+  return (
+    <Flex
+      as={Stack}
+      w="full"
+      spacing={2}
+      color={"red.500"}
+      justifyContent="center" // center horizontally
+      alignItems="center" // center vertically (useful for icon + text alignment)
+    >
+      <FiAlertTriangle />
+      <Text>Belum ada Memo Pengantar</Text>
+    </Flex>
+  );
+};
+
+export const NoMemoAlertText = () => {
+  return (
+    <Flex
+      as={HStack}
+      px={2}
+      w="full"
+      spacing={2}
+      color={"red.500"}
+      justifyContent="start" // center horizontally
+    >
+      <FiAlertTriangle />
+      <Text>Belum ada Memo Pengantar</Text>
+    </Flex>
   );
 };

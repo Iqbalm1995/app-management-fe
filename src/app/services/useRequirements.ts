@@ -58,9 +58,15 @@ export interface RequirementWorkProgramDataResponse {
   workProgramBudget: number;
   workProgramReal: number;
   workProgramLeftovers: number;
+  directorateId?: string | null;
+  directorateCode?: string | null;
+  directorateName?: string | null;
   divisionId: string;
   divisionCode: string;
   divisionName: string;
+  groupId?: string | null;
+  groupCode?: string | null;
+  groupName?: string | null;
   createdAt: Date;
   createdBy: string;
 }

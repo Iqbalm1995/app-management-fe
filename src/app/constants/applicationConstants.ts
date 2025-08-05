@@ -1,4 +1,8 @@
-import { OptionData, OptionListProps } from "../types/masterTypes";
+import {
+  OptionData,
+  OptionDataWithIndex,
+  OptionListProps,
+} from "../types/masterTypes";
 
 // CONST DATA =------------------------------------------------------------------
 
@@ -201,6 +205,50 @@ export const REQ_STATUS_LIST: string[] = [
   "NEEDS REVIEW",
   "IN PROGRESS REVIEW",
   "TEMPORARY APPROVED",
+  "APPROVED",
+  "ON HOLD",
+  "CANCELED",
+];
+
+export const PROJECT_STATUS_LIST: string[] = [
+  "NOT STARTED",
+  "INITIATE",
+  "ON DEVELOPMENT",
+  "READY FOR TESTING",
+  "WAITING APPROVAL",
+  "UNIT TEST IN PROGRESS",
+  "SIT IN PROGRESS",
+  "UAT IN PROGRESS",
+  "READY FOR DEPLOYMENT",
+  "COMPLETED",
+  "ON HOLD",
+  "CANCELED",
+];
+
+export const PROJECT_STATUS_LIST_INDEX: OptionDataWithIndex[] = [
+  "NOT STARTED",
+  "INITIATE",
+  "ON DEVELOPMENT",
+  "READY FOR TESTING",
+  "WAITING APPROVAL",
+  "UNIT TEST IN PROGRESS",
+  "SIT IN PROGRESS",
+  "UAT IN PROGRESS",
+  "READY FOR DEPLOYMENT",
+  "COMPLETED",
+  "ON HOLD",
+  "CANCELED",
+].map((status, idx) => ({
+  value: status,
+  label: status,
+  index: idx,
+}));
+
+export const DELIVERABLES_STATUS_LIST: string[] = [
+  "NOT STARTED", // NOT STARTED
+  "IN PROGRESS",
+  "UNDER REVIEW",
+  "WAITING APPROVAL", // ????
   "APPROVED",
   "ON HOLD",
   "CANCELED",

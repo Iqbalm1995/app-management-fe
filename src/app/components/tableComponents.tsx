@@ -834,6 +834,102 @@ export function TableComponent({ table }: any) {
   );
 }
 
+export function TableComponentHeadlessGrid({ table }: any) {
+  return (
+    <Flex w={"full"} my={4}>
+      <Grid templateColumns="repeat(3, 1fr)" gap={3} w={"full"}>
+        {table.getRowModel().rows.length > 0 ? (
+          table.getRowModel().rows.map((row: any, index: any) => {
+            return (
+              <GridItem
+                colSpan={{ base: 3, sm: 3, md: 1, lg: 1 }}
+                w={"full"}
+                key={row.id}
+              >
+                {row.getVisibleCells().map((cell: any) => {
+                  return (
+                    <Box key={cell.id} w={"full"}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </Box>
+                  );
+                })}
+              </GridItem>
+            );
+          })
+        ) : (
+          <GridItem colSpan={{ base: 3, sm: 3, md: 3, lg: 3 }} w={"full"}>
+            <Flex justifyContent={"center"} alignItems={"center"} minH={"30vh"}>
+              Belum ada data
+            </Flex>
+          </GridItem>
+        )}
+      </Grid>
+      {/* <Table
+        variant={"simple"}
+        // colorScheme="secondary"
+        size={"sm"}
+        border={0}
+      >
+        <Tbody border={0}>
+          {table.getRowModel().rows.length > 0 ? (
+            table.getRowModel().rows.map((row: any, index: any) => {
+              return (
+                <Tr key={row.id} border={0}>
+                  {row.getVisibleCells().map((cell: any) => {
+                    return (
+                      <Td key={cell.id} border={0}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </Td>
+                    );
+                  })}
+                </Tr>
+              );
+            })
+          ) : (
+            <Tr>
+              <Td colSpan={table.options.columns.length + 1}>
+                <Flex
+                  justifyContent={"center"}
+                  alignItems={"center"}
+                  minH={"30vh"}
+                >
+                  Belum ada data
+                </Flex>
+              </Td>
+            </Tr>
+          )}
+        </Tbody>
+      </Table> */}
+    </Flex>
+  );
+}
+
+export function TableComponentFullHeadlessGrid({ table }: any) {
+  return (
+    <>
+      <Grid
+        templateColumns="repeat(2, 1fr)"
+        gap={5}
+        px={3}
+        // bg={"red"}
+        w={"full"}
+      ></Grid>
+      <Box pb={8} w={"full"}>
+        <TableComponentHeadlessGrid table={table} />
+        <Flex w={"full"} px={5}>
+          <ControlTable table={table} />
+        </Flex>
+      </Box>
+    </>
+  );
+}
+
 export function TableComponentHeadless({ table }: any) {
   return (
     <Flex overflowX={"auto"}>

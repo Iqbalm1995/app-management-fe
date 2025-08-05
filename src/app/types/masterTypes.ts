@@ -3,6 +3,12 @@ export interface OptionData {
   label: string;
 }
 
+export interface OptionDataWithIndex {
+  value: string;
+  label: string;
+  index: number;
+}
+
 export interface ApiGenericResponse<T> {
   statusCode: number;
   message: string;

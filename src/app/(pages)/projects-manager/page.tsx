@@ -13,6 +13,7 @@ import {
   ControlTable,
   TableComponentFull,
   TableComponentFullHeadless,
+  TableComponentFullHeadlessGrid,
 } from "@/app/components/tableComponents";
 import { TableComponentWithFilterCTX } from "@/app/components/tableComponentV2";
 import {
@@ -29,7 +30,9 @@ import {
 import { AuthDataModelInterface, useAuth } from "@/app/context/AuthContext";
 import {
   buildUrlPort,
+  getProjectHealthRating,
   stringToDateFormatedReverse,
+  truncateText,
 } from "@/app/helper/MasterHelper";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
@@ -56,6 +59,7 @@ import {
   removeParamFilter,
 } from "@/app/types/masterTypes";
 import { Search2Icon } from "@chakra-ui/icons";
+import { TfiPulse } from "react-icons/tfi";
 import {
   Avatar,
   AvatarGroup,
@@ -132,6 +136,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { FaCog } from "react-icons/fa";
 import {
+  FiAlertTriangle,
   FiArrowRightCircle,
   FiEdit,
   FiFilter,
@@ -211,104 +216,10 @@ function ProjectManagerPage() {
         accessorFn: (row) => row.projectCode,
         id: "projectCode",
         cell: (info) => (
-          <Flex
-            p={6}
-            w={"full"}
-            bgColor={colorMode == "light" ? "white" : "gray.900"}
-            border={"1px"}
-            borderColor={colorMode == "light" ? "gray.200" : "gray.900"}
-            rounded={radiusStyle}
-            boxShadow={"md"}
-          >
-            <Flex justifyContent={"center"} pr={2}>
-              <Heading as="h5" size="sm">
-                {pageIndex * pageSize + info.row.index + 1}.
-              </Heading>
-            </Flex>
-            <Box
-              bgColor="secondary.500"
-              color="white"
-              p={2}
-              ml={1}
-              mr={3}
-              w="44px"
-              h="44px"
-              rounded="full"
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-              textAlign="center"
-              fontSize={
-                info.row.original.appsProject.appShortName.length > 4
-                  ? "xs"
-                  : "sm"
-              }
-              fontWeight="bold"
-              overflow="hidden"
-              textOverflow="ellipsis"
-              whiteSpace="nowrap"
-              flexShrink={0}
-            >
-              {info.row.original.appsProject.appShortName}
-            </Box>
-            <Grid templateColumns="repeat(12, 1fr)" gap={4} w={"full"}>
-              <GridItem
-                colSpan={{ base: 12, sm: 12, md: 8, lg: 8 }}
-                alignContent={"center"}
-              >
-                <Stack spacing={1}>
-                  <Heading as="h5" size="sm">
-                    {info.row.original.projectName}
-                  </Heading>
-                  <Text
-                    fontWeight={600}
-                    fontSize={"small"}
-                    color={"secondary.700"}
-                  >
-                    No. {info.row.original.projectNo}
-                  </Text>
-                  <Text
-                    fontWeight={500}
-                    fontSize={"xx-small"}
-                    color={"secondary.300"}
-                  >
-                    ({info.row.original.projectCode})
-                  </Text>
-                </Stack>
-              </GridItem>
-              <GridItem
-                colSpan={{ base: 12, sm: 12, md: 4, lg: 4 }}
-                textAlign={{ base: "center", md: "start" }}
-                alignContent={"center"}
-              >
-                <Flex
-                  as={Wrap}
-                  justifyContent={"end"}
-                  alignItems={"center"}
-                  h={"full"}
-                  w={"full"}
-                >
-                  <AvatarGroup size={"sm"} max={4}>
-                    {info.row.original.userAssignment.map((u, idx) => (
-                      <Avatar key={idx} name={u.userData.nama} />
-                    ))}
-                  </AvatarGroup>
-                  <Link
-                    href={`projects-manager/detail?projectId=${info.row.original.id}`}
-                  >
-                    <Button
-                      // size={"sm"}
-                      colorScheme={"secondary"}
-                      variant={"ghost"}
-                      rightIcon={<FiEdit />}
-                    >
-                      Manage
-                    </Button>
-                  </Link>
-                </Flex>
-              </GridItem>
-            </Grid>
-          </Flex>
+          <CardProject
+            data={info.row.original}
+            key={info.row.original.projectCode}
+          />
         ),
         header: () => <span>User Member</span>,
         footer: (props) => props.column.id,
@@ -568,11 +479,11 @@ function ProjectManagerPage() {
                     </GridItem>
                   </Grid>
 
-                  <VStack w={"full"} p={0} align={"start"} spacing={2}>
+                  <VStack w={"full"} px={4} align={"start"} spacing={2}>
                     {IsLoadingProcess ? (
                       <LoadingMiniSignature />
                     ) : (
-                      <TableComponentFullHeadless table={table} />
+                      <TableComponentFullHeadlessGrid table={table} />
                     )}
                   </VStack>
                 </Flex>
@@ -584,6 +495,177 @@ function ProjectManagerPage() {
     </LayoutAdmin>
   );
 }
+
+const CardProject = ({ data }: { data: ProjectDataResponse }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const { colorMode } = useColorMode();
+  return (
+    <Link href={`projects-manager/detail?projectId=${data.id}`}>
+      <Flex
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        w={"full"}
+        bgColor={colorMode == "light" ? "white" : "gray.900"}
+        border={"1px"}
+        borderColor={colorMode == "light" ? "gray.200" : "gray.900"}
+        rounded={"3xl"}
+        boxShadow={"md"}
+        as={Stack}
+        h={"430px"}
+        _hover={{
+          // bgGradient: "linear(to-br, secondary.100, secondary.50)",
+          // color: "white",
+          cursor: "pointer",
+        }}
+        transition="transform 0.2s ease-in-out, background-color 0.2s ease, box-shadow 0.2s ease-in-out" // Animate transform and box-shadow
+        transform={isHovered ? "translateY(-10px)" : "translateY(0)"}
+      >
+        {/* ICON APP */}
+        <Flex
+          position="relative" // Add this
+          bgGradient={"linear(to-br, secondary.800, secondary.500)"}
+          roundedTop={"3xl"}
+          color={"white"}
+          w={"full"}
+          h="180px"
+          alignItems="center"
+          justifyContent="center"
+          textAlign="center"
+          fontSize={data.appsProject.appShortName.length > 4 ? "2xl" : "4xl"}
+          fontWeight="bold"
+          // overflow="hidden"
+          textOverflow="ellipsis"
+          whiteSpace="nowrap"
+          flexShrink={0}
+        >
+          {data.appsProject.appShortName}
+
+          {/* Floating component at bottom center */}
+          <Flex
+            position="absolute"
+            bottom="8px"
+            left="50%"
+            transform="translateX(-50%)"
+            px={4}
+            py={1}
+            as={HStack}
+            alignItems={"end"}
+            justifyContent={"space-between"}
+            w={"full"}
+          >
+            <Flex
+              as={Stack}
+              textAlign={"start"}
+              fontSize={"x-small"}
+              fontWeight={500}
+              spacing={0}
+            >
+              <Text>{data.projectType}</Text>
+              <Text>{data.projectCategory}</Text>
+            </Flex>
+            <Badge
+              rounded={"md"}
+              fontSize={"large"}
+              colorScheme={"blackAlpha"}
+              variant="solid"
+              px={2}
+              boxShadow={"md"}
+            >
+              {data.projectStatus}
+            </Badge>
+          </Flex>
+        </Flex>
+
+        {/* Body */}
+        <Flex
+          px={6}
+          py={4}
+          as={Stack}
+          spacing={1}
+          justifyContent={"center"}
+          alignItems={"center"}
+        >
+          {/* PROJECT NUMBER */}
+          <Text fontWeight={600} fontSize={"small"} color={"secondary.700"}>
+            No. {data.projectNo}
+          </Text>
+
+          {/* PROJECT NAME */}
+          <Flex
+            w={"full"}
+            justifyContent={"center"}
+            alignItems={"center"}
+            h={"80px"}
+          >
+            <Tooltip
+              hasArrow
+              label={data.projectName}
+              p={2}
+              bg={"gray.100"}
+              color={"secondary.700"}
+              placement={"bottom"}
+              rounded={radiusStyle}
+              textAlign={"center"}
+              display={data.projectName.length > 50 ? "flex" : "none"}
+            >
+              <Heading as="h3" size="md" textAlign={"center"}>
+                {truncateText(data.projectName, 50)}
+              </Heading>
+            </Tooltip>
+          </Flex>
+
+          {/* PROJECT MEMBER */}
+          <AvatarGroup size={"sm"} max={4}>
+            {data.userAssignment.map((u, idx) => (
+              <Avatar key={idx} name={u.userData.nama} />
+            ))}
+          </AvatarGroup>
+
+          {/* PERCENTAGE */}
+          <Box w="full" h="4px" bg="gray.100" borderRadius="full" mt={4}>
+            <Box h="100%" w={`80%`} bg="blue.400" borderRadius="full" />
+          </Box>
+
+          {/* MORE INFO */}
+          <Flex
+            mt={2}
+            // px={4}
+            py={1}
+            as={HStack}
+            alignItems={"end"}
+            justifyContent={"space-between"}
+            w={"full"}
+          >
+            <Flex alignItems={"center"} as={HStack}>
+              <TfiPulse color={"red"} />
+              <Text fontWeight={600}>
+                Health :{" "}
+                <Text as={"span"}>
+                  {getProjectHealthRating(data.projectStatusPercentage)}
+                </Text>
+              </Text>
+            </Flex>
+            <Flex alignItems={"center"} justifyContent={"end"} as={HStack}>
+              <Badge
+                colorScheme={"orange"}
+                rounded={"md"}
+                fontSize={"small"}
+                px={2}
+                // display={"flex"}
+                display={"none"}
+                alignItems={"center"}
+                gap={2}
+              >
+                <FiAlertTriangle />
+                Project tanpa Memo
+              </Badge>
+            </Flex>
+          </Flex>
+        </Flex>
+      </Flex>
+    </Link>
+  );
+};
 
 const TeamProfile = () => {
   const showToast = useToastHelper();

@@ -145,6 +145,7 @@ import Link from "next/link";
 import { redirect, useParams, usePathname } from "next/navigation";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
+  FiAlertTriangle,
   FiArrowLeft,
   FiArrowRight,
   FiChevronDown,
@@ -399,7 +400,25 @@ function ReuirementsBRDPage() {
             as={Stack}
             spacing={1}
           >
-            <Flex as={Stack} spacing={2}>
+            <Flex
+              as={Stack}
+              w="full"
+              spacing={2}
+              color="red.500"
+              display={info.row.original.isHaveMemo === "N" ? "flex" : "none"}
+              justifyContent="center" // center horizontally
+              alignItems="center" // center vertically (useful for icon + text alignment)
+            >
+              <FiAlertTriangle />
+              <Text>
+                {info.row.original.requirementType} Belum ada Memo Pengantar
+              </Text>
+            </Flex>
+            <Flex
+              as={Stack}
+              spacing={2}
+              display={info.row.original.isHaveMemo == "Y" ? "flex" : "none"}
+            >
               <Flex as={Stack} spacing={0}>
                 <Text fontWeight={600}>{info.row.original.reqNumber}</Text>
                 <Text>{info.row.original.reqNarative}</Text>

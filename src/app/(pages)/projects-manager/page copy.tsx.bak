@@ -623,12 +623,51 @@ const TeamProfile = () => {
   const [image, setImage] = useState("/img/placeholder-header-sm.png");
   useEffect(() => {
     setIsLoadingProcess(true);
-    if (DataAuth && DataAuth.team) {
+    if (DataAuth && DataAuth.team && DataAuth.team.id) {
+      const teamId = DataAuth.team.id; // Store the ID to avoid repeated null checks
+
       const GetDataTeam = async () => {
-        const requestData = await GetDetailById(
-          DataAuth.team ? DataAuth.team.id : "",
-          tokenData
+        // Check if team data exists in localStorage and is not expired
+        const storedTeamData = localStorage.getItem(`teamData_${teamId}`);
+        const storedTeamTimestamp = localStorage.getItem(
+          `teamData_${teamId}_timestamp`
         );
+        const currentTime = new Date().getTime();
+        const CACHE_EXPIRATION = 30 * 60 * 1000; // 30 minutes in milliseconds
+
+        // Check if we have valid cached data
+        if (
+          storedTeamData &&
+          storedTeamTimestamp &&
+          currentTime - parseInt(storedTeamTimestamp) < CACHE_EXPIRATION &&
+          RefreshData === 0
+        ) {
+          try {
+            const parsedTeamData: TeamsResponse = JSON.parse(storedTeamData);
+            setDataTeam(parsedTeamData);
+
+            if (parsedTeamData.teamPict != null) {
+              setImage(
+                buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC) +
+                  parsedTeamData.teamPict
+              );
+            }
+            console.log("Team data loaded from localStorage");
+            setIsLoadingProcess(false);
+          } catch (error) {
+            console.error("Error parsing team data from localStorage:", error);
+            // If parsing fails, fetch from API
+            await fetchTeamDataFromAPI();
+          }
+        } else {
+          // No valid cache, fetch from API
+          await fetchTeamDataFromAPI();
+        }
+      };
+
+      // Function to fetch team data from API and save to localStorage
+      const fetchTeamDataFromAPI = async () => {
+        const requestData = await GetDetailById(teamId, tokenData);
         const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
 
         if (isErrorResponse || !requestData) {
@@ -639,7 +678,7 @@ const TeamProfile = () => {
           setIsLoadingProcess(false);
           return;
         } else {
-          console.log(requestData);
+          console.log("Team data fetched from API");
           await delay(DELAY_MEDIUM);
           if (requestData.data == null) {
             showToast({
@@ -651,6 +690,21 @@ const TeamProfile = () => {
           }
 
           const itemsData: TeamsResponse = requestData.data as TeamsResponse;
+
+          // Save to localStorage with timestamp
+          try {
+            localStorage.setItem(
+              `teamData_${teamId}`,
+              JSON.stringify(itemsData)
+            );
+            localStorage.setItem(
+              `teamData_${teamId}_timestamp`,
+              new Date().getTime().toString()
+            );
+          } catch (error) {
+            console.error("Error saving team data to localStorage:", error);
+          }
+
           setDataTeam(itemsData);
           setIsLoadingProcess(false);
           if (itemsData.teamPict != null) {
@@ -664,7 +718,7 @@ const TeamProfile = () => {
 
       const PayloadList: PaggingListPayloadCustom = {
         search: "",
-        teamId: DataAuth.team.id,
+        teamId: teamId,
         limit: 0,
         page: MAX_SIZE_TABLE,
         filterWhere: [],
@@ -672,7 +726,7 @@ const TeamProfile = () => {
         orderDir: "asc",
       };
 
-      setIsLoadingProcess(true);
+      // For team members, we'll just fetch from API directly as requested
       const GetDataList = async () => {
         const requestData = await ListMembers(PayloadList, tokenData);
         const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
@@ -684,7 +738,6 @@ const TeamProfile = () => {
           });
           return;
         } else {
-          console.log(requestData);
           if (requestData.data == null) {
             showToast({
               description: "Data return error",
@@ -701,6 +754,10 @@ const TeamProfile = () => {
 
       GetDataTeam();
       GetDataList();
+    } else {
+      // Handle case when DataAuth.team is null or undefined
+      setIsLoadingProcess(false);
+      console.warn("Team data is not available in auth context");
     }
   }, [DataAuth, RefreshData]);
 

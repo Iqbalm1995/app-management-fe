@@ -1,5 +1,6 @@
 "use client";
 
+import CoverLockedFeature from "@/app/components/coverLockedFeature";
 import {
   CustomPanelAlert,
   InputGroupPanel,
@@ -41,6 +42,7 @@ import {
   getQuarterText,
   ImagePreviewSM,
   joinFieldValues,
+  NoMemoAlertText,
   renderFileIconSTR,
   SummaryStatusReq,
 } from "@/app/helper/MasterHelper";
@@ -105,6 +107,10 @@ import {
   Textarea,
   RadioGroup,
   Radio,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
 } from "@chakra-ui/react";
 import {
   ColumnDef,
@@ -662,17 +668,54 @@ function BrdDetailView() {
                       ))}
                     </Stepper>
 
-                    <Divider mb={6} />
+                    <Divider mb={3} />
+
+                    <Box w={"full"}>
+                      {DataRequirement.isHaveMemo == "N" && (
+                        <Alert
+                          status="warning"
+                          variant="subtle"
+                          flexDirection="column"
+                          alignItems="center"
+                          justifyContent="center"
+                          textAlign="center"
+                          height="200px"
+                          rounded={radiusStyle}
+                          mb={3}
+                        >
+                          <AlertIcon boxSize="40px" mr={0} />
+                          <AlertTitle mt={4} mb={1} fontSize="lg">
+                            Memo Belum Ada!
+                          </AlertTitle>
+                          <AlertDescription maxWidth="sm">
+                            Informasi umum tidak ada karena memo pengantar belum
+                            ada. Tapi dapat diisi kembali pada saat project
+                            berjalan.
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                    </Box>
 
                     {/* Only render step content when client-side mounted */}
                     {activeStep === 0 && (
-                      <Flex as={Stack} w={"full"} spacing={5}>
-                        <ReqInfoGeneralSectionView
-                          DataRequirement={DataRequirement}
-                          steps={steps}
-                          activeStep={activeStep}
-                        />
-                      </Flex>
+                      <Box position="relative">
+                        <Flex as={Stack} w={"full"} spacing={5}>
+                          <ReqInfoGeneralSectionView
+                            DataRequirement={DataRequirement}
+                            steps={steps}
+                            activeStep={activeStep}
+                          />
+                          {/* Lock overlay */}
+                          {/* {DataRequirement.isHaveMemo == "N" && (
+                            <CoverLockedFeature
+                              title={"Inputan Terkunci"}
+                              desc={
+                                "Informasi umum tidak ada karena memo pengantar belum ada. Tapi dapat diisi kembali pada saat project berjalan."
+                              }
+                            />
+                          )} */}
+                        </Flex>
+                      </Box>
                     )}
 
                     {activeStep === 1 && (
@@ -725,10 +768,42 @@ function BrdDetailView() {
                           <FormControl>
                             <InputLayoutFull>
                               <FormLabel h={"full"} mt={2}>
+                                Target Pengguna
+                              </FormLabel>
+                              <Stack spacing={0} h={"full"}>
+                                <Text>
+                                  {DataRequirement.appTargetUsers == "INTERNAL"
+                                    ? "INTERNAL (BANK)"
+                                    : "EXTERNAL (NASABAH)"}
+                                </Text>
+                              </Stack>
+                            </InputLayoutFull>
+                          </FormControl>
+
+                          <FormControl>
+                            <InputLayoutFull>
+                              <FormLabel h={"full"} mt={2}>
                                 Media Akses Aplikasi
                               </FormLabel>
                               <Stack spacing={0} h={"full"}>
-                                <Text>{DataRequirement.appAccessMedia}</Text>
+                                {DataRequirement.appAccessFrontsiteDns !=
+                                  null && (
+                                  <Text>
+                                    Internet (Publik) :{" "}
+                                    <Text pl={2} as={"span"} fontWeight={600}>
+                                      {DataRequirement.appAccessFrontsiteDns}
+                                    </Text>
+                                  </Text>
+                                )}
+                                {DataRequirement.appAccessBacksiteIp !=
+                                  null && (
+                                  <Text>
+                                    Intranet (Untuk BackOffice Bank) :{" "}
+                                    <Text pl={2} as={"span"} fontWeight={600}>
+                                      {DataRequirement.appAccessBacksiteIp}
+                                    </Text>
+                                  </Text>
+                                )}
                               </Stack>
                             </InputLayoutFull>
                           </FormControl>
@@ -1221,92 +1296,121 @@ const ReqInfoGeneralSectionView = ({
 }: ReqSectionProps) => {
   return (
     <InputGroupPanel headerTitle={steps[activeStep].description}>
-      <FormControl>
-        <InputLayoutFull>
-          <FormLabel h={"full"} mt={2}>
-            Divisi Pengirim
-          </FormLabel>
-          <Stack spacing={0} h={"full"}>
-            <Text>{DataRequirement.senderDivisionName}</Text>
-          </Stack>
-        </InputLayoutFull>
-      </FormControl>
+      <>
+        <FormControl>
+          <InputLayoutFull>
+            <FormLabel h={"full"} mt={2}>
+              Diraktorat Pengirim
+            </FormLabel>
+            <Stack spacing={0} h={"full"}>
+              {DataRequirement.isHaveMemo == "Y" ? (
+                <Text>{DataRequirement.senderDirectorateName}</Text>
+              ) : (
+                <NoMemoAlertText />
+              )}
+            </Stack>
+          </InputLayoutFull>
+        </FormControl>
 
-      <FormControl>
-        <InputLayoutFull>
-          <FormLabel h={"full"} mt={2}>
-            Nomor Memo
-          </FormLabel>
-          <Stack spacing={0} h={"full"}>
-            <Text>{DataRequirement.reqNumber}</Text>
-          </Stack>
-        </InputLayoutFull>
-      </FormControl>
+        <FormControl>
+          <InputLayoutFull>
+            <FormLabel h={"full"} mt={2}>
+              Divisi Pengirim
+            </FormLabel>
+            <Stack spacing={0} h={"full"}>
+              {DataRequirement.isHaveMemo == "Y" ? (
+                <Text>{DataRequirement.senderDivisionName}</Text>
+              ) : (
+                <NoMemoAlertText />
+              )}
+            </Stack>
+          </InputLayoutFull>
+        </FormControl>
 
-      <FormControl>
-        <InputLayoutFull>
-          <FormLabel h={"full"} mt={2}>
-            Perihal
-          </FormLabel>
-          <Stack spacing={0} h={"full"}>
-            <Text>{DataRequirement.reqNarative}</Text>
-          </Stack>
-        </InputLayoutFull>
-      </FormControl>
+        <FormControl>
+          <InputLayoutFull>
+            <FormLabel h={"full"} mt={2}>
+              Nomor Memo
+            </FormLabel>
+            <Stack spacing={0} h={"full"}>
+              {DataRequirement.isHaveMemo == "Y" ? (
+                <Text>{DataRequirement.reqNumber}</Text>
+              ) : (
+                <NoMemoAlertText />
+              )}
+            </Stack>
+          </InputLayoutFull>
+        </FormControl>
 
-      <Box my={5} />
+        <FormControl>
+          <InputLayoutFull>
+            <FormLabel h={"full"} mt={2}>
+              Perihal
+            </FormLabel>
+            <Stack spacing={0} h={"full"}>
+              {DataRequirement.isHaveMemo == "Y" ? (
+                <Text>{DataRequirement.reqNarative}</Text>
+              ) : (
+                <NoMemoAlertText />
+              )}
+            </Stack>
+          </InputLayoutFull>
+        </FormControl>
 
-      <FormControl>
-        <InputLayoutFull>
-          <FormLabel h={"full"} mt={2}>
-            Tanggal Memo
-          </FormLabel>
-          <Stack spacing={0} h={"full"}>
-            <Text>
-              {DataRequirement.reqInititateDate != null
-                ? formatDateInputCustom(DataRequirement.reqInititateDate, "/")
-                : "-"}
-            </Text>
-          </Stack>
-        </InputLayoutFull>
-      </FormControl>
+        <Box my={5} />
 
-      <FormControl>
-        <InputLayoutFull>
-          <FormLabel h={"full"} mt={2}>
-            Tanggal Memo Diterima
-          </FormLabel>
-          <Stack spacing={0} h={"full"}>
-            <Text>
-              {DataRequirement.reqAcceptedDate != null
-                ? formatDateInputCustom(DataRequirement.reqAcceptedDate, "/")
-                : "-"}
-            </Text>
-          </Stack>
-        </InputLayoutFull>
-      </FormControl>
+        <FormControl>
+          <InputLayoutFull>
+            <FormLabel h={"full"} mt={2}>
+              Tanggal Memo
+            </FormLabel>
+            <Stack spacing={0} h={"full"}>
+              <Text>
+                {DataRequirement.reqInititateDate != null
+                  ? formatDateInputCustom(DataRequirement.reqInititateDate, "/")
+                  : "-"}
+              </Text>
+            </Stack>
+          </InputLayoutFull>
+        </FormControl>
 
-      <FormControl>
-        <InputLayoutFull>
-          <FormLabel h={"full"} mt={2}>
-            Durasi Memo
-          </FormLabel>
-          <Stack spacing={0} h={"full"}>
-            <Text>{DataRequirement.reqDurationDay} Hari kalender</Text>
-          </Stack>
-        </InputLayoutFull>
-      </FormControl>
+        <FormControl>
+          <InputLayoutFull>
+            <FormLabel h={"full"} mt={2}>
+              Tanggal Memo Diterima
+            </FormLabel>
+            <Stack spacing={0} h={"full"}>
+              <Text>
+                {DataRequirement.reqAcceptedDate != null
+                  ? formatDateInputCustom(DataRequirement.reqAcceptedDate, "/")
+                  : "-"}
+              </Text>
+            </Stack>
+          </InputLayoutFull>
+        </FormControl>
 
-      <FormControl>
-        <InputLayoutFull>
-          <FormLabel h={"full"} as={"i"} mt={2}>
-            CarryOver
-          </FormLabel>
-          <Stack spacing={0} h={"full"}>
-            <Text>{DataRequirement.isCarryOver == "Y" ? "YA" : "TIDAK"}</Text>
-          </Stack>
-        </InputLayoutFull>
-      </FormControl>
+        <FormControl>
+          <InputLayoutFull>
+            <FormLabel h={"full"} mt={2}>
+              Durasi Memo
+            </FormLabel>
+            <Stack spacing={0} h={"full"}>
+              <Text>{DataRequirement.reqDurationDay} Hari kalender</Text>
+            </Stack>
+          </InputLayoutFull>
+        </FormControl>
+
+        <FormControl>
+          <InputLayoutFull>
+            <FormLabel h={"full"} as={"i"} mt={2}>
+              CarryOver
+            </FormLabel>
+            <Stack spacing={0} h={"full"}>
+              <Text>{DataRequirement.isCarryOver == "Y" ? "YA" : "TIDAK"}</Text>
+            </Stack>
+          </InputLayoutFull>
+        </FormControl>
+      </>
     </InputGroupPanel>
   );
 };
@@ -1430,6 +1534,12 @@ const ReqInfoPersonelSectionView = ({
             </FormLabel>
             <Stack spacing={0} h={"full"}>
               <Text>
+                Direktorat :
+                <Text pl={2} as={"span"} fontWeight={600}>
+                  {DataRequirement.userPicDirectorateName}
+                </Text>
+              </Text>
+              <Text>
                 Divisi :
                 <Text pl={2} as={"span"} fontWeight={600}>
                   {DataRequirement.userPicDivisionName}
@@ -1493,10 +1603,29 @@ const ReqInfoWorkProgramsView = ({
                 <FormControl>
                   <InputLayoutFull>
                     <FormLabel h={"full"} mt={2}>
-                      Divisi
+                      Divisi Proker Uer
                     </FormLabel>
                     <Stack spacing={0} h={"full"}>
-                      <Text>{wp.divisionName}</Text>
+                      <Text>
+                        Direktorat :
+                        <Text pl={2} as={"span"} fontWeight={600}>
+                          {wp.directorateName != null
+                            ? wp.directorateName
+                            : "-"}
+                        </Text>
+                      </Text>
+                      <Text>
+                        Divisi :
+                        <Text pl={2} as={"span"} fontWeight={600}>
+                          {wp.divisionName != null ? wp.divisionName : "-"}
+                        </Text>
+                      </Text>
+                      <Text>
+                        Group :
+                        <Text pl={2} as={"span"} fontWeight={600}>
+                          {wp.groupName != null ? wp.groupName : "-"}
+                        </Text>
+                      </Text>
                     </Stack>
                   </InputLayoutFull>
                 </FormControl>
@@ -1610,10 +1739,29 @@ const ReqInfoWorkProgramsView = ({
                 <FormControl>
                   <InputLayoutFull>
                     <FormLabel h={"full"} mt={2}>
-                      Divisi
+                      Divisi Proker IT
                     </FormLabel>
                     <Stack spacing={0} h={"full"}>
-                      <Text>{wp.divisionName}</Text>
+                      <Text>
+                        Direktorat :
+                        <Text pl={2} as={"span"} fontWeight={600}>
+                          {wp.directorateName != null
+                            ? wp.directorateName
+                            : "-"}
+                        </Text>
+                      </Text>
+                      <Text>
+                        Divisi :
+                        <Text pl={2} as={"span"} fontWeight={600}>
+                          {wp.divisionName != null ? wp.divisionName : "-"}
+                        </Text>
+                      </Text>
+                      <Text>
+                        Group :
+                        <Text pl={2} as={"span"} fontWeight={600}>
+                          {wp.groupName != null ? wp.groupName : "-"}
+                        </Text>
+                      </Text>
                     </Stack>
                   </InputLayoutFull>
                 </FormControl>
@@ -1743,10 +1891,14 @@ const ReqInfoSummaryBacklogsView = ({
         <FormControl>
           <InputLayoutFull>
             <FormLabel h={"full"} mt={2}>
-              Nama Aplikasi
+              Target Pengguna
             </FormLabel>
             <Stack spacing={0} h={"full"}>
-              <Text>{DataRequirement.appInitialName}</Text>
+              <Text>
+                {DataRequirement.appTargetUsers == "INTERNAL"
+                  ? "INTERNAL (BANK)"
+                  : "EXTERNAL (NASABAH)"}
+              </Text>
             </Stack>
           </InputLayoutFull>
         </FormControl>
@@ -1757,7 +1909,22 @@ const ReqInfoSummaryBacklogsView = ({
               Media Akses Aplikasi
             </FormLabel>
             <Stack spacing={0} h={"full"}>
-              <Text>{DataRequirement.appAccessMedia}</Text>
+              {DataRequirement.appAccessFrontsiteDns != null && (
+                <Text>
+                  Internet (Publik) :{" "}
+                  <Text pl={2} as={"span"} fontWeight={600}>
+                    {DataRequirement.appAccessFrontsiteDns}
+                  </Text>
+                </Text>
+              )}
+              {DataRequirement.appAccessBacksiteIp != null && (
+                <Text>
+                  Intranet (Untuk BackOffice Bank) :{" "}
+                  <Text pl={2} as={"span"} fontWeight={600}>
+                    {DataRequirement.appAccessBacksiteIp}
+                  </Text>
+                </Text>
+              )}
             </Stack>
           </InputLayoutFull>
         </FormControl>

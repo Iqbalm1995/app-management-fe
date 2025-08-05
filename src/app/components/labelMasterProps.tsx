@@ -13,58 +13,76 @@ const LabelMaster = ({ labelName, groupLabel }: LabelMasterProps) => {
     color: "gray.700",
   };
   if (groupLabel == GROUP_CONST_BRD_STATUS) {
-    if (labelName == "NEW") {
+    if (labelName == "DRAFT") {
       return (
-        <Badge fontSize="1em" px={2} py={1} rounded={"md"} colorScheme={colors.bg}>
+        <Badge fontSize="1em" px={2} py={1} rounded={"md"} colorScheme={"gray"}>
           {labelName}
         </Badge>
       );
     }
     if (labelName == "NEEDS REVIEW") {
       return (
-        <Badge fontSize="1em" px={2} py={1} rounded={"md"} colorScheme={colors.bg}>
+        <Badge
+          fontSize="1em"
+          px={2}
+          py={1}
+          rounded={"md"}
+          colorScheme={"purple"}
+        >
           {labelName}
         </Badge>
       );
     }
     if (labelName == "IN PROGRESS REVIEW") {
       return (
-        <Badge fontSize="1em" px={2} py={1} rounded={"md"} colorScheme={colors.bg}>
+        <Badge fontSize="1em" px={2} py={1} rounded={"md"} colorScheme={"blue"}>
           {labelName}
         </Badge>
       );
     }
     if (labelName == "TEMPORARY APPROVED") {
       return (
-        <Badge fontSize="1em" px={2} py={1} rounded={"md"} colorScheme={colors.bg}>
+        <Badge fontSize="1em" px={2} py={1} rounded={"md"} colorScheme={"teal"}>
           {labelName}
         </Badge>
       );
     }
     if (labelName == "APPROVED") {
       return (
-        <Badge fontSize="1em" px={2} py={1} rounded={"md"} colorScheme={colors.bg}>
+        <Badge
+          fontSize="1em"
+          px={2}
+          py={1}
+          rounded={"md"}
+          colorScheme={"green"}
+        >
           {labelName}
         </Badge>
       );
     }
     if (labelName == "ON HOLD") {
       return (
-        <Badge fontSize="1em" px={2} py={1} rounded={"md"} colorScheme={colors.bg}>
+        <Badge
+          fontSize="1em"
+          px={2}
+          py={1}
+          rounded={"md"}
+          colorScheme={"orange"}
+        >
           {labelName}
         </Badge>
       );
     }
     if (labelName == "CANCELED") {
       return (
-        <Badge fontSize="1em" px={2} py={1} rounded={"md"} colorScheme={colors.bg}>
+        <Badge fontSize="1em" px={2} py={1} rounded={"md"} colorScheme={"red"}>
           {labelName}
         </Badge>
       );
     }
   }
 
-  <Badge fontSize="1em" px={2} py={1} rounded={"md"} colorScheme={colors.bg}>
+  <Badge fontSize="1em" px={2} py={1} rounded={"md"} colorScheme={"gray"}>
     {labelName}
   </Badge>;
 };
