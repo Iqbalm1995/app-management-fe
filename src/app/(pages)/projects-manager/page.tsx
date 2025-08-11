@@ -194,7 +194,7 @@ function ProjectManagerPage() {
   const [globalFilter, setGlobalFilter] = useState<string>("");
   const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
     pageIndex: 0,
-    pageSize: 5,
+    pageSize: 9,
   });
   const [ActionLoading, setActionLoading] = useState(false);
   const [IsEditMode, setIsEditMode] = useState(false);

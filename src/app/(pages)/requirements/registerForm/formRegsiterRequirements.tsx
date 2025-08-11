@@ -54,6 +54,9 @@ import {
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import {
   calculateDurationInDays,
+  convertStringToDate,
+  formatDateCA,
+  formatDateReverse,
   formatDateToDDMMYYYY,
   formatDateToYYYYMMDD,
   getCurrentQuarter,
@@ -70,6 +73,7 @@ import useConstants, {
   ConstantDataResponse,
 } from "@/app/services/useConstants";
 import useRequirements, {
+  BacklogDataResponse,
   PICAssignUserPayload,
   ReqBacklogPayload,
   RequirementsInsertPayload,
@@ -125,6 +129,7 @@ import {
   RadioGroup,
   Spacer,
   Stack,
+  StackDivider,
   Step,
   StepDescription,
   StepIndicator,
@@ -166,7 +171,13 @@ import { FieldArray, FormikProps, useFormik } from "formik";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { redirect, useParams, usePathname } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   FiArrowLeft,
   FiArrowRight,
@@ -211,8 +222,8 @@ import CoverLockedFeature from "@/app/components/coverLockedFeature";
 // const TYPE_REQ: string = REQUIREMENT_TYPE_BRD;
 
 const HeaderDataContent: HeaderContentProps = {
-  titleName: `Registrasi ${REQUIREMENT_TYPE_BRD}`,
-  breadCrumb: ["Home", "Requirements", REQUIREMENT_TYPE_BRD, "Registrasi"],
+  titleName: `Registrasi Requirements`,
+  breadCrumb: ["Home", "Requirements", "Registrasi"],
 };
 
 const FormSchema = yup.object().shape({
@@ -608,6 +619,9 @@ function RegsiterRequirementViewPage({
     },
   });
 
+  // BACKLOG DATA
+  const [DataBackLogs, setDataBackLogs] = useState<ReqBacklogPayload[]>([]);
+
   const logMissingRequiredFields = (
     values: Record<string, any>,
     schema: yup.ObjectSchema<any>
@@ -675,6 +689,10 @@ function RegsiterRequirementViewPage({
       formik.resetForm({ values: formik.initialValues });
     }
     LoadDataDirectorate(); // >>> LOAD DATA DIRECTORATE
+    const HeaderDataContentDC: HeaderContentProps = {
+      titleName: `Registrasi ${REQUIREMENT_TYPE_BRD}`,
+      breadCrumb: ["Home", "Requirements", REQUIREMENT_TYPE_BRD, "Registrasi"],
+    };
   }, [RefreshData]);
 
   const GetDataUser = async (
@@ -1092,226 +1110,6 @@ function RegsiterRequirementViewPage({
 
   // End Division Select
 
-  // Backlog Setup
-  const ModalForm = useDisclosure();
-  const [DataBackLogs, setDataBackLogs] = useState<ReqBacklogPayload[]>([]);
-  const [FormMode, setFormMode] = useState<"Add" | "Edit">("Add");
-
-  const columnsData = useMemo<ColumnDef<ReqBacklogPayload>[]>(
-    () => [
-      {
-        accessorFn: (row) => row.backlogId,
-        id: "numbertd",
-        cell: (info) => <Flex>{info.row.index + 1}. </Flex>,
-        header: () => <span>No. </span>,
-        footer: (props) => props.column.id,
-      },
-      {
-        accessorFn: (row) => row.backlogName,
-        id: "backlogName",
-        cell: (info) => <Flex>{info.row.original.backlogName}</Flex>,
-        header: () => <span>Nama Fitur</span>,
-        footer: (props) => props.column.id,
-      },
-      {
-        accessorFn: (row) => row.backlogDesc,
-        id: "backlogDesc",
-        cell: (info) => <Flex>{info.row.original.backlogDesc}</Flex>,
-        header: () => <span>Deskripsi</span>,
-        footer: (props) => props.column.id,
-      },
-      {
-        accessorFn: (row) => row.backlogId,
-        id: "backlogId",
-        cell: (info) => (
-          <Flex as={HStack} justifyContent={"end"}>
-            <Button
-              colorScheme="teal"
-              size="xs"
-              variant="ghost"
-              onClick={() => logBacklog(info.row.original.backlogId)}
-            >
-              Ubah
-            </Button>
-            <Button
-              colorScheme="red"
-              size="xs"
-              variant="ghost"
-              onClick={() => removeBacklog(info.row.original.backlogId)}
-            >
-              Hapus
-            </Button>
-          </Flex>
-        ),
-        header: () => <Flex justifyContent={"end"}>Aksi</Flex>,
-        footer: (props) => props.column.id,
-      },
-    ],
-    [DataBackLogs]
-  );
-  const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 5,
-  });
-  const pagination = useMemo(
-    () => ({
-      pageIndex,
-      pageSize,
-    }),
-    [pageIndex, pageSize]
-  );
-
-  const table = useReactTable({
-    data: DataBackLogs,
-    columns: columnsData,
-    state: {
-      pagination,
-    },
-    onPaginationChange: setPagination,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    debugTable: false,
-    manualFiltering: false,
-    manualPagination: false,
-  });
-
-  const [TextBackLogIndex, setTextBackLogIndex] = useState<number | null>(null);
-  const [TextBackLogId, setTextBackLogId] = useState<string | null>(null);
-  const [TextBackLogName, setTextBackLogName] = useState<string>("");
-  const [TextBackLogDesc, setTextBackLogDesc] = useState<string>("");
-
-  const handleOpenForm = () => {
-    ModalForm.onOpen();
-  };
-
-  const addBacklog = (name: string, desc?: string) => {
-    const generateFakeId = () => {
-      return `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
-    };
-
-    const isDuplicate = DataBackLogs.some(
-      (x) => x.backlogName.toLowerCase() === name.toLowerCase()
-    );
-
-    if (isDuplicate) {
-      showToast({
-        description: "Fitur sudah ada di daftar",
-        statusToast: "warning",
-      });
-      return;
-    }
-
-    const newBacklog: ReqBacklogPayload = {
-      backlogId: generateFakeId(),
-      backlogName: name,
-      backlogDesc: desc || null,
-    };
-
-    setDataBackLogs((prev) => [...prev, newBacklog]);
-
-    showToast({
-      description: "Fitur ditambahkan",
-      statusToast: "success",
-    });
-  };
-
-  const updateBacklog = (backlogId: string, updatedData: ReqBacklogPayload) => {
-    setDataBackLogs((prev) =>
-      prev.map((item) =>
-        item.backlogId === backlogId ? { ...item, ...updatedData } : item
-      )
-    );
-
-    showToast({
-      description: "Fitur diubah",
-      statusToast: "success",
-    });
-
-    ModalForm.onClose();
-    setFormMode("Add");
-  };
-
-  const removeBacklog = (backlogId: string | undefined | null) => {
-    if (backlogId == undefined || backlogId == null) {
-      showToast({
-        description: "Fitur ID error",
-        statusToast: "warning",
-      });
-      return;
-    }
-    setDataBackLogs((prev) =>
-      prev.filter((item) => item.backlogId !== backlogId)
-    );
-  };
-
-  const handleSaveBacklog = () => {
-    if (!TextBackLogName.trim()) {
-      showToast({
-        description: "Nama fitur tidak boleh kosong",
-        statusToast: "warning",
-      });
-      return;
-    }
-
-    if (FormMode === "Add") {
-      addBacklog(TextBackLogName.trim(), TextBackLogDesc?.trim());
-    } else {
-      if (!TextBackLogId) {
-        showToast({
-          description: "Backlog ID kosong",
-          statusToast: "warning",
-        });
-        return;
-      }
-
-      updateBacklog(TextBackLogId, {
-        backlogId: TextBackLogId,
-        backlogName: TextBackLogName.trim(),
-        backlogDesc: TextBackLogDesc?.trim() || null,
-      });
-    }
-
-    // Reset state
-    setTextBackLogIndex(null);
-    setTextBackLogId(null);
-    setTextBackLogName("");
-    setTextBackLogDesc("");
-    setFormMode("Add");
-  };
-
-  const logBacklog = (backlogId: string | undefined | null) => {
-    console.log(backlogId);
-    console.log(DataBackLogs);
-    if (backlogId == undefined || backlogId == null) {
-      showToast({
-        description: "Fitur ID error",
-        statusToast: "warning",
-      });
-      return;
-    }
-
-    const item = DataBackLogs.find((x) => x.backlogId === backlogId);
-    if (!item) return;
-
-    setFormMode("Edit");
-    ModalForm.onOpen();
-    setTextBackLogId(item.backlogId || null);
-    setTextBackLogName(item.backlogName || "");
-    setTextBackLogDesc(item.backlogDesc || "");
-  };
-
-  useEffect(() => {
-    formik.setFieldValue(
-      "backlogFeatures",
-      DataBackLogs.map((item) => ({
-        ...item,
-        backlogId: null,
-      }))
-    );
-  }, [DataBackLogs]);
-
-  // End Backlog setup
   const [uploadedFiles, setUploadedFiles] = useState<FileDetails[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
 
@@ -1493,281 +1291,12 @@ function RegsiterRequirementViewPage({
     formik.setFieldValue("workPrograms", updated);
   };
 
-  // APP TYPES OPTIONS HANDLER
-
-  const [SelectedAppsTypes, setSelectedAppsTypes] = useState<string>("");
-
-  const handleAppysTypesCheckboxChange = (value: string) => {
-    const currentList = SelectedAppsTypes.split(",")
-      .map((item) => item.trim())
-      .filter(Boolean); // removes empty strings
-
-    let updatedList: string[];
-
-    if (currentList.includes(value)) {
-      updatedList = currentList.filter((item) => item !== value);
-    } else {
-      updatedList = [...currentList, value];
-    }
-
-    setSelectedAppsTypes(
-      updatedList.join(", ") + (updatedList.length > 0 ? "," : "")
-    );
-  };
-  const hasOtherAppsTypes = SelectedAppsTypes.split(",")
-    .map((s) => s.trim().toLowerCase())
-    .includes("other");
-
-  // END APP TYPES OPTIONS HANDLER
-
-  // APPS OPERATIONAL STATE
-  const [OperationalDays, setOperationalDays] = useState<string>("");
-
-  // END APPS OPERATIONAL STATE
-
-  // APP ENV LOC OPTIONS HANDLER
-
-  const [SelectedAppsEnvLoc, setSelectedAppsEnvLoc] = useState<string>("");
-
-  const handleAppysEnvLocCheckboxChange = (value: string) => {
-    const currentList = SelectedAppsEnvLoc.split(",")
-      .map((item) => item.trim())
-      .filter(Boolean); // removes empty strings
-
-    let updatedList: string[];
-
-    if (currentList.includes(value)) {
-      updatedList = currentList.filter((item) => item !== value);
-    } else {
-      updatedList = [...currentList, value];
-    }
-
-    setSelectedAppsEnvLoc(
-      updatedList.join(", ") + (updatedList.length > 0 ? "," : "")
-    );
-  };
-  const hasOtherEnvLocTypes = SelectedAppsEnvLoc.split(",")
-    .map((s) => s.trim().toLowerCase())
-    .includes("other");
-
-  // END APP ENV LOC OPTIONS HANDLER
-
-  useEffect(() => {
-    formik.setFieldValue("appTypes", SelectedAppsTypes);
-    formik.setFieldValue("appOperationalDays", OperationalDays);
-    formik.setFieldValue("appEnvLocations", SelectedAppsEnvLoc);
-    // if (formik.values.appOperational24hrs == APP_OPERATIONAL_OPTIONS[0]) {
-    //   formik.setFieldValue("appOperationalDays", "");
-    // }
-
-    if (!hasOtherAppsTypes) {
-      formik.setFieldValue("appRelatednessDesc", "");
-    }
-    if (!hasOtherEnvLocTypes) {
-      formik.setFieldValue("appEnvLocationsOthers", "");
-    }
-  }, [SelectedAppsTypes, OperationalDays, SelectedAppsEnvLoc]);
-
-  const handleQuickAddTagIntegratedApps = (tag: string) => {
-    const currentValue = formik.values.appIntegrationOthersApps || "";
-
-    const currentTags = currentValue
-      .split(",")
-      .map((t) => t.trim())
-      .filter(Boolean);
-
-    if (!currentTags.includes(tag)) {
-      const updated = [...currentTags, tag].join(", ");
-      formik.setFieldValue("appIntegrationOthersApps", updated);
-    }
-  };
-
-  // Choose Aplication existing
-  const [ListDataAplicationExisting, setListDataAplicationExisting] = useState<
-    ApplicationMasterResponse[]
-  >([]);
-  const [ApplicationExistingChoosed, setApplicationExistingChoosed] =
-    useState<ApplicationMasterResponse | null>(null);
-
-  const GetDataApplications = async (
-    searchValue: string = "",
-    limit: number = 1
-  ) => {
-    setIsLoadingGroupDivisionSelect(true);
-    const PayloadList: PaggingListPayload = {
-      search: searchValue,
-      limit: limit,
-      page: 0,
-      filterWhere: [],
-      fieldOrder: ["appShortName"],
-      orderDir: "asc",
-    };
-    const token: string = localStorage.getItem("tokenData") as string;
-    const requestData = await ListApps(PayloadList, token);
-    const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
-
-    if (isErrorResponse || !requestData) {
-      showToast({
-        description: requestData?.message || RES_GENERIC_ERROR_MSG,
-        statusToast: "error",
-      });
-      return;
-    } else {
-      console.log(requestData);
-      if (requestData.data == null) {
-        showToast({
-          description: "Data return error",
-          statusToast: "error",
-        });
-        return;
-      }
-
-      const itemsData: ApplicationMasterResponse[] =
-        requestData.data as ApplicationMasterResponse[];
-
-      setListDataAplicationExisting(itemsData);
-
-      return;
-    }
-  };
-
-  const SelectedApp = (data: ApplicationMasterResponse) => {
-    setApplicationExistingChoosed(data);
-    // appInitialCode
-    // appInitialName
-    formik.setFieldValue("appInitialCode", data.appCode);
-    formik.setFieldValue("appInitialName", data.appName);
-  };
-
-  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
-
-  const handleChangeAppCode = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const onlyAlphabets = e.target.value
-      .replace(/[^a-zA-Z ]/g, "")
-      .toUpperCase();
-    formik.setFieldValue("appInitialCode", onlyAlphabets);
-
-    if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    debounceTimer.current = setTimeout(() => {
-      if (onlyAlphabets.length >= 2) {
-        GetDataApplications(onlyAlphabets, 4);
-      } else {
-        setListDataAplicationExisting([]);
-        formik.setFieldValue("appInitialName", "");
-      }
-    }, 300);
-  };
-  // End - Choose Aplication existing
-
-  // APP MEDIA AKSES
-  const [MediaAksesPublic, setMediaAksesPublic] = useState(false);
-  const [MediaAksesIntranet, setMediaAksesIntranet] = useState(false);
-
   return (
     <LayoutAdmin>
       <HeaderContent
         titleName={HeaderDataContent.titleName}
         breadCrumb={HeaderDataContent.breadCrumb}
       />
-
-      <Modal
-        size={"xl"}
-        isOpen={ModalForm.isOpen}
-        isCentered
-        onClose={ModalForm.onClose}
-        closeOnOverlayClick={true}
-        scrollBehavior={"inside"}
-      >
-        <ModalOverlay bg="blackAlpha.300" />
-        <ModalContent
-          rounded={radiusStyle}
-          m={2}
-          bg={colorMode == "light" ? "white" : "gray.900"}
-        >
-          <ModalHeader>{`${
-            FormMode == "Add" ? "Tambah" : "Ubah"
-          } Fitur`}</ModalHeader>
-          <ModalCloseButton color={"red.500"} />
-          <ModalBody w={"full"}>
-            <Flex as={Stack} w={"full"}>
-              <FormControl>
-                <FormLabel>Nama Fitur</FormLabel>
-                <Input
-                  id="backlogFeatureName"
-                  name="backlogFeatureName"
-                  type="text"
-                  onChange={(e) => setTextBackLogName(e.target.value)}
-                  value={TextBackLogName}
-                  placeholder={`Nama Fitur`}
-                  minLength={3}
-                  maxLength={200}
-                  isDisabled={ActionLoading}
-                />
-              </FormControl>
-              <FormControl>
-                <FormLabel>Deskripsi</FormLabel>
-                <Textarea
-                  id="backlogFeatureDesc"
-                  name="backlogFeatureDesc"
-                  onChange={(e) => setTextBackLogDesc(e.target.value)}
-                  value={TextBackLogDesc}
-                  placeholder={`Deskripsi Fitur`}
-                  maxLength={300}
-                  isDisabled={ActionLoading}
-                />
-              </FormControl>
-
-              <Button
-                mt={2}
-                w={"full"}
-                size={"lg"}
-                leftIcon={<FiPlusCircle />}
-                colorScheme={"secondary"}
-                onClick={() => handleSaveBacklog()}
-              >
-                {FormMode == "Add" ? "Tambah" : "Ubah"} Fitur
-              </Button>
-
-              <Divider py={1} />
-              <Text fontSize={"smaller"}>Tambah Cepat</Text>
-              <FormControl>
-                <FormLabel>Rekomendasi Fitur Umum</FormLabel>
-                <Flex as={Wrap} w={"full"}>
-                  {FeatureRecomentionsBacklogs.map((item, index) => {
-                    if (
-                      DataBackLogs.some(
-                        (x) => x.backlogName === item.featureName
-                      )
-                    ) {
-                      return null; // Skip if already exists
-                    } else {
-                      return (
-                        <Tag
-                          key={index}
-                          borderRadius="full"
-                          colorScheme="secondary"
-                          variant={"solid"}
-                          onClick={() => {
-                            setTextBackLogName(item.featureName);
-                            setTextBackLogDesc(item.featureDescription || "");
-                          }}
-                          px={3}
-                          cursor={"pointer"}
-                          _hover={{ bg: "secondary.700", color: "white" }}
-                        >
-                          <FiPlus />
-                          <TagLabel pl={1}>{item.featureName}</TagLabel>
-                        </Tag>
-                      );
-                    }
-                  })}
-                </Flex>
-              </FormControl>
-            </Flex>
-          </ModalBody>
-          <ModalFooter></ModalFooter>
-        </ModalContent>
-      </Modal>
 
       <ConfirmationDialog
         key={"confirmSaveData"}
@@ -4438,916 +3967,25 @@ function RegsiterRequirementViewPage({
                     )}
 
                     {activeStep === 4 && (
-                      <Flex as={Stack} w={"full"} spacing={5}>
-                        <InputGroupPanel
-                          headerTitle={`Ringkasan Ruanglingkup ${type_req_param} | Aspek Bisnis`}
-                        >
-                          <Flex as={Stack} w={"full"} spacing={5}>
-                            <FormControl
-                              id="appInitialCode"
-                              isInvalid={
-                                formik.errors.appInitialCode ? true : false
-                              }
-                            >
-                              <InputLayout>
-                                <FormLabel h={"full"} mt={2}>
-                                  Inisial Aplikasi
-                                </FormLabel>
-                                <Stack spacing={0} h={"full"}>
-                                  <Flex
-                                    w="full"
-                                    justifyContent="start"
-                                    alignItems="center"
-                                    gap={4}
-                                  >
-                                    <Input
-                                      id="appInitialCode"
-                                      name="appInitialCode"
-                                      type="text"
-                                      w={"50%"}
-                                      onChange={handleChangeAppCode}
-                                      value={formik.values.appInitialCode ?? ""}
-                                      placeholder={`CMS / SISMON / dsb.`}
-                                      minLength={3}
-                                      maxLength={10}
-                                      isDisabled={ActionLoading}
-                                    />
-                                    {formik.values.appInitialCode &&
-                                      formik.values.appInitialCode.length > 2 &&
-                                      ListDataAplicationExisting.length <=
-                                        0 && (
-                                        <HStack color={"secondary.500"}>
-                                          <Text fontWeight={600} as={"span"}>
-                                            Aplikasi Baru
-                                          </Text>
-                                          <FiCheckCircle />
-                                        </HStack>
-                                      )}
-                                  </Flex>
-                                  <Box
-                                    w={"full"}
-                                    py={2}
-                                    px={4}
-                                    mt={2}
-                                    bgColor={"gray.200"}
-                                    rounded={radiusStyle}
-                                    as={Wrap}
-                                    display={
-                                      ListDataAplicationExisting.length > 0
-                                        ? "block"
-                                        : "none"
-                                    }
-                                  >
-                                    <Heading as="h4" size="sm">
-                                      Aplikasi Existing
-                                    </Heading>
-                                    <Flex w="full" overflowX="auto">
-                                      <HStack spacing={4} minW="max-content">
-                                        {/* APP LIST */}
-                                        {ListDataAplicationExisting.length >
-                                          0 &&
-                                          ListDataAplicationExisting.map(
-                                            (ap, idx) => (
-                                              <AppicationShowCase
-                                                key={idx}
-                                                dataApp={ap}
-                                                SelectedApp={SelectedApp}
-                                                isActive={
-                                                  formik.values
-                                                    .appInitialCode ==
-                                                  ap.appCode
-                                                }
-                                              />
-                                            )
-                                          )}
-                                      </HStack>
-                                    </Flex>
-                                  </Box>
-                                  <Box
-                                    w={"full"}
-                                    overflowY={"auto"}
-                                    overflowX={"auto"}
-                                    h={"350px"}
-                                    p={4}
-                                    mt={2}
-                                    bgColor={"gray.200"}
-                                    rounded={radiusStyle}
-                                    display={"none"}
-                                  >
-                                    <Text fontWeight={600}>Data Apps</Text>
-                                    <pre>
-                                      {JSON.stringify(
-                                        ListDataAplicationExisting,
-                                        null,
-                                        2
-                                      )}
-                                    </pre>
-                                  </Box>
-                                  <FormErrorMessage>
-                                    {formik.errors.appInitialCode}
-                                  </FormErrorMessage>
-                                </Stack>
-                              </InputLayout>
-                            </FormControl>
-
-                            <FormControl
-                              id="appInitialName"
-                              isInvalid={
-                                formik.errors.appInitialName ? true : false
-                              }
-                            >
-                              <InputLayoutFull>
-                                <FormLabel h={"full"} mt={2}>
-                                  Nama Aplikasi
-                                </FormLabel>
-                                <Stack spacing={0} h={"full"}>
-                                  <Input
-                                    id="appInitialName"
-                                    name="appInitialName"
-                                    type="text"
-                                    onChange={formik.handleChange}
-                                    value={formik.values.appInitialName ?? ""}
-                                    placeholder={`Nama Aplikasi`}
-                                    minLength={3}
-                                    maxLength={150}
-                                    isDisabled={ActionLoading}
-                                  />
-                                  <FormErrorMessage>
-                                    {formik.errors.appInitialName}
-                                  </FormErrorMessage>
-                                </Stack>
-                              </InputLayoutFull>
-                            </FormControl>
-
-                            <Divider />
-
-                            <FormControl
-                              id="appTargetUsers"
-                              isInvalid={
-                                formik.errors.appTargetUsers ? true : false
-                              }
-                            >
-                              <InputLayout>
-                                <FormLabel h={"full"} mt={2}>
-                                  Target Pengguna
-                                </FormLabel>
-                                <Stack spacing={0} h={"full"}>
-                                  <RadioGroup
-                                    onChange={(val) =>
-                                      formik.setFieldValue(
-                                        "appTargetUsers",
-                                        val
-                                      )
-                                    }
-                                    value={formik.values.appTargetUsers ?? ""}
-                                  >
-                                    <Flex w={"full"} as={HStack}>
-                                      <Radio value={"EXTERNAL"}>
-                                        EXTERNAL (NASABAH)
-                                      </Radio>
-                                      <Radio value={"INTERNAL"}>
-                                        INTERNAL (BANK)
-                                      </Radio>
-                                    </Flex>
-                                  </RadioGroup>
-                                  <FormErrorMessage>
-                                    {formik.errors.appTargetUsers}
-                                  </FormErrorMessage>
-                                </Stack>
-                              </InputLayout>
-                            </FormControl>
-
-                            <FormControl>
-                              <InputLayoutFull>
-                                <FormLabel h={"full"} mt={2}>
-                                  Media Akses Aplikasi
-                                </FormLabel>
-                                <Stack spacing={0} h={"full"}>
-                                  {/* <RadioGroup
-                                    onChange={(val) =>
-                                      formik.setFieldValue(
-                                        "appAccessMedia",
-                                        val
-                                      )
-                                    }
-                                    value={formik.values.appAccessMedia ?? ""}
-                                  >
-                                    <Flex w={"full"} as={HStack}>
-                                      <Radio value={APP_ACCESS_MEDIA_INTERNET}>
-                                        Internet
-                                      </Radio>
-                                      <Radio value={APP_ACCESS_MEDIA_INTRANET}>
-                                        Interanet (Local Network)
-                                      </Radio>
-                                    </Flex>
-                                  </RadioGroup> */}
-                                  <Grid
-                                    templateColumns="repeat(2, 1fr)"
-                                    gap={3}
-                                    w={"full"}
-                                  >
-                                    <GridItem
-                                      colSpan={{
-                                        base: 2,
-                                        sm: 2,
-                                        md: 1,
-                                        lg: 1,
-                                      }}
-                                      w={"full"}
-                                    >
-                                      <Flex w={"full"} as={Stack}>
-                                        <Checkbox
-                                          isChecked={MediaAksesPublic}
-                                          onChange={(e) => {
-                                            setMediaAksesPublic(
-                                              !MediaAksesPublic
-                                            );
-                                            console.log(e);
-                                          }}
-                                        >
-                                          Internet (Publik)
-                                        </Checkbox>
-                                        <Input
-                                          id="appAccessFrontsiteDns"
-                                          name="appAccessFrontsiteDns"
-                                          type="text"
-                                          onChange={formik.handleChange}
-                                          value={
-                                            formik.values
-                                              .appAccessFrontsiteDns ||
-                                            "https://"
-                                          }
-                                          placeholder={`https://`}
-                                          minLength={5}
-                                          maxLength={150}
-                                          isDisabled={!MediaAksesPublic}
-                                        />
-                                      </Flex>
-                                    </GridItem>
-                                    <GridItem
-                                      colSpan={{
-                                        base: 2,
-                                        sm: 2,
-                                        md: 1,
-                                        lg: 1,
-                                      }}
-                                      w={"full"}
-                                    >
-                                      <Flex w={"full"} as={Stack}>
-                                        <Checkbox
-                                          isChecked={MediaAksesIntranet}
-                                          onChange={(e) => {
-                                            setMediaAksesIntranet(
-                                              !MediaAksesIntranet
-                                            );
-                                            console.log(e);
-                                          }}
-                                        >
-                                          Intranet (Untuk BackOffice Bank)
-                                        </Checkbox>
-                                        <Input
-                                          id="appAccessBacksiteIp"
-                                          name="appAccessBacksiteIp"
-                                          type="text"
-                                          onChange={formik.handleChange}
-                                          value={
-                                            formik.values.appAccessBacksiteIp ||
-                                            "http://"
-                                          }
-                                          placeholder={`http://`}
-                                          minLength={5}
-                                          maxLength={150}
-                                          isDisabled={!MediaAksesIntranet}
-                                        />
-                                      </Flex>
-                                    </GridItem>
-                                  </Grid>
-                                  <FormHelperText as={"i"} fontSize={"xs"}>
-                                    Pemilihan Kontektivitas Internet wajib
-                                    disertai Pentest dan pembelian SSL,
-                                    Divisi/Unit terkait dimohon menyiapkan
-                                    anggarannya.*
-                                  </FormHelperText>
-                                  <FormErrorMessage>
-                                    {formik.errors.appAccessMedia}
-                                  </FormErrorMessage>
-                                </Stack>
-                              </InputLayoutFull>
-                            </FormControl>
-
-                            <FormControl>
-                              <InputLayoutFull>
-                                <FormLabel h={"full"} mt={2}>
-                                  Jenis Aplikasi
-                                </FormLabel>
-                                <Stack spacing={0} h={"full"}>
-                                  <Text
-                                    color={"gray.500"}
-                                    fontSize={"smaller"}
-                                    pb={1}
-                                  >
-                                    Base Aplikasi
-                                  </Text>
-                                  <CheckboxGroup>
-                                    <Grid
-                                      templateColumns="repeat(2, 1fr)"
-                                      gap={1}
-                                      w={"full"}
-                                    >
-                                      {APP_TYPE_OPTIONS.map((item, idx) => (
-                                        <GridItem
-                                          key={idx}
-                                          colSpan={{
-                                            base: 2,
-                                            sm: 2,
-                                            md: 1,
-                                            lg: 1,
-                                          }}
-                                          w={"full"}
-                                        >
-                                          <Checkbox
-                                            key={idx}
-                                            isChecked={SelectedAppsTypes.includes(
-                                              item
-                                            )}
-                                            onChange={() =>
-                                              handleAppysTypesCheckboxChange(
-                                                item
-                                              )
-                                            }
-                                          >
-                                            {item}
-                                          </Checkbox>
-                                        </GridItem>
-                                      ))}
-                                    </Grid>
-                                  </CheckboxGroup>
-                                  {hasOtherAppsTypes && (
-                                    <Flex as={Stack} w={"full"} pt={2}>
-                                      <Text>Input Lainnya</Text>
-                                      <OtherInputAppsStringSeparator
-                                        value={
-                                          formik.values.appTypeCustom || ""
-                                        }
-                                        onChange={(val) => {
-                                          formik.setFieldValue(
-                                            "appTypeCustom",
-                                            val
-                                          );
-                                        }}
-                                      />
-                                    </Flex>
-                                  )}
-                                </Stack>
-                              </InputLayoutFull>
-                            </FormControl>
-
-                            <FormControl>
-                              <InputLayoutFull>
-                                <FormLabel h={"full"} mt={2}>
-                                  Keterkaitan Aplikasi
-                                </FormLabel>
-                                <Stack spacing={0} h={"full"}>
-                                  <CheckboxGroup>
-                                    <Stack spacing={0} h={"full"}>
-                                      <RadioGroup
-                                        onChange={(val) =>
-                                          formik.setFieldValue(
-                                            "appRelatedness",
-                                            val
-                                          )
-                                        }
-                                        value={
-                                          formik.values.appRelatedness ?? ""
-                                        }
-                                      >
-                                        <Flex w={"full"} as={HStack}>
-                                          <Radio value={APP_RELATED_OPTIONS[0]}>
-                                            {APP_RELATED_OPTIONS[0]}
-                                          </Radio>
-
-                                          <Radio value={APP_RELATED_OPTIONS[1]}>
-                                            {APP_RELATED_OPTIONS[1]}
-                                          </Radio>
-                                        </Flex>
-                                      </RadioGroup>
-                                      {formik.values.appRelatedness ==
-                                        APP_RELATED_OPTIONS[1] && (
-                                        <Flex as={Stack} w={"full"} pt={2}>
-                                          <Text>Nama Regulator</Text>
-                                          <OtherInputAppsStringSeparator
-                                            value={
-                                              formik.values
-                                                .appRelatednessDesc || ""
-                                            }
-                                            onChange={(val) => {
-                                              formik.setFieldValue(
-                                                "appRelatednessDesc",
-                                                val
-                                              );
-                                            }}
-                                          />
-                                        </Flex>
-                                      )}
-                                      <FormHelperText as={"i"} fontSize={"xs"}>
-                                        Jika memilih "Regulator", harap di isi
-                                        dengan nama instansi.*
-                                      </FormHelperText>
-                                    </Stack>
-                                  </CheckboxGroup>
-                                </Stack>
-                              </InputLayoutFull>
-                            </FormControl>
-
-                            <FormControl>
-                              <InputLayout>
-                                <FormLabel h={"full"} mt={2}>
-                                  Kategori Aplikasi
-                                </FormLabel>
-                                <Stack spacing={0} h={"full"}>
-                                  <RadioGroup
-                                    onChange={(val) =>
-                                      formik.setFieldValue(
-                                        "appTransactionals",
-                                        val
-                                      )
-                                    }
-                                    value={
-                                      formik.values.appTransactionals ?? ""
-                                    }
-                                  >
-                                    <Flex w={"full"} as={HStack}>
-                                      {APP_TRANSACTIONAL_OPTIONS.map(
-                                        (item, idx) => (
-                                          <Radio key={idx} value={item}>
-                                            {item}
-                                          </Radio>
-                                        )
-                                      )}
-                                    </Flex>
-                                  </RadioGroup>
-                                  <FormErrorMessage>
-                                    {formik.errors.appTransactionals}
-                                  </FormErrorMessage>
-                                </Stack>
-                              </InputLayout>
-                            </FormControl>
-
-                            <FormControl>
-                              <InputLayoutFull>
-                                <FormLabel h={"full"} mt={2}>
-                                  Waktu Operasional Aplikasi
-                                </FormLabel>
-                                <Stack spacing={0} h={"full"}>
-                                  <RadioGroup
-                                    onChange={(val) => {
-                                      formik.setFieldValue(
-                                        "appOperational24hrs",
-                                        val
-                                      );
-                                      if (val === APP_OPERATIONAL_OPTIONS[0]) {
-                                        formik.setFieldValue(
-                                          "appOperationalDays",
-                                          fullDay.join(", ")
-                                        );
-                                        formik.setFieldValue(
-                                          "appOperationalHourOpen",
-                                          ""
-                                        );
-                                        formik.setFieldValue(
-                                          "appOperationalHourClosed",
-                                          ""
-                                        );
-                                      } else {
-                                        formik.setFieldValue(
-                                          "appOperationalDays",
-                                          ""
-                                        );
-                                      }
-                                    }}
-                                    value={
-                                      formik.values.appOperational24hrs ?? ""
-                                    }
-                                  >
-                                    <Flex w={"full"} as={HStack}>
-                                      {APP_OPERATIONAL_OPTIONS.map(
-                                        (item, idx) => (
-                                          <Radio key={idx} value={item}>
-                                            {item}
-                                          </Radio>
-                                        )
-                                      )}
-                                    </Flex>
-                                  </RadioGroup>
-
-                                  {formik.values.appOperational24hrs ==
-                                    APP_OPERATIONAL_OPTIONS[1] && (
-                                    <Flex as={Stack} w={"full"} py={2}>
-                                      <Text color={"secondary.500"}>
-                                        Pilih Hari
-                                      </Text>
-                                      <WeekdaySelector
-                                        value={OperationalDays}
-                                        onChange={setOperationalDays}
-                                      />
-                                      <Grid
-                                        templateColumns="repeat(2, 1fr)"
-                                        gap={4}
-                                        w={"full"}
-                                      >
-                                        <GridItem
-                                          colSpan={{
-                                            base: 2,
-                                            sm: 2,
-                                            md: 1,
-                                            lg: 1,
-                                          }}
-                                          w={"full"}
-                                        >
-                                          <Stack w={"full"}>
-                                            <Text color={"secondary.500"}>
-                                              Operasional Mulai
-                                            </Text>
-                                            <Input
-                                              type="time"
-                                              id="appOperationalHourOpen"
-                                              name="appOperationalHourOpen"
-                                              onChange={formik.handleChange}
-                                              value={
-                                                formik.values
-                                                  .appOperationalHourOpen
-                                                  ? formik.values.appOperationalHourOpen.slice(
-                                                      0,
-                                                      5
-                                                    ) // ensure HH:mm
-                                                  : ""
-                                              }
-                                            />
-                                          </Stack>
-                                        </GridItem>
-                                        <GridItem
-                                          colSpan={{
-                                            base: 2,
-                                            sm: 2,
-                                            md: 1,
-                                            lg: 1,
-                                          }}
-                                          w={"full"}
-                                        >
-                                          <Stack w={"full"}>
-                                            <Text color={"secondary.500"}>
-                                              Operasional Berakhir
-                                            </Text>
-                                            <Input
-                                              type="time"
-                                              id="appOperationalHourClosed"
-                                              name="appOperationalHourClosed"
-                                              onChange={formik.handleChange}
-                                              value={
-                                                formik.values
-                                                  .appOperationalHourClosed
-                                                  ? formik.values.appOperationalHourClosed.slice(
-                                                      0,
-                                                      5
-                                                    ) // ensure HH:mm
-                                                  : ""
-                                              }
-                                            />
-                                          </Stack>
-                                        </GridItem>
-                                      </Grid>
-                                    </Flex>
-                                  )}
-
-                                  <FormErrorMessage>
-                                    {formik.errors.appOperational24hrs}
-                                  </FormErrorMessage>
-                                </Stack>
-                              </InputLayoutFull>
-                            </FormControl>
-
-                            <FormControl
-                              id="appLiveTargetDate"
-                              isInvalid={
-                                formik.errors.appLiveTargetDate ? true : false
-                              }
-                              isRequired
-                            >
-                              <InputLayout>
-                                <FormLabel h={"full"} mt={2}>
-                                  Target Live
-                                </FormLabel>
-                                <Stack spacing={2} h={"full"}>
-                                  <Input
-                                    id="appLiveTargetDate"
-                                    name="appLiveTargetDate"
-                                    type="date"
-                                    onChange={formik.handleChange}
-                                    value={
-                                      formik.values.appLiveTargetDate ?? ""
-                                    }
-                                    isDisabled={ActionLoading}
-                                  />
-                                  {/* <Text px={2} fontWeight={600}>
-                                    {formik.values.appLiveTargetDate
-                                      ? getQuarterText(
-                                          formik.values.appLiveTargetDate
-                                        )
-                                      : "-"}
-                                  </Text> */}
-                                  <FormErrorMessage>
-                                    {formik.errors.appLiveTargetDate}
-                                  </FormErrorMessage>
-                                </Stack>
-                              </InputLayout>
-                            </FormControl>
-
-                            <FormControl
-                              id="appLiveTargetDateTerbilang"
-                              isRequired
-                            >
-                              <InputLayout>
-                                <FormLabel h={"full"} mt={2}>
-                                  Terbilang Target Live
-                                </FormLabel>
-                                <Stack spacing={2} h={"full"}>
-                                  <Text px={2} fontWeight={600}>
-                                    {formik.values.appLiveTargetDate
-                                      ? getQuarterText(
-                                          formik.values.appLiveTargetDate
-                                        )
-                                      : "-"}
-                                  </Text>
-                                </Stack>
-                              </InputLayout>
-                            </FormControl>
-
-                            <FormControl
-                              id="note"
-                              isInvalid={formik.errors.note ? true : false}
-                            >
-                              <InputLayoutFull>
-                                <FormLabel h={"full"} mt={2}>
-                                  Catatan
-                                </FormLabel>
-                                <Stack spacing={0} h={"full"}>
-                                  <Textarea
-                                    id="note"
-                                    name="note"
-                                    onChange={formik.handleChange}
-                                    defaultValue={formik.values.note ?? ""}
-                                    placeholder={`Catatan (Opsional)`}
-                                    maxLength={300}
-                                    isDisabled={ActionLoading}
-                                  />
-                                  <FormErrorMessage>
-                                    {formik.errors.note}
-                                  </FormErrorMessage>
-                                </Stack>
-                              </InputLayoutFull>
-                            </FormControl>
-
-                            <Divider />
-
-                            <FormControl id="backlogFeatures">
-                              <InputLayoutFull>
-                                <FormLabel h={"full"} mt={2}>
-                                  Fitur Aplikasi
-                                </FormLabel>
-                                <Stack spacing={2} h={"full"}>
-                                  <Flex
-                                    as={Stack}
-                                    w={"full"}
-                                    p={2}
-                                    border={"1px"}
-                                    borderColor={
-                                      colorMode == "light"
-                                        ? "gray.200"
-                                        : "gray.600"
-                                    }
-                                    boxShadow={"md"}
-                                    rounded={radiusStyle}
-                                  >
-                                    <Button
-                                      w={"full"}
-                                      leftIcon={<FiPlusCircle />}
-                                      colorScheme={"secondary"}
-                                      onClick={() => handleOpenForm()}
-                                    >
-                                      Tambah Fitur
-                                    </Button>
-
-                                    <TableComponentFullSm table={table} />
-                                  </Flex>
-                                </Stack>
-                              </InputLayoutFull>
-                            </FormControl>
-                          </Flex>
-                        </InputGroupPanel>
-                        <InputGroupPanel
-                          headerTitle={`Ringkasan Ruanglingkup ${type_req_param} | Aspek Teknis`}
-                        >
-                          <Flex as={Stack} w={"full"} spacing={5}>
-                            <FormControl>
-                              <InputLayoutFull>
-                                <FormLabel h={"full"} mt={2}>
-                                  Target Lokasi Server
-                                </FormLabel>
-                                <Stack spacing={0} h={"full"}>
-                                  <CheckboxGroup>
-                                    <Grid
-                                      templateColumns="repeat(2, 1fr)"
-                                      gap={1}
-                                      w={"full"}
-                                    >
-                                      {APP_ENV_LOCATION_OPTIONS.map(
-                                        (item, idx) => (
-                                          <GridItem
-                                            key={idx}
-                                            colSpan={{
-                                              base: 2,
-                                              sm: 2,
-                                              md: 1,
-                                              lg: 1,
-                                            }}
-                                            w={"full"}
-                                          >
-                                            <Checkbox
-                                              key={idx}
-                                              isChecked={SelectedAppsEnvLoc.includes(
-                                                item
-                                              )}
-                                              onChange={() =>
-                                                handleAppysEnvLocCheckboxChange(
-                                                  item
-                                                )
-                                              }
-                                            >
-                                              {item}
-                                            </Checkbox>
-                                          </GridItem>
-                                        )
-                                      )}
-                                    </Grid>
-                                  </CheckboxGroup>
-                                  {hasOtherEnvLocTypes && (
-                                    <Flex as={Stack} w={"full"} pt={2}>
-                                      <Text>Input Lainnya</Text>
-                                      <OtherInputAppsStringSeparator
-                                        value={
-                                          formik.values.appEnvLocationsOthers ||
-                                          ""
-                                        }
-                                        onChange={(val) => {
-                                          formik.setFieldValue(
-                                            "appEnvLocationsOthers",
-                                            val
-                                          );
-                                        }}
-                                      />
-                                    </Flex>
-                                  )}
-                                  <FormHelperText as={"i"} fontSize={"xs"}>
-                                    Jika server aplikasi ditempatkan di pihak
-                                    ketiga, harap cantumkan alamat lokasi
-                                    (Domain/Data Center).*
-                                  </FormHelperText>
-                                </Stack>
-                              </InputLayoutFull>
-                            </FormControl>
-
-                            <FormControl>
-                              <InputLayout>
-                                <FormLabel h={"full"} mt={2}>
-                                  Otentikasi UIM Bank bjb
-                                </FormLabel>
-                                <Stack spacing={0} h={"full"}>
-                                  <RadioGroup
-                                    onChange={(val) =>
-                                      formik.setFieldValue(
-                                        "appPrivateAuth",
-                                        val
-                                      )
-                                    }
-                                    value={"Y"}
-                                  >
-                                    <Flex w={"full"} as={HStack}>
-                                      <Radio value={"Y"}>Ya</Radio>
-                                      <Radio value={"N"} isDisabled>
-                                        Tidak
-                                      </Radio>
-                                    </Flex>
-                                  </RadioGroup>
-
-                                  <FormErrorMessage>
-                                    {formik.errors.appAccessMedia}
-                                  </FormErrorMessage>
-                                </Stack>
-                              </InputLayout>
-                            </FormControl>
-
-                            <FormControl>
-                              <InputLayout>
-                                <FormLabel h={"full"} mt={2}>
-                                  Keperluan High Availability
-                                </FormLabel>
-                                <Stack spacing={0} h={"full"}>
-                                  <RadioGroup
-                                    onChange={(val) =>
-                                      formik.setFieldValue(
-                                        "appHightAvailability",
-                                        val
-                                      )
-                                    }
-                                    value={
-                                      formik.values.appHightAvailability ?? ""
-                                    }
-                                  >
-                                    <Flex w={"full"} as={HStack}>
-                                      <Radio value={"Y"}>Ya</Radio>
-                                      <Radio value={"N"}>Tidak</Radio>
-                                    </Flex>
-                                  </RadioGroup>
-
-                                  <FormErrorMessage>
-                                    {formik.errors.appAccessMedia}
-                                  </FormErrorMessage>
-                                </Stack>
-                              </InputLayout>
-                            </FormControl>
-
-                            <FormControl>
-                              <InputLayoutFull>
-                                <FormLabel h={"full"} mt={2}>
-                                  Integrasi Dengan Aplikasi Lain
-                                </FormLabel>
-                                <Stack spacing={0} h={"full"}>
-                                  <InputTagsArea
-                                    name="appIntegrationOthersApps"
-                                    value={
-                                      formik.values.appIntegrationOthersApps ||
-                                      ""
-                                    }
-                                    onChange={(val) => {
-                                      formik.setFieldValue(
-                                        "appIntegrationOthersApps",
-                                        val
-                                      );
-                                    }}
-                                  />
-                                  <FormErrorMessage>
-                                    {formik.errors.appAccessMedia}
-                                  </FormErrorMessage>
-                                  <Divider py={1} />
-                                  <Text fontSize={"smaller"} py={2}>
-                                    Tambah Cepat
-                                  </Text>
-                                  <FormControl>
-                                    <FormLabel>
-                                      Rekomendasi Aplikasi Lain / Surrounding
-                                    </FormLabel>
-                                    <Flex as={Wrap} w={"full"}>
-                                      {APP_INTEGRATED_OTHER_APPS.filter(
-                                        (item) => {
-                                          const existingTags = (
-                                            formik.values
-                                              .appIntegrationOthersApps || ""
-                                          )
-                                            .split(",")
-                                            .map((t) => t.trim());
-
-                                          return !existingTags.includes(item);
-                                        }
-                                      ).map((item, index) => (
-                                        <Tag
-                                          key={index}
-                                          borderRadius="full"
-                                          colorScheme="secondary"
-                                          variant={"solid"}
-                                          px={3}
-                                          cursor={"pointer"}
-                                          _hover={{
-                                            bg: "secondary.700",
-                                            color: "white",
-                                          }}
-                                          onClick={() => {
-                                            handleQuickAddTagIntegratedApps(
-                                              item
-                                            );
-                                          }}
-                                        >
-                                          <FiPlus />
-                                          <TagLabel pl={1}>{item}</TagLabel>
-                                        </Tag>
-                                      ))}
-                                    </Flex>
-                                  </FormControl>
-                                </Stack>
-                              </InputLayoutFull>
-                            </FormControl>
-                          </Flex>
-                        </InputGroupPanel>
-                      </Flex>
+                      <>
+                        {type_req_param == "BRD" ? (
+                          <Section4BRDView
+                            type_req_param={"BRD"}
+                            ActionLoading={ActionLoading}
+                            formik={formik}
+                            DataBackLogs={DataBackLogs}
+                            setDataBackLogs={setDataBackLogs}
+                          />
+                        ) : (
+                          <Section4RFCView
+                            type_req_param={"RFC"}
+                            ActionLoading={ActionLoading}
+                            formik={formik}
+                            DataBackLogs={DataBackLogs}
+                            setDataBackLogs={setDataBackLogs}
+                          />
+                        )}
+                      </>
                     )}
 
                     {activeStep === 5 && (
@@ -5482,7 +4120,7 @@ function RegsiterRequirementViewPage({
                       maxH={"350px"}
                       p={2}
                       bgColor={"gray.200"}
-                      display={"block"}
+                      display={"none"}
                     >
                       <pre>{JSON.stringify(formik.values, null, 2)}</pre>
                     </Box>
@@ -5595,6 +4233,3040 @@ const AppicationShowCase = ({
       <Text userSelect="none" fontWeight={600} fontSize={"small"}>
         {dataApp.appName}
       </Text>
+    </Flex>
+  );
+};
+
+// ------------------------------------ SECTION SPARATE
+
+interface Section4BRDProps {
+  type_req_param: "BRD";
+  formik: any;
+  ActionLoading: boolean;
+  DataBackLogs: ReqBacklogPayload[]; // <- add state value
+  setDataBackLogs: React.Dispatch<React.SetStateAction<ReqBacklogPayload[]>>; // <- add setter function
+}
+
+// STEP 4 SECTION BRD
+const Section4BRDView = ({
+  type_req_param,
+  formik,
+  ActionLoading,
+  DataBackLogs,
+  setDataBackLogs,
+}: Section4BRDProps) => {
+  const showToast = useToastHelper();
+  const { colorMode } = useColorMode();
+  const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
+  const [tokenData, setTokenData] = useState<string>("");
+  const delay = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
+  const { List: ListApps } = useApps();
+
+  // Backlog Setup
+  const ModalForm = useDisclosure();
+  const [FormMode, setFormMode] = useState<"Add" | "Edit">("Add");
+
+  const columnsData = useMemo<ColumnDef<ReqBacklogPayload>[]>(
+    () => [
+      {
+        accessorFn: (row) => row.backlogId,
+        id: "numbertd",
+        cell: (info) => <Flex>{info.row.index + 1}. </Flex>,
+        header: () => <span>No. </span>,
+        footer: (props) => props.column.id,
+      },
+      {
+        accessorFn: (row) => row.backlogName,
+        id: "backlogName",
+        cell: (info) => <Flex>{info.row.original.backlogName}</Flex>,
+        header: () => <span>Nama Fitur</span>,
+        footer: (props) => props.column.id,
+      },
+      {
+        accessorFn: (row) => row.backlogDesc,
+        id: "backlogDesc",
+        cell: (info) => <Flex>{info.row.original.backlogDesc}</Flex>,
+        header: () => <span>Deskripsi</span>,
+        footer: (props) => props.column.id,
+      },
+      {
+        accessorFn: (row) => row.backlogId,
+        id: "backlogId",
+        cell: (info) => (
+          <Flex as={HStack} justifyContent={"end"}>
+            <Button
+              colorScheme="teal"
+              size="xs"
+              variant="ghost"
+              onClick={() => logBacklog(info.row.original.backlogId)}
+            >
+              Ubah
+            </Button>
+            <Button
+              colorScheme="red"
+              size="xs"
+              variant="ghost"
+              onClick={() => removeBacklog(info.row.original.backlogId)}
+            >
+              Hapus
+            </Button>
+          </Flex>
+        ),
+        header: () => <Flex justifyContent={"end"}>Aksi</Flex>,
+        footer: (props) => props.column.id,
+      },
+    ],
+    [DataBackLogs]
+  );
+  const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 5,
+  });
+  const pagination = useMemo(
+    () => ({
+      pageIndex,
+      pageSize,
+    }),
+    [pageIndex, pageSize]
+  );
+
+  const table = useReactTable({
+    data: DataBackLogs,
+    columns: columnsData,
+    state: {
+      pagination,
+    },
+    onPaginationChange: setPagination,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    debugTable: false,
+    manualFiltering: false,
+    manualPagination: false,
+  });
+
+  const [TextBackLogIndex, setTextBackLogIndex] = useState<number | null>(null);
+  const [TextBackLogId, setTextBackLogId] = useState<string | null>(null);
+  const [TextBackLogName, setTextBackLogName] = useState<string>("");
+  const [TextBackLogDesc, setTextBackLogDesc] = useState<string>("");
+
+  const handleOpenForm = () => {
+    ModalForm.onOpen();
+  };
+
+  const addBacklog = (name: string, desc?: string) => {
+    const generateFakeId = () => {
+      return `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+    };
+
+    const isDuplicate = DataBackLogs.some(
+      (x) => x.backlogName.toLowerCase() === name.toLowerCase()
+    );
+
+    if (isDuplicate) {
+      showToast({
+        description: "Fitur sudah ada di daftar",
+        statusToast: "warning",
+      });
+      return;
+    }
+
+    const newBacklog: ReqBacklogPayload = {
+      backlogId: generateFakeId(),
+      backlogName: name,
+      backlogDesc: desc || null,
+    };
+
+    setDataBackLogs((prev) => [...prev, newBacklog]);
+
+    showToast({
+      description: "Fitur ditambahkan",
+      statusToast: "success",
+    });
+  };
+
+  const updateBacklog = (backlogId: string, updatedData: ReqBacklogPayload) => {
+    setDataBackLogs((prev) =>
+      prev.map((item) =>
+        item.backlogId === backlogId ? { ...item, ...updatedData } : item
+      )
+    );
+
+    showToast({
+      description: "Fitur diubah",
+      statusToast: "success",
+    });
+
+    ModalForm.onClose();
+    setFormMode("Add");
+  };
+
+  const removeBacklog = (backlogId: string | undefined | null) => {
+    if (backlogId == undefined || backlogId == null) {
+      showToast({
+        description: "Fitur ID error",
+        statusToast: "warning",
+      });
+      return;
+    }
+    setDataBackLogs((prev) =>
+      prev.filter((item) => item.backlogId !== backlogId)
+    );
+  };
+
+  const handleSaveBacklog = () => {
+    if (!TextBackLogName.trim()) {
+      showToast({
+        description: "Nama fitur tidak boleh kosong",
+        statusToast: "warning",
+      });
+      return;
+    }
+
+    if (FormMode === "Add") {
+      addBacklog(TextBackLogName.trim(), TextBackLogDesc?.trim());
+    } else {
+      if (!TextBackLogId) {
+        showToast({
+          description: "Backlog ID kosong",
+          statusToast: "warning",
+        });
+        return;
+      }
+
+      updateBacklog(TextBackLogId, {
+        backlogId: TextBackLogId,
+        backlogName: TextBackLogName.trim(),
+        backlogDesc: TextBackLogDesc?.trim() || null,
+      });
+    }
+
+    // Reset state
+    setTextBackLogIndex(null);
+    setTextBackLogId(null);
+    setTextBackLogName("");
+    setTextBackLogDesc("");
+    setFormMode("Add");
+  };
+
+  const logBacklog = (backlogId: string | undefined | null) => {
+    console.log(backlogId);
+    console.log(DataBackLogs);
+    if (backlogId == undefined || backlogId == null) {
+      showToast({
+        description: "Fitur ID error",
+        statusToast: "warning",
+      });
+      return;
+    }
+
+    const item = DataBackLogs.find((x) => x.backlogId === backlogId);
+    if (!item) return;
+
+    setFormMode("Edit");
+    ModalForm.onOpen();
+    setTextBackLogId(item.backlogId || null);
+    setTextBackLogName(item.backlogName || "");
+    setTextBackLogDesc(item.backlogDesc || "");
+  };
+
+  useEffect(() => {
+    formik.setFieldValue(
+      "backlogFeatures",
+      DataBackLogs.map((item) => ({
+        ...item,
+        backlogId: null,
+      }))
+    );
+  }, [DataBackLogs]);
+
+  // End Backlog setup
+
+  // Choose Aplication existing
+  const [ListDataAplicationExisting, setListDataAplicationExisting] = useState<
+    ApplicationMasterResponse[]
+  >([]);
+  const [ApplicationExistingChoosed, setApplicationExistingChoosed] =
+    useState<ApplicationMasterResponse | null>(null);
+
+  const GetDataApplications = async (
+    searchValue: string = "",
+    limit: number = 1
+  ) => {
+    const PayloadList: PaggingListPayload = {
+      search: searchValue,
+      limit: limit,
+      page: 0,
+      filterWhere: [],
+      fieldOrder: ["appShortName"],
+      orderDir: "asc",
+    };
+    const token: string = localStorage.getItem("tokenData") as string;
+    const requestData = await ListApps(PayloadList, token);
+    const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+
+    if (isErrorResponse || !requestData) {
+      showToast({
+        description: requestData?.message || RES_GENERIC_ERROR_MSG,
+        statusToast: "error",
+      });
+      return;
+    } else {
+      console.log(requestData);
+      if (requestData.data == null) {
+        showToast({
+          description: "Data return error",
+          statusToast: "error",
+        });
+        return;
+      }
+
+      const itemsData: ApplicationMasterResponse[] =
+        requestData.data as ApplicationMasterResponse[];
+
+      setListDataAplicationExisting(itemsData);
+
+      return;
+    }
+  };
+
+  const ResetAppSpec = () => {
+    setListDataAplicationExisting([]);
+    setApplicationExistingChoosed(null);
+    setSelectedAppsTypes("");
+    setOperationalDays("");
+    setSelectedAppsEnvLoc("");
+    setMediaAksesPublic(false);
+    setMediaAksesIntranet(false);
+    formik.setFieldValue("appInitialCode", null);
+    formik.setFieldValue("appInitialName", null);
+    formik.setFieldValue("appTargetUsers", "INTERNAL");
+    formik.setFieldValue("appAccessFrontsiteDns", null);
+    formik.setFieldValue("appAccessFrontsiteIp", null);
+    formik.setFieldValue("appAccessBacksiteDns", null);
+    formik.setFieldValue("appAccessBacksiteIp", null);
+
+    formik.setFieldValue("backlogChange", null);
+    formik.setFieldValue("appAccessMedia", null);
+    formik.setFieldValue("appTypes", null);
+    formik.setFieldValue("appTypeCustom", null);
+    formik.setFieldValue("appRelatedness", null);
+    formik.setFieldValue("appRelatednessDesc", null);
+    formik.setFieldValue("appTransactionals", null);
+    formik.setFieldValue("appOperational24hrs", null);
+    formik.setFieldValue("appOperationalDays", null);
+    formik.setFieldValue("appOperationalHourOpen", null);
+    formik.setFieldValue("appOperationalHourClosed", null);
+    formik.setFieldValue("appLiveTargetDate", null);
+
+    formik.setFieldValue("appEnvLocations", "");
+    formik.setFieldValue("appEnvLocationsOthers", "");
+    formik.setFieldValue("appPrivateAuth", "Y");
+    formik.setFieldValue("appHightAvailability", "Y");
+    formik.setFieldValue("appIntegrationOthersApps", "");
+  };
+
+  const SelectedApp = (data: ApplicationMasterResponse) => {
+    if (ApplicationExistingChoosed != null) {
+      ResetAppSpec();
+    } else {
+      setApplicationExistingChoosed(data);
+      formik.setFieldValue("appInitialCode", data.appShortName);
+      formik.setFieldValue("appInitialName", data.appName);
+
+      formik.setFieldValue(
+        "appTargetUsers",
+        data.requirementData?.appTargetUsers
+      );
+      if (data.requirementData?.appAccessFrontsiteDns) {
+        setMediaAksesPublic(true);
+      }
+      formik.setFieldValue(
+        "appAccessFrontsiteDns",
+        data.requirementData?.appAccessFrontsiteDns
+      );
+      formik.setFieldValue(
+        "appAccessFrontsiteIp",
+        data.requirementData?.appAccessFrontsiteIp
+      );
+      formik.setFieldValue(
+        "appAccessBacksiteDns",
+        data.requirementData?.appAccessBacksiteDns
+      );
+      if (data.requirementData?.appAccessBacksiteIp) {
+        setMediaAksesIntranet(true);
+      }
+      formik.setFieldValue(
+        "appAccessBacksiteIp",
+        data.requirementData?.appAccessBacksiteIp
+      );
+
+      formik.setFieldValue(
+        "backlogChange",
+        data.requirementData?.backlogChange
+      );
+      formik.setFieldValue(
+        "appAccessMedia",
+        data.requirementData?.appAccessMedia
+      );
+      formik.setFieldValue("appTypes", data.requirementData?.appTypes);
+      formik.setFieldValue(
+        "appTypeCustom",
+        data.requirementData?.appTypeCustom
+      );
+      formik.setFieldValue(
+        "appRelatedness",
+        data.requirementData?.appRelatedness
+      );
+      formik.setFieldValue(
+        "appRelatednessDesc",
+        data.requirementData?.appRelatednessDesc
+      );
+      formik.setFieldValue(
+        "appTransactionals",
+        data.requirementData?.appTransactionals
+      );
+      formik.setFieldValue(
+        "appOperational24hrs",
+        data.requirementData?.appOperational24hrs
+      );
+      formik.setFieldValue(
+        "appOperationalDays",
+        data.requirementData?.appOperationalDays
+      );
+      formik.setFieldValue(
+        "appOperationalHourOpen",
+        data.requirementData?.appOperationalHourOpen
+      );
+      formik.setFieldValue(
+        "appOperationalHourClosed",
+        data.requirementData?.appOperationalHourClosed
+      );
+      formik.setFieldValue(
+        "appLiveTargetDate",
+        data.requirementData?.appLiveTargetDate
+          ? stringToDateFormatedReverse(data.requirementData?.appLiveTargetDate)
+          : null
+      );
+
+      formik.setFieldValue(
+        "appEnvLocations",
+        data.requirementData?.appEnvLocations
+      );
+      formik.setFieldValue(
+        "appEnvLocationsOthers",
+        data.requirementData?.appEnvLocationsOthers
+      );
+      formik.setFieldValue(
+        "appPrivateAuth",
+        data.requirementData?.appPrivateAuth
+      );
+      formik.setFieldValue(
+        "appHightAvailability",
+        data.requirementData?.appHightAvailability
+      );
+      formik.setFieldValue(
+        "appIntegrationOthersApps",
+        data.requirementData?.appIntegrationOthersApps
+      );
+
+      setSelectedAppsTypes(data.requirementData?.appTypes || "");
+      setOperationalDays(data.requirementData?.appOperationalDays || "");
+      setSelectedAppsEnvLoc(data.requirementData?.appEnvLocations || "");
+    }
+  };
+
+  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+
+  const handleChangeAppCode = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const onlyAlphabets = e.target.value
+      .replace(/[^a-zA-Z ]/g, "")
+      .toUpperCase();
+    formik.setFieldValue("appInitialCode", onlyAlphabets);
+
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      if (onlyAlphabets.length >= 2) {
+        GetDataApplications(onlyAlphabets, 4);
+      } else {
+        setListDataAplicationExisting([]);
+        setApplicationExistingChoosed(null);
+        formik.setFieldValue("appInitialCode", null);
+        formik.setFieldValue("appInitialName", null);
+      }
+    }, 300);
+  };
+  // End - Choose Aplication existing
+
+  // APP TYPES OPTIONS HANDLER
+
+  const [SelectedAppsTypes, setSelectedAppsTypes] = useState<string>("");
+
+  const handleAppysTypesCheckboxChange = (value: string) => {
+    const currentList = SelectedAppsTypes.split(",")
+      .map((item) => item.trim())
+      .filter(Boolean); // removes empty strings
+
+    let updatedList: string[];
+
+    if (currentList.includes(value)) {
+      updatedList = currentList.filter((item) => item !== value);
+    } else {
+      updatedList = [...currentList, value];
+    }
+
+    setSelectedAppsTypes(
+      updatedList.join(", ") + (updatedList.length > 0 ? "," : "")
+    );
+  };
+  const hasOtherAppsTypes = SelectedAppsTypes.split(",")
+    .map((s) => s.trim().toLowerCase())
+    .includes("other");
+
+  // END APP TYPES OPTIONS HANDLER
+
+  // APPS OPERATIONAL STATE
+  const [OperationalDays, setOperationalDays] = useState<string>("");
+
+  // END APPS OPERATIONAL STATE
+
+  // APP ENV LOC OPTIONS HANDLER
+
+  const [SelectedAppsEnvLoc, setSelectedAppsEnvLoc] = useState<string>("");
+
+  const handleAppysEnvLocCheckboxChange = (value: string) => {
+    const currentList = SelectedAppsEnvLoc.split(",")
+      .map((item) => item.trim())
+      .filter(Boolean); // removes empty strings
+
+    let updatedList: string[];
+
+    if (currentList.includes(value)) {
+      updatedList = currentList.filter((item) => item !== value);
+    } else {
+      updatedList = [...currentList, value];
+    }
+
+    setSelectedAppsEnvLoc(
+      updatedList.join(", ") + (updatedList.length > 0 ? "," : "")
+    );
+  };
+  const hasOtherEnvLocTypes = SelectedAppsEnvLoc.split(",")
+    .map((s) => s.trim().toLowerCase())
+    .includes("other");
+
+  // END APP ENV LOC OPTIONS HANDLER
+
+  useEffect(() => {
+    formik.setFieldValue("appTypes", SelectedAppsTypes);
+    formik.setFieldValue("appOperationalDays", OperationalDays);
+    formik.setFieldValue("appEnvLocations", SelectedAppsEnvLoc);
+    // if (formik.values.appOperational24hrs == APP_OPERATIONAL_OPTIONS[0]) {
+    //   formik.setFieldValue("appOperationalDays", "");
+    // }
+
+    if (!hasOtherAppsTypes) {
+      formik.setFieldValue("appRelatednessDesc", "");
+    }
+    if (!hasOtherEnvLocTypes) {
+      formik.setFieldValue("appEnvLocationsOthers", "");
+    }
+  }, [SelectedAppsTypes, OperationalDays, SelectedAppsEnvLoc]);
+
+  const handleQuickAddTagIntegratedApps = (tag: string) => {
+    const currentValue = formik.values.appIntegrationOthersApps || "";
+
+    const currentTags = currentValue
+      .split(",")
+      .map((t: string) => t.trim())
+      .filter(Boolean);
+
+    if (!currentTags.includes(tag)) {
+      const updated = [...currentTags, tag].join(", ");
+      formik.setFieldValue("appIntegrationOthersApps", updated);
+    }
+  };
+
+  // APP MEDIA AKSES
+  const [MediaAksesPublic, setMediaAksesPublic] = useState(false);
+  const [MediaAksesIntranet, setMediaAksesIntranet] = useState(false);
+
+  return (
+    <Flex as={Stack} w={"full"} spacing={5}>
+      {/* MODAL HERE */}
+      <Modal
+        size={"xl"}
+        isOpen={ModalForm.isOpen}
+        isCentered
+        onClose={ModalForm.onClose}
+        closeOnOverlayClick={true}
+        scrollBehavior={"inside"}
+      >
+        <ModalOverlay bg="blackAlpha.300" />
+        <ModalContent
+          rounded={radiusStyle}
+          m={2}
+          bg={colorMode == "light" ? "white" : "gray.900"}
+        >
+          <ModalHeader>{`${
+            FormMode == "Add" ? "Tambah" : "Ubah"
+          } Fitur`}</ModalHeader>
+          <ModalCloseButton color={"red.500"} />
+          <ModalBody w={"full"}>
+            <Flex as={Stack} w={"full"}>
+              <FormControl>
+                <FormLabel>Nama Fitur</FormLabel>
+                <Input
+                  id="backlogFeatureName"
+                  name="backlogFeatureName"
+                  type="text"
+                  onChange={(e) => setTextBackLogName(e.target.value)}
+                  value={TextBackLogName}
+                  placeholder={`Nama Fitur`}
+                  minLength={3}
+                  maxLength={200}
+                  isDisabled={ActionLoading}
+                />
+              </FormControl>
+              <FormControl>
+                <FormLabel>Deskripsi</FormLabel>
+                <Textarea
+                  id="backlogFeatureDesc"
+                  name="backlogFeatureDesc"
+                  onChange={(e) => setTextBackLogDesc(e.target.value)}
+                  value={TextBackLogDesc}
+                  placeholder={`Deskripsi Fitur`}
+                  maxLength={300}
+                  isDisabled={ActionLoading}
+                />
+              </FormControl>
+
+              <Button
+                mt={2}
+                w={"full"}
+                size={"lg"}
+                leftIcon={<FiPlusCircle />}
+                colorScheme={"secondary"}
+                onClick={() => handleSaveBacklog()}
+              >
+                {FormMode == "Add" ? "Tambah" : "Ubah"} Fitur
+              </Button>
+
+              <Divider py={1} />
+              <Text fontSize={"smaller"}>Tambah Cepat</Text>
+              <FormControl>
+                <FormLabel>Rekomendasi Fitur Umum</FormLabel>
+                <Flex as={Wrap} w={"full"}>
+                  {FeatureRecomentionsBacklogs.map((item, index) => {
+                    if (
+                      DataBackLogs.some(
+                        (x) => x.backlogName === item.featureName
+                      )
+                    ) {
+                      return null; // Skip if already exists
+                    } else {
+                      return (
+                        <Tag
+                          key={index}
+                          borderRadius="full"
+                          colorScheme="secondary"
+                          variant={"solid"}
+                          onClick={() => {
+                            setTextBackLogName(item.featureName);
+                            setTextBackLogDesc(item.featureDescription || "");
+                          }}
+                          px={3}
+                          cursor={"pointer"}
+                          _hover={{ bg: "secondary.700", color: "white" }}
+                        >
+                          <FiPlus />
+                          <TagLabel pl={1}>{item.featureName}</TagLabel>
+                        </Tag>
+                      );
+                    }
+                  })}
+                </Flex>
+              </FormControl>
+            </Flex>
+          </ModalBody>
+          <ModalFooter></ModalFooter>
+        </ModalContent>
+      </Modal>
+      {/* SECTION STRAT */}
+      <InputGroupPanel
+        headerTitle={`Ringkasan Ruanglingkup ${type_req_param} | Aspek Bisnis`}
+      >
+        <Flex as={Stack} w={"full"} spacing={5}>
+          <FormControl
+            id="appInitialCode"
+            isInvalid={formik.errors.appInitialCode ? true : false}
+          >
+            <InputLayout>
+              <FormLabel h={"full"} mt={2}>
+                Inisial Aplikasi
+              </FormLabel>
+              <Stack spacing={0} h={"full"}>
+                <Flex
+                  w="full"
+                  justifyContent="start"
+                  alignItems="center"
+                  gap={4}
+                >
+                  <Input
+                    id="appInitialCode"
+                    name="appInitialCode"
+                    type="text"
+                    w={"50%"}
+                    onChange={handleChangeAppCode}
+                    value={formik.values.appInitialCode ?? ""}
+                    placeholder={`CMS / SISMON / dsb.`}
+                    minLength={3}
+                    maxLength={10}
+                    isDisabled={ActionLoading}
+                  />
+                  {formik.values.appInitialCode &&
+                    formik.values.appInitialCode.length > 2 &&
+                    ListDataAplicationExisting.length <= 0 && (
+                      <HStack color={"secondary.500"}>
+                        <Text fontWeight={600} as={"span"}>
+                          Aplikasi Baru
+                        </Text>
+                        <FiCheckCircle />
+                      </HStack>
+                    )}
+                </Flex>
+                <Box
+                  w={"full"}
+                  py={2}
+                  px={4}
+                  mt={2}
+                  bgColor={"gray.200"}
+                  rounded={radiusStyle}
+                  as={Wrap}
+                  display={
+                    ListDataAplicationExisting.length > 0 ? "block" : "none"
+                  }
+                >
+                  <Heading as="h4" size="sm">
+                    Aplikasi Existing
+                  </Heading>
+                  <Flex w="full" overflowX="auto">
+                    <HStack spacing={4} minW="max-content">
+                      {/* APP LIST */}
+                      {ListDataAplicationExisting.length > 0 &&
+                        ListDataAplicationExisting.map((ap, idx) => (
+                          <AppicationShowCase
+                            key={idx}
+                            dataApp={ap}
+                            SelectedApp={SelectedApp}
+                            isActive={
+                              ApplicationExistingChoosed?.appShortName ==
+                              ap.appShortName
+                            }
+                          />
+                        ))}
+                    </HStack>
+                  </Flex>
+                </Box>
+                <Box
+                  w={"full"}
+                  overflowY={"auto"}
+                  overflowX={"auto"}
+                  h={"350px"}
+                  p={4}
+                  mt={2}
+                  bgColor={"gray.200"}
+                  rounded={radiusStyle}
+                  display={"none"}
+                >
+                  <Text fontWeight={600}>Data Apps</Text>
+                  <pre>
+                    {JSON.stringify(ListDataAplicationExisting, null, 2)}
+                  </pre>
+                </Box>
+                <FormErrorMessage>
+                  {formik.errors.appInitialCode}
+                </FormErrorMessage>
+              </Stack>
+            </InputLayout>
+          </FormControl>
+
+          <FormControl
+            id="appInitialName"
+            isInvalid={formik.errors.appInitialName ? true : false}
+          >
+            <InputLayoutFull>
+              <FormLabel h={"full"} mt={2}>
+                Nama Aplikasi
+              </FormLabel>
+              <Stack spacing={0} h={"full"}>
+                <Input
+                  id="appInitialName"
+                  name="appInitialName"
+                  type="text"
+                  onChange={formik.handleChange}
+                  value={formik.values.appInitialName ?? ""}
+                  placeholder={`Nama Aplikasi`}
+                  minLength={3}
+                  maxLength={150}
+                  isDisabled={
+                    ActionLoading || ApplicationExistingChoosed != null
+                  }
+                />
+                <FormErrorMessage>
+                  {formik.errors.appInitialName}
+                </FormErrorMessage>
+              </Stack>
+            </InputLayoutFull>
+          </FormControl>
+
+          {ApplicationExistingChoosed && (
+            <Flex
+              w={"full"}
+              as={Stack}
+              justifyContent={"center"}
+              alignItems={"center"}
+              rounded={radiusStyle}
+              border={"1px"}
+              borderColor={colorMode == "light" ? "gray.200" : "gray.700"}
+              transition="transform 0.2s ease-in-out, background-color 0.2s ease, box-shadow 0.2s ease-in-out" // Animate transform and box-shadow
+              bgGradient={"linear(to-br, secondary.800, secondary.500)"}
+              color={"white"}
+              p={4}
+              spacing={5}
+            >
+              <Heading as="h5" size="sm">
+                Apliaksi Eksisting
+              </Heading>
+              {/* ICON APP */}
+              <Flex
+                position="relative"
+                backgroundPosition="center"
+                backgroundRepeat="no-repeat"
+                backgroundSize="cover"
+                backgroundImage={`url(/img/default-apps.jpg)`}
+                rounded={"100%"}
+                color={"white"}
+                w={"80px"}
+                h={"80px"}
+                alignItems="center"
+                justifyContent="center"
+                textAlign="center"
+                fontWeight="bold"
+                textOverflow="ellipsis"
+                whiteSpace="nowrap"
+                flexShrink={0}
+                boxShadow={"md"}
+              />
+              <Flex h={"full"} as={Stack} alignItems={"start"} spacing={1}>
+                <Flex as={HStack}>
+                  <Badge
+                    colorScheme="gray"
+                    fontSize={"medium"}
+                    px={3}
+                    rounded={"md"}
+                  >
+                    {ApplicationExistingChoosed.appShortName}
+                  </Badge>
+                  <Heading as="h4" size="md">
+                    {ApplicationExistingChoosed.appName.toUpperCase()}
+                  </Heading>
+                </Flex>
+                <Box>
+                  <Text fontSize={"small"}>
+                    ID APPS : {ApplicationExistingChoosed.appCode}
+                  </Text>
+                </Box>
+              </Flex>
+            </Flex>
+          )}
+
+          <Divider />
+
+          <FormControl
+            id="appTargetUsers"
+            isInvalid={formik.errors.appTargetUsers ? true : false}
+          >
+            <InputLayout>
+              <FormLabel h={"full"} mt={2}>
+                Target Pengguna
+              </FormLabel>
+              <Stack spacing={0} h={"full"}>
+                <RadioGroup
+                  onChange={(val) =>
+                    formik.setFieldValue("appTargetUsers", val)
+                  }
+                  value={formik.values.appTargetUsers ?? ""}
+                >
+                  <Flex w={"full"} as={HStack}>
+                    <Radio value={"EXTERNAL"}>EXTERNAL (NASABAH)</Radio>
+                    <Radio value={"INTERNAL"}>INTERNAL (BANK)</Radio>
+                  </Flex>
+                </RadioGroup>
+                <FormErrorMessage>
+                  {formik.errors.appTargetUsers}
+                </FormErrorMessage>
+              </Stack>
+            </InputLayout>
+          </FormControl>
+
+          <FormControl>
+            <InputLayoutFull>
+              <FormLabel h={"full"} mt={2}>
+                Media Akses Aplikasi
+              </FormLabel>
+              <Stack spacing={0} h={"full"}>
+                <Grid templateColumns="repeat(2, 1fr)" gap={3} w={"full"}>
+                  <GridItem
+                    colSpan={{
+                      base: 2,
+                      sm: 2,
+                      md: 1,
+                      lg: 1,
+                    }}
+                    w={"full"}
+                  >
+                    <Flex w={"full"} as={Stack}>
+                      <Checkbox
+                        isChecked={MediaAksesPublic}
+                        onChange={(e) => {
+                          setMediaAksesPublic(!MediaAksesPublic);
+                          console.log(e);
+                        }}
+                      >
+                        Internet (Publik)
+                      </Checkbox>
+                      <Input
+                        id="appAccessFrontsiteDns"
+                        name="appAccessFrontsiteDns"
+                        type="text"
+                        onChange={formik.handleChange}
+                        value={
+                          formik.values.appAccessFrontsiteDns || "https://"
+                        }
+                        placeholder={`https://`}
+                        minLength={5}
+                        maxLength={150}
+                        isDisabled={!MediaAksesPublic}
+                      />
+                    </Flex>
+                  </GridItem>
+                  <GridItem
+                    colSpan={{
+                      base: 2,
+                      sm: 2,
+                      md: 1,
+                      lg: 1,
+                    }}
+                    w={"full"}
+                  >
+                    <Flex w={"full"} as={Stack}>
+                      <Checkbox
+                        isChecked={MediaAksesIntranet}
+                        onChange={(e) => {
+                          setMediaAksesIntranet(!MediaAksesIntranet);
+                          console.log(e);
+                        }}
+                      >
+                        Intranet (Untuk BackOffice Bank)
+                      </Checkbox>
+                      <Input
+                        id="appAccessBacksiteIp"
+                        name="appAccessBacksiteIp"
+                        type="text"
+                        onChange={formik.handleChange}
+                        value={formik.values.appAccessBacksiteIp || "http://"}
+                        placeholder={`http://`}
+                        minLength={5}
+                        maxLength={150}
+                        isDisabled={!MediaAksesIntranet}
+                      />
+                    </Flex>
+                  </GridItem>
+                </Grid>
+                <FormHelperText as={"i"} fontSize={"xs"}>
+                  Pemilihan Kontektivitas Internet wajib disertai Pentest dan
+                  pembelian SSL, Divisi/Unit terkait dimohon menyiapkan
+                  anggarannya.*
+                </FormHelperText>
+                <FormErrorMessage>
+                  {formik.errors.appAccessMedia}
+                </FormErrorMessage>
+              </Stack>
+            </InputLayoutFull>
+          </FormControl>
+
+          <FormControl>
+            <InputLayoutFull>
+              <FormLabel h={"full"} mt={2}>
+                Jenis Aplikasi
+              </FormLabel>
+              <Stack spacing={0} h={"full"}>
+                <Text color={"gray.500"} fontSize={"smaller"} pb={1}>
+                  Base Aplikasi
+                </Text>
+                <CheckboxGroup>
+                  <Grid templateColumns="repeat(2, 1fr)" gap={1} w={"full"}>
+                    {APP_TYPE_OPTIONS.map((item, idx) => (
+                      <GridItem
+                        key={idx}
+                        colSpan={{
+                          base: 2,
+                          sm: 2,
+                          md: 1,
+                          lg: 1,
+                        }}
+                        w={"full"}
+                      >
+                        <Checkbox
+                          key={idx}
+                          isChecked={SelectedAppsTypes.includes(item)}
+                          onChange={() => handleAppysTypesCheckboxChange(item)}
+                        >
+                          {item}
+                        </Checkbox>
+                      </GridItem>
+                    ))}
+                  </Grid>
+                </CheckboxGroup>
+                {hasOtherAppsTypes && (
+                  <Flex as={Stack} w={"full"} pt={2}>
+                    <Text>Input Lainnya</Text>
+                    <OtherInputAppsStringSeparator
+                      value={formik.values.appTypeCustom || ""}
+                      onChange={(val) => {
+                        formik.setFieldValue("appTypeCustom", val);
+                      }}
+                    />
+                  </Flex>
+                )}
+              </Stack>
+            </InputLayoutFull>
+          </FormControl>
+
+          <FormControl>
+            <InputLayoutFull>
+              <FormLabel h={"full"} mt={2}>
+                Keterkaitan Aplikasi
+              </FormLabel>
+              <Stack spacing={0} h={"full"}>
+                <CheckboxGroup>
+                  <Stack spacing={0} h={"full"}>
+                    <RadioGroup
+                      onChange={(val) =>
+                        formik.setFieldValue("appRelatedness", val)
+                      }
+                      value={formik.values.appRelatedness ?? ""}
+                    >
+                      <Flex w={"full"} as={HStack}>
+                        <Radio value={APP_RELATED_OPTIONS[0]}>
+                          {APP_RELATED_OPTIONS[0]}
+                        </Radio>
+
+                        <Radio value={APP_RELATED_OPTIONS[1]}>
+                          {APP_RELATED_OPTIONS[1]}
+                        </Radio>
+                      </Flex>
+                    </RadioGroup>
+                    {formik.values.appRelatedness == APP_RELATED_OPTIONS[1] && (
+                      <Flex as={Stack} w={"full"} pt={2}>
+                        <Text>Nama Regulator</Text>
+                        <OtherInputAppsStringSeparator
+                          value={formik.values.appRelatednessDesc || ""}
+                          onChange={(val) => {
+                            formik.setFieldValue("appRelatednessDesc", val);
+                          }}
+                        />
+                      </Flex>
+                    )}
+                    <FormHelperText as={"i"} fontSize={"xs"}>
+                      Jika memilih "Regulator", harap di isi dengan nama
+                      instansi.*
+                    </FormHelperText>
+                  </Stack>
+                </CheckboxGroup>
+              </Stack>
+            </InputLayoutFull>
+          </FormControl>
+
+          <FormControl>
+            <InputLayout>
+              <FormLabel h={"full"} mt={2}>
+                Kategori Aplikasi
+              </FormLabel>
+              <Stack spacing={0} h={"full"}>
+                <RadioGroup
+                  onChange={(val) =>
+                    formik.setFieldValue("appTransactionals", val)
+                  }
+                  value={formik.values.appTransactionals ?? ""}
+                >
+                  <Flex w={"full"} as={HStack}>
+                    {APP_TRANSACTIONAL_OPTIONS.map((item, idx) => (
+                      <Radio key={idx} value={item}>
+                        {item}
+                      </Radio>
+                    ))}
+                  </Flex>
+                </RadioGroup>
+                <FormErrorMessage>
+                  {formik.errors.appTransactionals}
+                </FormErrorMessage>
+              </Stack>
+            </InputLayout>
+          </FormControl>
+
+          <FormControl>
+            <InputLayoutFull>
+              <FormLabel h={"full"} mt={2}>
+                Waktu Operasional Aplikasi
+              </FormLabel>
+              <Stack spacing={0} h={"full"}>
+                <RadioGroup
+                  onChange={(val) => {
+                    formik.setFieldValue("appOperational24hrs", val);
+                    if (val === APP_OPERATIONAL_OPTIONS[0]) {
+                      formik.setFieldValue(
+                        "appOperationalDays",
+                        fullDay.join(", ")
+                      );
+                      formik.setFieldValue("appOperationalHourOpen", "");
+                      formik.setFieldValue("appOperationalHourClosed", "");
+                    } else {
+                      formik.setFieldValue("appOperationalDays", "");
+                    }
+                  }}
+                  value={formik.values.appOperational24hrs ?? ""}
+                >
+                  <Flex w={"full"} as={HStack}>
+                    {APP_OPERATIONAL_OPTIONS.map((item, idx) => (
+                      <Radio key={idx} value={item}>
+                        {item}
+                      </Radio>
+                    ))}
+                  </Flex>
+                </RadioGroup>
+
+                {formik.values.appOperational24hrs ==
+                  APP_OPERATIONAL_OPTIONS[1] && (
+                  <Flex as={Stack} w={"full"} py={2}>
+                    <Text color={"secondary.500"}>Pilih Hari</Text>
+                    <WeekdaySelector
+                      value={OperationalDays}
+                      onChange={setOperationalDays}
+                    />
+                    <Grid templateColumns="repeat(2, 1fr)" gap={4} w={"full"}>
+                      <GridItem
+                        colSpan={{
+                          base: 2,
+                          sm: 2,
+                          md: 1,
+                          lg: 1,
+                        }}
+                        w={"full"}
+                      >
+                        <Stack w={"full"}>
+                          <Text color={"secondary.500"}>Operasional Mulai</Text>
+                          <Input
+                            type="time"
+                            id="appOperationalHourOpen"
+                            name="appOperationalHourOpen"
+                            onChange={formik.handleChange}
+                            value={
+                              formik.values.appOperationalHourOpen
+                                ? formik.values.appOperationalHourOpen.slice(
+                                    0,
+                                    5
+                                  ) // ensure HH:mm
+                                : ""
+                            }
+                          />
+                        </Stack>
+                      </GridItem>
+                      <GridItem
+                        colSpan={{
+                          base: 2,
+                          sm: 2,
+                          md: 1,
+                          lg: 1,
+                        }}
+                        w={"full"}
+                      >
+                        <Stack w={"full"}>
+                          <Text color={"secondary.500"}>
+                            Operasional Berakhir
+                          </Text>
+                          <Input
+                            type="time"
+                            id="appOperationalHourClosed"
+                            name="appOperationalHourClosed"
+                            onChange={formik.handleChange}
+                            value={
+                              formik.values.appOperationalHourClosed
+                                ? formik.values.appOperationalHourClosed.slice(
+                                    0,
+                                    5
+                                  ) // ensure HH:mm
+                                : ""
+                            }
+                          />
+                        </Stack>
+                      </GridItem>
+                    </Grid>
+                  </Flex>
+                )}
+
+                <FormErrorMessage>
+                  {formik.errors.appOperational24hrs}
+                </FormErrorMessage>
+              </Stack>
+            </InputLayoutFull>
+          </FormControl>
+
+          <FormControl
+            id="appLiveTargetDate"
+            isInvalid={formik.errors.appLiveTargetDate ? true : false}
+            isRequired
+          >
+            <InputLayout>
+              <FormLabel h={"full"} mt={2}>
+                Target Live
+              </FormLabel>
+              <Stack spacing={2} h={"full"}>
+                <Input
+                  id="appLiveTargetDate"
+                  name="appLiveTargetDate"
+                  type="date"
+                  onChange={formik.handleChange}
+                  value={formik.values.appLiveTargetDate ?? ""}
+                  isDisabled={ActionLoading}
+                />
+                {/* <Text px={2} fontWeight={600}>
+                                    {formik.values.appLiveTargetDate
+                                      ? getQuarterText(
+                                          formik.values.appLiveTargetDate
+                                        )
+                                      : "-"}
+                                  </Text> */}
+                <FormErrorMessage>
+                  {formik.errors.appLiveTargetDate}
+                </FormErrorMessage>
+              </Stack>
+            </InputLayout>
+          </FormControl>
+
+          <FormControl id="appLiveTargetDateTerbilang" isRequired>
+            <InputLayout>
+              <FormLabel h={"full"} mt={2}>
+                Terbilang Target Live
+              </FormLabel>
+              <Stack spacing={2} h={"full"}>
+                <Text px={2} fontWeight={600}>
+                  {formik.values.appLiveTargetDate
+                    ? getQuarterText(formik.values.appLiveTargetDate)
+                    : "-"}
+                </Text>
+              </Stack>
+            </InputLayout>
+          </FormControl>
+
+          <FormControl id="note" isInvalid={formik.errors.note ? true : false}>
+            <InputLayoutFull>
+              <FormLabel h={"full"} mt={2}>
+                Catatan
+              </FormLabel>
+              <Stack spacing={0} h={"full"}>
+                <Textarea
+                  id="note"
+                  name="note"
+                  onChange={formik.handleChange}
+                  defaultValue={formik.values.note ?? ""}
+                  placeholder={`Catatan (Opsional)`}
+                  maxLength={300}
+                  isDisabled={ActionLoading}
+                />
+                <FormErrorMessage>{formik.errors.note}</FormErrorMessage>
+              </Stack>
+            </InputLayoutFull>
+          </FormControl>
+
+          <Divider />
+
+          <FormControl id="backlogFeatures">
+            <InputLayoutFull>
+              <FormLabel h={"full"} mt={2}>
+                Fitur Aplikasi
+              </FormLabel>
+              <Stack spacing={2} h={"full"}>
+                <Flex
+                  as={Stack}
+                  w={"full"}
+                  p={2}
+                  border={"1px"}
+                  borderColor={colorMode == "light" ? "gray.200" : "gray.600"}
+                  boxShadow={"md"}
+                  rounded={radiusStyle}
+                >
+                  <Button
+                    w={"full"}
+                    leftIcon={<FiPlusCircle />}
+                    colorScheme={"secondary"}
+                    onClick={() => handleOpenForm()}
+                  >
+                    Tambah Fitur
+                  </Button>
+
+                  <TableComponentFullSm table={table} />
+                </Flex>
+              </Stack>
+            </InputLayoutFull>
+          </FormControl>
+        </Flex>
+      </InputGroupPanel>
+      <InputGroupPanel
+        headerTitle={`Ringkasan Ruanglingkup ${type_req_param} | Aspek Teknis`}
+      >
+        <Flex as={Stack} w={"full"} spacing={5}>
+          <FormControl>
+            <InputLayoutFull>
+              <FormLabel h={"full"} mt={2}>
+                Target Lokasi Server
+              </FormLabel>
+              <Stack spacing={0} h={"full"}>
+                <CheckboxGroup>
+                  <Grid templateColumns="repeat(2, 1fr)" gap={1} w={"full"}>
+                    {APP_ENV_LOCATION_OPTIONS.map((item, idx) => (
+                      <GridItem
+                        key={idx}
+                        colSpan={{
+                          base: 2,
+                          sm: 2,
+                          md: 1,
+                          lg: 1,
+                        }}
+                        w={"full"}
+                      >
+                        <Checkbox
+                          key={idx}
+                          isChecked={SelectedAppsEnvLoc.includes(item)}
+                          onChange={() => handleAppysEnvLocCheckboxChange(item)}
+                        >
+                          {item}
+                        </Checkbox>
+                      </GridItem>
+                    ))}
+                  </Grid>
+                </CheckboxGroup>
+                {hasOtherEnvLocTypes && (
+                  <Flex as={Stack} w={"full"} pt={2}>
+                    <Text>Input Lainnya</Text>
+                    <OtherInputAppsStringSeparator
+                      value={formik.values.appEnvLocationsOthers || ""}
+                      onChange={(val) => {
+                        formik.setFieldValue("appEnvLocationsOthers", val);
+                      }}
+                    />
+                  </Flex>
+                )}
+                <FormHelperText as={"i"} fontSize={"xs"}>
+                  Jika server aplikasi ditempatkan di pihak ketiga, harap
+                  cantumkan alamat lokasi (Domain/Data Center).*
+                </FormHelperText>
+              </Stack>
+            </InputLayoutFull>
+          </FormControl>
+
+          <FormControl>
+            <InputLayout>
+              <FormLabel h={"full"} mt={2}>
+                Otentikasi UIM Bank bjb
+              </FormLabel>
+              <Stack spacing={0} h={"full"}>
+                <RadioGroup
+                  onChange={(val) =>
+                    formik.setFieldValue("appPrivateAuth", val)
+                  }
+                  value={"Y"}
+                >
+                  <Flex w={"full"} as={HStack}>
+                    <Radio value={"Y"}>Ya</Radio>
+                    <Radio value={"N"} isDisabled>
+                      Tidak
+                    </Radio>
+                  </Flex>
+                </RadioGroup>
+
+                <FormErrorMessage>
+                  {formik.errors.appAccessMedia}
+                </FormErrorMessage>
+              </Stack>
+            </InputLayout>
+          </FormControl>
+
+          <FormControl>
+            <InputLayout>
+              <FormLabel h={"full"} mt={2}>
+                Keperluan High Availability
+              </FormLabel>
+              <Stack spacing={0} h={"full"}>
+                <RadioGroup
+                  onChange={(val) =>
+                    formik.setFieldValue("appHightAvailability", val)
+                  }
+                  value={formik.values.appHightAvailability ?? ""}
+                >
+                  <Flex w={"full"} as={HStack}>
+                    <Radio value={"Y"}>Ya</Radio>
+                    <Radio value={"N"}>Tidak</Radio>
+                  </Flex>
+                </RadioGroup>
+
+                <FormErrorMessage>
+                  {formik.errors.appAccessMedia}
+                </FormErrorMessage>
+              </Stack>
+            </InputLayout>
+          </FormControl>
+
+          <FormControl>
+            <InputLayoutFull>
+              <FormLabel h={"full"} mt={2}>
+                Integrasi Dengan Aplikasi Lain
+              </FormLabel>
+              <Stack spacing={0} h={"full"}>
+                <InputTagsArea
+                  name="appIntegrationOthersApps"
+                  value={formik.values.appIntegrationOthersApps || ""}
+                  onChange={(val) => {
+                    formik.setFieldValue("appIntegrationOthersApps", val);
+                  }}
+                />
+                <FormErrorMessage>
+                  {formik.errors.appAccessMedia}
+                </FormErrorMessage>
+                <Divider py={1} />
+                <Text fontSize={"smaller"} py={2}>
+                  Tambah Cepat
+                </Text>
+                <FormControl>
+                  <FormLabel>Rekomendasi Aplikasi Lain / Surrounding</FormLabel>
+                  <Flex as={Wrap} w={"full"}>
+                    {APP_INTEGRATED_OTHER_APPS.filter((item) => {
+                      const existingTags = (
+                        formik.values.appIntegrationOthersApps || ""
+                      )
+                        .split(",")
+                        .map((t: string) => t.trim());
+
+                      return !existingTags.includes(item);
+                    }).map((item, index) => (
+                      <Tag
+                        key={index}
+                        borderRadius="full"
+                        colorScheme="secondary"
+                        variant={"solid"}
+                        px={3}
+                        cursor={"pointer"}
+                        _hover={{
+                          bg: "secondary.700",
+                          color: "white",
+                        }}
+                        onClick={() => {
+                          handleQuickAddTagIntegratedApps(item);
+                        }}
+                      >
+                        <FiPlus />
+                        <TagLabel pl={1}>{item}</TagLabel>
+                      </Tag>
+                    ))}
+                  </Flex>
+                </FormControl>
+              </Stack>
+            </InputLayoutFull>
+          </FormControl>
+        </Flex>
+      </InputGroupPanel>
+    </Flex>
+  );
+};
+
+interface Section4RFCProps {
+  type_req_param: "RFC";
+  formik: any;
+  ActionLoading: boolean;
+  DataBackLogs: ReqBacklogPayload[]; // <- add state value
+  setDataBackLogs: React.Dispatch<React.SetStateAction<ReqBacklogPayload[]>>; // <- add setter function
+}
+
+interface BacklogChangesData {
+  backlog: BacklogDataResponse;
+  changes?: ReqBacklogPayload | null;
+}
+
+const EmptyBacklogChangesData: BacklogChangesData = {
+  backlog: {
+    id: "",
+    reqId: "",
+    backlogCode: "",
+    backlogName: "",
+    backlogDesc: null,
+    envSide: null,
+    maintenanceCategory: null,
+    maintenanceType: null,
+    rppb: "",
+    licensing: "",
+    backogRegistered: "",
+    backlogStartdate: "",
+    backlogEnddate: "",
+    urgency: "",
+    impact: "",
+    priority: "",
+    developmentStatus: "",
+    progressionPercentage: 0,
+    reffId: null,
+    version: "",
+    note: null,
+    isLive: "",
+    appsId: "",
+    createdAt: "",
+    createdBy: "",
+    updatedAt: "",
+    updatedBy: "",
+  },
+  changes: null,
+};
+
+// STEP 4 SECTION RFC
+const Section4RFCView = ({
+  type_req_param,
+  formik,
+  ActionLoading,
+  DataBackLogs,
+  setDataBackLogs,
+}: Section4RFCProps) => {
+  const showToast = useToastHelper();
+  const { colorMode } = useColorMode();
+  const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
+  const [tokenData, setTokenData] = useState<string>("");
+  const delay = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
+  const { List: ListApps } = useApps();
+  const { GetReqParentAppsByAppsId, ListBacklog, GetDetailBacklogById } =
+    useRequirements();
+
+  // Backlog Setup
+  // NEW BACKLOG RFC
+
+  const [BacklogChanges, setBacklogChanges] = useState<BacklogChangesData[]>(
+    []
+  );
+  const [BacklogApps, setBacklogApps] = useState<BacklogDataResponse[]>([]);
+  const [BacklogAppsOption, setBacklogAppsOption] = useState<OptionListProps[]>(
+    []
+  );
+
+  useEffect(() => {
+    const updatedBacklogData: ReqBacklogPayload[] = BacklogChanges.map(
+      (dt) => ({
+        // backlogId: generateFakeId(),
+        parentBacklogId: dt.backlog.id,
+        backlogName: dt.changes?.backlogName || "",
+        backlogDesc: dt.changes?.backlogDesc || "",
+        note: dt.changes?.note || "",
+      })
+    );
+
+    formik.setFieldValue("backlogFeatures", updatedBacklogData);
+
+    // setBacklogData(updatedBacklogData);
+  }, [BacklogChanges]);
+
+  const GetListBacklog = async (
+    searchValue: string = "",
+    limit: number = 1,
+    whereData: ListSearchByParam[]
+  ) => {
+    const PayloadList: PaggingListPayload = {
+      search: searchValue,
+      limit: limit,
+      page: 0,
+      filterWhere: whereData,
+      fieldOrder: ["backlogName"],
+      orderDir: "asc",
+    };
+    const token: string = localStorage.getItem("tokenData") as string;
+    const requestData = await ListBacklog(PayloadList, token);
+    const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+
+    if (isErrorResponse || !requestData) {
+      showToast({
+        description: requestData?.message || RES_GENERIC_ERROR_MSG,
+        statusToast: "error",
+      });
+      setBacklogChanges([]);
+      // return [];
+    } else {
+      console.log(requestData);
+      if (requestData.data == null) {
+        showToast({
+          description: "Data return error",
+          statusToast: "error",
+        });
+        setBacklogChanges([]);
+        // return [];
+      }
+
+      const itemsData: BacklogDataResponse[] =
+        requestData.data as BacklogDataResponse[];
+
+      // const mappedData: BacklogChangesData[] = itemsData.map((item) => ({
+      //   backlog: item,
+      //   changes: null, // or undefined if you prefer
+      // }));
+
+      const OptionData: OptionListProps[] = itemsData.map((dt) => ({
+        label: dt.backlogName,
+        value: dt.id,
+      }));
+
+      // setBacklogChanges(mappedData);
+
+      setBacklogApps(itemsData);
+      setBacklogAppsOption(OptionData);
+    }
+  };
+
+  // End Backlog setup
+
+  // Choose Aplication existing
+  const [ListDataAplicationExisting, setListDataAplicationExisting] = useState<
+    ApplicationMasterResponse[]
+  >([]);
+  const [ApplicationExistingChoosed, setApplicationExistingChoosed] =
+    useState<ApplicationMasterResponse | null>(null);
+  const [SearchAppsText, setSearchAppsText] = useState<string>("");
+
+  const GetDataApplications = async (
+    searchValue: string = "",
+    limit: number = 1
+  ) => {
+    const PayloadList: PaggingListPayload = {
+      search: searchValue,
+      limit: limit,
+      page: 0,
+      filterWhere: [],
+      fieldOrder: ["appShortName"],
+      orderDir: "asc",
+    };
+    const token: string = localStorage.getItem("tokenData") as string;
+    const requestData = await ListApps(PayloadList, token);
+    const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+
+    if (isErrorResponse || !requestData) {
+      showToast({
+        description: requestData?.message || RES_GENERIC_ERROR_MSG,
+        statusToast: "error",
+      });
+      return;
+    } else {
+      console.log(requestData);
+      if (requestData.data == null) {
+        showToast({
+          description: "Data return error",
+          statusToast: "error",
+        });
+        return;
+      }
+
+      const itemsData: ApplicationMasterResponse[] =
+        requestData.data as ApplicationMasterResponse[];
+
+      setListDataAplicationExisting(itemsData);
+
+      return;
+    }
+  };
+
+  const SelectedApp = async (data: ApplicationMasterResponse) => {
+    console.log(data);
+    if (ApplicationExistingChoosed != null) {
+      setApplicationExistingChoosed(null);
+      setBacklogAppsOption([]);
+      setBacklogChanges([]);
+      setSelectedAppsTypes("");
+      setOperationalDays("");
+      setSelectedAppsEnvLoc("");
+      setMediaAksesPublic(false);
+      setMediaAksesIntranet(false);
+      formik.setFieldValue("appInitialCode", null);
+      formik.setFieldValue("appInitialName", null);
+      formik.setFieldValue("appTargetUsers", "INTERNAL");
+      formik.setFieldValue("appAccessFrontsiteDns", null);
+      formik.setFieldValue("appAccessFrontsiteIp", null);
+      formik.setFieldValue("appAccessBacksiteDns", null);
+      formik.setFieldValue("appAccessBacksiteIp", null);
+
+      formik.setFieldValue("backlogChange", null);
+      formik.setFieldValue("appAccessMedia", null);
+      formik.setFieldValue("appTypes", null);
+      formik.setFieldValue("appTypeCustom", null);
+      formik.setFieldValue("appRelatedness", null);
+      formik.setFieldValue("appRelatednessDesc", null);
+      formik.setFieldValue("appTransactionals", null);
+      formik.setFieldValue("appOperational24hrs", null);
+      formik.setFieldValue("appOperationalDays", null);
+      formik.setFieldValue("appOperationalHourOpen", null);
+      formik.setFieldValue("appOperationalHourClosed", null);
+      formik.setFieldValue("appLiveTargetDate", null);
+
+      formik.setFieldValue("appEnvLocations", "");
+      formik.setFieldValue("appEnvLocationsOthers", "");
+      formik.setFieldValue("appPrivateAuth", "Y");
+      formik.setFieldValue("appHightAvailability", "Y");
+      formik.setFieldValue("appIntegrationOthersApps", "");
+    } else {
+      if (data.requirementData == null) {
+        setApplicationExistingChoosed(null);
+        setBacklogAppsOption([]);
+        setBacklogChanges([]);
+        setSelectedAppsTypes("");
+        setOperationalDays("");
+        setSelectedAppsEnvLoc("");
+        setMediaAksesPublic(false);
+        setMediaAksesIntranet(false);
+        formik.setFieldValue("appInitialCode", null);
+        formik.setFieldValue("appInitialName", null);
+        showToast({
+          description: "Aplikasi belum mempunyai BRD",
+          statusToast: "warning",
+        });
+        return;
+      }
+
+      if (data.countProjectAll == 0 || data.countProjectOnGoing > 0) {
+        setApplicationExistingChoosed(null);
+        setBacklogAppsOption([]);
+        setBacklogChanges([]);
+        setSelectedAppsTypes("");
+        setOperationalDays("");
+        setSelectedAppsEnvLoc("");
+        setMediaAksesPublic(false);
+        setMediaAksesIntranet(false);
+        formik.setFieldValue("appInitialCode", null);
+        formik.setFieldValue("appInitialName", null);
+        showToast({
+          description: `Aplikasi masih memiliki ${data.countProjectOnGoing} project berjalan`,
+          statusToast: "warning",
+        });
+        return;
+      }
+
+      setApplicationExistingChoosed(data);
+      formik.setFieldValue("appInitialCode", data.appShortName);
+      formik.setFieldValue("appInitialName", data.appName);
+
+      formik.setFieldValue(
+        "appTargetUsers",
+        data.requirementData.appTargetUsers
+      );
+      if (data.requirementData.appAccessFrontsiteDns) {
+        setMediaAksesPublic(true);
+      }
+      formik.setFieldValue(
+        "appAccessFrontsiteDns",
+        data.requirementData.appAccessFrontsiteDns
+      );
+      formik.setFieldValue(
+        "appAccessFrontsiteIp",
+        data.requirementData.appAccessFrontsiteIp
+      );
+      formik.setFieldValue(
+        "appAccessBacksiteDns",
+        data.requirementData.appAccessBacksiteDns
+      );
+      if (data.requirementData.appAccessBacksiteIp) {
+        setMediaAksesIntranet(true);
+      }
+      formik.setFieldValue(
+        "appAccessBacksiteIp",
+        data.requirementData.appAccessBacksiteIp
+      );
+
+      formik.setFieldValue("backlogChange", data.requirementData.backlogChange);
+      formik.setFieldValue(
+        "appAccessMedia",
+        data.requirementData.appAccessMedia
+      );
+      formik.setFieldValue("appTypes", data.requirementData.appTypes);
+      formik.setFieldValue("appTypeCustom", data.requirementData.appTypeCustom);
+      formik.setFieldValue(
+        "appRelatedness",
+        data.requirementData.appRelatedness
+      );
+      formik.setFieldValue(
+        "appRelatednessDesc",
+        data.requirementData.appRelatednessDesc
+      );
+      formik.setFieldValue(
+        "appTransactionals",
+        data.requirementData.appTransactionals
+      );
+      formik.setFieldValue(
+        "appOperational24hrs",
+        data.requirementData.appOperational24hrs
+      );
+      formik.setFieldValue(
+        "appOperationalDays",
+        data.requirementData.appOperationalDays
+      );
+      formik.setFieldValue(
+        "appOperationalHourOpen",
+        data.requirementData.appOperationalHourOpen
+      );
+      formik.setFieldValue(
+        "appOperationalHourClosed",
+        data.requirementData.appOperationalHourClosed
+      );
+      formik.setFieldValue(
+        "appLiveTargetDate",
+        data.requirementData.appLiveTargetDate
+          ? stringToDateFormatedReverse(data.requirementData.appLiveTargetDate)
+          : null
+      );
+
+      formik.setFieldValue(
+        "appEnvLocations",
+        data.requirementData.appEnvLocations
+      );
+      formik.setFieldValue(
+        "appEnvLocationsOthers",
+        data.requirementData.appEnvLocationsOthers
+      );
+      formik.setFieldValue(
+        "appPrivateAuth",
+        data.requirementData.appPrivateAuth
+      );
+      formik.setFieldValue(
+        "appHightAvailability",
+        data.requirementData.appHightAvailability
+      );
+      formik.setFieldValue(
+        "appIntegrationOthersApps",
+        data.requirementData.appIntegrationOthersApps
+      );
+
+      setSelectedAppsTypes(data.requirementData.appTypes || "");
+      setOperationalDays(data.requirementData.appOperationalDays || "");
+      setSelectedAppsEnvLoc(data.requirementData.appEnvLocations || "");
+
+      const WhereParams: ListSearchByParam[] = [
+        {
+          field: "appsId",
+          operator: "=",
+          value: data.id,
+        },
+        {
+          field: "isLive",
+          operator: "=",
+          value: "Y",
+        },
+        {
+          field: "developmentStatus",
+          operator: "=",
+          value: "DONE",
+        },
+      ];
+
+      await GetListBacklog("", MAX_SIZE_TABLE, WhereParams);
+    }
+  };
+
+  const handleBacklogChange = (
+    selectedOption: OptionListProps | null,
+    index: number
+  ) => {
+    if (!selectedOption?.value) return;
+
+    const choosedFeature = BacklogApps.find(
+      (x) => x.id === selectedOption.value
+    );
+
+    if (!choosedFeature) return;
+
+    setBacklogChanges((prev) =>
+      prev.map((item, i) =>
+        i === index
+          ? {
+              ...item,
+              backlog: choosedFeature,
+              changes: { backlogName: selectedOption.label },
+            }
+          : item
+      )
+    );
+  };
+
+  const handleRemoveBacklogChange = (indexToRemove: number) => {
+    setBacklogChanges((prev) => prev.filter((_, i) => i !== indexToRemove));
+  };
+
+  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+
+  const handleChangeAppCode = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const onlyAlphabets = e.target.value
+      .replace(/[^a-zA-Z ]/g, "")
+      .toUpperCase();
+    // formik.setFieldValue("appInitialCode", onlyAlphabets);
+    setSearchAppsText(onlyAlphabets);
+
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      if (onlyAlphabets.length >= 2) {
+        GetDataApplications(onlyAlphabets, 4);
+      } else {
+        setListDataAplicationExisting([]);
+        // formik.setFieldValue("appInitialName", "");
+        setSearchAppsText("");
+      }
+    }, 300);
+  };
+  // End - Choose Aplication existing
+
+  // APP TYPES OPTIONS HANDLER
+
+  const [SelectedAppsTypes, setSelectedAppsTypes] = useState<string>("");
+
+  const handleAppysTypesCheckboxChange = (value: string) => {
+    const currentList = SelectedAppsTypes.split(",")
+      .map((item) => item.trim())
+      .filter(Boolean); // removes empty strings
+
+    let updatedList: string[];
+
+    if (currentList.includes(value)) {
+      updatedList = currentList.filter((item) => item !== value);
+    } else {
+      updatedList = [...currentList, value];
+    }
+
+    setSelectedAppsTypes(
+      updatedList.join(", ") + (updatedList.length > 0 ? "," : "")
+    );
+  };
+
+  const hasOtherAppsTypes = SelectedAppsTypes.split(",")
+    .map((s) => s.trim().toLowerCase())
+    .includes("other");
+
+  // END APP TYPES OPTIONS HANDLER
+
+  // APPS OPERATIONAL STATE
+  const [OperationalDays, setOperationalDays] = useState<string>("");
+
+  // END APPS OPERATIONAL STATE
+
+  // APP ENV LOC OPTIONS HANDLER
+
+  const [SelectedAppsEnvLoc, setSelectedAppsEnvLoc] = useState<string>("");
+
+  const handleAppysEnvLocCheckboxChange = (value: string) => {
+    const currentList = SelectedAppsEnvLoc.split(",")
+      .map((item) => item.trim())
+      .filter(Boolean); // removes empty strings
+
+    let updatedList: string[];
+
+    if (currentList.includes(value)) {
+      updatedList = currentList.filter((item) => item !== value);
+    } else {
+      updatedList = [...currentList, value];
+    }
+
+    setSelectedAppsEnvLoc(
+      updatedList.join(", ") + (updatedList.length > 0 ? "," : "")
+    );
+  };
+
+  const hasOtherEnvLocTypes = SelectedAppsEnvLoc.split(",")
+    .map((s) => s.trim().toLowerCase())
+    .includes("other");
+
+  // END APP ENV LOC OPTIONS HANDLER
+
+  useEffect(() => {
+    formik.setFieldValue("appTypes", SelectedAppsTypes);
+    formik.setFieldValue("appOperationalDays", OperationalDays);
+    formik.setFieldValue("appEnvLocations", SelectedAppsEnvLoc);
+    // if (formik.values.appOperational24hrs == APP_OPERATIONAL_OPTIONS[0]) {
+    //   formik.setFieldValue("appOperationalDays", "");
+    // }
+
+    if (!hasOtherAppsTypes) {
+      formik.setFieldValue("appRelatednessDesc", "");
+    }
+    if (!hasOtherEnvLocTypes) {
+      formik.setFieldValue("appEnvLocationsOthers", "");
+    }
+  }, [SelectedAppsTypes, OperationalDays, SelectedAppsEnvLoc]);
+
+  const handleQuickAddTagIntegratedApps = (tag: string) => {
+    const currentValue = formik.values.appIntegrationOthersApps || "";
+
+    const currentTags = currentValue
+      .split(",")
+      .map((t: string) => t.trim())
+      .filter(Boolean);
+
+    if (!currentTags.includes(tag)) {
+      const updated = [...currentTags, tag].join(", ");
+      formik.setFieldValue("appIntegrationOthersApps", updated);
+    }
+  };
+
+  // APP MEDIA AKSES
+  const [MediaAksesPublic, setMediaAksesPublic] = useState(false);
+  const [MediaAksesIntranet, setMediaAksesIntranet] = useState(false);
+
+  return (
+    <Flex as={Stack} w={"full"} spacing={5}>
+      {/* SECTION STRAT */}
+      <InputGroupPanel
+        headerTitle={`Ringkasan Ruanglingkup ${type_req_param} | Aspek Bisnis`}
+      >
+        <Flex as={Stack} w={"full"} spacing={5}>
+          <FormControl
+            id="appInitialCode"
+            isInvalid={formik.errors.appInitialCode ? true : false}
+          >
+            <InputLayoutFull>
+              <FormLabel h={"full"} mt={2}>
+                Cari Aplikasi Eksisting
+              </FormLabel>
+              <Stack spacing={0} h={"full"}>
+                <Input
+                  id="appInitialCodeSearch"
+                  name="appInitialCodeSearch"
+                  type="text"
+                  onChange={handleChangeAppCode}
+                  value={SearchAppsText}
+                  placeholder={`CMS / SISMON / dsb.`}
+                  minLength={3}
+                  // maxLength={10}
+                  isDisabled={ActionLoading}
+                />
+                <Box
+                  w={"full"}
+                  py={2}
+                  px={4}
+                  mt={2}
+                  bgColor={"gray.200"}
+                  rounded={radiusStyle}
+                  as={Wrap}
+                  display={
+                    ListDataAplicationExisting.length > 0 ? "block" : "none"
+                  }
+                >
+                  <Heading as="h4" size="sm">
+                    Pilih Aplikasi Existing
+                  </Heading>
+                  <Flex w="full" overflowX="auto">
+                    <HStack spacing={4} minW="max-content">
+                      {/* APP LIST */}
+                      {ListDataAplicationExisting.length > 0 &&
+                        ListDataAplicationExisting.map((ap, idx) => (
+                          <AppicationShowCase
+                            key={idx}
+                            dataApp={ap}
+                            SelectedApp={SelectedApp}
+                            isActive={
+                              formik.values.appInitialCode == ap.appCode
+                            }
+                          />
+                        ))}
+                    </HStack>
+                  </Flex>
+                </Box>
+                <Box
+                  w={"full"}
+                  overflowY={"auto"}
+                  overflowX={"auto"}
+                  h={"350px"}
+                  p={4}
+                  mt={2}
+                  bgColor={"gray.200"}
+                  rounded={radiusStyle}
+                  display={"none"}
+                >
+                  <Text fontWeight={600}>Data Apps</Text>
+                  <pre>
+                    {JSON.stringify(ListDataAplicationExisting, null, 2)}
+                  </pre>
+                </Box>
+                <FormErrorMessage>
+                  {formik.errors.appInitialCode}
+                </FormErrorMessage>
+              </Stack>
+            </InputLayoutFull>
+          </FormControl>
+
+          <Input
+            id="appName"
+            name="appName"
+            type="hidden"
+            onChange={formik.handleChange}
+            value={formik.values.appInitialCode ?? ""}
+            isDisabled={true}
+            readOnly={true}
+          />
+          <Input
+            id="appInitialInitials"
+            name="appInitialInitials"
+            type="hidden"
+            value={formik.values.appInitialName ?? ""}
+            isDisabled={true}
+            readOnly={true}
+          />
+          <Box
+            overflowY={"auto"}
+            overflowX={"auto"}
+            maxH={"350px"}
+            p={2}
+            bgColor={"gray.200"}
+            display={"none"}
+          >
+            <pre>{JSON.stringify(ApplicationExistingChoosed, null, 2)}</pre>
+          </Box>
+
+          {ApplicationExistingChoosed && (
+            <Flex
+              w={"full"}
+              as={Stack}
+              justifyContent={"center"}
+              alignItems={"center"}
+              rounded={radiusStyle}
+              border={"1px"}
+              borderColor={colorMode == "light" ? "gray.200" : "gray.700"}
+              transition="transform 0.2s ease-in-out, background-color 0.2s ease, box-shadow 0.2s ease-in-out" // Animate transform and box-shadow
+              bgGradient={"linear(to-br, secondary.800, secondary.500)"}
+              color={"white"}
+              p={4}
+              spacing={5}
+            >
+              <Heading as="h5" size="sm">
+                Apliaksi Eksisting
+              </Heading>
+              {/* ICON APP */}
+              <Flex
+                position="relative"
+                backgroundPosition="center"
+                backgroundRepeat="no-repeat"
+                backgroundSize="cover"
+                backgroundImage={`url(/img/default-apps.jpg)`}
+                rounded={"100%"}
+                color={"white"}
+                w={"80px"}
+                h={"80px"}
+                alignItems="center"
+                justifyContent="center"
+                textAlign="center"
+                fontWeight="bold"
+                textOverflow="ellipsis"
+                whiteSpace="nowrap"
+                flexShrink={0}
+                boxShadow={"md"}
+              />
+              <Flex h={"full"} as={Stack} alignItems={"start"} spacing={1}>
+                <Flex as={HStack}>
+                  <Badge
+                    colorScheme="gray"
+                    fontSize={"medium"}
+                    px={3}
+                    rounded={"md"}
+                  >
+                    {ApplicationExistingChoosed.appShortName}
+                  </Badge>
+                  <Heading as="h4" size="md">
+                    {ApplicationExistingChoosed.appName.toUpperCase()}
+                  </Heading>
+                </Flex>
+                <Box>
+                  <Text fontSize={"small"}>
+                    ID APPS : {ApplicationExistingChoosed.appCode}
+                  </Text>
+                </Box>
+              </Flex>
+            </Flex>
+          )}
+
+          <InputGroupPanel headerTitle={`Perubahan Sistem`}>
+            <Flex
+              w={"full"}
+              as={Stack}
+              divider={<StackDivider borderColor="gray.200" />}
+            >
+              {BacklogChanges.map((item, index) => (
+                <Grid
+                  templateColumns="repeat(2, 1fr)"
+                  gap={4}
+                  w={"full"}
+                  key={index}
+                >
+                  <GridItem colSpan={2} w={"full"}>
+                    <Flex
+                      as={HStack}
+                      w={"full"}
+                      justifyContent={"space-between"}
+                    >
+                      <Heading as="h5" size="sm">
+                        Fitur - {index + 1}
+                      </Heading>
+                      <Button
+                        size="sm"
+                        colorScheme="red"
+                        leftIcon={<FiMinusCircle />}
+                        mt={2}
+                        onClick={() => handleRemoveBacklogChange(index)}
+                      >
+                        Hapus
+                      </Button>
+                    </Flex>
+                  </GridItem>
+                  <GridItem
+                    colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }}
+                    w={"full"}
+                  >
+                    <Flex
+                      as={Stack}
+                      w={"full"}
+                      p={5}
+                      rounded={radiusStyle}
+                      border={"2px"}
+                      borderColor={
+                        colorMode == "light" ? "gray.200" : "gray.700"
+                      }
+                      spacing={2}
+                      boxShadow={"md"}
+                      minH={"280px"}
+                    >
+                      <Flex
+                        w={"full"}
+                        as={HStack}
+                        justifyContent={"space-between"}
+                      >
+                        <Heading as="h5" size="sm">
+                          Kondisi Eksisting
+                        </Heading>
+                        <Badge
+                          colorScheme={"gray"}
+                          fontSize={"medium"}
+                          px={2}
+                          rounded={"md"}
+                        >
+                          Lama
+                        </Badge>
+                      </Flex>
+                      <Divider borderColor={"gray.300"} />
+                      <FormControl>
+                        <InputLayoutFull>
+                          <FormLabel h={"full"} mt={2}>
+                            Fitur
+                          </FormLabel>
+                          <Stack spacing={0}>
+                            <Select
+                              id={`backlogExisting-${1}`}
+                              options={BacklogAppsOption.filter(
+                                (opt) =>
+                                  !BacklogChanges.some(
+                                    (b) => b.backlog.id === opt.value
+                                  )
+                              )}
+                              isSearchable={true}
+                              onChange={(e) => handleBacklogChange(e, index)}
+                              value={BacklogAppsOption.find(
+                                (x) => x.value === item.backlog.id
+                              )}
+                              placeholder={"Piih Fitur Eksisting"}
+                              // value={BacklogAppsOption.find(
+                              //   (x) =>
+                              //     x.value == formik.values.senderDirectorateId
+                              // )}
+                            />
+                            <FormErrorMessage>
+                              {formik.errors.senderDivisionId}
+                            </FormErrorMessage>
+                          </Stack>
+                        </InputLayoutFull>
+                      </FormControl>
+                      <FormControl>
+                        <InputLayoutFull>
+                          <FormLabel h={"full"} mt={2}>
+                            Deskripsi
+                          </FormLabel>
+                          <Stack spacing={0}>
+                            <Textarea
+                              id={`backlogExistingDesc-${1}`}
+                              name={`backlogExistingDesc-${1}`}
+                              // onChange={(e) => setTextBackLogDesc(e.target.value)}
+                              value={item.backlog.backlogDesc || ""}
+                              placeholder={`Deskripsi Fitur Eksisting`}
+                              // maxLength={300}
+                              isDisabled={true}
+                            />
+                          </Stack>
+                        </InputLayoutFull>
+                      </FormControl>
+                      <FormControl>
+                        <InputLayoutFull>
+                          <FormLabel h={"full"} mt={2}>
+                            Catatan
+                          </FormLabel>
+                          <Stack spacing={0}>
+                            <Textarea
+                              id={`backlogExistingNote-${1}`}
+                              name={`backlogExistingNote-${1}`}
+                              // onChange={(e) => setTextBackLogDesc(e.target.value)}
+                              value={item.backlog.note || ""}
+                              placeholder={`Deskripsi Fitur Eksisting`}
+                              // maxLength={300}
+                              isDisabled={true}
+                            />
+                          </Stack>
+                        </InputLayoutFull>
+                      </FormControl>
+                    </Flex>
+                  </GridItem>
+                  <GridItem
+                    colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }}
+                    w={"full"}
+                  >
+                    <Flex
+                      as={Stack}
+                      w={"full"}
+                      p={5}
+                      rounded={radiusStyle}
+                      border={"2px"}
+                      borderColor={"secondary.300"}
+                      spacing={2}
+                      boxShadow={"md"}
+                      minH={"280px"}
+                    >
+                      <Flex
+                        w={"full"}
+                        as={HStack}
+                        justifyContent={"space-between"}
+                      >
+                        <Heading as="h5" size="sm">
+                          Kondisi Perubahan
+                        </Heading>
+                        <Badge
+                          colorScheme={"secondary"}
+                          fontSize={"medium"}
+                          px={2}
+                          rounded={"md"}
+                        >
+                          Baru
+                        </Badge>
+                      </Flex>
+                      <Divider borderColor={"gray.300"} />
+                      <FormControl>
+                        <InputLayoutFull>
+                          <FormLabel h={"full"} mt={2}>
+                            Fitur
+                          </FormLabel>
+                          <Stack spacing={0}>
+                            <Input
+                              id={`backlogChanges-${1}`}
+                              name={`backlogChanges-${1}`}
+                              type="text"
+                              placeholder={`Nama Fitur Perubahan`}
+                              value={item.changes?.backlogName ?? ""}
+                              onChange={(e) => {
+                                const updated = [...BacklogChanges];
+                                if (!updated[index].changes)
+                                  updated[index].changes = {
+                                    backlogName: "",
+                                    backlogDesc: "",
+                                    note: "",
+                                  };
+                                updated[index].changes!.backlogName =
+                                  e.target.value;
+                                setBacklogChanges(updated);
+                              }}
+                              minLength={4}
+                              maxLength={200}
+                            />
+                          </Stack>
+                        </InputLayoutFull>
+                      </FormControl>
+                      <FormControl>
+                        <InputLayoutFull>
+                          <FormLabel h={"full"} mt={2}>
+                            Deskripsi
+                          </FormLabel>
+                          <Stack spacing={0}>
+                            <Textarea
+                              id={`backlogChangesDesc-${1}`}
+                              name={`backlogChangesDesc-${1}`}
+                              value={item.changes?.backlogDesc ?? ""}
+                              onChange={(e) => {
+                                const updated = [...BacklogChanges];
+                                if (!updated[index].changes)
+                                  updated[index].changes = {
+                                    backlogName: "",
+                                    backlogDesc: "",
+                                    note: "",
+                                  };
+                                updated[index].changes!.backlogDesc =
+                                  e.target.value;
+                                setBacklogChanges(updated);
+                              }}
+                              placeholder={`Deskripsi Fitur Perubahan`}
+                              // maxLength={300}
+                              // isDisabled={ActionLoading}
+                            />
+                          </Stack>
+                        </InputLayoutFull>
+                      </FormControl>
+                      <FormControl>
+                        <InputLayoutFull>
+                          <FormLabel h={"full"} mt={2}>
+                            Catatan
+                          </FormLabel>
+                          <Stack spacing={0}>
+                            <Textarea
+                              id={`backlogChangesNote-${1}`}
+                              name={`backlogChangesNote-${1}`}
+                              value={item.changes?.note ?? ""}
+                              onChange={(e) => {
+                                const updated = [...BacklogChanges];
+                                if (!updated[index].changes)
+                                  updated[index].changes = {
+                                    backlogName: "",
+                                    backlogDesc: "",
+                                    note: "",
+                                  };
+                                updated[index].changes!.note = e.target.value;
+                                setBacklogChanges(updated);
+                              }}
+                              placeholder={`Catatan Fitur Perubahan`}
+                              // maxLength={300}
+                              // isDisabled={ActionLoading}
+                            />
+                          </Stack>
+                        </InputLayoutFull>
+                      </FormControl>
+                    </Flex>
+                  </GridItem>
+                </Grid>
+              ))}
+              {ApplicationExistingChoosed ? (
+                <Button
+                  leftIcon={<FiPlusCircle />}
+                  colorScheme={"yellow"}
+                  onClick={() =>
+                    setBacklogChanges((prev) => [
+                      ...prev,
+                      EmptyBacklogChangesData,
+                    ])
+                  }
+                >
+                  Tambah Perubahan
+                </Button>
+              ) : (
+                <Flex w={"full"} justifyContent={"center"}>
+                  <Text textAlign={"center"}>
+                    Pilih dulu aplikasi eksisting
+                  </Text>
+                </Flex>
+              )}
+            </Flex>
+          </InputGroupPanel>
+
+          <Box
+            overflowY={"auto"}
+            overflowX={"auto"}
+            maxH={"350px"}
+            p={2}
+            bgColor={"gray.200"}
+            display={"none"}
+          >
+            <pre>{JSON.stringify(formik.values, null, 2)}</pre>
+          </Box>
+
+          <Divider />
+
+          <FormControl
+            id="appTargetUsers"
+            isInvalid={formik.errors.appTargetUsers ? true : false}
+          >
+            <InputLayout>
+              <FormLabel h={"full"} mt={2}>
+                Target Pengguna
+              </FormLabel>
+              <Stack spacing={0} h={"full"}>
+                <RadioGroup
+                  onChange={(val) =>
+                    formik.setFieldValue("appTargetUsers", val)
+                  }
+                  value={formik.values.appTargetUsers ?? ""}
+                >
+                  <Flex w={"full"} as={HStack}>
+                    <Radio value={"EXTERNAL"}>EXTERNAL (NASABAH)</Radio>
+                    <Radio value={"INTERNAL"}>INTERNAL (BANK)</Radio>
+                  </Flex>
+                </RadioGroup>
+                <FormErrorMessage>
+                  {formik.errors.appTargetUsers}
+                </FormErrorMessage>
+              </Stack>
+            </InputLayout>
+          </FormControl>
+
+          <FormControl>
+            <InputLayoutFull>
+              <FormLabel h={"full"} mt={2}>
+                Media Akses Aplikasi
+              </FormLabel>
+              <Stack spacing={0} h={"full"}>
+                <Grid templateColumns="repeat(2, 1fr)" gap={3} w={"full"}>
+                  <GridItem
+                    colSpan={{
+                      base: 2,
+                      sm: 2,
+                      md: 1,
+                      lg: 1,
+                    }}
+                    w={"full"}
+                  >
+                    <Flex w={"full"} as={Stack}>
+                      <Checkbox
+                        isChecked={MediaAksesPublic}
+                        onChange={(e) => {
+                          setMediaAksesPublic(!MediaAksesPublic);
+                          console.log(e);
+                        }}
+                      >
+                        Internet (Publik)
+                      </Checkbox>
+                      <Input
+                        id="appAccessFrontsiteDns"
+                        name="appAccessFrontsiteDns"
+                        type="text"
+                        onChange={formik.handleChange}
+                        value={
+                          formik.values.appAccessFrontsiteDns || "https://"
+                        }
+                        placeholder={`https://`}
+                        minLength={5}
+                        maxLength={150}
+                        isDisabled={!MediaAksesPublic}
+                      />
+                    </Flex>
+                  </GridItem>
+                  <GridItem
+                    colSpan={{
+                      base: 2,
+                      sm: 2,
+                      md: 1,
+                      lg: 1,
+                    }}
+                    w={"full"}
+                  >
+                    <Flex w={"full"} as={Stack}>
+                      <Checkbox
+                        isChecked={MediaAksesIntranet}
+                        onChange={(e) => {
+                          setMediaAksesIntranet(!MediaAksesIntranet);
+                          console.log(e);
+                        }}
+                      >
+                        Intranet (Untuk BackOffice Bank)
+                      </Checkbox>
+                      <Input
+                        id="appAccessBacksiteIp"
+                        name="appAccessBacksiteIp"
+                        type="text"
+                        onChange={formik.handleChange}
+                        value={formik.values.appAccessBacksiteIp || "http://"}
+                        placeholder={`http://`}
+                        minLength={5}
+                        maxLength={150}
+                        isDisabled={!MediaAksesIntranet}
+                      />
+                    </Flex>
+                  </GridItem>
+                </Grid>
+                <FormHelperText as={"i"} fontSize={"xs"}>
+                  Pemilihan Kontektivitas Internet wajib disertai Pentest dan
+                  pembelian SSL, Divisi/Unit terkait dimohon menyiapkan
+                  anggarannya.*
+                </FormHelperText>
+                <FormErrorMessage>
+                  {formik.errors.appAccessMedia}
+                </FormErrorMessage>
+              </Stack>
+            </InputLayoutFull>
+          </FormControl>
+
+          <FormControl>
+            <InputLayoutFull>
+              <FormLabel h={"full"} mt={2}>
+                Jenis Aplikasi
+              </FormLabel>
+              <Stack spacing={0} h={"full"}>
+                <Text color={"gray.500"} fontSize={"smaller"} pb={1}>
+                  Base Aplikasi
+                </Text>
+                <CheckboxGroup>
+                  <Grid templateColumns="repeat(2, 1fr)" gap={1} w={"full"}>
+                    {APP_TYPE_OPTIONS.map((item, idx) => (
+                      <GridItem
+                        key={idx}
+                        colSpan={{
+                          base: 2,
+                          sm: 2,
+                          md: 1,
+                          lg: 1,
+                        }}
+                        w={"full"}
+                      >
+                        <Checkbox
+                          key={idx}
+                          isChecked={SelectedAppsTypes.includes(item)}
+                          onChange={() => handleAppysTypesCheckboxChange(item)}
+                        >
+                          {item}
+                        </Checkbox>
+                      </GridItem>
+                    ))}
+                  </Grid>
+                </CheckboxGroup>
+                {hasOtherAppsTypes && (
+                  <Flex as={Stack} w={"full"} pt={2}>
+                    <Text>Input Lainnya</Text>
+                    <OtherInputAppsStringSeparator
+                      value={formik.values.appTypeCustom || ""}
+                      onChange={(val) => {
+                        formik.setFieldValue("appTypeCustom", val);
+                      }}
+                    />
+                  </Flex>
+                )}
+              </Stack>
+            </InputLayoutFull>
+          </FormControl>
+
+          <FormControl>
+            <InputLayoutFull>
+              <FormLabel h={"full"} mt={2}>
+                Keterkaitan Aplikasi
+              </FormLabel>
+              <Stack spacing={0} h={"full"}>
+                <CheckboxGroup>
+                  <Stack spacing={0} h={"full"}>
+                    <RadioGroup
+                      onChange={(val) =>
+                        formik.setFieldValue("appRelatedness", val)
+                      }
+                      value={formik.values.appRelatedness ?? ""}
+                    >
+                      <Flex w={"full"} as={HStack}>
+                        <Radio value={APP_RELATED_OPTIONS[0]}>
+                          {APP_RELATED_OPTIONS[0]}
+                        </Radio>
+
+                        <Radio value={APP_RELATED_OPTIONS[1]}>
+                          {APP_RELATED_OPTIONS[1]}
+                        </Radio>
+                      </Flex>
+                    </RadioGroup>
+                    {formik.values.appRelatedness == APP_RELATED_OPTIONS[1] && (
+                      <Flex as={Stack} w={"full"} pt={2}>
+                        <Text>Nama Regulator</Text>
+                        <OtherInputAppsStringSeparator
+                          value={formik.values.appRelatednessDesc || ""}
+                          onChange={(val) => {
+                            formik.setFieldValue("appRelatednessDesc", val);
+                          }}
+                        />
+                      </Flex>
+                    )}
+                    <FormHelperText as={"i"} fontSize={"xs"}>
+                      Jika memilih "Regulator", harap di isi dengan nama
+                      instansi.*
+                    </FormHelperText>
+                  </Stack>
+                </CheckboxGroup>
+              </Stack>
+            </InputLayoutFull>
+          </FormControl>
+
+          <FormControl>
+            <InputLayout>
+              <FormLabel h={"full"} mt={2}>
+                Kategori Aplikasi
+              </FormLabel>
+              <Stack spacing={0} h={"full"}>
+                <RadioGroup
+                  onChange={(val) =>
+                    formik.setFieldValue("appTransactionals", val)
+                  }
+                  value={formik.values.appTransactionals ?? ""}
+                >
+                  <Flex w={"full"} as={HStack}>
+                    {APP_TRANSACTIONAL_OPTIONS.map((item, idx) => (
+                      <Radio key={idx} value={item}>
+                        {item}
+                      </Radio>
+                    ))}
+                  </Flex>
+                </RadioGroup>
+                <FormErrorMessage>
+                  {formik.errors.appTransactionals}
+                </FormErrorMessage>
+              </Stack>
+            </InputLayout>
+          </FormControl>
+
+          <FormControl>
+            <InputLayoutFull>
+              <FormLabel h={"full"} mt={2}>
+                Waktu Operasional Aplikasi
+              </FormLabel>
+              <Stack spacing={0} h={"full"}>
+                <RadioGroup
+                  onChange={(val) => {
+                    formik.setFieldValue("appOperational24hrs", val);
+                    if (val === APP_OPERATIONAL_OPTIONS[0]) {
+                      formik.setFieldValue(
+                        "appOperationalDays",
+                        fullDay.join(", ")
+                      );
+                      formik.setFieldValue("appOperationalHourOpen", "");
+                      formik.setFieldValue("appOperationalHourClosed", "");
+                    } else {
+                      formik.setFieldValue("appOperationalDays", "");
+                    }
+                  }}
+                  value={formik.values.appOperational24hrs ?? ""}
+                >
+                  <Flex w={"full"} as={HStack}>
+                    {APP_OPERATIONAL_OPTIONS.map((item, idx) => (
+                      <Radio key={idx} value={item}>
+                        {item}
+                      </Radio>
+                    ))}
+                  </Flex>
+                </RadioGroup>
+
+                {formik.values.appOperational24hrs ==
+                  APP_OPERATIONAL_OPTIONS[1] && (
+                  <Flex as={Stack} w={"full"} py={2}>
+                    <Text color={"secondary.500"}>Pilih Hari</Text>
+                    <WeekdaySelector
+                      value={OperationalDays}
+                      onChange={setOperationalDays}
+                    />
+                    <Grid templateColumns="repeat(2, 1fr)" gap={4} w={"full"}>
+                      <GridItem
+                        colSpan={{
+                          base: 2,
+                          sm: 2,
+                          md: 1,
+                          lg: 1,
+                        }}
+                        w={"full"}
+                      >
+                        <Stack w={"full"}>
+                          <Text color={"secondary.500"}>Operasional Mulai</Text>
+                          <Input
+                            type="time"
+                            id="appOperationalHourOpen"
+                            name="appOperationalHourOpen"
+                            onChange={formik.handleChange}
+                            value={
+                              formik.values.appOperationalHourOpen
+                                ? formik.values.appOperationalHourOpen.slice(
+                                    0,
+                                    5
+                                  ) // ensure HH:mm
+                                : ""
+                            }
+                          />
+                        </Stack>
+                      </GridItem>
+                      <GridItem
+                        colSpan={{
+                          base: 2,
+                          sm: 2,
+                          md: 1,
+                          lg: 1,
+                        }}
+                        w={"full"}
+                      >
+                        <Stack w={"full"}>
+                          <Text color={"secondary.500"}>
+                            Operasional Berakhir
+                          </Text>
+                          <Input
+                            type="time"
+                            id="appOperationalHourClosed"
+                            name="appOperationalHourClosed"
+                            onChange={formik.handleChange}
+                            value={
+                              formik.values.appOperationalHourClosed
+                                ? formik.values.appOperationalHourClosed.slice(
+                                    0,
+                                    5
+                                  ) // ensure HH:mm
+                                : ""
+                            }
+                          />
+                        </Stack>
+                      </GridItem>
+                    </Grid>
+                  </Flex>
+                )}
+
+                <FormErrorMessage>
+                  {formik.errors.appOperational24hrs}
+                </FormErrorMessage>
+              </Stack>
+            </InputLayoutFull>
+          </FormControl>
+
+          <FormControl
+            id="appLiveTargetDate"
+            isInvalid={formik.errors.appLiveTargetDate ? true : false}
+            isRequired
+          >
+            <InputLayout>
+              <FormLabel h={"full"} mt={2}>
+                Target Live
+              </FormLabel>
+              <Stack spacing={2} h={"full"}>
+                <Input
+                  id="appLiveTargetDate"
+                  name="appLiveTargetDate"
+                  type="date"
+                  onChange={formik.handleChange}
+                  value={formik.values.appLiveTargetDate ?? ""}
+                  isDisabled={ActionLoading}
+                />
+                {/* <Text px={2} fontWeight={600}>
+                                    {formik.values.appLiveTargetDate
+                                      ? getQuarterText(
+                                          formik.values.appLiveTargetDate
+                                        )
+                                      : "-"}
+                                  </Text> */}
+                <FormErrorMessage>
+                  {formik.errors.appLiveTargetDate}
+                </FormErrorMessage>
+              </Stack>
+            </InputLayout>
+          </FormControl>
+
+          <FormControl id="appLiveTargetDateTerbilang" isRequired>
+            <InputLayout>
+              <FormLabel h={"full"} mt={2}>
+                Terbilang Target Live
+              </FormLabel>
+              <Stack spacing={2} h={"full"}>
+                <Text px={2} fontWeight={600}>
+                  {formik.values.appLiveTargetDate
+                    ? getQuarterText(formik.values.appLiveTargetDate)
+                    : "-"}
+                </Text>
+              </Stack>
+            </InputLayout>
+          </FormControl>
+
+          <FormControl id="note" isInvalid={formik.errors.note ? true : false}>
+            <InputLayoutFull>
+              <FormLabel h={"full"} mt={2}>
+                Catatan
+              </FormLabel>
+              <Stack spacing={0} h={"full"}>
+                <Textarea
+                  id="note"
+                  name="note"
+                  onChange={formik.handleChange}
+                  defaultValue={formik.values.note ?? ""}
+                  placeholder={`Catatan (Opsional)`}
+                  maxLength={300}
+                  isDisabled={ActionLoading}
+                />
+                <FormErrorMessage>{formik.errors.note}</FormErrorMessage>
+              </Stack>
+            </InputLayoutFull>
+          </FormControl>
+        </Flex>
+      </InputGroupPanel>
+      <InputGroupPanel
+        headerTitle={`Ringkasan Ruanglingkup ${type_req_param} | Aspek Teknis`}
+      >
+        <Flex as={Stack} w={"full"} spacing={5}>
+          <FormControl>
+            <InputLayoutFull>
+              <FormLabel h={"full"} mt={2}>
+                Target Lokasi Server
+              </FormLabel>
+              <Stack spacing={0} h={"full"}>
+                <CheckboxGroup>
+                  <Grid templateColumns="repeat(2, 1fr)" gap={1} w={"full"}>
+                    {APP_ENV_LOCATION_OPTIONS.map((item, idx) => (
+                      <GridItem
+                        key={idx}
+                        colSpan={{
+                          base: 2,
+                          sm: 2,
+                          md: 1,
+                          lg: 1,
+                        }}
+                        w={"full"}
+                      >
+                        <Checkbox
+                          key={idx}
+                          isChecked={SelectedAppsEnvLoc.includes(item)}
+                          onChange={() => handleAppysEnvLocCheckboxChange(item)}
+                        >
+                          {item}
+                        </Checkbox>
+                      </GridItem>
+                    ))}
+                  </Grid>
+                </CheckboxGroup>
+                {hasOtherEnvLocTypes && (
+                  <Flex as={Stack} w={"full"} pt={2}>
+                    <Text>Input Lainnya</Text>
+                    <OtherInputAppsStringSeparator
+                      value={formik.values.appEnvLocationsOthers || ""}
+                      onChange={(val) => {
+                        formik.setFieldValue("appEnvLocationsOthers", val);
+                      }}
+                    />
+                  </Flex>
+                )}
+                <FormHelperText as={"i"} fontSize={"xs"}>
+                  Jika server aplikasi ditempatkan di pihak ketiga, harap
+                  cantumkan alamat lokasi (Domain/Data Center).*
+                </FormHelperText>
+              </Stack>
+            </InputLayoutFull>
+          </FormControl>
+
+          <FormControl>
+            <InputLayout>
+              <FormLabel h={"full"} mt={2}>
+                Otentikasi UIM Bank bjb
+              </FormLabel>
+              <Stack spacing={0} h={"full"}>
+                <RadioGroup
+                  onChange={(val) =>
+                    formik.setFieldValue("appPrivateAuth", val)
+                  }
+                  value={"Y"}
+                >
+                  <Flex w={"full"} as={HStack}>
+                    <Radio value={"Y"}>Ya</Radio>
+                    <Radio value={"N"} isDisabled>
+                      Tidak
+                    </Radio>
+                  </Flex>
+                </RadioGroup>
+
+                <FormErrorMessage>
+                  {formik.errors.appAccessMedia}
+                </FormErrorMessage>
+              </Stack>
+            </InputLayout>
+          </FormControl>
+
+          <FormControl>
+            <InputLayout>
+              <FormLabel h={"full"} mt={2}>
+                Keperluan High Availability
+              </FormLabel>
+              <Stack spacing={0} h={"full"}>
+                <RadioGroup
+                  onChange={(val) =>
+                    formik.setFieldValue("appHightAvailability", val)
+                  }
+                  value={formik.values.appHightAvailability ?? ""}
+                >
+                  <Flex w={"full"} as={HStack}>
+                    <Radio value={"Y"}>Ya</Radio>
+                    <Radio value={"N"}>Tidak</Radio>
+                  </Flex>
+                </RadioGroup>
+
+                <FormErrorMessage>
+                  {formik.errors.appAccessMedia}
+                </FormErrorMessage>
+              </Stack>
+            </InputLayout>
+          </FormControl>
+
+          <FormControl>
+            <InputLayoutFull>
+              <FormLabel h={"full"} mt={2}>
+                Integrasi Dengan Aplikasi Lain
+              </FormLabel>
+              <Stack spacing={0} h={"full"}>
+                <InputTagsArea
+                  name="appIntegrationOthersApps"
+                  value={formik.values.appIntegrationOthersApps || ""}
+                  onChange={(val) => {
+                    formik.setFieldValue("appIntegrationOthersApps", val);
+                  }}
+                />
+                <FormErrorMessage>
+                  {formik.errors.appAccessMedia}
+                </FormErrorMessage>
+                <Divider py={1} />
+                <Text fontSize={"smaller"} py={2}>
+                  Tambah Cepat
+                </Text>
+                <FormControl>
+                  <FormLabel>Rekomendasi Aplikasi Lain / Surrounding</FormLabel>
+                  <Flex as={Wrap} w={"full"}>
+                    {APP_INTEGRATED_OTHER_APPS.filter((item) => {
+                      const existingTags = (
+                        formik.values.appIntegrationOthersApps || ""
+                      )
+                        .split(",")
+                        .map((t: string) => t.trim());
+
+                      return !existingTags.includes(item);
+                    }).map((item, index) => (
+                      <Tag
+                        key={index}
+                        borderRadius="full"
+                        colorScheme="secondary"
+                        variant={"solid"}
+                        px={3}
+                        cursor={"pointer"}
+                        _hover={{
+                          bg: "secondary.700",
+                          color: "white",
+                        }}
+                        onClick={() => {
+                          handleQuickAddTagIntegratedApps(item);
+                        }}
+                      >
+                        <FiPlus />
+                        <TagLabel pl={1}>{item}</TagLabel>
+                      </Tag>
+                    ))}
+                  </Flex>
+                </FormControl>
+              </Stack>
+            </InputLayoutFull>
+          </FormControl>
+        </Flex>
+      </InputGroupPanel>
     </Flex>
   );
 };

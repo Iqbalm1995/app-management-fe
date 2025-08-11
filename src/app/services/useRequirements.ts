@@ -182,8 +182,10 @@ export interface WorkProgramsPayload {
 
 export interface ReqBacklogPayload {
   backlogId?: string | null;
+  parentBacklogId?: string | null;
   backlogName: string;
   backlogDesc?: string | null;
+  note?: string | null;
 }
 
 export interface RequirementsInsertPayload {
@@ -274,6 +276,7 @@ export interface BacklogDataResponse {
   developmentStatus: string;
   progressionPercentage: number;
   reffId: string | null;
+  note: string | null;
   version: string;
   isLive: string;
   appsId: string;
@@ -361,6 +364,18 @@ interface useRequirements {
     payload: RequirementsInsertPayload,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
+  GetReqParentAppsByAppsId: (
+    appsId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<RequirementsResponse | null> | null>;
+  GetReqParentAppsByAppsCode: (
+    appsCode: string,
+    token: string
+  ) => Promise<ApiGenericResponse<RequirementsResponse | null> | null>;
+  GetReqParentAppsByAppsInitial: (
+    appsInitial: string,
+    token: string
+  ) => Promise<ApiGenericResponse<RequirementsResponse | null> | null>;
 
   ListBacklog: (
     payload: PaggingListPayload,
@@ -536,6 +551,130 @@ const useRequirements = (): useRequirements => {
       const response = await axiosInstance.post<
         ApiGenericResponse<string | null>
       >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const GetReqParentAppsByAppsId = async (
+    appsId: string,
+    token: string
+  ): Promise<ApiGenericResponse<RequirementsResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Requirement/req-parent-apps-by-appsId?appsId=${appsId}`;
+    console.log(`${UrlEndpoint}${PathEndpoint}`);
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<RequirementsResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const GetReqParentAppsByAppsCode = async (
+    appsCode: string,
+    token: string
+  ): Promise<ApiGenericResponse<RequirementsResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `v1/Requirement/req-parent-apps-by-appsCode?appsCode=${appsCode}`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<RequirementsResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const GetReqParentAppsByAppsInitial = async (
+    appsInitial: string,
+    token: string
+  ): Promise<ApiGenericResponse<RequirementsResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `v1/Requirement/req-parent-apps-by-appsInitial?appsInitial=${appsInitial}`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<RequirementsResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -854,6 +993,9 @@ const useRequirements = (): useRequirements => {
     ListUnregistProject,
     GetDetailById,
     InsertReq,
+    GetReqParentAppsByAppsId,
+    GetReqParentAppsByAppsCode,
+    GetReqParentAppsByAppsInitial,
     ListBacklog,
     GetDetailBacklogById,
     InsertBacklog,

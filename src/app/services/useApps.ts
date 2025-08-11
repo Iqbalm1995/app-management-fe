@@ -1,5 +1,6 @@
 "use client";
 
+import { RequirementsResponse } from "./useRequirements";
 import { useState } from "react";
 import {
   ApiGenericResponse,
@@ -45,6 +46,10 @@ export interface ApplicationMasterResponse {
   createdBy: string;
   updatedAt?: string | null;
   updatedBy?: string | null;
+  requirementData?: RequirementsResponse | null;
+  countProjectAll: number;
+  countProjectCompleted: number;
+  countProjectOnGoing: number;
 }
 
 export interface ApplicationMasterShortResponse {
