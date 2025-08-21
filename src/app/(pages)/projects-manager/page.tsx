@@ -1,87 +1,15 @@
 "use client";
 
-import { ConfirmationDialog } from "@/app/components/confirmationDialog";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import {
-  HeaderContent,
-  HeaderContentProps,
-} from "@/app/components/headerContent";
-import LabelMaster from "@/app/components/labelMasterProps";
-import LayoutAdmin from "@/app/components/layoutAdmin";
-import { InputLayoutFull } from "@/app/components/layoutContentBody";
-import LoadingMiniSignature from "@/app/components/loadingMini";
-import {
-  ControlTable,
-  TableComponentFull,
-  TableComponentFullHeadless,
-  TableComponentFullHeadlessGrid,
-} from "@/app/components/tableComponents";
-import { TableComponentWithFilterCTX } from "@/app/components/tableComponentV2";
-import {
-  DELAY_MEDIUM,
-  ENDPOINT_API_BASEURL,
-  ENDPOINT_PORT_BASIC,
-  GROUP_CONST_BRD_STATUS,
-  MAX_SIZE_TABLE,
-  radiusStyle,
-  REQ_STATUS_LIST_OPTION,
-  RES_CODE_OK,
-  RES_GENERIC_ERROR_MSG,
-} from "@/app/constants/applicationConstants";
-import { AuthDataModelInterface, useAuth } from "@/app/context/AuthContext";
-import {
-  buildUrlPort,
-  getProjectHealthRating,
-  stringToDateFormatedReverse,
-  truncateText,
-} from "@/app/helper/MasterHelper";
-import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
-import { AuthDataResponse } from "@/app/services/useAuthentications";
-import useOrganization, {
-  OrganizationResponse,
-} from "@/app/services/useOrganization";
-import useProjects, {
-  ProjectDataResponse,
-  ProjectInsertPayload,
-} from "@/app/services/useProjects";
-import useRequirements, {
-  RequirementsResponse,
-} from "@/app/services/useRequirements";
-import useTeams, { TeamsResponse } from "@/app/services/useTeams";
-import { UsersResponse } from "@/app/services/useUsers";
-import {
-  addParamFilter,
-  addParamFilterUpdate,
-  ColumnMetaCustom,
-  ListSearchByParamProps,
-  OptionListProps,
-  PaggingListPayload,
-  PaggingListPayloadCustom,
-  removeParamFilter,
-} from "@/app/types/masterTypes";
-import { Search2Icon } from "@chakra-ui/icons";
-import { TfiPulse } from "react-icons/tfi";
-import {
-  Avatar,
-  AvatarGroup,
-  Badge,
   Box,
   Button,
   Card,
   CardBody,
-  CardHeader,
-  Container,
-  Divider,
   Flex,
-  FormControl,
-  FormErrorMessage,
-  FormHelperText,
-  FormLabel,
   Grid,
   GridItem,
-  Heading,
   HStack,
-  IconButton,
-  Image,
   Input,
   InputGroup,
   InputLeftElement,
@@ -92,36 +20,14 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
-  Popover,
-  PopoverArrow,
-  PopoverBody,
-  PopoverCloseButton,
-  PopoverContent,
-  PopoverTrigger,
-  Portal,
-  Radio,
-  RadioGroup,
-  Spacer,
-  Spinner,
   Stack,
-  Table,
-  Tbody,
-  Td,
-  Text,
-  Textarea,
-  Th,
-  Thead,
-  Tooltip,
-  Tr,
   useColorMode,
   useColorModeValue,
   useDisclosure,
   VStack,
-  Wrap,
 } from "@chakra-ui/react";
 import {
   ColumnDef,
-  flexRender,
   getCoreRowModel,
   getFacetedMinMaxValues,
   getFacetedUniqueValues,
@@ -130,77 +36,77 @@ import {
   PaginationState,
   useReactTable,
 } from "@tanstack/react-table";
-import { Select } from "chakra-react-select";
-import { Formik, FormikState, useFormik } from "formik";
-import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { FaCog } from "react-icons/fa";
+import { Search2Icon } from "@chakra-ui/icons";
+import { FiPlusSquare, FiRefreshCcw, FiSave, FiX } from "react-icons/fi";
+
+// Components
+import { ConfirmationDialog } from "@/app/components/confirmationDialog";
+import { HeaderContent, HeaderContentProps } from "@/app/components/headerContent";
+import LayoutAdmin from "@/app/components/layoutAdmin";
+import LoadingMiniSignature from "@/app/components/loadingMini";
+import { TableComponentFullHeadlessGrid } from "@/app/components/tableComponents";
+
+// Services and Hooks
+import { AuthDataModelInterface, useAuth } from "@/app/context/AuthContext";
+import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
+import { AuthDataResponse } from "@/app/services/useAuthentications";
+import useProjects, { ProjectDataResponse, ProjectInsertPayload } from "@/app/services/useProjects";
+
+// Constants and Types
 import {
-  FiAlertTriangle,
-  FiArrowRightCircle,
-  FiEdit,
-  FiFilter,
-  FiInfo,
-  FiPlusSquare,
-  FiRefreshCcw,
-  FiSave,
-  FiTrash2,
-  FiX,
-} from "react-icons/fi";
-import * as Yup from "yup";
+  DELAY_MEDIUM,
+  radiusStyle,
+  RES_CODE_OK,
+  RES_GENERIC_ERROR_MSG,
+} from "@/app/constants/applicationConstants";
+import { PaggingListPayloadCustom } from "@/app/types/masterTypes";
+
+// Local Components
+import CardProject from "./components/CardProject";
+import TeamProfile from "./components/TeamProfile";
+import ModalRegisterProject from "./components/ModalRegisterProject";
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Projects Manager",
   breadCrumb: ["Home", "Projects Manager"],
 };
 
-function ProjectManagerPage() {
+const ProjectManagerPage = memo(() => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
   const { isAuthenticated, authData, goLogout } = useAuth();
-  const delay = (ms: number) =>
-    new Promise((resolve) => setTimeout(resolve, ms));
   const { List, GetDetailById, InsertProjects } = useProjects();
-  const { ListUnregistProject: ListReq } = useRequirements();
 
-  // SetUp auth data on current page
+  // Auth state
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
 
-  useEffect(() => {
-    const storedData = localStorage.getItem("authData");
-    const token: string = localStorage.getItem("tokenData") as string;
-
-    if (DataAuth == null) {
-      if (storedData) {
-        const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
-        const UserData: AuthDataResponse =
-          StorageAuth.dataLogin as AuthDataResponse;
-        setDataAuth(UserData);
-      }
-    }
-
-    if (token) {
-      setTokenData(token);
-    }
-  }, [DataAuth]);
-  // End SetUp auth data on current page
-
+  // Data state
   const [DataProjects, setDataProjects] = useState<ProjectDataResponse[]>([]);
   const [RefreshData, setRefreshData] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
 
+  // Table state
   const [totalPages, setTotalPageData] = useState<number>(0);
   const [globalFilter, setGlobalFilter] = useState<string>("");
   const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 9,
   });
+
+  // UI state
   const [ActionLoading, setActionLoading] = useState(false);
   const [IsEditMode, setIsEditMode] = useState(false);
-  const [DataOptionsRoleTeam, setDataOptionsRoleTeam] = useState<
-    OptionListProps[]
-  >([]);
+  const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
+  const [questionMsgDialog, setQuestionMsgDialog] = useState<string>("");
+  const [captionDialog, setCaptionDialog] = useState<string>("");
+  const [PayloadData, setPayloadData] = useState<ProjectInsertPayload | null>(null);
+
+  const ModalForm = useDisclosure();
+
+  // Memoized values
+  const delay = useCallback((ms: number) => 
+    new Promise((resolve) => setTimeout(resolve, ms)), []);
 
   const pagination = useMemo(
     () => ({
@@ -210,24 +116,23 @@ function ProjectManagerPage() {
     [pageIndex, pageSize]
   );
 
-  const columnsData = useMemo<ColumnDef<ProjectDataResponse>[]>(
-    () => [
-      {
-        accessorFn: (row) => row.projectCode,
-        id: "projectCode",
-        cell: (info) => (
-          <CardProject
-            data={info.row.original}
-            key={info.row.original.projectCode}
-          />
-        ),
-        header: () => <span>User Member</span>,
-        footer: (props) => props.column.id,
-      },
-    ],
-    [ActionLoading, pageIndex, pageSize, DataOptionsRoleTeam, colorMode]
-  );
+  // Auth setup effect
+  useEffect(() => {
+    const storedData = localStorage.getItem("authData");
+    const token: string = localStorage.getItem("tokenData") as string;
 
+    if (storedData) {
+      const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
+      const UserData: AuthDataResponse = StorageAuth.dataLogin as AuthDataResponse;
+      setDataAuth(UserData);
+    }
+
+    if (token) {
+      setTokenData(token);
+    }
+  }, []); // Empty dependency array - run only once on mount
+
+  // Data fetching effect
   useEffect(() => {
     setIsEditMode(false);
     if (DataAuth && DataAuth.team) {
@@ -243,18 +148,19 @@ function ProjectManagerPage() {
 
       setIsLoadingProcess(true);
       const GetDataList = async () => {
-        const requestData = await List(PayloadList, tokenData);
-        const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+        try {
+          const requestData = await List(PayloadList, tokenData);
+          const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
 
-        if (isErrorResponse || !requestData) {
-          showToast({
-            description: requestData?.message || RES_GENERIC_ERROR_MSG,
-            statusToast: "error",
-          });
-          setIsLoadingProcess(false);
-          return;
-        } else {
-          console.log(requestData);
+          if (isErrorResponse || !requestData) {
+            showToast({
+              description: requestData?.message || RES_GENERIC_ERROR_MSG,
+              statusToast: "error",
+            });
+            setIsLoadingProcess(false);
+            return;
+          }
+
           if (requestData.data == null) {
             showToast({
               description: "Data return error",
@@ -264,27 +170,45 @@ function ProjectManagerPage() {
             return;
           }
 
-          const itemsData: ProjectDataResponse[] =
-            requestData.data as ProjectDataResponse[];
+          const itemsData: ProjectDataResponse[] = requestData.data as ProjectDataResponse[];
           const totalData: number = requestData.countTotal as number;
-          const totalPages: number =
-            totalData > 0 ? Math.ceil(totalData / pageSize) : -1;
+          const totalPages: number = totalData > 0 ? Math.ceil(totalData / pageSize) : -1;
+          
           setDataProjects(itemsData);
           setTotalPageData(totalPages);
           setIsLoadingProcess(false);
+        } catch (error) {
+          console.error("Error fetching projects:", error);
+          showToast({
+            description: "Failed to fetch projects",
+            statusToast: "error",
+          });
+          setIsLoadingProcess(false);
         }
       };
+      
       GetDataList();
     }
-  }, [DataAuth, RefreshData, pageIndex, pageSize, globalFilter]);
-  const [SelectedRoleTeam, setSelectedRoleTeam] =
-    useState<OptionListProps | null>(null);
+  }, [DataAuth, RefreshData, pageIndex, pageSize, globalFilter, tokenData]);
 
-  const RefreshAction = () => {
-    setTotalPageData(0);
-    setDataProjects([]);
-    setRefreshData(RefreshData + 1);
-  };
+  // Table configuration
+  const columnsData = useMemo<ColumnDef<ProjectDataResponse>[]>(
+    () => [
+      {
+        accessorFn: (row) => row.projectCode,
+        id: "projectCode",
+        cell: (info) => (
+          <CardProject
+            data={info.row.original}
+            key={info.row.original.projectCode}
+          />
+        ),
+        header: () => <span>Projects</span>,
+        footer: (props) => props.column.id,
+      },
+    ],
+    [ActionLoading, pageIndex, pageSize, colorMode]
+  );
 
   const table = useReactTable({
     data: DataProjects,
@@ -306,9 +230,14 @@ function ProjectManagerPage() {
     manualPagination: true,
   });
 
-  const ModalForm = useDisclosure();
+  // Event handlers
+  const RefreshAction = useCallback(() => {
+    setTotalPageData(0);
+    setDataProjects([]);
+    setRefreshData(RefreshData + 1);
+  }, [RefreshData]);
 
-  const handleAddNew = () => {
+  const handleAddNew = useCallback(() => {
     if (DataAuth && DataAuth.team) {
       ModalForm.onOpen();
     } else {
@@ -317,23 +246,14 @@ function ProjectManagerPage() {
         statusToast: "error",
       });
     }
-  };
+  }, [DataAuth, ModalForm, showToast]);
 
-  const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
-  const [questionMsgDialog, setQuestionMsgDialog] = useState<string>("");
-  const [captionDialog, setCaptionDialog] = useState<string>("");
-  const [PayloadData, setPayloadData] = useState<ProjectInsertPayload | null>(
-    null
-  );
-
-  // await handleConfirmSaveData();
-
-  const handleSaveData = async () => {
+  const handleSaveData = useCallback(async () => {
     setActionLoading(true);
     await delay(DELAY_MEDIUM);
     if (DataAuth && DataAuth.team) {
-      // await AddProjectNewServ(PayloadData);
       console.log("save");
+      // Implement save logic here
     } else {
       showToast({
         description: "Data is invalid",
@@ -342,17 +262,17 @@ function ProjectManagerPage() {
       setActionLoading(false);
       setPayloadData(null);
     }
-  };
+  }, [DataAuth, delay, showToast]);
 
-  const handleConfirmSaveData = () => {
+  const handleConfirmSaveData = useCallback(() => {
     setCaptionDialog("Confirm Save Data");
     setQuestionMsgDialog(`Are you sure want to create new project ?`);
     setOpenConfirmDialog(true);
-  };
+  }, []);
 
-  const handleDialogTrigger = () => {
+  const handleDialogTrigger = useCallback(() => {
     setOpenConfirmDialog(!openConfirmDialog);
-  };
+  }, [openConfirmDialog]);
 
   return (
     <LayoutAdmin>
@@ -378,7 +298,6 @@ function ProjectManagerPage() {
           <ModalBody w={"full"}>
             <ModalRegisterProject />
           </ModalBody>
-
           <ModalFooter>
             <Button
               colorScheme={"gray"}
@@ -400,6 +319,7 @@ function ProjectManagerPage() {
         questionMsg={questionMsgDialog}
         captionMsg={captionDialog}
       />
+
       <Card rounded={radiusStyle}>
         <CardBody
           bgColor={colorMode == "light" ? "white" : "gray.800"}
@@ -460,7 +380,7 @@ function ProjectManagerPage() {
                         <Button
                           size={"sm"}
                           leftIcon={<FiRefreshCcw />}
-                          onClick={() => RefreshAction()}
+                          onClick={RefreshAction}
                           isLoading={ActionLoading}
                         >
                           Refresh
@@ -471,7 +391,7 @@ function ProjectManagerPage() {
                           leftIcon={<FiPlusSquare />}
                           type={"submit"}
                           isLoading={ActionLoading}
-                          onClick={() => handleAddNew()}
+                          onClick={handleAddNew}
                         >
                           Create New Project
                         </Button>
@@ -494,1191 +414,8 @@ function ProjectManagerPage() {
       </Card>
     </LayoutAdmin>
   );
-}
+});
 
-const CardProject = ({ data }: { data: ProjectDataResponse }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  const { colorMode } = useColorMode();
-  return (
-    <Link href={`projects-manager/detail?projectId=${data.id}`}>
-      <Flex
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        w={"full"}
-        bgColor={colorMode == "light" ? "white" : "gray.900"}
-        border={"1px"}
-        borderColor={colorMode == "light" ? "gray.200" : "gray.900"}
-        rounded={"3xl"}
-        boxShadow={"md"}
-        as={Stack}
-        h={"430px"}
-        _hover={{
-          // bgGradient: "linear(to-br, secondary.100, secondary.50)",
-          // color: "white",
-          cursor: "pointer",
-        }}
-        transition="transform 0.2s ease-in-out, background-color 0.2s ease, box-shadow 0.2s ease-in-out" // Animate transform and box-shadow
-        transform={isHovered ? "translateY(-10px)" : "translateY(0)"}
-      >
-        {/* ICON APP */}
-        <Flex
-          position="relative" // Add this
-          bgGradient={"linear(to-br, secondary.800, secondary.500)"}
-          roundedTop={"3xl"}
-          color={"white"}
-          w={"full"}
-          h="180px"
-          alignItems="center"
-          justifyContent="center"
-          textAlign="center"
-          fontSize={data.appsProject.appShortName.length > 4 ? "2xl" : "4xl"}
-          fontWeight="bold"
-          // overflow="hidden"
-          textOverflow="ellipsis"
-          whiteSpace="nowrap"
-          flexShrink={0}
-        >
-          {data.appsProject.appShortName}
-
-          {/* Floating component at bottom center */}
-          <Flex
-            position="absolute"
-            bottom="8px"
-            left="50%"
-            transform="translateX(-50%)"
-            px={4}
-            py={1}
-            as={HStack}
-            alignItems={"end"}
-            justifyContent={"space-between"}
-            w={"full"}
-          >
-            <Flex
-              as={Stack}
-              textAlign={"start"}
-              fontSize={"x-small"}
-              fontWeight={500}
-              spacing={0}
-            >
-              <Text>{data.projectType}</Text>
-              <Text>{data.projectCategory}</Text>
-            </Flex>
-            <Badge
-              rounded={"md"}
-              fontSize={"large"}
-              colorScheme={"blackAlpha"}
-              variant="solid"
-              px={2}
-              boxShadow={"md"}
-            >
-              {data.projectStatus}
-            </Badge>
-          </Flex>
-        </Flex>
-
-        {/* Body */}
-        <Flex
-          px={6}
-          py={4}
-          as={Stack}
-          spacing={1}
-          justifyContent={"center"}
-          alignItems={"center"}
-        >
-          {/* PROJECT NUMBER */}
-          <Text fontWeight={600} fontSize={"small"} color={"secondary.700"}>
-            No. {data.projectNo}
-          </Text>
-
-          {/* PROJECT NAME */}
-          <Flex
-            w={"full"}
-            justifyContent={"center"}
-            alignItems={"center"}
-            h={"80px"}
-          >
-            <Tooltip
-              hasArrow
-              label={data.projectName}
-              p={2}
-              bg={"gray.100"}
-              color={"secondary.700"}
-              placement={"bottom"}
-              rounded={radiusStyle}
-              textAlign={"center"}
-              display={data.projectName.length > 50 ? "flex" : "none"}
-            >
-              <Heading as="h3" size="md" textAlign={"center"}>
-                {truncateText(data.projectName, 50)}
-              </Heading>
-            </Tooltip>
-          </Flex>
-
-          {/* PROJECT MEMBER */}
-          <AvatarGroup size={"sm"} max={4}>
-            {data.userAssignment.map((u, idx) => (
-              <Avatar key={idx} name={u.userData.nama} />
-            ))}
-          </AvatarGroup>
-
-          {/* PERCENTAGE */}
-          <Box w="full" h="4px" bg="gray.100" borderRadius="full" mt={4}>
-            <Box h="100%" w={`80%`} bg="blue.400" borderRadius="full" />
-          </Box>
-
-          {/* MORE INFO */}
-          <Flex
-            mt={2}
-            // px={4}
-            py={1}
-            as={HStack}
-            alignItems={"end"}
-            justifyContent={"space-between"}
-            w={"full"}
-          >
-            <Flex alignItems={"center"} as={HStack}>
-              <TfiPulse color={"red"} />
-              <Text fontWeight={600}>
-                Health :{" "}
-                <Text as={"span"}>
-                  {getProjectHealthRating(data.projectStatusPercentage)}
-                </Text>
-              </Text>
-            </Flex>
-            <Flex alignItems={"center"} justifyContent={"end"} as={HStack}>
-              <Badge
-                colorScheme={"orange"}
-                rounded={"md"}
-                fontSize={"small"}
-                px={2}
-                // display={"flex"}
-                display={"none"}
-                alignItems={"center"}
-                gap={2}
-              >
-                <FiAlertTriangle />
-                Project tanpa Memo
-              </Badge>
-            </Flex>
-          </Flex>
-        </Flex>
-      </Flex>
-    </Link>
-  );
-};
-
-const TeamProfile = () => {
-  const showToast = useToastHelper();
-  const { GetDetailById, ListMembers } = useTeams();
-  const delay = (ms: number) =>
-    new Promise((resolve) => setTimeout(resolve, ms));
-
-  // SetUp auth data on current page
-  const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
-  const [tokenData, setTokenData] = useState<string>("");
-
-  useEffect(() => {
-    const storedData = localStorage.getItem("authData");
-    const token: string = localStorage.getItem("tokenData") as string;
-
-    if (DataAuth == null) {
-      if (storedData) {
-        const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
-        const UserData: AuthDataResponse =
-          StorageAuth.dataLogin as AuthDataResponse;
-        setDataAuth(UserData);
-      }
-    }
-
-    if (token) {
-      setTokenData(token);
-    }
-  }, [DataAuth]);
-  // End SetUp auth data on current page
-
-  const [DataTeam, setDataTeam] = useState<TeamsResponse | null>(null);
-  const [DataTeamMembers, setDataTeamMembers] = useState<UsersResponse[]>([]);
-  const [RefreshData, setRefreshData] = useState<number>(0);
-  const [IsLoadingProcess, setIsLoadingProcess] = useState(true);
-  const [ActionLoading, setActionLoading] = useState(false);
-
-  const [image, setImage] = useState("/img/placeholder-header-sm.png");
-  useEffect(() => {
-    setIsLoadingProcess(true);
-    if (DataAuth && DataAuth.team && DataAuth.team.id) {
-      const teamId = DataAuth.team.id; // Store the ID to avoid repeated null checks
-
-      const GetDataTeam = async () => {
-        // Check if team data exists in localStorage and is not expired
-        const storedTeamData = localStorage.getItem(`teamData_${teamId}`);
-        const storedTeamTimestamp = localStorage.getItem(
-          `teamData_${teamId}_timestamp`
-        );
-        const currentTime = new Date().getTime();
-        const CACHE_EXPIRATION = 30 * 60 * 1000; // 30 minutes in milliseconds
-
-        // Check if we have valid cached data
-        if (
-          storedTeamData &&
-          storedTeamTimestamp &&
-          currentTime - parseInt(storedTeamTimestamp) < CACHE_EXPIRATION &&
-          RefreshData === 0
-        ) {
-          try {
-            const parsedTeamData: TeamsResponse = JSON.parse(storedTeamData);
-            setDataTeam(parsedTeamData);
-
-            if (parsedTeamData.teamPict != null) {
-              setImage(
-                buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC) +
-                  parsedTeamData.teamPict
-              );
-            }
-            console.log("Team data loaded from localStorage");
-            setIsLoadingProcess(false);
-          } catch (error) {
-            console.error("Error parsing team data from localStorage:", error);
-            // If parsing fails, fetch from API
-            await fetchTeamDataFromAPI();
-          }
-        } else {
-          // No valid cache, fetch from API
-          await fetchTeamDataFromAPI();
-        }
-      };
-
-      // Function to fetch team data from API and save to localStorage
-      const fetchTeamDataFromAPI = async () => {
-        const requestData = await GetDetailById(teamId, tokenData);
-        const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
-
-        if (isErrorResponse || !requestData) {
-          showToast({
-            description: requestData?.message || RES_GENERIC_ERROR_MSG,
-            statusToast: "error",
-          });
-          setIsLoadingProcess(false);
-          return;
-        } else {
-          console.log("Team data fetched from API");
-          await delay(DELAY_MEDIUM);
-          if (requestData.data == null) {
-            showToast({
-              description: "Data return error",
-              statusToast: "error",
-            });
-            setIsLoadingProcess(false);
-            return;
-          }
-
-          const itemsData: TeamsResponse = requestData.data as TeamsResponse;
-
-          // Save to localStorage with timestamp
-          try {
-            localStorage.setItem(
-              `teamData_${teamId}`,
-              JSON.stringify(itemsData)
-            );
-            localStorage.setItem(
-              `teamData_${teamId}_timestamp`,
-              new Date().getTime().toString()
-            );
-          } catch (error) {
-            console.error("Error saving team data to localStorage:", error);
-          }
-
-          setDataTeam(itemsData);
-          setIsLoadingProcess(false);
-          if (itemsData.teamPict != null) {
-            setImage(
-              buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC) +
-                itemsData.teamPict
-            );
-          }
-        }
-      };
-
-      const PayloadList: PaggingListPayloadCustom = {
-        search: "",
-        teamId: teamId,
-        limit: 0,
-        page: MAX_SIZE_TABLE,
-        filterWhere: [],
-        fieldOrder: ["nama"],
-        orderDir: "asc",
-      };
-
-      // For team members, we'll just fetch from API directly as requested
-      const GetDataList = async () => {
-        const requestData = await ListMembers(PayloadList, tokenData);
-        const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
-
-        if (isErrorResponse || !requestData) {
-          showToast({
-            description: requestData?.message || RES_GENERIC_ERROR_MSG,
-            statusToast: "error",
-          });
-          return;
-        } else {
-          if (requestData.data == null) {
-            showToast({
-              description: "Data return error",
-              statusToast: "error",
-            });
-            return;
-          }
-
-          const itemsData: UsersResponse[] =
-            requestData.data as UsersResponse[];
-          setDataTeamMembers(itemsData);
-        }
-      };
-
-      GetDataTeam();
-      GetDataList();
-    } else {
-      // Handle case when DataAuth.team is null or undefined
-      setIsLoadingProcess(false);
-      console.warn("Team data is not available in auth context");
-    }
-  }, [DataAuth, RefreshData]);
-
-  const RefreshAction = () => {
-    setRefreshData(RefreshData + 1);
-  };
-
-  return (
-    <Flex pb={2}>
-      <Box w={"full"}>
-        <Box
-          zIndex={1}
-          pos={"relative"}
-          h={"190px"}
-          w={"full"}
-          bgGradient={"linear(to-r, #1b517e, #063154)"}
-          backgroundPosition="center"
-          backgroundRepeat="no-repeat"
-          backgroundSize="cover"
-          backgroundImage={`url(/img/currency-bg.png)`}
-          objectFit="cover"
-          boxShadow={"md"}
-          rounded={radiusStyle}
-        >
-          <Box
-            rounded={radiusStyle}
-            pos={"absolute"}
-            top="0"
-            left="0"
-            w="full"
-            h="full"
-            bgGradient="linear(to-b, blackAlpha.200 0%, blackAlpha.800 100%)"
-          ></Box>
-        </Box>
-        <Flex justify={"center"} mt={"-120px"} zIndex={2}>
-          <Flex
-            w={"full"}
-            zIndex={2}
-            px={{ base: 3, sm: 3, md: 8, lg: 8 }}
-            justifyContent={"start"}
-          >
-            <Container maxW={"8xl"}>
-              <Flex as={Stack} direction={"row"} spacing={5}>
-                <Box
-                  w={"160px"}
-                  h={"160px"}
-                  borderRadius={"full"}
-                  overflow={"hidden"}
-                  boxShadow={"lg"}
-                >
-                  <Image
-                    src={image}
-                    // rounded={"3xl"}
-                    draggable={false} // Prevent image from being draggable
-                    w={"full"}
-                    h={"full"}
-                  />
-                </Box>
-                <Flex
-                  alignItems={"start"}
-                  color={"white"}
-                  as={Stack}
-                  pt={5}
-                  spacing={1}
-                >
-                  <Heading as="h2" size="xl">
-                    {DataTeam?.teamName}
-                  </Heading>
-                  <Flex
-                    alignItems={"start"}
-                    color={"white"}
-                    as={Stack}
-                    spacing={0}
-                  >
-                    <Text
-                      fontWeight={600}
-                      fontSize={"md"}
-                      textStyle={"italic"}
-                      as={"i"}
-                      lineHeight={1}
-                    >
-                      {DataTeam?.division.orgName}
-                    </Text>
-                    <Text
-                      fontWeight={500}
-                      fontSize={"md"}
-                      textStyle={"italic"}
-                      as={"i"}
-                      lineHeight={1.5}
-                    >
-                      {DataTeam?.group.orgName}
-                    </Text>
-                  </Flex>
-                </Flex>
-                <Spacer />
-                <Flex>
-                  <AvatarGroup size="md" max={4}>
-                    {DataTeamMembers.map((dt, index) => (
-                      <Avatar key={index} name={`${dt.nama}`} />
-                    ))}
-                  </AvatarGroup>
-                </Flex>
-              </Flex>
-            </Container>
-          </Flex>
-        </Flex>
-
-        {/* <pre>{JSON.stringify(DataTeam?.teamUserMembers, null, 2)}</pre> */}
-      </Box>
-    </Flex>
-  );
-};
-
-const brdFilter: ListSearchByParamProps = {
-  field: "requirementType",
-  operator: "=",
-  value: "BRD",
-  filterLabel: "Tipe",
-};
-
-const ModalRegisterProject = () => {
-  const showToast = useToastHelper();
-  const { colorMode } = useColorMode();
-  const { isAuthenticated, authData, goLogout } = useAuth();
-  const delay = (ms: number) =>
-    new Promise((resolve) => setTimeout(resolve, ms));
-  const { ListUnregistProject: ListReq } = useRequirements();
-  const { List: ListOrganization } = useOrganization();
-
-  // SetUp auth data on current page
-  const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
-  const [tokenData, setTokenData] = useState<string>("");
-
-  useEffect(() => {
-    const storedData = localStorage.getItem("authData");
-    const token: string = localStorage.getItem("tokenData") as string;
-
-    if (DataAuth == null) {
-      if (storedData) {
-        const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
-        const UserData: AuthDataResponse =
-          StorageAuth.dataLogin as AuthDataResponse;
-        setDataAuth(UserData);
-      }
-    }
-
-    if (token) {
-      setTokenData(token);
-    }
-  }, [DataAuth]);
-  // End SetUp auth data on current page
-
-  const [DataReq, setDataReq] = useState<RequirementsResponse[]>([]);
-  const [RefreshData, setRefreshData] = useState<number>(0);
-  const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
-  const [ActionLoading, setActionLoading] = useState(false);
-
-  const [totalPages, setTotalPageData] = useState<number>(0);
-  const [globalFilter, setGlobalFilter] = useState<string>("");
-  const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 5,
-  });
-
-  const pagination = useMemo(
-    () => ({
-      pageIndex,
-      pageSize,
-    }),
-    [pageIndex, pageSize]
-  );
-
-  // Division Option setup
-  const [IsLoadingDivisionSelect, setIsLoadingDivisionSelect] = useState(false);
-  const [OptionDivision, setOptionDivision] = useState<OptionListProps[]>([]);
-
-  const GetDataDivision = async (
-    searchValue: string = "",
-    limit: number = 1
-  ): Promise<OrganizationResponse[]> => {
-    setIsLoadingDivisionSelect(true);
-    const PayloadList: PaggingListPayload = {
-      search: searchValue,
-      limit: limit,
-      page: 0,
-      filterWhere: [
-        {
-          field: "orgType",
-          operator: "=",
-          value: "DIVISION",
-        },
-      ],
-      fieldOrder: ["orgName"],
-      orderDir: "asc",
-    };
-    const token: string = localStorage.getItem("tokenData") as string;
-    const requestData = await ListOrganization(PayloadList, token);
-    const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
-
-    if (isErrorResponse || !requestData) {
-      showToast({
-        description: requestData?.message || RES_GENERIC_ERROR_MSG,
-        statusToast: "error",
-      });
-      setIsLoadingDivisionSelect(false);
-      return [];
-    } else {
-      console.log(requestData);
-      if (requestData.data == null) {
-        showToast({
-          description: "Data return error",
-          statusToast: "error",
-        });
-        setIsLoadingDivisionSelect(false);
-        return [];
-      }
-
-      const itemsData: OrganizationResponse[] =
-        requestData.data as OrganizationResponse[];
-
-      const mapOptionData: OptionListProps[] = itemsData.map((d) => ({
-        label: `${d.orgName}`,
-        value: d.id,
-      }));
-      setOptionDivision(mapOptionData);
-      setIsLoadingDivisionSelect(false);
-
-      return itemsData;
-    }
-  };
-
-  const LoadDataDivision = async () => {
-    if (OptionDivision.length <= 0) {
-      const dataDivision = await GetDataDivision("", MAX_SIZE_TABLE);
-    }
-  };
-
-  const [ParamFilter, setParamFilter] = useState<ListSearchByParamProps[]>([]);
-
-  const handleFilterChange = (newFilters: ListSearchByParamProps[]) => {
-    console.log("handleFilterChange");
-    console.log(newFilters);
-
-    // Use reduce to merge all new filters at once
-    const updatedFilters = newFilters.reduce(
-      (acc, filter) => addParamFilterUpdate(acc, filter),
-      ParamFilter
-    );
-
-    setParamFilter(updatedFilters);
-  };
-
-  const columnsData = useMemo<ColumnDef<RequirementsResponse>[]>(
-    () => [
-      {
-        accessorKey: "numbData",
-        cell: (info) => (
-          <Flex justifyContent={"center"} alignItems="flex-start" h={"full"}>
-            <Text>{pageIndex * pageSize + info.row.index + 1}.</Text>
-          </Flex>
-        ),
-        header: () => <Flex justifyContent={"center"}>No.</Flex>,
-        footer: (props) => props.column.id,
-        // Custom variable
-        meta: {
-          isFilterable: false,
-        } as ColumnMetaCustom,
-      },
-      {
-        accessorFn: (row) => row.reqNarative,
-        id: "reqNarative",
-        cell: (info) => (
-          <Flex
-            w={"full"}
-            h={"full"}
-            justifyContent={"center"}
-            alignItems={"start"}
-            as={Stack}
-            spacing={1}
-          >
-            <Flex as={Stack} spacing={2}>
-              <Flex as={Stack} spacing={0}>
-                <Text fontWeight={600}>{info.row.original.reqNumber}</Text>
-                <Text>{info.row.original.reqNarative}</Text>
-              </Flex>
-              <Flex as={Stack} spacing={0}>
-                <Text>Divisi Pengirim :</Text>
-                <Text fontWeight={600}>
-                  {info.row.original.senderDivisionName}
-                </Text>
-              </Flex>
-              <Flex pt={2}>
-                {info.row.original.isCarryOver == "Y" && (
-                  <Badge
-                    variant="solid"
-                    colorScheme="yellow"
-                    fontSize={"small"}
-                    rounded={radiusStyle}
-                    px={4}
-                  >
-                    CARRYOVER
-                  </Badge>
-                )}
-              </Flex>
-            </Flex>
-          </Flex>
-        ),
-        header: () => <span>Perihal</span>,
-        footer: (props) => props.column.id,
-        // Custom variable
-        meta: {
-          isFilterable: true,
-          filterData: [
-            {
-              field: "reqNarative",
-              operator: "like",
-              value: "",
-              filterType: "text",
-              filterLabel: "Perihal",
-            },
-            {
-              field: "senderDivisionId",
-              operator: "=",
-              value: "",
-              filterType: "select",
-              filterLabel: "Divisi Pengirim",
-              sourceListData: OptionDivision,
-            },
-          ],
-        } as ColumnMetaCustom,
-      },
-      {
-        accessorFn: (row) => row.reqInititateDate,
-        id: "reqInititateDate",
-        cell: (info) => (
-          <Flex
-            w={"full"}
-            h={"full"}
-            justifyContent={"center"}
-            alignItems={"start"}
-            as={Stack}
-            spacing={1}
-          >
-            <Flex fontSize={"small"} as={Stack} spacing={0}>
-              <Text>Memo Dibuat :</Text>
-              <Text fontWeight={600}>
-                {info.row.original.reqInititateDate
-                  ? stringToDateFormatedReverse(
-                      info.row.original.reqInititateDate
-                    )
-                  : "-"}
-              </Text>
-            </Flex>
-            <Flex fontSize={"small"} as={Stack} spacing={0}>
-              <Text>Memo Diterima :</Text>
-              <Text fontWeight={600}>
-                {info.row.original.reqAcceptedDate
-                  ? stringToDateFormatedReverse(
-                      info.row.original.reqAcceptedDate
-                    )
-                  : "-"}
-              </Text>
-            </Flex>
-          </Flex>
-        ),
-        header: () => <span>Tanggal</span>,
-        footer: (props) => props.column.id,
-        // Custom variable
-        meta: {
-          isFilterable: true,
-          filterData: [
-            {
-              field: "reqInititateDate",
-              operator: ">=",
-              value: "",
-              filterType: "date",
-              filterLabel: "Tgl. Awal Memo Dibuat",
-            },
-            {
-              field: "reqInititateDate",
-              operator: "<=",
-              value: "",
-              filterType: "date",
-              filterLabel: "Tgl. Akhir Memo Dibuat",
-            },
-          ],
-        } as ColumnMetaCustom,
-      },
-      {
-        accessorFn: (row) => row.assignedFromName,
-        id: "assigned",
-        cell: (info) => (
-          <Flex w={"full"} justifyContent={"center"} as={Stack} spacing={1}>
-            <Flex fontSize={"small"} as={Stack} spacing={0}>
-              <Text>Ditugaskan Oleh :</Text>
-              <Text fontWeight={600} fontSize={"smaller"}>
-                {info.row.original.assignedFromName}
-              </Text>
-            </Flex>
-            <Flex fontSize={"small"} as={Stack} spacing={0}>
-              <Text>Ditugaskan Ke :</Text>
-              {info.row.original.approvalDatas.map((x, idx) => (
-                <Text fontWeight={600} key={idx} fontSize={"smaller"}>
-                  {idx + 1}. {x.approverUserFirstName}{" "}
-                  {x.approverUserLastnameName}
-                </Text>
-              ))}
-            </Flex>
-          </Flex>
-        ),
-        header: () => <span>Penugasan</span>,
-        footer: (props) => props.column.id,
-        // Custom variable
-        // Custom variable
-        meta: {
-          isFilterable: true,
-          filterData: [
-            {
-              field: "assignedFromName",
-              operator: "like",
-              value: "",
-              filterType: "text",
-              filterLabel: "Ditugaskan Oleh",
-            },
-          ],
-        } as ColumnMetaCustom,
-      },
-      {
-        accessorFn: (row) => row.appInitialName,
-        id: "appInitialName",
-        cell: (info) => (
-          <Flex
-            w={"full"}
-            h={"full"}
-            justifyContent={"center"}
-            alignItems={"start"}
-            as={Stack}
-            spacing={1}
-          >
-            <Flex as={Stack} spacing={2}>
-              <Flex as={Stack} spacing={0}>
-                <Text fontWeight={600}>
-                  ({info.row.original.appInitialCode})
-                </Text>
-                <Text fontWeight={600}>{info.row.original.appInitialName}</Text>
-              </Flex>
-            </Flex>
-          </Flex>
-        ),
-        header: () => <span>Aplikasi</span>,
-        footer: (props) => props.column.id,
-        // Custom variable
-        meta: {
-          isFilterable: true,
-          filterData: [
-            {
-              field: "appInitialCode",
-              operator: "like",
-              value: "",
-              filterType: "text",
-              filterLabel: "Inisial Aplikasi",
-            },
-            {
-              field: "appInitialName",
-              operator: "like",
-              value: "",
-              filterType: "text",
-              filterLabel: "Nama Aplikasi",
-            },
-          ],
-        } as ColumnMetaCustom,
-      },
-      {
-        accessorFn: (row) => row.reqStatus,
-        id: "reqStatus",
-        cell: (info) => (
-          <Flex
-            w={"full"}
-            h={"full"}
-            justifyContent={"center"}
-            alignItems={"start"}
-            as={Stack}
-            spacing={1}
-          >
-            <Flex fontSize={"small"} as={Stack} spacing={1}>
-              {info.row.original.reqStatus ? (
-                <LabelMaster
-                  groupLabel={GROUP_CONST_BRD_STATUS}
-                  labelName={info.row.original.reqStatus}
-                />
-              ) : (
-                "-"
-              )}
-            </Flex>
-            <Text>
-              Next Step :
-              <Text as="span" fontWeight="bold" pl={1}>
-                {info.row.original.nextStep}
-              </Text>
-            </Text>
-          </Flex>
-        ),
-        header: () => <span>Status</span>,
-        footer: (props) => props.column.id,
-        // Custom variable
-        meta: {
-          isFilterable: true,
-          filterData: [
-            {
-              field: "reqStatus",
-              operator: "=",
-              value: "",
-              filterType: "select",
-              filterLabel: "Status",
-              sourceListData: REQ_STATUS_LIST_OPTION,
-            },
-          ],
-        } as ColumnMetaCustom,
-      },
-      {
-        accessorFn: (row) => row.id,
-        id: "id",
-        cell: (info) => (
-          <Flex w={"full"} justifyContent={"center"}>
-            <Link
-              href={`projects-manager/register?reqId=${info.row.original.id}`}
-            >
-              <Button
-                rightIcon={<FiArrowRightCircle />}
-                colorScheme="secondary"
-                size="sm"
-              >
-                Register
-              </Button>
-            </Link>
-          </Flex>
-        ),
-        header: () => "",
-        footer: (props) => props.column.id,
-        // Custom variable
-        meta: {
-          isFilterable: false,
-        },
-      },
-    ],
-    [ActionLoading, pageIndex, pageSize, colorMode, OptionDivision, ParamFilter]
-  );
-
-  // Set Onload Filter For Constant Filter
-  useEffect(() => {
-    const brdStatusApprove: ListSearchByParamProps = {
-      field: "reqStatus",
-      operator: "=",
-      value: "APPROVED",
-      filterLabel: "Tipe",
-    };
-    LoadDataDivision();
-    // addFilterData(brdFilter);
-    addFilterData(brdStatusApprove);
-  }, []);
-
-  const addFilterData = (data: ListSearchByParamProps) => {
-    const filterWhereData: ListSearchByParamProps[] = addParamFilterUpdate(
-      ParamFilter,
-      data
-    );
-
-    setParamFilter(filterWhereData);
-  };
-
-  const removeFilterData = (data: ListSearchByParamProps) => {
-    const filterWhereData: ListSearchByParamProps[] = removeParamFilter(
-      ParamFilter,
-      data
-    );
-
-    setParamFilter(filterWhereData);
-  };
-
-  const [SelectedTypeReq, setSelectedTypeReq] = useState<string>("BRD");
-
-  useEffect(() => {
-    const brdFilterSelected: ListSearchByParamProps[] = [
-      {
-        field: "requirementType",
-        operator: "=",
-        value: SelectedTypeReq,
-        filterLabel: "Tipe",
-      },
-    ];
-    handleFilterChange(brdFilterSelected);
-  }, [SelectedTypeReq]);
-
-  useEffect(() => {
-    const brdStatusApproveStatic: ListSearchByParamProps = {
-      field: "reqStatus",
-      operator: "=",
-      value: "APPROVED",
-      filterLabel: "Tipe",
-    };
-    const filterWhereData: ListSearchByParamProps[] = addParamFilter(
-      ParamFilter,
-      brdStatusApproveStatic
-    );
-    if (DataAuth && DataAuth.team && tokenData) {
-      const PayloadList: PaggingListPayload = {
-        search: globalFilter,
-        limit: pageSize,
-        page: pageIndex,
-        filterWhere: filterWhereData,
-        fieldOrder: ["createdAt"],
-        orderDir: "desc",
-      };
-
-      setIsLoadingProcess(true);
-      const GetDataList = async () => {
-        const requestData = await ListReq(PayloadList, tokenData);
-        const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
-
-        if (isErrorResponse || !requestData) {
-          showToast({
-            description: requestData?.message || RES_GENERIC_ERROR_MSG,
-            statusToast: "error",
-          });
-          setIsLoadingProcess(false);
-          return;
-        } else {
-          console.log(requestData);
-          if (requestData.data == null) {
-            showToast({
-              description: "Data return error",
-              statusToast: "error",
-            });
-            setIsLoadingProcess(false);
-            return;
-          }
-
-          const itemsData: RequirementsResponse[] =
-            requestData.data as RequirementsResponse[];
-          const totalData: number = requestData.countTotal as number;
-          const totalPages: number =
-            totalData > 0 ? Math.ceil(totalData / pageSize) : -1;
-          setDataReq(itemsData);
-          setTotalPageData(totalPages);
-          setIsLoadingProcess(false);
-        }
-      };
-      GetDataList();
-    }
-  }, [DataAuth, RefreshData, pageIndex, pageSize, globalFilter, ParamFilter]);
-
-  const table = useReactTable({
-    data: DataReq,
-    columns: columnsData,
-    pageCount: totalPages ?? 1,
-    state: {
-      globalFilter,
-      pagination,
-    },
-    onPaginationChange: setPagination,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    onGlobalFilterChange: setGlobalFilter,
-    getFacetedUniqueValues: getFacetedUniqueValues(),
-    getFacetedMinMaxValues: getFacetedMinMaxValues(),
-    debugTable: false,
-    manualFiltering: true,
-    manualPagination: true,
-  });
-
-  return (
-    <Flex as={Stack} w={"full"} pt={4}>
-      <FormControl>
-        <Grid templateColumns="repeat(2, 1fr)" gap={1} w={"full"}>
-          <GridItem
-            colSpan={{
-              base: 2,
-              sm: 2,
-              md: 1,
-              lg: 1,
-            }}
-            w={"full"}
-          >
-            <FormLabel h={"full"}>Sudah memiliki requirement</FormLabel>
-          </GridItem>
-          <GridItem
-            colSpan={{
-              base: 2,
-              sm: 2,
-              md: 1,
-              lg: 1,
-            }}
-            w={"full"}
-          >
-            <FormControl>
-              <RadioGroup
-                id={"isHaveReq"}
-                onChange={(val) => {
-                  // formik.setFieldValue("appPrivateAuth", val);
-                  console.log(val);
-                }}
-                value={"Y"}
-              >
-                <Flex w={"full"} as={HStack} justifyContent={"end"}>
-                  <Radio value={"Y"}>Ya</Radio>
-                  <Radio value={"N"} isDisabled>
-                    Tidak
-                  </Radio>
-                </Flex>
-              </RadioGroup>
-            </FormControl>
-          </GridItem>
-
-          <GridItem
-            colSpan={{
-              base: 2,
-              sm: 2,
-              md: 1,
-              lg: 1,
-            }}
-            w={"full"}
-          >
-            <FormLabel h={"full"}>Tipe Requirement</FormLabel>
-          </GridItem>
-
-          <GridItem
-            colSpan={{
-              base: 2,
-              sm: 2,
-              md: 1,
-              lg: 1,
-            }}
-            w={"full"}
-          >
-            <FormControl>
-              <RadioGroup
-                id={"FilterReqType"}
-                onChange={(val) => {
-                  // formik.setFieldValue("appPrivateAuth", val);
-                  console.log(val);
-                  setSelectedTypeReq(val);
-                }}
-                value={SelectedTypeReq}
-              >
-                <Flex w={"full"} as={HStack} justifyContent={"end"}>
-                  <Radio value={"BRD"}>BRD</Radio>
-                  <Radio value={"RFC"}>RFC</Radio>
-                </Flex>
-              </RadioGroup>
-            </FormControl>
-          </GridItem>
-
-          <GridItem colSpan={2} w={"full"}>
-            {/* <pre>{JSON.stringify(formik.values, null, 2)}</pre> */}
-          </GridItem>
-
-          <GridItem colSpan={2} w={"full"}>
-            <Popover closeOnBlur={false} placement={"bottom"}>
-              <PopoverTrigger>
-                <Button size={"sm"} leftIcon={<FiFilter />}>
-                  Filter{" "}
-                  <Flex
-                    as={"span"}
-                    pl={1}
-                    display={ParamFilter.length > 0 ? "flex" : "none"}
-                    color={"secondary.500"}
-                    fontWeight={600}
-                  >
-                    ({ParamFilter.length})
-                  </Flex>
-                </Button>
-              </PopoverTrigger>
-              <Portal>
-                <PopoverContent width="auto" minW="xs">
-                  <PopoverBody>
-                    <Flex as={Stack} w={"full"}>
-                      <Text fontWeight={600}>Filter Data</Text>
-                      <Divider />
-
-                      <Stack spacing={2}>
-                        {ParamFilter.map((dt, idx) => (
-                          <Flex
-                            key={idx}
-                            w={"full"}
-                            alignItems="center"
-                            as={HStack}
-                            spacing={2}
-                          >
-                            <Text>
-                              {dt.filterLabel} :{" "}
-                              <Text as={"span"} fontWeight={600}>
-                                {" "}
-                                {dt.field === "senderDivisionId"
-                                  ? OptionDivision.find(
-                                      (opt) => opt.value === dt.value
-                                    )?.label || dt.value
-                                  : dt.value}
-                              </Text>
-                            </Text>
-                            <Button
-                              size={"xs"}
-                              colorScheme={"red"}
-                              justifyContent={"center"}
-                              variant={"ghost"}
-                              onClick={() => removeFilterData(dt)}
-                            >
-                              <FiX />
-                            </Button>
-                          </Flex>
-                        ))}
-                      </Stack>
-                    </Flex>
-                  </PopoverBody>
-                </PopoverContent>
-              </Portal>
-            </Popover>
-          </GridItem>
-        </Grid>
-
-        <GridItem colSpan={2} w={"full"}>
-          {IsLoadingProcess ? (
-            <LoadingMiniSignature />
-          ) : (
-            // <TableComponentFull table={table} />
-            // TABLE NEW DESIGN
-            <Box w={"full"} pt={2}>
-              <TableComponentWithFilterCTX
-                table={table}
-                handleFilterChange={handleFilterChange}
-              />
-            </Box>
-          )}
-        </GridItem>
-      </FormControl>
-
-      {/* <pre>{JSON.stringify(formik.values, null, 2)}</pre> */}
-    </Flex>
-  );
-};
+ProjectManagerPage.displayName = "ProjectManagerPage";
 
 export default ProjectManagerPage;
