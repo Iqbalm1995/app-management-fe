@@ -13,13 +13,13 @@ import {
   Text,
   useColorMode,
 } from "@chakra-ui/react";
-import { LoadingOverlay } from "./loadingOverlay";
+import { LoadingOverlayEnhanced } from "./loadingOverlayEnhanced";
 import TopNavigationLanding from "./landingTopNavigation";
 import SignatureLineColor from "./signatureStyle";
 import Head from "next/head";
 import { usePathname } from "next/navigation";
 
-const LayoutLanding = ({ children }: { children: ReactNode }) => {
+const LayoutLandingEnhanced = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
   const [loading, setLoading] = useState(true);
   const { colorMode } = useColorMode();
@@ -28,10 +28,19 @@ const LayoutLanding = ({ children }: { children: ReactNode }) => {
     // Show loading on route change
     setLoading(true);
     
-    // Simulate loading time for landing pages
-    const timer = setTimeout(() => setLoading(false), DELAY_MEDIUM);
+    // Landing pages typically load faster
+    const timer = setTimeout(() => setLoading(false), DELAY_MEDIUM - 200);
     return () => clearTimeout(timer);
-  }, [pathname]); // Re-run when pathname changes
+  }, [pathname]);
+
+  // Get loading text based on landing page route
+  const getLoadingText = (path: string) => {
+    if (path === "/" || path === "/landing") return "Loading KOBRA...";
+    if (path.includes("login")) return "Loading Login...";
+    if (path.includes("register")) return "Loading Registration...";
+    if (path.includes("about")) return "Loading About...";
+    return "Loading Page...";
+  };
 
   return (
     <>
@@ -40,12 +49,18 @@ const LayoutLanding = ({ children }: { children: ReactNode }) => {
           <title>KOBRA - Applications Management</title>
         </Head>
         
-        <LoadingOverlay isLoading={loading} />
+        <LoadingOverlayEnhanced 
+          isLoading={loading} 
+          loadingText={getLoadingText(pathname)}
+          showProgress={true}
+        />
         
         <Box
-          opacity={loading ? 0.5 : 1}
+          opacity={loading ? 0.3 : 1}
           pointerEvents={loading ? "none" : "auto"}
-          transition="opacity 0.3s ease"
+          transition="opacity 0.5s ease"
+          transform={loading ? "scale(0.98)" : "scale(1)"}
+          style={{ transition: "all 0.5s ease" }}
         >
           <TopNavigationLanding />
           {children}
@@ -96,4 +111,4 @@ export const FooterAdminPanel = () => {
   );
 };
 
-export default LayoutLanding;
+export default LayoutLandingEnhanced;

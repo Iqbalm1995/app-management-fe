@@ -13,10 +13,13 @@ const LayoutAdmin = ({ children }: { children: ReactNode }) => {
   const { colorMode } = useColorMode();
 
   useEffect(() => {
+    // Show loading on route change
+    setLoading(true);
+    
     // Simulate loading time
     const timer = setTimeout(() => setLoading(false), DELAY_MEDIUM);
     return () => clearTimeout(timer);
-  }, []);
+  }, [pathname]); // Re-run when pathname changes
 
   return (
     <>
@@ -25,6 +28,7 @@ const LayoutAdmin = ({ children }: { children: ReactNode }) => {
         <Box
           opacity={loading ? 0.5 : 1}
           pointerEvents={loading ? "none" : "auto"}
+          transition="opacity 0.3s ease"
         >
           <Box minH="100vh" bg={colorMode == "light" ? "gray.100" : "gray.900"}>
             <NavigationAdmin>{children}</NavigationAdmin>
