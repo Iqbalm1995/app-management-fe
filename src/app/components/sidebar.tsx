@@ -57,6 +57,7 @@ import {
   AlertIcon,
   AlertTitle,
   AlertDescription,
+  Spinner,
 } from "@chakra-ui/react";
 import {
   FiHome,
@@ -121,7 +122,7 @@ import {
   MdOutlineCircle,
   MdOutlinePermMedia,
 } from "react-icons/md";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { AuthDataResponse } from "../services/useAuthentications";
 import { BiSolidReport } from "react-icons/bi";
 import { CiMemoPad, CiServer } from "react-icons/ci";
@@ -755,6 +756,8 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
   const hasChildren = data.children && data.children.length > 0;
   const [isHovered, setIsHovered] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+  const [isNavigating, setIsNavigating] = useState(false);
 
   const handleToggle = () => {
     setIsOpen(!isOpen);
@@ -776,12 +779,38 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
       setIsActiveNav(true);
     } else {
       setIsActiveNav(false);
+    // Reset loading state when pathname changes (navigation complete)
+    setIsNavigating(false);
     }
   }, [pathname]);
 
+  const handleNavigation = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    
+    if (hasChildren) {
+      handleToggle();
+      return;
+    }
+
+    // Don't navigate if already on the same page
+    if (pathname === data.link) {
+      return;
+    }
+
+    // Start loading
+    setIsNavigating(true);
+    
+    try {
+      // Navigate to the new page
+      await router.push(data.link);
+    } catch (error) {
+      console.error("Navigation error:", error);
+      setIsNavigating(false);
+    }
+  };
   return (
     <Box w={"full"}>
-      <Link href={data.children.length == 0 ? data.link : "#"}>
+      <Box cursor="pointer">
         <Tooltip
           label={data.name}
           placement="right-end"
@@ -820,7 +849,7 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
             // onClick={() => {
             //   GoNavigationLink();
             // }}
-            onClick={hasChildren ? handleToggle : undefined}
+            onClick={handleNavigation}
           >
             <Flex
               w={"full"}
@@ -860,11 +889,19 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
                     as={isOpen ? ChevronDownIcon : ChevronRightIcon}
                   />
                 )}
+                {/* Loading Spinner */}
+                {isNavigating && !hasChildren && (
+                  <Spinner
+                    size="sm"
+                    ml="auto"
+                    color={IsActiveNav ? "white" : "secondary.500"}
+                  />
+                )}
               </Flex>
             </Flex>
           </Flex>
         </Tooltip>
-      </Link>
+      </Box>
       {isOpen && hasChildren && (
         <MotionBox
           pl={3}
