@@ -82,7 +82,7 @@ import {
 } from "@chakra-ui/icons";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   useToastHelper,
   useToastHelperShort,
@@ -383,6 +383,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
   const [LiteMode, setLiteMode] = useState<boolean>(false);
   const { isAuthenticated, authData, goLogout } = useAuth();
   const { colorMode, toggleColorMode } = useColorMode();
+  const pathname = usePathname();
 
   // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -650,28 +651,20 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                 pt={2}
                 minH={"100vh"}
               >
-                <Stack>
-                  {/* <Alert
-                    status="warning"
-                    variant="subtle"
-                    flexDirection="column"
-                    alignItems="center"
-                    justifyContent="center"
-                    textAlign="center"
-                    height="200px"
-                    borderRadius={"20px"}
-                    boxShadow={"md"}
-                  >
-                    <AlertIcon boxSize="40px" mr={0} />
-                    <AlertTitle mt={4} mb={1} fontSize="lg">
-                      {TextContent[lang].alertResetPassTittle}
-                    </AlertTitle>
-                    <AlertDescription maxWidth="sm">
-                      {TextContent[lang].alertResetPassDesc}
-                    </AlertDescription>
-                  </Alert> */}
-                  <>{children}</>
-                </Stack>
+                <AnimatePresence mode="wait">
+                <MotionBox
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{
+                    duration: 0.4,
+                    ease: "easeInOut"
+                  }}
+                  key={pathname} // Re-animate when route changes
+                >
+                  {children}
+                </MotionBox>
+                </AnimatePresence>
               </Container>
             </Box>
           </Box>
