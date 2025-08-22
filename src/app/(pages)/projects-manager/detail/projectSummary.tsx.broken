@@ -210,6 +210,10 @@ const ProjectSummary = ({ data, refreshActionMain }: ProjectSummaryProps) => {
   const [ChoosedMemberProjects, setChoosedMemberProjects] = useState<
     UsersResponse[]
   >([]);
+
+  // Modal states for team management
+  const [openModalAddMember, setOpenModalAddMember] = useState(false);
+  const [openModalRemoveMember, setOpenModalRemoveMember] = useState(false);
   const handleSearchUser = async (textSearch: string) => {
     setDataUsers([]);
     setSearchUserInput(textSearch);
@@ -323,37 +327,37 @@ const ProjectSummary = ({ data, refreshActionMain }: ProjectSummaryProps) => {
   return (
     <>
       {data ? (
-        <VStack w={"full"} spacing={4} align="stretch">
-          {/* Modern Analytics Cards */}
-          <SimpleGrid columns={1} spacing={3}>
-            {/* Task Overview Card */}
-            <Card bg="blue.50" border="1px" borderColor="blue.200" size="sm">
+        <VStack spacing={6} align="stretch">
+          {/* Project Analytics Cards */}
+          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+            {/* Tasks Overview Card */}
+            <Card bg="blue.50" border="1px" borderColor="blue.200">
               <CardBody p={4}>
                 <HStack spacing={3}>
                   <Box
                     bg="blue.500"
                     color="white"
-                    p={2}
+                    p={3}
                     rounded="lg"
                     display="flex"
                     alignItems="center"
                     justifyContent="center"
                   >
-                    <FiTarget size={20} />
+                    <FiTarget size={24} />
                   </Box>
                   <Box flex={1}>
                     <Text fontSize="sm" color="gray.600" fontWeight="medium">
                       Total Tasks
                     </Text>
-                    <Text fontSize="xl" fontWeight="bold" color="blue.600">
+                    <Text fontSize="2xl" fontWeight="bold" color="blue.600">
                       {TaskCountProject.all}
                     </Text>
-                    <HStack spacing={3} mt={1}>
+                    <HStack spacing={4} mt={2}>
                       <Text fontSize="xs" color="green.600">
-                        ✓ {TaskCountProject.done}
+                        ✓ {TaskCountProject.done} Done
                       </Text>
                       <Text fontSize="xs" color="orange.600">
-                        ⏳ {TaskCountProject.inProgress}
+                        ⏳ {TaskCountProject.inProgress} In Progress
                       </Text>
                     </HStack>
                   </Box>
@@ -362,25 +366,25 @@ const ProjectSummary = ({ data, refreshActionMain }: ProjectSummaryProps) => {
             </Card>
 
             {/* Team Members Card */}
-            <Card bg="green.50" border="1px" borderColor="green.200" size="sm">
+            <Card bg="green.50" border="1px" borderColor="green.200">
               <CardBody p={4}>
                 <HStack spacing={3}>
                   <Box
                     bg="green.500"
                     color="white"
-                    p={2}
+                    p={3}
                     rounded="lg"
                     display="flex"
                     alignItems="center"
                     justifyContent="center"
                   >
-                    <FiUsers size={20} />
+                    <FiUsers size={24} />
                   </Box>
                   <Box flex={1}>
                     <Text fontSize="sm" color="gray.600" fontWeight="medium">
                       Team Members
                     </Text>
-                    <Text fontSize="xl" fontWeight="bold" color="green.600">
+                    <Text fontSize="2xl" fontWeight="bold" color="green.600">
                       {data.userAssignment?.length || 0}
                     </Text>
                     <Text fontSize="xs" color="gray.500" mt={1}>
@@ -392,32 +396,32 @@ const ProjectSummary = ({ data, refreshActionMain }: ProjectSummaryProps) => {
             </Card>
           </SimpleGrid>
 
-          {/* Original Application Section - Enhanced */}
-          <Card>
-            <CardHeader pb={2}>
-              <HStack justify="space-between">
-                <Heading size="sm">Application</Heading>
-                <Tooltip label="Application Settings" placement="top">
-                  <IconButton
-                    icon={<FiSettings />}
-                    size="sm"
-                    variant="ghost"
-                    aria-label="Settings"
-                    _hover={{ color: "blue.500" }}
-                  />
-                </Tooltip>
-              </HStack>
-            </CardHeader>
-            <CardBody pt={0}>
-              {data.appsProject && (
-                <HStack spacing={3}>
+          {/* Application Info Card */}
+          {data.appsProject && (
+            <Card>
+              <CardHeader pb={2}>
+                <HStack justify="space-between">
+                  <Heading size="sm">Application Details</Heading>
+                  <Tooltip label="Application Settings" placement="top">
+                    <IconButton
+                      icon={<FiSettings />}
+                      size="sm"
+                      variant="ghost"
+                      aria-label="Settings"
+                      _hover={{ color: "blue.500" }}
+                    />
+                  </Tooltip>
+                </HStack>
+              </CardHeader>
+              <CardBody pt={0}>
+                <HStack spacing={4}>
                   <Box
                     bgGradient="linear(to-br, blue.500, purple.600)"
                     color="white"
-                    p={2}
-                    rounded="lg"
-                    minW="50px"
-                    h="50px"
+                    p={3}
+                    rounded="xl"
+                    minW="60px"
+                    h="60px"
                     display="flex"
                     alignItems="center"
                     justifyContent="center"
@@ -429,7 +433,7 @@ const ProjectSummary = ({ data, refreshActionMain }: ProjectSummaryProps) => {
                     {data.appsProject.appShortName}
                   </Box>
                   <Box flex={1}>
-                    <Text fontSize="md" fontWeight="semibold" color="gray.800">
+                    <Text fontSize="lg" fontWeight="semibold" color="gray.800">
                       {data.appsProject.appName}
                     </Text>
                     <Text fontSize="sm" color="gray.600">
@@ -437,16 +441,198 @@ const ProjectSummary = ({ data, refreshActionMain }: ProjectSummaryProps) => {
                     </Text>
                     <Badge 
                       colorScheme={data.appsProject.appsStatus === "ACTIVE" ? "green" : "gray"}
-                      mt={1}
+                      mt={2}
                       fontSize="xs"
                     >
                       {data.appsProject.appsStatus}
                     </Badge>
                   </Box>
                 </HStack>
+              </CardBody>
+            </Card>
+          )}
+
+          {/* Team Management Section */}
+          <Card>
+            <CardHeader pb={2}>
+              <HStack justify="space-between">
+                <Heading size="sm">Team Management</Heading>
+                <HStack spacing={2}>
+                  <Tooltip label="Add Team Member" placement="top">
+                    <IconButton
+                      icon={<FiPlusCircle />}
+                      size="sm"
+                      variant="ghost"
+                      colorScheme="green"
+                      aria-label="Add Member"
+                      onClick={() => setOpenModalAddMember(true)}
+                    />
+                  </Tooltip>
+                  <Tooltip label="Remove Team Member" placement="top">
+                    <IconButton
+                      icon={<FiMinusCircle />}
+                      size="sm"
+                      variant="ghost"
+                      colorScheme="red"
+                      aria-label="Remove Member"
+                      onClick={() => setOpenModalRemoveMember(true)}
+                    />
+                  </Tooltip>
+                </HStack>
+              </HStack>
+            </CardHeader>
+            <CardBody pt={0}>
+              {data.userAssignment && data.userAssignment.length > 0 ? (
+                <VStack spacing={3} align="stretch">
+                  {data.userAssignment.slice(0, 5).map((assignment, index) => (
+                    <HStack key={index} spacing={3} p={3} bg="gray.50" rounded="lg">
+                      <Avatar
+                        size="sm"
+                        name={assignment.userData?.nama || "User"}
+                        src={assignment.userData?.profilePict || undefined}
+                      />
+                      <Box flex={1}>
+                        <Text fontSize="sm" fontWeight="semibold">
+                          {assignment.userData?.nama || "Unknown User"}
+                        </Text>
+                        <Text fontSize="xs" color="gray.500">
+                          {assignment.userAssignStatus}
+                        </Text>
+                      </Box>
+                      <Badge 
+                        colorScheme={assignment.userAssignStatus === "ACTIVE" ? "green" : "gray"}
+                        fontSize="xs"
+                      >
+                        {assignment.userAssignStatus}
+                      </Badge>
+                    </HStack>
+                  ))}
+                  {data.userAssignment.length > 5 && (
+                    <Text fontSize="sm" color="gray.500" textAlign="center">
+                      +{data.userAssignment.length - 5} more members
+                    </Text>
+                  )}
+                </VStack>
+              ) : (
+                <Box textAlign="center" py={6}>
+                  <FiUsers size={32} color="gray" />
+                  <Text mt={2} color="gray.500">No team members assigned</Text>
+                  <Button
+                    size="sm"
+                    leftIcon={<FiPlusCircle />}
+                    colorScheme="blue"
+                    variant="outline"
+                    mt={3}
+                    onClick={() => setOpenModalAddMember(true)}
+                  >
+                    Add First Member
+                  </Button>
+                </Box>
               )}
             </CardBody>
           </Card>
+
+          {/* Task Progress Overview */}
+          <Card>
+            <CardHeader pb={2}>
+              <Heading size="sm">Task Progress</Heading>
+            </CardHeader>
+            <CardBody pt={0}>
+              <VStack spacing={4} align="stretch">
+                <Box>
+                  <HStack justify="space-between" mb={2}>
+                    <Text fontSize="sm" fontWeight="medium">To Do</Text>
+                    <Text fontSize="sm" color="gray.500">{TaskCountProject.toDo}</Text>
+                  </HStack>
+                  <Progress 
+                    value={TaskCountProject.all > 0 ? (TaskCountProject.toDo / TaskCountProject.all) * 100 : 0} 
+                    colorScheme="gray" 
+                    size="sm" 
+                    rounded="full" 
+                  />
+                </Box>
+
+                <Box>
+                  <HStack justify="space-between" mb={2}>
+                    <Text fontSize="sm" fontWeight="medium">In Progress</Text>
+                    <Text fontSize="sm" color="blue.500">{TaskCountProject.inProgress}</Text>
+                  </HStack>
+                  <Progress 
+                    value={TaskCountProject.all > 0 ? (TaskCountProject.inProgress / TaskCountProject.all) * 100 : 0} 
+                    colorScheme="blue" 
+                    size="sm" 
+                    rounded="full" 
+                  />
+                </Box>
+
+                <Box>
+                  <HStack justify="space-between" mb={2}>
+                    <Text fontSize="sm" fontWeight="medium">In Review</Text>
+                    <Text fontSize="sm" color="orange.500">{TaskCountProject.inReview}</Text>
+                  </HStack>
+                  <Progress 
+                    value={TaskCountProject.all > 0 ? (TaskCountProject.inReview / TaskCountProject.all) * 100 : 0} 
+                    colorScheme="orange" 
+                    size="sm" 
+                    rounded="full" 
+                  />
+                </Box>
+
+                <Box>
+                  <HStack justify="space-between" mb={2}>
+                    <Text fontSize="sm" fontWeight="medium">Completed</Text>
+                    <Text fontSize="sm" color="green.500">{TaskCountProject.done}</Text>
+                  </HStack>
+                  <Progress 
+                    value={TaskCountProject.all > 0 ? (TaskCountProject.done / TaskCountProject.all) * 100 : 0} 
+                    colorScheme="green" 
+                    size="sm" 
+                    rounded="full" 
+                  />
+                </Box>
+              </VStack>
+            </CardBody>
+          </Card>
+        </VStack>
+      ) : (
+        <Box textAlign="center" py={8}>
+          <LoadingMiniSignature />
+          <Text mt={4} color="gray.500">Loading project data...</Text>
+        </Box>
+      )}
+
+      {/* Existing Modals - Keep the original modal implementations */}
+                    Task In Review
+                  </Text>
+                  <Text
+                    lineHeight={0.9}
+                    fontSize={"2xl"}
+                    fontWeight={600}
+                    textAlign={"center"}
+                  >
+                    {TaskCountProject.inReview}
+                  </Text>
+                </Flex>
+                <Flex as={Stack} spacing={1.5} my={2}>
+                  <Text
+                    fontSize={"small"}
+                    fontWeight={500}
+                    textAlign={"center"}
+                  >
+                    Task Done
+                  </Text>
+                  <Text
+                    lineHeight={0.9}
+                    fontSize={"2xl"}
+                    fontWeight={600}
+                    textAlign={"center"}
+                  >
+                    {TaskCountProject.done}
+                  </Text>
+                </Flex>
+              </Flex>
+            </Box>
+          </Flex>
 
           <Divider />
 
@@ -533,7 +719,7 @@ const ProjectSummary = ({ data, refreshActionMain }: ProjectSummaryProps) => {
               my={3}
             />
           </Flex>
-        </VStack>
+        </Stack>
       ) : (
         <Flex w={"full"} justifyContent={"center"}>
           <Text pt={5}>Data cannot loaded</Text>

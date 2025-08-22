@@ -40,3 +40,6 @@ Thumbs.db
 
 # Static export
 out/
+# Prevent Enhanced/Modern components from being restored
+src/app/(pages)/projects-manager/detail/Enhanced*.tsx
+src/app/(pages)/projects-manager/detail/Modern*.tsx
