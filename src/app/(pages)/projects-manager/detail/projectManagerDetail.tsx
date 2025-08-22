@@ -91,7 +91,6 @@ import {
   FiZap,
 } from "react-icons/fi";
 import * as Yup from "yup";
-import ProjectSummary from "./projectSummary";
 import { CustomPanelAlert } from "@/app/components/customPanels";
 import AppInfromationSection from "./apps/appViewSection";
 import AppChangeLogSection from "./apps/appLogsViewSection";
@@ -275,16 +274,24 @@ function ProjectManagerDetail() {
             </Link>
             <Divider orientation="vertical" h="6" />
             <Box>
-              <Heading size="lg" color={colorMode === "light" ? "gray.800" : "white"}>
-                {DataProject?.projectName || "🚀 Modern Project Detail (Loading...)"}
+              <Heading
+                size="lg"
+                color={colorMode === "light" ? "gray.800" : "white"}
+              >
+                {DataProject?.projectName ||
+                  "🚀 Modern Project Detail (Loading...)"}
               </Heading>
               <HStack spacing={3} mt={2}>
                 {DataProject?.projectStatus && (
                   <Badge
                     colorScheme={
-                      DataProject.projectStatus === "ACTIVE" ? "green" :
-                      DataProject.projectStatus === "ONHOLD" ? "orange" :
-                      DataProject.projectStatus === "COMPLETED" ? "blue" : "gray"
+                      DataProject.projectStatus === "ACTIVE"
+                        ? "green"
+                        : DataProject.projectStatus === "ONHOLD"
+                        ? "orange"
+                        : DataProject.projectStatus === "COMPLETED"
+                        ? "blue"
+                        : "gray"
                     }
                     px={3}
                     py={1}
@@ -295,36 +302,50 @@ function ProjectManagerDetail() {
                   </Badge>
                 )}
                 {DataProject?.projectType && (
-                  <Badge colorScheme="purple" px={3} py={1} rounded="full" fontSize="sm">
+                  <Badge
+                    colorScheme="purple"
+                    px={3}
+                    py={1}
+                    rounded="full"
+                    fontSize="sm"
+                  >
                     {DataProject.projectType}
                   </Badge>
                 )}
                 {DataProject?.projectRegisterDate && (
                   <Text fontSize="sm" color="gray.500">
-                    Created {calculateDurationInDays(DataProject.projectRegisterDate, new Date().toISOString())} days ago
+                    Created{" "}
+                    {calculateDurationInDays(
+                      DataProject.projectRegisterDate,
+                      new Date().toISOString()
+                    )}{" "}
+                    days ago
                   </Text>
                 )}
               </HStack>
             </Box>
           </HStack>
-          
+
           <HStack spacing={3}>
-            {DataProject?.userAssignment && DataProject.userAssignment.length > 0 && (
-              <AvatarGroup size="sm" max={4}>
-                {DataProject.userAssignment.slice(0, 5).map((assignment, index) => (
-                  <Avatar
-                    key={index}
-                    name={assignment.userData?.nama || "User"}
-                    src={assignment.userData?.profilePict || undefined}
-                  />
-                ))}
-              </AvatarGroup>
-            )}
+            {DataProject?.userAssignment &&
+              DataProject.userAssignment.length > 0 && (
+                <AvatarGroup size="sm" max={4}>
+                  {DataProject.userAssignment
+                    .slice(0, 5)
+                    .map((assignment, index) => (
+                      <Avatar
+                        key={index}
+                        name={assignment.userData?.nama || "User"}
+                        src={assignment.userData?.profilePict || undefined}
+                      />
+                    ))}
+                </AvatarGroup>
+              )}
             <Button
               leftIcon={<FiRefreshCcw />}
               variant="outline"
               size="sm"
-              onClick={() => setRefreshData(prev => prev + 1)}
+              onClick={() => setRefreshData((prev) => prev + 1)}
               isLoading={IsLoadingProcess}
             >
               Refresh
@@ -334,7 +355,11 @@ function ProjectManagerDetail() {
       </Box>
 
       {/* Main Content Layout */}
-      <Grid templateColumns={{ base: "1fr", xl: "1fr 350px" }} gap={6} minH="calc(100vh - 200px)">
+      <Grid
+        templateColumns={{ base: "1fr", xl: "1fr 350px" }}
+        gap={6}
+        minH="calc(100vh - 200px)"
+      >
         {/* Main Content Area */}
         <GridItem>
           <Box
@@ -346,9 +371,9 @@ function ProjectManagerDetail() {
             overflow="hidden"
           >
             <Tabs size="lg" variant="enclosed" colorScheme="blue">
-              <TabList 
-                bg={colorMode === "light" ? "gray.50" : "gray.700"} 
-                borderBottom="1px" 
+              <TabList
+                bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                borderBottom="1px"
                 borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
                 px={6}
               >
@@ -357,7 +382,8 @@ function ProjectManagerDetail() {
                     bg: colorMode === "light" ? "white" : "gray.800",
                     color: "blue.500",
                     borderColor: "blue.500",
-                    borderBottomColor: colorMode === "light" ? "white" : "gray.800",
+                    borderBottomColor:
+                      colorMode === "light" ? "white" : "gray.800",
                   }}
                   fontWeight="semibold"
                   py={4}
@@ -372,7 +398,8 @@ function ProjectManagerDetail() {
                     bg: colorMode === "light" ? "white" : "gray.800",
                     color: "blue.500",
                     borderColor: "blue.500",
-                    borderBottomColor: colorMode === "light" ? "white" : "gray.800",
+                    borderBottomColor:
+                      colorMode === "light" ? "white" : "gray.800",
                   }}
                   fontWeight="semibold"
                   py={4}
@@ -388,7 +415,8 @@ function ProjectManagerDetail() {
                     bg: colorMode === "light" ? "white" : "gray.800",
                     color: "blue.500",
                     borderColor: "blue.500",
-                    borderBottomColor: colorMode === "light" ? "white" : "gray.800",
+                    borderBottomColor:
+                      colorMode === "light" ? "white" : "gray.800",
                   }}
                   fontWeight="semibold"
                   py={4}
@@ -400,7 +428,7 @@ function ProjectManagerDetail() {
                   </HStack>
                 </Tab>
               </TabList>
-              
+
               <TabPanels>
                 {/* PROJECT INFO */}
                 <TabPanel p={6}>
@@ -434,7 +462,7 @@ function ProjectManagerDetail() {
         {/* Side Content Panel */}
         <GridItem>
           <Stack spacing={6}>
-            {/* Project Summary Card */}
+            {/* Project Overview Card */}
             <Box
               bg={colorMode === "light" ? "white" : "gray.800"}
               rounded="xl"
@@ -443,15 +471,132 @@ function ProjectManagerDetail() {
               borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
               p={6}
             >
-              <Heading size="md" mb={4} color={colorMode === "light" ? "gray.800" : "white"}>
+              <Heading
+                size="md"
+                mb={4}
+                color={colorMode === "light" ? "gray.800" : "white"}
+              >
                 Project Overview
               </Heading>
-              <Suspense fallback={<LoadingMiniSignature />}>
-                <ProjectSummary 
-                  data={DataProject} 
-                  refreshActionMain={() => setRefreshData(prev => prev + 1)} 
-                />
-              </Suspense>
+
+              {DataProject ? (
+                <VStack spacing={4} align="stretch">
+                  {/* Project Basic Info */}
+                  <Box>
+                    <Text fontSize="lg" fontWeight="semibold" mb={2}>
+                      {DataProject.projectName}
+                    </Text>
+                    <HStack spacing={2} mb={3}>
+                      <Badge
+                        colorScheme={
+                          DataProject.projectStatus === "ACTIVE"
+                            ? "green"
+                            : DataProject.projectStatus === "ONHOLD"
+                            ? "orange"
+                            : DataProject.projectStatus === "COMPLETED"
+                            ? "blue"
+                            : "gray"
+                        }
+                      >
+                        {DataProject.projectStatus}
+                      </Badge>
+                      <Badge colorScheme="purple">
+                        {DataProject.projectType}
+                      </Badge>
+                    </HStack>
+                    {DataProject.projectDesc && (
+                      <Text fontSize="sm" color="gray.600" noOfLines={3}>
+                        {DataProject.projectDesc}
+                      </Text>
+                    )}
+                  </Box>
+
+                  <Divider />
+
+                  {/* Project Stats */}
+                  <VStack spacing={3} align="stretch">
+                    <HStack justify="space-between">
+                      <Text fontSize="sm" color="gray.600">
+                        Team Members:
+                      </Text>
+                      <Text fontSize="sm" fontWeight="medium">
+                        {DataProject.userAssignment?.length || 0}
+                      </Text>
+                    </HStack>
+
+                    <HStack justify="space-between">
+                      <Text fontSize="sm" color="gray.600">
+                        Project Code:
+                      </Text>
+                      <Text fontSize="sm" fontWeight="medium">
+                        {DataProject.projectCode}
+                      </Text>
+                    </HStack>
+
+                    {DataProject.projectRegisterDate && (
+                      <HStack justify="space-between">
+                        <Text fontSize="sm" color="gray.600">
+                          Created:
+                        </Text>
+                        <Text fontSize="sm" fontWeight="medium">
+                          {new Date(
+                            DataProject.projectRegisterDate
+                          ).toLocaleDateString()}
+                        </Text>
+                      </HStack>
+                    )}
+
+                    {DataProject.projectStatusPercentage !== undefined && (
+                      <Box>
+                        <HStack justify="space-between" mb={2}>
+                          <Text fontSize="sm" color="gray.600">
+                            Progress:
+                          </Text>
+                          <Text fontSize="sm" fontWeight="medium">
+                            {DataProject.projectStatusPercentage}%
+                          </Text>
+                        </HStack>
+                        <Progress
+                          value={DataProject.projectStatusPercentage}
+                          colorScheme="blue"
+                          size="sm"
+                          rounded="full"
+                        />
+                      </Box>
+                    )}
+                  </VStack>
+
+                  {/* Team Avatars */}
+                  {DataProject.userAssignment &&
+                    DataProject.userAssignment.length > 0 && (
+                      <Box>
+                        <Text fontSize="sm" color="gray.600" mb={2}>
+                          Team:
+                        </Text>
+                        <AvatarGroup size="sm" max={6}>
+                          {DataProject.userAssignment.map(
+                            (assignment, index) => (
+                              <Avatar
+                                key={index}
+                                name={assignment.userData?.nama || "User"}
+                                src={
+                                  assignment.userData?.profilePict || undefined
+                                }
+                              />
+                            )
+                          )}
+                        </AvatarGroup>
+                      </Box>
+                    )}
+                </VStack>
+              ) : (
+                <Box textAlign="center" py={8}>
+                  <LoadingMiniSignature />
+                  <Text mt={4} color="gray.500" fontSize="sm">
+                    Loading project data...
+                  </Text>
+                </Box>
+              )}
             </Box>
 
             {/* Quick Actions Card */}
@@ -463,7 +608,11 @@ function ProjectManagerDetail() {
               borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
               p={6}
             >
-              <Heading size="md" mb={4} color={colorMode === "light" ? "gray.800" : "white"}>
+              <Heading
+                size="md"
+                mb={4}
+                color={colorMode === "light" ? "gray.800" : "white"}
+              >
                 Quick Actions
               </Heading>
               <Stack spacing={3}>
@@ -507,35 +656,47 @@ function ProjectManagerDetail() {
                 borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
                 p={6}
               >
-                <Heading size="md" mb={4} color={colorMode === "light" ? "gray.800" : "white"}>
+                <Heading
+                  size="md"
+                  mb={4}
+                  color={colorMode === "light" ? "gray.800" : "white"}
+                >
                   Project Health
                 </Heading>
                 <Stack spacing={4}>
                   <Box>
                     <HStack justify="space-between" mb={2}>
-                      <Text fontSize="sm" fontWeight="medium">Overall Progress</Text>
+                      <Text fontSize="sm" fontWeight="medium">
+                        Overall Progress
+                      </Text>
                       <Text fontSize="sm" color="gray.500">
                         {DataProject.projectStatusPercentage || 0}%
                       </Text>
                     </HStack>
-                    <Progress 
-                      value={DataProject.projectStatusPercentage || 0} 
-                      colorScheme="blue" 
-                      size="md" 
+                    <Progress
+                      value={DataProject.projectStatusPercentage || 0}
+                      colorScheme="blue"
+                      size="md"
                       rounded="full"
                     />
                   </Box>
-                  
+
                   <Divider />
-                  
+
                   <Stack spacing={3}>
                     <HStack justify="space-between">
-                      <Text fontSize="sm" color="gray.600">Status:</Text>
-                      <Badge 
+                      <Text fontSize="sm" color="gray.600">
+                        Status:
+                      </Text>
+                      <Badge
                         colorScheme={
-                          DataProject.projectStatus === "ACTIVE" ? "green" :
-                          DataProject.projectStatus === "ONHOLD" ? "orange" :
-                          DataProject.projectStatus === "COMPLETED" ? "blue" : "gray"
+                          DataProject.projectStatus === "ACTIVE"
+                            ? "green"
+                            : DataProject.projectStatus === "ONHOLD"
+                            ? "orange"
+                            : DataProject.projectStatus === "COMPLETED"
+                            ? "blue"
+                            : "gray"
                         }
                         fontSize="xs"
                       >
@@ -543,17 +704,25 @@ function ProjectManagerDetail() {
                       </Badge>
                     </HStack>
                     <HStack justify="space-between">
-                      <Text fontSize="sm" color="gray.600">Team Size:</Text>
+                      <Text fontSize="sm" color="gray.600">
+                        Team Size:
+                      </Text>
                       <Text fontSize="sm" fontWeight="medium">
                         {DataProject.userAssignment?.length || 0} members
                       </Text>
                     </HStack>
                     <HStack justify="space-between">
-                      <Text fontSize="sm" color="gray.600">Duration:</Text>
+                      <Text fontSize="sm" color="gray.600">
+                        Duration:
+                      </Text>
                       <Text fontSize="sm" fontWeight="medium">
-                        {DataProject.projectRegisterDate 
-                          ? calculateDurationInDays(DataProject.projectRegisterDate, new Date().toISOString())
-                          : 0} days
+                        {DataProject.projectRegisterDate
+                          ? calculateDurationInDays(
+                              DataProject.projectRegisterDate,
+                              new Date().toISOString()
+                            )
+                          : 0}{" "}
+                        days
                       </Text>
                     </HStack>
                   </Stack>
@@ -801,497 +970,445 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
           <Text>No project ID found in the URL</Text>
         </CustomPanelAlert>
       ) : (
-        <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"}>
-          <GridItem colSpan={{ base: 12, sm: 12, md: 4, lg: 4 }} w={"full"}>
-            <Flex w={"full"} as={Stack} spacing={4}>
-              <Card
-                rounded={radiusStyle}
-                boxShadow={"md"}
-                bgGradient={"linear(to-br, secondary.500, secondary.800)"}
-                color={"white"}
+        <Flex w={"full"}>
+          {IsLoadingProcess ? (
+            <LoadingMiniSignature />
+          ) : (
+            <form onSubmit={formik.handleSubmit} onReset={formik.handleReset}>
+              <Flex
+                as={Stack}
+                w={"full"}
+                // divider={<StackDivider borderColor="gray.200" />}
+                spacing={6}
+                px={4}
               >
-                <CardHeader pb={1}>
-                  <Flex justifyContent={"space-between"}>
-                    <Heading as="h5" size="md">
-                      Ringkasan
-                    </Heading>
-                    <Flex as={Wrap} justifyContent={"end"} px={0}>
-                      {/* <Button
-                        rounded={"3xl"}
-                        size={"sm"}
-                        rightIcon={<BsKanban />}
-                      >
-                        Go to Kanban
-                      </Button> */}
-                    </Flex>
-                  </Flex>
-                </CardHeader>
-                <CardBody pt={2}>
-                  <Flex minH={"420px"}>
-                    <ProjectSummary
-                      data={DataProject}
-                      refreshActionMain={() => RefreshAction()}
-                    />
-                  </Flex>
-                </CardBody>
-              </Card>
-            </Flex>
-          </GridItem>
-          <GridItem colSpan={{ base: 12, sm: 12, md: 8, lg: 8 }} w={"full"}>
-            {IsLoadingProcess ? (
-              <LoadingMiniSignature />
-            ) : (
-              <form onSubmit={formik.handleSubmit} onReset={formik.handleReset}>
-                <Flex
-                  as={Stack}
-                  w={"full"}
-                  // divider={<StackDivider borderColor="gray.200" />}
-                  spacing={6}
-                  px={4}
-                >
-                  <Flex w={"full"} as={HStack} justifyContent={"space-between"}>
-                    <Heading as="h5" size="md" w={"full"}>
-                      Project Information
-                    </Heading>
-                    <Flex as={Wrap} justifyContent={"end"} px={0} w={"full"}>
-                      <Button
-                        display={IsEditMode ? "none" : "flex"}
-                        size={"sm"}
-                        leftIcon={<FiRefreshCcw />}
-                        onClick={() => RefreshAction()}
-                        isLoading={ActionLoading}
-                      >
-                        Refresh
-                      </Button>
-                      <Button
-                        display={IsEditMode ? "flex" : "none"}
-                        size={"sm"}
-                        colorScheme={"red"}
-                        leftIcon={<FiXCircle />}
-                        onClick={() => {
-                          setIsEditMode(false);
-                          RefreshAction();
-                        }}
-                        isLoading={ActionLoading}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        display={IsEditMode ? "none" : "flex"}
-                        size={"sm"}
-                        leftIcon={<FiEdit3 />}
-                        colorScheme={"secondary"}
-                        onClick={() => setIsEditMode(true)}
-                        isLoading={ActionLoading}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        display={IsEditMode ? "flex" : "none"}
-                        size={"sm"}
-                        colorScheme={"green"}
-                        leftIcon={<FiSave />}
-                        // type={"submit"}
-                        onClick={() => {
-                          formik.submitForm();
-                        }}
-                        isLoading={ActionLoading}
-                      >
-                        Save
-                      </Button>
-                    </Flex>
-                  </Flex>
-                  <Flex
-                    minH={"420px"}
-                    as={Stack}
-                    py={4}
-                    px={2}
-                    divider={<StackDivider borderColor="gray.200" />}
-                  >
-                    <FormControl
-                      id="projectNo"
-                      isInvalid={formik.errors.projectNo ? true : false}
-                      isRequired
+                <Flex w={"full"} as={HStack} justifyContent={"space-between"}>
+                  <Heading as="h5" size="md" w={"full"}>
+                    Project Information
+                  </Heading>
+                  <Flex as={Wrap} justifyContent={"end"} px={0} w={"full"}>
+                    <Button
+                      display={IsEditMode ? "none" : "flex"}
+                      size={"sm"}
+                      leftIcon={<FiRefreshCcw />}
+                      onClick={() => RefreshAction()}
+                      isLoading={ActionLoading}
                     >
-                      <InputLayoutFullHalf>
-                        <FormLabel
-                          fontWeight={600}
-                          h={"full"}
-                          display="flex"
-                          alignItems="center"
-                        >
-                          Nomor Project
-                        </FormLabel>
-                        <Stack spacing={0}>
-                          <Input
-                            id="projectNo"
-                            name="projectNo"
-                            type="text"
-                            onChange={(e) => {
-                              const uppercaseValue =
-                                e.target.value.toUpperCase(); // Convert to uppercase
-                              formik.setFieldValue("projectNo", uppercaseValue); // Update Formik's value
-                            }}
-                            value={formik.values.projectNo ?? ""}
-                            placeholder="Project No."
-                            readOnly={!IsEditMode}
-                            variant={IsEditMode ? "outline" : "unstyled"}
-                            minLength={3}
-                            maxLength={80}
-                            isDisabled={ActionLoading}
-                          />
-                          <FormErrorMessage>
-                            {formik.errors.projectNo}
-                          </FormErrorMessage>
-                        </Stack>
-                      </InputLayoutFullHalf>
-                    </FormControl>
-
-                    <FormControl
-                      id="projectName"
-                      isInvalid={formik.errors.projectName ? true : false}
-                      isRequired
+                      Refresh
+                    </Button>
+                    <Button
+                      display={IsEditMode ? "flex" : "none"}
+                      size={"sm"}
+                      colorScheme={"red"}
+                      leftIcon={<FiXCircle />}
+                      onClick={() => {
+                        setIsEditMode(false);
+                        RefreshAction();
+                      }}
+                      isLoading={ActionLoading}
                     >
-                      <InputLayoutFullHalf>
-                        <FormLabel
-                          fontWeight={600}
-                          h={"full"}
-                          display="flex"
-                          alignItems="center"
-                        >
-                          Nama Project
-                        </FormLabel>
-                        <Stack spacing={0}>
-                          <Input
-                            id="projectName"
-                            name="projectName"
-                            type="text"
-                            onChange={(e) => {
-                              const uppercaseValue =
-                                e.target.value.toUpperCase(); // Convert to uppercase
-                              formik.setFieldValue(
-                                "projectName",
-                                uppercaseValue
-                              ); // Update Formik's value
-                            }}
-                            value={formik.values.projectName ?? ""}
-                            placeholder="Project Name"
-                            readOnly={!IsEditMode}
-                            variant={IsEditMode ? "outline" : "unstyled"}
-                            minLength={3}
-                            maxLength={80}
-                            isDisabled={ActionLoading}
-                          />
-                          <FormErrorMessage>
-                            {formik.errors.projectName}
-                          </FormErrorMessage>
-                        </Stack>
-                      </InputLayoutFullHalf>
-                    </FormControl>
-
-                    <FormControl
-                      id="projectDesc"
-                      isInvalid={formik.errors.projectDesc ? true : false}
+                      Cancel
+                    </Button>
+                    <Button
+                      display={IsEditMode ? "none" : "flex"}
+                      size={"sm"}
+                      leftIcon={<FiEdit3 />}
+                      colorScheme={"secondary"}
+                      onClick={() => setIsEditMode(true)}
+                      isLoading={ActionLoading}
                     >
-                      <InputLayoutFullHalf>
-                        <FormLabel
-                          fontWeight={600}
-                          h={"full"}
-                          display="flex"
-                          alignItems="center"
-                        >
-                          Deskripsi Project
-                        </FormLabel>
-                        <Stack spacing={0}>
-                          <Textarea
-                            id="projectDesc"
-                            name="projectDesc"
-                            onChange={(e) => {
-                              formik.setFieldValue(
-                                "projectDesc",
-                                e.target.value
-                              );
-                            }}
-                            readOnly={!IsEditMode}
-                            variant={IsEditMode ? "outline" : "unstyled"}
-                            defaultValue={formik.values.projectDesc ?? ""}
-                            placeholder="Project Descriptions"
-                            isDisabled={ActionLoading}
-                            minH={"30px"}
-                          ></Textarea>
-                          <FormErrorMessage>
-                            {formik.errors.projectDesc}
-                          </FormErrorMessage>
-                        </Stack>
-                      </InputLayoutFullHalf>
-                    </FormControl>
-
-                    <FormControl
-                      id="projectCategory"
-                      isInvalid={formik.errors.projectCategory ? true : false}
-                      isRequired
+                      Edit
+                    </Button>
+                    <Button
+                      display={IsEditMode ? "flex" : "none"}
+                      size={"sm"}
+                      colorScheme={"green"}
+                      leftIcon={<FiSave />}
+                      // type={"submit"}
+                      onClick={() => {
+                        formik.submitForm();
+                      }}
+                      isLoading={ActionLoading}
                     >
-                      <InputLayoutFullHalf>
-                        <FormLabel
-                          fontWeight={600}
-                          h={"full"}
-                          display="flex"
-                          alignItems="center"
-                        >
-                          Karakteristik Project
-                        </FormLabel>
-                        <Stack spacing={0} h={"full"}>
-                          <SelectC
-                            value={formik.values.projectCategory}
-                            id="projectCategory"
-                            name="projectCategory"
-                            onChange={(e) => {
-                              formik.setFieldValue(
-                                `projectCategory`,
-                                e.target.value
-                              );
-                            }}
-                            placeholder="Select Karakteristik Project"
-                            variant={IsEditMode ? "outline" : "unstyled"}
-                            pointerEvents={!IsEditMode ? "none" : "auto"} // disable interaction
-                            tabIndex={!IsEditMode ? -1 : undefined} // prevent tabbing
-                            cursor={!IsEditMode ? "default" : "pointer"} // keep consistent cursor
-                            color={
-                              colorMode === "light"
-                                ? "gray.800"
-                                : "whiteAlpha.900"
-                            }
-                            bg="transparent"
-                          >
-                            {PROJEC_CATEGORY_OPTIONS.map((option) => (
-                              <option key={option} value={option}>
-                                {option}
-                              </option>
-                            ))}
-                          </SelectC>
-                        </Stack>
-                      </InputLayoutFullHalf>
-                    </FormControl>
-
-                    <FormControl
-                      id="projectType"
-                      isInvalid={formik.errors.projectType ? true : false}
-                      isRequired
-                    >
-                      <InputLayoutFullHalf>
-                        <FormLabel
-                          fontWeight={600}
-                          h={"full"}
-                          display="flex"
-                          alignItems="center"
-                        >
-                          Tipe Project
-                        </FormLabel>
-                        <Stack spacing={0} h={"full"}>
-                          <SelectC
-                            value={formik.values.projectType}
-                            id="projectType"
-                            name="projectType"
-                            onChange={(e) => {
-                              formik.setFieldValue(
-                                `projectType`,
-                                e.target.value
-                              );
-                            }}
-                            placeholder="Select Tipe Project"
-                            variant={IsEditMode ? "outline" : "unstyled"}
-                            pointerEvents={!IsEditMode ? "none" : "auto"} // disable interaction
-                            tabIndex={!IsEditMode ? -1 : undefined} // prevent tabbing
-                            cursor={!IsEditMode ? "default" : "pointer"} // keep consistent cursor
-                            color={
-                              colorMode === "light"
-                                ? "gray.800"
-                                : "whiteAlpha.900"
-                            }
-                            bg="transparent"
-                          >
-                            {PROJEC_TYPE_OPTIONS.map((option) => (
-                              <option key={option} value={option}>
-                                {option}
-                              </option>
-                            ))}
-                          </SelectC>
-                        </Stack>
-                      </InputLayoutFullHalf>
-                    </FormControl>
-
-                    <FormControl
-                      id="projectRegisterDate"
-                      isInvalid={
-                        formik.errors.projectRegisterDate ? true : false
-                      }
-                      isRequired
-                    >
-                      <InputLayoutFullHalf>
-                        <FormLabel
-                          fontWeight={600}
-                          h={"full"}
-                          display="flex"
-                          alignItems="center"
-                        >
-                          Tanggal Register Project
-                        </FormLabel>
-                        <Stack spacing={0} h={"full"}>
-                          <Input
-                            id="projectRegisterDate"
-                            name="projectRegisterDate"
-                            type="date"
-                            onChange={formik.handleChange}
-                            value={
-                              formik.values.projectRegisterDate
-                                ? formik.values.projectRegisterDate.split(
-                                    "T"
-                                  )[0]
-                                : ""
-                            }
-                            isReadOnly={!IsEditMode}
-                            variant={IsEditMode ? "outline" : "unstyled"}
-                            isDisabled={ActionLoading}
-                          />
-                          <FormErrorMessage>
-                            {formik.errors.projectRegisterDate}
-                          </FormErrorMessage>
-                        </Stack>
-                      </InputLayoutFullHalf>
-                    </FormControl>
-
-                    <FormControl
-                      id="projectClosedDate"
-                      isInvalid={formik.errors.projectClosedDate ? true : false}
-                      isRequired
-                    >
-                      <InputLayoutFullHalf>
-                        <FormLabel
-                          fontWeight={600}
-                          h={"full"}
-                          display="flex"
-                          alignItems="center"
-                        >
-                          Tanggal Closed Project
-                        </FormLabel>
-                        <Stack spacing={0} h={"full"}>
-                          {formik.values.projectClosedDate != null ? (
-                            <>
-                              <Input
-                                id="projectClosedDate"
-                                name="projectClosedDate"
-                                type="date"
-                                isReadOnly={true}
-                                variant={"unstyled"}
-                                isDisabled={true}
-                              />
-                              <FormErrorMessage>
-                                {formik.errors.projectClosedDate}
-                              </FormErrorMessage>
-                            </>
-                          ) : (
-                            <Text px={2} fontWeight={600}>
-                              ON GOING
-                            </Text>
-                          )}
-                        </Stack>
-                      </InputLayoutFullHalf>
-                    </FormControl>
-
-                    <FormControl
-                      id="projDateDuration"
-                      isInvalid={
-                        calculateDurationInDays(
-                          formik.values.projectRegisterDate ??
-                            new Date().toISOString().slice(0, 10),
-                          formik.values.projectClosedDate ??
-                            new Date().toISOString().slice(0, 10)
-                        ) < 0
-                      }
-                    >
-                      <InputLayoutFullHalf>
-                        <FormLabel
-                          fontWeight={600}
-                          h="full"
-                          display="flex"
-                          alignItems="center"
-                        >
-                          Durasi Project
-                        </FormLabel>
-                        <Stack spacing={0} h="full">
-                          {formik.values.projectClosedDate != null ? (
-                            <>
-                              <Text px={2} fontWeight={600}>
-                                {calculateDurationInDays(
-                                  formik.values.projectRegisterDate ??
-                                    new Date().toISOString().slice(0, 10),
-                                  formik.values.projectClosedDate ??
-                                    new Date().toISOString().slice(0, 10)
-                                )}{" "}
-                                Hari Kalendar (CLOSED)
-                              </Text>
-                              <FormErrorMessage>
-                                {calculateDurationInDays(
-                                  formik.values.projectRegisterDate ??
-                                    new Date().toISOString().slice(0, 10),
-                                  formik.values.projectClosedDate ??
-                                    new Date().toISOString().slice(0, 10)
-                                ) < 0 && "Durasi tidak boleh negatif"}
-                              </FormErrorMessage>
-                            </>
-                          ) : (
-                            <Text px={2} fontWeight={600}>
-                              ON GOING
-                            </Text>
-                          )}
-                        </Stack>
-                      </InputLayoutFullHalf>
-                    </FormControl>
-
-                    <FormControl
-                      id="note"
-                      isInvalid={formik.errors.note ? true : false}
-                    >
-                      <InputLayoutFullHalf>
-                        <FormLabel
-                          fontWeight={600}
-                          h={"full"}
-                          display="flex"
-                          alignItems="center"
-                        >
-                          Note
-                        </FormLabel>
-                        <Stack spacing={0}>
-                          <Textarea
-                            id="note"
-                            name="note"
-                            onChange={(e) => {
-                              formik.setFieldValue("note", e.target.value);
-                            }}
-                            readOnly={!IsEditMode}
-                            variant={IsEditMode ? "outline" : "unstyled"}
-                            defaultValue={formik.values.note ?? ""}
-                            placeholder="Notes"
-                            isDisabled={ActionLoading}
-                            minH={"30px"}
-                          ></Textarea>
-                          <FormErrorMessage>
-                            {formik.errors.note}
-                          </FormErrorMessage>
-                        </Stack>
-                      </InputLayoutFullHalf>
-                    </FormControl>
-
-                    {/* <p>Project ID: {projectId}</p> */}
-                    <Box overflowY={"auto"}>
-                      {/* <pre>{JSON.stringify(formik.values, null, 2)}</pre> */}
-                    </Box>
+                      Save
+                    </Button>
                   </Flex>
                 </Flex>
-              </form>
-            )}
-          </GridItem>
-        </Grid>
+                <Flex
+                  minH={"420px"}
+                  as={Stack}
+                  py={4}
+                  px={2}
+                  divider={<StackDivider borderColor="gray.200" />}
+                >
+                  <FormControl
+                    id="projectNo"
+                    isInvalid={formik.errors.projectNo ? true : false}
+                    isRequired
+                  >
+                    <InputLayoutFullHalf>
+                      <FormLabel
+                        fontWeight={600}
+                        h={"full"}
+                        display="flex"
+                        alignItems="center"
+                      >
+                        Nomor Project
+                      </FormLabel>
+                      <Stack spacing={0}>
+                        <Input
+                          id="projectNo"
+                          name="projectNo"
+                          type="text"
+                          onChange={(e) => {
+                            const uppercaseValue = e.target.value.toUpperCase(); // Convert to uppercase
+                            formik.setFieldValue("projectNo", uppercaseValue); // Update Formik's value
+                          }}
+                          value={formik.values.projectNo ?? ""}
+                          placeholder="Project No."
+                          readOnly={!IsEditMode}
+                          variant={IsEditMode ? "outline" : "unstyled"}
+                          minLength={3}
+                          maxLength={80}
+                          isDisabled={ActionLoading}
+                        />
+                        <FormErrorMessage>
+                          {formik.errors.projectNo}
+                        </FormErrorMessage>
+                      </Stack>
+                    </InputLayoutFullHalf>
+                  </FormControl>
+
+                  <FormControl
+                    id="projectName"
+                    isInvalid={formik.errors.projectName ? true : false}
+                    isRequired
+                  >
+                    <InputLayoutFullHalf>
+                      <FormLabel
+                        fontWeight={600}
+                        h={"full"}
+                        display="flex"
+                        alignItems="center"
+                      >
+                        Nama Project
+                      </FormLabel>
+                      <Stack spacing={0}>
+                        <Input
+                          id="projectName"
+                          name="projectName"
+                          type="text"
+                          onChange={(e) => {
+                            const uppercaseValue = e.target.value.toUpperCase(); // Convert to uppercase
+                            formik.setFieldValue("projectName", uppercaseValue); // Update Formik's value
+                          }}
+                          value={formik.values.projectName ?? ""}
+                          placeholder="Project Name"
+                          readOnly={!IsEditMode}
+                          variant={IsEditMode ? "outline" : "unstyled"}
+                          minLength={3}
+                          maxLength={80}
+                          isDisabled={ActionLoading}
+                        />
+                        <FormErrorMessage>
+                          {formik.errors.projectName}
+                        </FormErrorMessage>
+                      </Stack>
+                    </InputLayoutFullHalf>
+                  </FormControl>
+
+                  <FormControl
+                    id="projectDesc"
+                    isInvalid={formik.errors.projectDesc ? true : false}
+                  >
+                    <InputLayoutFullHalf>
+                      <FormLabel
+                        fontWeight={600}
+                        h={"full"}
+                        display="flex"
+                        alignItems="center"
+                      >
+                        Deskripsi Project
+                      </FormLabel>
+                      <Stack spacing={0}>
+                        <Textarea
+                          id="projectDesc"
+                          name="projectDesc"
+                          onChange={(e) => {
+                            formik.setFieldValue("projectDesc", e.target.value);
+                          }}
+                          readOnly={!IsEditMode}
+                          variant={IsEditMode ? "outline" : "unstyled"}
+                          defaultValue={formik.values.projectDesc ?? ""}
+                          placeholder="Project Descriptions"
+                          isDisabled={ActionLoading}
+                          minH={"30px"}
+                        ></Textarea>
+                        <FormErrorMessage>
+                          {formik.errors.projectDesc}
+                        </FormErrorMessage>
+                      </Stack>
+                    </InputLayoutFullHalf>
+                  </FormControl>
+
+                  <FormControl
+                    id="projectCategory"
+                    isInvalid={formik.errors.projectCategory ? true : false}
+                    isRequired
+                  >
+                    <InputLayoutFullHalf>
+                      <FormLabel
+                        fontWeight={600}
+                        h={"full"}
+                        display="flex"
+                        alignItems="center"
+                      >
+                        Karakteristik Project
+                      </FormLabel>
+                      <Stack spacing={0} h={"full"}>
+                        <SelectC
+                          value={formik.values.projectCategory}
+                          id="projectCategory"
+                          name="projectCategory"
+                          onChange={(e) => {
+                            formik.setFieldValue(
+                              `projectCategory`,
+                              e.target.value
+                            );
+                          }}
+                          placeholder="Select Karakteristik Project"
+                          variant={IsEditMode ? "outline" : "unstyled"}
+                          pointerEvents={!IsEditMode ? "none" : "auto"} // disable interaction
+                          tabIndex={!IsEditMode ? -1 : undefined} // prevent tabbing
+                          cursor={!IsEditMode ? "default" : "pointer"} // keep consistent cursor
+                          color={
+                            colorMode === "light"
+                              ? "gray.800"
+                              : "whiteAlpha.900"
+                          }
+                          bg="transparent"
+                        >
+                          {PROJEC_CATEGORY_OPTIONS.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </SelectC>
+                      </Stack>
+                    </InputLayoutFullHalf>
+                  </FormControl>
+
+                  <FormControl
+                    id="projectType"
+                    isInvalid={formik.errors.projectType ? true : false}
+                    isRequired
+                  >
+                    <InputLayoutFullHalf>
+                      <FormLabel
+                        fontWeight={600}
+                        h={"full"}
+                        display="flex"
+                        alignItems="center"
+                      >
+                        Tipe Project
+                      </FormLabel>
+                      <Stack spacing={0} h={"full"}>
+                        <SelectC
+                          value={formik.values.projectType}
+                          id="projectType"
+                          name="projectType"
+                          onChange={(e) => {
+                            formik.setFieldValue(`projectType`, e.target.value);
+                          }}
+                          placeholder="Select Tipe Project"
+                          variant={IsEditMode ? "outline" : "unstyled"}
+                          pointerEvents={!IsEditMode ? "none" : "auto"} // disable interaction
+                          tabIndex={!IsEditMode ? -1 : undefined} // prevent tabbing
+                          cursor={!IsEditMode ? "default" : "pointer"} // keep consistent cursor
+                          color={
+                            colorMode === "light"
+                              ? "gray.800"
+                              : "whiteAlpha.900"
+                          }
+                          bg="transparent"
+                        >
+                          {PROJEC_TYPE_OPTIONS.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </SelectC>
+                      </Stack>
+                    </InputLayoutFullHalf>
+                  </FormControl>
+
+                  <FormControl
+                    id="projectRegisterDate"
+                    isInvalid={formik.errors.projectRegisterDate ? true : false}
+                    isRequired
+                  >
+                    <InputLayoutFullHalf>
+                      <FormLabel
+                        fontWeight={600}
+                        h={"full"}
+                        display="flex"
+                        alignItems="center"
+                      >
+                        Tanggal Register Project
+                      </FormLabel>
+                      <Stack spacing={0} h={"full"}>
+                        <Input
+                          id="projectRegisterDate"
+                          name="projectRegisterDate"
+                          type="date"
+                          onChange={formik.handleChange}
+                          value={
+                            formik.values.projectRegisterDate
+                              ? formik.values.projectRegisterDate.split("T")[0]
+                              : ""
+                          }
+                          isReadOnly={!IsEditMode}
+                          variant={IsEditMode ? "outline" : "unstyled"}
+                          isDisabled={ActionLoading}
+                        />
+                        <FormErrorMessage>
+                          {formik.errors.projectRegisterDate}
+                        </FormErrorMessage>
+                      </Stack>
+                    </InputLayoutFullHalf>
+                  </FormControl>
+
+                  <FormControl
+                    id="projectClosedDate"
+                    isInvalid={formik.errors.projectClosedDate ? true : false}
+                    isRequired
+                  >
+                    <InputLayoutFullHalf>
+                      <FormLabel
+                        fontWeight={600}
+                        h={"full"}
+                        display="flex"
+                        alignItems="center"
+                      >
+                        Tanggal Closed Project
+                      </FormLabel>
+                      <Stack spacing={0} h={"full"}>
+                        {formik.values.projectClosedDate != null ? (
+                          <>
+                            <Input
+                              id="projectClosedDate"
+                              name="projectClosedDate"
+                              type="date"
+                              isReadOnly={true}
+                              variant={"unstyled"}
+                              isDisabled={true}
+                            />
+                            <FormErrorMessage>
+                              {formik.errors.projectClosedDate}
+                            </FormErrorMessage>
+                          </>
+                        ) : (
+                          <Text px={2} fontWeight={600}>
+                            ON GOING
+                          </Text>
+                        )}
+                      </Stack>
+                    </InputLayoutFullHalf>
+                  </FormControl>
+
+                  <FormControl
+                    id="projDateDuration"
+                    isInvalid={
+                      calculateDurationInDays(
+                        formik.values.projectRegisterDate ??
+                          new Date().toISOString().slice(0, 10),
+                        formik.values.projectClosedDate ??
+                          new Date().toISOString().slice(0, 10)
+                      ) < 0
+                    }
+                  >
+                    <InputLayoutFullHalf>
+                      <FormLabel
+                        fontWeight={600}
+                        h="full"
+                        display="flex"
+                        alignItems="center"
+                      >
+                        Durasi Project
+                      </FormLabel>
+                      <Stack spacing={0} h="full">
+                        {formik.values.projectClosedDate != null ? (
+                          <>
+                            <Text px={2} fontWeight={600}>
+                              {calculateDurationInDays(
+                                formik.values.projectRegisterDate ??
+                                  new Date().toISOString().slice(0, 10),
+                                formik.values.projectClosedDate ??
+                                  new Date().toISOString().slice(0, 10)
+                              )}{" "}
+                              Hari Kalendar (CLOSED)
+                            </Text>
+                            <FormErrorMessage>
+                              {calculateDurationInDays(
+                                formik.values.projectRegisterDate ??
+                                  new Date().toISOString().slice(0, 10),
+                                formik.values.projectClosedDate ??
+                                  new Date().toISOString().slice(0, 10)
+                              ) < 0 && "Durasi tidak boleh negatif"}
+                            </FormErrorMessage>
+                          </>
+                        ) : (
+                          <Text px={2} fontWeight={600}>
+                            ON GOING
+                          </Text>
+                        )}
+                      </Stack>
+                    </InputLayoutFullHalf>
+                  </FormControl>
+
+                  <FormControl
+                    id="note"
+                    isInvalid={formik.errors.note ? true : false}
+                  >
+                    <InputLayoutFullHalf>
+                      <FormLabel
+                        fontWeight={600}
+                        h={"full"}
+                        display="flex"
+                        alignItems="center"
+                      >
+                        Note
+                      </FormLabel>
+                      <Stack spacing={0}>
+                        <Textarea
+                          id="note"
+                          name="note"
+                          onChange={(e) => {
+                            formik.setFieldValue("note", e.target.value);
+                          }}
+                          readOnly={!IsEditMode}
+                          variant={IsEditMode ? "outline" : "unstyled"}
+                          defaultValue={formik.values.note ?? ""}
+                          placeholder="Notes"
+                          isDisabled={ActionLoading}
+                          minH={"30px"}
+                        ></Textarea>
+                        <FormErrorMessage>
+                          {formik.errors.note}
+                        </FormErrorMessage>
+                      </Stack>
+                    </InputLayoutFullHalf>
+                  </FormControl>
+
+                  {/* <p>Project ID: {projectId}</p> */}
+                  <Box overflowY={"auto"}>
+                    {/* <pre>{JSON.stringify(formik.values, null, 2)}</pre> */}
+                  </Box>
+                </Flex>
+              </Flex>
+            </form>
+          )}
+        </Flex>
       )}
     </Flex>
   );
