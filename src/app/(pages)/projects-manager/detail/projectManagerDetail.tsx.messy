@@ -90,14 +90,14 @@ import {
   FiShare,
   FiXCircle,
   FiZap,
+  FiSettings,
   FiUsers,
-  FiCalendar,
+  FiClock,
   FiTarget,
   FiTrendingUp,
-  FiClock,
-  FiBarChart,
+  FiCalendar,
   FiFileText,
-  FiSettings,
+  FiBarChart,
 } from "react-icons/fi";
 import * as Yup from "yup";
 import { CustomPanelAlert } from "@/app/components/customPanels";
@@ -245,15 +245,156 @@ function ProjectManagerDetail() {
 
   return (
     <LayoutAdmin>
-      {/* Clean Header Section */}
+      {/* Modern Clean Header */}
       <Box
         bg="white"
         borderBottom="1px"
-        borderColor="gray.200"
-        px={6}
-        py={4}
-        mb={6}
+        borderColor="gray.100"
+        px={8}
+        py={6}
+        mb={8}
       >
+        <VStack spacing={4} align="stretch">
+          {/* Top Navigation */}
+          <HStack justify="space-between" align="center">
+            <HStack spacing={4}>
+              <Link href={"/projects-manager"}>
+                <Button
+                  leftIcon={<FiArrowLeft />}
+                  variant="ghost"
+                  size="sm"
+                  color="gray.600"
+                  _hover={{ bg: "gray.50", color: "gray.800" }}
+                >
+                  Back
+                </Button>
+              </Link>
+              <Text color="gray.400" fontSize="sm">Projects / Detail</Text>
+            </HStack>
+            
+            <HStack spacing={3}>
+              <Button
+                leftIcon={<FiRefreshCcw />}
+                variant="outline"
+                size="sm"
+                onClick={() => setRefreshData(prev => prev + 1)}
+                isLoading={IsLoadingProcess}
+                borderColor="gray.200"
+                _hover={{ borderColor: "gray.300", bg: "gray.50" }}
+              >
+                Refresh
+              </Button>
+            </HStack>
+          </HStack>
+
+          {/* Project Header Info */}
+          {DataProject ? (
+            <HStack spacing={6} align="center">
+              {/* Project Icon */}
+              <Box
+                w={16}
+                h={16}
+                bgGradient="linear(to-br, blue.500, purple.600)"
+                rounded="2xl"
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                color="white"
+                fontSize="xl"
+                fontWeight="bold"
+                shadow="lg"
+              >
+                {DataProject.projectName?.charAt(0) || "P"}
+              </Box>
+
+              {/* Project Details */}
+              <Box flex={1}>
+                <HStack spacing={4} align="center" mb={2}>
+                  <Heading size="xl" color="gray.800" fontWeight="700">
+                    {DataProject.projectName}
+                  </Heading>
+                  <Badge
+                    colorScheme={
+                      DataProject.projectStatus === "ACTIVE" ? "green" :
+                      DataProject.projectStatus === "ONHOLD" ? "orange" :
+                      DataProject.projectStatus === "COMPLETED" ? "blue" : "gray"
+                    }
+                    px={3}
+                    py={1}
+                    rounded="full"
+                    fontSize="sm"
+                    fontWeight="medium"
+                  >
+                    {DataProject.projectStatus}
+                  </Badge>
+                  <Badge
+                    colorScheme="purple"
+                    variant="subtle"
+                    px={3}
+                    py={1}
+                    rounded="full"
+                    fontSize="sm"
+                  >
+                    {DataProject.projectType}
+                  </Badge>
+                </HStack>
+
+                <HStack spacing={6} color="gray.600" fontSize="sm">
+                  <HStack spacing={2}>
+                    <FiUsers size={16} />
+                    <Text>{DataProject.userAssignment?.length || 0} members</Text>
+                  </HStack>
+                  <HStack spacing={2}>
+                    <FiCalendar size={16} />
+                    <Text>
+                      {DataProject.projectRegisterDate 
+                        ? new Date(DataProject.projectRegisterDate).toLocaleDateString()
+                        : "N/A"}
+                    </Text>
+                  </HStack>
+                  <HStack spacing={2}>
+                    <FiTarget size={16} />
+                    <Text>{DataProject.projectStatusPercentage || 0}% complete</Text>
+                  </HStack>
+                </HStack>
+              </Box>
+
+              {/* Team Avatars */}
+              {DataProject.userAssignment && DataProject.userAssignment.length > 0 && (
+                <AvatarGroup size="md" max={4} spacing="-0.5rem">
+                  {DataProject.userAssignment.slice(0, 5).map((assignment, index) => (
+                    <Avatar
+                      key={index}
+                      name={assignment.userData?.nama || "User"}
+                      src={assignment.userData?.profilePict || undefined}
+                      border="2px solid white"
+                    />
+                  ))}
+                </AvatarGroup>
+              )}
+            </HStack>
+          ) : (
+            <HStack spacing={6} align="center">
+              <Box
+                w={16}
+                h={16}
+                bg="gray.200"
+                rounded="2xl"
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+              >
+                <LoadingMiniSignature />
+              </Box>
+              <Box flex={1}>
+                <Heading size="xl" color="gray.400">
+                  Loading project...
+                </Heading>
+              </Box>
+            </HStack>
+          )}
+        </VStack>
+      </Box>
         <HStack justify="space-between" align="center">
           <HStack spacing={4}>
             <Link href={"/projects-manager"}>
@@ -262,27 +403,36 @@ function ProjectManagerDetail() {
                 variant="ghost"
                 size="sm"
                 _hover={{ bg: "gray.100" }}
+                colorScheme="blue"
               >
                 Back to Projects
               </Button>
             </Link>
             <Divider orientation="vertical" h="6" />
             <Box>
-              <Heading size="lg" color="gray.800">
-                {DataProject?.projectName || "Project Detail"}
+              <Heading
+                size="lg"
+                color={colorMode === "light" ? "gray.800" : "white"}
+              >
+                {DataProject?.projectName ||
+                  "🚀 Modern Project Detail (Loading...)"}
               </Heading>
-              <HStack spacing={3} mt={1}>
+              <HStack spacing={3} mt={2}>
                 {DataProject?.projectStatus && (
                   <Badge
                     colorScheme={
-                      DataProject.projectStatus === "ACTIVE" ? "green" :
-                      DataProject.projectStatus === "ONHOLD" ? "orange" :
-                      DataProject.projectStatus === "COMPLETED" ? "blue" : "gray"
+                      DataProject.projectStatus === "ACTIVE"
+                        ? "green"
+                        : DataProject.projectStatus === "ONHOLD"
+                        ? "orange"
+                        : DataProject.projectStatus === "COMPLETED"
+                        ? "blue"
+                        : "gray"
                     }
-                    px={2}
+                    px={3}
                     py={1}
-                    rounded="md"
-                    fontSize="xs"
+                    rounded="full"
+                    fontSize="sm"
                   >
                     {DataProject.projectStatus}
                   </Badge>
@@ -290,35 +440,48 @@ function ProjectManagerDetail() {
                 {DataProject?.projectType && (
                   <Badge
                     colorScheme="purple"
-                    px={2}
+                    px={3}
                     py={1}
-                    rounded="md"
-                    fontSize="xs"
+                    rounded="full"
+                    fontSize="sm"
                   >
                     {DataProject.projectType}
                   </Badge>
                 )}
+                {DataProject?.projectRegisterDate && (
+                  <Text fontSize="sm" color="gray.500">
+                    Created{" "}
+                    {calculateDurationInDays(
+                      DataProject.projectRegisterDate,
+                      new Date().toISOString()
+                    )}{" "}
+                    days ago
+                  </Text>
+                )}
               </HStack>
             </Box>
           </HStack>
-          
+
           <HStack spacing={3}>
-            {DataProject?.userAssignment && DataProject.userAssignment.length > 0 && (
-              <AvatarGroup size="sm" max={3}>
-                {DataProject.userAssignment.slice(0, 4).map((assignment, index) => (
-                  <Avatar
-                    key={index}
-                    name={assignment.userData?.nama || "User"}
-                    src={assignment.userData?.profilePict || undefined}
-                  />
-                ))}
-              </AvatarGroup>
-            )}
+            {DataProject?.userAssignment &&
+              DataProject.userAssignment.length > 0 && (
+                <AvatarGroup size="sm" max={4}>
+                  {DataProject.userAssignment
+                    .slice(0, 5)
+                    .map((assignment, index) => (
+                      <Avatar
+                        key={index}
+                        name={assignment.userData?.nama || "User"}
+                        src={assignment.userData?.profilePict || undefined}
+                      />
+                    ))}
+                </AvatarGroup>
+              )}
             <Button
               leftIcon={<FiRefreshCcw />}
               variant="outline"
               size="sm"
-              onClick={() => setRefreshData(prev => prev + 1)}
+              onClick={() => setRefreshData((prev) => prev + 1)}
               isLoading={IsLoadingProcess}
             >
               Refresh
@@ -327,290 +490,14 @@ function ProjectManagerDetail() {
         </HStack>
       </Box>
 
-      {/* Main Content Container */}
-      <Box px={6}>
-        <Grid templateColumns={{ base: "1fr", lg: "1fr 300px" }} gap={6}>
-          {/* Main Content Area */}
-          <GridItem>
-            <Card shadow="sm" rounded="lg">
-              <CardBody p={0}>
-                <Tabs variant="enclosed" colorScheme="blue">
-                  <TabList bg="gray.50" px={4}>
-                    <Tab fontWeight="medium" fontSize="sm">
-                      <HStack spacing={2}>
-                        <FiTarget size={16} />
-                        <Text>Overview</Text>
-                      </HStack>
-                    </Tab>
-                    <Tab fontWeight="medium" fontSize="sm">
-                      <HStack spacing={2}>
-                        <FiInfo size={16} />
-                        <Text>Details</Text>
-                      </HStack>
-                    </Tab>
-                    <Tab fontWeight="medium" fontSize="sm" isDisabled={!DataProject}>
-                      <HStack spacing={2}>
-                        <FiCpu size={16} />
-                        <Text>Features</Text>
-                      </HStack>
-                    </Tab>
-                    <Tab fontWeight="medium" fontSize="sm" isDisabled={!DataProject}>
-                      <HStack spacing={2}>
-                        <FiUsers size={16} />
-                        <Text>Team</Text>
-                      </HStack>
-                    </Tab>
-                    <Tab fontWeight="medium" fontSize="sm" isDisabled={!DataProject}>
-                      <HStack spacing={2}>
-                        <FiBarChart size={16} />
-                        <Text>Analytics</Text>
-                      </HStack>
-                    </Tab>
-                  </TabList>
-
-                  <TabPanels>
-                    {/* Overview Tab */}
-                    <TabPanel p={6}>
-                      <VStack spacing={6} align="stretch">
-                        <Heading size="md">Project Overview</Heading>
-                        
-                        {DataProject ? (
-                          <>
-                            {/* Quick Stats */}
-                            <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
-                              <Card bg="blue.50" textAlign="center">
-                                <CardBody py={4}>
-                                  <Text fontSize="2xl" fontWeight="bold" color="blue.600">
-                                    {DataProject.projectStatusPercentage || 0}%
-                                  </Text>
-                                  <Text fontSize="sm" color="gray.600">Progress</Text>
-                                </CardBody>
-                              </Card>
-                              <Card bg="green.50" textAlign="center">
-                                <CardBody py={4}>
-                                  <Text fontSize="2xl" fontWeight="bold" color="green.600">
-                                    {DataProject.userAssignment?.length || 0}
-                                  </Text>
-                                  <Text fontSize="sm" color="gray.600">Team</Text>
-                                </CardBody>
-                              </Card>
-                              <Card bg="orange.50" textAlign="center">
-                                <CardBody py={4}>
-                                  <Text fontSize="2xl" fontWeight="bold" color="orange.600">
-                                    {DataProject.projectRegisterDate 
-                                      ? calculateDurationInDays(DataProject.projectRegisterDate, new Date().toISOString())
-                                      : 0}
-                                  </Text>
-                                  <Text fontSize="sm" color="gray.600">Days</Text>
-                                </CardBody>
-                              </Card>
-                              <Card bg="purple.50" textAlign="center">
-                                <CardBody py={4}>
-                                  <Text fontSize="2xl" fontWeight="bold" color="purple.600">
-                                    {DataProject.projectStatus === "ACTIVE" ? "Active" : "Inactive"}
-                                  </Text>
-                                  <Text fontSize="sm" color="gray.600">Status</Text>
-                                </CardBody>
-                              </Card>
-                            </SimpleGrid>
-
-                            {/* Project Description */}
-                            <Card>
-                              <CardHeader>
-                                <Heading size="sm">Description</Heading>
-                              </CardHeader>
-                              <CardBody>
-                                <Text color="gray.600">
-                                  {DataProject.projectDesc || "No description available"}
-                                </Text>
-                              </CardBody>
-                            </Card>
-                          </>
-                        ) : (
-                          <Box textAlign="center" py={8}>
-                            <LoadingMiniSignature />
-                          </Box>
-                        )}
-                      </VStack>
-                    </TabPanel>
-
-                    {/* Details Tab */}
-                    <TabPanel p={6}>
-                      <Suspense fallback={<LoadingMiniSignature />}>
-                        <ProjectInfoSection projectId={projectId} />
-                      </Suspense>
-                    </TabPanel>
-
-                    {/* Features Tab */}
-                    <TabPanel p={6}>
-                      <Suspense fallback={<LoadingMiniSignature />}>
-                        <ProjectFeatureView DataProject={DataProject} />
-                      </Suspense>
-                    </TabPanel>
-
-                    {/* Team Tab */}
-                    <TabPanel p={6}>
-                      <VStack spacing={4} align="stretch">
-                        <HStack justify="space-between">
-                          <Heading size="md">Team Members</Heading>
-                          <Button size="sm" colorScheme="blue" leftIcon={<FiUsers />}>
-                            Add Member
-                          </Button>
-                        </HStack>
-
-                        {DataProject?.userAssignment && DataProject.userAssignment.length > 0 ? (
-                          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-                            {DataProject.userAssignment.map((member, index) => (
-                              <Card key={index}>
-                                <CardBody>
-                                  <HStack spacing={3}>
-                                    <Avatar
-                                      name={member.userData?.nama || "User"}
-                                      src={member.userData?.profilePict || undefined}
-                                    />
-                                    <Box flex={1}>
-                                      <Text fontWeight="medium">
-                                        {member.userData?.nama || "Unknown User"}
-                                      </Text>
-                                      <Badge
-                                        size="sm"
-                                        colorScheme={member.userAssignStatus === "ACTIVE" ? "green" : "gray"}
-                                      >
-                                        {member.userAssignStatus}
-                                      </Badge>
-                                    </Box>
-                                  </HStack>
-                                </CardBody>
-                              </Card>
-                            ))}
-                          </SimpleGrid>
-                        ) : (
-                          <Box textAlign="center" py={8}>
-                            <Text color="gray.500">No team members assigned</Text>
-                          </Box>
-                        )}
-                      </VStack>
-                    </TabPanel>
-
-                    {/* Analytics Tab */}
-                    <TabPanel p={6}>
-                      <VStack spacing={4} align="stretch">
-                        <Heading size="md">Analytics</Heading>
-                        
-                        <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
-                          <Card>
-                            <CardBody textAlign="center">
-                              <Text fontSize="lg" fontWeight="bold" color="blue.600">
-                                {DataProject?.projectStatusPercentage || 0}%
-                              </Text>
-                              <Text fontSize="sm" color="gray.600">Completion</Text>
-                            </CardBody>
-                          </Card>
-                          <Card>
-                            <CardBody textAlign="center">
-                              <Text fontSize="lg" fontWeight="bold" color="green.600">
-                                {DataProject?.userAssignment?.length || 0}
-                              </Text>
-                              <Text fontSize="sm" color="gray.600">Team Size</Text>
-                            </CardBody>
-                          </Card>
-                          <Card>
-                            <CardBody textAlign="center">
-                              <Text fontSize="lg" fontWeight="bold" color="orange.600">
-                                {DataProject?.projectRegisterDate 
-                                  ? calculateDurationInDays(DataProject.projectRegisterDate, new Date().toISOString())
-                                  : 0}
-                              </Text>
-                              <Text fontSize="sm" color="gray.600">Days Active</Text>
-                            </CardBody>
-                          </Card>
-                        </SimpleGrid>
-                      </VStack>
-                    </TabPanel>
-                  </TabPanels>
-                </Tabs>
-              </CardBody>
-            </Card>
-          </GridItem>
-
-          {/* Sidebar */}
-          <GridItem>
-            <VStack spacing={4}>
-              {/* Project Info Card */}
-              <Card w="full">
-                <CardHeader>
-                  <Heading size="sm">Project Info</Heading>
-                </CardHeader>
-                <CardBody>
-                  <VStack spacing={3} align="stretch">
-                    {DataProject ? (
-                      <>
-                        <HStack justify="space-between">
-                          <Text fontSize="sm" color="gray.600">Code:</Text>
-                          <Text fontSize="sm" fontWeight="medium">{DataProject.projectCode}</Text>
-                        </HStack>
-                        <HStack justify="space-between">
-                          <Text fontSize="sm" color="gray.600">Type:</Text>
-                          <Text fontSize="sm" fontWeight="medium">{DataProject.projectType}</Text>
-                        </HStack>
-                        <HStack justify="space-between">
-                          <Text fontSize="sm" color="gray.600">Status:</Text>
-                          <Badge
-                            size="sm"
-                            colorScheme={
-                              DataProject.projectStatus === "ACTIVE" ? "green" :
-                              DataProject.projectStatus === "ONHOLD" ? "orange" :
-                              DataProject.projectStatus === "COMPLETED" ? "blue" : "gray"
-                            }
-                          >
-                            {DataProject.projectStatus}
-                          </Badge>
-                        </HStack>
-                        <HStack justify="space-between">
-                          <Text fontSize="sm" color="gray.600">Progress:</Text>
-                          <Text fontSize="sm" fontWeight="medium">{DataProject.projectStatusPercentage || 0}%</Text>
-                        </HStack>
-                        <Box>
-                          <Progress
-                            value={DataProject.projectStatusPercentage || 0}
-                            colorScheme="blue"
-                            size="sm"
-                            rounded="md"
-                          />
-                        </Box>
-                      </>
-                    ) : (
-                      <LoadingMiniSignature />
-                    )}
-                  </VStack>
-                </CardBody>
-              </Card>
-
-              {/* Quick Actions Card */}
-              <Card w="full">
-                <CardHeader>
-                  <Heading size="sm">Quick Actions</Heading>
-                </CardHeader>
-                <CardBody>
-                  <VStack spacing={2}>
-                    <Button size="sm" variant="ghost" w="full" justifyContent="flex-start" leftIcon={<FiActivity />}>
-                      View Activity
-                    </Button>
-                    <Button size="sm" variant="ghost" w="full" justifyContent="flex-start" leftIcon={<FiSettings />}>
-                      Settings
-                    </Button>
-                    <Button size="sm" variant="ghost" w="full" justifyContent="flex-start" leftIcon={<FiBarChart />}>
-                      Reports
-                    </Button>
-                  </VStack>
-                </CardBody>
-              </Card>
-            </VStack>
-          </GridItem>
-        </Grid>
-      </Box>
-    </LayoutAdmin>
-  );
+      {/* Main Content Layout */}
+      <Grid
+        templateColumns={{ base: "1fr", xl: "1fr 350px" }}
+        gap={6}
+        minH="calc(100vh - 200px)"
+      >
+        {/* Main Content Area */}
+        <GridItem>
           <Box
             bg={colorMode === "light" ? "white" : "gray.800"}
             rounded="xl"
@@ -619,34 +506,26 @@ function ProjectManagerDetail() {
             borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
             overflow="hidden"
           >
-            <Tabs size="lg" variant="unstyled" colorScheme="blue">
+            <Tabs size="lg" variant="enclosed" colorScheme="blue">
               <TabList
-                bg="gray.50"
-                p={4}
-                rounded="2xl"
-                gap={3}
+                bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                borderBottom="1px"
+                borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                px={6}
                 overflowX="auto"
+                gap={2}
               >
-                {/* Overview Tab */}
+                {/* Project Overview Tab */}
                 <Tab
-                  bgGradient="linear(135deg, blue.400, blue.600)"
-                  color="white"
-                  rounded="xl"
-                  px={6}
-                  py={4}
-                  fontWeight="bold"
-                  fontSize="sm"
-                  shadow="lg"
                   _selected={{
-                    bgGradient: "linear(135deg, blue.500, blue.700)",
-                    transform: "translateY(-2px)",
-                    shadow: "xl",
+                    bg: colorMode === "light" ? "white" : "gray.800",
+                    color: "blue.500",
+                    borderColor: "blue.500",
+                    borderBottomColor:
+                      colorMode === "light" ? "white" : "gray.800",
                   }}
-                  _hover={{
-                    transform: "translateY(-1px)",
-                    shadow: "lg",
-                  }}
-                  transition="all 0.2s"
+                  fontWeight="semibold"
+                  py={4}
                   minW="fit-content"
                 >
                   <HStack spacing={2}>
@@ -657,24 +536,15 @@ function ProjectManagerDetail() {
 
                 {/* Project Info Tab */}
                 <Tab
-                  bgGradient="linear(135deg, green.400, green.600)"
-                  color="white"
-                  rounded="xl"
-                  px={6}
-                  py={4}
-                  fontWeight="bold"
-                  fontSize="sm"
-                  shadow="lg"
                   _selected={{
-                    bgGradient: "linear(135deg, green.500, green.700)",
-                    transform: "translateY(-2px)",
-                    shadow: "xl",
+                    bg: colorMode === "light" ? "white" : "gray.800",
+                    color: "green.500",
+                    borderColor: "green.500",
+                    borderBottomColor:
+                      colorMode === "light" ? "white" : "gray.800",
                   }}
-                  _hover={{
-                    transform: "translateY(-1px)",
-                    shadow: "lg",
-                  }}
-                  transition="all 0.2s"
+                  fontWeight="semibold"
+                  py={4}
                   minW="fit-content"
                 >
                   <HStack spacing={2}>
@@ -683,26 +553,57 @@ function ProjectManagerDetail() {
                   </HStack>
                 </Tab>
 
+                {/* Progression Tab */}
+                <Tab
+                  _selected={{
+                    bg: colorMode === "light" ? "white" : "gray.800",
+                    color: "orange.500",
+                    borderColor: "orange.500",
+                    borderBottomColor:
+                      colorMode === "light" ? "white" : "gray.800",
+                  }}
+                  fontWeight="semibold"
+                  py={4}
+                  isDisabled={!DataProject}
+                  minW="fit-content"
+                >
+                  <HStack spacing={2}>
+                    <FiTrendingUp />
+                    <Text>Progression</Text>
+                  </HStack>
+                </Tab>
+
+                {/* Timeline Tab */}
+                <Tab
+                  _selected={{
+                    bg: colorMode === "light" ? "white" : "gray.800",
+                    color: "purple.500",
+                    borderColor: "purple.500",
+                    borderBottomColor:
+                      colorMode === "light" ? "white" : "gray.800",
+                  }}
+                  fontWeight="semibold"
+                  py={4}
+                  isDisabled={!DataProject}
+                  minW="fit-content"
+                >
+                  <HStack spacing={2}>
+                    <FiClock />
+                    <Text>Timeline</Text>
+                  </HStack>
+                </Tab>
+
                 {/* Features Tab */}
                 <Tab
-                  bgGradient="linear(135deg, teal.400, teal.600)"
-                  color="white"
-                  rounded="xl"
-                  px={6}
-                  py={4}
-                  fontWeight="bold"
-                  fontSize="sm"
-                  shadow="lg"
                   _selected={{
-                    bgGradient: "linear(135deg, teal.500, teal.700)",
-                    transform: "translateY(-2px)",
-                    shadow: "xl",
+                    bg: colorMode === "light" ? "white" : "gray.800",
+                    color: "teal.500",
+                    borderColor: "teal.500",
+                    borderBottomColor:
+                      colorMode === "light" ? "white" : "gray.800",
                   }}
-                  _hover={{
-                    transform: "translateY(-1px)",
-                    shadow: "lg",
-                  }}
-                  transition="all 0.2s"
+                  fontWeight="semibold"
+                  py={4}
                   isDisabled={!DataProject}
                   minW="fit-content"
                 >
@@ -714,24 +615,15 @@ function ProjectManagerDetail() {
 
                 {/* Team Tab */}
                 <Tab
-                  bgGradient="linear(135deg, pink.400, pink.600)"
-                  color="white"
-                  rounded="xl"
-                  px={6}
-                  py={4}
-                  fontWeight="bold"
-                  fontSize="sm"
-                  shadow="lg"
                   _selected={{
-                    bgGradient: "linear(135deg, pink.500, pink.700)",
-                    transform: "translateY(-2px)",
-                    shadow: "xl",
+                    bg: colorMode === "light" ? "white" : "gray.800",
+                    color: "pink.500",
+                    borderColor: "pink.500",
+                    borderBottomColor:
+                      colorMode === "light" ? "white" : "gray.800",
                   }}
-                  _hover={{
-                    transform: "translateY(-1px)",
-                    shadow: "lg",
-                  }}
-                  transition="all 0.2s"
+                  fontWeight="semibold"
+                  py={4}
                   isDisabled={!DataProject}
                   minW="fit-content"
                 >
@@ -741,55 +633,17 @@ function ProjectManagerDetail() {
                   </HStack>
                 </Tab>
 
-                {/* Progress Tab */}
-                <Tab
-                  bgGradient="linear(135deg, orange.400, orange.600)"
-                  color="white"
-                  rounded="xl"
-                  px={6}
-                  py={4}
-                  fontWeight="bold"
-                  fontSize="sm"
-                  shadow="lg"
-                  _selected={{
-                    bgGradient: "linear(135deg, orange.500, orange.700)",
-                    transform: "translateY(-2px)",
-                    shadow: "xl",
-                  }}
-                  _hover={{
-                    transform: "translateY(-1px)",
-                    shadow: "lg",
-                  }}
-                  transition="all 0.2s"
-                  isDisabled={!DataProject}
-                  minW="fit-content"
-                >
-                  <HStack spacing={2}>
-                    <FiTrendingUp />
-                    <Text>Progress</Text>
-                  </HStack>
-                </Tab>
-
                 {/* Analytics Tab */}
                 <Tab
-                  bgGradient="linear(135deg, cyan.400, cyan.600)"
-                  color="white"
-                  rounded="xl"
-                  px={6}
-                  py={4}
-                  fontWeight="bold"
-                  fontSize="sm"
-                  shadow="lg"
                   _selected={{
-                    bgGradient: "linear(135deg, cyan.500, cyan.700)",
-                    transform: "translateY(-2px)",
-                    shadow: "xl",
+                    bg: colorMode === "light" ? "white" : "gray.800",
+                    color: "cyan.500",
+                    borderColor: "cyan.500",
+                    borderBottomColor:
+                      colorMode === "light" ? "white" : "gray.800",
                   }}
-                  _hover={{
-                    transform: "translateY(-1px)",
-                    shadow: "lg",
-                  }}
-                  transition="all 0.2s"
+                  fontWeight="semibold"
+                  py={4}
                   isDisabled={!DataProject}
                   minW="fit-content"
                 >
@@ -799,26 +653,37 @@ function ProjectManagerDetail() {
                   </HStack>
                 </Tab>
 
+                {/* Files Tab */}
+                <Tab
+                  _selected={{
+                    bg: colorMode === "light" ? "white" : "gray.800",
+                    color: "yellow.600",
+                    borderColor: "yellow.600",
+                    borderBottomColor:
+                      colorMode === "light" ? "white" : "gray.800",
+                  }}
+                  fontWeight="semibold"
+                  py={4}
+                  isDisabled={!DataProject}
+                  minW="fit-content"
+                >
+                  <HStack spacing={2}>
+                    <FiFileText />
+                    <Text>Files</Text>
+                  </HStack>
+                </Tab>
+
                 {/* Settings Tab */}
                 <Tab
-                  bgGradient="linear(135deg, gray.400, gray.600)"
-                  color="white"
-                  rounded="xl"
-                  px={6}
-                  py={4}
-                  fontWeight="bold"
-                  fontSize="sm"
-                  shadow="lg"
                   _selected={{
-                    bgGradient: "linear(135deg, gray.500, gray.700)",
-                    transform: "translateY(-2px)",
-                    shadow: "xl",
+                    bg: colorMode === "light" ? "white" : "gray.800",
+                    color: "gray.600",
+                    borderColor: "gray.600",
+                    borderBottomColor:
+                      colorMode === "light" ? "white" : "gray.800",
                   }}
-                  _hover={{
-                    transform: "translateY(-1px)",
-                    shadow: "lg",
-                  }}
-                  transition="all 0.2s"
+                  fontWeight="semibold"
+                  py={4}
                   isDisabled={!DataProject}
                   minW="fit-content"
                 >
@@ -830,148 +695,96 @@ function ProjectManagerDetail() {
               </TabList>
 
               <TabPanels>
-                {/* OVERVIEW TAB */}
-                <TabPanel p={8}>
-                  <VStack spacing={8} align="stretch">
-                    <Heading size="lg" color="gray.800">Project Overview</Heading>
+                {/* PROJECT OVERVIEW TAB */}
+                <TabPanel p={6}>
+                  <VStack spacing={6} align="stretch">
+                    <Heading size="md">Project Overview</Heading>
                     
                     {DataProject ? (
-                      <>
-                        {/* Stats Cards */}
-                        <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6}>
-                          <Card bg="blue.50" border="2px" borderColor="blue.200" rounded="2xl" shadow="lg">
-                            <CardBody textAlign="center" p={6}>
-                              <Box
-                                w={16}
-                                h={16}
-                                bgGradient="linear(135deg, blue.400, blue.600)"
-                                rounded="2xl"
-                                display="flex"
-                                alignItems="center"
-                                justifyContent="center"
-                                mx="auto"
-                                mb={4}
-                              >
-                                <FiTarget size={24} color="white" />
-                              </Box>
-                              <Text fontSize="3xl" fontWeight="bold" color="blue.600">
-                                {DataProject.projectStatusPercentage || 0}%
-                              </Text>
-                              <Text fontSize="sm" color="gray.600" fontWeight="medium">
-                                Completion Rate
-                              </Text>
-                            </CardBody>
-                          </Card>
-
-                          <Card bg="green.50" border="2px" borderColor="green.200" rounded="2xl" shadow="lg">
-                            <CardBody textAlign="center" p={6}>
-                              <Box
-                                w={16}
-                                h={16}
-                                bgGradient="linear(135deg, green.400, green.600)"
-                                rounded="2xl"
-                                display="flex"
-                                alignItems="center"
-                                justifyContent="center"
-                                mx="auto"
-                                mb={4}
-                              >
-                                <FiUsers size={24} color="white" />
-                              </Box>
-                              <Text fontSize="3xl" fontWeight="bold" color="green.600">
-                                {DataProject.userAssignment?.length || 0}
-                              </Text>
-                              <Text fontSize="sm" color="gray.600" fontWeight="medium">
-                                Team Members
-                              </Text>
-                            </CardBody>
-                          </Card>
-
-                          <Card bg="orange.50" border="2px" borderColor="orange.200" rounded="2xl" shadow="lg">
-                            <CardBody textAlign="center" p={6}>
-                              <Box
-                                w={16}
-                                h={16}
-                                bgGradient="linear(135deg, orange.400, orange.600)"
-                                rounded="2xl"
-                                display="flex"
-                                alignItems="center"
-                                justifyContent="center"
-                                mx="auto"
-                                mb={4}
-                              >
-                                <FiClock size={24} color="white" />
-                              </Box>
-                              <Text fontSize="3xl" fontWeight="bold" color="orange.600">
-                                {DataProject.projectRegisterDate 
-                                  ? calculateDurationInDays(DataProject.projectRegisterDate, new Date().toISOString())
-                                  : 0}
-                              </Text>
-                              <Text fontSize="sm" color="gray.600" fontWeight="medium">
-                                Days Active
-                              </Text>
-                            </CardBody>
-                          </Card>
-
-                          <Card bg="purple.50" border="2px" borderColor="purple.200" rounded="2xl" shadow="lg">
-                            <CardBody textAlign="center" p={6}>
-                              <Box
-                                w={16}
-                                h={16}
-                                bgGradient="linear(135deg, purple.400, purple.600)"
-                                rounded="2xl"
-                                display="flex"
-                                alignItems="center"
-                                justifyContent="center"
-                                mx="auto"
-                                mb={4}
-                              >
-                                <FiActivity size={24} color="white" />
-                              </Box>
-                              <Text fontSize="3xl" fontWeight="bold" color="purple.600">
-                                {DataProject.projectStatus === "ACTIVE" ? "High" : "Low"}
-                              </Text>
-                              <Text fontSize="sm" color="gray.600" fontWeight="medium">
-                                Activity Level
-                              </Text>
-                            </CardBody>
-                          </Card>
-                        </SimpleGrid>
-
-                        {/* Project Summary */}
-                        <Card bg="white" rounded="2xl" shadow="xl" border="1px" borderColor="gray.100">
+                      <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
+                        {/* Project Summary Card */}
+                        <Card>
                           <CardHeader>
-                            <Heading size="md" color="gray.800">Project Summary</Heading>
+                            <Heading size="sm">Project Summary</Heading>
                           </CardHeader>
                           <CardBody>
-                            <VStack spacing={4} align="stretch">
-                              <Text color="gray.600" lineHeight="tall">
-                                {DataProject.projectDesc || "No description available"}
-                              </Text>
-                              
-                              <Divider />
-                              
-                              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-                                <HStack justify="space-between">
-                                  <Text fontWeight="medium" color="gray.700">Project Code:</Text>
-                                  <Badge colorScheme="blue" px={3} py={1} rounded="full">
-                                    {DataProject.projectCode}
+                            <VStack spacing={3} align="stretch">
+                              <Box>
+                                <Text fontSize="lg" fontWeight="semibold">{DataProject.projectName}</Text>
+                                <HStack spacing={2} mt={2}>
+                                  <Badge colorScheme={DataProject.projectStatus === "ACTIVE" ? "green" : "gray"}>
+                                    {DataProject.projectStatus}
                                   </Badge>
+                                  <Badge colorScheme="purple">{DataProject.projectType}</Badge>
                                 </HStack>
-                                
-                                <HStack justify="space-between">
-                                  <Text fontWeight="medium" color="gray.700">Created Date:</Text>
-                                  <Text color="gray.600">
-                                    {DataProject.projectRegisterDate 
-                                      ? new Date(DataProject.projectRegisterDate).toLocaleDateString()
-                                      : "N/A"}
-                                  </Text>
-                                </HStack>
-                              </SimpleGrid>
+                              </Box>
+                              {DataProject.projectDesc && (
+                                <Text fontSize="sm" color="gray.600" noOfLines={4}>
+                                  {DataProject.projectDesc}
+                                </Text>
+                              )}
                             </VStack>
                           </CardBody>
                         </Card>
-                      </>
+
+                        {/* Key Metrics Card */}
+                        <Card>
+                          <CardHeader>
+                            <Heading size="sm">Key Metrics</Heading>
+                          </CardHeader>
+                          <CardBody>
+                            <VStack spacing={4}>
+                              <Box textAlign="center">
+                                <Text fontSize="2xl" fontWeight="bold" color="blue.500">
+                                  {DataProject.projectStatusPercentage || 0}%
+                                </Text>
+                                <Text fontSize="sm" color="gray.600">Completion</Text>
+                              </Box>
+                              <Box textAlign="center">
+                                <Text fontSize="2xl" fontWeight="bold" color="green.500">
+                                  {DataProject.userAssignment?.length || 0}
+                                </Text>
+                                <Text fontSize="sm" color="gray.600">Team Members</Text>
+                              </Box>
+                              <Box textAlign="center">
+                                <Text fontSize="2xl" fontWeight="bold" color="orange.500">
+                                  {DataProject.projectRegisterDate 
+                                    ? calculateDurationInDays(DataProject.projectRegisterDate, new Date().toISOString())
+                                    : 0}
+                                </Text>
+                                <Text fontSize="sm" color="gray.600">Days Active</Text>
+                              </Box>
+                            </VStack>
+                          </CardBody>
+                        </Card>
+
+                        {/* Recent Activity Card */}
+                        <Card>
+                          <CardHeader>
+                            <Heading size="sm">Recent Activity</Heading>
+                          </CardHeader>
+                          <CardBody>
+                            <VStack spacing={3} align="stretch">
+                              <HStack>
+                                <Box w={2} h={2} bg="green.500" rounded="full" />
+                                <Text fontSize="sm">Project created</Text>
+                              </HStack>
+                              <HStack>
+                                <Box w={2} h={2} bg="blue.500" rounded="full" />
+                                <Text fontSize="sm">Team members assigned</Text>
+                              </HStack>
+                              <HStack>
+                                <Box w={2} h={2} bg="orange.500" rounded="full" />
+                                <Text fontSize="sm">Features added</Text>
+                              </HStack>
+                              <HStack>
+                                <Box w={2} h={2} bg="purple.500" rounded="full" />
+                                <Text fontSize="sm">Progress updated</Text>
+                              </HStack>
+                            </VStack>
+                          </CardBody>
+                        </Card>
+                      </SimpleGrid>
                     ) : (
                       <Box textAlign="center" py={12}>
                         <LoadingMiniSignature />
@@ -988,6 +801,183 @@ function ProjectManagerDetail() {
                   </Suspense>
                 </TabPanel>
 
+                {/* PROGRESSION TAB */}
+                <TabPanel p={6}>
+                  <VStack spacing={6} align="stretch">
+                    <Heading size="md">Project Progression</Heading>
+                    
+                    {DataProject ? (
+                      <VStack spacing={6} align="stretch">
+                        {/* Overall Progress */}
+                        <Card>
+                          <CardHeader>
+                            <Heading size="sm">Overall Progress</Heading>
+                          </CardHeader>
+                          <CardBody>
+                            <Box>
+                              <HStack justify="space-between" mb={4}>
+                                <Text fontWeight="medium">Project Completion</Text>
+                                <Text fontWeight="bold" color="blue.500">
+                                  {DataProject.projectStatusPercentage || 0}%
+                                </Text>
+                              </HStack>
+                              <Progress 
+                                value={DataProject.projectStatusPercentage || 0} 
+                                colorScheme="blue" 
+                                size="lg" 
+                                rounded="full"
+                              />
+                            </Box>
+                          </CardBody>
+                        </Card>
+
+                        {/* Phase Progress */}
+                        <Card>
+                          <CardHeader>
+                            <Heading size="sm">Phase Progress</Heading>
+                          </CardHeader>
+                          <CardBody>
+                            <VStack spacing={4} align="stretch">
+                              <Box>
+                                <HStack justify="space-between" mb={2}>
+                                  <Text fontSize="sm">Planning</Text>
+                                  <Text fontSize="sm" color="green.500">100%</Text>
+                                </HStack>
+                                <Progress value={100} colorScheme="green" size="sm" rounded="full" />
+                              </Box>
+                              <Box>
+                                <HStack justify="space-between" mb={2}>
+                                  <Text fontSize="sm">Development</Text>
+                                  <Text fontSize="sm" color="blue.500">75%</Text>
+                                </HStack>
+                                <Progress value={75} colorScheme="blue" size="sm" rounded="full" />
+                              </Box>
+                              <Box>
+                                <HStack justify="space-between" mb={2}>
+                                  <Text fontSize="sm">Testing</Text>
+                                  <Text fontSize="sm" color="orange.500">45%</Text>
+                                </HStack>
+                                <Progress value={45} colorScheme="orange" size="sm" rounded="full" />
+                              </Box>
+                              <Box>
+                                <HStack justify="space-between" mb={2}>
+                                  <Text fontSize="sm">Deployment</Text>
+                                  <Text fontSize="sm" color="gray.500">0%</Text>
+                                </HStack>
+                                <Progress value={0} colorScheme="gray" size="sm" rounded="full" />
+                              </Box>
+                            </VStack>
+                          </CardBody>
+                        </Card>
+
+                        {/* Milestones */}
+                        <Card>
+                          <CardHeader>
+                            <Heading size="sm">Milestones</Heading>
+                          </CardHeader>
+                          <CardBody>
+                            <VStack spacing={3} align="stretch">
+                              <HStack>
+                                <Box w={3} h={3} bg="green.500" rounded="full" />
+                                <Text fontSize="sm" flex={1}>Project Kickoff</Text>
+                                <Badge colorScheme="green" size="sm">Completed</Badge>
+                              </HStack>
+                              <HStack>
+                                <Box w={3} h={3} bg="blue.500" rounded="full" />
+                                <Text fontSize="sm" flex={1}>MVP Development</Text>
+                                <Badge colorScheme="blue" size="sm">In Progress</Badge>
+                              </HStack>
+                              <HStack>
+                                <Box w={3} h={3} bg="gray.300" rounded="full" />
+                                <Text fontSize="sm" flex={1}>Beta Testing</Text>
+                                <Badge colorScheme="gray" size="sm">Pending</Badge>
+                              </HStack>
+                              <HStack>
+                                <Box w={3} h={3} bg="gray.300" rounded="full" />
+                                <Text fontSize="sm" flex={1}>Production Release</Text>
+                                <Badge colorScheme="gray" size="sm">Pending</Badge>
+                              </HStack>
+                            </VStack>
+                          </CardBody>
+                        </Card>
+                      </VStack>
+                    ) : (
+                      <Box textAlign="center" py={12}>
+                        <LoadingMiniSignature />
+                        <Text mt={4} color="gray.500">Loading progression data...</Text>
+                      </Box>
+                    )}
+                  </VStack>
+                </TabPanel>
+
+                {/* TIMELINE TAB */}
+                <TabPanel p={6}>
+                  <VStack spacing={6} align="stretch">
+                    <Heading size="md">Project Timeline</Heading>
+                    
+                    <Card>
+                      <CardHeader>
+                        <Heading size="sm">Project Timeline</Heading>
+                      </CardHeader>
+                      <CardBody>
+                        <VStack spacing={6} align="stretch">
+                          {/* Timeline Item */}
+                          <HStack spacing={4}>
+                            <VStack spacing={0}>
+                              <Box w={4} h={4} bg="green.500" rounded="full" />
+                              <Box w={0.5} h={12} bg="gray.200" />
+                            </VStack>
+                            <Box flex={1}>
+                              <Text fontWeight="semibold">Project Started</Text>
+                              <Text fontSize="sm" color="gray.600">
+                                {DataProject?.projectRegisterDate 
+                                  ? new Date(DataProject.projectRegisterDate).toLocaleDateString()
+                                  : "N/A"}
+                              </Text>
+                              <Text fontSize="sm" color="gray.500">Project initialization and team setup</Text>
+                            </Box>
+                          </HStack>
+
+                          <HStack spacing={4}>
+                            <VStack spacing={0}>
+                              <Box w={4} h={4} bg="blue.500" rounded="full" />
+                              <Box w={0.5} h={12} bg="gray.200" />
+                            </VStack>
+                            <Box flex={1}>
+                              <Text fontWeight="semibold">Development Phase</Text>
+                              <Text fontSize="sm" color="gray.600">In Progress</Text>
+                              <Text fontSize="sm" color="gray.500">Core features development and implementation</Text>
+                            </Box>
+                          </HStack>
+
+                          <HStack spacing={4}>
+                            <VStack spacing={0}>
+                              <Box w={4} h={4} bg="orange.500" rounded="full" />
+                              <Box w={0.5} h={12} bg="gray.200" />
+                            </VStack>
+                            <Box flex={1}>
+                              <Text fontWeight="semibold">Testing Phase</Text>
+                              <Text fontSize="sm" color="gray.600">Upcoming</Text>
+                              <Text fontSize="sm" color="gray.500">Quality assurance and bug fixes</Text>
+                            </Box>
+                          </HStack>
+
+                          <HStack spacing={4}>
+                            <VStack spacing={0}>
+                              <Box w={4} h={4} bg="gray.300" rounded="full" />
+                            </VStack>
+                            <Box flex={1}>
+                              <Text fontWeight="semibold">Deployment</Text>
+                              <Text fontSize="sm" color="gray.600">Planned</Text>
+                              <Text fontSize="sm" color="gray.500">Production deployment and go-live</Text>
+                            </Box>
+                          </HStack>
+                        </VStack>
+                      </CardBody>
+                    </Card>
+                  </VStack>
+                </TabPanel>
+
                 {/* FEATURES TAB */}
                 <TabPanel p={6}>
                   <Suspense fallback={<LoadingMiniSignature />}>
@@ -996,61 +986,32 @@ function ProjectManagerDetail() {
                 </TabPanel>
 
                 {/* TEAM TAB */}
-                <TabPanel p={8}>
-                  <VStack spacing={8} align="stretch">
+                <TabPanel p={6}>
+                  <VStack spacing={6} align="stretch">
                     <HStack justify="space-between">
-                      <Heading size="lg" color="gray.800">Team Management</Heading>
-                      <Button
-                        leftIcon={<FiUsers />}
-                        colorScheme="blue"
-                        rounded="full"
-                        shadow="lg"
-                        _hover={{ transform: "translateY(-2px)", shadow: "xl" }}
-                        transition="all 0.2s"
-                      >
+                      <Heading size="md">Team Management</Heading>
+                      <Button leftIcon={<FiUsers />} colorScheme="blue" size="sm">
                         Add Member
                       </Button>
                     </HStack>
 
                     {DataProject?.userAssignment && DataProject.userAssignment.length > 0 ? (
-                      <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
+                      <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={4}>
                         {DataProject.userAssignment.map((member, index) => (
-                          <Card
-                            key={index}
-                            bg="white"
-                            rounded="2xl"
-                            shadow="lg"
-                            border="1px"
-                            borderColor="gray.100"
-                            _hover={{
-                              transform: "translateY(-4px)",
-                              shadow: "xl",
-                            }}
-                            transition="all 0.2s"
-                          >
-                            <CardBody p={6}>
-                              <VStack spacing={4}>
-                                <Avatar
-                                  size="xl"
-                                  name={member.userData?.nama || "User"}
+                          <Card key={index}>
+                            <CardBody>
+                              <VStack spacing={3}>
+                                <Avatar 
+                                  size="lg" 
+                                  name={member.userData?.nama || "User"} 
                                   src={member.userData?.profilePict || undefined}
-                                  border="4px solid"
-                                  borderColor="blue.100"
-                                  shadow="lg"
                                 />
                                 <Box textAlign="center">
-                                  <Text fontWeight="bold" fontSize="lg" color="gray.800">
-                                    {member.userData?.nama || "Unknown User"}
-                                  </Text>
-                                  <Text fontSize="sm" color="gray.600" mb={2}>
-                                    {member.userAssignStatus}
-                                  </Text>
-                                  <Badge
+                                  <Text fontWeight="semibold">{member.userData?.nama || "Unknown User"}</Text>
+                                  <Text fontSize="sm" color="gray.600">{member.userAssignStatus}</Text>
+                                  <Badge 
                                     colorScheme={member.userAssignStatus === "ACTIVE" ? "green" : "gray"}
-                                    px={3}
-                                    py={1}
-                                    rounded="full"
-                                    fontWeight="semibold"
+                                    mt={2}
                                   >
                                     {member.userAssignStatus}
                                   </Badge>
@@ -1063,15 +1024,8 @@ function ProjectManagerDetail() {
                     ) : (
                       <Box textAlign="center" py={12}>
                         <FiUsers size={48} color="gray" />
-                        <Text mt={4} color="gray.500" fontSize="lg">
-                          No team members assigned yet
-                        </Text>
-                        <Button
-                          leftIcon={<FiUsers />}
-                          colorScheme="blue"
-                          mt={4}
-                          rounded="full"
-                        >
+                        <Text mt={4} color="gray.500" fontSize="lg">No team members assigned</Text>
+                        <Button leftIcon={<FiUsers />} colorScheme="blue" mt={4} size="sm">
                           Add First Member
                         </Button>
                       </Box>
@@ -1079,98 +1033,13 @@ function ProjectManagerDetail() {
                   </VStack>
                 </TabPanel>
 
-                {/* PROGRESS TAB */}
-                <TabPanel p={8}>
-                  <VStack spacing={8} align="stretch">
-                    <Heading size="lg" color="gray.800">Project Progress</Heading>
-                    
-                    {DataProject ? (
-                      <>
-                        {/* Overall Progress */}
-                        <Card bg="white" rounded="2xl" shadow="xl" border="1px" borderColor="gray.100">
-                          <CardHeader>
-                            <Heading size="md" color="gray.800">Overall Progress</Heading>
-                          </CardHeader>
-                          <CardBody>
-                            <VStack spacing={6}>
-                              <Box textAlign="center">
-                                <Text fontSize="4xl" fontWeight="bold" color="blue.600" mb={2}>
-                                  {DataProject.projectStatusPercentage || 0}%
-                                </Text>
-                                <Text color="gray.600">Project Completion</Text>
-                              </Box>
-                              
-                              <Box w="full">
-                                <Progress
-                                  value={DataProject.projectStatusPercentage || 0}
-                                  size="lg"
-                                  colorScheme="blue"
-                                  rounded="full"
-                                  bg="gray.100"
-                                />
-                              </Box>
-                            </VStack>
-                          </CardBody>
-                        </Card>
-
-                        {/* Phase Progress */}
-                        <Card bg="white" rounded="2xl" shadow="xl" border="1px" borderColor="gray.100">
-                          <CardHeader>
-                            <Heading size="md" color="gray.800">Phase Progress</Heading>
-                          </CardHeader>
-                          <CardBody>
-                            <VStack spacing={6}>
-                              <Box w="full">
-                                <HStack justify="space-between" mb={2}>
-                                  <Text fontWeight="medium">Planning</Text>
-                                  <Badge colorScheme="green" rounded="full">100%</Badge>
-                                </HStack>
-                                <Progress value={100} colorScheme="green" size="md" rounded="full" />
-                              </Box>
-                              
-                              <Box w="full">
-                                <HStack justify="space-between" mb={2}>
-                                  <Text fontWeight="medium">Development</Text>
-                                  <Badge colorScheme="blue" rounded="full">75%</Badge>
-                                </HStack>
-                                <Progress value={75} colorScheme="blue" size="md" rounded="full" />
-                              </Box>
-                              
-                              <Box w="full">
-                                <HStack justify="space-between" mb={2}>
-                                  <Text fontWeight="medium">Testing</Text>
-                                  <Badge colorScheme="orange" rounded="full">45%</Badge>
-                                </HStack>
-                                <Progress value={45} colorScheme="orange" size="md" rounded="full" />
-                              </Box>
-                              
-                              <Box w="full">
-                                <HStack justify="space-between" mb={2}>
-                                  <Text fontWeight="medium">Deployment</Text>
-                                  <Badge colorScheme="gray" rounded="full">0%</Badge>
-                                </HStack>
-                                <Progress value={0} colorScheme="gray" size="md" rounded="full" />
-                              </Box>
-                            </VStack>
-                          </CardBody>
-                        </Card>
-                      </>
-                    ) : (
-                      <Box textAlign="center" py={12}>
-                        <LoadingMiniSignature />
-                        <Text mt={4} color="gray.500">Loading progress data...</Text>
-                      </Box>
-                    )}
-                  </VStack>
-                </TabPanel>
-
                 {/* ANALYTICS TAB */}
-                <TabPanel p={8}>
-                  <VStack spacing={8} align="stretch">
-                    <Heading size="lg" color="gray.800">Project Analytics</Heading>
+                <TabPanel p={6}>
+                  <VStack spacing={6} align="stretch">
+                    <Heading size="md">Project Analytics</Heading>
                     
-                    <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
-                      <Card bg="blue.50" border="2px" borderColor="blue.200" rounded="2xl" shadow="lg">
+                    <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={4}>
+                      <Card bg="blue.50" border="1px" borderColor="blue.200">
                         <CardBody textAlign="center" p={6}>
                           <FiTarget size={32} color="blue" />
                           <Text fontSize="2xl" fontWeight="bold" color="blue.600" mt={2}>
@@ -1180,7 +1049,7 @@ function ProjectManagerDetail() {
                         </CardBody>
                       </Card>
 
-                      <Card bg="green.50" border="2px" borderColor="green.200" rounded="2xl" shadow="lg">
+                      <Card bg="green.50" border="1px" borderColor="green.200">
                         <CardBody textAlign="center" p={6}>
                           <FiUsers size={32} color="green" />
                           <Text fontSize="2xl" fontWeight="bold" color="green.600" mt={2}>
@@ -1190,7 +1059,7 @@ function ProjectManagerDetail() {
                         </CardBody>
                       </Card>
 
-                      <Card bg="orange.50" border="2px" borderColor="orange.200" rounded="2xl" shadow="lg">
+                      <Card bg="orange.50" border="1px" borderColor="orange.200">
                         <CardBody textAlign="center" p={6}>
                           <FiClock size={32} color="orange" />
                           <Text fontSize="2xl" fontWeight="bold" color="orange.600" mt={2}>
@@ -1201,11 +1070,21 @@ function ProjectManagerDetail() {
                           <Text fontSize="sm" color="gray.600">Days Active</Text>
                         </CardBody>
                       </Card>
+
+                      <Card bg="purple.50" border="1px" borderColor="purple.200">
+                        <CardBody textAlign="center" p={6}>
+                          <FiActivity size={32} color="purple" />
+                          <Text fontSize="2xl" fontWeight="bold" color="purple.600" mt={2}>
+                            {DataProject?.projectStatus === "ACTIVE" ? "High" : "Low"}
+                          </Text>
+                          <Text fontSize="sm" color="gray.600">Activity Level</Text>
+                        </CardBody>
+                      </Card>
                     </SimpleGrid>
 
-                    <Card bg="white" rounded="2xl" shadow="xl" border="1px" borderColor="gray.100">
+                    <Card>
                       <CardHeader>
-                        <Heading size="md" color="gray.800">Performance Overview</Heading>
+                        <Heading size="sm">Performance Trends</Heading>
                       </CardHeader>
                       <CardBody>
                         <Text color="gray.500" textAlign="center" py={8}>
@@ -1216,33 +1095,104 @@ function ProjectManagerDetail() {
                   </VStack>
                 </TabPanel>
 
+                {/* FILES TAB */}
+                <TabPanel p={6}>
+                  <VStack spacing={6} align="stretch">
+                    <HStack justify="space-between">
+                      <Heading size="md">Project Files</Heading>
+                      <Button leftIcon={<FiFileText />} colorScheme="yellow" size="sm">
+                        Upload File
+                      </Button>
+                    </HStack>
+
+                    <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+                      <Card>
+                        <CardHeader>
+                          <Heading size="sm">Recent Files</Heading>
+                        </CardHeader>
+                        <CardBody>
+                          <VStack spacing={3} align="stretch">
+                            <HStack justify="space-between" p={3} bg="gray.50" rounded="md">
+                              <HStack>
+                                <FiFileText />
+                                <Text fontSize="sm">project-requirements.pdf</Text>
+                              </HStack>
+                              <Text fontSize="xs" color="gray.500">2 days ago</Text>
+                            </HStack>
+                            <HStack justify="space-between" p={3} bg="gray.50" rounded="md">
+                              <HStack>
+                                <FiFileText />
+                                <Text fontSize="sm">design-mockups.figma</Text>
+                              </HStack>
+                              <Text fontSize="xs" color="gray.500">1 week ago</Text>
+                            </HStack>
+                            <HStack justify="space-between" p={3} bg="gray.50" rounded="md">
+                              <HStack>
+                                <FiFileText />
+                                <Text fontSize="sm">technical-specs.docx</Text>
+                              </HStack>
+                              <Text fontSize="xs" color="gray.500">2 weeks ago</Text>
+                            </HStack>
+                          </VStack>
+                        </CardBody>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <Heading size="sm">File Categories</Heading>
+                        </CardHeader>
+                        <CardBody>
+                          <VStack spacing={3}>
+                            <HStack justify="space-between" w="full">
+                              <Text fontSize="sm">Documents</Text>
+                              <Badge colorScheme="blue">12 files</Badge>
+                            </HStack>
+                            <HStack justify="space-between" w="full">
+                              <Text fontSize="sm">Images</Text>
+                              <Badge colorScheme="green">8 files</Badge>
+                            </HStack>
+                            <HStack justify="space-between" w="full">
+                              <Text fontSize="sm">Code Files</Text>
+                              <Badge colorScheme="purple">25 files</Badge>
+                            </HStack>
+                            <HStack justify="space-between" w="full">
+                              <Text fontSize="sm">Others</Text>
+                              <Badge colorScheme="gray">5 files</Badge>
+                            </HStack>
+                          </VStack>
+                        </CardBody>
+                      </Card>
+                    </SimpleGrid>
+                  </VStack>
+                </TabPanel>
+
                 {/* SETTINGS TAB */}
-                <TabPanel p={8}>
-                  <VStack spacing={8} align="stretch">
-                    <Heading size="lg" color="gray.800">Project Settings</Heading>
+                <TabPanel p={6}>
+                  <VStack spacing={6} align="stretch">
+                    <Heading size="md">Project Settings</Heading>
                     
                     <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
-                      <Card bg="white" rounded="2xl" shadow="xl" border="1px" borderColor="gray.100">
+                      <Card>
                         <CardHeader>
-                          <Heading size="md" color="gray.800">General Settings</Heading>
+                          <Heading size="sm">General Settings</Heading>
                         </CardHeader>
                         <CardBody>
                           <VStack spacing={4} align="stretch">
                             <Box>
                               <Text fontSize="sm" fontWeight="medium" mb={2}>Project Visibility</Text>
-                              <Button size="sm" colorScheme="green" variant="outline" w="full" rounded="full">
+                              <Button size="sm" colorScheme="green" variant="outline" w="full">
                                 Public
                               </Button>
                             </Box>
                             <Box>
                               <Text fontSize="sm" fontWeight="medium" mb={2}>Notifications</Text>
-                              <Button size="sm" colorScheme="blue" variant="outline" w="full" rounded="full">
+                              <Button size="sm" colorScheme="blue" variant="outline" w="full">
                                 Enabled
                               </Button>
                             </Box>
                             <Box>
                               <Text fontSize="sm" fontWeight="medium" mb={2}>Auto-save</Text>
-                              <Button size="sm" colorScheme="purple" variant="outline" w="full" rounded="full">
+                              <Button size="sm" colorScheme="purple" variant="outline" w="full">
                                 Every 5 minutes
                               </Button>
                             </Box>
@@ -1250,21 +1200,21 @@ function ProjectManagerDetail() {
                         </CardBody>
                       </Card>
 
-                      <Card bg="white" rounded="2xl" shadow="xl" border="1px" borderColor="gray.100">
+                      <Card>
                         <CardHeader>
-                          <Heading size="md" color="gray.800">Danger Zone</Heading>
+                          <Heading size="sm">Danger Zone</Heading>
                         </CardHeader>
                         <CardBody>
                           <VStack spacing={4} align="stretch">
                             <Box>
                               <Text fontSize="sm" fontWeight="medium" mb={2}>Archive Project</Text>
-                              <Button size="sm" colorScheme="orange" variant="outline" w="full" rounded="full">
+                              <Button size="sm" colorScheme="orange" variant="outline" w="full">
                                 Archive
                               </Button>
                             </Box>
                             <Box>
                               <Text fontSize="sm" fontWeight="medium" mb={2}>Delete Project</Text>
-                              <Button size="sm" colorScheme="red" variant="outline" w="full" rounded="full">
+                              <Button size="sm" colorScheme="red" variant="outline" w="full">
                                 Delete
                               </Button>
                             </Box>
@@ -1552,7 +1502,6 @@ function ProjectManagerDetail() {
           </Stack>
         </GridItem>
       </Grid>
-      </Box>
     </LayoutAdmin>
   );
 }
