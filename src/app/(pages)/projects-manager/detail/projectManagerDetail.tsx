@@ -111,7 +111,7 @@ import { calculateDurationInDays } from "@/app/helper/MasterHelper";
 import { InputLayoutFullHalf } from "@/app/components/layoutContentBody";
 
 // Dynamic import for ApexCharts (client-side only)
-const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
+const Chart = dynamic(() => import("react-apexcharts"), { ssr: false }) as any;
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Project Detail",
@@ -838,7 +838,7 @@ function ProjectManagerDetail() {
                                         labels: ['Progress'],
                                         colors: ['#3182CE']
                                       }}
-                                      series={[DataProject.projectStatusPercentage || 0]}
+                                      series={[Number(DataProject?.projectStatusPercentage || 0)]}
                                     />
                                   </Box>
                                 </CardBody>
@@ -887,7 +887,7 @@ function ProjectManagerDetail() {
                                         },
                                         dataLabels: {
                                           enabled: true,
-                                          formatter: function (val) {
+                                          formatter: function (val: number) {
                                             return Math.round(val) + "%"
                                           }
                                         },
@@ -1089,59 +1089,464 @@ function ProjectManagerDetail() {
 
                     {/* Team Tab */}
                     <TabPanel p={6}>
-                      <VStack spacing={4} align="stretch">
-                        <HStack justify="space-between">
-                          <Heading size="md">Team Members</Heading>
-                          <Button
-                            size="sm"
-                            colorScheme="blue"
-                            leftIcon={<FiUsers />}
-                          >
-                            Add Member
-                          </Button>
+                      <VStack spacing={8} align="stretch">
+                        {/* Header Section */}
+                        <HStack justify="space-between" align="center">
+                          <VStack align="start" spacing={1}>
+                            <Heading size="lg" color="gray.800">Team Management</Heading>
+                            <Text color="gray.600" fontSize="sm">
+                              Manage project team members and their roles
+                            </Text>
+                          </VStack>
+                          <HStack spacing={3}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              leftIcon={<FiRefreshCcw />}
+                              colorScheme="gray"
+                              rounded="full"
+                            >
+                              Refresh
+                            </Button>
+                            <Button
+                              size="sm"
+                              colorScheme="blue"
+                              leftIcon={<FiUsers />}
+                              rounded="full"
+                              shadow="md"
+                              _hover={{ transform: "translateY(-1px)", shadow: "lg" }}
+                            >
+                              Add Member
+                            </Button>
+                          </HStack>
                         </HStack>
 
-                        {DataProject?.userAssignment &&
-                        DataProject.userAssignment.length > 0 ? (
-                          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-                            {DataProject.userAssignment.map((member, index) => (
-                              <Card key={index}>
-                                <CardBody>
-                                  <HStack spacing={3}>
-                                    <Avatar
-                                      name={member.userData?.nama || "User"}
-                                      src={
-                                        member.userData?.profilePict ||
-                                        undefined
-                                      }
-                                    />
-                                    <Box flex={1}>
-                                      <Text fontWeight="medium">
-                                        {member.userData?.nama ||
-                                          "Unknown User"}
-                                      </Text>
-                                      <Badge
-                                        size="sm"
-                                        colorScheme={
-                                          member.userAssignStatus === "ACTIVE"
-                                            ? "green"
-                                            : "gray"
-                                        }
-                                      >
-                                        {member.userAssignStatus}
-                                      </Badge>
-                                    </Box>
-                                  </HStack>
+                        {DataProject?.userAssignment && DataProject.userAssignment.length > 0 ? (
+                          <>
+                            {/* Team Statistics */}
+                            <SimpleGrid columns={{ base: 2, md: 4 }} spacing={6}>
+                              <Card 
+                                bg="blue.50" 
+                                textAlign="center" 
+                                shadow="lg" 
+                                rounded="xl" 
+                                border="2px" 
+                                borderColor="blue.200"
+                                _hover={{ transform: "translateY(-2px)", shadow: "xl" }}
+                                transition="all 0.2s"
+                              >
+                                <CardBody py={6}>
+                                  <Box
+                                    w={12}
+                                    h={12}
+                                    bgGradient="linear(135deg, blue.400, blue.600)"
+                                    rounded="xl"
+                                    display="flex"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                    mx="auto"
+                                    mb={3}
+                                  >
+                                    <FiUsers size={24} color="white" />
+                                  </Box>
+                                  <Text fontSize="3xl" fontWeight="bold" color="blue.600">
+                                    {DataProject.userAssignment.length}
+                                  </Text>
+                                  <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                                    Total Members
+                                  </Text>
                                 </CardBody>
                               </Card>
-                            ))}
-                          </SimpleGrid>
+
+                              <Card 
+                                bg="green.50" 
+                                textAlign="center" 
+                                shadow="lg" 
+                                rounded="xl" 
+                                border="2px" 
+                                borderColor="green.200"
+                                _hover={{ transform: "translateY(-2px)", shadow: "xl" }}
+                                transition="all 0.2s"
+                              >
+                                <CardBody py={6}>
+                                  <Box
+                                    w={12}
+                                    h={12}
+                                    bgGradient="linear(135deg, green.400, green.600)"
+                                    rounded="xl"
+                                    display="flex"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                    mx="auto"
+                                    mb={3}
+                                  >
+                                    <FiActivity size={24} color="white" />
+                                  </Box>
+                                  <Text fontSize="3xl" fontWeight="bold" color="green.600">
+                                    {DataProject.userAssignment.filter(m => m.userAssignStatus === "ACTIVE").length}
+                                  </Text>
+                                  <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                                    Active Members
+                                  </Text>
+                                </CardBody>
+                              </Card>
+
+                              <Card 
+                                bg="orange.50" 
+                                textAlign="center" 
+                                shadow="lg" 
+                                rounded="xl" 
+                                border="2px" 
+                                borderColor="orange.200"
+                                _hover={{ transform: "translateY(-2px)", shadow: "xl" }}
+                                transition="all 0.2s"
+                              >
+                                <CardBody py={6}>
+                                  <Box
+                                    w={12}
+                                    h={12}
+                                    bgGradient="linear(135deg, orange.400, orange.600)"
+                                    rounded="xl"
+                                    display="flex"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                    mx="auto"
+                                    mb={3}
+                                  >
+                                    <FiTarget size={24} color="white" />
+                                  </Box>
+                                  <Text fontSize="3xl" fontWeight="bold" color="orange.600">
+                                    {Math.round((DataProject.userAssignment.filter(m => m.userAssignStatus === "ACTIVE").length / DataProject.userAssignment.length) * 100)}%
+                                  </Text>
+                                  <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                                    Active Rate
+                                  </Text>
+                                </CardBody>
+                              </Card>
+
+                              <Card 
+                                bg="purple.50" 
+                                textAlign="center" 
+                                shadow="lg" 
+                                rounded="xl" 
+                                border="2px" 
+                                borderColor="purple.200"
+                                _hover={{ transform: "translateY(-2px)", shadow: "xl" }}
+                                transition="all 0.2s"
+                              >
+                                <CardBody py={6}>
+                                  <Box
+                                    w={12}
+                                    h={12}
+                                    bgGradient="linear(135deg, purple.400, purple.600)"
+                                    rounded="xl"
+                                    display="flex"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                    mx="auto"
+                                    mb={3}
+                                  >
+                                    <FiClock size={24} color="white" />
+                                  </Box>
+                                  <Text fontSize="3xl" fontWeight="bold" color="purple.600">
+                                    {DataProject.userAssignment.length > 0 ? Math.ceil(DataProject.userAssignment.length / 2) : 0}
+                                  </Text>
+                                  <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                                    Avg. Load
+                                  </Text>
+                                </CardBody>
+                              </Card>
+                            </SimpleGrid>
+
+                            {/* Team Members Grid */}
+                            <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                              <CardHeader bg="blue.50" roundedTop="xl">
+                                <HStack justify="space-between">
+                                  <HStack spacing={3}>
+                                    <Box
+                                      w={10}
+                                      h={10}
+                                      bgGradient="linear(135deg, blue.400, blue.600)"
+                                      rounded="xl"
+                                      display="flex"
+                                      alignItems="center"
+                                      justifyContent="center"
+                                    >
+                                      <FiUsers size={20} color="white" />
+                                    </Box>
+                                    <Heading size="md" color="blue.700">Team Members</Heading>
+                                  </HStack>
+                                  <Badge colorScheme="blue" px={3} py={1} rounded="full">
+                                    {DataProject.userAssignment.length} Members
+                                  </Badge>
+                                </HStack>
+                              </CardHeader>
+                              <CardBody p={6}>
+                                <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
+                                  {DataProject.userAssignment.map((member, index) => (
+                                    <Card 
+                                      key={index}
+                                      shadow="md"
+                                      rounded="xl"
+                                      border="1px"
+                                      borderColor="gray.200"
+                                      _hover={{ 
+                                        transform: "translateY(-4px)", 
+                                        shadow: "xl",
+                                        borderColor: "blue.300"
+                                      }}
+                                      transition="all 0.2s"
+                                      bg="white"
+                                    >
+                                      <CardBody p={6}>
+                                        <VStack spacing={4}>
+                                          {/* Avatar Section */}
+                                          <Box position="relative">
+                                            <Avatar
+                                              size="xl"
+                                              name={member.userData?.nama || "User"}
+                                              src={member.userData?.profilePict || undefined}
+                                              border="4px solid"
+                                              borderColor={member.userAssignStatus === "ACTIVE" ? "green.200" : "gray.200"}
+                                              shadow="lg"
+                                            />
+                                            <Box
+                                              position="absolute"
+                                              bottom={0}
+                                              right={0}
+                                              w={6}
+                                              h={6}
+                                              bg={member.userAssignStatus === "ACTIVE" ? "green.400" : "gray.400"}
+                                              rounded="full"
+                                              border="2px solid white"
+                                              shadow="md"
+                                            />
+                                          </Box>
+
+                                          {/* Member Info */}
+                                          <VStack spacing={2} textAlign="center">
+                                            <Text fontWeight="bold" fontSize="lg" color="gray.800">
+                                              {member.userData?.nama || "Unknown User"}
+                                            </Text>
+                                            <Text fontSize="sm" color="gray.600">
+                                              {member.userData?.email || "No email"}
+                                            </Text>
+                                            <Badge
+                                              colorScheme={member.userAssignStatus === "ACTIVE" ? "green" : "gray"}
+                                              px={3}
+                                              py={1}
+                                              rounded="full"
+                                              fontWeight="semibold"
+                                              fontSize="xs"
+                                            >
+                                              {member.userAssignStatus}
+                                            </Badge>
+                                          </VStack>
+
+                                          {/* Member Actions */}
+                                          <HStack spacing={2} w="full">
+                                            <Button
+                                              size="sm"
+                                              variant="ghost"
+                                              colorScheme="blue"
+                                              flex={1}
+                                              leftIcon={<FiInfo />}
+                                              rounded="lg"
+                                            >
+                                              View
+                                            </Button>
+                                            <Button
+                                              size="sm"
+                                              variant="ghost"
+                                              colorScheme="orange"
+                                              flex={1}
+                                              leftIcon={<FiEdit3 />}
+                                              rounded="lg"
+                                            >
+                                              Edit
+                                            </Button>
+                                          </HStack>
+
+                                          {/* Additional Info */}
+                                          <VStack spacing={2} w="full" pt={2} borderTop="1px" borderColor="gray.100">
+                                            <HStack justify="space-between" w="full">
+                                              <Text fontSize="xs" color="gray.500">Role:</Text>
+                                              <Badge size="sm" colorScheme="purple" rounded="md">
+                                                {member.userData?.team?.teamName || "Developer"}
+                                              </Badge>
+                                            </HStack>
+                                            <HStack justify="space-between" w="full">
+                                              <Text fontSize="xs" color="gray.500">Joined:</Text>
+                                              <Text fontSize="xs" color="gray.600">
+                                                {member.assignDate 
+                                                  ? new Date(member.assignDate).toLocaleDateString()
+                                                  : "N/A"}
+                                              </Text>
+                                            </HStack>
+                                          </VStack>
+                                        </VStack>
+                                      </CardBody>
+                                    </Card>
+                                  ))}
+                                </SimpleGrid>
+                              </CardBody>
+                            </Card>
+
+                            {/* Team Roles Distribution */}
+                            <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6}>
+                              {/* Roles Chart */}
+                              <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                                <CardHeader bg="green.50" roundedTop="xl">
+                                  <HStack spacing={3}>
+                                    <Box
+                                      w={10}
+                                      h={10}
+                                      bgGradient="linear(135deg, green.400, green.600)"
+                                      rounded="xl"
+                                      display="flex"
+                                      alignItems="center"
+                                      justifyContent="center"
+                                    >
+                                      <FiTarget size={20} color="white" />
+                                    </Box>
+                                    <Heading size="md" color="green.700">Team Roles</Heading>
+                                  </HStack>
+                                </CardHeader>
+                                <CardBody p={6}>
+                                  <Box h="250px">
+                                    <Chart
+                                      type="pie"
+                                      height="100%"
+                                      options={{
+                                        chart: {
+                                          type: 'pie',
+                                          toolbar: { show: false }
+                                        },
+                                        labels: ['Developers', 'Designers', 'Managers', 'QA'],
+                                        colors: ['#3182CE', '#38A169', '#ED8936', '#E53E3E'],
+                                        legend: {
+                                          position: 'bottom',
+                                          horizontalAlign: 'center',
+                                        },
+                                        dataLabels: {
+                                          enabled: true,
+                                          formatter: function (val: number) {
+                                            return Math.round(val) + "%"
+                                          }
+                                        },
+                                        responsive: [{
+                                          breakpoint: 480,
+                                          options: {
+                                            chart: {
+                                              width: 200
+                                            },
+                                            legend: {
+                                              position: 'bottom'
+                                            }
+                                          }
+                                        }]
+                                      }}
+                                      series={[60, 20, 15, 5]} // Dummy data for roles
+                                    />
+                                  </Box>
+                                </CardBody>
+                              </Card>
+
+                              {/* Team Activity */}
+                              <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                                <CardHeader bg="orange.50" roundedTop="xl">
+                                  <HStack spacing={3}>
+                                    <Box
+                                      w={10}
+                                      h={10}
+                                      bgGradient="linear(135deg, orange.400, orange.600)"
+                                      rounded="xl"
+                                      display="flex"
+                                      alignItems="center"
+                                      justifyContent="center"
+                                    >
+                                      <FiActivity size={20} color="white" />
+                                    </Box>
+                                    <Heading size="md" color="orange.700">Recent Activity</Heading>
+                                  </HStack>
+                                </CardHeader>
+                                <CardBody p={6}>
+                                  <VStack spacing={4} align="stretch">
+                                    <HStack spacing={3}>
+                                      <Avatar size="sm" name="John Doe" />
+                                      <VStack align="start" spacing={0} flex={1}>
+                                        <Text fontSize="sm" fontWeight="medium">John Doe joined the project</Text>
+                                        <Text fontSize="xs" color="gray.500">2 hours ago</Text>
+                                      </VStack>
+                                      <Badge colorScheme="green" size="sm">New</Badge>
+                                    </HStack>
+                                    <Divider />
+                                    <HStack spacing={3}>
+                                      <Avatar size="sm" name="Jane Smith" />
+                                      <VStack align="start" spacing={0} flex={1}>
+                                        <Text fontSize="sm" fontWeight="medium">Jane Smith completed a task</Text>
+                                        <Text fontSize="xs" color="gray.500">5 hours ago</Text>
+                                      </VStack>
+                                      <Badge colorScheme="blue" size="sm">Task</Badge>
+                                    </HStack>
+                                    <Divider />
+                                    <HStack spacing={3}>
+                                      <Avatar size="sm" name="Mike Johnson" />
+                                      <VStack align="start" spacing={0} flex={1}>
+                                        <Text fontSize="sm" fontWeight="medium">Mike Johnson updated status</Text>
+                                        <Text fontSize="xs" color="gray.500">1 day ago</Text>
+                                      </VStack>
+                                      <Badge colorScheme="orange" size="sm">Update</Badge>
+                                    </HStack>
+                                    <Divider />
+                                    <HStack spacing={3}>
+                                      <Avatar size="sm" name="Sarah Wilson" />
+                                      <VStack align="start" spacing={0} flex={1}>
+                                        <Text fontSize="sm" fontWeight="medium">Sarah Wilson left a comment</Text>
+                                        <Text fontSize="xs" color="gray.500">2 days ago</Text>
+                                      </VStack>
+                                      <Badge colorScheme="purple" size="sm">Comment</Badge>
+                                    </HStack>
+                                  </VStack>
+                                </CardBody>
+                              </Card>
+                            </SimpleGrid>
+                          </>
                         ) : (
-                          <Box textAlign="center" py={8}>
-                            <Text color="gray.500">
-                              No team members assigned
-                            </Text>
-                          </Box>
+                          <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                            <CardBody p={12} textAlign="center">
+                              <VStack spacing={6}>
+                                <Box
+                                  w={20}
+                                  h={20}
+                                  bgGradient="linear(135deg, gray.300, gray.500)"
+                                  rounded="full"
+                                  display="flex"
+                                  alignItems="center"
+                                  justifyContent="center"
+                                >
+                                  <FiUsers size={40} color="white" />
+                                </Box>
+                                <VStack spacing={2}>
+                                  <Heading size="md" color="gray.600">No Team Members</Heading>
+                                  <Text color="gray.500" fontSize="sm" maxW="400px">
+                                    This project doesn't have any team members assigned yet. 
+                                    Start building your team by adding members to collaborate on this project.
+                                  </Text>
+                                </VStack>
+                                <Button
+                                  colorScheme="blue"
+                                  size="lg"
+                                  leftIcon={<FiUsers />}
+                                  rounded="full"
+                                  shadow="lg"
+                                  _hover={{ transform: "translateY(-2px)", shadow: "xl" }}
+                                >
+                                  Add First Team Member
+                                </Button>
+                              </VStack>
+                            </CardBody>
+                          </Card>
                         )}
                       </VStack>
                     </TabPanel>
