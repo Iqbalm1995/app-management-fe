@@ -275,9 +275,9 @@ function ProjectManagerDetail() {
 
   return (
     <LayoutAdmin>
-      {/* Beautiful Header with Gradient - Aligned Margins */}
+      {/* Modern Enhanced Header with Custom Gradient */}
       <Box
-        bgGradient="linear(135deg, blue.500, purple.600, pink.500)"
+        bgGradient="linear(135deg, #0B79CA 0%, #0078FF 50%, #EDC817 100%)"
         color="white"
         px={6}
         py={6}
@@ -287,22 +287,78 @@ function ProjectManagerDetail() {
         rounded={radiusStyle}
         position="relative"
         overflow="hidden"
+        shadow="xl"
+        _before={{
+          content: '""',
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          bgGradient: "linear(45deg, whiteAlpha.100 0%, transparent 50%, whiteAlpha.150 100%)",
+          zIndex: 0
+        }}
       >
-        {/* Background Pattern */}
+        {/* Simplified Background Pattern */}
         <Box
           position="absolute"
           top={0}
           left={0}
           right={0}
           bottom={0}
-          opacity={0.1}
-          bgImage="radial-gradient(circle at 25px 25px, white 2px, transparent 0), radial-gradient(circle at 75px 75px, white 2px, transparent 0)"
-          bgSize="100px 100px"
+          opacity={0.06}
+          bgImage="radial-gradient(circle at 30% 40%, white 1px, transparent 1px), radial-gradient(circle at 70% 60%, white 1px, transparent 1px)"
+          bgSize="80px 80px, 80px 80px"
         />
 
-        {/* Header Content */}
-        <VStack spacing={4} align="stretch" position="relative" zIndex={1}>
-          {/* Top Navigation */}
+        {/* Reduced Floating Elements */}
+        <Box
+          position="absolute"
+          top="15%"
+          right="10%"
+          w={8}
+          h={8}
+          bg="whiteAlpha.100"
+          rounded="full"
+          blur="sm"
+          animation="pulse 4s ease-in-out infinite"
+        />
+        <Box
+          position="absolute"
+          bottom="20%"
+          left="8%"
+          w={6}
+          h={6}
+          bg="whiteAlpha.120"
+          transform="rotate(45deg)"
+          rounded="md"
+          animation="spin 15s linear infinite"
+        />
+
+        {/* BJB Logo in Bottom Right Corner */}
+        <Box
+          position="absolute"
+          bottom={4}
+          right={6}
+          zIndex={3}
+          opacity={0.7}
+          _hover={{ opacity: 1 }}
+          transition="opacity 0.2s ease"
+        >
+          <img
+            src="/img/logo-bjb-black-wing.svg"
+            alt="BJB Logo"
+            style={{
+              width: "60px",
+              height: "auto",
+              filter: "brightness(0) invert(1)", // Makes the logo white
+            }}
+          />
+        </Box>
+
+        {/* Main Header Content */}
+        <VStack spacing={4} align="stretch" position="relative" zIndex={2}>
+          {/* Compact Top Navigation */}
           <HStack justify="space-between" align="center">
             <HStack spacing={3}>
               <Link href={"/projects-manager"}>
@@ -311,8 +367,18 @@ function ProjectManagerDetail() {
                   variant="ghost"
                   size="sm"
                   color="white"
-                  _hover={{ bg: "whiteAlpha.200" }}
+                  bg="whiteAlpha.100"
+                  backdropFilter="blur(10px)"
+                  border="1px solid"
+                  borderColor="whiteAlpha.200"
+                  _hover={{ 
+                    bg: "whiteAlpha.200", 
+                    borderColor: "whiteAlpha.300",
+                    transform: "translateY(-1px)"
+                  }}
                   rounded="full"
+                  px={4}
+                  transition="all 0.2s ease"
                 >
                   Back
                 </Button>
@@ -320,26 +386,44 @@ function ProjectManagerDetail() {
             </HStack>
 
             <HStack spacing={2}>
-              {/* Favorite Project Button */}
               <Button
                 leftIcon={<FiHeart />}
                 variant="ghost"
                 size="sm"
                 color="white"
-                _hover={{ bg: "whiteAlpha.200", color: "pink.200" }}
+                bg="whiteAlpha.100"
+                backdropFilter="blur(10px)"
+                border="1px solid"
+                borderColor="whiteAlpha.200"
+                _hover={{ 
+                  bg: "pink.400", 
+                  borderColor: "pink.300",
+                  transform: "translateY(-1px)"
+                }}
                 rounded="full"
+                px={3}
+                transition="all 0.2s ease"
               >
                 Favorite
               </Button>
 
-              {/* Share Project Button */}
               <Button
                 leftIcon={<FiShare />}
                 variant="ghost"
                 size="sm"
                 color="white"
-                _hover={{ bg: "whiteAlpha.200" }}
+                bg="whiteAlpha.100"
+                backdropFilter="blur(10px)"
+                border="1px solid"
+                borderColor="whiteAlpha.200"
+                _hover={{ 
+                  bg: "blue.400", 
+                  borderColor: "blue.300",
+                  transform: "translateY(-1px)"
+                }}
                 rounded="full"
+                px={3}
+                transition="all 0.2s ease"
               >
                 Share
               </Button>
@@ -352,51 +436,68 @@ function ProjectManagerDetail() {
                 isLoading={IsLoadingProcess}
                 borderColor="whiteAlpha.300"
                 color="white"
-                _hover={{ bg: "whiteAlpha.200", borderColor: "whiteAlpha.500" }}
+                bg="whiteAlpha.100"
+                backdropFilter="blur(10px)"
+                _hover={{ 
+                  bg: "whiteAlpha.200", 
+                  borderColor: "whiteAlpha.400",
+                  transform: "translateY(-1px)"
+                }}
                 rounded="full"
+                px={3}
+                transition="all 0.2s ease"
               >
                 Refresh
               </Button>
             </HStack>
           </HStack>
 
-          {/* Main Project Information */}
+          {/* Compact Main Project Information */}
           {DataProject ? (
             <HStack spacing={6} align="start">
-              {/* Application Avatar with Name and Status */}
-              <VStack spacing={2} align="center">
-                <Box
-                  w={16}
-                  h={16}
-                  bgGradient="linear(to-br, blue.400, purple.500)"
-                  rounded="2xl"
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
-                  fontSize="xl"
-                  fontWeight="bold"
-                  shadow="lg"
-                  border="3px solid"
-                  borderColor="whiteAlpha.300"
-                >
-                  {DataProject?.appsProject?.appName?.charAt(0) ||
-                    DataApps?.appName?.charAt(0) ||
-                    DataProject.projectName?.charAt(0) ||
-                    "A"}
+              {/* Compact Application Avatar */}
+              <VStack spacing={3} align="center">
+                <Box position="relative">
+                  <Box
+                    w={16}
+                    h={16}
+                    bgGradient="linear(135deg, blue.300, purple.400, pink.300)"
+                    rounded="2xl"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                    fontSize="xl"
+                    fontWeight="bold"
+                    shadow="lg"
+                    border="3px solid"
+                    borderColor="whiteAlpha.300"
+                    backdropFilter="blur(10px)"
+                    position="relative"
+                    _hover={{
+                      transform: "scale(1.05)"
+                    }}
+                    transition="all 0.2s ease"
+                  >
+                    {DataProject?.appsProject?.appName?.charAt(0) ||
+                      DataApps?.appName?.charAt(0) ||
+                      DataProject.projectName?.charAt(0) ||
+                      "A"}
+                  </Box>
                 </Box>
 
-                {/* App Name and Status Below Avatar */}
                 <VStack spacing={1} align="center">
-                  <Box
-                    as="span"
+                  <Text
                     fontSize="sm"
                     fontWeight="semibold"
-                    opacity={0.9}
+                    opacity={0.95}
+                    textAlign="center"
+                    maxW="100px"
+                    noOfLines={1}
                   >
                     {DataProject?.appsProject?.appName ||
                       DataApps?.appName ||
                       "Application"}
-                  </Box>
+                  </Text>
                   <Badge
                     colorScheme={
                       (DataProject?.appsProject?.appsStatus ||
@@ -418,6 +519,7 @@ function ProjectManagerDetail() {
                     py={1}
                     rounded="full"
                     fontSize="xs"
+                    fontWeight="bold"
                   >
                     {DataProject?.appsProject?.appsStatus ||
                       DataApps?.appsStatus ||
@@ -426,82 +528,103 @@ function ProjectManagerDetail() {
                 </VStack>
               </VStack>
 
-              {/* Project Details */}
+              {/* Compact Project Details */}
               <Box flex={1}>
-                <Heading size="xl" mb={2} fontWeight="700">
-                  {DataProject.projectName}
-                </Heading>
-
-                <HStack spacing={3} mb={3}>
-                  <Badge
-                    colorScheme={
-                      DataProject.projectStatus === "ACTIVE"
-                        ? "green"
-                        : DataProject.projectStatus === "ONHOLD"
-                        ? "orange"
-                        : DataProject.projectStatus === "COMPLETED"
-                        ? "blue"
-                        : "gray"
-                    }
-                    px={3}
-                    py={1}
-                    rounded="full"
-                    fontSize="sm"
-                    fontWeight="semibold"
+                <VStack spacing={3} align="start">
+                  <Heading 
+                    size="xl" 
+                    fontWeight="700"
+                    bgGradient="linear(to-r, white, whiteAlpha.900)"
+                    bgClip="text"
+                    lineHeight="shorter"
                   >
-                    {DataProject.projectStatus}
-                  </Badge>
-                  <Badge
-                    colorScheme="purple"
-                    variant="solid"
-                    px={3}
-                    py={1}
-                    rounded="full"
-                    fontSize="sm"
-                    fontWeight="semibold"
+                    {DataProject.projectName}
+                  </Heading>
+
+                  <HStack spacing={3} wrap="wrap">
+                    <Badge
+                      colorScheme={
+                        DataProject.projectStatus === "ACTIVE"
+                          ? "green"
+                          : DataProject.projectStatus === "ONHOLD"
+                          ? "orange"
+                          : DataProject.projectStatus === "COMPLETED"
+                          ? "blue"
+                          : "gray"
+                      }
+                      px={3}
+                      py={1}
+                      rounded="full"
+                      fontSize="sm"
+                      fontWeight="semibold"
+                      shadow="md"
+                    >
+                      {DataProject.projectStatus}
+                    </Badge>
+                    <Badge
+                      colorScheme="purple"
+                      variant="solid"
+                      px={3}
+                      py={1}
+                      rounded="full"
+                      fontSize="sm"
+                      fontWeight="semibold"
+                      shadow="md"
+                    >
+                      {DataProject.projectType}
+                    </Badge>
+                  </HStack>
+
+                  <Box 
+                    bg="whiteAlpha.100"
+                    backdropFilter="blur(10px)"
+                    p={3}
+                    rounded="lg"
+                    border="1px solid"
+                    borderColor="whiteAlpha.200"
+                    maxW="500px"
                   >
-                    {DataProject.projectType}
-                  </Badge>
-                </HStack>
+                    <Text 
+                      fontSize="sm" 
+                      opacity={0.95} 
+                      lineHeight="base"
+                      noOfLines={2}
+                    >
+                      {DataProject.projectDesc ||
+                        "Modern application with advanced features and best practices implementation."}
+                    </Text>
+                  </Box>
 
-                {/* Short Application Information */}
-                <Box fontSize="sm" opacity={0.9} mb={3} maxW="500px">
-                  <Text noOfLines={2}>
-                    {DataProject.projectDesc ||
-                      "Modern application with advanced features and best practices implementation."}
-                  </Text>
-                </Box>
-
-                {/* Quick Stats */}
-                <HStack spacing={6} fontSize="sm" opacity={0.9}>
-                  <HStack spacing={1}>
-                    <Box as="span" fontWeight="bold">
-                      {DataProject.projectStatusPercentage || 0}%
-                    </Box>
-                    <Box as="span">Progress</Box>
+                  <HStack spacing={6} fontSize="sm" opacity={0.95}>
+                    <VStack spacing={0} align="center">
+                      <Text fontSize="lg" fontWeight="bold" color="green.200">
+                        {DataProject.projectStatusPercentage || 0}%
+                      </Text>
+                      <Text fontSize="xs" opacity={0.8}>Progress</Text>
+                    </VStack>
+                    <VStack spacing={0} align="center">
+                      <Text fontSize="lg" fontWeight="bold" color="blue.200">
+                        {DataProject.userAssignment?.length || 0}
+                      </Text>
+                      <Text fontSize="xs" opacity={0.8}>Team</Text>
+                    </VStack>
+                    <VStack spacing={0} align="center">
+                      <Text fontSize="lg" fontWeight="bold" color="orange.200">
+                        {DataProject.projectRegisterDate
+                          ? calculateDurationInDays(
+                              DataProject.projectRegisterDate,
+                              new Date().toISOString()
+                            )
+                          : 0}
+                      </Text>
+                      <Text fontSize="xs" opacity={0.8}>Days</Text>
+                    </VStack>
                   </HStack>
-                  <HStack spacing={1}>
-                    <Box as="span" fontWeight="bold">
-                      {DataProject.userAssignment?.length || 0}
-                    </Box>
-                    <Box as="span">Team</Box>
-                  </HStack>
-                  <HStack spacing={1}>
-                    <Box as="span" fontWeight="bold">
-                      {DataProject.projectRegisterDate
-                        ? calculateDurationInDays(
-                            DataProject.projectRegisterDate,
-                            new Date().toISOString()
-                          )
-                        : 0}
-                    </Box>
-                    <Box as="span">Days</Box>
-                  </HStack>
-                </HStack>
+                </VStack>
               </Box>
 
-              {/* Team Avatars & Progress */}
-              <VStack spacing={3} align="center">
+              {/* Compact Team & Progress */}
+              <VStack spacing={3} align="center" minW="120px">
                 {DataProject.userAssignment &&
                   DataProject.userAssignment.length > 0 && (
                     <AvatarGroup size="md" max={4} spacing="-0.5rem">
@@ -514,24 +637,30 @@ function ProjectManagerDetail() {
                             src={assignment.userData?.profilePict || undefined}
                             border="2px solid white"
                             shadow="md"
+                            _hover={{
+                              transform: "scale(1.05)",
+                              zIndex: 10
+                            }}
+                            transition="all 0.2s ease"
                           />
                         ))}
                     </AvatarGroup>
                   )}
 
-                <Box textAlign="center">
+                <VStack spacing={2} align="center">
                   <Progress
                     value={DataProject.projectStatusPercentage || 0}
-                    size="sm"
+                    size="md"
                     colorScheme="whiteAlpha"
                     bg="whiteAlpha.200"
                     rounded="full"
                     w="80px"
+                    shadow="inner"
                   />
-                  <Box fontSize="xs" mt={1} opacity={0.8}>
+                  <Text fontSize="sm" fontWeight="bold" opacity={0.9}>
                     {DataProject.projectStatusPercentage || 0}%
-                  </Box>
-                </Box>
+                  </Text>
+                </VStack>
               </VStack>
             </HStack>
           ) : (
@@ -544,16 +673,19 @@ function ProjectManagerDetail() {
                 display="flex"
                 alignItems="center"
                 justifyContent="center"
+                backdropFilter="blur(10px)"
+                border="2px solid"
+                borderColor="whiteAlpha.300"
               >
                 <LoadingMiniSignature />
               </Box>
               <Box flex={1}>
-                <Heading size="xl" color="whiteAlpha.700">
+                <Heading size="xl" color="whiteAlpha.800" fontWeight="700">
                   Loading project...
                 </Heading>
-                <Box opacity={0.7} fontSize="sm">
+                <Text opacity={0.8} fontSize="sm" mt={1}>
                   Please wait while we fetch project details
-                </Box>
+                </Text>
               </Box>
             </HStack>
           )}
