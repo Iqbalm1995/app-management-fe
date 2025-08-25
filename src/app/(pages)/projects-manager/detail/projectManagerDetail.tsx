@@ -280,11 +280,11 @@ function ProjectManagerDetail() {
       <Box
         bgGradient="linear(135deg, #0B79CA 0%, #0078FF 50%, #EDC817 100%)"
         color="white"
-        px={6}
-        py={6}
-        mt={4}
-        mb={6}
-        mx={4}
+        px={{ base: 4, md: 6 }}
+        py={{ base: 4, md: 6 }}
+        mt={{ base: 2, md: 4 }}
+        mb={{ base: 4, md: 6 }}
+        mx={{ base: 2, md: 4 }}
         rounded={radiusStyle}
         position="relative"
         overflow="hidden"
@@ -337,24 +337,23 @@ function ProjectManagerDetail() {
           animation="spin 15s linear infinite"
         />
 
-        {/* BJB Logo in Bottom Right Corner */}
+        {/* BJB Logo in Bottom Right Corner - Responsive */}
         <Box
           position="absolute"
-          bottom={4}
-          right={6}
+          bottom={{ base: 2, md: 4 }}
+          right={{ base: 4, md: 6 }}
           zIndex={3}
           opacity={0.7}
           _hover={{ opacity: 1 }}
           transition="opacity 0.2s ease"
         >
-          <img
+          <Box
+            as="img"
             src="/img/logo-bjb-black-wing.svg"
             alt="BJB Logo"
-            style={{
-              width: "60px",
-              height: "auto",
-              filter: "brightness(0) invert(1)", // Makes the logo white
-            }}
+            w={{ base: "40px", md: "60px" }}
+            h="auto"
+            filter="brightness(0) invert(1)"
           />
         </Box>
 
@@ -454,9 +453,13 @@ function ProjectManagerDetail() {
             </HStack>
           </HStack>
 
-          {/* Compact Main Project Information */}
+          {/* Compact Main Project Information - Responsive */}
           {DataProject ? (
-            <HStack spacing={6} align="start">
+            <Stack
+              direction={{ base: "column", md: "row" }}
+              spacing={{ base: 4, md: 6 }}
+              align={{ base: "center", md: "start" }}
+            >
               {/* Compact Application Avatar */}
               <VStack spacing={3} align="center">
                 <Box position="relative">
@@ -670,9 +673,14 @@ function ProjectManagerDetail() {
                   </Text>
                 </VStack>
               </VStack>
-            </HStack>
+            </Stack>
           ) : (
-            <HStack spacing={6} align="center" py={4}>
+            <Stack
+              direction={{ base: "column", md: "row" }}
+              spacing={{ base: 4, md: 6 }}
+              align="center"
+              py={4}
+            >
               <Box
                 w={16}
                 h={16}
@@ -695,16 +703,21 @@ function ProjectManagerDetail() {
                   Please wait while we fetch project details
                 </Text>
               </Box>
-            </HStack>
+            </Stack>
           )}
         </VStack>
       </Box>
 
-      {/* Main Content Container */}
-      <Box px={4}>
-        <Grid templateColumns={{ base: "1fr", lg: "1fr 300px" }} gap={6}>
+      {/* Main Content Container - Fixed Responsive Layout */}
+      <Box px={{ base: 2, md: 4 }} w="full" maxW="100vw" overflow="hidden">
+        <Stack
+          direction={{ base: "column", lg: "row" }}
+          spacing={{ base: 4, md: 6 }}
+          align="stretch"
+          w="full"
+        >
           {/* Main Content Area */}
-          <GridItem>
+          <Box flex="1" minW="0" w={{ base: "full", lg: "auto" }}>
             <Card
               shadow="xl"
               rounded={radiusStyle}
@@ -3235,11 +3248,11 @@ function ProjectManagerDetail() {
                 </Tabs>
               </CardBody>
             </Card>
-          </GridItem>
+          </Box>
 
-          {/* Sidebar */}
-          <GridItem>
-            <VStack spacing={6}>
+          {/* Sidebar - Responsive */}
+          <Box w={{ base: "full", lg: "300px" }} flexShrink={0}>
+            <VStack spacing={{ base: 4, md: 6 }}>
               {/* Application Information Card - Launcher Style */}
               {DataProject?.appsProject && (
                 <Card
@@ -3258,23 +3271,22 @@ function ProjectManagerDetail() {
                   overflow="hidden"
                   position="relative"
                 >
-                  {/* BJB Logo Background Overlay */}
+                  {/* BJB Logo Background Overlay - Responsive */}
                   <Box
                     position="absolute"
-                    top="-10px"
-                    right="-40px"
+                    top={{ base: "-5px", md: "-10px" }}
+                    right={{ base: "-20px", md: "-40px" }}
                     zIndex={0}
                     opacity={0.08}
                     transform="rotate(15deg)"
                   >
-                    <img
+                    <Box
+                      as="img"
                       src="/img/logo-bjb-black-wing.svg"
                       alt="BJB Logo Background"
-                      style={{
-                        width: "240px",
-                        height: "auto",
-                        filter: "brightness(0) invert(1)", // Makes the logo white
-                      }}
+                      w={{ base: "180px", md: "240px" }}
+                      h="auto"
+                      filter="brightness(0) invert(1)"
                     />
                   </Box>
 
@@ -3302,8 +3314,12 @@ function ProjectManagerDetail() {
                     animation="spin 10s linear infinite"
                   /> */}
 
-                  <CardBody p={8} position="relative" zIndex={1}>
-                    <VStack spacing={6} align="center">
+                  <CardBody
+                    p={{ base: 6, md: 8 }}
+                    position="relative"
+                    zIndex={1}
+                  >
+                    <VStack spacing={{ base: 4, md: 6 }} align="center">
                       {/* App Icon - Launcher Style */}
                       <Box position="relative">
                         {/* Glowing Ring Effect */}
@@ -3322,14 +3338,14 @@ function ProjectManagerDetail() {
 
                         {/* Main App Icon */}
                         <Box
-                          w={20}
-                          h={20}
+                          w={{ base: 16, md: 20 }}
+                          h={{ base: 16, md: 20 }}
                           bgGradient="linear(135deg, whiteAlpha.200, whiteAlpha.400)"
                           rounded="3xl"
                           display="flex"
                           alignItems="center"
                           justifyContent="center"
-                          fontSize="3xl"
+                          fontSize={{ base: "2xl", md: "3xl" }}
                           fontWeight="bold"
                           shadow="2xl"
                           border="3px solid"
@@ -3414,8 +3430,12 @@ function ProjectManagerDetail() {
                         </Badge>
                       </VStack>
 
-                      {/* App Details Grid */}
-                      <SimpleGrid columns={2} spacing={4} w="full">
+                      {/* App Details Grid - Responsive */}
+                      <SimpleGrid
+                        columns={{ base: 1, sm: 2 }}
+                        spacing={4}
+                        w="full"
+                      >
                         {/* Status */}
                         <VStack spacing={1} align="center">
                           <Text
@@ -3514,8 +3534,12 @@ function ProjectManagerDetail() {
                         </VStack>
                       </Box>
 
-                      {/* Quick Actions */}
-                      <HStack spacing={3} w="full">
+                      {/* Quick Actions - Responsive */}
+                      <Stack
+                        direction={{ base: "column", sm: "row" }}
+                        spacing={3}
+                        w="full"
+                      >
                         <Button
                           size="sm"
                           bg="whiteAlpha.200"
@@ -3538,7 +3562,7 @@ function ProjectManagerDetail() {
                         >
                           Settings
                         </Button>
-                      </HStack>
+                      </Stack>
                     </VStack>
                   </CardBody>
                 </Card>
@@ -3733,8 +3757,8 @@ function ProjectManagerDetail() {
                 </CardBody>
               </Card>
             </VStack>
-          </GridItem>
-        </Grid>
+          </Box>
+        </Stack>
       </Box>
     </LayoutAdmin>
   );
