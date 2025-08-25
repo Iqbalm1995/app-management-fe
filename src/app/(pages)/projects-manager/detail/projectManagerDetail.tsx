@@ -101,6 +101,7 @@ import {
   FiHeart,
 } from "react-icons/fi";
 import * as Yup from "yup";
+import dynamic from "next/dynamic";
 import { CustomPanelAlert } from "@/app/components/customPanels";
 import AppInfromationSection from "./apps/appViewSection";
 import AppChangeLogSection from "./apps/appLogsViewSection";
@@ -108,6 +109,9 @@ import AppsEnvirontmentSection from "./apps/appsEnvViewSection";
 import ProjectFeatureView from "./projectFeaturesView";
 import { calculateDurationInDays } from "@/app/helper/MasterHelper";
 import { InputLayoutFullHalf } from "@/app/components/layoutContentBody";
+
+// Dynamic import for ApexCharts (client-side only)
+const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Project Detail",
@@ -612,51 +616,112 @@ function ProjectManagerDetail() {
                   <TabPanels>
                     {/* Overview Tab */}
                     <TabPanel p={6}>
-                      <VStack spacing={6} align="stretch">
-                        <Heading size="md">Project Overview</Heading>
+                      <VStack spacing={8} align="stretch">
+                        <HStack justify="space-between" align="center">
+                          <Heading size="lg" color="gray.800">Project Overview</Heading>
+                          <Badge colorScheme="blue" px={4} py={2} rounded="full" fontSize="md">
+                            Dashboard
+                          </Badge>
+                        </HStack>
 
                         {DataProject ? (
                           <>
-                            {/* Quick Stats */}
-                            <SimpleGrid
-                              columns={{ base: 2, md: 4 }}
-                              spacing={4}
-                            >
-                              <Card bg="blue.50" textAlign="center">
-                                <CardBody py={4}>
-                                  <Text
-                                    fontSize="2xl"
-                                    fontWeight="bold"
-                                    color="blue.600"
+                            {/* Enhanced Quick Stats Cards */}
+                            <SimpleGrid columns={{ base: 2, md: 4 }} spacing={6}>
+                              {/* Progress Card */}
+                              <Card 
+                                bg="blue.50" 
+                                textAlign="center" 
+                                shadow="lg" 
+                                rounded="xl" 
+                                border="2px" 
+                                borderColor="blue.200"
+                                _hover={{ transform: "translateY(-2px)", shadow: "xl" }}
+                                transition="all 0.2s"
+                              >
+                                <CardBody py={6}>
+                                  <Box
+                                    w={12}
+                                    h={12}
+                                    bgGradient="linear(135deg, blue.400, blue.600)"
+                                    rounded="xl"
+                                    display="flex"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                    mx="auto"
+                                    mb={3}
                                   >
+                                    <FiTrendingUp size={24} color="white" />
+                                  </Box>
+                                  <Text fontSize="3xl" fontWeight="bold" color="blue.600">
                                     {DataProject.projectStatusPercentage || 0}%
                                   </Text>
-                                  <Text fontSize="sm" color="gray.600">
+                                  <Text fontSize="sm" color="gray.600" fontWeight="medium">
                                     Progress
                                   </Text>
                                 </CardBody>
                               </Card>
-                              <Card bg="green.50" textAlign="center">
-                                <CardBody py={4}>
-                                  <Text
-                                    fontSize="2xl"
-                                    fontWeight="bold"
-                                    color="green.600"
+
+                              {/* Team Card */}
+                              <Card 
+                                bg="green.50" 
+                                textAlign="center" 
+                                shadow="lg" 
+                                rounded="xl" 
+                                border="2px" 
+                                borderColor="green.200"
+                                _hover={{ transform: "translateY(-2px)", shadow: "xl" }}
+                                transition="all 0.2s"
+                              >
+                                <CardBody py={6}>
+                                  <Box
+                                    w={12}
+                                    h={12}
+                                    bgGradient="linear(135deg, green.400, green.600)"
+                                    rounded="xl"
+                                    display="flex"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                    mx="auto"
+                                    mb={3}
                                   >
+                                    <FiUsers size={24} color="white" />
+                                  </Box>
+                                  <Text fontSize="3xl" fontWeight="bold" color="green.600">
                                     {DataProject.userAssignment?.length || 0}
                                   </Text>
-                                  <Text fontSize="sm" color="gray.600">
-                                    Team
+                                  <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                                    Team Members
                                   </Text>
                                 </CardBody>
                               </Card>
-                              <Card bg="orange.50" textAlign="center">
-                                <CardBody py={4}>
-                                  <Text
-                                    fontSize="2xl"
-                                    fontWeight="bold"
-                                    color="orange.600"
+
+                              {/* Duration Card */}
+                              <Card 
+                                bg="orange.50" 
+                                textAlign="center" 
+                                shadow="lg" 
+                                rounded="xl" 
+                                border="2px" 
+                                borderColor="orange.200"
+                                _hover={{ transform: "translateY(-2px)", shadow: "xl" }}
+                                transition="all 0.2s"
+                              >
+                                <CardBody py={6}>
+                                  <Box
+                                    w={12}
+                                    h={12}
+                                    bgGradient="linear(135deg, orange.400, orange.600)"
+                                    rounded="xl"
+                                    display="flex"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                    mx="auto"
+                                    mb={3}
                                   >
+                                    <FiClock size={24} color="white" />
+                                  </Box>
+                                  <Text fontSize="3xl" fontWeight="bold" color="orange.600">
                                     {DataProject.projectRegisterDate
                                       ? calculateDurationInDays(
                                           DataProject.projectRegisterDate,
@@ -664,45 +729,345 @@ function ProjectManagerDetail() {
                                         )
                                       : 0}
                                   </Text>
-                                  <Text fontSize="sm" color="gray.600">
-                                    Days
+                                  <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                                    Days Active
                                   </Text>
                                 </CardBody>
                               </Card>
-                              <Card bg="purple.50" textAlign="center">
-                                <CardBody py={4}>
-                                  <Text
-                                    fontSize="2xl"
-                                    fontWeight="bold"
-                                    color="purple.600"
+
+                              {/* Status Card */}
+                              <Card 
+                                bg="purple.50" 
+                                textAlign="center" 
+                                shadow="lg" 
+                                rounded="xl" 
+                                border="2px" 
+                                borderColor="purple.200"
+                                _hover={{ transform: "translateY(-2px)", shadow: "xl" }}
+                                transition="all 0.2s"
+                              >
+                                <CardBody py={6}>
+                                  <Box
+                                    w={12}
+                                    h={12}
+                                    bgGradient="linear(135deg, purple.400, purple.600)"
+                                    rounded="xl"
+                                    display="flex"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                    mx="auto"
+                                    mb={3}
                                   >
-                                    {DataProject.projectStatus === "ACTIVE"
-                                      ? "Active"
-                                      : "Inactive"}
+                                    <FiActivity size={24} color="white" />
+                                  </Box>
+                                  <Text fontSize="3xl" fontWeight="bold" color="purple.600">
+                                    {DataProject.projectStatus === "ACTIVE" ? "Active" : "Inactive"}
                                   </Text>
-                                  <Text fontSize="sm" color="gray.600">
+                                  <Text fontSize="sm" color="gray.600" fontWeight="medium">
                                     Status
                                   </Text>
                                 </CardBody>
                               </Card>
                             </SimpleGrid>
 
-                            {/* Project Description */}
-                            <Card>
-                              <CardHeader>
-                                <Heading size="sm">Description</Heading>
+                            {/* Charts Section */}
+                            <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6}>
+                              {/* Progress Chart */}
+                              <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                                <CardHeader bg="blue.50" roundedTop="xl">
+                                  <HStack spacing={3}>
+                                    <Box
+                                      w={10}
+                                      h={10}
+                                      bgGradient="linear(135deg, blue.400, blue.600)"
+                                      rounded="xl"
+                                      display="flex"
+                                      alignItems="center"
+                                      justifyContent="center"
+                                    >
+                                      <FiBarChart size={20} color="white" />
+                                    </Box>
+                                    <Heading size="md" color="blue.700">Project Progress</Heading>
+                                  </HStack>
+                                </CardHeader>
+                                <CardBody p={6}>
+                                  <Box h="300px">
+                                    <Chart
+                                      type="radialBar"
+                                      height="100%"
+                                      options={{
+                                        chart: {
+                                          type: 'radialBar',
+                                          toolbar: { show: false }
+                                        },
+                                        plotOptions: {
+                                          radialBar: {
+                                            startAngle: -90,
+                                            endAngle: 90,
+                                            hollow: {
+                                              margin: 15,
+                                              size: '70%'
+                                            },
+                                            dataLabels: {
+                                              name: {
+                                                offsetY: -10,
+                                                show: true,
+                                                color: '#888',
+                                                fontSize: '17px'
+                                              },
+                                              value: {
+                                                offsetY: 16,
+                                                color: '#111',
+                                                fontSize: '36px',
+                                                show: true,
+                                              }
+                                            }
+                                          }
+                                        },
+                                        fill: {
+                                          type: 'gradient',
+                                          gradient: {
+                                            shade: 'light',
+                                            shadeIntensity: 0.4,
+                                            inverseColors: false,
+                                            opacityFrom: 1,
+                                            opacityTo: 1,
+                                            stops: [0, 50, 53, 91]
+                                          },
+                                        },
+                                        labels: ['Progress'],
+                                        colors: ['#3182CE']
+                                      }}
+                                      series={[DataProject.projectStatusPercentage || 0]}
+                                    />
+                                  </Box>
+                                </CardBody>
+                              </Card>
+
+                              {/* Task Distribution Chart (Dummy Data) */}
+                              <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                                <CardHeader bg="green.50" roundedTop="xl">
+                                  <HStack spacing={3}>
+                                    <Box
+                                      w={10}
+                                      h={10}
+                                      bgGradient="linear(135deg, green.400, green.600)"
+                                      rounded="xl"
+                                      display="flex"
+                                      alignItems="center"
+                                      justifyContent="center"
+                                    >
+                                      <FiTarget size={20} color="white" />
+                                    </Box>
+                                    <Heading size="md" color="green.700">Task Distribution</Heading>
+                                  </HStack>
+                                </CardHeader>
+                                <CardBody p={6}>
+                                  <Box h="300px">
+                                    <Chart
+                                      type="donut"
+                                      height="100%"
+                                      options={{
+                                        chart: {
+                                          type: 'donut',
+                                          toolbar: { show: false }
+                                        },
+                                        labels: ['Completed', 'In Progress', 'Pending', 'On Hold'],
+                                        colors: ['#38A169', '#3182CE', '#ED8936', '#E53E3E'],
+                                        legend: {
+                                          position: 'bottom',
+                                          horizontalAlign: 'center',
+                                        },
+                                        plotOptions: {
+                                          pie: {
+                                            donut: {
+                                              size: '65%'
+                                            }
+                                          }
+                                        },
+                                        dataLabels: {
+                                          enabled: true,
+                                          formatter: function (val) {
+                                            return Math.round(val) + "%"
+                                          }
+                                        },
+                                        responsive: [{
+                                          breakpoint: 480,
+                                          options: {
+                                            chart: {
+                                              width: 200
+                                            },
+                                            legend: {
+                                              position: 'bottom'
+                                            }
+                                          }
+                                        }]
+                                      }}
+                                      series={[45, 30, 15, 10]} // Dummy data
+                                    />
+                                  </Box>
+                                </CardBody>
+                              </Card>
+                            </SimpleGrid>
+
+                            {/* Additional Information Cards */}
+                            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
+                              {/* Recent Activity Card */}
+                              <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                                <CardHeader bg="orange.50" roundedTop="xl">
+                                  <HStack spacing={3}>
+                                    <Box
+                                      w={8}
+                                      h={8}
+                                      bgGradient="linear(135deg, orange.400, orange.600)"
+                                      rounded="lg"
+                                      display="flex"
+                                      alignItems="center"
+                                      justifyContent="center"
+                                    >
+                                      <FiActivity size={16} color="white" />
+                                    </Box>
+                                    <Heading size="sm" color="orange.700">Recent Activity</Heading>
+                                  </HStack>
+                                </CardHeader>
+                                <CardBody p={4}>
+                                  <VStack spacing={3} align="stretch">
+                                    <HStack spacing={3}>
+                                      <Box w={2} h={2} bg="green.400" rounded="full" />
+                                      <Text fontSize="sm" color="gray.600">Task completed</Text>
+                                    </HStack>
+                                    <HStack spacing={3}>
+                                      <Box w={2} h={2} bg="blue.400" rounded="full" />
+                                      <Text fontSize="sm" color="gray.600">Team member added</Text>
+                                    </HStack>
+                                    <HStack spacing={3}>
+                                      <Box w={2} h={2} bg="orange.400" rounded="full" />
+                                      <Text fontSize="sm" color="gray.600">Status updated</Text>
+                                    </HStack>
+                                    <HStack spacing={3}>
+                                      <Box w={2} h={2} bg="purple.400" rounded="full" />
+                                      <Text fontSize="sm" color="gray.600">Feature deployed</Text>
+                                    </HStack>
+                                  </VStack>
+                                </CardBody>
+                              </Card>
+
+                              {/* Milestones Card */}
+                              <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                                <CardHeader bg="purple.50" roundedTop="xl">
+                                  <HStack spacing={3}>
+                                    <Box
+                                      w={8}
+                                      h={8}
+                                      bgGradient="linear(135deg, purple.400, purple.600)"
+                                      rounded="lg"
+                                      display="flex"
+                                      alignItems="center"
+                                      justifyContent="center"
+                                    >
+                                      <FiTarget size={16} color="white" />
+                                    </Box>
+                                    <Heading size="sm" color="purple.700">Milestones</Heading>
+                                  </HStack>
+                                </CardHeader>
+                                <CardBody p={4}>
+                                  <VStack spacing={3} align="stretch">
+                                    <HStack justify="space-between">
+                                      <Text fontSize="sm" color="gray.600">Planning</Text>
+                                      <Badge colorScheme="green" size="sm">Done</Badge>
+                                    </HStack>
+                                    <HStack justify="space-between">
+                                      <Text fontSize="sm" color="gray.600">Development</Text>
+                                      <Badge colorScheme="blue" size="sm">Active</Badge>
+                                    </HStack>
+                                    <HStack justify="space-between">
+                                      <Text fontSize="sm" color="gray.600">Testing</Text>
+                                      <Badge colorScheme="orange" size="sm">Pending</Badge>
+                                    </HStack>
+                                    <HStack justify="space-between">
+                                      <Text fontSize="sm" color="gray.600">Deployment</Text>
+                                      <Badge colorScheme="gray" size="sm">Waiting</Badge>
+                                    </HStack>
+                                  </VStack>
+                                </CardBody>
+                              </Card>
+
+                              {/* Quick Actions Card */}
+                              <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                                <CardHeader bg="blue.50" roundedTop="xl">
+                                  <HStack spacing={3}>
+                                    <Box
+                                      w={8}
+                                      h={8}
+                                      bgGradient="linear(135deg, blue.400, blue.600)"
+                                      rounded="lg"
+                                      display="flex"
+                                      alignItems="center"
+                                      justifyContent="center"
+                                    >
+                                      <FiZap size={16} color="white" />
+                                    </Box>
+                                    <Heading size="sm" color="blue.700">Quick Actions</Heading>
+                                  </HStack>
+                                </CardHeader>
+                                <CardBody p={4}>
+                                  <VStack spacing={2}>
+                                    <Button size="sm" variant="ghost" w="full" justifyContent="flex-start" leftIcon={<FiUsers />}>
+                                      Add Team Member
+                                    </Button>
+                                    <Button size="sm" variant="ghost" w="full" justifyContent="flex-start" leftIcon={<FiCpu />}>
+                                      Create Feature
+                                    </Button>
+                                    <Button size="sm" variant="ghost" w="full" justifyContent="flex-start" leftIcon={<FiBarChart />}>
+                                      View Reports
+                                    </Button>
+                                    <Button size="sm" variant="ghost" w="full" justifyContent="flex-start" leftIcon={<FiSettings />}>
+                                      Project Settings
+                                    </Button>
+                                  </VStack>
+                                </CardBody>
+                              </Card>
+                            </SimpleGrid>
+
+                            {/* Project Description - Enhanced */}
+                            <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                              <CardHeader bg="gray.50" roundedTop="xl">
+                                <HStack spacing={3}>
+                                  <Box
+                                    w={10}
+                                    h={10}
+                                    bgGradient="linear(135deg, gray.400, gray.600)"
+                                    rounded="xl"
+                                    display="flex"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                  >
+                                    <FiFileText size={20} color="white" />
+                                  </Box>
+                                  <Heading size="md" color="gray.700">Project Description</Heading>
+                                </HStack>
                               </CardHeader>
-                              <CardBody>
-                                <Text color="gray.600">
-                                  {DataProject.projectDesc ||
-                                    "No description available"}
+                              <CardBody p={6}>
+                                <Text color="gray.600" lineHeight="tall" fontSize="md">
+                                  {DataProject.projectDesc || "No description available for this project. Consider adding a detailed description to help team members understand the project goals and objectives."}
                                 </Text>
+                                {DataProject.projectDesc && (
+                                  <HStack mt={4} spacing={4}>
+                                    <Badge colorScheme="blue" px={3} py={1} rounded="full">
+                                      {DataProject.projectCategory}
+                                    </Badge>
+                                    <Badge colorScheme="purple" px={3} py={1} rounded="full">
+                                      {DataProject.projectType}
+                                    </Badge>
+                                  </HStack>
+                                )}
                               </CardBody>
                             </Card>
                           </>
                         ) : (
-                          <Box textAlign="center" py={8}>
+                          <Box textAlign="center" py={12}>
                             <LoadingMiniSignature />
+                            <Text mt={4} color="gray.500">Loading project overview...</Text>
                           </Box>
                         )}
                       </VStack>
@@ -987,11 +1352,7 @@ export const initialProjectUpdateValues: ProjectUpdatePayload = {
 const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
-
-  const delay = (ms: number) =>
-    new Promise((resolve) => setTimeout(resolve, ms));
-  const { GetDetailById, UpdateProjects, GetDetailAppsByProjectId } =
-    useProjects();
+  const { GetDetailById } = useProjects();
 
   // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -1021,84 +1382,9 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
   );
   const [RefreshData, setRefreshData] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
-  const [ActionLoading, setActionLoading] = useState(false);
-  const [IsEditMode, setIsEditMode] = useState(false);
-
-  const [openConfirmUpdateDialog, setOpenConfirmUpdateDialog] = useState(false);
-  const [questionMsgDialog, setQuestionMsgDialog] = useState<string>("");
-  const [captionDialog, setCaptionDialog] = useState<string>("");
-  const [UpdatePayload, setUpdatePayload] =
-    useState<ProjectUpdatePayload | null>(null);
-
-  const formik = useFormik<ProjectUpdatePayload>({
-    initialValues: initialProjectUpdateValues,
-    validationSchema: FormSchemaEditProject,
-    validateOnChange: false,
-    validateOnBlur: false,
-    onSubmit: async (values) => {
-      await handleConfirmSaveData(values);
-    },
-  });
-
-  const handleConfirmSaveData = async (data: ProjectUpdatePayload) => {
-    setCaptionDialog("Confirm Save");
-    setQuestionMsgDialog(`Are you sure want update project info?`);
-    setOpenConfirmUpdateDialog(true);
-    setUpdatePayload(data);
-  };
-
-  const handleConfirmSaveDataTrigger = () => {
-    setOpenConfirmUpdateDialog(!openConfirmUpdateDialog);
-  };
-
-  const handleUpdateData = async () => {
-    setActionLoading(true);
-    await delay(DELAY_MEDIUM);
-    if (DataAuth && DataAuth.team && UpdatePayload) {
-      await UpdateTeamServ();
-      setIsEditMode(false);
-    } else {
-      showToast({
-        description: "ID is invalid",
-        statusToast: "error",
-      });
-      setActionLoading(false);
-      setUpdatePayload(null);
-      setIsEditMode(false);
-    }
-  };
-
-  const UpdateTeamServ = async () => {
-    if (UpdatePayload) {
-      const requestData = await UpdateProjects(UpdatePayload, tokenData);
-      const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
-
-      if (isErrorResponse || !requestData) {
-        showToast({
-          description: requestData?.message || RES_GENERIC_ERROR_MSG,
-          statusToast: "error",
-        });
-        setIsLoadingProcess(false);
-        setActionLoading(false);
-        return;
-      } else {
-        console.log(requestData);
-        showToast({
-          description: `Data project update successfully`,
-          statusToast: "success",
-        });
-        setIsLoadingProcess(false);
-        setActionLoading(false);
-        setIsEditMode(false);
-        RefreshAction();
-        return;
-      }
-    }
-  };
 
   const RefreshAction = () => {
-    setUpdatePayload(null);
-    setRefreshData(RefreshData + 1);
+    setRefreshData(prev => prev + 1);
   };
 
   useEffect(() => {
@@ -1129,40 +1415,6 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
           const itemsData: ProjectDataResponse =
             requestData.data as ProjectDataResponse;
 
-          // set in form
-          formik.setFieldValue("id", itemsData.id);
-          formik.setFieldValue("projectNo", itemsData.projectNo);
-          formik.setFieldValue("projectName", itemsData.projectName);
-          formik.setFieldValue("projectDesc", itemsData.projectDesc);
-          formik.setFieldValue("note", itemsData.note);
-          formik.setFieldValue("projectCategory", itemsData.projectCategory);
-          formik.setFieldValue("projectType", itemsData.projectType);
-          formik.setFieldValue(
-            "projectRegisterDate",
-            itemsData.projectRegisterDate
-          );
-          formik.setFieldValue(
-            "projectClosedDate",
-            itemsData.projectClosedDate
-          );
-          formik.setFieldValue(
-            "proOwnerDivisionId",
-            itemsData.proOwnerDivisionId
-          );
-          formik.setFieldValue("proOwnerGroupId", itemsData.proOwnerGroupId);
-          formik.setFieldValue(
-            "proManageByDivisionId",
-            itemsData.proManageByDivisionId
-          );
-          formik.setFieldValue(
-            "proManageByGroupId",
-            itemsData.proManageByGroupId
-          );
-          formik.setFieldValue(
-            "proManageByTeamId",
-            itemsData.proManageByTeamId
-          );
-
           setDataProject(itemsData);
           setIsLoadingProcess(false);
         }
@@ -1171,469 +1423,306 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
     }
   }, [DataAuth, RefreshData, projectId]);
 
-  // Stepper
-  const { activeStep } = useSteps({
-    index: 4,
-    count: stepsProgress.length,
-  });
-
   return (
-    <Flex w={"full"}>
-      <ConfirmationDialog
-        key={"confirmUpdateData"}
-        isOpenTrigger={openConfirmUpdateDialog}
-        action={handleUpdateData}
-        trigger={handleConfirmSaveDataTrigger}
-        questionMsg={questionMsgDialog}
-        captionMsg={captionDialog}
-      />
+    <VStack spacing={6} align="stretch">
       {!projectId && !DataProject ? (
         <CustomPanelAlert type={"error"}>
           <FiAlertTriangle color={"red"} size={70} />
           <Text>No project ID found in the URL</Text>
         </CustomPanelAlert>
       ) : (
-        <Flex w={"full"}>
+        <>
           {IsLoadingProcess ? (
-            <LoadingMiniSignature />
-          ) : (
-            <form onSubmit={formik.handleSubmit} onReset={formik.handleReset}>
-              <Flex
-                as={Stack}
-                w={"full"}
-                // divider={<StackDivider borderColor="gray.200" />}
-                spacing={6}
-                px={4}
-              >
-                <Flex w={"full"} as={HStack} justifyContent={"space-between"}>
-                  <Heading as="h5" size="md" w={"full"}>
-                    Project Information
-                  </Heading>
-                  <Flex as={Wrap} justifyContent={"end"} px={0} w={"full"}>
-                    <Button
-                      display={IsEditMode ? "none" : "flex"}
-                      size={"sm"}
-                      leftIcon={<FiRefreshCcw />}
-                      onClick={() => RefreshAction()}
-                      isLoading={ActionLoading}
-                    >
-                      Refresh
-                    </Button>
-                    <Button
-                      display={IsEditMode ? "flex" : "none"}
-                      size={"sm"}
-                      colorScheme={"red"}
-                      leftIcon={<FiXCircle />}
-                      onClick={() => {
-                        setIsEditMode(false);
-                        RefreshAction();
-                      }}
-                      isLoading={ActionLoading}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      display={IsEditMode ? "none" : "flex"}
-                      size={"sm"}
-                      leftIcon={<FiEdit3 />}
-                      colorScheme={"secondary"}
-                      onClick={() => setIsEditMode(true)}
-                      isLoading={ActionLoading}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      display={IsEditMode ? "flex" : "none"}
-                      size={"sm"}
-                      colorScheme={"green"}
-                      leftIcon={<FiSave />}
-                      // type={"submit"}
-                      onClick={() => {
-                        formik.submitForm();
-                      }}
-                      isLoading={ActionLoading}
-                    >
-                      Save
-                    </Button>
-                  </Flex>
-                </Flex>
-                <Flex
-                  minH={"420px"}
-                  as={Stack}
-                  py={4}
-                  px={2}
-                  divider={<StackDivider borderColor="gray.200" />}
+            <Box textAlign="center" py={12}>
+              <LoadingMiniSignature />
+              <Text mt={4} color="gray.500">Loading project information...</Text>
+            </Box>
+          ) : DataProject ? (
+            <>
+              {/* Header Section */}
+              <HStack justify="space-between" align="center">
+                <Heading size="lg" color="gray.800">
+                  Project Information
+                </Heading>
+                <Button
+                  leftIcon={<FiRefreshCcw />}
+                  variant="outline"
+                  size="sm"
+                  onClick={RefreshAction}
+                  colorScheme="blue"
+                  rounded="full"
                 >
-                  <FormControl
-                    id="projectNo"
-                    isInvalid={formik.errors.projectNo ? true : false}
-                    isRequired
-                  >
-                    <InputLayoutFullHalf>
-                      <FormLabel
-                        fontWeight={600}
-                        h={"full"}
-                        display="flex"
-                        alignItems="center"
-                      >
-                        Nomor Project
-                      </FormLabel>
-                      <Stack spacing={0}>
-                        <Input
-                          id="projectNo"
-                          name="projectNo"
-                          type="text"
-                          onChange={(e) => {
-                            const uppercaseValue = e.target.value.toUpperCase(); // Convert to uppercase
-                            formik.setFieldValue("projectNo", uppercaseValue); // Update Formik's value
-                          }}
-                          value={formik.values.projectNo ?? ""}
-                          placeholder="Project No."
-                          readOnly={!IsEditMode}
-                          variant={IsEditMode ? "outline" : "unstyled"}
-                          minLength={3}
-                          maxLength={80}
-                          isDisabled={ActionLoading}
-                        />
-                        <FormErrorMessage>
-                          {formik.errors.projectNo}
-                        </FormErrorMessage>
-                      </Stack>
-                    </InputLayoutFullHalf>
-                  </FormControl>
+                  Refresh
+                </Button>
+              </HStack>
 
-                  <FormControl
-                    id="projectName"
-                    isInvalid={formik.errors.projectName ? true : false}
-                    isRequired
-                  >
-                    <InputLayoutFullHalf>
-                      <FormLabel
-                        fontWeight={600}
-                        h={"full"}
+              {/* Beautiful Information Cards */}
+              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+                {/* Basic Information Card */}
+                <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                  <CardHeader bg="blue.50" roundedTop="xl">
+                    <HStack spacing={3}>
+                      <Box
+                        w={10}
+                        h={10}
+                        bgGradient="linear(135deg, blue.400, blue.600)"
+                        rounded="xl"
                         display="flex"
                         alignItems="center"
+                        justifyContent="center"
                       >
-                        Nama Project
-                      </FormLabel>
-                      <Stack spacing={0}>
-                        <Input
-                          id="projectName"
-                          name="projectName"
-                          type="text"
-                          onChange={(e) => {
-                            const uppercaseValue = e.target.value.toUpperCase(); // Convert to uppercase
-                            formik.setFieldValue("projectName", uppercaseValue); // Update Formik's value
-                          }}
-                          value={formik.values.projectName ?? ""}
-                          placeholder="Project Name"
-                          readOnly={!IsEditMode}
-                          variant={IsEditMode ? "outline" : "unstyled"}
-                          minLength={3}
-                          maxLength={80}
-                          isDisabled={ActionLoading}
-                        />
-                        <FormErrorMessage>
-                          {formik.errors.projectName}
-                        </FormErrorMessage>
-                      </Stack>
-                    </InputLayoutFullHalf>
-                  </FormControl>
-
-                  <FormControl
-                    id="projectDesc"
-                    isInvalid={formik.errors.projectDesc ? true : false}
-                  >
-                    <InputLayoutFullHalf>
-                      <FormLabel
-                        fontWeight={600}
-                        h={"full"}
-                        display="flex"
-                        alignItems="center"
-                      >
-                        Deskripsi Project
-                      </FormLabel>
-                      <Stack spacing={0}>
-                        <Textarea
-                          id="projectDesc"
-                          name="projectDesc"
-                          onChange={(e) => {
-                            formik.setFieldValue("projectDesc", e.target.value);
-                          }}
-                          readOnly={!IsEditMode}
-                          variant={IsEditMode ? "outline" : "unstyled"}
-                          defaultValue={formik.values.projectDesc ?? ""}
-                          placeholder="Project Descriptions"
-                          isDisabled={ActionLoading}
-                          minH={"30px"}
-                        ></Textarea>
-                        <FormErrorMessage>
-                          {formik.errors.projectDesc}
-                        </FormErrorMessage>
-                      </Stack>
-                    </InputLayoutFullHalf>
-                  </FormControl>
-
-                  <FormControl
-                    id="projectCategory"
-                    isInvalid={formik.errors.projectCategory ? true : false}
-                    isRequired
-                  >
-                    <InputLayoutFullHalf>
-                      <FormLabel
-                        fontWeight={600}
-                        h={"full"}
-                        display="flex"
-                        alignItems="center"
-                      >
-                        Karakteristik Project
-                      </FormLabel>
-                      <Stack spacing={0} h={"full"}>
-                        <SelectC
-                          value={formik.values.projectCategory}
-                          id="projectCategory"
-                          name="projectCategory"
-                          onChange={(e) => {
-                            formik.setFieldValue(
-                              `projectCategory`,
-                              e.target.value
-                            );
-                          }}
-                          placeholder="Select Karakteristik Project"
-                          variant={IsEditMode ? "outline" : "unstyled"}
-                          pointerEvents={!IsEditMode ? "none" : "auto"} // disable interaction
-                          tabIndex={!IsEditMode ? -1 : undefined} // prevent tabbing
-                          cursor={!IsEditMode ? "default" : "pointer"} // keep consistent cursor
-                          color={
-                            colorMode === "light"
-                              ? "gray.800"
-                              : "whiteAlpha.900"
-                          }
-                          bg="transparent"
+                        <FiInfo size={20} color="white" />
+                      </Box>
+                      <Heading size="md" color="blue.700">Basic Information</Heading>
+                    </HStack>
+                  </CardHeader>
+                  <CardBody p={6}>
+                    <VStack spacing={4} align="stretch">
+                      <HStack justify="space-between">
+                        <Text fontSize="sm" color="gray.600" fontWeight="medium">Project Number:</Text>
+                        <Badge colorScheme="blue" px={3} py={1} rounded="full" fontSize="sm">
+                          {DataProject.projectNo || "N/A"}
+                        </Badge>
+                      </HStack>
+                      <Divider />
+                      <HStack justify="space-between">
+                        <Text fontSize="sm" color="gray.600" fontWeight="medium">Project Name:</Text>
+                        <Text fontSize="sm" fontWeight="bold" color="gray.800" textAlign="right" maxW="200px">
+                          {DataProject.projectName || "N/A"}
+                        </Text>
+                      </HStack>
+                      <Divider />
+                      <VStack align="stretch" spacing={2}>
+                        <Text fontSize="sm" color="gray.600" fontWeight="medium">Description:</Text>
+                        <Box
+                          bg="gray.50"
+                          p={3}
+                          rounded="lg"
+                          border="1px"
+                          borderColor="gray.200"
+                          minH="60px"
                         >
-                          {PROJEC_CATEGORY_OPTIONS.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </SelectC>
-                      </Stack>
-                    </InputLayoutFullHalf>
-                  </FormControl>
+                          <Text fontSize="sm" color="gray.700" lineHeight="tall">
+                            {DataProject.projectDesc || "No description available"}
+                          </Text>
+                        </Box>
+                      </VStack>
+                    </VStack>
+                  </CardBody>
+                </Card>
 
-                  <FormControl
-                    id="projectType"
-                    isInvalid={formik.errors.projectType ? true : false}
-                    isRequired
-                  >
-                    <InputLayoutFullHalf>
-                      <FormLabel
-                        fontWeight={600}
-                        h={"full"}
+                {/* Project Classification Card */}
+                <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                  <CardHeader bg="green.50" roundedTop="xl">
+                    <HStack spacing={3}>
+                      <Box
+                        w={10}
+                        h={10}
+                        bgGradient="linear(135deg, green.400, green.600)"
+                        rounded="xl"
                         display="flex"
                         alignItems="center"
+                        justifyContent="center"
                       >
-                        Tipe Project
-                      </FormLabel>
-                      <Stack spacing={0} h={"full"}>
-                        <SelectC
-                          value={formik.values.projectType}
-                          id="projectType"
-                          name="projectType"
-                          onChange={(e) => {
-                            formik.setFieldValue(`projectType`, e.target.value);
-                          }}
-                          placeholder="Select Tipe Project"
-                          variant={IsEditMode ? "outline" : "unstyled"}
-                          pointerEvents={!IsEditMode ? "none" : "auto"} // disable interaction
-                          tabIndex={!IsEditMode ? -1 : undefined} // prevent tabbing
-                          cursor={!IsEditMode ? "default" : "pointer"} // keep consistent cursor
-                          color={
-                            colorMode === "light"
-                              ? "gray.800"
-                              : "whiteAlpha.900"
+                        <FiTarget size={20} color="white" />
+                      </Box>
+                      <Heading size="md" color="green.700">Classification</Heading>
+                    </HStack>
+                  </CardHeader>
+                  <CardBody p={6}>
+                    <VStack spacing={4} align="stretch">
+                      <HStack justify="space-between">
+                        <Text fontSize="sm" color="gray.600" fontWeight="medium">Category:</Text>
+                        <Badge colorScheme="green" px={3} py={1} rounded="full" fontSize="sm">
+                          {DataProject.projectCategory || "N/A"}
+                        </Badge>
+                      </HStack>
+                      <Divider />
+                      <HStack justify="space-between">
+                        <Text fontSize="sm" color="gray.600" fontWeight="medium">Type:</Text>
+                        <Badge colorScheme="purple" px={3} py={1} rounded="full" fontSize="sm">
+                          {DataProject.projectType || "N/A"}
+                        </Badge>
+                      </HStack>
+                      <Divider />
+                      <HStack justify="space-between">
+                        <Text fontSize="sm" color="gray.600" fontWeight="medium">Status:</Text>
+                        <Badge
+                          colorScheme={
+                            DataProject.projectStatus === "ACTIVE" ? "green" :
+                            DataProject.projectStatus === "ONHOLD" ? "orange" :
+                            DataProject.projectStatus === "COMPLETED" ? "blue" :
+                            "gray"
                           }
-                          bg="transparent"
+                          px={3}
+                          py={1}
+                          rounded="full"
+                          fontSize="sm"
                         >
-                          {PROJEC_TYPE_OPTIONS.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </SelectC>
-                      </Stack>
-                    </InputLayoutFullHalf>
-                  </FormControl>
+                          {DataProject.projectStatus || "N/A"}
+                        </Badge>
+                      </HStack>
+                    </VStack>
+                  </CardBody>
+                </Card>
 
-                  <FormControl
-                    id="projectRegisterDate"
-                    isInvalid={formik.errors.projectRegisterDate ? true : false}
-                    isRequired
-                  >
-                    <InputLayoutFullHalf>
-                      <FormLabel
-                        fontWeight={600}
-                        h={"full"}
+                {/* Timeline Information Card */}
+                <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                  <CardHeader bg="orange.50" roundedTop="xl">
+                    <HStack spacing={3}>
+                      <Box
+                        w={10}
+                        h={10}
+                        bgGradient="linear(135deg, orange.400, orange.600)"
+                        rounded="xl"
                         display="flex"
                         alignItems="center"
+                        justifyContent="center"
                       >
-                        Tanggal Register Project
-                      </FormLabel>
-                      <Stack spacing={0} h={"full"}>
-                        <Input
-                          id="projectRegisterDate"
-                          name="projectRegisterDate"
-                          type="date"
-                          onChange={formik.handleChange}
-                          value={
-                            formik.values.projectRegisterDate
-                              ? formik.values.projectRegisterDate.split("T")[0]
-                              : ""
-                          }
-                          isReadOnly={!IsEditMode}
-                          variant={IsEditMode ? "outline" : "unstyled"}
-                          isDisabled={ActionLoading}
-                        />
-                        <FormErrorMessage>
-                          {formik.errors.projectRegisterDate}
-                        </FormErrorMessage>
-                      </Stack>
-                    </InputLayoutFullHalf>
-                  </FormControl>
-
-                  <FormControl
-                    id="projectClosedDate"
-                    isInvalid={formik.errors.projectClosedDate ? true : false}
-                    isRequired
-                  >
-                    <InputLayoutFullHalf>
-                      <FormLabel
-                        fontWeight={600}
-                        h={"full"}
-                        display="flex"
-                        alignItems="center"
-                      >
-                        Tanggal Closed Project
-                      </FormLabel>
-                      <Stack spacing={0} h={"full"}>
-                        {formik.values.projectClosedDate != null ? (
-                          <>
-                            <Input
-                              id="projectClosedDate"
-                              name="projectClosedDate"
-                              type="date"
-                              isReadOnly={true}
-                              variant={"unstyled"}
-                              isDisabled={true}
-                            />
-                            <FormErrorMessage>
-                              {formik.errors.projectClosedDate}
-                            </FormErrorMessage>
-                          </>
-                        ) : (
-                          <Text px={2} fontWeight={600}>
-                            ON GOING
+                        <FiCalendar size={20} color="white" />
+                      </Box>
+                      <Heading size="md" color="orange.700">Timeline</Heading>
+                    </HStack>
+                  </CardHeader>
+                  <CardBody p={6}>
+                    <VStack spacing={4} align="stretch">
+                      <HStack justify="space-between">
+                        <Text fontSize="sm" color="gray.600" fontWeight="medium">Register Date:</Text>
+                        <Text fontSize="sm" fontWeight="bold" color="gray.800">
+                          {DataProject.projectRegisterDate 
+                            ? new Date(DataProject.projectRegisterDate).toLocaleDateString()
+                            : "N/A"}
+                        </Text>
+                      </HStack>
+                      <Divider />
+                      <HStack justify="space-between">
+                        <Text fontSize="sm" color="gray.600" fontWeight="medium">Closed Date:</Text>
+                        {DataProject.projectClosedDate ? (
+                          <Text fontSize="sm" fontWeight="bold" color="gray.800">
+                            {new Date(DataProject.projectClosedDate).toLocaleDateString()}
                           </Text>
-                        )}
-                      </Stack>
-                    </InputLayoutFullHalf>
-                  </FormControl>
-
-                  <FormControl
-                    id="projDateDuration"
-                    isInvalid={
-                      calculateDurationInDays(
-                        formik.values.projectRegisterDate ??
-                          new Date().toISOString().slice(0, 10),
-                        formik.values.projectClosedDate ??
-                          new Date().toISOString().slice(0, 10)
-                      ) < 0
-                    }
-                  >
-                    <InputLayoutFullHalf>
-                      <FormLabel
-                        fontWeight={600}
-                        h="full"
-                        display="flex"
-                        alignItems="center"
-                      >
-                        Durasi Project
-                      </FormLabel>
-                      <Stack spacing={0} h="full">
-                        {formik.values.projectClosedDate != null ? (
-                          <>
-                            <Text px={2} fontWeight={600}>
-                              {calculateDurationInDays(
-                                formik.values.projectRegisterDate ??
-                                  new Date().toISOString().slice(0, 10),
-                                formik.values.projectClosedDate ??
-                                  new Date().toISOString().slice(0, 10)
-                              )}{" "}
-                              Hari Kalendar (CLOSED)
-                            </Text>
-                            <FormErrorMessage>
-                              {calculateDurationInDays(
-                                formik.values.projectRegisterDate ??
-                                  new Date().toISOString().slice(0, 10),
-                                formik.values.projectClosedDate ??
-                                  new Date().toISOString().slice(0, 10)
-                              ) < 0 && "Durasi tidak boleh negatif"}
-                            </FormErrorMessage>
-                          </>
                         ) : (
-                          <Text px={2} fontWeight={600}>
+                          <Badge colorScheme="green" px={3} py={1} rounded="full" fontSize="sm">
                             ON GOING
-                          </Text>
+                          </Badge>
                         )}
-                      </Stack>
-                    </InputLayoutFullHalf>
-                  </FormControl>
+                      </HStack>
+                      <Divider />
+                      <HStack justify="space-between">
+                        <Text fontSize="sm" color="gray.600" fontWeight="medium">Duration:</Text>
+                        <Text fontSize="sm" fontWeight="bold" color="gray.800">
+                          {DataProject.projectRegisterDate
+                            ? calculateDurationInDays(
+                                DataProject.projectRegisterDate,
+                                DataProject.projectClosedDate || new Date().toISOString()
+                              )
+                            : 0} days
+                        </Text>
+                      </HStack>
+                    </VStack>
+                  </CardBody>
+                </Card>
 
-                  <FormControl
-                    id="note"
-                    isInvalid={formik.errors.note ? true : false}
-                  >
-                    <InputLayoutFullHalf>
-                      <FormLabel
-                        fontWeight={600}
-                        h={"full"}
+                {/* Additional Information Card */}
+                <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                  <CardHeader bg="purple.50" roundedTop="xl">
+                    <HStack spacing={3}>
+                      <Box
+                        w={10}
+                        h={10}
+                        bgGradient="linear(135deg, purple.400, purple.600)"
+                        rounded="xl"
                         display="flex"
                         alignItems="center"
+                        justifyContent="center"
                       >
-                        Note
-                      </FormLabel>
-                      <Stack spacing={0}>
-                        <Textarea
-                          id="note"
-                          name="note"
-                          onChange={(e) => {
-                            formik.setFieldValue("note", e.target.value);
-                          }}
-                          readOnly={!IsEditMode}
-                          variant={IsEditMode ? "outline" : "unstyled"}
-                          defaultValue={formik.values.note ?? ""}
-                          placeholder="Notes"
-                          isDisabled={ActionLoading}
-                          minH={"30px"}
-                        ></Textarea>
-                        <FormErrorMessage>
-                          {formik.errors.note}
-                        </FormErrorMessage>
-                      </Stack>
-                    </InputLayoutFullHalf>
-                  </FormControl>
+                        <FiFileText size={20} color="white" />
+                      </Box>
+                      <Heading size="md" color="purple.700">Additional Info</Heading>
+                    </HStack>
+                  </CardHeader>
+                  <CardBody p={6}>
+                    <VStack spacing={4} align="stretch">
+                      <VStack align="stretch" spacing={2}>
+                        <Text fontSize="sm" color="gray.600" fontWeight="medium">Notes:</Text>
+                        <Box
+                          bg="gray.50"
+                          p={3}
+                          rounded="lg"
+                          border="1px"
+                          borderColor="gray.200"
+                          minH="60px"
+                        >
+                          <Text fontSize="sm" color="gray.700" lineHeight="tall">
+                            {DataProject.note || "No additional notes"}
+                          </Text>
+                        </Box>
+                      </VStack>
+                      <Divider />
+                      <HStack justify="space-between">
+                        <Text fontSize="sm" color="gray.600" fontWeight="medium">Project ID:</Text>
+                        <Text fontSize="xs" fontFamily="mono" color="gray.500" bg="gray.100" px={2} py={1} rounded="md">
+                          {DataProject.id}
+                        </Text>
+                      </HStack>
+                    </VStack>
+                  </CardBody>
+                </Card>
+              </SimpleGrid>
 
-                  {/* <p>Project ID: {projectId}</p> */}
-                  <Box overflowY={"auto"}>
-                    {/* <pre>{JSON.stringify(formik.values, null, 2)}</pre> */}
-                  </Box>
-                </Flex>
-              </Flex>
-            </form>
+              {/* Progress Section */}
+              <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                <CardHeader bg="blue.50" roundedTop="xl">
+                  <HStack spacing={3}>
+                    <Box
+                      w={10}
+                      h={10}
+                      bgGradient="linear(135deg, blue.400, blue.600)"
+                      rounded="xl"
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                    >
+                      <FiTrendingUp size={20} color="white" />
+                    </Box>
+                    <Heading size="md" color="blue.700">Project Progress</Heading>
+                  </HStack>
+                </CardHeader>
+                <CardBody p={6}>
+                  <VStack spacing={4}>
+                    <HStack justify="space-between" w="full">
+                      <Text fontSize="lg" fontWeight="bold" color="gray.800">
+                        Overall Progress
+                      </Text>
+                      <Text fontSize="2xl" fontWeight="bold" color="blue.600">
+                        {DataProject.projectStatusPercentage || 0}%
+                      </Text>
+                    </HStack>
+                    <Progress
+                      value={DataProject.projectStatusPercentage || 0}
+                      size="lg"
+                      colorScheme="blue"
+                      rounded="full"
+                      w="full"
+                      bg="gray.100"
+                    />
+                    <HStack justify="space-between" w="full" fontSize="sm" color="gray.600">
+                      <Text>Started</Text>
+                      <Text>In Progress</Text>
+                      <Text>Completed</Text>
+                    </HStack>
+                  </VStack>
+                </CardBody>
+              </Card>
+            </>
+          ) : (
+            <Box textAlign="center" py={12}>
+              <Text color="gray.500" fontSize="lg">No project data available</Text>
+            </Box>
           )}
-        </Flex>
+        </>
       )}
-    </Flex>
+    </VStack>
   );
 };
 
