@@ -99,6 +99,7 @@ import {
   FiFileText,
   FiSettings,
   FiHeart,
+  FiExternalLink,
 } from "react-icons/fi";
 import * as Yup from "yup";
 import dynamic from "next/dynamic";
@@ -2462,6 +2463,277 @@ function ProjectManagerDetail() {
           {/* Sidebar */}
           <GridItem>
             <VStack spacing={6}>
+              {/* Application Information Card - Launcher Style */}
+              {DataProject?.appsProject && (
+                <Card 
+                  w="full" 
+                  shadow="lg" 
+                  rounded={radiusStyle}
+                  border="1px"
+                  borderColor="gray.200"
+                  bgGradient="linear(to-br, secondary.400, secondary.600)"
+                  color="white"
+                  _hover={{ 
+                    shadow: "xl",
+                    transform: "translateY(-2px)"
+                  }}
+                  transition="all 0.3s ease"
+                  overflow="hidden"
+                  position="relative"
+                >
+                  {/* Decorative Background Pattern */}
+                  <Box
+                    position="absolute"
+                    top={0}
+                    left={0}
+                    right={0}
+                    bottom={0}
+                    opacity={0.08}
+                    bgImage="radial-gradient(circle at 20% 30%, white 1px, transparent 1px), radial-gradient(circle at 80% 70%, white 1px, transparent 1px)"
+                    bgSize="40px 40px, 40px 40px"
+                  />
+                  
+                  {/* Floating Decorative Elements */}
+                  <Box
+                    position="absolute"
+                    top="15%"
+                    right="10%"
+                    w={6}
+                    h={6}
+                    bg="whiteAlpha.100"
+                    rounded="full"
+                    blur="sm"
+                    animation="pulse 3s ease-in-out infinite"
+                  />
+                  <Box
+                    position="absolute"
+                    bottom="20%"
+                    left="8%"
+                    w={4}
+                    h={4}
+                    bg="whiteAlpha.120"
+                    transform="rotate(45deg)"
+                    rounded="sm"
+                    animation="spin 10s linear infinite"
+                  />
+                  
+                  <CardBody p={8} position="relative" zIndex={1}>
+                    <VStack spacing={6} align="center">
+                      {/* App Icon - Launcher Style */}
+                      <Box position="relative">
+                        {/* Glowing Ring Effect */}
+                        <Box
+                          position="absolute"
+                          top="-6px"
+                          left="-6px"
+                          right="-6px"
+                          bottom="-6px"
+                          bgGradient="linear(45deg, whiteAlpha.300, whiteAlpha.100)"
+                          rounded="3xl"
+                          blur="md"
+                          opacity={0.8}
+                          animation="pulse 2s ease-in-out infinite"
+                        />
+                        
+                        {/* Main App Icon */}
+                        <Box
+                          w={20}
+                          h={20}
+                          bgGradient="linear(135deg, whiteAlpha.200, whiteAlpha.400)"
+                          rounded="3xl"
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="center"
+                          fontSize="3xl"
+                          fontWeight="bold"
+                          shadow="2xl"
+                          border="3px solid"
+                          borderColor="whiteAlpha.300"
+                          backdropFilter="blur(10px)"
+                          position="relative"
+                          _hover={{
+                            transform: "scale(1.05)",
+                            shadow: "3xl"
+                          }}
+                          transition="all 0.3s ease"
+                        >
+                          {DataProject.appsProject.iconApps ? (
+                            <img
+                              src={DataProject.appsProject.iconApps}
+                              alt="App Icon"
+                              style={{
+                                width: "60%",
+                                height: "60%",
+                                objectFit: "contain"
+                              }}
+                            />
+                          ) : (
+                            <Text color="white" fontSize="2xl">
+                              {DataProject.appsProject.appName?.charAt(0) || "A"}
+                            </Text>
+                          )}
+                        </Box>
+                        
+                        {/* Status Indicator Dot */}
+                        <Box
+                          position="absolute"
+                          top={-1}
+                          right={-1}
+                          w={6}
+                          h={6}
+                          bg={
+                            DataProject.appsProject.appsStatus === "ACTIVE"
+                              ? "green.400"
+                              : DataProject.appsProject.appsStatus === "DEVELOPMENT"
+                              ? "blue.400"
+                              : DataProject.appsProject.appsStatus === "TESTING"
+                              ? "orange.400"
+                              : "red.400"
+                          }
+                          rounded="full"
+                          border="2px solid white"
+                          shadow="md"
+                          animation="pulse 2s ease-in-out infinite"
+                        />
+                      </Box>
+
+                      {/* App Name - Launcher Style */}
+                      <VStack spacing={2} align="center">
+                        <Text
+                          fontSize="xl"
+                          fontWeight="bold"
+                          color="white"
+                          textAlign="center"
+                          lineHeight="shorter"
+                          noOfLines={2}
+                          maxW="200px"
+                        >
+                          {DataProject.appsProject.appName}
+                        </Text>
+                        
+                        {/* App Short Name Badge */}
+                        <Badge
+                          bg="whiteAlpha.200"
+                          color="white"
+                          px={3}
+                          py={1}
+                          rounded="full"
+                          fontSize="xs"
+                          fontWeight="bold"
+                          border="1px solid"
+                          borderColor="whiteAlpha.300"
+                        >
+                          {DataProject.appsProject.appShortName}
+                        </Badge>
+                      </VStack>
+
+                      {/* App Details Grid */}
+                      <SimpleGrid columns={2} spacing={4} w="full">
+                        {/* Status */}
+                        <VStack spacing={1} align="center">
+                          <Text fontSize="xs" color="whiteAlpha.700" fontWeight="medium">
+                            STATUS
+                          </Text>
+                          <Badge
+                            colorScheme={
+                              DataProject.appsProject.appsStatus === "ACTIVE"
+                                ? "green"
+                                : DataProject.appsProject.appsStatus === "DEVELOPMENT"
+                                ? "blue"
+                                : DataProject.appsProject.appsStatus === "TESTING"
+                                ? "orange"
+                                : "red"
+                            }
+                            size="sm"
+                            px={2}
+                            py={1}
+                            rounded="full"
+                            fontSize="xs"
+                            fontWeight="bold"
+                          >
+                            {DataProject.appsProject.appsStatus}
+                          </Badge>
+                        </VStack>
+
+                        {/* App Code */}
+                        <VStack spacing={1} align="center">
+                          <Text fontSize="xs" color="whiteAlpha.700" fontWeight="medium">
+                            CODE
+                          </Text>
+                          <Text fontSize="sm" fontWeight="bold" color="white" fontFamily="mono">
+                            {DataProject.appsProject.appCode}
+                          </Text>
+                        </VStack>
+                      </SimpleGrid>
+
+                      {/* Project Connection Info */}
+                      <Box
+                        bg="whiteAlpha.100"
+                        backdropFilter="blur(10px)"
+                        p={3}
+                        rounded="lg"
+                        border="1px solid"
+                        borderColor="whiteAlpha.200"
+                        w="full"
+                      >
+                        <VStack spacing={2}>
+                          <HStack justify="space-between" w="full">
+                            <Text fontSize="xs" color="whiteAlpha.700" fontWeight="medium">
+                              PROJECT
+                            </Text>
+                            <Text fontSize="xs" fontWeight="bold" color="white">
+                              {DataProject.projectName}
+                            </Text>
+                          </HStack>
+                          <HStack justify="space-between" w="full">
+                            <Text fontSize="xs" color="whiteAlpha.700" fontWeight="medium">
+                              CATEGORY
+                            </Text>
+                            <Badge
+                              bg="whiteAlpha.200"
+                              color="white"
+                              size="xs"
+                              px={2}
+                              py={1}
+                              rounded="full"
+                              fontSize="xs"
+                            >
+                              {DataProject.projectCategory}
+                            </Badge>
+                          </HStack>
+                        </VStack>
+                      </Box>
+
+                      {/* Quick Actions */}
+                      <HStack spacing={3} w="full">
+                        <Button
+                          size="sm"
+                          bg="whiteAlpha.200"
+                          color="white"
+                          _hover={{ bg: "whiteAlpha.300" }}
+                          rounded="full"
+                          leftIcon={<FiExternalLink />}
+                          flex={1}
+                        >
+                          Launch
+                        </Button>
+                        <Button
+                          size="sm"
+                          bg="whiteAlpha.200"
+                          color="white"
+                          _hover={{ bg: "whiteAlpha.300" }}
+                          rounded="full"
+                          leftIcon={<FiSettings />}
+                          flex={1}
+                        >
+                          Settings
+                        </Button>
+                      </HStack>
+                    </VStack>
+                  </CardBody>
+                </Card>
+              )}
+
               {/* Project Info Card */}
               <Card 
                 w="full" 
