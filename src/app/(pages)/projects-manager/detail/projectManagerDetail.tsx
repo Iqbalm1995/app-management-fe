@@ -296,8 +296,9 @@ function ProjectManagerDetail() {
           left: 0,
           right: 0,
           bottom: 0,
-          bgGradient: "linear(45deg, whiteAlpha.100 0%, transparent 50%, whiteAlpha.150 100%)",
-          zIndex: 0
+          bgGradient:
+            "linear(45deg, whiteAlpha.100 0%, transparent 50%, whiteAlpha.150 100%)",
+          zIndex: 0,
         }}
       >
         {/* Simplified Background Pattern */}
@@ -372,10 +373,10 @@ function ProjectManagerDetail() {
                   backdropFilter="blur(10px)"
                   border="1px solid"
                   borderColor="whiteAlpha.200"
-                  _hover={{ 
-                    bg: "whiteAlpha.200", 
+                  _hover={{
+                    bg: "whiteAlpha.200",
                     borderColor: "whiteAlpha.300",
-                    transform: "translateY(-1px)"
+                    transform: "translateY(-1px)",
                   }}
                   rounded="full"
                   px={4}
@@ -396,10 +397,10 @@ function ProjectManagerDetail() {
                 backdropFilter="blur(10px)"
                 border="1px solid"
                 borderColor="whiteAlpha.200"
-                _hover={{ 
-                  bg: "pink.400", 
+                _hover={{
+                  bg: "pink.400",
                   borderColor: "pink.300",
-                  transform: "translateY(-1px)"
+                  transform: "translateY(-1px)",
                 }}
                 rounded="full"
                 px={3}
@@ -417,10 +418,10 @@ function ProjectManagerDetail() {
                 backdropFilter="blur(10px)"
                 border="1px solid"
                 borderColor="whiteAlpha.200"
-                _hover={{ 
-                  bg: "blue.400", 
+                _hover={{
+                  bg: "blue.400",
                   borderColor: "blue.300",
-                  transform: "translateY(-1px)"
+                  transform: "translateY(-1px)",
                 }}
                 rounded="full"
                 px={3}
@@ -439,10 +440,10 @@ function ProjectManagerDetail() {
                 color="white"
                 bg="whiteAlpha.100"
                 backdropFilter="blur(10px)"
-                _hover={{ 
-                  bg: "whiteAlpha.200", 
+                _hover={{
+                  bg: "whiteAlpha.200",
                   borderColor: "whiteAlpha.400",
-                  transform: "translateY(-1px)"
+                  transform: "translateY(-1px)",
                 }}
                 rounded="full"
                 px={3}
@@ -475,7 +476,7 @@ function ProjectManagerDetail() {
                     backdropFilter="blur(10px)"
                     position="relative"
                     _hover={{
-                      transform: "scale(1.05)"
+                      transform: "scale(1.05)",
                     }}
                     transition="all 0.2s ease"
                   >
@@ -532,8 +533,8 @@ function ProjectManagerDetail() {
               {/* Compact Project Details */}
               <Box flex={1}>
                 <VStack spacing={3} align="start">
-                  <Heading 
-                    size="xl" 
+                  <Heading
+                    size="xl"
                     fontWeight="700"
                     bgGradient="linear(to-r, white, whiteAlpha.900)"
                     bgClip="text"
@@ -576,7 +577,7 @@ function ProjectManagerDetail() {
                     </Badge>
                   </HStack>
 
-                  <Box 
+                  <Box
                     bg="whiteAlpha.100"
                     backdropFilter="blur(10px)"
                     p={3}
@@ -585,9 +586,9 @@ function ProjectManagerDetail() {
                     borderColor="whiteAlpha.200"
                     maxW="500px"
                   >
-                    <Text 
-                      fontSize="sm" 
-                      opacity={0.95} 
+                    <Text
+                      fontSize="sm"
+                      opacity={0.95}
                       lineHeight="base"
                       noOfLines={2}
                     >
@@ -601,13 +602,17 @@ function ProjectManagerDetail() {
                       <Text fontSize="lg" fontWeight="bold" color="green.200">
                         {DataProject.projectStatusPercentage || 0}%
                       </Text>
-                      <Text fontSize="xs" opacity={0.8}>Progress</Text>
+                      <Text fontSize="xs" opacity={0.8}>
+                        Progress
+                      </Text>
                     </VStack>
                     <VStack spacing={0} align="center">
                       <Text fontSize="lg" fontWeight="bold" color="blue.200">
                         {DataProject.userAssignment?.length || 0}
                       </Text>
-                      <Text fontSize="xs" opacity={0.8}>Team</Text>
+                      <Text fontSize="xs" opacity={0.8}>
+                        Team
+                      </Text>
                     </VStack>
                     <VStack spacing={0} align="center">
                       <Text fontSize="lg" fontWeight="bold" color="orange.200">
@@ -618,7 +623,9 @@ function ProjectManagerDetail() {
                             )
                           : 0}
                       </Text>
-                      <Text fontSize="xs" opacity={0.8}>Days</Text>
+                      <Text fontSize="xs" opacity={0.8}>
+                        Days
+                      </Text>
                     </VStack>
                   </HStack>
                 </VStack>
@@ -640,7 +647,7 @@ function ProjectManagerDetail() {
                             shadow="md"
                             _hover={{
                               transform: "scale(1.05)",
-                              zIndex: 10
+                              zIndex: 10,
                             }}
                             transition="all 0.2s ease"
                           />
@@ -698,23 +705,23 @@ function ProjectManagerDetail() {
         <Grid templateColumns={{ base: "1fr", lg: "1fr 300px" }} gap={6}>
           {/* Main Content Area */}
           <GridItem>
-            <Card 
-              shadow="xl" 
+            <Card
+              shadow="xl"
               rounded={radiusStyle}
               border="1px"
               borderColor="gray.200"
               bg="white"
               overflow="hidden"
-              _hover={{ 
+              _hover={{
                 shadow: "2xl",
-                transform: "translateY(-2px)"
+                transform: "translateY(-2px)",
               }}
               transition="all 0.3s ease"
             >
               <CardBody p={0}>
                 <Tabs variant="unstyled" colorScheme="blue">
-                  <TabList 
-                    bg="white" 
+                  <TabList
+                    bg="white"
                     px={6}
                     py={4}
                     borderBottom="1px"
@@ -722,8 +729,8 @@ function ProjectManagerDetail() {
                     roundedTop={radiusStyle}
                     gap={2}
                   >
-                    <Tab 
-                      fontWeight="semibold" 
+                    <Tab
+                      fontWeight="semibold"
                       fontSize="sm"
                       px={6}
                       py={3}
@@ -734,15 +741,15 @@ function ProjectManagerDetail() {
                         color: "white",
                         bg: "blue.500",
                         shadow: "md",
-                        transform: "translateY(-1px)"
+                        transform: "translateY(-1px)",
                       }}
                       _hover={{
                         bg: "blue.100",
                         color: "gray.800",
                         _selected: {
                           bg: "purple.500",
-                          color: "white"
-                        }
+                          color: "white",
+                        },
                       }}
                       transition="all 0.2s"
                     >
@@ -759,8 +766,8 @@ function ProjectManagerDetail() {
                         <Text>Overview</Text>
                       </HStack>
                     </Tab>
-                    <Tab 
-                      fontWeight="semibold" 
+                    <Tab
+                      fontWeight="semibold"
                       fontSize="sm"
                       px={6}
                       py={3}
@@ -771,15 +778,15 @@ function ProjectManagerDetail() {
                         color: "white",
                         bg: "blue.500",
                         shadow: "md",
-                        transform: "translateY(-1px)"
+                        transform: "translateY(-1px)",
                       }}
                       _hover={{
                         bg: "blue.100",
                         color: "gray.800",
                         _selected: {
                           bg: "purple.500",
-                          color: "white"
-                        }
+                          color: "white",
+                        },
                       }}
                       transition="all 0.2s"
                     >
@@ -809,23 +816,23 @@ function ProjectManagerDetail() {
                         color: "white",
                         bg: "blue.500",
                         shadow: "md",
-                        transform: "translateY(-1px)"
+                        transform: "translateY(-1px)",
                       }}
                       _hover={{
                         bg: "blue.100",
                         color: "gray.800",
                         _selected: {
                           bg: "purple.500",
-                          color: "white"
-                        }
+                          color: "white",
+                        },
                       }}
                       _disabled={{
                         opacity: 0.4,
                         cursor: "not-allowed",
                         _hover: {
                           bg: "gray.100",
-                          color: "gray.400"
-                        }
+                          color: "gray.400",
+                        },
                       }}
                       transition="all 0.2s"
                     >
@@ -855,23 +862,23 @@ function ProjectManagerDetail() {
                         color: "white",
                         bg: "blue.500",
                         shadow: "md",
-                        transform: "translateY(-1px)"
+                        transform: "translateY(-1px)",
                       }}
                       _hover={{
                         bg: "blue.100",
                         color: "gray.800",
                         _selected: {
                           bg: "purple.500",
-                          color: "white"
-                        }
+                          color: "white",
+                        },
                       }}
                       _disabled={{
                         opacity: 0.4,
                         cursor: "not-allowed",
                         _hover: {
                           bg: "gray.100",
-                          color: "gray.400"
-                        }
+                          color: "gray.400",
+                        },
                       }}
                       transition="all 0.2s"
                     >
@@ -901,23 +908,23 @@ function ProjectManagerDetail() {
                         color: "white",
                         bg: "blue.500",
                         shadow: "md",
-                        transform: "translateY(-1px)"
+                        transform: "translateY(-1px)",
                       }}
                       _hover={{
                         bg: "blue.100",
                         color: "gray.800",
                         _selected: {
                           bg: "purple.500",
-                          color: "white"
-                        }
+                          color: "white",
+                        },
                       }}
                       _disabled={{
                         opacity: 0.4,
                         cursor: "not-allowed",
                         _hover: {
                           bg: "gray.100",
-                          color: "gray.400"
-                        }
+                          color: "gray.400",
+                        },
                       }}
                       transition="all 0.2s"
                     >
@@ -936,7 +943,7 @@ function ProjectManagerDetail() {
                     </Tab>
                   </TabList>
 
-                  <TabPanels 
+                  <TabPanels
                     bg="white"
                     roundedBottom={radiusStyle}
                     minH="600px"
@@ -945,8 +952,16 @@ function ProjectManagerDetail() {
                     <TabPanel p={8} bg="gray.50" roundedBottom={radiusStyle}>
                       <VStack spacing={8} align="stretch">
                         <HStack justify="space-between" align="center">
-                          <Heading size="lg" color="gray.800">Project Overview</Heading>
-                          <Badge colorScheme="blue" px={4} py={2} rounded="full" fontSize="md">
+                          <Heading size="lg" color="gray.800">
+                            Project Overview
+                          </Heading>
+                          <Badge
+                            colorScheme="blue"
+                            px={4}
+                            py={2}
+                            rounded="full"
+                            fontSize="md"
+                          >
                             Dashboard
                           </Badge>
                         </HStack>
@@ -954,16 +969,22 @@ function ProjectManagerDetail() {
                         {DataProject ? (
                           <>
                             {/* Enhanced Quick Stats Cards */}
-                            <SimpleGrid columns={{ base: 2, md: 4 }} spacing={6}>
+                            <SimpleGrid
+                              columns={{ base: 2, md: 4 }}
+                              spacing={6}
+                            >
                               {/* Progress Card */}
-                              <Card 
-                                bg="blue.50" 
-                                textAlign="center" 
-                                shadow="lg" 
-                                rounded="xl" 
-                                border="2px" 
+                              <Card
+                                bg="blue.50"
+                                textAlign="center"
+                                shadow="lg"
+                                rounded="xl"
+                                border="2px"
                                 borderColor="blue.200"
-                                _hover={{ transform: "translateY(-2px)", shadow: "xl" }}
+                                _hover={{
+                                  transform: "translateY(-2px)",
+                                  shadow: "xl",
+                                }}
                                 transition="all 0.2s"
                               >
                                 <CardBody py={6}>
@@ -980,24 +1001,35 @@ function ProjectManagerDetail() {
                                   >
                                     <FiTrendingUp size={24} color="white" />
                                   </Box>
-                                  <Text fontSize="3xl" fontWeight="bold" color="blue.600">
+                                  <Text
+                                    fontSize="3xl"
+                                    fontWeight="bold"
+                                    color="blue.600"
+                                  >
                                     {DataProject.projectStatusPercentage || 0}%
                                   </Text>
-                                  <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                                  <Text
+                                    fontSize="sm"
+                                    color="gray.600"
+                                    fontWeight="medium"
+                                  >
                                     Progress
                                   </Text>
                                 </CardBody>
                               </Card>
 
                               {/* Team Card */}
-                              <Card 
-                                bg="green.50" 
-                                textAlign="center" 
-                                shadow="lg" 
-                                rounded="xl" 
-                                border="2px" 
+                              <Card
+                                bg="green.50"
+                                textAlign="center"
+                                shadow="lg"
+                                rounded="xl"
+                                border="2px"
                                 borderColor="green.200"
-                                _hover={{ transform: "translateY(-2px)", shadow: "xl" }}
+                                _hover={{
+                                  transform: "translateY(-2px)",
+                                  shadow: "xl",
+                                }}
                                 transition="all 0.2s"
                               >
                                 <CardBody py={6}>
@@ -1014,24 +1046,35 @@ function ProjectManagerDetail() {
                                   >
                                     <FiUsers size={24} color="white" />
                                   </Box>
-                                  <Text fontSize="3xl" fontWeight="bold" color="green.600">
+                                  <Text
+                                    fontSize="3xl"
+                                    fontWeight="bold"
+                                    color="green.600"
+                                  >
                                     {DataProject.userAssignment?.length || 0}
                                   </Text>
-                                  <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                                  <Text
+                                    fontSize="sm"
+                                    color="gray.600"
+                                    fontWeight="medium"
+                                  >
                                     Team Members
                                   </Text>
                                 </CardBody>
                               </Card>
 
                               {/* Duration Card */}
-                              <Card 
-                                bg="orange.50" 
-                                textAlign="center" 
-                                shadow="lg" 
-                                rounded="xl" 
-                                border="2px" 
+                              <Card
+                                bg="orange.50"
+                                textAlign="center"
+                                shadow="lg"
+                                rounded="xl"
+                                border="2px"
                                 borderColor="orange.200"
-                                _hover={{ transform: "translateY(-2px)", shadow: "xl" }}
+                                _hover={{
+                                  transform: "translateY(-2px)",
+                                  shadow: "xl",
+                                }}
                                 transition="all 0.2s"
                               >
                                 <CardBody py={6}>
@@ -1048,7 +1091,11 @@ function ProjectManagerDetail() {
                                   >
                                     <FiClock size={24} color="white" />
                                   </Box>
-                                  <Text fontSize="3xl" fontWeight="bold" color="orange.600">
+                                  <Text
+                                    fontSize="3xl"
+                                    fontWeight="bold"
+                                    color="orange.600"
+                                  >
                                     {DataProject.projectRegisterDate
                                       ? calculateDurationInDays(
                                           DataProject.projectRegisterDate,
@@ -1056,21 +1103,28 @@ function ProjectManagerDetail() {
                                         )
                                       : 0}
                                   </Text>
-                                  <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                                  <Text
+                                    fontSize="sm"
+                                    color="gray.600"
+                                    fontWeight="medium"
+                                  >
                                     Days Active
                                   </Text>
                                 </CardBody>
                               </Card>
 
                               {/* Status Card */}
-                              <Card 
-                                bg="purple.50" 
-                                textAlign="center" 
-                                shadow="lg" 
-                                rounded="xl" 
-                                border="2px" 
+                              <Card
+                                bg="purple.50"
+                                textAlign="center"
+                                shadow="lg"
+                                rounded="xl"
+                                border="2px"
                                 borderColor="purple.200"
-                                _hover={{ transform: "translateY(-2px)", shadow: "xl" }}
+                                _hover={{
+                                  transform: "translateY(-2px)",
+                                  shadow: "xl",
+                                }}
                                 transition="all 0.2s"
                               >
                                 <CardBody py={6}>
@@ -1087,10 +1141,20 @@ function ProjectManagerDetail() {
                                   >
                                     <FiActivity size={24} color="white" />
                                   </Box>
-                                  <Text fontSize="3xl" fontWeight="bold" color="purple.600">
-                                    {DataProject.projectStatus === "ACTIVE" ? "Active" : "Inactive"}
+                                  <Text
+                                    fontSize="3xl"
+                                    fontWeight="bold"
+                                    color="purple.600"
+                                  >
+                                    {DataProject.projectStatus === "ACTIVE"
+                                      ? "Active"
+                                      : "Inactive"}
                                   </Text>
-                                  <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                                  <Text
+                                    fontSize="sm"
+                                    color="gray.600"
+                                    fontWeight="medium"
+                                  >
                                     Status
                                   </Text>
                                 </CardBody>
@@ -1098,9 +1162,17 @@ function ProjectManagerDetail() {
                             </SimpleGrid>
 
                             {/* Charts Section */}
-                            <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6}>
+                            <SimpleGrid
+                              columns={{ base: 1, lg: 2 }}
+                              spacing={6}
+                            >
                               {/* Progress Chart */}
-                              <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                              <Card
+                                shadow="lg"
+                                rounded="xl"
+                                border="1px"
+                                borderColor="gray.100"
+                              >
                                 <CardHeader bg="blue.50" roundedTop="xl">
                                   <HStack spacing={3}>
                                     <Box
@@ -1114,7 +1186,9 @@ function ProjectManagerDetail() {
                                     >
                                       <FiBarChart size={20} color="white" />
                                     </Box>
-                                    <Heading size="md" color="blue.700">Project Progress</Heading>
+                                    <Heading size="md" color="blue.700">
+                                      Project Progress
+                                    </Heading>
                                   </HStack>
                                 </CardHeader>
                                 <CardBody p={6}>
@@ -1124,8 +1198,8 @@ function ProjectManagerDetail() {
                                       height="100%"
                                       options={{
                                         chart: {
-                                          type: 'radialBar',
-                                          toolbar: { show: false }
+                                          type: "radialBar",
+                                          toolbar: { show: false },
                                         },
                                         plotOptions: {
                                           radialBar: {
@@ -1133,46 +1207,56 @@ function ProjectManagerDetail() {
                                             endAngle: 90,
                                             hollow: {
                                               margin: 15,
-                                              size: '70%'
+                                              size: "70%",
                                             },
                                             dataLabels: {
                                               name: {
                                                 offsetY: -10,
                                                 show: true,
-                                                color: '#888',
-                                                fontSize: '17px'
+                                                color: "#888",
+                                                fontSize: "17px",
                                               },
                                               value: {
                                                 offsetY: 16,
-                                                color: '#111',
-                                                fontSize: '36px',
+                                                color: "#111",
+                                                fontSize: "36px",
                                                 show: true,
-                                              }
-                                            }
-                                          }
+                                              },
+                                            },
+                                          },
                                         },
                                         fill: {
-                                          type: 'gradient',
+                                          type: "gradient",
                                           gradient: {
-                                            shade: 'light',
+                                            shade: "light",
                                             shadeIntensity: 0.4,
                                             inverseColors: false,
                                             opacityFrom: 1,
                                             opacityTo: 1,
-                                            stops: [0, 50, 53, 91]
+                                            stops: [0, 50, 53, 91],
                                           },
                                         },
-                                        labels: ['Progress'],
-                                        colors: ['#3182CE']
+                                        labels: ["Progress"],
+                                        colors: ["#3182CE"],
                                       }}
-                                      series={[Number(DataProject?.projectStatusPercentage || 0)]}
+                                      series={[
+                                        Number(
+                                          DataProject?.projectStatusPercentage ||
+                                            0
+                                        ),
+                                      ]}
                                     />
                                   </Box>
                                 </CardBody>
                               </Card>
 
                               {/* Task Distribution Chart (Dummy Data) */}
-                              <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                              <Card
+                                shadow="lg"
+                                rounded="xl"
+                                border="1px"
+                                borderColor="gray.100"
+                              >
                                 <CardHeader bg="green.50" roundedTop="xl">
                                   <HStack spacing={3}>
                                     <Box
@@ -1186,7 +1270,9 @@ function ProjectManagerDetail() {
                                     >
                                       <FiTarget size={20} color="white" />
                                     </Box>
-                                    <Heading size="md" color="green.700">Task Distribution</Heading>
+                                    <Heading size="md" color="green.700">
+                                      Task Distribution
+                                    </Heading>
                                   </HStack>
                                 </CardHeader>
                                 <CardBody p={6}>
@@ -1196,39 +1282,51 @@ function ProjectManagerDetail() {
                                       height="100%"
                                       options={{
                                         chart: {
-                                          type: 'donut',
-                                          toolbar: { show: false }
+                                          type: "donut",
+                                          toolbar: { show: false },
                                         },
-                                        labels: ['Completed', 'In Progress', 'Pending', 'On Hold'],
-                                        colors: ['#38A169', '#3182CE', '#ED8936', '#E53E3E'],
+                                        labels: [
+                                          "Completed",
+                                          "In Progress",
+                                          "Pending",
+                                          "On Hold",
+                                        ],
+                                        colors: [
+                                          "#38A169",
+                                          "#3182CE",
+                                          "#ED8936",
+                                          "#E53E3E",
+                                        ],
                                         legend: {
-                                          position: 'bottom',
-                                          horizontalAlign: 'center',
+                                          position: "bottom",
+                                          horizontalAlign: "center",
                                         },
                                         plotOptions: {
                                           pie: {
                                             donut: {
-                                              size: '65%'
-                                            }
-                                          }
+                                              size: "65%",
+                                            },
+                                          },
                                         },
                                         dataLabels: {
                                           enabled: true,
                                           formatter: function (val: number) {
-                                            return Math.round(val) + "%"
-                                          }
+                                            return Math.round(val) + "%";
+                                          },
                                         },
-                                        responsive: [{
-                                          breakpoint: 480,
-                                          options: {
-                                            chart: {
-                                              width: 200
+                                        responsive: [
+                                          {
+                                            breakpoint: 480,
+                                            options: {
+                                              chart: {
+                                                width: 200,
+                                              },
+                                              legend: {
+                                                position: "bottom",
+                                              },
                                             },
-                                            legend: {
-                                              position: 'bottom'
-                                            }
-                                          }
-                                        }]
+                                          },
+                                        ],
                                       }}
                                       series={[45, 30, 15, 10]} // Dummy data
                                     />
@@ -1238,9 +1336,17 @@ function ProjectManagerDetail() {
                             </SimpleGrid>
 
                             {/* Additional Information Cards */}
-                            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
+                            <SimpleGrid
+                              columns={{ base: 1, md: 3 }}
+                              spacing={6}
+                            >
                               {/* Recent Activity Card */}
-                              <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                              <Card
+                                shadow="lg"
+                                rounded="xl"
+                                border="1px"
+                                borderColor="gray.100"
+                              >
                                 <CardHeader bg="orange.50" roundedTop="xl">
                                   <HStack spacing={3}>
                                     <Box
@@ -1254,33 +1360,68 @@ function ProjectManagerDetail() {
                                     >
                                       <FiActivity size={16} color="white" />
                                     </Box>
-                                    <Heading size="sm" color="orange.700">Recent Activity</Heading>
+                                    <Heading size="sm" color="orange.700">
+                                      Recent Activity
+                                    </Heading>
                                   </HStack>
                                 </CardHeader>
                                 <CardBody p={4}>
                                   <VStack spacing={3} align="stretch">
                                     <HStack spacing={3}>
-                                      <Box w={2} h={2} bg="green.400" rounded="full" />
-                                      <Text fontSize="sm" color="gray.600">Task completed</Text>
+                                      <Box
+                                        w={2}
+                                        h={2}
+                                        bg="green.400"
+                                        rounded="full"
+                                      />
+                                      <Text fontSize="sm" color="gray.600">
+                                        Task completed
+                                      </Text>
                                     </HStack>
                                     <HStack spacing={3}>
-                                      <Box w={2} h={2} bg="blue.400" rounded="full" />
-                                      <Text fontSize="sm" color="gray.600">Team member added</Text>
+                                      <Box
+                                        w={2}
+                                        h={2}
+                                        bg="blue.400"
+                                        rounded="full"
+                                      />
+                                      <Text fontSize="sm" color="gray.600">
+                                        Team member added
+                                      </Text>
                                     </HStack>
                                     <HStack spacing={3}>
-                                      <Box w={2} h={2} bg="orange.400" rounded="full" />
-                                      <Text fontSize="sm" color="gray.600">Status updated</Text>
+                                      <Box
+                                        w={2}
+                                        h={2}
+                                        bg="orange.400"
+                                        rounded="full"
+                                      />
+                                      <Text fontSize="sm" color="gray.600">
+                                        Status updated
+                                      </Text>
                                     </HStack>
                                     <HStack spacing={3}>
-                                      <Box w={2} h={2} bg="purple.400" rounded="full" />
-                                      <Text fontSize="sm" color="gray.600">Feature deployed</Text>
+                                      <Box
+                                        w={2}
+                                        h={2}
+                                        bg="purple.400"
+                                        rounded="full"
+                                      />
+                                      <Text fontSize="sm" color="gray.600">
+                                        Feature deployed
+                                      </Text>
                                     </HStack>
                                   </VStack>
                                 </CardBody>
                               </Card>
 
                               {/* Milestones Card */}
-                              <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                              <Card
+                                shadow="lg"
+                                rounded="xl"
+                                border="1px"
+                                borderColor="gray.100"
+                              >
                                 <CardHeader bg="purple.50" roundedTop="xl">
                                   <HStack spacing={3}>
                                     <Box
@@ -1294,33 +1435,56 @@ function ProjectManagerDetail() {
                                     >
                                       <FiTarget size={16} color="white" />
                                     </Box>
-                                    <Heading size="sm" color="purple.700">Milestones</Heading>
+                                    <Heading size="sm" color="purple.700">
+                                      Milestones
+                                    </Heading>
                                   </HStack>
                                 </CardHeader>
                                 <CardBody p={4}>
                                   <VStack spacing={3} align="stretch">
                                     <HStack justify="space-between">
-                                      <Text fontSize="sm" color="gray.600">Planning</Text>
-                                      <Badge colorScheme="green" size="sm">Done</Badge>
+                                      <Text fontSize="sm" color="gray.600">
+                                        Planning
+                                      </Text>
+                                      <Badge colorScheme="green" size="sm">
+                                        Done
+                                      </Badge>
                                     </HStack>
                                     <HStack justify="space-between">
-                                      <Text fontSize="sm" color="gray.600">Development</Text>
-                                      <Badge colorScheme="blue" size="sm">Active</Badge>
+                                      <Text fontSize="sm" color="gray.600">
+                                        Development
+                                      </Text>
+                                      <Badge colorScheme="blue" size="sm">
+                                        Active
+                                      </Badge>
                                     </HStack>
                                     <HStack justify="space-between">
-                                      <Text fontSize="sm" color="gray.600">Testing</Text>
-                                      <Badge colorScheme="orange" size="sm">Pending</Badge>
+                                      <Text fontSize="sm" color="gray.600">
+                                        Testing
+                                      </Text>
+                                      <Badge colorScheme="orange" size="sm">
+                                        Pending
+                                      </Badge>
                                     </HStack>
                                     <HStack justify="space-between">
-                                      <Text fontSize="sm" color="gray.600">Deployment</Text>
-                                      <Badge colorScheme="gray" size="sm">Waiting</Badge>
+                                      <Text fontSize="sm" color="gray.600">
+                                        Deployment
+                                      </Text>
+                                      <Badge colorScheme="gray" size="sm">
+                                        Waiting
+                                      </Badge>
                                     </HStack>
                                   </VStack>
                                 </CardBody>
                               </Card>
 
                               {/* Quick Actions Card */}
-                              <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                              <Card
+                                shadow="lg"
+                                rounded="xl"
+                                border="1px"
+                                borderColor="gray.100"
+                              >
                                 <CardHeader bg="blue.50" roundedTop="xl">
                                   <HStack spacing={3}>
                                     <Box
@@ -1334,21 +1498,47 @@ function ProjectManagerDetail() {
                                     >
                                       <FiZap size={16} color="white" />
                                     </Box>
-                                    <Heading size="sm" color="blue.700">Quick Actions</Heading>
+                                    <Heading size="sm" color="blue.700">
+                                      Quick Actions
+                                    </Heading>
                                   </HStack>
                                 </CardHeader>
                                 <CardBody p={4}>
                                   <VStack spacing={2}>
-                                    <Button size="sm" variant="ghost" w="full" justifyContent="flex-start" leftIcon={<FiUsers />}>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      w="full"
+                                      justifyContent="flex-start"
+                                      leftIcon={<FiUsers />}
+                                    >
                                       Add Team Member
                                     </Button>
-                                    <Button size="sm" variant="ghost" w="full" justifyContent="flex-start" leftIcon={<FiCpu />}>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      w="full"
+                                      justifyContent="flex-start"
+                                      leftIcon={<FiCpu />}
+                                    >
                                       Create Feature
                                     </Button>
-                                    <Button size="sm" variant="ghost" w="full" justifyContent="flex-start" leftIcon={<FiBarChart />}>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      w="full"
+                                      justifyContent="flex-start"
+                                      leftIcon={<FiBarChart />}
+                                    >
                                       View Reports
                                     </Button>
-                                    <Button size="sm" variant="ghost" w="full" justifyContent="flex-start" leftIcon={<FiSettings />}>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      w="full"
+                                      justifyContent="flex-start"
+                                      leftIcon={<FiSettings />}
+                                    >
                                       Project Settings
                                     </Button>
                                   </VStack>
@@ -1357,7 +1547,12 @@ function ProjectManagerDetail() {
                             </SimpleGrid>
 
                             {/* Project Description - Enhanced */}
-                            <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                            <Card
+                              shadow="lg"
+                              rounded="xl"
+                              border="1px"
+                              borderColor="gray.100"
+                            >
                               <CardHeader bg="gray.50" roundedTop="xl">
                                 <HStack spacing={3}>
                                   <Box
@@ -1371,19 +1566,36 @@ function ProjectManagerDetail() {
                                   >
                                     <FiFileText size={20} color="white" />
                                   </Box>
-                                  <Heading size="md" color="gray.700">Project Description</Heading>
+                                  <Heading size="md" color="gray.700">
+                                    Project Description
+                                  </Heading>
                                 </HStack>
                               </CardHeader>
                               <CardBody p={6}>
-                                <Text color="gray.600" lineHeight="tall" fontSize="md">
-                                  {DataProject.projectDesc || "No description available for this project. Consider adding a detailed description to help team members understand the project goals and objectives."}
+                                <Text
+                                  color="gray.600"
+                                  lineHeight="tall"
+                                  fontSize="md"
+                                >
+                                  {DataProject.projectDesc ||
+                                    "No description available for this project. Consider adding a detailed description to help team members understand the project goals and objectives."}
                                 </Text>
                                 {DataProject.projectDesc && (
                                   <HStack mt={4} spacing={4}>
-                                    <Badge colorScheme="blue" px={3} py={1} rounded="full">
+                                    <Badge
+                                      colorScheme="blue"
+                                      px={3}
+                                      py={1}
+                                      rounded="full"
+                                    >
                                       {DataProject.projectCategory}
                                     </Badge>
-                                    <Badge colorScheme="purple" px={3} py={1} rounded="full">
+                                    <Badge
+                                      colorScheme="purple"
+                                      px={3}
+                                      py={1}
+                                      rounded="full"
+                                    >
                                       {DataProject.projectType}
                                     </Badge>
                                   </HStack>
@@ -1394,7 +1606,9 @@ function ProjectManagerDetail() {
                         ) : (
                           <Box textAlign="center" py={12}>
                             <LoadingMiniSignature />
-                            <Text mt={4} color="gray.500">Loading project overview...</Text>
+                            <Text mt={4} color="gray.500">
+                              Loading project overview...
+                            </Text>
                           </Box>
                         )}
                       </VStack>
@@ -1420,7 +1634,9 @@ function ProjectManagerDetail() {
                         {/* Header Section */}
                         <HStack justify="space-between" align="center">
                           <VStack align="start" spacing={1}>
-                            <Heading size="lg" color="gray.800">Team Management</Heading>
+                            <Heading size="lg" color="gray.800">
+                              Team Management
+                            </Heading>
                             <Text color="gray.600" fontSize="sm">
                               Manage project team members and their roles
                             </Text>
@@ -1441,25 +1657,35 @@ function ProjectManagerDetail() {
                               leftIcon={<FiUsers />}
                               rounded="full"
                               shadow="md"
-                              _hover={{ transform: "translateY(-1px)", shadow: "lg" }}
+                              _hover={{
+                                transform: "translateY(-1px)",
+                                shadow: "lg",
+                              }}
                             >
                               Add Member
                             </Button>
                           </HStack>
                         </HStack>
 
-                        {DataProject?.userAssignment && DataProject.userAssignment.length > 0 ? (
+                        {DataProject?.userAssignment &&
+                        DataProject.userAssignment.length > 0 ? (
                           <>
                             {/* Team Statistics */}
-                            <SimpleGrid columns={{ base: 2, md: 4 }} spacing={6}>
-                              <Card 
-                                bg="blue.50" 
-                                textAlign="center" 
-                                shadow="lg" 
-                                rounded="xl" 
-                                border="2px" 
+                            <SimpleGrid
+                              columns={{ base: 2, md: 4 }}
+                              spacing={6}
+                            >
+                              <Card
+                                bg="blue.50"
+                                textAlign="center"
+                                shadow="lg"
+                                rounded="xl"
+                                border="2px"
                                 borderColor="blue.200"
-                                _hover={{ transform: "translateY(-2px)", shadow: "xl" }}
+                                _hover={{
+                                  transform: "translateY(-2px)",
+                                  shadow: "xl",
+                                }}
                                 transition="all 0.2s"
                               >
                                 <CardBody py={6}>
@@ -1476,23 +1702,34 @@ function ProjectManagerDetail() {
                                   >
                                     <FiUsers size={24} color="white" />
                                   </Box>
-                                  <Text fontSize="3xl" fontWeight="bold" color="blue.600">
+                                  <Text
+                                    fontSize="3xl"
+                                    fontWeight="bold"
+                                    color="blue.600"
+                                  >
                                     {DataProject.userAssignment.length}
                                   </Text>
-                                  <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                                  <Text
+                                    fontSize="sm"
+                                    color="gray.600"
+                                    fontWeight="medium"
+                                  >
                                     Total Members
                                   </Text>
                                 </CardBody>
                               </Card>
 
-                              <Card 
-                                bg="green.50" 
-                                textAlign="center" 
-                                shadow="lg" 
-                                rounded="xl" 
-                                border="2px" 
+                              <Card
+                                bg="green.50"
+                                textAlign="center"
+                                shadow="lg"
+                                rounded="xl"
+                                border="2px"
                                 borderColor="green.200"
-                                _hover={{ transform: "translateY(-2px)", shadow: "xl" }}
+                                _hover={{
+                                  transform: "translateY(-2px)",
+                                  shadow: "xl",
+                                }}
                                 transition="all 0.2s"
                               >
                                 <CardBody py={6}>
@@ -1509,23 +1746,38 @@ function ProjectManagerDetail() {
                                   >
                                     <FiActivity size={24} color="white" />
                                   </Box>
-                                  <Text fontSize="3xl" fontWeight="bold" color="green.600">
-                                    {DataProject.userAssignment.filter(m => m.userAssignStatus === "ACTIVE").length}
+                                  <Text
+                                    fontSize="3xl"
+                                    fontWeight="bold"
+                                    color="green.600"
+                                  >
+                                    {
+                                      DataProject.userAssignment.filter(
+                                        (m) => m.userAssignStatus === "ACTIVE"
+                                      ).length
+                                    }
                                   </Text>
-                                  <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                                  <Text
+                                    fontSize="sm"
+                                    color="gray.600"
+                                    fontWeight="medium"
+                                  >
                                     Active Members
                                   </Text>
                                 </CardBody>
                               </Card>
 
-                              <Card 
-                                bg="orange.50" 
-                                textAlign="center" 
-                                shadow="lg" 
-                                rounded="xl" 
-                                border="2px" 
+                              <Card
+                                bg="orange.50"
+                                textAlign="center"
+                                shadow="lg"
+                                rounded="xl"
+                                border="2px"
                                 borderColor="orange.200"
-                                _hover={{ transform: "translateY(-2px)", shadow: "xl" }}
+                                _hover={{
+                                  transform: "translateY(-2px)",
+                                  shadow: "xl",
+                                }}
                                 transition="all 0.2s"
                               >
                                 <CardBody py={6}>
@@ -1542,23 +1794,41 @@ function ProjectManagerDetail() {
                                   >
                                     <FiTarget size={24} color="white" />
                                   </Box>
-                                  <Text fontSize="3xl" fontWeight="bold" color="orange.600">
-                                    {Math.round((DataProject.userAssignment.filter(m => m.userAssignStatus === "ACTIVE").length / DataProject.userAssignment.length) * 100)}%
+                                  <Text
+                                    fontSize="3xl"
+                                    fontWeight="bold"
+                                    color="orange.600"
+                                  >
+                                    {Math.round(
+                                      (DataProject.userAssignment.filter(
+                                        (m) => m.userAssignStatus === "ACTIVE"
+                                      ).length /
+                                        DataProject.userAssignment.length) *
+                                        100
+                                    )}
+                                    %
                                   </Text>
-                                  <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                                  <Text
+                                    fontSize="sm"
+                                    color="gray.600"
+                                    fontWeight="medium"
+                                  >
                                     Active Rate
                                   </Text>
                                 </CardBody>
                               </Card>
 
-                              <Card 
-                                bg="purple.50" 
-                                textAlign="center" 
-                                shadow="lg" 
-                                rounded="xl" 
-                                border="2px" 
+                              <Card
+                                bg="purple.50"
+                                textAlign="center"
+                                shadow="lg"
+                                rounded="xl"
+                                border="2px"
                                 borderColor="purple.200"
-                                _hover={{ transform: "translateY(-2px)", shadow: "xl" }}
+                                _hover={{
+                                  transform: "translateY(-2px)",
+                                  shadow: "xl",
+                                }}
                                 transition="all 0.2s"
                               >
                                 <CardBody py={6}>
@@ -1575,10 +1845,22 @@ function ProjectManagerDetail() {
                                   >
                                     <FiClock size={24} color="white" />
                                   </Box>
-                                  <Text fontSize="3xl" fontWeight="bold" color="purple.600">
-                                    {DataProject.userAssignment.length > 0 ? Math.ceil(DataProject.userAssignment.length / 2) : 0}
+                                  <Text
+                                    fontSize="3xl"
+                                    fontWeight="bold"
+                                    color="purple.600"
+                                  >
+                                    {DataProject.userAssignment.length > 0
+                                      ? Math.ceil(
+                                          DataProject.userAssignment.length / 2
+                                        )
+                                      : 0}
                                   </Text>
-                                  <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                                  <Text
+                                    fontSize="sm"
+                                    color="gray.600"
+                                    fontWeight="medium"
+                                  >
                                     Avg. Load
                                   </Text>
                                 </CardBody>
@@ -1586,7 +1868,12 @@ function ProjectManagerDetail() {
                             </SimpleGrid>
 
                             {/* Team Members Grid */}
-                            <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                            <Card
+                              shadow="lg"
+                              rounded="xl"
+                              border="1px"
+                              borderColor="gray.100"
+                            >
                               <CardHeader bg="blue.50" roundedTop="xl">
                                 <HStack justify="space-between">
                                   <HStack spacing={3}>
@@ -1601,128 +1888,213 @@ function ProjectManagerDetail() {
                                     >
                                       <FiUsers size={20} color="white" />
                                     </Box>
-                                    <Heading size="md" color="blue.700">Team Members</Heading>
+                                    <Heading size="md" color="blue.700">
+                                      Team Members
+                                    </Heading>
                                   </HStack>
-                                  <Badge colorScheme="blue" px={3} py={1} rounded="full">
+                                  <Badge
+                                    colorScheme="blue"
+                                    px={3}
+                                    py={1}
+                                    rounded="full"
+                                  >
                                     {DataProject.userAssignment.length} Members
                                   </Badge>
                                 </HStack>
                               </CardHeader>
                               <CardBody p={6}>
-                                <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
-                                  {DataProject.userAssignment.map((member, index) => (
-                                    <Card 
-                                      key={index}
-                                      shadow="md"
-                                      rounded="xl"
-                                      border="1px"
-                                      borderColor="gray.200"
-                                      _hover={{ 
-                                        transform: "translateY(-4px)", 
-                                        shadow: "xl",
-                                        borderColor: "blue.300"
-                                      }}
-                                      transition="all 0.2s"
-                                      bg="white"
-                                    >
-                                      <CardBody p={6}>
-                                        <VStack spacing={4}>
-                                          {/* Avatar Section */}
-                                          <Box position="relative">
-                                            <Avatar
-                                              size="xl"
-                                              name={member.userData?.nama || "User"}
-                                              src={member.userData?.profilePict || undefined}
-                                              border="4px solid"
-                                              borderColor={member.userAssignStatus === "ACTIVE" ? "green.200" : "gray.200"}
-                                              shadow="lg"
-                                            />
-                                            <Box
-                                              position="absolute"
-                                              bottom={0}
-                                              right={0}
-                                              w={6}
-                                              h={6}
-                                              bg={member.userAssignStatus === "ACTIVE" ? "green.400" : "gray.400"}
-                                              rounded="full"
-                                              border="2px solid white"
-                                              shadow="md"
-                                            />
-                                          </Box>
+                                <SimpleGrid
+                                  columns={{ base: 1, md: 2, lg: 3 }}
+                                  spacing={6}
+                                >
+                                  {DataProject.userAssignment.map(
+                                    (member, index) => (
+                                      <Card
+                                        key={index}
+                                        shadow="md"
+                                        rounded="xl"
+                                        border="1px"
+                                        borderColor="gray.200"
+                                        _hover={{
+                                          transform: "translateY(-4px)",
+                                          shadow: "xl",
+                                          borderColor: "blue.300",
+                                        }}
+                                        transition="all 0.2s"
+                                        bg="white"
+                                      >
+                                        <CardBody p={6}>
+                                          <VStack spacing={4}>
+                                            {/* Avatar Section */}
+                                            <Box position="relative">
+                                              <Avatar
+                                                size="xl"
+                                                name={
+                                                  member.userData?.nama ||
+                                                  "User"
+                                                }
+                                                src={
+                                                  member.userData
+                                                    ?.profilePict || undefined
+                                                }
+                                                border="4px solid"
+                                                borderColor={
+                                                  member.userAssignStatus ===
+                                                  "ACTIVE"
+                                                    ? "green.200"
+                                                    : "gray.200"
+                                                }
+                                                shadow="lg"
+                                              />
+                                              <Box
+                                                position="absolute"
+                                                bottom={0}
+                                                right={0}
+                                                w={6}
+                                                h={6}
+                                                bg={
+                                                  member.userAssignStatus ===
+                                                  "ACTIVE"
+                                                    ? "green.400"
+                                                    : "gray.400"
+                                                }
+                                                rounded="full"
+                                                border="2px solid white"
+                                                shadow="md"
+                                              />
+                                            </Box>
 
-                                          {/* Member Info */}
-                                          <VStack spacing={2} textAlign="center">
-                                            <Text fontWeight="bold" fontSize="lg" color="gray.800">
-                                              {member.userData?.nama || "Unknown User"}
-                                            </Text>
-                                            <Text fontSize="sm" color="gray.600">
-                                              {member.userData?.email || "No email"}
-                                            </Text>
-                                            <Badge
-                                              colorScheme={member.userAssignStatus === "ACTIVE" ? "green" : "gray"}
-                                              px={3}
-                                              py={1}
-                                              rounded="full"
-                                              fontWeight="semibold"
-                                              fontSize="xs"
+                                            {/* Member Info */}
+                                            <VStack
+                                              spacing={2}
+                                              textAlign="center"
                                             >
-                                              {member.userAssignStatus}
-                                            </Badge>
-                                          </VStack>
-
-                                          {/* Member Actions */}
-                                          <HStack spacing={2} w="full">
-                                            <Button
-                                              size="sm"
-                                              variant="ghost"
-                                              colorScheme="blue"
-                                              flex={1}
-                                              leftIcon={<FiInfo />}
-                                              rounded="lg"
-                                            >
-                                              View
-                                            </Button>
-                                            <Button
-                                              size="sm"
-                                              variant="ghost"
-                                              colorScheme="orange"
-                                              flex={1}
-                                              leftIcon={<FiEdit3 />}
-                                              rounded="lg"
-                                            >
-                                              Edit
-                                            </Button>
-                                          </HStack>
-
-                                          {/* Additional Info */}
-                                          <VStack spacing={2} w="full" pt={2} borderTop="1px" borderColor="gray.100">
-                                            <HStack justify="space-between" w="full">
-                                              <Text fontSize="xs" color="gray.500">Role:</Text>
-                                              <Badge size="sm" colorScheme="purple" rounded="md">
-                                                {member.userData?.team?.teamName || "Developer"}
-                                              </Badge>
-                                            </HStack>
-                                            <HStack justify="space-between" w="full">
-                                              <Text fontSize="xs" color="gray.500">Joined:</Text>
-                                              <Text fontSize="xs" color="gray.600">
-                                                {member.assignDate 
-                                                  ? new Date(member.assignDate).toLocaleDateString()
-                                                  : "N/A"}
+                                              <Text
+                                                fontWeight="bold"
+                                                fontSize="lg"
+                                                color="gray.800"
+                                              >
+                                                {member.userData?.nama ||
+                                                  "Unknown User"}
                                               </Text>
+                                              <Text
+                                                fontSize="sm"
+                                                color="gray.600"
+                                              >
+                                                {member.userData?.email ||
+                                                  "No email"}
+                                              </Text>
+                                              <Badge
+                                                colorScheme={
+                                                  member.userAssignStatus ===
+                                                  "ACTIVE"
+                                                    ? "green"
+                                                    : "gray"
+                                                }
+                                                px={3}
+                                                py={1}
+                                                rounded="full"
+                                                fontWeight="semibold"
+                                                fontSize="xs"
+                                              >
+                                                {member.userAssignStatus}
+                                              </Badge>
+                                            </VStack>
+
+                                            {/* Member Actions */}
+                                            <HStack spacing={2} w="full">
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                colorScheme="blue"
+                                                flex={1}
+                                                leftIcon={<FiInfo />}
+                                                rounded="lg"
+                                              >
+                                                View
+                                              </Button>
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                colorScheme="orange"
+                                                flex={1}
+                                                leftIcon={<FiEdit3 />}
+                                                rounded="lg"
+                                              >
+                                                Edit
+                                              </Button>
                                             </HStack>
+
+                                            {/* Additional Info */}
+                                            <VStack
+                                              spacing={2}
+                                              w="full"
+                                              pt={2}
+                                              borderTop="1px"
+                                              borderColor="gray.100"
+                                            >
+                                              <HStack
+                                                justify="space-between"
+                                                w="full"
+                                              >
+                                                <Text
+                                                  fontSize="xs"
+                                                  color="gray.500"
+                                                >
+                                                  Role:
+                                                </Text>
+                                                <Badge
+                                                  size="sm"
+                                                  colorScheme="purple"
+                                                  rounded="md"
+                                                >
+                                                  {member.userData?.team
+                                                    ?.teamName || "Developer"}
+                                                </Badge>
+                                              </HStack>
+                                              <HStack
+                                                justify="space-between"
+                                                w="full"
+                                              >
+                                                <Text
+                                                  fontSize="xs"
+                                                  color="gray.500"
+                                                >
+                                                  Joined:
+                                                </Text>
+                                                <Text
+                                                  fontSize="xs"
+                                                  color="gray.600"
+                                                >
+                                                  {member.assignDate
+                                                    ? new Date(
+                                                        member.assignDate
+                                                      ).toLocaleDateString()
+                                                    : "N/A"}
+                                                </Text>
+                                              </HStack>
+                                            </VStack>
                                           </VStack>
-                                        </VStack>
-                                      </CardBody>
-                                    </Card>
-                                  ))}
+                                        </CardBody>
+                                      </Card>
+                                    )
+                                  )}
                                 </SimpleGrid>
                               </CardBody>
                             </Card>
 
                             {/* Team Roles Distribution */}
-                            <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6}>
+                            <SimpleGrid
+                              columns={{ base: 1, lg: 2 }}
+                              spacing={6}
+                            >
                               {/* Roles Chart */}
-                              <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                              <Card
+                                shadow="lg"
+                                rounded="xl"
+                                border="1px"
+                                borderColor="gray.100"
+                              >
                                 <CardHeader bg="green.50" roundedTop="xl">
                                   <HStack spacing={3}>
                                     <Box
@@ -1736,7 +2108,9 @@ function ProjectManagerDetail() {
                                     >
                                       <FiTarget size={20} color="white" />
                                     </Box>
-                                    <Heading size="md" color="green.700">Team Roles</Heading>
+                                    <Heading size="md" color="green.700">
+                                      Team Roles
+                                    </Heading>
                                   </HStack>
                                 </CardHeader>
                                 <CardBody p={6}>
@@ -1746,32 +2120,44 @@ function ProjectManagerDetail() {
                                       height="100%"
                                       options={{
                                         chart: {
-                                          type: 'pie',
-                                          toolbar: { show: false }
+                                          type: "pie",
+                                          toolbar: { show: false },
                                         },
-                                        labels: ['Developers', 'Designers', 'Managers', 'QA'],
-                                        colors: ['#3182CE', '#38A169', '#ED8936', '#E53E3E'],
+                                        labels: [
+                                          "Developers",
+                                          "Designers",
+                                          "Managers",
+                                          "QA",
+                                        ],
+                                        colors: [
+                                          "#3182CE",
+                                          "#38A169",
+                                          "#ED8936",
+                                          "#E53E3E",
+                                        ],
                                         legend: {
-                                          position: 'bottom',
-                                          horizontalAlign: 'center',
+                                          position: "bottom",
+                                          horizontalAlign: "center",
                                         },
                                         dataLabels: {
                                           enabled: true,
                                           formatter: function (val: number) {
-                                            return Math.round(val) + "%"
-                                          }
+                                            return Math.round(val) + "%";
+                                          },
                                         },
-                                        responsive: [{
-                                          breakpoint: 480,
-                                          options: {
-                                            chart: {
-                                              width: 200
+                                        responsive: [
+                                          {
+                                            breakpoint: 480,
+                                            options: {
+                                              chart: {
+                                                width: 200,
+                                              },
+                                              legend: {
+                                                position: "bottom",
+                                              },
                                             },
-                                            legend: {
-                                              position: 'bottom'
-                                            }
-                                          }
-                                        }]
+                                          },
+                                        ],
                                       }}
                                       series={[60, 20, 15, 5]} // Dummy data for roles
                                     />
@@ -1780,7 +2166,12 @@ function ProjectManagerDetail() {
                               </Card>
 
                               {/* Team Activity */}
-                              <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                              <Card
+                                shadow="lg"
+                                rounded="xl"
+                                border="1px"
+                                borderColor="gray.100"
+                              >
                                 <CardHeader bg="orange.50" roundedTop="xl">
                                   <HStack spacing={3}>
                                     <Box
@@ -1794,45 +2185,87 @@ function ProjectManagerDetail() {
                                     >
                                       <FiActivity size={20} color="white" />
                                     </Box>
-                                    <Heading size="md" color="orange.700">Recent Activity</Heading>
+                                    <Heading size="md" color="orange.700">
+                                      Recent Activity
+                                    </Heading>
                                   </HStack>
                                 </CardHeader>
                                 <CardBody p={6}>
                                   <VStack spacing={4} align="stretch">
                                     <HStack spacing={3}>
                                       <Avatar size="sm" name="John Doe" />
-                                      <VStack align="start" spacing={0} flex={1}>
-                                        <Text fontSize="sm" fontWeight="medium">John Doe joined the project</Text>
-                                        <Text fontSize="xs" color="gray.500">2 hours ago</Text>
+                                      <VStack
+                                        align="start"
+                                        spacing={0}
+                                        flex={1}
+                                      >
+                                        <Text fontSize="sm" fontWeight="medium">
+                                          John Doe joined the project
+                                        </Text>
+                                        <Text fontSize="xs" color="gray.500">
+                                          2 hours ago
+                                        </Text>
                                       </VStack>
-                                      <Badge colorScheme="green" size="sm">New</Badge>
+                                      <Badge colorScheme="green" size="sm">
+                                        New
+                                      </Badge>
                                     </HStack>
                                     <Divider />
                                     <HStack spacing={3}>
                                       <Avatar size="sm" name="Jane Smith" />
-                                      <VStack align="start" spacing={0} flex={1}>
-                                        <Text fontSize="sm" fontWeight="medium">Jane Smith completed a task</Text>
-                                        <Text fontSize="xs" color="gray.500">5 hours ago</Text>
+                                      <VStack
+                                        align="start"
+                                        spacing={0}
+                                        flex={1}
+                                      >
+                                        <Text fontSize="sm" fontWeight="medium">
+                                          Jane Smith completed a task
+                                        </Text>
+                                        <Text fontSize="xs" color="gray.500">
+                                          5 hours ago
+                                        </Text>
                                       </VStack>
-                                      <Badge colorScheme="blue" size="sm">Task</Badge>
+                                      <Badge colorScheme="blue" size="sm">
+                                        Task
+                                      </Badge>
                                     </HStack>
                                     <Divider />
                                     <HStack spacing={3}>
                                       <Avatar size="sm" name="Mike Johnson" />
-                                      <VStack align="start" spacing={0} flex={1}>
-                                        <Text fontSize="sm" fontWeight="medium">Mike Johnson updated status</Text>
-                                        <Text fontSize="xs" color="gray.500">1 day ago</Text>
+                                      <VStack
+                                        align="start"
+                                        spacing={0}
+                                        flex={1}
+                                      >
+                                        <Text fontSize="sm" fontWeight="medium">
+                                          Mike Johnson updated status
+                                        </Text>
+                                        <Text fontSize="xs" color="gray.500">
+                                          1 day ago
+                                        </Text>
                                       </VStack>
-                                      <Badge colorScheme="orange" size="sm">Update</Badge>
+                                      <Badge colorScheme="orange" size="sm">
+                                        Update
+                                      </Badge>
                                     </HStack>
                                     <Divider />
                                     <HStack spacing={3}>
                                       <Avatar size="sm" name="Sarah Wilson" />
-                                      <VStack align="start" spacing={0} flex={1}>
-                                        <Text fontSize="sm" fontWeight="medium">Sarah Wilson left a comment</Text>
-                                        <Text fontSize="xs" color="gray.500">2 days ago</Text>
+                                      <VStack
+                                        align="start"
+                                        spacing={0}
+                                        flex={1}
+                                      >
+                                        <Text fontSize="sm" fontWeight="medium">
+                                          Sarah Wilson left a comment
+                                        </Text>
+                                        <Text fontSize="xs" color="gray.500">
+                                          2 days ago
+                                        </Text>
                                       </VStack>
-                                      <Badge colorScheme="purple" size="sm">Comment</Badge>
+                                      <Badge colorScheme="purple" size="sm">
+                                        Comment
+                                      </Badge>
                                     </HStack>
                                   </VStack>
                                 </CardBody>
@@ -1840,7 +2273,12 @@ function ProjectManagerDetail() {
                             </SimpleGrid>
                           </>
                         ) : (
-                          <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                          <Card
+                            shadow="lg"
+                            rounded="xl"
+                            border="1px"
+                            borderColor="gray.100"
+                          >
                             <CardBody p={12} textAlign="center">
                               <VStack spacing={6}>
                                 <Box
@@ -1855,10 +2293,18 @@ function ProjectManagerDetail() {
                                   <FiUsers size={40} color="white" />
                                 </Box>
                                 <VStack spacing={2}>
-                                  <Heading size="md" color="gray.600">No Team Members</Heading>
-                                  <Text color="gray.500" fontSize="sm" maxW="400px">
-                                    This project doesn't have any team members assigned yet. 
-                                    Start building your team by adding members to collaborate on this project.
+                                  <Heading size="md" color="gray.600">
+                                    No Team Members
+                                  </Heading>
+                                  <Text
+                                    color="gray.500"
+                                    fontSize="sm"
+                                    maxW="400px"
+                                  >
+                                    This project doesn't have any team members
+                                    assigned yet. Start building your team by
+                                    adding members to collaborate on this
+                                    project.
                                   </Text>
                                 </VStack>
                                 <Button
@@ -1867,7 +2313,10 @@ function ProjectManagerDetail() {
                                   leftIcon={<FiUsers />}
                                   rounded="full"
                                   shadow="lg"
-                                  _hover={{ transform: "translateY(-2px)", shadow: "xl" }}
+                                  _hover={{
+                                    transform: "translateY(-2px)",
+                                    shadow: "xl",
+                                  }}
                                 >
                                   Add First Team Member
                                 </Button>
@@ -1884,7 +2333,9 @@ function ProjectManagerDetail() {
                         {/* Header Section */}
                         <HStack justify="space-between" align="center">
                           <VStack align="start" spacing={1}>
-                            <Heading size="lg" color="gray.800">Project Analytics</Heading>
+                            <Heading size="lg" color="gray.800">
+                              Project Analytics
+                            </Heading>
                             <Text color="gray.600" fontSize="sm">
                               Comprehensive insights and performance metrics
                             </Text>
@@ -1905,7 +2356,10 @@ function ProjectManagerDetail() {
                               leftIcon={<FiBarChart />}
                               rounded="full"
                               shadow="md"
-                              _hover={{ transform: "translateY(-1px)", shadow: "lg" }}
+                              _hover={{
+                                transform: "translateY(-1px)",
+                                shadow: "lg",
+                              }}
                             >
                               Export Report
                             </Button>
@@ -1915,16 +2369,22 @@ function ProjectManagerDetail() {
                         {DataProject ? (
                           <>
                             {/* Key Performance Indicators */}
-                            <SimpleGrid columns={{ base: 2, md: 4 }} spacing={6}>
+                            <SimpleGrid
+                              columns={{ base: 2, md: 4 }}
+                              spacing={6}
+                            >
                               {/* Completion Rate */}
-                              <Card 
-                                bg="blue.50" 
-                                textAlign="center" 
-                                shadow="lg" 
-                                rounded="xl" 
-                                border="2px" 
+                              <Card
+                                bg="blue.50"
+                                textAlign="center"
+                                shadow="lg"
+                                rounded="xl"
+                                border="2px"
                                 borderColor="blue.200"
-                                _hover={{ transform: "translateY(-2px)", shadow: "xl" }}
+                                _hover={{
+                                  transform: "translateY(-2px)",
+                                  shadow: "xl",
+                                }}
                                 transition="all 0.2s"
                               >
                                 <CardBody py={6}>
@@ -1941,10 +2401,18 @@ function ProjectManagerDetail() {
                                   >
                                     <FiTrendingUp size={24} color="white" />
                                   </Box>
-                                  <Text fontSize="3xl" fontWeight="bold" color="blue.600">
+                                  <Text
+                                    fontSize="3xl"
+                                    fontWeight="bold"
+                                    color="blue.600"
+                                  >
                                     {DataProject.projectStatusPercentage || 0}%
                                   </Text>
-                                  <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                                  <Text
+                                    fontSize="sm"
+                                    color="gray.600"
+                                    fontWeight="medium"
+                                  >
                                     Completion Rate
                                   </Text>
                                   <Text fontSize="xs" color="green.500" mt={1}>
@@ -1954,14 +2422,17 @@ function ProjectManagerDetail() {
                               </Card>
 
                               {/* Team Productivity */}
-                              <Card 
-                                bg="green.50" 
-                                textAlign="center" 
-                                shadow="lg" 
-                                rounded="xl" 
-                                border="2px" 
+                              <Card
+                                bg="green.50"
+                                textAlign="center"
+                                shadow="lg"
+                                rounded="xl"
+                                border="2px"
                                 borderColor="green.200"
-                                _hover={{ transform: "translateY(-2px)", shadow: "xl" }}
+                                _hover={{
+                                  transform: "translateY(-2px)",
+                                  shadow: "xl",
+                                }}
                                 transition="all 0.2s"
                               >
                                 <CardBody py={6}>
@@ -1978,10 +2449,25 @@ function ProjectManagerDetail() {
                                   >
                                     <FiActivity size={24} color="white" />
                                   </Box>
-                                  <Text fontSize="3xl" fontWeight="bold" color="green.600">
-                                    {DataProject.userAssignment?.length ? Math.round((DataProject.projectStatusPercentage || 0) / DataProject.userAssignment.length) : 0}%
+                                  <Text
+                                    fontSize="3xl"
+                                    fontWeight="bold"
+                                    color="green.600"
+                                  >
+                                    {DataProject.userAssignment?.length
+                                      ? Math.round(
+                                          (DataProject.projectStatusPercentage ||
+                                            0) /
+                                            DataProject.userAssignment.length
+                                        )
+                                      : 0}
+                                    %
                                   </Text>
-                                  <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                                  <Text
+                                    fontSize="sm"
+                                    color="gray.600"
+                                    fontWeight="medium"
+                                  >
                                     Team Efficiency
                                   </Text>
                                   <Text fontSize="xs" color="green.500" mt={1}>
@@ -1991,14 +2477,17 @@ function ProjectManagerDetail() {
                               </Card>
 
                               {/* Time Performance */}
-                              <Card 
-                                bg="orange.50" 
-                                textAlign="center" 
-                                shadow="lg" 
-                                rounded="xl" 
-                                border="2px" 
+                              <Card
+                                bg="orange.50"
+                                textAlign="center"
+                                shadow="lg"
+                                rounded="xl"
+                                border="2px"
                                 borderColor="orange.200"
-                                _hover={{ transform: "translateY(-2px)", shadow: "xl" }}
+                                _hover={{
+                                  transform: "translateY(-2px)",
+                                  shadow: "xl",
+                                }}
                                 transition="all 0.2s"
                               >
                                 <CardBody py={6}>
@@ -2015,7 +2504,11 @@ function ProjectManagerDetail() {
                                   >
                                     <FiClock size={24} color="white" />
                                   </Box>
-                                  <Text fontSize="3xl" fontWeight="bold" color="orange.600">
+                                  <Text
+                                    fontSize="3xl"
+                                    fontWeight="bold"
+                                    color="orange.600"
+                                  >
                                     {DataProject.projectRegisterDate
                                       ? calculateDurationInDays(
                                           DataProject.projectRegisterDate,
@@ -2023,7 +2516,11 @@ function ProjectManagerDetail() {
                                         )
                                       : 0}
                                   </Text>
-                                  <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                                  <Text
+                                    fontSize="sm"
+                                    color="gray.600"
+                                    fontWeight="medium"
+                                  >
                                     Days Active
                                   </Text>
                                   <Text fontSize="xs" color="orange.500" mt={1}>
@@ -2033,14 +2530,17 @@ function ProjectManagerDetail() {
                               </Card>
 
                               {/* Quality Score */}
-                              <Card 
-                                bg="purple.50" 
-                                textAlign="center" 
-                                shadow="lg" 
-                                rounded="xl" 
-                                border="2px" 
+                              <Card
+                                bg="purple.50"
+                                textAlign="center"
+                                shadow="lg"
+                                rounded="xl"
+                                border="2px"
                                 borderColor="purple.200"
-                                _hover={{ transform: "translateY(-2px)", shadow: "xl" }}
+                                _hover={{
+                                  transform: "translateY(-2px)",
+                                  shadow: "xl",
+                                }}
                                 transition="all 0.2s"
                               >
                                 <CardBody py={6}>
@@ -2057,10 +2557,25 @@ function ProjectManagerDetail() {
                                   >
                                     <FiTarget size={24} color="white" />
                                   </Box>
-                                  <Text fontSize="3xl" fontWeight="bold" color="purple.600">
-                                    {Math.min(95, Math.max(70, (DataProject.projectStatusPercentage || 0) + 15))}
+                                  <Text
+                                    fontSize="3xl"
+                                    fontWeight="bold"
+                                    color="purple.600"
+                                  >
+                                    {Math.min(
+                                      95,
+                                      Math.max(
+                                        70,
+                                        (DataProject.projectStatusPercentage ||
+                                          0) + 15
+                                      )
+                                    )}
                                   </Text>
-                                  <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                                  <Text
+                                    fontSize="sm"
+                                    color="gray.600"
+                                    fontWeight="medium"
+                                  >
                                     Quality Score
                                   </Text>
                                   <Text fontSize="xs" color="green.500" mt={1}>
@@ -2071,9 +2586,17 @@ function ProjectManagerDetail() {
                             </SimpleGrid>
 
                             {/* Charts Section */}
-                            <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6}>
+                            <SimpleGrid
+                              columns={{ base: 1, lg: 2 }}
+                              spacing={6}
+                            >
                               {/* Progress Timeline Chart */}
-                              <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                              <Card
+                                shadow="lg"
+                                rounded="xl"
+                                border="1px"
+                                borderColor="gray.100"
+                              >
                                 <CardHeader bg="blue.50" roundedTop="xl">
                                   <HStack spacing={3}>
                                     <Box
@@ -2087,7 +2610,9 @@ function ProjectManagerDetail() {
                                     >
                                       <FiTrendingUp size={20} color="white" />
                                     </Box>
-                                    <Heading size="md" color="blue.700">Progress Timeline</Heading>
+                                    <Heading size="md" color="blue.700">
+                                      Progress Timeline
+                                    </Heading>
                                   </HStack>
                                 </CardHeader>
                                 <CardBody p={6}>
@@ -2097,64 +2622,86 @@ function ProjectManagerDetail() {
                                       height="100%"
                                       options={{
                                         chart: {
-                                          type: 'line',
+                                          type: "line",
                                           toolbar: { show: false },
-                                          zoom: { enabled: false }
+                                          zoom: { enabled: false },
                                         },
                                         stroke: {
-                                          curve: 'smooth',
-                                          width: 3
+                                          curve: "smooth",
+                                          width: 3,
                                         },
-                                        colors: ['#3182CE'],
+                                        colors: ["#3182CE"],
                                         xaxis: {
-                                          categories: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
+                                          categories: [
+                                            "Week 1",
+                                            "Week 2",
+                                            "Week 3",
+                                            "Week 4",
+                                            "Week 5",
+                                            "Week 6",
+                                          ],
                                           labels: {
                                             style: {
-                                              colors: '#718096'
-                                            }
-                                          }
+                                              colors: "#718096",
+                                            },
+                                          },
                                         },
                                         yaxis: {
                                           min: 0,
                                           max: 100,
                                           labels: {
                                             formatter: function (val: number) {
-                                              return val + "%"
+                                              return val + "%";
                                             },
                                             style: {
-                                              colors: '#718096'
-                                            }
-                                          }
+                                              colors: "#718096",
+                                            },
+                                          },
                                         },
                                         grid: {
-                                          borderColor: '#E2E8F0',
-                                          strokeDashArray: 3
+                                          borderColor: "#E2E8F0",
+                                          strokeDashArray: 3,
                                         },
                                         markers: {
                                           size: 6,
-                                          colors: ['#3182CE'],
-                                          strokeColors: '#fff',
-                                          strokeWidth: 2
+                                          colors: ["#3182CE"],
+                                          strokeColors: "#fff",
+                                          strokeWidth: 2,
                                         },
                                         tooltip: {
                                           y: {
                                             formatter: function (val: number) {
-                                              return val + "% completed"
-                                            }
-                                          }
-                                        }
+                                              return val + "% completed";
+                                            },
+                                          },
+                                        },
                                       }}
-                                      series={[{
-                                        name: 'Progress',
-                                        data: [10, 25, 45, 60, 75, DataProject.projectStatusPercentage || 0]
-                                      }]}
+                                      series={[
+                                        {
+                                          name: "Progress",
+                                          data: [
+                                            10,
+                                            25,
+                                            45,
+                                            60,
+                                            75,
+                                            DataProject.projectStatusPercentage ||
+                                              0,
+                                          ],
+                                        },
+                                      ]}
                                     />
                                   </Box>
                                 </CardBody>
                               </Card>
 
                               {/* Team Performance Chart */}
-                              <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                              <Card
+                                shadow="lg"
+                                rounded="xl"
+                                border="1px"
+                                borderColor="gray.100"
+                              >
                                 <CardHeader bg="green.50" roundedTop="xl">
                                   <HStack spacing={3}>
                                     <Box
@@ -2168,7 +2715,9 @@ function ProjectManagerDetail() {
                                     >
                                       <FiUsers size={20} color="white" />
                                     </Box>
-                                    <Heading size="md" color="green.700">Team Performance</Heading>
+                                    <Heading size="md" color="green.700">
+                                      Team Performance
+                                    </Heading>
                                   </HStack>
                                 </CardHeader>
                                 <CardBody p={6}>
@@ -2178,47 +2727,57 @@ function ProjectManagerDetail() {
                                       height="100%"
                                       options={{
                                         chart: {
-                                          type: 'bar',
-                                          toolbar: { show: false }
+                                          type: "bar",
+                                          toolbar: { show: false },
                                         },
-                                        colors: ['#38A169', '#3182CE', '#ED8936'],
+                                        colors: [
+                                          "#38A169",
+                                          "#3182CE",
+                                          "#ED8936",
+                                        ],
                                         xaxis: {
-                                          categories: ['Tasks Completed', 'In Progress', 'Pending'],
+                                          categories: [
+                                            "Tasks Completed",
+                                            "In Progress",
+                                            "Pending",
+                                          ],
                                           labels: {
                                             style: {
-                                              colors: '#718096'
-                                            }
-                                          }
+                                              colors: "#718096",
+                                            },
+                                          },
                                         },
                                         yaxis: {
                                           labels: {
                                             style: {
-                                              colors: '#718096'
-                                            }
-                                          }
+                                              colors: "#718096",
+                                            },
+                                          },
                                         },
                                         grid: {
-                                          borderColor: '#E2E8F0',
-                                          strokeDashArray: 3
+                                          borderColor: "#E2E8F0",
+                                          strokeDashArray: 3,
                                         },
                                         plotOptions: {
                                           bar: {
                                             borderRadius: 8,
                                             horizontal: false,
-                                            columnWidth: '60%'
-                                          }
+                                            columnWidth: "60%",
+                                          },
                                         },
                                         dataLabels: {
                                           enabled: true,
                                           style: {
-                                            colors: ['#fff']
-                                          }
-                                        }
+                                            colors: ["#fff"],
+                                          },
+                                        },
                                       }}
-                                      series={[{
-                                        name: 'Tasks',
-                                        data: [45, 30, 15] // Dummy data
-                                      }]}
+                                      series={[
+                                        {
+                                          name: "Tasks",
+                                          data: [45, 30, 15], // Dummy data
+                                        },
+                                      ]}
                                     />
                                   </Box>
                                 </CardBody>
@@ -2226,9 +2785,17 @@ function ProjectManagerDetail() {
                             </SimpleGrid>
 
                             {/* Detailed Analytics Cards */}
-                            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
+                            <SimpleGrid
+                              columns={{ base: 1, md: 3 }}
+                              spacing={6}
+                            >
                               {/* Performance Insights */}
-                              <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                              <Card
+                                shadow="lg"
+                                rounded="xl"
+                                border="1px"
+                                borderColor="gray.100"
+                              >
                                 <CardHeader bg="orange.50" roundedTop="xl">
                                   <HStack spacing={3}>
                                     <Box
@@ -2242,40 +2809,80 @@ function ProjectManagerDetail() {
                                     >
                                       <FiActivity size={16} color="white" />
                                     </Box>
-                                    <Heading size="sm" color="orange.700">Performance Insights</Heading>
+                                    <Heading size="sm" color="orange.700">
+                                      Performance Insights
+                                    </Heading>
                                   </HStack>
                                 </CardHeader>
                                 <CardBody p={4}>
                                   <VStack spacing={4} align="stretch">
                                     <HStack justify="space-between">
-                                      <Text fontSize="sm" color="gray.600">Velocity</Text>
+                                      <Text fontSize="sm" color="gray.600">
+                                        Velocity
+                                      </Text>
                                       <HStack spacing={2}>
-                                        <Text fontSize="sm" fontWeight="bold" color="green.600">+12%</Text>
+                                        <Text
+                                          fontSize="sm"
+                                          fontWeight="bold"
+                                          color="green.600"
+                                        >
+                                          +12%
+                                        </Text>
                                         <FiTrendingUp size={14} color="green" />
                                       </HStack>
                                     </HStack>
                                     <Divider />
                                     <HStack justify="space-between">
-                                      <Text fontSize="sm" color="gray.600">Code Quality</Text>
+                                      <Text fontSize="sm" color="gray.600">
+                                        Code Quality
+                                      </Text>
                                       <HStack spacing={2}>
-                                        <Text fontSize="sm" fontWeight="bold" color="blue.600">95%</Text>
-                                        <Badge colorScheme="blue" size="sm">Excellent</Badge>
+                                        <Text
+                                          fontSize="sm"
+                                          fontWeight="bold"
+                                          color="blue.600"
+                                        >
+                                          95%
+                                        </Text>
+                                        <Badge colorScheme="blue" size="sm">
+                                          Excellent
+                                        </Badge>
                                       </HStack>
                                     </HStack>
                                     <Divider />
                                     <HStack justify="space-between">
-                                      <Text fontSize="sm" color="gray.600">Bug Rate</Text>
+                                      <Text fontSize="sm" color="gray.600">
+                                        Bug Rate
+                                      </Text>
                                       <HStack spacing={2}>
-                                        <Text fontSize="sm" fontWeight="bold" color="green.600">0.2%</Text>
-                                        <Badge colorScheme="green" size="sm">Low</Badge>
+                                        <Text
+                                          fontSize="sm"
+                                          fontWeight="bold"
+                                          color="green.600"
+                                        >
+                                          0.2%
+                                        </Text>
+                                        <Badge colorScheme="green" size="sm">
+                                          Low
+                                        </Badge>
                                       </HStack>
                                     </HStack>
                                     <Divider />
                                     <HStack justify="space-between">
-                                      <Text fontSize="sm" color="gray.600">Test Coverage</Text>
+                                      <Text fontSize="sm" color="gray.600">
+                                        Test Coverage
+                                      </Text>
                                       <HStack spacing={2}>
-                                        <Text fontSize="sm" fontWeight="bold" color="blue.600">87%</Text>
-                                        <Badge colorScheme="blue" size="sm">Good</Badge>
+                                        <Text
+                                          fontSize="sm"
+                                          fontWeight="bold"
+                                          color="blue.600"
+                                        >
+                                          87%
+                                        </Text>
+                                        <Badge colorScheme="blue" size="sm">
+                                          Good
+                                        </Badge>
                                       </HStack>
                                     </HStack>
                                   </VStack>
@@ -2283,7 +2890,12 @@ function ProjectManagerDetail() {
                               </Card>
 
                               {/* Resource Utilization */}
-                              <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                              <Card
+                                shadow="lg"
+                                rounded="xl"
+                                border="1px"
+                                borderColor="gray.100"
+                              >
                                 <CardHeader bg="purple.50" roundedTop="xl">
                                   <HStack spacing={3}>
                                     <Box
@@ -2297,45 +2909,88 @@ function ProjectManagerDetail() {
                                     >
                                       <FiCpu size={16} color="white" />
                                     </Box>
-                                    <Heading size="sm" color="purple.700">Resource Utilization</Heading>
+                                    <Heading size="sm" color="purple.700">
+                                      Resource Utilization
+                                    </Heading>
                                   </HStack>
                                 </CardHeader>
                                 <CardBody p={4}>
                                   <VStack spacing={4} align="stretch">
                                     <VStack spacing={2} align="stretch">
                                       <HStack justify="space-between">
-                                        <Text fontSize="sm" color="gray.600">Team Capacity</Text>
-                                        <Text fontSize="sm" fontWeight="bold">85%</Text>
+                                        <Text fontSize="sm" color="gray.600">
+                                          Team Capacity
+                                        </Text>
+                                        <Text fontSize="sm" fontWeight="bold">
+                                          85%
+                                        </Text>
                                       </HStack>
-                                      <Progress value={85} colorScheme="purple" size="sm" rounded="full" />
+                                      <Progress
+                                        value={85}
+                                        colorScheme="purple"
+                                        size="sm"
+                                        rounded="full"
+                                      />
                                     </VStack>
                                     <VStack spacing={2} align="stretch">
                                       <HStack justify="space-between">
-                                        <Text fontSize="sm" color="gray.600">Budget Used</Text>
-                                        <Text fontSize="sm" fontWeight="bold">72%</Text>
+                                        <Text fontSize="sm" color="gray.600">
+                                          Budget Used
+                                        </Text>
+                                        <Text fontSize="sm" fontWeight="bold">
+                                          72%
+                                        </Text>
                                       </HStack>
-                                      <Progress value={72} colorScheme="blue" size="sm" rounded="full" />
+                                      <Progress
+                                        value={72}
+                                        colorScheme="blue"
+                                        size="sm"
+                                        rounded="full"
+                                      />
                                     </VStack>
                                     <VStack spacing={2} align="stretch">
                                       <HStack justify="space-between">
-                                        <Text fontSize="sm" color="gray.600">Time Allocated</Text>
-                                        <Text fontSize="sm" fontWeight="bold">68%</Text>
+                                        <Text fontSize="sm" color="gray.600">
+                                          Time Allocated
+                                        </Text>
+                                        <Text fontSize="sm" fontWeight="bold">
+                                          68%
+                                        </Text>
                                       </HStack>
-                                      <Progress value={68} colorScheme="green" size="sm" rounded="full" />
+                                      <Progress
+                                        value={68}
+                                        colorScheme="green"
+                                        size="sm"
+                                        rounded="full"
+                                      />
                                     </VStack>
                                     <VStack spacing={2} align="stretch">
                                       <HStack justify="space-between">
-                                        <Text fontSize="sm" color="gray.600">Resources</Text>
-                                        <Text fontSize="sm" fontWeight="bold">91%</Text>
+                                        <Text fontSize="sm" color="gray.600">
+                                          Resources
+                                        </Text>
+                                        <Text fontSize="sm" fontWeight="bold">
+                                          91%
+                                        </Text>
                                       </HStack>
-                                      <Progress value={91} colorScheme="orange" size="sm" rounded="full" />
+                                      <Progress
+                                        value={91}
+                                        colorScheme="orange"
+                                        size="sm"
+                                        rounded="full"
+                                      />
                                     </VStack>
                                   </VStack>
                                 </CardBody>
                               </Card>
 
                               {/* Risk Assessment */}
-                              <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                              <Card
+                                shadow="lg"
+                                rounded="xl"
+                                border="1px"
+                                borderColor="gray.100"
+                              >
                                 <CardHeader bg="red.50" roundedTop="xl">
                                   <HStack spacing={3}>
                                     <Box
@@ -2347,33 +3002,65 @@ function ProjectManagerDetail() {
                                       alignItems="center"
                                       justifyContent="center"
                                     >
-                                      <FiAlertTriangle size={16} color="white" />
+                                      <FiAlertTriangle
+                                        size={16}
+                                        color="white"
+                                      />
                                     </Box>
-                                    <Heading size="sm" color="red.700">Risk Assessment</Heading>
+                                    <Heading size="sm" color="red.700">
+                                      Risk Assessment
+                                    </Heading>
                                   </HStack>
                                 </CardHeader>
                                 <CardBody p={4}>
                                   <VStack spacing={3} align="stretch">
                                     <HStack justify="space-between">
-                                      <Text fontSize="sm" color="gray.600">Schedule Risk</Text>
-                                      <Badge colorScheme="green" size="sm">Low</Badge>
+                                      <Text fontSize="sm" color="gray.600">
+                                        Schedule Risk
+                                      </Text>
+                                      <Badge colorScheme="green" size="sm">
+                                        Low
+                                      </Badge>
                                     </HStack>
                                     <HStack justify="space-between">
-                                      <Text fontSize="sm" color="gray.600">Budget Risk</Text>
-                                      <Badge colorScheme="yellow" size="sm">Medium</Badge>
+                                      <Text fontSize="sm" color="gray.600">
+                                        Budget Risk
+                                      </Text>
+                                      <Badge colorScheme="yellow" size="sm">
+                                        Medium
+                                      </Badge>
                                     </HStack>
                                     <HStack justify="space-between">
-                                      <Text fontSize="sm" color="gray.600">Technical Risk</Text>
-                                      <Badge colorScheme="green" size="sm">Low</Badge>
+                                      <Text fontSize="sm" color="gray.600">
+                                        Technical Risk
+                                      </Text>
+                                      <Badge colorScheme="green" size="sm">
+                                        Low
+                                      </Badge>
                                     </HStack>
                                     <HStack justify="space-between">
-                                      <Text fontSize="sm" color="gray.600">Resource Risk</Text>
-                                      <Badge colorScheme="green" size="sm">Low</Badge>
+                                      <Text fontSize="sm" color="gray.600">
+                                        Resource Risk
+                                      </Text>
+                                      <Badge colorScheme="green" size="sm">
+                                        Low
+                                      </Badge>
                                     </HStack>
                                     <Divider />
                                     <HStack justify="space-between">
-                                      <Text fontSize="sm" fontWeight="bold" color="gray.700">Overall Risk</Text>
-                                      <Badge colorScheme="green" size="sm" px={3} py={1}>
+                                      <Text
+                                        fontSize="sm"
+                                        fontWeight="bold"
+                                        color="gray.700"
+                                      >
+                                        Overall Risk
+                                      </Text>
+                                      <Badge
+                                        colorScheme="green"
+                                        size="sm"
+                                        px={3}
+                                        py={1}
+                                      >
                                         LOW RISK
                                       </Badge>
                                     </HStack>
@@ -2383,7 +3070,12 @@ function ProjectManagerDetail() {
                             </SimpleGrid>
 
                             {/* Recommendations */}
-                            <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                            <Card
+                              shadow="lg"
+                              rounded="xl"
+                              border="1px"
+                              borderColor="gray.100"
+                            >
                               <CardHeader bg="blue.50" roundedTop="xl">
                                 <HStack spacing={3}>
                                   <Box
@@ -2397,48 +3089,131 @@ function ProjectManagerDetail() {
                                   >
                                     <FiZap size={20} color="white" />
                                   </Box>
-                                  <Heading size="md" color="blue.700">AI-Powered Recommendations</Heading>
+                                  <Heading size="md" color="blue.700">
+                                    AI-Powered Recommendations
+                                  </Heading>
                                 </HStack>
                               </CardHeader>
                               <CardBody p={6}>
-                                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+                                <SimpleGrid
+                                  columns={{ base: 1, md: 2 }}
+                                  spacing={6}
+                                >
                                   <VStack spacing={4} align="stretch">
                                     <HStack spacing={3}>
-                                      <Box w={2} h={2} bg="green.400" rounded="full" />
+                                      <Box
+                                        w={2}
+                                        h={2}
+                                        bg="green.400"
+                                        rounded="full"
+                                      />
                                       <Text fontSize="sm" color="gray.700">
-                                        <Text as="span" fontWeight="bold" color="green.600">Optimize team allocation:</Text> Consider redistributing tasks to balance workload across team members.
+                                        <Text
+                                          as="span"
+                                          fontWeight="bold"
+                                          color="green.600"
+                                        >
+                                          Optimize team allocation:
+                                        </Text>{" "}
+                                        Consider redistributing tasks to balance
+                                        workload across team members.
                                       </Text>
                                     </HStack>
                                     <HStack spacing={3}>
-                                      <Box w={2} h={2} bg="blue.400" rounded="full" />
+                                      <Box
+                                        w={2}
+                                        h={2}
+                                        bg="blue.400"
+                                        rounded="full"
+                                      />
                                       <Text fontSize="sm" color="gray.700">
-                                        <Text as="span" fontWeight="bold" color="blue.600">Increase test coverage:</Text> Add more unit tests to reach the target of 90% code coverage.
+                                        <Text
+                                          as="span"
+                                          fontWeight="bold"
+                                          color="blue.600"
+                                        >
+                                          Increase test coverage:
+                                        </Text>{" "}
+                                        Add more unit tests to reach the target
+                                        of 90% code coverage.
                                       </Text>
                                     </HStack>
                                     <HStack spacing={3}>
-                                      <Box w={2} h={2} bg="orange.400" rounded="full" />
+                                      <Box
+                                        w={2}
+                                        h={2}
+                                        bg="orange.400"
+                                        rounded="full"
+                                      />
                                       <Text fontSize="sm" color="gray.700">
-                                        <Text as="span" fontWeight="bold" color="orange.600">Monitor budget:</Text> Current spending rate may exceed budget by 8% if maintained.
+                                        <Text
+                                          as="span"
+                                          fontWeight="bold"
+                                          color="orange.600"
+                                        >
+                                          Monitor budget:
+                                        </Text>{" "}
+                                        Current spending rate may exceed budget
+                                        by 8% if maintained.
                                       </Text>
                                     </HStack>
                                   </VStack>
                                   <VStack spacing={4} align="stretch">
                                     <HStack spacing={3}>
-                                      <Box w={2} h={2} bg="purple.400" rounded="full" />
+                                      <Box
+                                        w={2}
+                                        h={2}
+                                        bg="purple.400"
+                                        rounded="full"
+                                      />
                                       <Text fontSize="sm" color="gray.700">
-                                        <Text as="span" fontWeight="bold" color="purple.600">Schedule review:</Text> Plan a milestone review meeting to assess progress and adjust timeline.
+                                        <Text
+                                          as="span"
+                                          fontWeight="bold"
+                                          color="purple.600"
+                                        >
+                                          Schedule review:
+                                        </Text>{" "}
+                                        Plan a milestone review meeting to
+                                        assess progress and adjust timeline.
                                       </Text>
                                     </HStack>
                                     <HStack spacing={3}>
-                                      <Box w={2} h={2} bg="pink.400" rounded="full" />
+                                      <Box
+                                        w={2}
+                                        h={2}
+                                        bg="pink.400"
+                                        rounded="full"
+                                      />
                                       <Text fontSize="sm" color="gray.700">
-                                        <Text as="span" fontWeight="bold" color="pink.600">Documentation update:</Text> Update project documentation to reflect recent changes and decisions.
+                                        <Text
+                                          as="span"
+                                          fontWeight="bold"
+                                          color="pink.600"
+                                        >
+                                          Documentation update:
+                                        </Text>{" "}
+                                        Update project documentation to reflect
+                                        recent changes and decisions.
                                       </Text>
                                     </HStack>
                                     <HStack spacing={3}>
-                                      <Box w={2} h={2} bg="teal.400" rounded="full" />
+                                      <Box
+                                        w={2}
+                                        h={2}
+                                        bg="teal.400"
+                                        rounded="full"
+                                      />
                                       <Text fontSize="sm" color="gray.700">
-                                        <Text as="span" fontWeight="bold" color="teal.600">Performance optimization:</Text> Consider implementing caching to improve application performance.
+                                        <Text
+                                          as="span"
+                                          fontWeight="bold"
+                                          color="teal.600"
+                                        >
+                                          Performance optimization:
+                                        </Text>{" "}
+                                        Consider implementing caching to improve
+                                        application performance.
                                       </Text>
                                     </HStack>
                                   </VStack>
@@ -2449,7 +3224,9 @@ function ProjectManagerDetail() {
                         ) : (
                           <Box textAlign="center" py={12}>
                             <LoadingMiniSignature />
-                            <Text mt={4} color="gray.500">Loading analytics data...</Text>
+                            <Text mt={4} color="gray.500">
+                              Loading analytics data...
+                            </Text>
                           </Box>
                         )}
                       </VStack>
@@ -2465,36 +3242,44 @@ function ProjectManagerDetail() {
             <VStack spacing={6}>
               {/* Application Information Card - Launcher Style */}
               {DataProject?.appsProject && (
-                <Card 
-                  w="full" 
-                  shadow="lg" 
+                <Card
+                  w="full"
+                  shadow="lg"
                   rounded={radiusStyle}
                   border="1px"
                   borderColor="gray.200"
-                  bgGradient="linear(to-br, secondary.400, secondary.600)"
+                  bgGradient="linear(to-b, secondary.500, secondary.800)"
                   color="white"
-                  _hover={{ 
+                  _hover={{
                     shadow: "xl",
-                    transform: "translateY(-2px)"
+                    transform: "translateY(-2px)",
                   }}
                   transition="all 0.3s ease"
                   overflow="hidden"
                   position="relative"
                 >
-                  {/* Decorative Background Pattern */}
+                  {/* BJB Logo Background Overlay */}
                   <Box
                     position="absolute"
-                    top={0}
-                    left={0}
-                    right={0}
-                    bottom={0}
+                    top="-10px"
+                    right="-40px"
+                    zIndex={0}
                     opacity={0.08}
-                    bgImage="radial-gradient(circle at 20% 30%, white 1px, transparent 1px), radial-gradient(circle at 80% 70%, white 1px, transparent 1px)"
-                    bgSize="40px 40px, 40px 40px"
-                  />
-                  
+                    transform="rotate(15deg)"
+                  >
+                    <img
+                      src="/img/logo-bjb-black-wing.svg"
+                      alt="BJB Logo Background"
+                      style={{
+                        width: "240px",
+                        height: "auto",
+                        filter: "brightness(0) invert(1)", // Makes the logo white
+                      }}
+                    />
+                  </Box>
+
                   {/* Floating Decorative Elements */}
-                  <Box
+                  {/* <Box
                     position="absolute"
                     top="15%"
                     right="10%"
@@ -2515,8 +3300,8 @@ function ProjectManagerDetail() {
                     transform="rotate(45deg)"
                     rounded="sm"
                     animation="spin 10s linear infinite"
-                  />
-                  
+                  /> */}
+
                   <CardBody p={8} position="relative" zIndex={1}>
                     <VStack spacing={6} align="center">
                       {/* App Icon - Launcher Style */}
@@ -2534,7 +3319,7 @@ function ProjectManagerDetail() {
                           opacity={0.8}
                           animation="pulse 2s ease-in-out infinite"
                         />
-                        
+
                         {/* Main App Icon */}
                         <Box
                           w={20}
@@ -2553,7 +3338,7 @@ function ProjectManagerDetail() {
                           position="relative"
                           _hover={{
                             transform: "scale(1.05)",
-                            shadow: "3xl"
+                            shadow: "3xl",
                           }}
                           transition="all 0.3s ease"
                         >
@@ -2564,16 +3349,17 @@ function ProjectManagerDetail() {
                               style={{
                                 width: "60%",
                                 height: "60%",
-                                objectFit: "contain"
+                                objectFit: "contain",
                               }}
                             />
                           ) : (
                             <Text color="white" fontSize="2xl">
-                              {DataProject.appsProject.appName?.charAt(0) || "A"}
+                              {DataProject.appsProject.appName?.charAt(0) ||
+                                "A"}
                             </Text>
                           )}
                         </Box>
-                        
+
                         {/* Status Indicator Dot */}
                         <Box
                           position="absolute"
@@ -2584,7 +3370,8 @@ function ProjectManagerDetail() {
                           bg={
                             DataProject.appsProject.appsStatus === "ACTIVE"
                               ? "green.400"
-                              : DataProject.appsProject.appsStatus === "DEVELOPMENT"
+                              : DataProject.appsProject.appsStatus ===
+                                "DEVELOPMENT"
                               ? "blue.400"
                               : DataProject.appsProject.appsStatus === "TESTING"
                               ? "orange.400"
@@ -2610,7 +3397,7 @@ function ProjectManagerDetail() {
                         >
                           {DataProject.appsProject.appName}
                         </Text>
-                        
+
                         {/* App Short Name Badge */}
                         <Badge
                           bg="whiteAlpha.200"
@@ -2631,16 +3418,22 @@ function ProjectManagerDetail() {
                       <SimpleGrid columns={2} spacing={4} w="full">
                         {/* Status */}
                         <VStack spacing={1} align="center">
-                          <Text fontSize="xs" color="whiteAlpha.700" fontWeight="medium">
+                          <Text
+                            fontSize="xs"
+                            color="whiteAlpha.700"
+                            fontWeight="medium"
+                          >
                             STATUS
                           </Text>
                           <Badge
                             colorScheme={
                               DataProject.appsProject.appsStatus === "ACTIVE"
                                 ? "green"
-                                : DataProject.appsProject.appsStatus === "DEVELOPMENT"
+                                : DataProject.appsProject.appsStatus ===
+                                  "DEVELOPMENT"
                                 ? "blue"
-                                : DataProject.appsProject.appsStatus === "TESTING"
+                                : DataProject.appsProject.appsStatus ===
+                                  "TESTING"
                                 ? "orange"
                                 : "red"
                             }
@@ -2657,10 +3450,19 @@ function ProjectManagerDetail() {
 
                         {/* App Code */}
                         <VStack spacing={1} align="center">
-                          <Text fontSize="xs" color="whiteAlpha.700" fontWeight="medium">
+                          <Text
+                            fontSize="xs"
+                            color="whiteAlpha.700"
+                            fontWeight="medium"
+                          >
                             CODE
                           </Text>
-                          <Text fontSize="sm" fontWeight="bold" color="white" fontFamily="mono">
+                          <Text
+                            fontSize="sm"
+                            fontWeight="bold"
+                            color="white"
+                            fontFamily="mono"
+                          >
                             {DataProject.appsProject.appCode}
                           </Text>
                         </VStack>
@@ -2678,7 +3480,11 @@ function ProjectManagerDetail() {
                       >
                         <VStack spacing={2}>
                           <HStack justify="space-between" w="full">
-                            <Text fontSize="xs" color="whiteAlpha.700" fontWeight="medium">
+                            <Text
+                              fontSize="xs"
+                              color="whiteAlpha.700"
+                              fontWeight="medium"
+                            >
                               PROJECT
                             </Text>
                             <Text fontSize="xs" fontWeight="bold" color="white">
@@ -2686,7 +3492,11 @@ function ProjectManagerDetail() {
                             </Text>
                           </HStack>
                           <HStack justify="space-between" w="full">
-                            <Text fontSize="xs" color="whiteAlpha.700" fontWeight="medium">
+                            <Text
+                              fontSize="xs"
+                              color="whiteAlpha.700"
+                              fontWeight="medium"
+                            >
                               CATEGORY
                             </Text>
                             <Badge
@@ -2735,20 +3545,20 @@ function ProjectManagerDetail() {
               )}
 
               {/* Project Info Card */}
-              <Card 
-                w="full" 
-                shadow="lg" 
+              <Card
+                w="full"
+                shadow="lg"
                 rounded={radiusStyle}
                 border="1px"
                 borderColor="gray.200"
-                _hover={{ 
+                _hover={{
                   shadow: "xl",
-                  transform: "translateY(-2px)"
+                  transform: "translateY(-2px)",
                 }}
                 transition="all 0.3s ease"
               >
-                <CardHeader 
-                  bg="blue.50" 
+                <CardHeader
+                  bg="blue.50"
                   roundedTop={radiusStyle}
                   borderBottom="1px"
                   borderColor="gray.200"
@@ -2765,7 +3575,9 @@ function ProjectManagerDetail() {
                     >
                       <FiInfo size={16} color="white" />
                     </Box>
-                    <Heading size="sm" color="blue.700">Project Info</Heading>
+                    <Heading size="sm" color="blue.700">
+                      Project Info
+                    </Heading>
                   </HStack>
                 </CardHeader>
                 <CardBody p={6}>
@@ -2832,20 +3644,20 @@ function ProjectManagerDetail() {
               </Card>
 
               {/* Quick Actions Card */}
-              <Card 
-                w="full" 
-                shadow="lg" 
+              <Card
+                w="full"
+                shadow="lg"
                 rounded={radiusStyle}
                 border="1px"
                 borderColor="gray.200"
-                _hover={{ 
+                _hover={{
                   shadow: "xl",
-                  transform: "translateY(-2px)"
+                  transform: "translateY(-2px)",
                 }}
                 transition="all 0.3s ease"
               >
-                <CardHeader 
-                  bg="green.50" 
+                <CardHeader
+                  bg="green.50"
                   roundedTop={radiusStyle}
                   borderBottom="1px"
                   borderColor="gray.200"
@@ -2862,7 +3674,9 @@ function ProjectManagerDetail() {
                     >
                       <FiZap size={16} color="white" />
                     </Box>
-                    <Heading size="sm" color="green.700">Quick Actions</Heading>
+                    <Heading size="sm" color="green.700">
+                      Quick Actions
+                    </Heading>
                   </HStack>
                 </CardHeader>
                 <CardBody p={6}>
@@ -2874,10 +3688,10 @@ function ProjectManagerDetail() {
                       justifyContent="flex-start"
                       leftIcon={<FiActivity />}
                       rounded={radiusStyle}
-                      _hover={{ 
-                        bg: "blue.50", 
+                      _hover={{
+                        bg: "blue.50",
                         color: "blue.600",
-                        transform: "translateX(4px)"
+                        transform: "translateX(4px)",
                       }}
                       transition="all 0.2s"
                     >
@@ -2890,10 +3704,10 @@ function ProjectManagerDetail() {
                       justifyContent="flex-start"
                       leftIcon={<FiSettings />}
                       rounded={radiusStyle}
-                      _hover={{ 
-                        bg: "orange.50", 
+                      _hover={{
+                        bg: "orange.50",
                         color: "orange.600",
-                        transform: "translateX(4px)"
+                        transform: "translateX(4px)",
                       }}
                       transition="all 0.2s"
                     >
@@ -2906,10 +3720,10 @@ function ProjectManagerDetail() {
                       justifyContent="flex-start"
                       leftIcon={<FiBarChart />}
                       rounded={radiusStyle}
-                      _hover={{ 
-                        bg: "purple.50", 
+                      _hover={{
+                        bg: "purple.50",
                         color: "purple.600",
-                        transform: "translateX(4px)"
+                        transform: "translateX(4px)",
                       }}
                       transition="all 0.2s"
                     >
@@ -2986,7 +3800,7 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
 
   const RefreshAction = () => {
-    setRefreshData(prev => prev + 1);
+    setRefreshData((prev) => prev + 1);
   };
 
   useEffect(() => {
@@ -3037,7 +3851,9 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
           {IsLoadingProcess ? (
             <Box textAlign="center" py={12}>
               <LoadingMiniSignature />
-              <Text mt={4} color="gray.500">Loading project information...</Text>
+              <Text mt={4} color="gray.500">
+                Loading project information...
+              </Text>
             </Box>
           ) : DataProject ? (
             <>
@@ -3061,7 +3877,12 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
               {/* Beautiful Information Cards */}
               <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
                 {/* Basic Information Card */}
-                <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                <Card
+                  shadow="lg"
+                  rounded="xl"
+                  border="1px"
+                  borderColor="gray.100"
+                >
                   <CardHeader bg="blue.50" roundedTop="xl">
                     <HStack spacing={3}>
                       <Box
@@ -3075,27 +3896,59 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
                       >
                         <FiInfo size={20} color="white" />
                       </Box>
-                      <Heading size="md" color="blue.700">Basic Information</Heading>
+                      <Heading size="md" color="blue.700">
+                        Basic Information
+                      </Heading>
                     </HStack>
                   </CardHeader>
                   <CardBody p={6}>
                     <VStack spacing={4} align="stretch">
                       <HStack justify="space-between">
-                        <Text fontSize="sm" color="gray.600" fontWeight="medium">Project Number:</Text>
-                        <Badge colorScheme="blue" px={3} py={1} rounded="full" fontSize="sm">
+                        <Text
+                          fontSize="sm"
+                          color="gray.600"
+                          fontWeight="medium"
+                        >
+                          Project Number:
+                        </Text>
+                        <Badge
+                          colorScheme="blue"
+                          px={3}
+                          py={1}
+                          rounded="full"
+                          fontSize="sm"
+                        >
                           {DataProject.projectNo || "N/A"}
                         </Badge>
                       </HStack>
                       <Divider />
                       <HStack justify="space-between">
-                        <Text fontSize="sm" color="gray.600" fontWeight="medium">Project Name:</Text>
-                        <Text fontSize="sm" fontWeight="bold" color="gray.800" textAlign="right" maxW="200px">
+                        <Text
+                          fontSize="sm"
+                          color="gray.600"
+                          fontWeight="medium"
+                        >
+                          Project Name:
+                        </Text>
+                        <Text
+                          fontSize="sm"
+                          fontWeight="bold"
+                          color="gray.800"
+                          textAlign="right"
+                          maxW="200px"
+                        >
                           {DataProject.projectName || "N/A"}
                         </Text>
                       </HStack>
                       <Divider />
                       <VStack align="stretch" spacing={2}>
-                        <Text fontSize="sm" color="gray.600" fontWeight="medium">Description:</Text>
+                        <Text
+                          fontSize="sm"
+                          color="gray.600"
+                          fontWeight="medium"
+                        >
+                          Description:
+                        </Text>
                         <Box
                           bg="gray.50"
                           p={3}
@@ -3104,8 +3957,13 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
                           borderColor="gray.200"
                           minH="60px"
                         >
-                          <Text fontSize="sm" color="gray.700" lineHeight="tall">
-                            {DataProject.projectDesc || "No description available"}
+                          <Text
+                            fontSize="sm"
+                            color="gray.700"
+                            lineHeight="tall"
+                          >
+                            {DataProject.projectDesc ||
+                              "No description available"}
                           </Text>
                         </Box>
                       </VStack>
@@ -3114,7 +3972,12 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
                 </Card>
 
                 {/* Project Classification Card */}
-                <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                <Card
+                  shadow="lg"
+                  rounded="xl"
+                  border="1px"
+                  borderColor="gray.100"
+                >
                   <CardHeader bg="green.50" roundedTop="xl">
                     <HStack spacing={3}>
                       <Box
@@ -3128,33 +3991,68 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
                       >
                         <FiTarget size={20} color="white" />
                       </Box>
-                      <Heading size="md" color="green.700">Classification</Heading>
+                      <Heading size="md" color="green.700">
+                        Classification
+                      </Heading>
                     </HStack>
                   </CardHeader>
                   <CardBody p={6}>
                     <VStack spacing={4} align="stretch">
                       <HStack justify="space-between">
-                        <Text fontSize="sm" color="gray.600" fontWeight="medium">Category:</Text>
-                        <Badge colorScheme="green" px={3} py={1} rounded="full" fontSize="sm">
+                        <Text
+                          fontSize="sm"
+                          color="gray.600"
+                          fontWeight="medium"
+                        >
+                          Category:
+                        </Text>
+                        <Badge
+                          colorScheme="green"
+                          px={3}
+                          py={1}
+                          rounded="full"
+                          fontSize="sm"
+                        >
                           {DataProject.projectCategory || "N/A"}
                         </Badge>
                       </HStack>
                       <Divider />
                       <HStack justify="space-between">
-                        <Text fontSize="sm" color="gray.600" fontWeight="medium">Type:</Text>
-                        <Badge colorScheme="purple" px={3} py={1} rounded="full" fontSize="sm">
+                        <Text
+                          fontSize="sm"
+                          color="gray.600"
+                          fontWeight="medium"
+                        >
+                          Type:
+                        </Text>
+                        <Badge
+                          colorScheme="purple"
+                          px={3}
+                          py={1}
+                          rounded="full"
+                          fontSize="sm"
+                        >
                           {DataProject.projectType || "N/A"}
                         </Badge>
                       </HStack>
                       <Divider />
                       <HStack justify="space-between">
-                        <Text fontSize="sm" color="gray.600" fontWeight="medium">Status:</Text>
+                        <Text
+                          fontSize="sm"
+                          color="gray.600"
+                          fontWeight="medium"
+                        >
+                          Status:
+                        </Text>
                         <Badge
                           colorScheme={
-                            DataProject.projectStatus === "ACTIVE" ? "green" :
-                            DataProject.projectStatus === "ONHOLD" ? "orange" :
-                            DataProject.projectStatus === "COMPLETED" ? "blue" :
-                            "gray"
+                            DataProject.projectStatus === "ACTIVE"
+                              ? "green"
+                              : DataProject.projectStatus === "ONHOLD"
+                              ? "orange"
+                              : DataProject.projectStatus === "COMPLETED"
+                              ? "blue"
+                              : "gray"
                           }
                           px={3}
                           py={1}
@@ -3169,7 +4067,12 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
                 </Card>
 
                 {/* Timeline Information Card */}
-                <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                <Card
+                  shadow="lg"
+                  rounded="xl"
+                  border="1px"
+                  borderColor="gray.100"
+                >
                   <CardHeader bg="orange.50" roundedTop="xl">
                     <HStack spacing={3}>
                       <Box
@@ -3183,42 +4086,78 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
                       >
                         <FiCalendar size={20} color="white" />
                       </Box>
-                      <Heading size="md" color="orange.700">Timeline</Heading>
+                      <Heading size="md" color="orange.700">
+                        Timeline
+                      </Heading>
                     </HStack>
                   </CardHeader>
                   <CardBody p={6}>
                     <VStack spacing={4} align="stretch">
                       <HStack justify="space-between">
-                        <Text fontSize="sm" color="gray.600" fontWeight="medium">Register Date:</Text>
+                        <Text
+                          fontSize="sm"
+                          color="gray.600"
+                          fontWeight="medium"
+                        >
+                          Register Date:
+                        </Text>
                         <Text fontSize="sm" fontWeight="bold" color="gray.800">
-                          {DataProject.projectRegisterDate 
-                            ? new Date(DataProject.projectRegisterDate).toLocaleDateString()
+                          {DataProject.projectRegisterDate
+                            ? new Date(
+                                DataProject.projectRegisterDate
+                              ).toLocaleDateString()
                             : "N/A"}
                         </Text>
                       </HStack>
                       <Divider />
                       <HStack justify="space-between">
-                        <Text fontSize="sm" color="gray.600" fontWeight="medium">Closed Date:</Text>
+                        <Text
+                          fontSize="sm"
+                          color="gray.600"
+                          fontWeight="medium"
+                        >
+                          Closed Date:
+                        </Text>
                         {DataProject.projectClosedDate ? (
-                          <Text fontSize="sm" fontWeight="bold" color="gray.800">
-                            {new Date(DataProject.projectClosedDate).toLocaleDateString()}
+                          <Text
+                            fontSize="sm"
+                            fontWeight="bold"
+                            color="gray.800"
+                          >
+                            {new Date(
+                              DataProject.projectClosedDate
+                            ).toLocaleDateString()}
                           </Text>
                         ) : (
-                          <Badge colorScheme="green" px={3} py={1} rounded="full" fontSize="sm">
+                          <Badge
+                            colorScheme="green"
+                            px={3}
+                            py={1}
+                            rounded="full"
+                            fontSize="sm"
+                          >
                             ON GOING
                           </Badge>
                         )}
                       </HStack>
                       <Divider />
                       <HStack justify="space-between">
-                        <Text fontSize="sm" color="gray.600" fontWeight="medium">Duration:</Text>
+                        <Text
+                          fontSize="sm"
+                          color="gray.600"
+                          fontWeight="medium"
+                        >
+                          Duration:
+                        </Text>
                         <Text fontSize="sm" fontWeight="bold" color="gray.800">
                           {DataProject.projectRegisterDate
                             ? calculateDurationInDays(
                                 DataProject.projectRegisterDate,
-                                DataProject.projectClosedDate || new Date().toISOString()
+                                DataProject.projectClosedDate ||
+                                  new Date().toISOString()
                               )
-                            : 0} days
+                            : 0}{" "}
+                          days
                         </Text>
                       </HStack>
                     </VStack>
@@ -3226,7 +4165,12 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
                 </Card>
 
                 {/* Additional Information Card */}
-                <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+                <Card
+                  shadow="lg"
+                  rounded="xl"
+                  border="1px"
+                  borderColor="gray.100"
+                >
                   <CardHeader bg="purple.50" roundedTop="xl">
                     <HStack spacing={3}>
                       <Box
@@ -3240,13 +4184,21 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
                       >
                         <FiFileText size={20} color="white" />
                       </Box>
-                      <Heading size="md" color="purple.700">Additional Info</Heading>
+                      <Heading size="md" color="purple.700">
+                        Additional Info
+                      </Heading>
                     </HStack>
                   </CardHeader>
                   <CardBody p={6}>
                     <VStack spacing={4} align="stretch">
                       <VStack align="stretch" spacing={2}>
-                        <Text fontSize="sm" color="gray.600" fontWeight="medium">Notes:</Text>
+                        <Text
+                          fontSize="sm"
+                          color="gray.600"
+                          fontWeight="medium"
+                        >
+                          Notes:
+                        </Text>
                         <Box
                           bg="gray.50"
                           p={3}
@@ -3255,15 +4207,33 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
                           borderColor="gray.200"
                           minH="60px"
                         >
-                          <Text fontSize="sm" color="gray.700" lineHeight="tall">
+                          <Text
+                            fontSize="sm"
+                            color="gray.700"
+                            lineHeight="tall"
+                          >
                             {DataProject.note || "No additional notes"}
                           </Text>
                         </Box>
                       </VStack>
                       <Divider />
                       <HStack justify="space-between">
-                        <Text fontSize="sm" color="gray.600" fontWeight="medium">Project ID:</Text>
-                        <Text fontSize="xs" fontFamily="mono" color="gray.500" bg="gray.100" px={2} py={1} rounded="md">
+                        <Text
+                          fontSize="sm"
+                          color="gray.600"
+                          fontWeight="medium"
+                        >
+                          Project ID:
+                        </Text>
+                        <Text
+                          fontSize="xs"
+                          fontFamily="mono"
+                          color="gray.500"
+                          bg="gray.100"
+                          px={2}
+                          py={1}
+                          rounded="md"
+                        >
                           {DataProject.id}
                         </Text>
                       </HStack>
@@ -3273,7 +4243,12 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
               </SimpleGrid>
 
               {/* Progress Section */}
-              <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
+              <Card
+                shadow="lg"
+                rounded="xl"
+                border="1px"
+                borderColor="gray.100"
+              >
                 <CardHeader bg="blue.50" roundedTop="xl">
                   <HStack spacing={3}>
                     <Box
@@ -3287,7 +4262,9 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
                     >
                       <FiTrendingUp size={20} color="white" />
                     </Box>
-                    <Heading size="md" color="blue.700">Project Progress</Heading>
+                    <Heading size="md" color="blue.700">
+                      Project Progress
+                    </Heading>
                   </HStack>
                 </CardHeader>
                 <CardBody p={6}>
@@ -3308,7 +4285,12 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
                       w="full"
                       bg="gray.100"
                     />
-                    <HStack justify="space-between" w="full" fontSize="sm" color="gray.600">
+                    <HStack
+                      justify="space-between"
+                      w="full"
+                      fontSize="sm"
+                      color="gray.600"
+                    >
                       <Text>Started</Text>
                       <Text>In Progress</Text>
                       <Text>Completed</Text>
@@ -3319,7 +4301,9 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
             </>
           ) : (
             <Box textAlign="center" py={12}>
-              <Text color="gray.500" fontSize="lg">No project data available</Text>
+              <Text color="gray.500" fontSize="lg">
+                No project data available
+              </Text>
             </Box>
           )}
         </>
