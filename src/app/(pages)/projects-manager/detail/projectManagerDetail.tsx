@@ -201,6 +201,7 @@ function ProjectManagerDetail() {
   const [DataProject, setDataProject] = useState<ProjectDataResponse | null>(
     null
   );
+  const [DataApps, setDataApps] = useState<AppsResponse | null>(null);
   const [RefreshData, setRefreshData] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
 
@@ -243,6 +244,30 @@ function ProjectManagerDetail() {
       GetDataList();
     }
   }, [DataAuth, RefreshData, projectId]);
+
+  // Fetch application data when project is loaded
+  useEffect(() => {
+    if (DataAuth && DataAuth.team && DataProject && !DataApps) {
+      const GetAppData = async () => {
+        try {
+          const requestData = await GetDetailAppsByProjectId(
+            DataProject.id,
+            tokenData
+          );
+
+          if (!requestData || requestData.statusCode !== RES_CODE_OK) {
+            return;
+          }
+
+          const appsData: AppsResponse = requestData.data as AppsResponse;
+          setDataApps(appsData);
+        } catch (error) {
+          console.error("Error fetching app data:", error);
+        }
+      };
+      GetAppData();
+    }
+  }, [DataAuth, DataProject, tokenData]);
 
   return (
     <LayoutAdmin>
@@ -333,24 +358,69 @@ function ProjectManagerDetail() {
 
           {/* Main Project Information */}
           {DataProject ? (
-            <HStack spacing={6} align="center">
-              {/* Project Avatar */}
-              <Box
-                w={16}
-                h={16}
-                bgGradient="linear(to-br, blue.400, purple.500)"
-                rounded="2xl"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-                fontSize="xl"
-                fontWeight="bold"
-                shadow="lg"
-                border="3px solid"
-                borderColor="whiteAlpha.300"
-              >
-                {DataProject.projectName?.charAt(0) || "P"}
-              </Box>
+            <HStack spacing={6} align="start">
+              {/* Application Avatar with Name and Status */}
+              <VStack spacing={2} align="center">
+                <Box
+                  w={16}
+                  h={16}
+                  bgGradient="linear(to-br, blue.400, purple.500)"
+                  rounded="2xl"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  fontSize="xl"
+                  fontWeight="bold"
+                  shadow="lg"
+                  border="3px solid"
+                  borderColor="whiteAlpha.300"
+                >
+                  {DataProject?.appsProject?.appName?.charAt(0) ||
+                    DataApps?.appName?.charAt(0) ||
+                    DataProject.projectName?.charAt(0) ||
+                    "A"}
+                </Box>
+
+                {/* App Name and Status Below Avatar */}
+                <VStack spacing={1} align="center">
+                  <Box
+                    as="span"
+                    fontSize="sm"
+                    fontWeight="semibold"
+                    opacity={0.9}
+                  >
+                    {DataProject?.appsProject?.appName ||
+                      DataApps?.appName ||
+                      "Application"}
+                  </Box>
+                  <Badge
+                    colorScheme={
+                      (DataProject?.appsProject?.appsStatus ||
+                        DataApps?.appsStatus) === "ACTIVE"
+                        ? "green"
+                        : (DataProject?.appsProject?.appsStatus ||
+                            DataApps?.appsStatus) === "INACTIVE"
+                        ? "red"
+                        : (DataProject?.appsProject?.appsStatus ||
+                            DataApps?.appsStatus) === "DEVELOPMENT"
+                        ? "blue"
+                        : (DataProject?.appsProject?.appsStatus ||
+                            DataApps?.appsStatus) === "TESTING"
+                        ? "orange"
+                        : "gray"
+                    }
+                    size="sm"
+                    px={2}
+                    py={1}
+                    rounded="full"
+                    fontSize="xs"
+                  >
+                    {DataProject?.appsProject?.appsStatus ||
+                      DataApps?.appsStatus ||
+                      "Unknown"}
+                  </Badge>
+                </VStack>
+              </VStack>
 
               {/* Project Details */}
               <Box flex={1}>
