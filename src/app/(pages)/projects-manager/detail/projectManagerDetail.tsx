@@ -565,57 +565,251 @@ function ProjectManagerDetail() {
         <Grid templateColumns={{ base: "1fr", lg: "1fr 300px" }} gap={6}>
           {/* Main Content Area */}
           <GridItem>
-            <Card shadow="sm" rounded="lg">
+            <Card 
+              shadow="xl" 
+              rounded={radiusStyle}
+              border="1px"
+              borderColor="gray.200"
+              bg="white"
+              overflow="hidden"
+              _hover={{ 
+                shadow: "2xl",
+                transform: "translateY(-2px)"
+              }}
+              transition="all 0.3s ease"
+            >
               <CardBody p={0}>
-                <Tabs variant="enclosed" colorScheme="blue">
-                  <TabList bg="gray.50" px={4}>
-                    <Tab fontWeight="medium" fontSize="sm">
-                      <HStack spacing={2}>
-                        <FiTarget size={16} />
+                <Tabs variant="unstyled" colorScheme="blue">
+                  <TabList 
+                    bg="white" 
+                    px={6}
+                    py={4}
+                    borderBottom="1px"
+                    borderColor="gray.200"
+                    roundedTop={radiusStyle}
+                    gap={2}
+                  >
+                    <Tab 
+                      fontWeight="semibold" 
+                      fontSize="sm"
+                      px={6}
+                      py={3}
+                      rounded={radiusStyle}
+                      bg="gray.100"
+                      color="gray.600"
+                      _selected={{
+                        color: "white",
+                        bg: "blue.500",
+                        shadow: "md",
+                        transform: "translateY(-1px)"
+                      }}
+                      _hover={{
+                        bg: "blue.100",
+                        color: "gray.800",
+                        _selected: {
+                          bg: "purple.500",
+                          color: "white"
+                        }
+                      }}
+                      transition="all 0.2s"
+                    >
+                      <HStack spacing={3}>
+                        <Box
+                          w={5}
+                          h={5}
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="center"
+                        >
+                          <FiTarget size={16} />
+                        </Box>
                         <Text>Overview</Text>
                       </HStack>
                     </Tab>
-                    <Tab fontWeight="medium" fontSize="sm">
-                      <HStack spacing={2}>
-                        <FiInfo size={16} />
+                    <Tab 
+                      fontWeight="semibold" 
+                      fontSize="sm"
+                      px={6}
+                      py={3}
+                      rounded={radiusStyle}
+                      bg="gray.100"
+                      color="gray.600"
+                      _selected={{
+                        color: "white",
+                        bg: "blue.500",
+                        shadow: "md",
+                        transform: "translateY(-1px)"
+                      }}
+                      _hover={{
+                        bg: "blue.100",
+                        color: "gray.800",
+                        _selected: {
+                          bg: "purple.500",
+                          color: "white"
+                        }
+                      }}
+                      transition="all 0.2s"
+                    >
+                      <HStack spacing={3}>
+                        <Box
+                          w={5}
+                          h={5}
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="center"
+                        >
+                          <FiInfo size={16} />
+                        </Box>
                         <Text>Details</Text>
                       </HStack>
                     </Tab>
                     <Tab
-                      fontWeight="medium"
+                      fontWeight="semibold"
                       fontSize="sm"
+                      px={6}
+                      py={3}
+                      rounded={radiusStyle}
+                      bg="gray.100"
+                      color="gray.600"
                       isDisabled={!DataProject}
+                      _selected={{
+                        color: "white",
+                        bg: "blue.500",
+                        shadow: "md",
+                        transform: "translateY(-1px)"
+                      }}
+                      _hover={{
+                        bg: "blue.100",
+                        color: "gray.800",
+                        _selected: {
+                          bg: "purple.500",
+                          color: "white"
+                        }
+                      }}
+                      _disabled={{
+                        opacity: 0.4,
+                        cursor: "not-allowed",
+                        _hover: {
+                          bg: "gray.100",
+                          color: "gray.400"
+                        }
+                      }}
+                      transition="all 0.2s"
                     >
-                      <HStack spacing={2}>
-                        <FiCpu size={16} />
+                      <HStack spacing={3}>
+                        <Box
+                          w={5}
+                          h={5}
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="center"
+                        >
+                          <FiCpu size={16} />
+                        </Box>
                         <Text>Features</Text>
                       </HStack>
                     </Tab>
                     <Tab
-                      fontWeight="medium"
+                      fontWeight="semibold"
                       fontSize="sm"
+                      px={6}
+                      py={3}
+                      rounded={radiusStyle}
+                      bg="gray.100"
+                      color="gray.600"
                       isDisabled={!DataProject}
+                      _selected={{
+                        color: "white",
+                        bg: "blue.500",
+                        shadow: "md",
+                        transform: "translateY(-1px)"
+                      }}
+                      _hover={{
+                        bg: "blue.100",
+                        color: "gray.800",
+                        _selected: {
+                          bg: "purple.500",
+                          color: "white"
+                        }
+                      }}
+                      _disabled={{
+                        opacity: 0.4,
+                        cursor: "not-allowed",
+                        _hover: {
+                          bg: "gray.100",
+                          color: "gray.400"
+                        }
+                      }}
+                      transition="all 0.2s"
                     >
-                      <HStack spacing={2}>
-                        <FiUsers size={16} />
+                      <HStack spacing={3}>
+                        <Box
+                          w={5}
+                          h={5}
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="center"
+                        >
+                          <FiUsers size={16} />
+                        </Box>
                         <Text>Team</Text>
                       </HStack>
                     </Tab>
                     <Tab
-                      fontWeight="medium"
+                      fontWeight="semibold"
                       fontSize="sm"
+                      px={6}
+                      py={3}
+                      rounded={radiusStyle}
+                      bg="gray.100"
+                      color="gray.600"
                       isDisabled={!DataProject}
+                      _selected={{
+                        color: "white",
+                        bg: "blue.500",
+                        shadow: "md",
+                        transform: "translateY(-1px)"
+                      }}
+                      _hover={{
+                        bg: "blue.100",
+                        color: "gray.800",
+                        _selected: {
+                          bg: "purple.500",
+                          color: "white"
+                        }
+                      }}
+                      _disabled={{
+                        opacity: 0.4,
+                        cursor: "not-allowed",
+                        _hover: {
+                          bg: "gray.100",
+                          color: "gray.400"
+                        }
+                      }}
+                      transition="all 0.2s"
                     >
-                      <HStack spacing={2}>
-                        <FiBarChart size={16} />
+                      <HStack spacing={3}>
+                        <Box
+                          w={5}
+                          h={5}
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="center"
+                        >
+                          <FiBarChart size={16} />
+                        </Box>
                         <Text>Analytics</Text>
                       </HStack>
                     </Tab>
                   </TabList>
 
-                  <TabPanels>
+                  <TabPanels 
+                    bg="white"
+                    roundedBottom={radiusStyle}
+                    minH="600px"
+                  >
                     {/* Overview Tab */}
-                    <TabPanel p={6}>
+                    <TabPanel p={8} bg="gray.50" roundedBottom={radiusStyle}>
                       <VStack spacing={8} align="stretch">
                         <HStack justify="space-between" align="center">
                           <Heading size="lg" color="gray.800">Project Overview</Heading>
@@ -1074,21 +1268,21 @@ function ProjectManagerDetail() {
                     </TabPanel>
 
                     {/* Details Tab */}
-                    <TabPanel p={6}>
+                    <TabPanel p={8} bg="gray.50" roundedBottom={radiusStyle}>
                       <Suspense fallback={<LoadingMiniSignature />}>
                         <ProjectInfoSection projectId={projectId} />
                       </Suspense>
                     </TabPanel>
 
                     {/* Features Tab */}
-                    <TabPanel p={6}>
+                    <TabPanel p={8} bg="gray.50" roundedBottom={radiusStyle}>
                       <Suspense fallback={<LoadingMiniSignature />}>
                         <ProjectFeatureView DataProject={DataProject} />
                       </Suspense>
                     </TabPanel>
 
                     {/* Team Tab */}
-                    <TabPanel p={6}>
+                    <TabPanel p={8} bg="gray.50" roundedBottom={radiusStyle}>
                       <VStack spacing={8} align="stretch">
                         {/* Header Section */}
                         <HStack justify="space-between" align="center">
@@ -1552,7 +1746,7 @@ function ProjectManagerDetail() {
                     </TabPanel>
 
                     {/* Analytics Tab */}
-                    <TabPanel p={6}>
+                    <TabPanel p={8} bg="gray.50" roundedBottom={radiusStyle}>
                       <VStack spacing={8} align="stretch">
                         {/* Header Section */}
                         <HStack justify="space-between" align="center">
@@ -2135,13 +2329,42 @@ function ProjectManagerDetail() {
 
           {/* Sidebar */}
           <GridItem>
-            <VStack spacing={4}>
+            <VStack spacing={6}>
               {/* Project Info Card */}
-              <Card w="full">
-                <CardHeader>
-                  <Heading size="sm">Project Info</Heading>
+              <Card 
+                w="full" 
+                shadow="lg" 
+                rounded={radiusStyle}
+                border="1px"
+                borderColor="gray.200"
+                _hover={{ 
+                  shadow: "xl",
+                  transform: "translateY(-2px)"
+                }}
+                transition="all 0.3s ease"
+              >
+                <CardHeader 
+                  bg="blue.50" 
+                  roundedTop={radiusStyle}
+                  borderBottom="1px"
+                  borderColor="gray.200"
+                >
+                  <HStack spacing={3}>
+                    <Box
+                      w={8}
+                      h={8}
+                      bgGradient="linear(135deg, blue.400, blue.600)"
+                      rounded="lg"
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                    >
+                      <FiInfo size={16} color="white" />
+                    </Box>
+                    <Heading size="sm" color="blue.700">Project Info</Heading>
+                  </HStack>
                 </CardHeader>
-                <CardBody>
+                <CardBody p={6}>
                   <VStack spacing={3} align="stretch">
                     {DataProject ? (
                       <>
@@ -2205,18 +2428,54 @@ function ProjectManagerDetail() {
               </Card>
 
               {/* Quick Actions Card */}
-              <Card w="full">
-                <CardHeader>
-                  <Heading size="sm">Quick Actions</Heading>
+              <Card 
+                w="full" 
+                shadow="lg" 
+                rounded={radiusStyle}
+                border="1px"
+                borderColor="gray.200"
+                _hover={{ 
+                  shadow: "xl",
+                  transform: "translateY(-2px)"
+                }}
+                transition="all 0.3s ease"
+              >
+                <CardHeader 
+                  bg="green.50" 
+                  roundedTop={radiusStyle}
+                  borderBottom="1px"
+                  borderColor="gray.200"
+                >
+                  <HStack spacing={3}>
+                    <Box
+                      w={8}
+                      h={8}
+                      bgGradient="linear(135deg, green.400, green.600)"
+                      rounded="lg"
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                    >
+                      <FiZap size={16} color="white" />
+                    </Box>
+                    <Heading size="sm" color="green.700">Quick Actions</Heading>
+                  </HStack>
                 </CardHeader>
-                <CardBody>
-                  <VStack spacing={2}>
+                <CardBody p={6}>
+                  <VStack spacing={3}>
                     <Button
                       size="sm"
                       variant="ghost"
                       w="full"
                       justifyContent="flex-start"
                       leftIcon={<FiActivity />}
+                      rounded={radiusStyle}
+                      _hover={{ 
+                        bg: "blue.50", 
+                        color: "blue.600",
+                        transform: "translateX(4px)"
+                      }}
+                      transition="all 0.2s"
                     >
                       View Activity
                     </Button>
@@ -2226,6 +2485,13 @@ function ProjectManagerDetail() {
                       w="full"
                       justifyContent="flex-start"
                       leftIcon={<FiSettings />}
+                      rounded={radiusStyle}
+                      _hover={{ 
+                        bg: "orange.50", 
+                        color: "orange.600",
+                        transform: "translateX(4px)"
+                      }}
+                      transition="all 0.2s"
                     >
                       Settings
                     </Button>
@@ -2235,6 +2501,13 @@ function ProjectManagerDetail() {
                       w="full"
                       justifyContent="flex-start"
                       leftIcon={<FiBarChart />}
+                      rounded={radiusStyle}
+                      _hover={{ 
+                        bg: "purple.50", 
+                        color: "purple.600",
+                        transform: "translateX(4px)"
+                      }}
+                      transition="all 0.2s"
                     >
                       Reports
                     </Button>
