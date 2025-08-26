@@ -837,7 +837,12 @@ export function TableComponent({ table }: any) {
 export function TableComponentHeadlessGrid({ table }: any) {
   return (
     <Flex w={"full"} my={4}>
-      <Grid templateColumns="repeat(3, 1fr)" gap={3} w={"full"}>
+      <Grid 
+        templateColumns="repeat(3, 1fr)" 
+        gap={{ base: 4, md: 6 }} 
+        w={"full"}
+        px={{ base: 2, md: 4 }}
+      >
         {table.getRowModel().rows.length > 0 ? (
           table.getRowModel().rows.map((row: any, index: any) => {
             return (

@@ -76,8 +76,9 @@ const CardProject = memo(({ data }: CardProjectProps) => {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       w="full"
-      h="auto"
+      h="420px"
       minH="420px"
+      maxH="420px"
       bg={useColorModeValue("white", "gray.800")}
       border="1px"
       borderColor={useColorModeValue("gray.200", "gray.700")}
@@ -91,6 +92,8 @@ const CardProject = memo(({ data }: CardProjectProps) => {
       }}
       overflow="hidden"
       position="relative"
+      display="flex"
+      flexDirection="column"
     >
       {/* Header with App Icon and Status */}
       <CardHeader
@@ -98,7 +101,7 @@ const CardProject = memo(({ data }: CardProjectProps) => {
         position="relative"
         bgGradient="linear(135deg, secondary.600 0%, blue.500 50%, secondary.400 100%)"
         color="white"
-        h="140px"
+        h="180px"
         display="flex"
         alignItems="center"
         justifyContent="center"
@@ -169,8 +172,8 @@ const CardProject = memo(({ data }: CardProjectProps) => {
       </CardHeader>
 
       {/* Card Body */}
-      <CardBody p={6}>
-        <VStack spacing={4} align="stretch">
+      <CardBody p={4} flex="1" display="flex" flexDirection="column">
+        <VStack spacing={3} align="stretch" flex="1">
           {/* Project Info */}
           <VStack spacing={2} align="start">
             <HStack spacing={2} w="full" justify="space-between">
@@ -196,8 +199,11 @@ const CardProject = memo(({ data }: CardProjectProps) => {
                 color={useColorModeValue("gray.800", "white")}
                 noOfLines={2}
                 minH="48px"
+                maxH="48px"
                 display="flex"
-                alignItems="center"
+                alignItems="start"
+                lineHeight="1.3"
+                overflow="hidden"
               >
                 {data.projectName}
               </Heading>
@@ -224,7 +230,7 @@ const CardProject = memo(({ data }: CardProjectProps) => {
           </VStack>
 
           {/* Team Section */}
-          <VStack spacing={2} align="stretch">
+          <VStack spacing={1} align="stretch" flex="1">
             <HStack justify="space-between">
               <HStack spacing={2}>
                 <Icon as={FiUsers} size="14px" color="gray.500" />
@@ -258,8 +264,9 @@ const CardProject = memo(({ data }: CardProjectProps) => {
             </HStack>
           </VStack>
 
-          {/* Quick Actions */}
-          <HStack spacing={2} pt={2}>
+          {/* Quick Actions - Always at bottom */}
+          <Box mt="auto">
+            <HStack spacing={2}>
             <Link href={`/projects-manager/detail?projectId=${data.id}`} style={{ flex: 1 }}>
               <Button
                 size="md"
@@ -299,7 +306,8 @@ const CardProject = memo(({ data }: CardProjectProps) => {
                 Development
               </Button>
             </Link>
-          </HStack>
+            </HStack>
+          </Box>
         </VStack>
       </CardBody>
 
