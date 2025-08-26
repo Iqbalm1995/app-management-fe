@@ -101,8 +101,22 @@ import {
   FiHeart,
   FiExternalLink,
 } from "react-icons/fi";
+import { FaCircle } from "react-icons/fa6";
 import * as Yup from "yup";
 import dynamic from "next/dynamic";
+import { EventContentArg, EventClickArg } from "@fullcalendar/core/index.js";
+import { EventImpl } from "@fullcalendar/core/internal";
+
+// Dynamically load FullCalendar with no SSR
+const FullCalendar = dynamic(() => import("@fullcalendar/react"), {
+  ssr: false,
+});
+
+// Calendar plugins imports
+import dayGridPlugin from "@fullcalendar/daygrid";
+import timeGridPlugin from "@fullcalendar/timegrid";
+import interactionPlugin from "@fullcalendar/interaction";
+import momentPlugin from "@fullcalendar/moment";
 import { CustomPanelAlert } from "@/app/components/customPanels";
 import AppInfromationSection from "./apps/appViewSection";
 import AppChangeLogSection from "./apps/appLogsViewSection";
@@ -110,6 +124,16 @@ import AppsEnvirontmentSection from "./apps/appsEnvViewSection";
 import ProjectFeatureView from "./projectFeaturesView";
 import { calculateDurationInDays } from "@/app/helper/MasterHelper";
 import { InputLayoutFullHalf } from "@/app/components/layoutContentBody";
+
+// Calendar Event Interface
+interface EventInterface {
+  title: string;
+  start: string; // ISO date string format
+  end?: string; // Optional end time
+  allDay?: boolean; // Optional flag for all-day events
+  [key: string]: any; // For any additional properties like `id`, `description`, etc.
+  color?: string;
+}
 
 // Dynamic import for ApexCharts (client-side only)
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false }) as any;
@@ -210,6 +234,9 @@ function ProjectManagerDetail() {
   const [RefreshData, setRefreshData] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
 
+  // Calendar events state
+  const [calendarEvents, setCalendarEvents] = useState<EventInterface[]>([]);
+
   useEffect(() => {
     if (DataAuth && DataAuth.team && projectId) {
       setIsLoadingProcess(true);
@@ -273,6 +300,64 @@ function ProjectManagerDetail() {
       GetAppData();
     }
   }, [DataAuth, DataProject, tokenData]);
+
+  // Initialize calendar events
+  useEffect(() => {
+    const initializeCalendarEvents = () => {
+      const projectStartDate = DataProject?.projectRegisterDate || "2024-01-15";
+      const startDate = new Date(projectStartDate);
+      
+      const events: EventInterface[] = [
+        {
+          title: "Project Kickoff",
+          start: projectStartDate,
+          allDay: true,
+          color: "#38A169", // green
+        },
+        {
+          title: "Requirements Review",
+          start: new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          allDay: true,
+          color: "#3182CE", // blue
+        },
+        {
+          title: "Design Phase",
+          start: new Date(startDate.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          end: new Date(startDate.getTime() + 28 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          color: "#805AD5", // purple
+        },
+        {
+          title: "Development Sprint 1",
+          start: new Date(startDate.getTime() + 21 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          end: new Date(startDate.getTime() + 35 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          color: "#DD6B20", // orange
+        },
+        {
+          title: "Team Meeting",
+          start: new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] + "T10:00:00",
+          end: new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] + "T11:00:00",
+          color: "#E53E3E", // red
+        },
+        {
+          title: "Testing Phase",
+          start: new Date(startDate.getTime() + 45 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          end: new Date(startDate.getTime() + 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          color: "#D69E2E", // yellow
+        },
+      ];
+      setCalendarEvents(events);
+    };
+
+    if (DataProject) {
+      initializeCalendarEvents();
+    }
+  }, [DataProject]);
+
+  // Calendar event click handler
+  const handleCalendarEventClick = (eventClickInfo: EventClickArg) => {
+    console.log("Event clicked:", eventClickInfo.event);
+    // You can add more functionality here like showing event details
+  };
 
   return (
     <LayoutAdmin>
@@ -952,6 +1037,45 @@ function ProjectManagerDetail() {
                           <FiBarChart size={16} />
                         </Box>
                         <Text>Analytics</Text>
+                      </HStack>
+                    </Tab>
+
+                    {/* Timeline Tab */}
+                    <Tab
+                      fontWeight="semibold"
+                      fontSize="sm"
+                      px={6}
+                      py={3}
+                      rounded={radiusStyle}
+                      bg="gray.100"
+                      color="gray.600"
+                      _selected={{
+                        color: "white",
+                        bg: "blue.500",
+                        shadow: "md",
+                        transform: "translateY(-1px)",
+                      }}
+                      _hover={{
+                        bg: "blue.100",
+                        color: "gray.800",
+                        _selected: {
+                          bg: "purple.500",
+                          color: "white"
+                        }
+                      }}
+                      transition="all 0.2s"
+                    >
+                      <HStack spacing={3}>
+                        <Box
+                          w={5}
+                          h={5}
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="center"
+                        >
+                          <FiCalendar size={16} />
+                        </Box>
+                        <Text>Timeline</Text>
                       </HStack>
                     </Tab>
                   </TabList>
@@ -3243,6 +3367,681 @@ function ProjectManagerDetail() {
                           </Box>
                         )}
                       </VStack>
+                    </TabPanel>
+
+                    {/* Timeline Tab Panel */}
+                    <TabPanel p={0} bg="gray.50" roundedBottom={radiusStyle}>
+                      <Box p={8}>
+                        <VStack spacing={8} align="stretch">
+                          {/* Timeline Header */}
+                          <HStack justify="space-between" align="center">
+                            <VStack align="start" spacing={1}>
+                              <Heading size="lg" color="gray.800">
+                                Project Timeline
+                              </Heading>
+                              <Text color="gray.600" fontSize="md">
+                                Track project milestones and important dates
+                              </Text>
+                            </VStack>
+                            <HStack spacing={3}>
+                              <Badge colorScheme="blue" px={3} py={1} rounded="full">
+                                {DataProject && DataProject.projectRegisterDate ? 
+                                  `${Math.ceil((new Date().getTime() - new Date(DataProject.projectRegisterDate).getTime()) / (1000 * 60 * 60 * 24))} days active`
+                                  : "Active"
+                                }
+                              </Badge>
+                              <Badge colorScheme="green" px={3} py={1} rounded="full">
+                                On Track
+                              </Badge>
+                            </HStack>
+                          </HStack>
+
+                          {/* Timeline Stats Cards */}
+                          <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6}>
+                            <Card bg="white" shadow="md" rounded="xl" border="1px" borderColor="gray.200">
+                              <CardBody p={6}>
+                                <VStack spacing={3}>
+                                  <Box
+                                    w={12}
+                                    h={12}
+                                    bg="blue.100"
+                                    rounded="full"
+                                    display="flex"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                  >
+                                    <FiCalendar size={24} color="#3182CE" />
+                                  </Box>
+                                  <VStack spacing={1} textAlign="center">
+                                    <Text fontSize="2xl" fontWeight="bold" color="blue.600">
+                                      {DataProject && DataProject.projectRegisterDate ? 
+                                        Math.ceil((new Date().getTime() - new Date(DataProject.projectRegisterDate).getTime()) / (1000 * 60 * 60 * 24))
+                                        : 45
+                                      }
+                                    </Text>
+                                    <Text fontSize="sm" color="gray.600">Days Active</Text>
+                                  </VStack>
+                                </VStack>
+                              </CardBody>
+                            </Card>
+
+                            <Card bg="white" shadow="md" rounded="xl" border="1px" borderColor="gray.200">
+                              <CardBody p={6}>
+                                <VStack spacing={3}>
+                                  <Box
+                                    w={12}
+                                    h={12}
+                                    bg="green.100"
+                                    rounded="full"
+                                    display="flex"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                  >
+                                    <FiTarget size={24} color="#38A169" />
+                                  </Box>
+                                  <VStack spacing={1} textAlign="center">
+                                    <Text fontSize="2xl" fontWeight="bold" color="green.600">
+                                      8
+                                    </Text>
+                                    <Text fontSize="sm" color="gray.600">Milestones</Text>
+                                  </VStack>
+                                </VStack>
+                              </CardBody>
+                            </Card>
+
+                            <Card bg="white" shadow="md" rounded="xl" border="1px" borderColor="gray.200">
+                              <CardBody p={6}>
+                                <VStack spacing={3}>
+                                  <Box
+                                    w={12}
+                                    h={12}
+                                    bg="orange.100"
+                                    rounded="full"
+                                    display="flex"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                  >
+                                    <FiClock size={24} color="#DD6B20" />
+                                  </Box>
+                                  <VStack spacing={1} textAlign="center">
+                                    <Text fontSize="2xl" fontWeight="bold" color="orange.600">
+                                      3
+                                    </Text>
+                                    <Text fontSize="sm" color="gray.600">Upcoming</Text>
+                                  </VStack>
+                                </VStack>
+                              </CardBody>
+                            </Card>
+
+                            <Card bg="white" shadow="md" rounded="xl" border="1px" borderColor="gray.200">
+                              <CardBody p={6}>
+                                <VStack spacing={3}>
+                                  <Box
+                                    w={12}
+                                    h={12}
+                                    bg="purple.100"
+                                    rounded="full"
+                                    display="flex"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                  >
+                                    <FiTrendingUp size={24} color="#805AD5" />
+                                  </Box>
+                                  <VStack spacing={1} textAlign="center">
+                                    <Text fontSize="2xl" fontWeight="bold" color="purple.600">
+                                      {DataProject?.projectStatusPercentage || 75}%
+                                    </Text>
+                                    <Text fontSize="sm" color="gray.600">Progress</Text>
+                                  </VStack>
+                                </VStack>
+                              </CardBody>
+                            </Card>
+                          </SimpleGrid>
+
+                          {/* Calendar and Timeline Section */}
+                          <Grid templateColumns={{ base: "1fr", lg: "2fr 1fr" }} gap={8}>
+                            {/* Calendar Section */}
+                            <Card bg="white" shadow="lg" rounded="xl" border="1px" borderColor="gray.200">
+                              <CardHeader bg="gradient.100" roundedTop="xl" borderBottom="1px" borderColor="gray.200">
+                                <HStack spacing={3}>
+                                  <Box
+                                    w={8}
+                                    h={8}
+                                    bg="blue.500"
+                                    rounded="lg"
+                                    display="flex"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                  >
+                                    <FiCalendar size={16} color="white" />
+                                  </Box>
+                                  <VStack align="start" spacing={0}>
+                                    <Heading size="md" color="gray.800">
+                                      Project Calendar
+                                    </Heading>
+                                    <Text fontSize="sm" color="gray.600">
+                                      Important dates and milestones
+                                    </Text>
+                                  </VStack>
+                                </HStack>
+                              </CardHeader>
+                              <CardBody p={6}>
+                                <Box bg="white" p={4} rounded="lg" minH="400px" className="fullcalendar-container">
+                                  <style jsx global>{`
+                                    .fullcalendar-container {
+                                      width: 100% !important;
+                                      max-width: 100% !important;
+                                    }
+                                    
+                                    .fullcalendar-container .fc {
+                                      font-family: inherit;
+                                      width: 100% !important;
+                                      max-width: 100% !important;
+                                    }
+                                    
+                                    .fullcalendar-container .fc-view-harness {
+                                      width: 100% !important;
+                                    }
+                                    
+                                    .fullcalendar-container .fc-view {
+                                      width: 100% !important;
+                                    }
+                                    
+                                    /* Force table to full width */
+                                    .fullcalendar-container .fc-scrollgrid {
+                                      border: 1px solid #e2e8f0;
+                                      border-radius: 8px;
+                                      overflow: hidden;
+                                      width: 100% !important;
+                                      table-layout: fixed !important;
+                                    }
+                                    
+                                    .fullcalendar-container .fc-scrollgrid-sync-table {
+                                      width: 100% !important;
+                                      table-layout: fixed !important;
+                                      border-collapse: separate;
+                                      border-spacing: 0;
+                                    }
+                                    
+                                    .fullcalendar-container .fc-scrollgrid-sync-table td,
+                                    .fullcalendar-container .fc-scrollgrid-sync-table th {
+                                      width: 14.285714% !important; /* 100% / 7 days */
+                                      min-width: 0 !important;
+                                      max-width: none !important;
+                                    }
+                                    
+                                    .fullcalendar-container .fc-daygrid-body {
+                                      width: 100% !important;
+                                    }
+                                    
+                                    .fullcalendar-container .fc-daygrid-body table {
+                                      width: 100% !important;
+                                      table-layout: fixed !important;
+                                    }
+                                    
+                                    /* Header styling */
+                                    .fullcalendar-container .fc-col-header {
+                                      background-color: #f7fafc;
+                                      width: 100% !important;
+                                    }
+                                    
+                                    .fullcalendar-container .fc-col-header-cell {
+                                      background-color: #f7fafc;
+                                      font-weight: 600;
+                                      color: #4a5568;
+                                      padding: 12px 8px;
+                                      border-right: 1px solid #e2e8f0;
+                                      border-bottom: 1px solid #e2e8f0;
+                                      text-align: center;
+                                      width: 14.285714% !important;
+                                      box-sizing: border-box;
+                                    }
+                                    
+                                    .fullcalendar-container .fc-col-header-cell:last-child {
+                                      border-right: none;
+                                    }
+                                    
+                                    /* Day cells */
+                                    .fullcalendar-container .fc-daygrid-day {
+                                      background-color: white;
+                                      min-height: 100px;
+                                      border-right: 1px solid #e2e8f0;
+                                      border-bottom: 1px solid #e2e8f0;
+                                      position: relative;
+                                      vertical-align: top;
+                                      width: 14.285714% !important;
+                                      padding: 0;
+                                      box-sizing: border-box;
+                                    }
+                                    
+                                    .fullcalendar-container .fc-daygrid-day:last-child {
+                                      border-right: none;
+                                    }
+                                    
+                                    .fullcalendar-container .fc-daygrid-day:hover {
+                                      background-color: #f7fafc;
+                                    }
+                                    
+                                    .fullcalendar-container .fc-daygrid-day-frame {
+                                      padding: 6px;
+                                      height: 100%;
+                                      position: relative;
+                                      min-height: 94px;
+                                      width: 100%;
+                                      box-sizing: border-box;
+                                    }
+                                    
+                                    .fullcalendar-container .fc-daygrid-day-top {
+                                      display: flex;
+                                      justify-content: flex-end;
+                                      margin-bottom: 4px;
+                                    }
+                                    
+                                    .fullcalendar-container .fc-daygrid-day-number {
+                                      color: #2d3748;
+                                      font-weight: 500;
+                                      padding: 4px 6px;
+                                      font-size: 14px;
+                                      line-height: 1;
+                                    }
+                                    
+                                    .fullcalendar-container .fc-daygrid-day-events {
+                                      margin-top: 4px;
+                                      width: 100%;
+                                    }
+                                    
+                                    /* Today highlighting */
+                                    .fullcalendar-container .fc-day-today {
+                                      background-color: #ebf8ff !important;
+                                    }
+                                    
+                                    .fullcalendar-container .fc-day-today .fc-daygrid-day-number {
+                                      background-color: #3182ce;
+                                      color: white;
+                                      border-radius: 50%;
+                                      width: 24px;
+                                      height: 24px;
+                                      display: flex;
+                                      align-items: center;
+                                      justify-content: center;
+                                    }
+                                    
+                                    /* Toolbar styling */
+                                    .fullcalendar-container .fc-toolbar {
+                                      margin-bottom: 16px;
+                                      display: flex;
+                                      justify-content: space-between;
+                                      align-items: center;
+                                      width: 100%;
+                                    }
+                                    
+                                    .fullcalendar-container .fc-toolbar-chunk {
+                                      display: flex;
+                                      align-items: center;
+                                      gap: 8px;
+                                    }
+                                    
+                                    .fullcalendar-container .fc-button {
+                                      background-color: #3182ce;
+                                      border: 1px solid #3182ce;
+                                      color: white;
+                                      border-radius: 6px;
+                                      padding: 6px 12px;
+                                      font-size: 14px;
+                                      cursor: pointer;
+                                      transition: all 0.2s ease;
+                                      font-family: inherit;
+                                    }
+                                    
+                                    .fullcalendar-container .fc-button:hover {
+                                      background-color: #2c5aa0;
+                                      border-color: #2c5aa0;
+                                    }
+                                    
+                                    .fullcalendar-container .fc-button:disabled {
+                                      background-color: #a0aec0;
+                                      border-color: #a0aec0;
+                                      cursor: not-allowed;
+                                    }
+                                    
+                                    .fullcalendar-container .fc-button-primary:not(:disabled):active,
+                                    .fullcalendar-container .fc-button-primary:not(:disabled).fc-button-active {
+                                      background-color: #2c5aa0;
+                                      border-color: #2c5aa0;
+                                    }
+                                    
+                                    .fullcalendar-container .fc-toolbar-title {
+                                      font-size: 1.25rem;
+                                      font-weight: 600;
+                                      color: #2d3748;
+                                      margin: 0;
+                                    }
+                                    
+                                    /* Event styling */
+                                    .fullcalendar-container .fc-event {
+                                      border: none;
+                                      border-radius: 4px;
+                                      margin: 1px 0;
+                                      font-size: 11px;
+                                      cursor: pointer;
+                                      transition: all 0.2s ease;
+                                      padding: 2px 4px;
+                                      width: calc(100% - 4px);
+                                      box-sizing: border-box;
+                                    }
+                                    
+                                    .fullcalendar-container .fc-event:hover {
+                                      opacity: 0.8;
+                                      transform: scale(1.02);
+                                    }
+                                    
+                                    .fullcalendar-container .fc-daygrid-event {
+                                      margin-top: 1px;
+                                      margin-bottom: 1px;
+                                      white-space: nowrap;
+                                      overflow: hidden;
+                                      text-overflow: ellipsis;
+                                      width: 100%;
+                                    }
+                                    
+                                    .fullcalendar-container .fc-daygrid-event-harness {
+                                      margin-bottom: 2px;
+                                      width: 100%;
+                                    }
+                                    
+                                    .fullcalendar-container .fc-event-title {
+                                      font-weight: 500;
+                                    }
+                                    
+                                    /* More link styling */
+                                    .fullcalendar-container .fc-more-link {
+                                      color: #3182ce;
+                                      font-size: 11px;
+                                      font-weight: 500;
+                                      cursor: pointer;
+                                      padding: 2px 4px;
+                                      border-radius: 3px;
+                                      text-decoration: none;
+                                    }
+                                    
+                                    .fullcalendar-container .fc-more-link:hover {
+                                      background-color: #ebf8ff;
+                                    }
+                                    
+                                    /* Other month days */
+                                    .fullcalendar-container .fc-day-other .fc-daygrid-day-number {
+                                      color: #a0aec0;
+                                    }
+                                    
+                                    .fullcalendar-container .fc-day-other {
+                                      background-color: #fafafa;
+                                    }
+                                    
+                                    /* Week view adjustments */
+                                    .fullcalendar-container .fc-timegrid-slot {
+                                      height: 2em;
+                                      border-bottom: 1px solid #e2e8f0;
+                                    }
+                                    
+                                    .fullcalendar-container .fc-timegrid-axis {
+                                      border-right: 1px solid #e2e8f0;
+                                      background-color: #f7fafc;
+                                    }
+                                    
+                                    /* Responsive adjustments */
+                                    @media (max-width: 768px) {
+                                      .fullcalendar-container .fc-toolbar {
+                                        flex-direction: column;
+                                        gap: 12px;
+                                      }
+                                      
+                                      .fullcalendar-container .fc-toolbar-chunk {
+                                        justify-content: center;
+                                      }
+                                      
+                                      .fullcalendar-container .fc-daygrid-day {
+                                        min-height: 80px;
+                                      }
+                                      
+                                      .fullcalendar-container .fc-daygrid-day-frame {
+                                        padding: 4px;
+                                        min-height: 76px;
+                                      }
+                                      
+                                      .fullcalendar-container .fc-button {
+                                        padding: 4px 8px;
+                                        font-size: 12px;
+                                      }
+                                      
+                                      .fullcalendar-container .fc-toolbar-title {
+                                        font-size: 1.1rem;
+                                      }
+                                    }
+                                  `}</style>
+                                  <FullCalendar
+                                    plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                                    initialView="dayGridMonth"
+                                    events={calendarEvents}
+                                    timeZone="Asia/Jakarta"
+                                    locale="en"
+                                    height={450}
+                                    headerToolbar={{
+                                      left: "prev,next today",
+                                      center: "title",
+                                      right: "dayGridMonth,timeGridWeek",
+                                    }}
+                                    buttonText={{
+                                      today: "Today",
+                                      month: "Month",
+                                      week: "Week",
+                                    }}
+                                    dayMaxEvents={2}
+                                    moreLinkClick="popover"
+                                    eventDisplay="block"
+                                    displayEventTime={false}
+                                    dayHeaderFormat={{ weekday: 'short' }}
+                                    titleFormat={{ year: 'numeric', month: 'long' }}
+                                    eventClick={handleCalendarEventClick}
+                                    fixedWeekCount={false}
+                                    showNonCurrentDates={true}
+                                  />
+                                </Box>
+                              </CardBody>
+                            </Card>
+
+                            {/* Timeline Events */}
+                            <Card bg="white" shadow="lg" rounded="xl" border="1px" borderColor="gray.200">
+                              <CardHeader bg="gradient.100" roundedTop="xl" borderBottom="1px" borderColor="gray.200">
+                                <HStack spacing={3}>
+                                  <Box
+                                    w={8}
+                                    h={8}
+                                    bg="green.500"
+                                    rounded="lg"
+                                    display="flex"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                  >
+                                    <FiActivity size={16} color="white" />
+                                  </Box>
+                                  <VStack align="start" spacing={0}>
+                                    <Heading size="md" color="gray.800">
+                                      Recent Activity
+                                    </Heading>
+                                    <Text fontSize="sm" color="gray.600">
+                                      Latest project updates
+                                    </Text>
+                                  </VStack>
+                                </HStack>
+                              </CardHeader>
+                              <CardBody p={6}>
+                                <VStack spacing={4} align="stretch">
+                                  {/* Timeline Events */}
+                                  {[
+                                    {
+                                      title: "Project Started",
+                                      date: DataProject?.projectRegisterDate || "2024-01-15",
+                                      type: "start",
+                                      color: "green",
+                                      icon: FiPlayCircle
+                                    },
+                                    {
+                                      title: "Requirements Finalized",
+                                      date: "2024-01-22",
+                                      type: "milestone",
+                                      color: "blue",
+                                      icon: FiFileText
+                                    },
+                                    {
+                                      title: "Development Phase",
+                                      date: "2024-02-01",
+                                      type: "phase",
+                                      color: "purple",
+                                      icon: FiZap
+                                    },
+                                    {
+                                      title: "Team Meeting",
+                                      date: "2024-02-15",
+                                      type: "meeting",
+                                      color: "orange",
+                                      icon: FiUsers
+                                    },
+                                    {
+                                      title: "Testing Phase",
+                                      date: "2024-03-01",
+                                      type: "upcoming",
+                                      color: "yellow",
+                                      icon: FiTarget
+                                    }
+                                  ].map((event, index) => (
+                                    <HStack key={index} spacing={4} align="start">
+                                      <Box
+                                        w={10}
+                                        h={10}
+                                        bg={`${event.color}.100`}
+                                        rounded="full"
+                                        display="flex"
+                                        alignItems="center"
+                                        justifyContent="center"
+                                        flexShrink={0}
+                                      >
+                                        <event.icon size={16} color={`var(--chakra-colors-${event.color}-500)`} />
+                                      </Box>
+                                      <VStack align="start" spacing={1} flex={1}>
+                                        <Text fontWeight="semibold" color="gray.800" fontSize="sm">
+                                          {event.title}
+                                        </Text>
+                                        <Text fontSize="xs" color="gray.600">
+                                          {new Date(event.date).toLocaleDateString('en-US', {
+                                            month: 'short',
+                                            day: 'numeric',
+                                            year: 'numeric'
+                                          })}
+                                        </Text>
+                                        <Badge 
+                                          size="sm" 
+                                          colorScheme={event.color}
+                                          rounded="full"
+                                          px={2}
+                                        >
+                                          {event.type}
+                                        </Badge>
+                                      </VStack>
+                                    </HStack>
+                                  ))}
+                                </VStack>
+                              </CardBody>
+                            </Card>
+                          </Grid>
+
+                          {/* Project Phases Timeline */}
+                          <Card bg="white" shadow="lg" rounded="xl" border="1px" borderColor="gray.200">
+                            <CardHeader bg="gradient.100" roundedTop="xl" borderBottom="1px" borderColor="gray.200">
+                              <HStack spacing={3}>
+                                <Box
+                                  w={8}
+                                  h={8}
+                                  bg="purple.500"
+                                  rounded="lg"
+                                  display="flex"
+                                  alignItems="center"
+                                  justifyContent="center"
+                                >
+                                  <FiTrendingUp size={16} color="white" />
+                                </Box>
+                                <VStack align="start" spacing={0}>
+                                  <Heading size="md" color="gray.800">
+                                    Project Phases
+                                  </Heading>
+                                  <Text fontSize="sm" color="gray.600">
+                                    Development lifecycle progress
+                                  </Text>
+                                </VStack>
+                              </HStack>
+                            </CardHeader>
+                            <CardBody p={6}>
+                              <HStack spacing={4} align="center" overflowX="auto" pb={2}>
+                                {[
+                                  { phase: "Planning", status: "completed", progress: 100 },
+                                  { phase: "Design", status: "completed", progress: 100 },
+                                  { phase: "Development", status: "active", progress: DataProject?.projectStatusPercentage || 75 },
+                                  { phase: "Testing", status: "upcoming", progress: 0 },
+                                  { phase: "Deployment", status: "upcoming", progress: 0 }
+                                ].map((phase, index) => (
+                                  <VStack key={index} spacing={3} minW="120px" align="center">
+                                    <Box
+                                      w={12}
+                                      h={12}
+                                      bg={
+                                        phase.status === "completed" ? "green.500" :
+                                        phase.status === "active" ? "blue.500" : "gray.300"
+                                      }
+                                      rounded="full"
+                                      display="flex"
+                                      alignItems="center"
+                                      justifyContent="center"
+                                      position="relative"
+                                    >
+                                      <Text color="white" fontWeight="bold" fontSize="sm">
+                                        {index + 1}
+                                      </Text>
+                                      {index < 4 && (
+                                        <Box
+                                          position="absolute"
+                                          left="100%"
+                                          top="50%"
+                                          transform="translateY(-50%)"
+                                          w="20px"
+                                          h="2px"
+                                          bg={phase.status === "completed" ? "green.500" : "gray.300"}
+                                        />
+                                      )}
+                                    </Box>
+                                    <VStack spacing={1} textAlign="center">
+                                      <Text fontSize="sm" fontWeight="semibold" color="gray.800">
+                                        {phase.phase}
+                                      </Text>
+                                      <Text fontSize="xs" color="gray.600">
+                                        {phase.progress}%
+                                      </Text>
+                                      <Badge
+                                        size="sm"
+                                        colorScheme={
+                                          phase.status === "completed" ? "green" :
+                                          phase.status === "active" ? "blue" : "gray"
+                                        }
+                                        rounded="full"
+                                      >
+                                        {phase.status}
+                                      </Badge>
+                                    </VStack>
+                                  </VStack>
+                                ))}
+                              </HStack>
+                            </CardBody>
+                          </Card>
+                        </VStack>
+                      </Box>
                     </TabPanel>
                   </TabPanels>
                 </Tabs>
