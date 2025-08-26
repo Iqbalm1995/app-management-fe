@@ -73,6 +73,7 @@ import {
   FiPlay,
   FiSettings,
   FiPlayCircle,
+  FiCode,
 } from "react-icons/fi";
 import { IconType } from "react-icons";
 import {
@@ -216,6 +217,14 @@ const LinkItems: LinkItemProps[] = [
         name: "Projects Manager",
         icon: FaDiagramProject,
         link: "/projects-manager",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Project Development",
+        icon: FiCode,
+        link: "/project-development",
         role: ["admin"],
         menuID: "1",
         children: [],

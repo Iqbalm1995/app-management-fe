@@ -1,0 +1,158 @@
+  useEffect(() => {
+    setIsLoadingProcess(true);
+    if (DataAuth && DataAuth.team) {
+      const GetDataTeam = async () => {
+        // Check if team data exists in localStorage and is not expired
+        const storedTeamData = localStorage.getItem(`teamData_${DataAuth.team.id}`);
+        const storedTeamTimestamp = localStorage.getItem(`teamData_${DataAuth.team.id}_timestamp`);
+        const currentTime = new Date().getTime();
+        const CACHE_EXPIRATION = 30 * 60 * 1000; // 30 minutes in milliseconds
+        
+        // Check if we have valid cached data
+        if (storedTeamData && storedTeamTimestamp && 
+            (currentTime - parseInt(storedTeamTimestamp) < CACHE_EXPIRATION) && 
+            RefreshData === 0) {
+          try {
+            const parsedTeamData: TeamsResponse = JSON.parse(storedTeamData);
+            setDataTeam(parsedTeamData);
+            
+            if (parsedTeamData.teamPict != null) {
+              setImage(
+                buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC) +
+                  parsedTeamData.teamPict
+              );
+            }
+            console.log("Team data loaded from localStorage");
+            setIsLoadingProcess(false);
+          } catch (error) {
+            console.error("Error parsing team data from localStorage:", error);
+            // If parsing fails, fetch from API
+            await fetchTeamDataFromAPI();
+          }
+        } else {
+          // No valid cache, fetch from API
+          await fetchTeamDataFromAPI();
+        }
+      };
+      
+      // Function to fetch team data from API and save to localStorage
+      const fetchTeamDataFromAPI = async () => {
+        const requestData = await GetDetailById(
+          DataAuth.team ? DataAuth.team.id : "",
+          tokenData
+        );
+        const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+
+        if (isErrorResponse || !requestData) {
+          showToast({
+            description: requestData?.message || RES_GENERIC_ERROR_MSG,
+            statusToast: "error",
+          });
+          setIsLoadingProcess(false);
+          return;
+        } else {
+          console.log("Team data fetched from API");
+          await delay(DELAY_MEDIUM);
+          if (requestData.data == null) {
+            showToast({
+              description: "Data return error",
+              statusToast: "error",
+            });
+            setIsLoadingProcess(false);
+            return;
+          }
+
+          const itemsData: TeamsResponse = requestData.data as TeamsResponse;
+          
+          // Save to localStorage with timestamp
+          try {
+            localStorage.setItem(`teamData_${DataAuth.team.id}`, JSON.stringify(itemsData));
+            localStorage.setItem(`teamData_${DataAuth.team.id}_timestamp`, new Date().getTime().toString());
+          } catch (error) {
+            console.error("Error saving team data to localStorage:", error);
+          }
+          
+          setDataTeam(itemsData);
+          setIsLoadingProcess(false);
+          if (itemsData.teamPict != null) {
+            setImage(
+              buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC) +
+                itemsData.teamPict
+            );
+          }
+        }
+      };
+
+      const PayloadList: PaggingListPayloadCustom = {
+        search: "",
+        teamId: DataAuth.team.id,
+        limit: 0,
+        page: MAX_SIZE_TABLE,
+        filterWhere: [],
+        fieldOrder: ["nama"],
+        orderDir: "asc",
+      };
+
+      // Similar approach for team members data
+      const GetDataList = async () => {
+        // Check if team members data exists in localStorage and is not expired
+        const storedMembersData = localStorage.getItem(`teamMembers_${DataAuth.team.id}`);
+        const storedMembersTimestamp = localStorage.getItem(`teamMembers_${DataAuth.team.id}_timestamp`);
+        const currentTime = new Date().getTime();
+        const CACHE_EXPIRATION = 30 * 60 * 1000; // 30 minutes in milliseconds
+        
+        if (storedMembersData && storedMembersTimestamp && 
+            (currentTime - parseInt(storedMembersTimestamp) < CACHE_EXPIRATION) && 
+            RefreshData === 0) {
+          try {
+            const parsedMembersData: UsersResponse[] = JSON.parse(storedMembersData);
+            setDataTeamMembers(parsedMembersData);
+            console.log("Team members data loaded from localStorage");
+          } catch (error) {
+            console.error("Error parsing team members data from localStorage:", error);
+            await fetchTeamMembersFromAPI();
+          }
+        } else {
+          await fetchTeamMembersFromAPI();
+        }
+      };
+      
+      // Function to fetch team members from API and save to localStorage
+      const fetchTeamMembersFromAPI = async () => {
+        const requestData = await ListMembers(PayloadList, tokenData);
+        const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+
+        if (isErrorResponse || !requestData) {
+          showToast({
+            description: requestData?.message || RES_GENERIC_ERROR_MSG,
+            statusToast: "error",
+          });
+          return;
+        } else {
+          console.log("Team members fetched from API");
+          if (requestData.data == null) {
+            showToast({
+              description: "Data return error",
+              statusToast: "error",
+            });
+            return;
+          }
+
+          const itemsData: UsersResponse[] = requestData.data as UsersResponse[];
+          
+          // Save to localStorage with timestamp
+          try {
+            localStorage.setItem(`teamMembers_${DataAuth.team.id}`, JSON.stringify(itemsData));
+            localStorage.setItem(`teamMembers_${DataAuth.team.id}_timestamp`, new Date().getTime().toString());
+          } catch (error) {
+            console.error("Error saving team members data to localStorage:", error);
+          }
+          
+          setDataTeamMembers(itemsData);
+        }
+      };
+
+      GetDataTeam();
+      GetDataList();
+    }
+  }, [DataAuth, RefreshData]);

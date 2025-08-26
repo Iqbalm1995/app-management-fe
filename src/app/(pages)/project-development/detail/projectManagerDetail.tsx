@@ -141,7 +141,7 @@ const Chart = dynamic(() => import("react-apexcharts"), { ssr: false }) as any;
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Project Detail",
-  breadCrumb: ["Home", "Project Manager", "Detail"],
+  breadCrumb: ["Home", "Project Development", "Detail"],
 };
 
 const OptionDataProjectStatus: OptionListProps[] = [
@@ -269,7 +269,7 @@ function ProjectManagerDetail() {
           setDataProject(itemsData);
           setHeaderContentState({
             titleName: `Project Detail`,
-            breadCrumb: ["Home", "Project Manager", itemsData.projectCode],
+            breadCrumb: ["Home", "Project Development", itemsData.projectCode],
           });
           setIsLoadingProcess(false);
         }
@@ -448,7 +448,7 @@ function ProjectManagerDetail() {
           {/* Compact Top Navigation */}
           <HStack justify="space-between" align="center">
             <HStack spacing={3}>
-              <Link href={"/projects-manager"}>
+              <Link href={"/project-development"}>
                 <Button
                   leftIcon={<FiArrowLeft />}
                   variant="ghost"
@@ -471,7 +471,7 @@ function ProjectManagerDetail() {
                 </Button>
               </Link>
 
-              <Link href={`/projects-manager/development?projectId=${projectId}`}>
+              <Link href={`/project-development/development?projectId=${projectId}`}>
                 <Button
                   leftIcon={<FiCode />}
                   variant="ghost"
