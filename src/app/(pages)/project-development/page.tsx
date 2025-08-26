@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
   Badge,
   Box,
@@ -22,7 +23,7 @@ import {
   VStack,
   Icon,
 } from "@chakra-ui/react";
-import { FiFilter, FiSearch, FiRefreshCw, FiTarget, FiUsers, FiBarChart2, FiTrendingUp, FiZap, FiFolder, FiX, FiMonitor, FiClipboard } from "react-icons/fi";
+import { FiFilter, FiSearch, FiRefreshCw, FiTarget, FiUsers, FiBarChart2, FiTrendingUp, FiZap, FiFolder, FiX, FiMonitor, FiClipboard, FiGrid, FiList } from "react-icons/fi";
 import {
   ColumnDef,
   getCoreRowModel,
@@ -43,7 +44,7 @@ import {
 } from "@/app/components/headerContent";
 import LayoutAdmin from "@/app/components/layoutAdmin";
 import LoadingMiniSignature from "@/app/components/loadingMini";
-import { TableComponentFullHeadlessGrid } from "@/app/components/tableComponents";
+import { TableComponentFullHeadlessGrid, ControlTable } from "@/app/components/tableComponents";
 
 // Services and Hooks
 import { AuthDataModelInterface, useAuth } from "@/app/context/AuthContext";
@@ -98,6 +99,7 @@ const ProjectManagerPage = memo(() => {
   // UI state
   const [ActionLoading, setActionLoading] = useState(false);
   const [IsEditMode, setIsEditMode] = useState(false);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid"); // View mode state
 
   // Memoized values
   const delay = useCallback(
@@ -886,6 +888,7 @@ const ProjectManagerPage = memo(() => {
                   direction={{ base: "column", sm: "row" }}
                   gap={{ base: 3, sm: 0 }}
                 >
+                <HStack justify="space-between" align="center" w="full">
                   <HStack spacing={3} align="center">
                     <Box
                       w={{ base: 8, md: 10 }}
@@ -934,22 +937,62 @@ const ProjectManagerPage = memo(() => {
                     </VStack>
                   </HStack>
 
-                  {DataProjects.length > 0 && (
-                    <Badge
-                      colorScheme="green"
-                      px={{ base: 2, md: 3 }}
-                      py={1}
-                      rounded="full"
-                      fontSize={{ base: "xs", md: "sm" }}
-                      flexShrink={0}
-                    >
-                      {
-                        DataProjects.filter((p) => p.projectStatus === "ACTIVE")
-                          .length
-                      }{" "}
-                      Active
-                    </Badge>
-                  )}
+                  {/* View Mode Toggle & Active Badge */}
+                  <HStack spacing={3}>
+                    {DataProjects.length > 0 && (
+                      <Badge
+                        colorScheme="green"
+                        px={{ base: 2, md: 3 }}
+                        py={1}
+                        rounded="full"
+                        fontSize={{ base: "xs", md: "sm" }}
+                        flexShrink={0}
+                      >
+                        {
+                          DataProjects.filter((p) => p.projectStatus === "ACTIVE")
+                            .length
+                        }{" "}
+                        Active
+                      </Badge>
+                    )}
+                    
+                    {/* View Mode Toggle Buttons */}
+                    <HStack spacing={1} bg={useColorModeValue("gray.100", "gray.700")} rounded="lg" p={1}>
+                      <Button
+                        size="sm"
+                        variant={viewMode === "grid" ? "solid" : "ghost"}
+                        colorScheme={viewMode === "grid" ? "blue" : "gray"}
+                        onClick={() => setViewMode("grid")}
+                        leftIcon={<Icon as={FiGrid} boxSize={3} />}
+                        fontSize="xs"
+                        px={3}
+                        h={8}
+                        _hover={{
+                          bg: viewMode === "grid" ? "blue.500" : useColorModeValue("gray.200", "gray.600"),
+                        }}
+                        transition="all 0.2s"
+                      >
+                        Grid
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={viewMode === "list" ? "solid" : "ghost"}
+                        colorScheme={viewMode === "list" ? "blue" : "gray"}
+                        onClick={() => setViewMode("list")}
+                        leftIcon={<Icon as={FiList} boxSize={3} />}
+                        fontSize="xs"
+                        px={3}
+                        h={8}
+                        _hover={{
+                          bg: viewMode === "list" ? "blue.500" : useColorModeValue("gray.200", "gray.600"),
+                        }}
+                        transition="all 0.2s"
+                      >
+                        List
+                      </Button>
+                    </HStack>
+                  </HStack>
+                </HStack>
                 </Flex>
 
                 {/* Projects Content */}
@@ -1040,7 +1083,184 @@ const ProjectManagerPage = memo(() => {
                       )}
                     </VStack>
                   ) : (
-                    <TableComponentFullHeadlessGrid table={table} />
+                    <>
+                      {/* Grid View */}
+                      <Box display={viewMode === "grid" ? "block" : "none"}>
+                        <TableComponentFullHeadlessGrid table={table} />
+                      </Box>
+                      
+                      {/* List View */}
+                      <Box display={viewMode === "list" ? "block" : "none"}>
+                        <VStack spacing={3} align="stretch">
+                          {table.getRowModel().rows.map((row) => {
+                            const project = row.original;
+                            return (
+                              <Card
+                                key={project.id}
+                                rounded="lg"
+                                shadow="sm"
+                                border="1px"
+                                borderColor={useColorModeValue("gray.200", "gray.700")}
+                                bg={useColorModeValue("white", "gray.800")}
+                                _hover={{
+                                  shadow: "md",
+                                  borderColor: useColorModeValue("blue.300", "blue.600"),
+                                  transform: "translateY(-1px)",
+                                }}
+                                transition="all 0.2s"
+                              >
+                                <CardBody p={4}>
+                                  <Grid templateColumns={{ base: "1fr", md: "1fr auto auto auto" }} gap={4} alignItems="center">
+                                    {/* Project Info */}
+                                    <GridItem>
+                                      <HStack spacing={3}>
+                                        {/* Project Avatar */}
+                                        <Box
+                                          w={12}
+                                          h={12}
+                                          bg="blue.500"
+                                          rounded="lg"
+                                          display="flex"
+                                          alignItems="center"
+                                          justifyContent="center"
+                                          color="white"
+                                          fontSize="lg"
+                                          fontWeight="bold"
+                                          flexShrink={0}
+                                        >
+                                          {project.appsProject?.appName?.charAt(0) || project.projectName.charAt(0)}
+                                        </Box>
+                                        
+                                        {/* Project Details */}
+                                        <VStack align="start" spacing={1}>
+                                          <Heading size="sm" color={useColorModeValue("gray.800", "white")}>
+                                            {project.projectName}
+                                          </Heading>
+                                          <Text fontSize="sm" color={useColorModeValue("gray.600", "gray.400")}>
+                                            {project.projectDesc || "No description available"}
+                                          </Text>
+                                          <HStack spacing={2}>
+                                            <Badge colorScheme="blue" size="sm">
+                                              {project.projectType}
+                                            </Badge>
+                                            <Badge colorScheme="purple" size="sm">
+                                              {project.projectCategory}
+                                            </Badge>
+                                          </HStack>
+                                        </VStack>
+                                      </HStack>
+                                    </GridItem>
+
+                                    {/* Status */}
+                                    <GridItem display={{ base: "none", md: "block" }}>
+                                      <VStack spacing={1}>
+                                        <Badge
+                                          colorScheme={
+                                            project.projectStatus === "ACTIVE"
+                                              ? "green"
+                                              : project.projectStatus === "ONHOLD"
+                                              ? "orange"
+                                              : "red"
+                                          }
+                                          px={3}
+                                          py={1}
+                                          rounded="full"
+                                          fontSize="xs"
+                                        >
+                                          {project.projectStatus}
+                                        </Badge>
+                                      </VStack>
+                                    </GridItem>
+
+                                    {/* Progress */}
+                                    <GridItem display={{ base: "none", md: "block" }}>
+                                      <VStack spacing={1} align="center">
+                                        <Text fontSize="sm" fontWeight="bold" color="blue.600">
+                                          {project.projectStatusPercentage}%
+                                        </Text>
+                                        <Box w="60px" bg="gray.200" rounded="full" h="6px">
+                                          <Box
+                                            bg="blue.500"
+                                            h="6px"
+                                            rounded="full"
+                                            w={`${project.projectStatusPercentage}%`}
+                                          />
+                                        </Box>
+                                      </VStack>
+                                    </GridItem>
+
+                                    {/* Action Button */}
+                                    <GridItem>
+                                      <Link href={`project-development/development?projectId=${project.id}`}>
+                                        <Button
+                                          size="sm"
+                                          colorScheme="secondary"
+                                          leftIcon={<Icon as={FiTarget} boxSize={3} />}
+                                          rounded="lg"
+                                          _hover={{
+                                            transform: "translateY(-1px)",
+                                            shadow: "md",
+                                          }}
+                                          transition="all 0.2s"
+                                          fontWeight="bold"
+                                          bgGradient="linear(to-r, secondary.500, blue.500)"
+                                          _active={{
+                                            bgGradient: "linear(to-r, secondary.600, blue.600)",
+                                          }}
+                                        >
+                                          Start Development
+                                        </Button>
+                                      </Link>
+                                    </GridItem>
+                                  </Grid>
+
+                                  {/* Mobile Status & Progress */}
+                                  <Box display={{ base: "block", md: "none" }} mt={3} pt={3} borderTop="1px" borderColor={useColorModeValue("gray.200", "gray.700")}>
+                                    <HStack justify="space-between">
+                                      <HStack spacing={2}>
+                                        <Badge
+                                          colorScheme={
+                                            project.projectStatus === "ACTIVE"
+                                              ? "green"
+                                              : project.projectStatus === "ONHOLD"
+                                              ? "orange"
+                                              : "red"
+                                          }
+                                          px={2}
+                                          py={1}
+                                          rounded="full"
+                                          fontSize="xs"
+                                        >
+                                          {project.projectStatus}
+                                        </Badge>
+                                      </HStack>
+                                      <HStack spacing={2}>
+                                        <Text fontSize="sm" fontWeight="bold" color="blue.600">
+                                          {project.projectStatusPercentage}%
+                                        </Text>
+                                        <Box w="40px" bg="gray.200" rounded="full" h="4px">
+                                          <Box
+                                            bg="blue.500"
+                                            h="4px"
+                                            rounded="full"
+                                            w={`${project.projectStatusPercentage}%`}
+                                          />
+                                        </Box>
+                                      </HStack>
+                                    </HStack>
+                                  </Box>
+                                </CardBody>
+                              </Card>
+                            );
+                          })}
+                        </VStack>
+                        
+                        {/* Pagination Controls for List View */}
+                        <Flex w="full" px={5} mt={6}>
+                          <ControlTable table={table} />
+                        </Flex>
+                      </Box>
+                    </>
                   )}
                 </Box>
               </VStack>

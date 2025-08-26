@@ -76,9 +76,9 @@ const CardProject = memo(({ data }: CardProjectProps) => {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       w="full"
-      h="420px"
-      minH="420px"
-      maxH="420px"
+      h="480px"
+      minH="480px"
+      maxH="480px"
       bg={useColorModeValue("white", "gray.800")}
       border="1px"
       borderColor={useColorModeValue("gray.200", "gray.700")}
@@ -101,7 +101,7 @@ const CardProject = memo(({ data }: CardProjectProps) => {
         position="relative"
         bgGradient="linear(135deg, secondary.600 0%, blue.500 50%, secondary.400 100%)"
         color="white"
-        h="180px"
+        h="200px"
         display="flex"
         alignItems="center"
         justifyContent="center"
@@ -119,25 +119,30 @@ const CardProject = memo(({ data }: CardProjectProps) => {
         />
         
         {/* App Icon */}
-        <VStack spacing={2} position="relative" zIndex={1}>
+        <VStack spacing={3} position="relative" zIndex={1}>
           <Box
-            w={16}
-            h={16}
+            w={20}
+            h={20}
             bg="whiteAlpha.200"
             rounded="xl"
             display="flex"
             alignItems="center"
             justifyContent="center"
-            fontSize="2xl"
+            fontSize="3xl"
             fontWeight="bold"
             border="2px"
             borderColor="whiteAlpha.300"
           >
             {data.appsProject?.appShortName?.charAt(0) || data.projectName.charAt(0)}
           </Box>
-          <Text fontSize="sm" fontWeight="medium" opacity="0.9">
-            {data.projectType}
-          </Text>
+          <VStack spacing={1} align="center">
+            <Text fontSize="sm" fontWeight="bold" opacity="0.9" textAlign="center">
+              {data.projectCategory}
+            </Text>
+            <Text fontSize="xs" fontWeight="medium" opacity="0.8" textAlign="center">
+              {data.projectType}
+            </Text>
+          </VStack>
         </VStack>
 
         {/* Status Badge */}
@@ -154,26 +159,11 @@ const CardProject = memo(({ data }: CardProjectProps) => {
         >
           {data.projectStatus}
         </Badge>
-
-        {/* Project Category */}
-        <Badge
-          position="absolute"
-          bottom={4}
-          left={4}
-          bg="whiteAlpha.200"
-          color="white"
-          rounded="full"
-          px={3}
-          py={1}
-          fontSize="xs"
-        >
-          {data.projectCategory}
-        </Badge>
       </CardHeader>
 
       {/* Card Body */}
-      <CardBody p={4} flex="1" display="flex" flexDirection="column">
-        <VStack spacing={3} align="stretch" flex="1">
+      <CardBody p={6} flex="1" display="flex" flexDirection="column">
+        <VStack spacing={4} align="stretch" flex="1">
           {/* Project Info */}
           <VStack spacing={2} align="start">
             <HStack spacing={2} w="full" justify="space-between">
