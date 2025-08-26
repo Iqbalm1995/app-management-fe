@@ -19,11 +19,26 @@ import {
   Stack,
   Text,
   useColorMode,
-  useColorModeValue,
   VStack,
   Icon,
+  Divider,
 } from "@chakra-ui/react";
-import { FiFilter, FiSearch, FiRefreshCw, FiTarget, FiUsers, FiBarChart2, FiTrendingUp, FiZap, FiFolder, FiX, FiMonitor, FiClipboard, FiGrid, FiList } from "react-icons/fi";
+import {
+  FiFilter,
+  FiSearch,
+  FiRefreshCw,
+  FiTarget,
+  FiUsers,
+  FiBarChart2,
+  FiTrendingUp,
+  FiZap,
+  FiFolder,
+  FiX,
+  FiMonitor,
+  FiClipboard,
+  FiGrid,
+  FiList,
+} from "react-icons/fi";
 import {
   ColumnDef,
   getCoreRowModel,
@@ -44,7 +59,10 @@ import {
 } from "@/app/components/headerContent";
 import LayoutAdmin from "@/app/components/layoutAdmin";
 import LoadingMiniSignature from "@/app/components/loadingMini";
-import { TableComponentFullHeadlessGrid, ControlTable } from "@/app/components/tableComponents";
+import {
+  TableComponentFullHeadlessGrid,
+  ControlTable,
+} from "@/app/components/tableComponents";
 
 // Services and Hooks
 import { AuthDataModelInterface, useAuth } from "@/app/context/AuthContext";
@@ -284,9 +302,9 @@ const ProjectManagerPage = memo(() => {
 
       {/* Modern Header Section */}
       <Box
-        bg={useColorModeValue("white", "gray.800")}
+        bg={colorMode === "light" ? "white" : "gray.800"}
         border="1px"
-        borderColor={useColorModeValue("gray.200", "gray.700")}
+        borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
         rounded="xl"
         shadow="xl"
         px={2}
@@ -359,14 +377,14 @@ const ProjectManagerPage = memo(() => {
                 <VStack align="start" spacing={1}>
                   <Heading
                     size="xl"
-                    color={useColorModeValue("gray.800", "white")}
+                    color={colorMode === "light" ? "gray.800" : "white"}
                     fontWeight="bold"
                   >
                     My Project Hub
                   </Heading>
                   <Text
                     fontSize="md"
-                    color={useColorModeValue("gray.600", "gray.300")}
+                    color={colorMode === "light" ? "gray.600" : "gray.300"}
                     fontWeight="medium"
                   >
                     Manage your projects and track progress
@@ -417,12 +435,11 @@ const ProjectManagerPage = memo(() => {
               <Grid templateColumns="repeat(2, 1fr)" gap={3} minW="260px">
                 {/* Total Projects */}
                 <Card
-                  bg={useColorModeValue("secondary.50", "secondary.900")}
+                  bg={colorMode === "light" ? "secondary.50" : "secondary.900"}
                   border="1px"
-                  borderColor={useColorModeValue(
-                    "secondary.200",
-                    "secondary.700"
-                  )}
+                  borderColor={
+                    colorMode === "light" ? "secondary.200" : "secondary.700"
+                  }
                   rounded="lg"
                 >
                   <CardBody p={4} textAlign="center">
@@ -449,10 +466,11 @@ const ProjectManagerPage = memo(() => {
                       </Text>
                       <Text
                         fontSize="xs"
-                        color={useColorModeValue(
-                          "secondary.600",
-                          "secondary.300"
-                        )}
+                        color={
+                          colorMode === "light"
+                            ? "secondary.600"
+                            : "secondary.300"
+                        }
                       >
                         Total Projects
                       </Text>
@@ -462,9 +480,11 @@ const ProjectManagerPage = memo(() => {
 
                 {/* Active Projects */}
                 <Card
-                  bg={useColorModeValue("green.50", "green.900")}
+                  bg={colorMode === "light" ? "green.50" : "green.900"}
                   border="1px"
-                  borderColor={useColorModeValue("green.200", "green.700")}
+                  borderColor={
+                    colorMode === "light" ? "green.200" : "green.700"
+                  }
                   rounded="lg"
                 >
                   <CardBody p={4} textAlign="center">
@@ -491,7 +511,9 @@ const ProjectManagerPage = memo(() => {
                       </Text>
                       <Text
                         fontSize="xs"
-                        color={useColorModeValue("green.600", "green.300")}
+                        color={
+                          colorMode === "light" ? "green.600" : "green.300"
+                        }
                       >
                         Active Projects
                       </Text>
@@ -501,9 +523,9 @@ const ProjectManagerPage = memo(() => {
 
                 {/* Average Progress */}
                 <Card
-                  bg={useColorModeValue("blue.50", "blue.900")}
+                  bg={colorMode === "light" ? "blue.50" : "blue.900"}
                   border="1px"
-                  borderColor={useColorModeValue("blue.200", "blue.700")}
+                  borderColor={colorMode === "light" ? "blue.200" : "blue.700"}
                   rounded="lg"
                 >
                   <CardBody p={4} textAlign="center">
@@ -532,7 +554,7 @@ const ProjectManagerPage = memo(() => {
                       </Text>
                       <Text
                         fontSize="xs"
-                        color={useColorModeValue("blue.600", "blue.300")}
+                        color={colorMode === "light" ? "blue.600" : "blue.300"}
                       >
                         Avg Progress
                       </Text>
@@ -542,9 +564,11 @@ const ProjectManagerPage = memo(() => {
 
                 {/* Team Count */}
                 <Card
-                  bg={useColorModeValue("orange.50", "orange.900")}
+                  bg={colorMode === "light" ? "orange.50" : "orange.900"}
                   border="1px"
-                  borderColor={useColorModeValue("orange.200", "orange.700")}
+                  borderColor={
+                    colorMode === "light" ? "orange.200" : "orange.700"
+                  }
                   rounded="lg"
                 >
                   <CardBody p={4} textAlign="center">
@@ -567,7 +591,9 @@ const ProjectManagerPage = memo(() => {
                       </Text>
                       <Text
                         fontSize="xs"
-                        color={useColorModeValue("orange.600", "orange.300")}
+                        color={
+                          colorMode === "light" ? "orange.600" : "orange.300"
+                        }
                       >
                         Active Teams
                       </Text>
@@ -588,8 +614,8 @@ const ProjectManagerPage = memo(() => {
             rounded={{ base: "lg", md: "xl" }}
             shadow={{ base: "md", md: "lg" }}
             border="1px"
-            borderColor={useColorModeValue("gray.200", "gray.700")}
-            bg={useColorModeValue("white", "gray.800")}
+            borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+            bg={colorMode === "light" ? "white" : "gray.800"}
             w="full"
           >
             <CardBody p={{ base: 4, sm: 5, md: 6 }}>
@@ -621,7 +647,7 @@ const ProjectManagerPage = memo(() => {
                       </Box>
                       <Heading
                         size={{ base: "sm", md: "md" }}
-                        color={useColorModeValue("gray.800", "white")}
+                        color={colorMode === "light" ? "gray.800" : "white"}
                         lineHeight="1.2"
                       >
                         Project Search & Management
@@ -636,20 +662,20 @@ const ProjectManagerPage = memo(() => {
                       <Input
                         type="text"
                         placeholder="Search projects..."
-                        bg={useColorModeValue("gray.50", "gray.700")}
+                        bg={colorMode === "light" ? "gray.50" : "gray.700"}
                         border="2px"
-                        borderColor={useColorModeValue("gray.200", "gray.600")}
+                        borderColor={
+                          colorMode === "light" ? "gray.200" : "gray.600"
+                        }
                         _focus={{
                           borderColor: "secondary.500",
                           boxShadow:
                             "0 0 0 1px var(--chakra-colors-secondary-500)",
-                          bg: useColorModeValue("white", "gray.600"),
+                          bg: colorMode === "light" ? "white" : "gray.600",
                         }}
                         _hover={{
-                          borderColor: useColorModeValue(
-                            "gray.300",
-                            "gray.500"
-                          ),
+                          borderColor:
+                            colorMode === "light" ? "gray.300" : "gray.500",
                         }}
                         onChange={(e) => setGlobalFilter(e.target.value)}
                         value={globalFilter}
@@ -711,14 +737,14 @@ const ProjectManagerPage = memo(() => {
                 <VStack align="start" spacing={0}>
                   <Heading
                     size={{ base: "sm", md: "md" }}
-                    color={useColorModeValue("gray.800", "white")}
+                    color={colorMode === "light" ? "gray.800" : "white"}
                     lineHeight="1.2"
                   >
                     Quick Status Filters
                   </Heading>
                   <Text
                     fontSize={{ base: "xs", md: "sm" }}
-                    color={useColorModeValue("gray.600", "gray.400")}
+                    color={colorMode === "light" ? "gray.600" : "gray.400"}
                   >
                     Filter projects by status
                     {statusFilter && ` • Currently: ${statusFilter}`}
@@ -734,9 +760,27 @@ const ProjectManagerPage = memo(() => {
                     size="xs"
                     variant={!statusFilter ? "solid" : "solid"}
                     colorScheme={!statusFilter ? "secondary" : "gray"}
-                    bg={!statusFilter ? undefined : useColorModeValue("white", "gray.700")}
-                    color={!statusFilter ? undefined : useColorModeValue("gray.700", "white")}
-                    borderColor={!statusFilter ? undefined : useColorModeValue("gray.200", "gray.600")}
+                    bg={
+                      !statusFilter
+                        ? undefined
+                        : colorMode === "light"
+                        ? "white"
+                        : "gray.700"
+                    }
+                    color={
+                      !statusFilter
+                        ? undefined
+                        : colorMode === "light"
+                        ? "gray.700"
+                        : "white"
+                    }
+                    borderColor={
+                      !statusFilter
+                        ? undefined
+                        : colorMode === "light"
+                        ? "gray.200"
+                        : "gray.600"
+                    }
                     border={!statusFilter ? undefined : "1px solid"}
                     onClick={() => setStatusFilter("")}
                     rounded="full"
@@ -746,7 +790,11 @@ const ProjectManagerPage = memo(() => {
                     _hover={{
                       transform: "translateY(-1px)",
                       shadow: "sm",
-                      bg: !statusFilter ? undefined : useColorModeValue("gray.50", "gray.600"),
+                      bg: !statusFilter
+                        ? undefined
+                        : colorMode === "light"
+                        ? "gray.50"
+                        : "gray.600",
                     }}
                     transition="all 0.2s"
                   >
@@ -777,9 +825,27 @@ const ProjectManagerPage = memo(() => {
                         size="xs"
                         variant="solid"
                         colorScheme={isActive ? "blue" : undefined}
-                        bg={isActive ? undefined : useColorModeValue("white", "gray.700")}
-                        color={isActive ? undefined : useColorModeValue("gray.700", "white")}
-                        borderColor={isActive ? undefined : useColorModeValue("gray.200", "gray.600")}
+                        bg={
+                          isActive
+                            ? undefined
+                            : colorMode === "light"
+                            ? "white"
+                            : "gray.700"
+                        }
+                        color={
+                          isActive
+                            ? undefined
+                            : colorMode === "light"
+                            ? "gray.700"
+                            : "white"
+                        }
+                        borderColor={
+                          isActive
+                            ? undefined
+                            : colorMode === "light"
+                            ? "gray.200"
+                            : "gray.600"
+                        }
                         border={isActive ? undefined : "1px solid"}
                         onClick={() => handleStatusFilter(status)}
                         rounded="full"
@@ -789,8 +855,16 @@ const ProjectManagerPage = memo(() => {
                         _hover={{
                           transform: "translateY(-1px)",
                           shadow: "sm",
-                          bg: isActive ? undefined : useColorModeValue("gray.50", "gray.600"),
-                          borderColor: isActive ? "blue.400" : useColorModeValue("gray.300", "gray.500"),
+                          bg: isActive
+                            ? undefined
+                            : colorMode === "light"
+                            ? "gray.50"
+                            : "gray.600",
+                          borderColor: isActive
+                            ? "blue.400"
+                            : colorMode === "light"
+                            ? "gray.300"
+                            : "gray.500",
                         }}
                         transition="all 0.2s"
                         opacity={projectCount === 0 && !isActive ? 0.5 : 1}
@@ -826,7 +900,7 @@ const ProjectManagerPage = memo(() => {
                       size="sm"
                       variant="outline"
                       colorScheme="red"
-                      bg={useColorModeValue("white", "gray.800")}
+                      bg={colorMode === "light" ? "white" : "gray.800"}
                       borderColor="red.300"
                       color="red.500"
                       onClick={clearAllFilters}
@@ -873,13 +947,139 @@ const ProjectManagerPage = memo(() => {
             rounded={{ base: "lg", md: "xl" }}
             shadow={{ base: "md", md: "lg" }}
             border="1px"
-            borderColor={useColorModeValue("gray.200", "gray.700")}
-            bg={useColorModeValue("white", "gray.800")}
+            borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+            bg={colorMode === "light" ? "white" : "gray.800"}
             w="full"
             minH={{ base: "300px", md: "400px" }}
           >
             <CardBody p={{ base: 4, sm: 5, md: 6 }}>
-              <VStack spacing={{ base: 4, md: 6 }} w="full">
+              <VStack spacing={{ base: 6, md: 8 }} w="full">
+                {/* Last Working Projects Section */}
+                {DataProjects.length > 0 && !IsLoadingProcess && (
+                  <Box w="full">
+                    <VStack spacing={4} align="stretch">
+                      {/* Section Header */}
+                      <HStack spacing={3} align="center">
+                        <Box
+                          w={{ base: 8, md: 10 }}
+                          h={{ base: 8, md: 10 }}
+                          bg="purple.500"
+                          rounded="lg"
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="center"
+                          color="white"
+                          fontSize={{ base: "sm", md: "md" }}
+                          flexShrink={0}
+                        >
+                          <Icon as={FiZap} boxSize={{ base: 4, md: 5 }} />
+                        </Box>
+                        <VStack align="start" spacing={0}>
+                          <Heading
+                            size={{ base: "sm", md: "md" }}
+                            color={colorMode === "light" ? "gray.800" : "white"}
+                            lineHeight="1.2"
+                          >
+                            Last Working Projects
+                          </Heading>
+                          <Text
+                            fontSize={{ base: "xs", md: "sm" }}
+                            color={
+                              colorMode === "light" ? "gray.600" : "gray.400"
+                            }
+                            lineHeight="1.3"
+                          >
+                            Recently active projects you've been working on
+                          </Text>
+                        </VStack>
+                      </HStack>
+
+                      {/* Last Working Projects List */}
+                      <VStack spacing={0} align="stretch" divider={<Divider />}>
+                        {DataProjects.slice(0, 3).map((project, index) => (
+                          <HStack
+                            key={`recent-${project.id}`}
+                            spacing={4}
+                            align="center"
+                            py={3}
+                            px={2}
+                            _hover={{
+                              bg:
+                                colorMode === "light" ? "gray.50" : "gray.700",
+                            }}
+                            transition="all 0.2s"
+                            cursor="pointer"
+                            onClick={() =>
+                              (window.location.href = `project-development/development?projectId=${project.id}`)
+                            }
+                          >
+                            {/* Project Number */}
+                            <Text
+                              fontSize="sm"
+                              fontWeight="bold"
+                              color="purple.500"
+                              minW="20px"
+                              textAlign="center"
+                            >
+                              {index + 1}.
+                            </Text>
+
+                            {/* Project Info */}
+                            <VStack align="start" spacing={0} flex={1}>
+                              <HStack spacing={2} align="center">
+                                <Text
+                                  fontSize="sm"
+                                  fontWeight="bold"
+                                  color={
+                                    colorMode === "light" ? "gray.800" : "white"
+                                  }
+                                >
+                                  {project.projectName}
+                                </Text>
+                                <Badge
+                                  colorScheme="purple"
+                                  size="sm"
+                                  variant="subtle"
+                                >
+                                  {project.projectCategory}
+                                </Badge>
+                              </HStack>
+                              <Text
+                                fontSize="xs"
+                                color={
+                                  colorMode === "light"
+                                    ? "gray.500"
+                                    : "gray.400"
+                                }
+                                noOfLines={1}
+                              >
+                                {project.projectNo} |{" "}
+                                {project.appsProject.appName}
+                              </Text>
+                            </VStack>
+
+                            {/* Progress */}
+                            <HStack spacing={2} align="center" minW="60px">
+                              <Text
+                                fontSize="xs"
+                                fontWeight="medium"
+                                color="orange.600"
+                              >
+                                {project.projectStatusPercentage}%
+                              </Text>
+                              <Icon
+                                as={FiTarget}
+                                boxSize={4}
+                                color="purple.500"
+                              />
+                            </HStack>
+                          </HStack>
+                        ))}
+                      </VStack>
+                    </VStack>
+                  </Box>
+                )}
+
                 {/* Projects Header */}
                 <Flex
                   justify="space-between"
@@ -888,111 +1088,133 @@ const ProjectManagerPage = memo(() => {
                   direction={{ base: "column", sm: "row" }}
                   gap={{ base: 3, sm: 0 }}
                 >
-                <HStack justify="space-between" align="center" w="full">
-                  <HStack spacing={3} align="center">
-                    <Box
-                      w={{ base: 8, md: 10 }}
-                      h={{ base: 8, md: 10 }}
-                      bg="blue.500"
-                      rounded="lg"
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
-                      color="white"
-                      fontSize={{ base: "sm", md: "md" }}
-                      flexShrink={0}
-                    >
-                      <Icon as={FiClipboard} boxSize={{ base: 4, md: 5 }} />
-                    </Box>
-                    <VStack align="start" spacing={0}>
-                      <Heading
-                        size={{ base: "sm", md: "md" }}
-                        color={useColorModeValue("gray.800", "white")}
-                        lineHeight="1.2"
-                      >
-                        My Projects
-                      </Heading>
-                      <Text
-                        fontSize={{ base: "xs", md: "sm" }}
-                        color={useColorModeValue("gray.600", "gray.400")}
-                        lineHeight="1.3"
-                      >
-                        {DataProjects.length} projects found
-                        {statusFilter && (
-                          <Text as="span" color="blue.500" fontWeight="medium">
-                            {" "}
-                            • Status: {statusFilter}
-                          </Text>
-                        )}
-                        {globalFilter && (
-                          <Text
-                            as="span"
-                            display={{ base: "block", sm: "inline" }}
-                          >
-                            {" "}
-                            • Search: "{globalFilter}"
-                          </Text>
-                        )}
-                      </Text>
-                    </VStack>
-                  </HStack>
-
-                  {/* View Mode Toggle & Active Badge */}
-                  <HStack spacing={3}>
-                    {DataProjects.length > 0 && (
-                      <Badge
-                        colorScheme="green"
-                        px={{ base: 2, md: 3 }}
-                        py={1}
-                        rounded="full"
-                        fontSize={{ base: "xs", md: "sm" }}
+                  <HStack justify="space-between" align="center" w="full">
+                    <HStack spacing={3} align="center">
+                      <Box
+                        w={{ base: 8, md: 10 }}
+                        h={{ base: 8, md: 10 }}
+                        bg="blue.500"
+                        rounded="lg"
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                        color="white"
+                        fontSize={{ base: "sm", md: "md" }}
                         flexShrink={0}
                       >
-                        {
-                          DataProjects.filter((p) => p.projectStatus === "ACTIVE")
-                            .length
-                        }{" "}
-                        Active
-                      </Badge>
-                    )}
-                    
-                    {/* View Mode Toggle Buttons */}
-                    <HStack spacing={1} bg={useColorModeValue("gray.100", "gray.700")} rounded="lg" p={1}>
-                      <Button
-                        size="sm"
-                        variant={viewMode === "grid" ? "solid" : "ghost"}
-                        colorScheme={viewMode === "grid" ? "blue" : "gray"}
-                        onClick={() => setViewMode("grid")}
-                        leftIcon={<Icon as={FiGrid} boxSize={3} />}
-                        fontSize="xs"
-                        px={3}
-                        h={8}
-                        _hover={{
-                          bg: viewMode === "grid" ? "blue.500" : useColorModeValue("gray.200", "gray.600"),
-                        }}
-                        transition="all 0.2s"
+                        <Icon as={FiClipboard} boxSize={{ base: 4, md: 5 }} />
+                      </Box>
+                      <VStack align="start" spacing={0}>
+                        <Heading
+                          size={{ base: "sm", md: "md" }}
+                          color={colorMode === "light" ? "gray.800" : "white"}
+                          lineHeight="1.2"
+                        >
+                          My Projects
+                        </Heading>
+                        <Text
+                          fontSize={{ base: "xs", md: "sm" }}
+                          color={
+                            colorMode === "light" ? "gray.600" : "gray.400"
+                          }
+                          lineHeight="1.3"
+                        >
+                          {DataProjects.length} projects found
+                          {statusFilter && (
+                            <Text
+                              as="span"
+                              color="blue.500"
+                              fontWeight="medium"
+                            >
+                              {" "}
+                              • Status: {statusFilter}
+                            </Text>
+                          )}
+                          {globalFilter && (
+                            <Text
+                              as="span"
+                              display={{ base: "block", sm: "inline" }}
+                            >
+                              {" "}
+                              • Search: "{globalFilter}"
+                            </Text>
+                          )}
+                        </Text>
+                      </VStack>
+                    </HStack>
+
+                    {/* View Mode Toggle & Active Badge */}
+                    <HStack spacing={3}>
+                      {DataProjects.length > 0 && (
+                        <Badge
+                          colorScheme="green"
+                          px={{ base: 2, md: 3 }}
+                          py={1}
+                          rounded="full"
+                          fontSize={{ base: "xs", md: "sm" }}
+                          flexShrink={0}
+                        >
+                          {
+                            DataProjects.filter(
+                              (p) => p.projectStatus === "ACTIVE"
+                            ).length
+                          }{" "}
+                          Active
+                        </Badge>
+                      )}
+
+                      {/* View Mode Toggle Buttons */}
+                      <HStack
+                        spacing={1}
+                        bg={colorMode === "light" ? "gray.100" : "gray.700"}
+                        rounded="lg"
+                        p={1}
                       >
-                        Grid
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={viewMode === "list" ? "solid" : "ghost"}
-                        colorScheme={viewMode === "list" ? "blue" : "gray"}
-                        onClick={() => setViewMode("list")}
-                        leftIcon={<Icon as={FiList} boxSize={3} />}
-                        fontSize="xs"
-                        px={3}
-                        h={8}
-                        _hover={{
-                          bg: viewMode === "list" ? "blue.500" : useColorModeValue("gray.200", "gray.600"),
-                        }}
-                        transition="all 0.2s"
-                      >
-                        List
-                      </Button>
+                        <Button
+                          size="sm"
+                          variant={viewMode === "grid" ? "solid" : "ghost"}
+                          colorScheme={viewMode === "grid" ? "blue" : "gray"}
+                          onClick={() => setViewMode("grid")}
+                          leftIcon={<Icon as={FiGrid} boxSize={3} />}
+                          fontSize="xs"
+                          px={3}
+                          h={8}
+                          _hover={{
+                            bg:
+                              viewMode === "grid"
+                                ? "blue.500"
+                                : colorMode === "light"
+                                ? "gray.200"
+                                : "gray.600",
+                          }}
+                          transition="all 0.2s"
+                        >
+                          Grid
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={viewMode === "list" ? "solid" : "ghost"}
+                          colorScheme={viewMode === "list" ? "blue" : "gray"}
+                          onClick={() => setViewMode("list")}
+                          leftIcon={<Icon as={FiList} boxSize={3} />}
+                          fontSize="xs"
+                          px={3}
+                          h={8}
+                          _hover={{
+                            bg:
+                              viewMode === "list"
+                                ? "blue.500"
+                                : colorMode === "light"
+                                ? "gray.200"
+                                : "gray.600",
+                          }}
+                          transition="all 0.2s"
+                        >
+                          List
+                        </Button>
+                      </HStack>
                     </HStack>
                   </HStack>
-                </HStack>
                 </Flex>
 
                 {/* Projects Content */}
@@ -1031,19 +1253,27 @@ const ProjectManagerPage = memo(() => {
                       <Box
                         w={{ base: 16, md: 24 }}
                         h={{ base: 16, md: 24 }}
-                        bg={useColorModeValue("gray.100", "gray.700")}
+                        bg={colorMode === "light" ? "gray.100" : "gray.700"}
                         rounded="full"
                         display="flex"
                         alignItems="center"
                         justifyContent="center"
                         fontSize={{ base: "2xl", md: "4xl" }}
                       >
-                        <Icon as={FiFolder} boxSize={{ base: 8, md: 12 }} color={useColorModeValue("gray.400", "gray.500")} />
+                        <Icon
+                          as={FiFolder}
+                          boxSize={{ base: 8, md: 12 }}
+                          color={
+                            colorMode === "light" ? "gray.400" : "gray.500"
+                          }
+                        />
                       </Box>
                       <VStack spacing={{ base: 2, md: 3 }}>
                         <Heading
                           size={{ base: "md", md: "lg" }}
-                          color={useColorModeValue("gray.600", "gray.400")}
+                          color={
+                            colorMode === "light" ? "gray.600" : "gray.400"
+                          }
                           textAlign="center"
                         >
                           {globalFilter || statusFilter
@@ -1051,7 +1281,7 @@ const ProjectManagerPage = memo(() => {
                             : "No Projects"}
                         </Heading>
                         <Text
-                          color={useColorModeValue("gray.500", "gray.500")}
+                          color="gray.500"
                           maxW={{ base: "300px", md: "500px" }}
                           lineHeight="1.6"
                           fontSize={{ base: "sm", md: "md" }}
@@ -1088,7 +1318,7 @@ const ProjectManagerPage = memo(() => {
                       <Box display={viewMode === "grid" ? "block" : "none"}>
                         <TableComponentFullHeadlessGrid table={table} />
                       </Box>
-                      
+
                       {/* List View */}
                       <Box display={viewMode === "list" ? "block" : "none"}>
                         <VStack spacing={3} align="stretch">
@@ -1100,17 +1330,33 @@ const ProjectManagerPage = memo(() => {
                                 rounded="lg"
                                 shadow="sm"
                                 border="1px"
-                                borderColor={useColorModeValue("gray.200", "gray.700")}
-                                bg={useColorModeValue("white", "gray.800")}
+                                borderColor={
+                                  colorMode === "light"
+                                    ? "gray.200"
+                                    : "gray.700"
+                                }
+                                bg={
+                                  colorMode === "light" ? "white" : "gray.800"
+                                }
                                 _hover={{
                                   shadow: "md",
-                                  borderColor: useColorModeValue("blue.300", "blue.600"),
+                                  borderColor:
+                                    colorMode === "light"
+                                      ? "blue.300"
+                                      : "blue.600",
                                   transform: "translateY(-1px)",
                                 }}
                                 transition="all 0.2s"
                               >
                                 <CardBody p={4}>
-                                  <Grid templateColumns={{ base: "1fr", md: "1fr auto auto auto" }} gap={4} alignItems="center">
+                                  <Grid
+                                    templateColumns={{
+                                      base: "1fr",
+                                      md: "1fr auto auto auto",
+                                    }}
+                                    gap={4}
+                                    alignItems="center"
+                                  >
                                     {/* Project Info */}
                                     <GridItem>
                                       <HStack spacing={3}>
@@ -1128,22 +1374,42 @@ const ProjectManagerPage = memo(() => {
                                           fontWeight="bold"
                                           flexShrink={0}
                                         >
-                                          {project.appsProject?.appName?.charAt(0) || project.projectName.charAt(0)}
+                                          {project.appsProject?.appName?.charAt(
+                                            0
+                                          ) || project.projectName.charAt(0)}
                                         </Box>
-                                        
+
                                         {/* Project Details */}
                                         <VStack align="start" spacing={1}>
-                                          <Heading size="sm" color={useColorModeValue("gray.800", "white")}>
+                                          <Heading
+                                            size="sm"
+                                            color={
+                                              colorMode === "light"
+                                                ? "gray.800"
+                                                : "white"
+                                            }
+                                          >
                                             {project.projectName}
                                           </Heading>
-                                          <Text fontSize="sm" color={useColorModeValue("gray.600", "gray.400")}>
-                                            {project.projectDesc || "No description available"}
+                                          <Text
+                                            fontSize="sm"
+                                            color={
+                                              colorMode === "light"
+                                                ? "gray.600"
+                                                : "gray.400"
+                                            }
+                                          >
+                                            {project.projectDesc ||
+                                              "No description available"}
                                           </Text>
                                           <HStack spacing={2}>
                                             <Badge colorScheme="blue" size="sm">
                                               {project.projectType}
                                             </Badge>
-                                            <Badge colorScheme="purple" size="sm">
+                                            <Badge
+                                              colorScheme="purple"
+                                              size="sm"
+                                            >
                                               {project.projectCategory}
                                             </Badge>
                                           </HStack>
@@ -1152,13 +1418,16 @@ const ProjectManagerPage = memo(() => {
                                     </GridItem>
 
                                     {/* Status */}
-                                    <GridItem display={{ base: "none", md: "block" }}>
+                                    <GridItem
+                                      display={{ base: "none", md: "block" }}
+                                    >
                                       <VStack spacing={1}>
                                         <Badge
                                           colorScheme={
                                             project.projectStatus === "ACTIVE"
                                               ? "green"
-                                              : project.projectStatus === "ONHOLD"
+                                              : project.projectStatus ===
+                                                "ONHOLD"
                                               ? "orange"
                                               : "red"
                                           }
@@ -1173,12 +1442,23 @@ const ProjectManagerPage = memo(() => {
                                     </GridItem>
 
                                     {/* Progress */}
-                                    <GridItem display={{ base: "none", md: "block" }}>
+                                    <GridItem
+                                      display={{ base: "none", md: "block" }}
+                                    >
                                       <VStack spacing={1} align="center">
-                                        <Text fontSize="sm" fontWeight="bold" color="blue.600">
+                                        <Text
+                                          fontSize="sm"
+                                          fontWeight="bold"
+                                          color="blue.600"
+                                        >
                                           {project.projectStatusPercentage}%
                                         </Text>
-                                        <Box w="60px" bg="gray.200" rounded="full" h="6px">
+                                        <Box
+                                          w="60px"
+                                          bg="gray.200"
+                                          rounded="full"
+                                          h="6px"
+                                        >
                                           <Box
                                             bg="blue.500"
                                             h="6px"
@@ -1191,11 +1471,15 @@ const ProjectManagerPage = memo(() => {
 
                                     {/* Action Button */}
                                     <GridItem>
-                                      <Link href={`project-development/development?projectId=${project.id}`}>
+                                      <Link
+                                        href={`project-development/development?projectId=${project.id}`}
+                                      >
                                         <Button
                                           size="sm"
                                           colorScheme="secondary"
-                                          leftIcon={<Icon as={FiTarget} boxSize={3} />}
+                                          leftIcon={
+                                            <Icon as={FiTarget} boxSize={3} />
+                                          }
                                           rounded="lg"
                                           _hover={{
                                             transform: "translateY(-1px)",
@@ -1205,7 +1489,8 @@ const ProjectManagerPage = memo(() => {
                                           fontWeight="bold"
                                           bgGradient="linear(to-r, secondary.500, blue.500)"
                                           _active={{
-                                            bgGradient: "linear(to-r, secondary.600, blue.600)",
+                                            bgGradient:
+                                              "linear(to-r, secondary.600, blue.600)",
                                           }}
                                         >
                                           Start Development
@@ -1215,14 +1500,25 @@ const ProjectManagerPage = memo(() => {
                                   </Grid>
 
                                   {/* Mobile Status & Progress */}
-                                  <Box display={{ base: "block", md: "none" }} mt={3} pt={3} borderTop="1px" borderColor={useColorModeValue("gray.200", "gray.700")}>
+                                  <Box
+                                    display={{ base: "block", md: "none" }}
+                                    mt={3}
+                                    pt={3}
+                                    borderTop="1px"
+                                    borderColor={
+                                      colorMode === "light"
+                                        ? "gray.200"
+                                        : "gray.700"
+                                    }
+                                  >
                                     <HStack justify="space-between">
                                       <HStack spacing={2}>
                                         <Badge
                                           colorScheme={
                                             project.projectStatus === "ACTIVE"
                                               ? "green"
-                                              : project.projectStatus === "ONHOLD"
+                                              : project.projectStatus ===
+                                                "ONHOLD"
                                               ? "orange"
                                               : "red"
                                           }
@@ -1235,10 +1531,19 @@ const ProjectManagerPage = memo(() => {
                                         </Badge>
                                       </HStack>
                                       <HStack spacing={2}>
-                                        <Text fontSize="sm" fontWeight="bold" color="blue.600">
+                                        <Text
+                                          fontSize="sm"
+                                          fontWeight="bold"
+                                          color="blue.600"
+                                        >
                                           {project.projectStatusPercentage}%
                                         </Text>
-                                        <Box w="40px" bg="gray.200" rounded="full" h="4px">
+                                        <Box
+                                          w="40px"
+                                          bg="gray.200"
+                                          rounded="full"
+                                          h="4px"
+                                        >
                                           <Box
                                             bg="blue.500"
                                             h="4px"
@@ -1254,7 +1559,7 @@ const ProjectManagerPage = memo(() => {
                             );
                           })}
                         </VStack>
-                        
+
                         {/* Pagination Controls for List View */}
                         <Flex w="full" px={5} mt={6}>
                           <ControlTable table={table} />
