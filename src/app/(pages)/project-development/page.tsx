@@ -20,7 +20,9 @@ import {
   useColorMode,
   useColorModeValue,
   VStack,
+  Icon,
 } from "@chakra-ui/react";
+import { FiFilter, FiSearch, FiRefreshCw, FiTarget, FiUsers, FiBarChart2, FiTrendingUp, FiZap, FiFolder, FiX, FiMonitor, FiClipboard } from "react-icons/fi";
 import {
   ColumnDef,
   getCoreRowModel,
@@ -65,8 +67,8 @@ import {
 import CardProject from "./components/CardProject";
 
 const HeaderDataContent: HeaderContentProps = {
-  titleName: "Project Development",
-  breadCrumb: ["Home", "Project Development"],
+  titleName: "My Project",
+  breadCrumb: ["Home", "My Project"],
 };
 
 const ProjectManagerPage = memo(() => {
@@ -350,7 +352,7 @@ const ProjectManagerPage = memo(() => {
                   fontSize="xl"
                   shadow="lg"
                 >
-                  💻
+                  <Icon as={FiMonitor} boxSize={6} color="white" />
                 </Box>
                 <VStack align="start" spacing={1}>
                   <Heading
@@ -358,14 +360,14 @@ const ProjectManagerPage = memo(() => {
                     color={useColorModeValue("gray.800", "white")}
                     fontWeight="bold"
                   >
-                    Development Hub
+                    My Project Hub
                   </Heading>
                   <Text
                     fontSize="md"
                     color={useColorModeValue("gray.600", "gray.300")}
                     fontWeight="medium"
                   >
-                    Manage your development projects and track progress
+                    Manage your projects and track progress
                   </Text>
                 </VStack>
               </HStack>
@@ -380,7 +382,8 @@ const ProjectManagerPage = memo(() => {
                   fontSize="sm"
                   fontWeight="medium"
                 >
-                  🚀 Project Tracking
+                  <Icon as={FiTarget} w={3} h={3} mr={2} />
+                  Project Tracking
                 </Badge>
                 <Badge
                   colorScheme="blue"
@@ -390,7 +393,8 @@ const ProjectManagerPage = memo(() => {
                   fontSize="sm"
                   fontWeight="medium"
                 >
-                  👥 Team Collaboration
+                  <Icon as={FiUsers} w={3} h={3} mr={2} />
+                  Team Collaboration
                 </Badge>
                 <Badge
                   colorScheme="green"
@@ -400,7 +404,8 @@ const ProjectManagerPage = memo(() => {
                   fontSize="sm"
                   fontWeight="medium"
                 >
-                  📊 Progress Analytics
+                  <Icon as={FiBarChart2} w={3} h={3} mr={2} />
+                  Progress Analytics
                 </Badge>
               </HStack>
             </VStack>
@@ -431,7 +436,7 @@ const ProjectManagerPage = memo(() => {
                         color="white"
                         fontSize="md"
                       >
-                        📁
+                        <Icon as={FiFolder} boxSize={4} />
                       </Box>
                       <Text
                         fontSize="xl"
@@ -473,7 +478,7 @@ const ProjectManagerPage = memo(() => {
                         color="white"
                         fontSize="md"
                       >
-                        ⚡
+                        <Icon as={FiZap} boxSize={4} />
                       </Box>
                       <Text fontSize="xl" fontWeight="bold" color="green.600">
                         {
@@ -512,7 +517,7 @@ const ProjectManagerPage = memo(() => {
                         color="white"
                         fontSize="md"
                       >
-                        📈
+                        <Icon as={FiTrendingUp} boxSize={4} />
                       </Box>
                       <Text fontSize="xl" fontWeight="bold" color="blue.600">
                         {Math.round(
@@ -553,7 +558,7 @@ const ProjectManagerPage = memo(() => {
                         color="white"
                         fontSize="md"
                       >
-                        👥
+                        <Icon as={FiUsers} boxSize={4} />
                       </Box>
                       <Text fontSize="xl" fontWeight="bold" color="orange.600">
                         {DataAuth?.team ? 1 : 0}
@@ -610,7 +615,7 @@ const ProjectManagerPage = memo(() => {
                         fontSize={{ base: "sm", md: "md" }}
                         flexShrink={0}
                       >
-                        🔍
+                        <Icon as={FiSearch} boxSize={{ base: 4, md: 5 }} />
                       </Box>
                       <Heading
                         size={{ base: "sm", md: "md" }}
@@ -628,7 +633,7 @@ const ProjectManagerPage = memo(() => {
                       </InputLeftElement>
                       <Input
                         type="text"
-                        placeholder="Search development projects..."
+                        placeholder="Search projects..."
                         bg={useColorModeValue("gray.50", "gray.700")}
                         border="2px"
                         borderColor={useColorModeValue("gray.200", "gray.600")}
@@ -699,7 +704,7 @@ const ProjectManagerPage = memo(() => {
                   fontSize={{ base: "sm", md: "md" }}
                   flexShrink={0}
                 >
-                  🏷️
+                  <Icon as={FiFilter} boxSize={{ base: 4, md: 5 }} />
                 </Box>
                 <VStack align="start" spacing={0}>
                   <Heading
@@ -713,7 +718,7 @@ const ProjectManagerPage = memo(() => {
                     fontSize={{ base: "xs", md: "sm" }}
                     color={useColorModeValue("gray.600", "gray.400")}
                   >
-                    Filter projects by development status
+                    Filter projects by status
                     {statusFilter && ` • Currently: ${statusFilter}`}
                   </Text>
                 </VStack>
@@ -833,7 +838,7 @@ const ProjectManagerPage = memo(() => {
                           alignItems="center"
                           justifyContent="center"
                         >
-                          <Text fontSize="xs" color="red.500">✕</Text>
+                          <Icon as={FiX} boxSize={3} color="red.500" />
                         </Box>
                       }
                       fontSize="sm"
@@ -894,7 +899,7 @@ const ProjectManagerPage = memo(() => {
                       fontSize={{ base: "sm", md: "md" }}
                       flexShrink={0}
                     >
-                      📋
+                      <Icon as={FiClipboard} boxSize={{ base: 4, md: 5 }} />
                     </Box>
                     <VStack align="start" spacing={0}>
                       <Heading
@@ -902,7 +907,7 @@ const ProjectManagerPage = memo(() => {
                         color={useColorModeValue("gray.800", "white")}
                         lineHeight="1.2"
                       >
-                        Development Projects
+                        My Projects
                       </Heading>
                       <Text
                         fontSize={{ base: "xs", md: "sm" }}
@@ -962,7 +967,7 @@ const ProjectManagerPage = memo(() => {
                           fontWeight="medium"
                           textAlign="center"
                         >
-                          Loading Development Projects
+                          Loading My Projects
                         </Text>
                         <Text
                           color="gray.400"
@@ -990,7 +995,7 @@ const ProjectManagerPage = memo(() => {
                         justifyContent="center"
                         fontSize={{ base: "2xl", md: "4xl" }}
                       >
-                        📂
+                        <Icon as={FiFolder} boxSize={{ base: 8, md: 12 }} color={useColorModeValue("gray.400", "gray.500")} />
                       </Box>
                       <VStack spacing={{ base: 2, md: 3 }}>
                         <Heading
@@ -1000,7 +1005,7 @@ const ProjectManagerPage = memo(() => {
                         >
                           {globalFilter || statusFilter
                             ? "No Projects Found"
-                            : "No Development Projects"}
+                            : "No Projects"}
                         </Heading>
                         <Text
                           color={useColorModeValue("gray.500", "gray.500")}
@@ -1018,7 +1023,7 @@ const ProjectManagerPage = memo(() => {
                               }${
                                 statusFilter ? ` (status: ${statusFilter})` : ""
                               }. Try adjusting your filters or clearing them.`
-                            : "You don't have any development projects yet. Projects will appear here once they are created and assigned to your team."}
+                            : "You don't have any projects yet. Projects will appear here once they are created and assigned to your team."}
                         </Text>
                       </VStack>
                       {(globalFilter || statusFilter) && (

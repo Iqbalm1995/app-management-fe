@@ -222,7 +222,7 @@ const LinkItems: LinkItemProps[] = [
         children: [],
       },
       {
-        name: "Project Development",
+        name: "My Project",
         icon: FiCode,
         link: "/project-development",
         role: ["admin"],

@@ -266,26 +266,7 @@ const CardProject = memo(({ data }: CardProjectProps) => {
 
           {/* Quick Actions - Always at bottom */}
           <Box mt="auto">
-            <HStack spacing={2}>
-            <Link href={`/projects-manager/detail?projectId=${data.id}`} style={{ flex: 1 }}>
-              <Button
-                size="md"
-                variant="outline"
-                colorScheme="gray"
-                leftIcon={<FiExternalLink />}
-                w="full"
-                rounded="lg"
-                _hover={{
-                  bg: "gray.50",
-                  transform: "translateY(-1px)",
-                }}
-                transition="all 0.2s"
-              >
-                Detail
-              </Button>
-            </Link>
-            
-            <Link href={`project-development/development?projectId=${data.id}`} style={{ flex: 1 }}>
+            <Link href={`project-development/development?projectId=${data.id}`} style={{ width: "100%" }}>
               <Button
                 size="md"
                 colorScheme="secondary"
@@ -303,10 +284,9 @@ const CardProject = memo(({ data }: CardProjectProps) => {
                   bgGradient: "linear(to-r, secondary.600, blue.600)",
                 }}
               >
-                Development
+                Start Development
               </Button>
             </Link>
-            </HStack>
           </Box>
         </VStack>
       </CardBody>
