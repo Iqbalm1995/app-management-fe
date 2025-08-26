@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Badge,
@@ -39,9 +39,6 @@ import {
   FiGrid,
   FiList,
   FiSettings,
-  FiCheckCircle,
-  FiClock,
-  FiAlertCircle,
 } from "react-icons/fi";
 import {
   ColumnDef,
@@ -87,7 +84,7 @@ import {
 } from "@/app/types/masterTypes";
 
 // Local Components
-import CardProject from "@/app/components/CardProject";
+import CardProject from "./components/CardProject";
 import ManagerSidebar from "./components/ManagerSidebar";
 
 const HeaderDataContent: HeaderContentProps = {
@@ -95,7 +92,7 @@ const HeaderDataContent: HeaderContentProps = {
   breadCrumb: ["Home", "Projects Manager"],
 };
 
-const ProjectManagerPage = () => {
+const ProjectManagerPage = memo(() => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
   const { isAuthenticated, authData, goLogout } = useAuth();
@@ -113,7 +110,7 @@ const ProjectManagerPage = () => {
   // Table state
   const [totalPages, setTotalPageData] = useState<number>(0);
   const [globalFilter, setGlobalFilter] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<string[]>([]); // Fixed: array instead of string
+  const [statusFilter, setStatusFilter] = useState<string>(""); // New status filter state
   const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 9,
@@ -163,15 +160,14 @@ const ProjectManagerPage = () => {
       const filterWhere: ListSearchByParam[] = [];
 
       // Add status filter if selected
-      if (statusFilter.length > 0) {
-        statusFilter.forEach((status: string) => {
-          filterWhere.push({
-            field: "projectStatus",
-            operator: "=",
-            value: status, // Handle each status filter
-          });
+      if (statusFilter) {
+        filterWhere.push({
+          field: "projectStatus",
+          operator: "=",
+          value: statusFilter,
         });
       }
+
       const PayloadList: PaggingListPayloadCustom = {
         search: globalFilter,
         teamId: DataAuth.team.id,
@@ -247,7 +243,6 @@ const ProjectManagerPage = () => {
           <CardProject
             data={info.row.original}
             key={info.row.original.projectCode}
-            variant="manager"
           />
         ),
         header: () => <span>Projects</span>,
@@ -287,7 +282,7 @@ const ProjectManagerPage = () => {
   // Status filter handler
   const handleStatusFilter = useCallback(
     (status: string) => {
-      if (statusFilter.includes(status)) { setStatusFilter(statusFilter.filter(s => s !== status)); } else { setStatusFilter([...statusFilter, status]); } // Toggle filter
+      setStatusFilter(status === statusFilter ? "" : status); // Toggle filter
       setPagination({ pageIndex: 0, pageSize }); // Reset to first page
     },
     [statusFilter, pageSize]
@@ -296,7 +291,7 @@ const ProjectManagerPage = () => {
   // Clear all filters
   const clearAllFilters = useCallback(() => {
     setGlobalFilter("");
-    setStatusFilter([]);
+    setStatusFilter("");
     setPagination({ pageIndex: 0, pageSize });
   }, [pageSize]);
 
@@ -621,17 +616,333 @@ const ProjectManagerPage = () => {
           w="full"
           gap={5}
         >
-          {/* Enhanced Manager Sidebar */}
+          {/* Sidebar - Search & Filters */}
           <GridItem colSpan={{ base: 12, sm: 12, md: 3, lg: 3 }} w={"full"}>
-            <ManagerSidebar
-              globalFilter={globalFilter}
-              setGlobalFilter={setGlobalFilter}
-              statusFilter={statusFilter}
-              setStatusFilter={setStatusFilter}
-              DataProjects={DataProjects}
-              colorMode={colorMode}
-            />
+            <VStack spacing={4} align="stretch">
+              {/* Project Search Card */}
+              <Card
+                rounded="2xl"
+                shadow="lg"
+                border="1px"
+                borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                bg={colorMode === "light" ? "white" : "gray.800"}
+              >
+                <CardBody p={5}>
+                  <VStack spacing={4} align="stretch">
+                    <HStack spacing={3} align="center">
+                      <Box
+                        w={10}
+                        h={10}
+                        bg="blue.500"
+                        rounded="lg"
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                        color="white"
+                        fontSize="md"
+                        flexShrink={0}
+                      >
+                        <Icon as={FiSearch} boxSize={5} />
+                      </Box>
+                      <Heading
+                        size="md"
+                        color={colorMode === "light" ? "gray.800" : "white"}
+                        lineHeight="1.2"
+                      >
+                        Project Search
+                      </Heading>
+                    </HStack>
+                    <InputGroup>
+                      <InputLeftElement pointerEvents="none" h="full">
+                        <Search2Icon color="gray.400" />
+                      </InputLeftElement>
+                      <Input
+                        type="text"
+                        placeholder="Search projects..."
+                        bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                        border="2px"
+                        borderColor={
+                          colorMode === "light" ? "gray.200" : "gray.600"
+                        }
+                        _focus={{
+                          borderColor:
+                            colorMode === "light" ? "blue.400" : "blue.300",
+                          bg: colorMode === "light" ? "white" : "gray.600",
+                        }}
+                        _hover={{
+                          borderColor:
+                            colorMode === "light" ? "gray.300" : "gray.500",
+                        }}
+                        onChange={(e) => setGlobalFilter(e.target.value)}
+                        value={globalFilter}
+                        size="md"
+                        rounded="lg"
+                        fontSize="sm"
+                      />
+                    </InputGroup>
+                  </VStack>
+                </CardBody>
+              </Card>
+
+              {/* Status Filters Card */}
+              <Card
+                rounded="2xl"
+                shadow="lg"
+                border="1px"
+                borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                bg={colorMode === "light" ? "white" : "gray.800"}
+              >
+                <CardBody p={5}>
+                  <VStack spacing={4} align="stretch">
+                    <HStack spacing={3} align="center">
+                      <Box
+                        w={10}
+                        h={10}
+                        bg="blue.500"
+                        rounded="lg"
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                        color="white"
+                        fontSize="md"
+                        flexShrink={0}
+                      >
+                        <Icon as={FiFilter} boxSize={5} />
+                      </Box>
+                      <VStack align="start" spacing={0}>
+                        <Heading
+                          size="md"
+                          color={colorMode === "light" ? "gray.800" : "white"}
+                          lineHeight="1.2"
+                        >
+                          Status Filters
+                        </Heading>
+                        <Text
+                          fontSize="xs"
+                          color={
+                            colorMode === "light" ? "gray.600" : "gray.400"
+                          }
+                        >
+                          Filter by project status
+                          {statusFilter && ` • ${statusFilter}`}
+                        </Text>
+                      </VStack>
+                    </HStack>
+
+                    {/* Filter Tags */}
+                    <Box>
+                      <Text
+                        fontSize="sm"
+                        color={colorMode === "light" ? "gray.600" : "gray.400"}
+                        mb={3}
+                        fontWeight="medium"
+                      >
+                        Quick Filters
+                      </Text>
+                      <Flex wrap="wrap" gap={2}>
+                        {/* All Projects Tag */}
+                        <Button
+                          size="sm"
+                          variant={!statusFilter ? "solid" : "ghost"}
+                          colorScheme={!statusFilter ? "blue" : "gray"}
+                          onClick={() => setStatusFilter("")}
+                          rounded="full"
+                          fontSize="xs"
+                          px={3}
+                          h={8}
+                          _hover={{
+                            transform: "translateY(-1px)",
+                            shadow: "sm",
+                          }}
+                          transition="all 0.2s"
+                        >
+                          All
+                          <Badge
+                            ml={1}
+                            colorScheme={!statusFilter ? "white" : "gray"}
+                            color={!statusFilter ? "blue.600" : "gray.600"}
+                            rounded="full"
+                            fontSize="xs"
+                            px={1}
+                          >
+                            {DataProjects.length}
+                          </Badge>
+                        </Button>
+
+                        {/* Status Filter Tags */}
+                        {PROJECT_STATUS_LIST.map((status) => {
+                          const isActive = statusFilter === status;
+                          const projectCount = DataProjects.filter(
+                            (p) => p.projectStatus === status
+                          ).length;
+
+                          return (
+                            <Button
+                              key={status}
+                              size="sm"
+                              variant={isActive ? "solid" : "outline"}
+                              colorScheme={
+                                status === "ACTIVE"
+                                  ? "green"
+                                  : status === "COMPLETED"
+                                  ? "blue"
+                                  : status === "ONHOLD"
+                                  ? "orange"
+                                  : "gray"
+                              }
+                              onClick={() => handleStatusFilter(status)}
+                              rounded="full"
+                              fontSize="xs"
+                              px={3}
+                              h={8}
+                              _hover={{
+                                transform: "translateY(-1px)",
+                                shadow: "sm",
+                              }}
+                              transition="all 0.2s"
+                            >
+                              {status}
+                              <Badge
+                                ml={1}
+                                colorScheme={isActive ? "white" : "gray"}
+                                color={
+                                  isActive
+                                    ? status === "ACTIVE"
+                                      ? "green.600"
+                                      : status === "COMPLETED"
+                                      ? "blue.600"
+                                      : status === "ONHOLD"
+                                      ? "orange.600"
+                                      : "red.600"
+                                    : "gray.600"
+                                }
+                                rounded="full"
+                                fontSize="xs"
+                                px={1}
+                              >
+                                {projectCount}
+                              </Badge>
+                            </Button>
+                          );
+                        })}
+                      </Flex>
+                    </Box>
+
+                    {/* Clear Filters Button */}
+                    {(statusFilter || globalFilter) && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        colorScheme="red"
+                        onClick={clearAllFilters}
+                        leftIcon={<Icon as={FiX} />}
+                        rounded="lg"
+                        fontSize="sm"
+                        _hover={{
+                          bg: "red.50",
+                          transform: "translateY(-1px)",
+                          shadow: "sm",
+                        }}
+                        transition="all 0.2s"
+                      >
+                        Clear All Filters
+                      </Button>
+                    )}
+                  </VStack>
+                </CardBody>
+              </Card>
+
+              {/* Project Stats Card */}
+              <Card
+                rounded="2xl"
+                shadow="lg"
+                border="1px"
+                borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                bg={colorMode === "light" ? "white" : "gray.800"}
+              >
+                <CardBody p={5}>
+                  <VStack spacing={3} align="stretch">
+                    <HStack spacing={3} align="center">
+                      <Box
+                        w={10}
+                        h={10}
+                        bg="purple.500"
+                        rounded="lg"
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                        color="white"
+                        fontSize="md"
+                        flexShrink={0}
+                      >
+                        <Icon as={FiBarChart2} boxSize={5} />
+                      </Box>
+                      <Heading
+                        size="md"
+                        color={colorMode === "light" ? "gray.800" : "white"}
+                        lineHeight="1.2"
+                      >
+                        Quick Stats
+                      </Heading>
+                    </HStack>
+
+                    <VStack spacing={2} align="stretch">
+                      <HStack justify="space-between">
+                        <Text fontSize="sm" color="gray.600">
+                          Total Projects
+                        </Text>
+                        <Text fontSize="sm" fontWeight="bold" color="blue.500">
+                          {DataProjects.length}
+                        </Text>
+                      </HStack>
+                      <HStack justify="space-between">
+                        <Text fontSize="sm" color="gray.600">
+                          Active
+                        </Text>
+                        <Text fontSize="sm" fontWeight="bold" color="green.500">
+                          {
+                            DataProjects.filter(
+                              (p) => p.projectStatus === "ACTIVE"
+                            ).length
+                          }
+                        </Text>
+                      </HStack>
+                      <HStack justify="space-between">
+                        <Text fontSize="sm" color="gray.600">
+                          Completed
+                        </Text>
+                        <Text fontSize="sm" fontWeight="bold" color="blue.500">
+                          {
+                            DataProjects.filter(
+                              (p) => p.projectStatus === "COMPLETED"
+                            ).length
+                          }
+                        </Text>
+                      </HStack>
+                      {(globalFilter || statusFilter) && (
+                        <>
+                          <Divider />
+                          <HStack justify="space-between">
+                            <Text fontSize="sm" color="gray.600">
+                              Filtered Results
+                            </Text>
+                            <Text
+                              fontSize="sm"
+                              fontWeight="bold"
+                              color="purple.500"
+                            >
+                              {table.getRowModel().rows.length}
+                            </Text>
+                          </HStack>
+                        </>
+                      )}
+                    </VStack>
+                  </VStack>
+                </CardBody>
+              </Card>
+            </VStack>
           </GridItem>
+
           <GridItem colSpan={{ base: 12, sm: 12, md: 9, lg: 9 }} w={"full"}>
             {/* Main Content Area */}
             <VStack spacing={{ base: 4, md: 6 }} w="full">
@@ -672,9 +983,9 @@ const ProjectManagerPage = () => {
                   <Flex wrap="wrap" gap={2}>
                     <Button
                       size="xs"
-                      variant={statusFilter.length === 0 ? "solid" : "ghost"}
-                      colorScheme={statusFilter.length === 0 ? "blue" : "gray"}
-                      onClick={() => setStatusFilter([])}
+                      variant={!statusFilter ? "solid" : "ghost"}
+                      colorScheme={!statusFilter ? "blue" : "gray"}
+                      onClick={() => setStatusFilter("")}
                       rounded="full"
                       fontSize="xs"
                       px={3}
@@ -683,7 +994,7 @@ const ProjectManagerPage = () => {
                       All ({DataProjects.length})
                     </Button>
                     {PROJECT_STATUS_LIST.map((status) => {
-                      const isActive = statusFilter.includes(status);
+                      const isActive = statusFilter === status;
                       const projectCount = DataProjects.filter(
                         (p) => p.projectStatus === status
                       ).length;
@@ -715,7 +1026,7 @@ const ProjectManagerPage = () => {
                   </Flex>
 
                   {/* Mobile Clear Filters */}
-                  {(statusFilter.length > 0 || globalFilter) && (
+                  {(statusFilter || globalFilter) && (
                     <Button
                       size="sm"
                       variant="outline"
@@ -927,14 +1238,14 @@ const ProjectManagerPage = () => {
                               lineHeight="1.3"
                             >
                               {DataProjects.length} projects found
-                              {statusFilter.length > 0 && (
+                              {statusFilter && (
                                 <Text
                                   as="span"
                                   color="blue.500"
                                   fontWeight="medium"
                                 >
                                   {" "}
-                                  • Status: {statusFilter.join(", ")}
+                                  • Status: {statusFilter}
                                 </Text>
                               )}
                               {globalFilter && (
@@ -1087,7 +1398,7 @@ const ProjectManagerPage = () => {
                               }
                               textAlign="center"
                             >
-                              {globalFilter || statusFilter.length > 0
+                              {globalFilter || statusFilter
                                 ? "No Projects Found"
                                 : "No Projects"}
                             </Heading>
@@ -1099,20 +1410,20 @@ const ProjectManagerPage = () => {
                               px={{ base: 4, md: 0 }}
                               textAlign="center"
                             >
-                              {globalFilter || statusFilter.length > 0
+                              {globalFilter || statusFilter
                                 ? `No projects match your current filters${
                                     globalFilter
                                       ? ` (search: "${globalFilter}")`
                                       : ""
                                   }${
-                                    statusFilter.length > 0
-                                      ? ` (status: ${statusFilter.join(", ")})`
+                                    statusFilter
+                                      ? ` (status: ${statusFilter})`
                                       : ""
                                   }. Try adjusting your filters or clearing them.`
                                 : "You don't have any projects yet. Projects will appear here once they are created and assigned to your team."}
                             </Text>
                           </VStack>
-                          {(globalFilter || statusFilter.length > 0) && (
+                          {(globalFilter || statusFilter) && (
                             <Button
                               variant="outline"
                               colorScheme="gray"
@@ -1407,7 +1718,7 @@ const ProjectManagerPage = () => {
       </Box>
     </LayoutAdmin>
   );
-};
+});
 
 ProjectManagerPage.displayName = "ProjectManagerPage";
 

@@ -83,7 +83,7 @@ import {
 } from "@/app/types/masterTypes";
 
 // Local Components
-import CardProject from "./components/CardProject";
+import CardProject from "@/app/components/CardProject";
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: "My Project",
