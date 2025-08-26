@@ -16,16 +16,33 @@ import {
   AvatarGroup,
   Badge,
   Box,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
   Flex,
   Heading,
   HStack,
+  Icon,
+  Progress,
   Stack,
   Text,
   Tooltip,
   useColorMode,
+  useColorModeValue,
+  VStack,
 } from "@chakra-ui/react";
-import { TfiPulse } from "react-icons/tfi";
-import { FiAlertTriangle } from "react-icons/fi";
+import { 
+  FiCode, 
+  FiUsers, 
+  FiCalendar, 
+  FiTrendingUp, 
+  FiGitBranch,
+  FiActivity,
+  FiExternalLink,
+  FiPlay
+} from "react-icons/fi";
+import { BsKanban } from "react-icons/bs";
 import Link from "next/link";
 import { memo, useState } from "react";
 
@@ -37,166 +54,270 @@ const CardProject = memo(({ data }: CardProjectProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const { colorMode } = useColorMode();
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "ACTIVE": return "green";
+      case "COMPLETED": return "blue";
+      case "ONHOLD": return "orange";
+      case "INACTIVE": return "red";
+      default: return "gray";
+    }
+  };
+
+  const getProgressColor = (percentage: number) => {
+    if (percentage >= 80) return "green";
+    if (percentage >= 60) return "blue";
+    if (percentage >= 40) return "orange";
+    return "red";
+  };
+
   return (
-    <Link href={`project-development/detail?projectId=${data.id}`}>
-      <Flex
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        w={"full"}
-        bgColor={colorMode == "light" ? "white" : "gray.900"}
-        border={"1px"}
-        borderColor={colorMode == "light" ? "gray.200" : "gray.900"}
-        rounded={"3xl"}
-        boxShadow={"md"}
-        as={Stack}
-        h={"430px"}
-        _hover={{
-          cursor: "pointer",
-        }}
-        transition="transform 0.2s ease-in-out, background-color 0.2s ease, box-shadow 0.2s ease-in-out"
-        transform={isHovered ? "translateY(-10px)" : "translateY(0)"}
+    <Card
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      w="full"
+      h="auto"
+      minH="420px"
+      bg={useColorModeValue("white", "gray.800")}
+      border="1px"
+      borderColor={useColorModeValue("gray.200", "gray.700")}
+      rounded="2xl"
+      shadow={isHovered ? "2xl" : "lg"}
+      transition="all 0.3s ease"
+      transform={isHovered ? "translateY(-8px)" : "translateY(0)"}
+      _hover={{
+        cursor: "pointer",
+        borderColor: "secondary.300",
+      }}
+      overflow="hidden"
+      position="relative"
+    >
+      {/* Header with App Icon and Status */}
+      <CardHeader
+        p={0}
+        position="relative"
+        bgGradient="linear(135deg, secondary.600 0%, blue.500 50%, secondary.400 100%)"
+        color="white"
+        h="140px"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
       >
-        {/* ICON APP */}
-        <Flex
-          position="relative"
-          bgGradient={"linear(to-br, secondary.800, secondary.500)"}
-          roundedTop={"3xl"}
-          color={"white"}
-          w={"full"}
-          h="180px"
-          alignItems="center"
-          justifyContent="center"
-          textAlign="center"
-          fontSize={data.appsProject.appShortName.length > 4 ? "2xl" : "4xl"}
-          fontWeight="bold"
-          textOverflow="ellipsis"
-          whiteSpace="nowrap"
-          flexShrink={0}
-        >
-          {data.appsProject.appShortName}
-
-          {/* Floating component at bottom center */}
-          <Flex
-            position="absolute"
-            bottom="8px"
-            left="50%"
-            transform="translateX(-50%)"
-            px={4}
-            py={1}
-            as={HStack}
-            alignItems={"end"}
-            justifyContent={"space-between"}
-            w={"full"}
+        {/* Background Pattern */}
+        <Box
+          position="absolute"
+          top="0"
+          left="0"
+          right="0"
+          bottom="0"
+          opacity="0.1"
+          bgImage="radial-gradient(circle at 20% 50%, white 1px, transparent 1px)"
+          bgSize="20px 20px"
+        />
+        
+        {/* App Icon */}
+        <VStack spacing={2} position="relative" zIndex={1}>
+          <Box
+            w={16}
+            h={16}
+            bg="whiteAlpha.200"
+            rounded="xl"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            fontSize="2xl"
+            fontWeight="bold"
+            border="2px"
+            borderColor="whiteAlpha.300"
           >
-            <Flex
-              as={Stack}
-              textAlign={"start"}
-              fontSize={"x-small"}
-              fontWeight={500}
-              spacing={0}
-            >
-              <Text>{data.projectType}</Text>
-              <Text>{data.projectCategory}</Text>
-            </Flex>
-            <Badge
-              rounded={"md"}
-              fontSize={"large"}
-              colorScheme={"blackAlpha"}
-              variant="solid"
-              px={2}
-              boxShadow={"md"}
-            >
-              {data.projectStatus}
-            </Badge>
-          </Flex>
-        </Flex>
-
-        {/* Body */}
-        <Flex
-          px={6}
-          py={4}
-          as={Stack}
-          spacing={1}
-          justifyContent={"center"}
-          alignItems={"center"}
-        >
-          {/* PROJECT NUMBER */}
-          <Text fontWeight={600} fontSize={"small"} color={"secondary.700"}>
-            No. {data.projectNo}
-          </Text>
-
-          {/* PROJECT NAME */}
-          <Flex
-            w={"full"}
-            justifyContent={"center"}
-            alignItems={"center"}
-            h={"80px"}
-          >
-            <Tooltip
-              hasArrow
-              label={data.projectName}
-              p={2}
-              bg={"gray.100"}
-              color={"secondary.700"}
-              placement={"bottom"}
-              rounded={radiusStyle}
-              textAlign={"center"}
-              display={data.projectName.length > 50 ? "flex" : "none"}
-            >
-              <Heading as="h3" size="md" textAlign={"center"}>
-                {truncateText(data.projectName, 50)}
-              </Heading>
-            </Tooltip>
-          </Flex>
-
-          {/* PROJECT MEMBER */}
-          <AvatarGroup size={"sm"} max={4}>
-            {data.userAssignment.map((u, idx) => (
-              <Avatar key={idx} name={u.userData.nama} />
-            ))}
-          </AvatarGroup>
-
-          {/* PERCENTAGE */}
-          <Box w="full" h="4px" bg="gray.100" borderRadius="full" mt={4}>
-            <Box h="100%" w={`80%`} bg="blue.400" borderRadius="full" />
+            {data.appsProject?.appShortName?.charAt(0) || data.projectName.charAt(0)}
           </Box>
+          <Text fontSize="sm" fontWeight="medium" opacity="0.9">
+            {data.projectType}
+          </Text>
+        </VStack>
 
-          {/* MORE INFO */}
-          <Flex
-            mt={2}
-            py={1}
-            as={HStack}
-            alignItems={"end"}
-            justifyContent={"space-between"}
-            w={"full"}
-          >
-            <Flex alignItems={"center"} as={HStack}>
-              <TfiPulse color={"red"} />
-              <Text fontWeight={600}>
-                Health :{" "}
-                <Text as={"span"}>
+        {/* Status Badge */}
+        <Badge
+          position="absolute"
+          top={4}
+          right={4}
+          colorScheme={getStatusColor(data.projectStatus)}
+          rounded="full"
+          px={3}
+          py={1}
+          fontSize="xs"
+          fontWeight="bold"
+        >
+          {data.projectStatus}
+        </Badge>
+
+        {/* Project Category */}
+        <Badge
+          position="absolute"
+          bottom={4}
+          left={4}
+          bg="whiteAlpha.200"
+          color="white"
+          rounded="full"
+          px={3}
+          py={1}
+          fontSize="xs"
+        >
+          {data.projectCategory}
+        </Badge>
+      </CardHeader>
+
+      {/* Card Body */}
+      <CardBody p={6}>
+        <VStack spacing={4} align="stretch">
+          {/* Project Info */}
+          <VStack spacing={2} align="start">
+            <HStack spacing={2} w="full" justify="space-between">
+              <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                #{data.projectCode}
+              </Text>
+              <HStack spacing={1}>
+                <Icon as={FiActivity} size="12px" color="gray.400" />
+                <Text fontSize="xs" color="gray.500">
                   {getProjectHealthRating(data.projectStatusPercentage)}
                 </Text>
-              </Text>
-            </Flex>
-            <Flex alignItems={"center"} justifyContent={"end"} as={HStack}>
-              <Badge
-                colorScheme={"orange"}
-                rounded={"md"}
-                fontSize={"small"}
-                px={2}
-                display={"none"}
-                alignItems={"center"}
-                gap={2}
+              </HStack>
+            </HStack>
+            
+            <Tooltip
+              label={data.projectName}
+              hasArrow
+              placement="top"
+              isDisabled={data.projectName.length <= 45}
+            >
+              <Heading 
+                size="md" 
+                color={useColorModeValue("gray.800", "white")}
+                noOfLines={2}
+                minH="48px"
+                display="flex"
+                alignItems="center"
               >
-                <FiAlertTriangle />
-                Project tanpa Memo
-              </Badge>
-            </Flex>
-          </Flex>
-        </Flex>
-      </Flex>
-    </Link>
+                {data.projectName}
+              </Heading>
+            </Tooltip>
+          </VStack>
+
+          {/* Progress Section */}
+          <VStack spacing={2} align="stretch">
+            <HStack justify="space-between">
+              <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                Progress
+              </Text>
+              <Text fontSize="sm" fontWeight="bold" color={`${getProgressColor(data.projectStatusPercentage)}.500`}>
+                {data.projectStatusPercentage}%
+              </Text>
+            </HStack>
+            <Progress
+              value={data.projectStatusPercentage}
+              colorScheme={getProgressColor(data.projectStatusPercentage)}
+              rounded="full"
+              size="md"
+              bg={useColorModeValue("gray.100", "gray.700")}
+            />
+          </VStack>
+
+          {/* Team Section */}
+          <VStack spacing={2} align="stretch">
+            <HStack justify="space-between">
+              <HStack spacing={2}>
+                <Icon as={FiUsers} size="14px" color="gray.500" />
+                <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                  Team
+                </Text>
+              </HStack>
+              <Text fontSize="xs" color="gray.500">
+                {data.userAssignment?.length || 0} members
+              </Text>
+            </HStack>
+            
+            <HStack justify="space-between" align="center">
+              <AvatarGroup size="sm" max={4} spacing="-8px">
+                {data.userAssignment?.map((user, idx) => (
+                  <Avatar 
+                    key={idx} 
+                    name={user.userData?.nama || "Unknown"} 
+                    size="sm"
+                    border="2px"
+                    borderColor={useColorModeValue("white", "gray.800")}
+                  />
+                )) || []}
+              </AvatarGroup>
+              
+              {data.userAssignment && data.userAssignment.length > 4 && (
+                <Text fontSize="xs" color="gray.500">
+                  +{data.userAssignment.length - 4} more
+                </Text>
+              )}
+            </HStack>
+          </VStack>
+
+          {/* Quick Actions */}
+          <HStack spacing={2} pt={2}>
+            <Link href={`/projects-manager/detail?projectId=${data.id}`} style={{ flex: 1 }}>
+              <Button
+                size="md"
+                variant="outline"
+                colorScheme="gray"
+                leftIcon={<FiExternalLink />}
+                w="full"
+                rounded="lg"
+                _hover={{
+                  bg: "gray.50",
+                  transform: "translateY(-1px)",
+                }}
+                transition="all 0.2s"
+              >
+                Detail
+              </Button>
+            </Link>
+            
+            <Link href={`project-development/development?projectId=${data.id}`} style={{ flex: 1 }}>
+              <Button
+                size="md"
+                colorScheme="secondary"
+                leftIcon={<FiCode />}
+                w="full"
+                rounded="lg"
+                _hover={{
+                  transform: "translateY(-1px)",
+                  shadow: "lg",
+                }}
+                transition="all 0.2s"
+                fontWeight="bold"
+                bgGradient="linear(to-r, secondary.500, blue.500)"
+                _active={{
+                  bgGradient: "linear(to-r, secondary.600, blue.600)",
+                }}
+              >
+                Development
+              </Button>
+            </Link>
+          </HStack>
+        </VStack>
+      </CardBody>
+
+      {/* Hover Overlay */}
+      {isHovered && (
+        <Box
+          position="absolute"
+          top="0"
+          left="0"
+          right="0"
+          bottom="0"
+          bg="secondary.500"
+          opacity="0.05"
+          rounded="2xl"
+          pointerEvents="none"
+        />
+      )}
+    </Card>
   );
 });
 
