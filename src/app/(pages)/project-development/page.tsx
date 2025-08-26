@@ -727,88 +727,104 @@ const ProjectManagerPage = memo(() => {
                       </VStack>
                     </HStack>
 
-                    {/* Filter Buttons */}
-                    <VStack spacing={2} align="stretch">
-                      {/* All Projects Button */}
-                      <Button
-                        size="sm"
-                        variant={!statusFilter ? "solid" : "outline"}
-                        colorScheme={!statusFilter ? "blue" : "gray"}
-                        onClick={() => setStatusFilter("")}
-                        rounded="lg"
+                    {/* Filter Tags */}
+                    <Box>
+                      <Text
                         fontSize="sm"
-                        justifyContent="space-between"
-                        _hover={{
-                          transform: "translateY(-1px)",
-                          shadow: "sm",
-                        }}
-                        transition="all 0.2s"
+                        color={colorMode === "light" ? "gray.600" : "gray.400"}
+                        mb={3}
+                        fontWeight="medium"
                       >
-                        <Text>All Projects</Text>
-                        <Badge
-                          colorScheme={!statusFilter ? "white" : "gray"}
-                          color={!statusFilter ? "blue.600" : "gray.600"}
+                        Quick Filters
+                      </Text>
+                      <Flex wrap="wrap" gap={2}>
+                        {/* All Projects Tag */}
+                        <Button
+                          size="sm"
+                          variant={!statusFilter ? "solid" : "ghost"}
+                          colorScheme={!statusFilter ? "blue" : "gray"}
+                          onClick={() => setStatusFilter("")}
                           rounded="full"
                           fontSize="xs"
+                          px={3}
+                          h={8}
+                          _hover={{
+                            transform: "translateY(-1px)",
+                            shadow: "sm",
+                          }}
+                          transition="all 0.2s"
                         >
-                          {DataProjects.length}
-                        </Badge>
-                      </Button>
-
-                      {/* Status Filter Buttons */}
-                      {PROJECT_STATUS_LIST.map((status) => {
-                        const isActive = statusFilter === status;
-                        const projectCount = DataProjects.filter(
-                          (p) => p.projectStatus === status
-                        ).length;
-
-                        return (
-                          <Button
-                            key={status}
-                            size="sm"
-                            variant={isActive ? "solid" : "outline"}
-                            colorScheme={
-                              status === "ACTIVE"
-                                ? "green"
-                                : status === "COMPLETED"
-                                ? "blue"
-                                : status === "ONHOLD"
-                                ? "orange"
-                                : "red"
-                            }
-                            onClick={() => handleStatusFilter(status)}
-                            rounded="lg"
-                            fontSize="sm"
-                            justifyContent="space-between"
-                            _hover={{
-                              transform: "translateY(-1px)",
-                              shadow: "sm",
-                            }}
-                            transition="all 0.2s"
+                          All
+                          <Badge
+                            ml={1}
+                            colorScheme={!statusFilter ? "white" : "gray"}
+                            color={!statusFilter ? "blue.600" : "gray.600"}
+                            rounded="full"
+                            fontSize="xs"
+                            px={1}
                           >
-                            <Text>{status}</Text>
-                            <Badge
-                              colorScheme={isActive ? "white" : "gray"}
-                              color={
-                                isActive
-                                  ? status === "ACTIVE"
-                                    ? "green.600"
-                                    : status === "COMPLETED"
-                                    ? "blue.600"
-                                    : status === "ONHOLD"
-                                    ? "orange.600"
-                                    : "red.600"
-                                  : "gray.600"
+                            {DataProjects.length}
+                          </Badge>
+                        </Button>
+
+                        {/* Status Filter Tags */}
+                        {PROJECT_STATUS_LIST.map((status) => {
+                          const isActive = statusFilter === status;
+                          const projectCount = DataProjects.filter(
+                            (p) => p.projectStatus === status
+                          ).length;
+
+                          return (
+                            <Button
+                              key={status}
+                              size="sm"
+                              variant={isActive ? "solid" : "outline"}
+                              colorScheme={
+                                status === "ACTIVE"
+                                  ? "green"
+                                  : status === "COMPLETED"
+                                  ? "blue"
+                                  : status === "ONHOLD"
+                                  ? "orange"
+                                  : "gray"
                               }
+                              onClick={() => handleStatusFilter(status)}
                               rounded="full"
                               fontSize="xs"
+                              px={3}
+                              h={8}
+                              _hover={{
+                                transform: "translateY(-1px)",
+                                shadow: "sm",
+                              }}
+                              transition="all 0.2s"
                             >
-                              {projectCount}
-                            </Badge>
-                          </Button>
-                        );
-                      })}
-                    </VStack>
+                              {status}
+                              <Badge
+                                ml={1}
+                                colorScheme={isActive ? "white" : "gray"}
+                                color={
+                                  isActive
+                                    ? status === "ACTIVE"
+                                      ? "green.600"
+                                      : status === "COMPLETED"
+                                      ? "blue.600"
+                                      : status === "ONHOLD"
+                                      ? "orange.600"
+                                      : "red.600"
+                                    : "gray.600"
+                                }
+                                rounded="full"
+                                fontSize="xs"
+                                px={1}
+                              >
+                                {projectCount}
+                              </Badge>
+                            </Button>
+                          );
+                        })}
+                      </Flex>
+                    </Box>
 
                     {/* Clear Filters Button */}
                     {(statusFilter || globalFilter) && (
@@ -962,14 +978,16 @@ const ProjectManagerPage = memo(() => {
                   </InputGroup>
 
                   {/* Mobile Status Filters */}
-                  <HStack spacing={2} wrap="wrap">
+                  <Flex wrap="wrap" gap={2}>
                     <Button
                       size="xs"
-                      variant={!statusFilter ? "solid" : "outline"}
+                      variant={!statusFilter ? "solid" : "ghost"}
                       colorScheme={!statusFilter ? "blue" : "gray"}
                       onClick={() => setStatusFilter("")}
                       rounded="full"
                       fontSize="xs"
+                      px={3}
+                      h={7}
                     >
                       All ({DataProjects.length})
                     </Button>
@@ -996,12 +1014,14 @@ const ProjectManagerPage = memo(() => {
                           onClick={() => handleStatusFilter(status)}
                           rounded="full"
                           fontSize="xs"
+                          px={3}
+                          h={7}
                         >
                           {status} ({projectCount})
                         </Button>
                       );
                     })}
-                  </HStack>
+                  </Flex>
 
                   {/* Mobile Clear Filters */}
                   {(statusFilter || globalFilter) && (
