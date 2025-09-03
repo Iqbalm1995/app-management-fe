@@ -2205,24 +2205,21 @@ function RegsiterRequirementViewPage({
                           >
                             <InputLayout>
                               <FormLabel h={"full"} mt={2}>
-                                NIK
+                                NIP
                               </FormLabel>
                               <Stack spacing={0} h={"full"}>
                                 <Input
                                   id="userPicIdentityNumber"
                                   name="userPicIdentityNumber"
                                   type="text"
+                                  placeholder={`Nomor Induk Pegawai`}
                                   onChange={formik.handleChange}
                                   value={
                                     formik.values.userPicIdentityNumber ?? ""
                                   }
                                   minLength={4}
                                   maxLength={10}
-                                  isDisabled={
-                                    ActionLoading ||
-                                    (formik.values.userPicIdentityNumber ?? "")
-                                      .length > 0
-                                  }
+                                  isDisabled={ActionLoading}
                                 />
                                 <FormErrorMessage>
                                   {formik.errors.userPicIdentityNumber}
@@ -2250,7 +2247,8 @@ function RegsiterRequirementViewPage({
                                   placeholder={`Nama Lengkap PIC`}
                                   minLength={9}
                                   maxLength={225}
-                                  isDisabled={true}
+                                  // isDisabled={true}
+                                  isDisabled={ActionLoading}
                                 />
                                 <FormErrorMessage>
                                   {formik.errors.userPicContanct}
@@ -2328,15 +2326,14 @@ function RegsiterRequirementViewPage({
                                   id="userPicEmail"
                                   name="userPicEmail"
                                   type="email"
-                                  onChange={formik.handleChange}
+                                  onChange={(val) =>
+                                    formik.setFieldValue("userPicEmail", val)
+                                  }
                                   value={formik.values.userPicEmail ?? ""}
-                                  // onChange={(val) =>
-                                  //   formik.setFieldValue("userPicEmail", val)
-                                  // }
-                                  // placeholder={`Alamat PIC Email (xxxx@bankbjb.co.id)`}
+                                  placeholder={`Alamat PIC Email (xxxx@bankbjb.co.id)`}
                                   minLength={9}
                                   maxLength={50}
-                                  isDisabled={true}
+                                  isDisabled={ActionLoading}
                                 />
                                 <FormErrorMessage>
                                   {formik.errors.userPicEmail}

@@ -727,7 +727,8 @@ function ReuirementsRFCPage() {
     //   value: TYPE_REQ,
     // };
 
-    if (DataAuth && DataAuth.team && tokenData) {
+    // if (DataAuth && DataAuth.team && tokenData) {
+    if (DataAuth && tokenData) {
       // const filterWhereData: ListSearchByParam[] = addParamFilter(
       //   ParamFilter,
       //   brdFilter

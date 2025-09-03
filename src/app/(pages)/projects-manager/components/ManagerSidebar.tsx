@@ -101,12 +101,22 @@ const ManagerSidebar = ({
 
   // Calculate project statistics
   const totalProjects = DataProjects.length;
-  const activeProjects = DataProjects.filter((p) => p.projectStatus === "ACTIVE").length;
-  const completedProjects = DataProjects.filter((p) => p.projectStatus === "COMPLETED").length;
-  const onHoldProjects = DataProjects.filter((p) => p.projectStatus === "ONHOLD").length;
-  const avgProgress = totalProjects > 0 
-    ? Math.round(DataProjects.reduce((acc, p) => acc + p.projectStatusPercentage, 0) / totalProjects)
-    : 0;
+  const activeProjects = DataProjects.filter(
+    (p) => p.projectStatus === "ACTIVE"
+  ).length;
+  const completedProjects = DataProjects.filter(
+    (p) => p.projectStatus === "COMPLETED"
+  ).length;
+  const onHoldProjects = DataProjects.filter(
+    (p) => p.projectStatus === "ONHOLD"
+  ).length;
+  const avgProgress =
+    totalProjects > 0
+      ? Math.round(
+          DataProjects.reduce((acc, p) => acc + p.projectStatusPercentage, 0) /
+            totalProjects
+        )
+      : 0;
 
   return (
     <VStack spacing={6} align="stretch">
@@ -114,13 +124,13 @@ const ManagerSidebar = ({
       <Card
         rounded="2xl"
         shadow="xl"
-        border="2px"
-        borderColor={colorMode === "light" ? "blue.200" : "blue.700"}
+        border="1px"
+        borderColor={colorMode === "light" ? "secondary.500" : "secondary.700"}
         bg={colorMode === "light" ? "white" : "gray.800"}
         overflow="hidden"
       >
         <Box
-          bgGradient="linear(135deg, blue.500, purple.600)"
+          bgGradient={"linear(to-br, secondary.700, secondary.400)"}
           p={4}
           color="white"
         >
@@ -147,7 +157,7 @@ const ManagerSidebar = ({
             </VStack>
           </HStack>
         </Box>
-        
+
         <CardBody p={5}>
           <VStack spacing={4} align="stretch">
             {/* Key Metrics */}
@@ -410,13 +420,20 @@ const ManagerSidebar = ({
               {/* Completion Rate */}
               <Box textAlign="center" w="full">
                 <CircularProgress
-                  value={totalProjects > 0 ? (completedProjects / totalProjects) * 100 : 0}
+                  value={
+                    totalProjects > 0
+                      ? (completedProjects / totalProjects) * 100
+                      : 0
+                  }
                   size="80px"
                   color="green.500"
                   thickness="8px"
                 >
                   <CircularProgressLabel fontSize="sm" fontWeight="bold">
-                    {totalProjects > 0 ? Math.round((completedProjects / totalProjects) * 100) : 0}%
+                    {totalProjects > 0
+                      ? Math.round((completedProjects / totalProjects) * 100)
+                      : 0}
+                    %
                   </CircularProgressLabel>
                 </CircularProgress>
                 <Text fontSize="xs" color="gray.600" mt={2} fontWeight="medium">
@@ -429,27 +446,33 @@ const ManagerSidebar = ({
                 <HStack justify="space-between" w="full">
                   <HStack spacing={2}>
                     <Box w={3} h={3} bg="green.500" rounded="full" />
-                    <Text fontSize="xs" color="gray.600">Active</Text>
+                    <Text fontSize="xs" color="gray.600">
+                      Active
+                    </Text>
                   </HStack>
                   <Text fontSize="xs" fontWeight="bold" color="green.600">
                     {activeProjects}
                   </Text>
                 </HStack>
-                
+
                 <HStack justify="space-between" w="full">
                   <HStack spacing={2}>
                     <Box w={3} h={3} bg="blue.500" rounded="full" />
-                    <Text fontSize="xs" color="gray.600">Completed</Text>
+                    <Text fontSize="xs" color="gray.600">
+                      Completed
+                    </Text>
                   </HStack>
                   <Text fontSize="xs" fontWeight="bold" color="blue.600">
                     {completedProjects}
                   </Text>
                 </HStack>
-                
+
                 <HStack justify="space-between" w="full">
                   <HStack spacing={2}>
                     <Box w={3} h={3} bg="orange.500" rounded="full" />
-                    <Text fontSize="xs" color="gray.600">On Hold</Text>
+                    <Text fontSize="xs" color="gray.600">
+                      On Hold
+                    </Text>
                   </HStack>
                   <Text fontSize="xs" fontWeight="bold" color="orange.600">
                     {onHoldProjects}

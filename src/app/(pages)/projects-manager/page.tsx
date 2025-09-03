@@ -158,7 +158,8 @@ const ProjectManagerPage = () => {
   // Data fetching effect
   useEffect(() => {
     setIsEditMode(false);
-    if (DataAuth && DataAuth.team) {
+    // if (DataAuth && DataAuth.team) {
+    if (DataAuth) {
       // Build filter conditions
       const filterWhere: ListSearchByParam[] = [];
 
@@ -174,7 +175,7 @@ const ProjectManagerPage = () => {
       }
       const PayloadList: PaggingListPayloadCustom = {
         search: globalFilter,
-        teamId: DataAuth.team.id,
+        // teamId: DataAuth.team.id,
         limit: pageSize,
         page: pageIndex,
         filterWhere: filterWhere,
@@ -287,7 +288,11 @@ const ProjectManagerPage = () => {
   // Status filter handler
   const handleStatusFilter = useCallback(
     (status: string) => {
-      if (statusFilter.includes(status)) { setStatusFilter(statusFilter.filter(s => s !== status)); } else { setStatusFilter([...statusFilter, status]); } // Toggle filter
+      if (statusFilter.includes(status)) {
+        setStatusFilter(statusFilter.filter((s) => s !== status));
+      } else {
+        setStatusFilter([...statusFilter, status]);
+      } // Toggle filter
       setPagination({ pageIndex: 0, pageSize }); // Reset to first page
     },
     [statusFilter, pageSize]
@@ -368,9 +373,9 @@ const ProjectManagerPage = () => {
               {/* Title Section */}
               <HStack spacing={4}>
                 <Box
-                  w={14}
-                  h={14}
-                  bg="blue.500"
+                  w={"80px"}
+                  h={"80px"}
+                  bgGradient={"linear(to-br, secondary.700, secondary.400)"}
                   rounded="2xl"
                   display="flex"
                   alignItems="center"
@@ -444,9 +449,7 @@ const ProjectManagerPage = () => {
                 <Card
                   bg={colorMode === "light" ? "blue.50" : "blue.900"}
                   border="1px"
-                  borderColor={
-                    colorMode === "light" ? "blue.200" : "blue.700"
-                  }
+                  borderColor={colorMode === "light" ? "blue.200" : "blue.700"}
                   rounded="lg"
                 >
                   <CardBody p={4} textAlign="center">
@@ -464,20 +467,12 @@ const ProjectManagerPage = () => {
                       >
                         <Icon as={FiFolder} boxSize={4} />
                       </Box>
-                      <Text
-                        fontSize="xl"
-                        fontWeight="bold"
-                        color="blue.600"
-                      >
+                      <Text fontSize="xl" fontWeight="bold" color="blue.600">
                         {DataProjects.length}
                       </Text>
                       <Text
                         fontSize="xs"
-                        color={
-                          colorMode === "light"
-                            ? "blue.600"
-                            : "blue.300"
-                        }
+                        color={colorMode === "light" ? "blue.600" : "blue.300"}
                       >
                         Total Projects
                       </Text>
@@ -1140,7 +1135,7 @@ const ProjectManagerPage = () => {
                                 return (
                                   <Card
                                     key={project.id}
-                                    rounded="lg"
+                                    rounded={radiusStyle}
                                     shadow="sm"
                                     border="1px"
                                     borderColor={
@@ -1157,8 +1152,8 @@ const ProjectManagerPage = () => {
                                       shadow: "md",
                                       borderColor:
                                         colorMode === "light"
-                                          ? "blue.300"
-                                          : "blue.600",
+                                          ? "secondary.300"
+                                          : "secondary.600",
                                       transform: "translateY(-1px)",
                                     }}
                                     transition="all 0.2s"
@@ -1179,7 +1174,9 @@ const ProjectManagerPage = () => {
                                             <Box
                                               w={12}
                                               h={12}
-                                              bg="blue.500"
+                                              bgGradient={
+                                                "linear(to-br, teal.600, teal.400)"
+                                              }
                                               rounded="lg"
                                               display="flex"
                                               alignItems="center"

@@ -27,6 +27,7 @@ import {
   Tooltip,
   useColorMode,
   Spinner,
+  Stack,
 } from "@chakra-ui/react";
 import {
   FiHome,
@@ -39,7 +40,6 @@ import {
   FiChevronDown,
 } from "react-icons/fi";
 import { IconType } from "react-icons";
-import { ReactText } from "react";
 import { ChevronDownIcon, ChevronRightIcon } from "@chakra-ui/icons";
 import { motion, AnimatePresence } from "framer-motion";
 import { radiusStyle } from "../constants/applicationConstants";
@@ -69,7 +69,12 @@ interface SidebarProps extends BoxProps {
 
 const LinkItems: Array<LinkItemProps> = [
   { name: "Home", icon: FiHome, link: "/home", children: [] },
-  { name: "Projects Manager", icon: FiTrendingUp, link: "/projects-manager", children: [] },
+  {
+    name: "Projects Manager",
+    icon: FiTrendingUp,
+    link: "/projects-manager",
+    children: [],
+  },
   { name: "Teams", icon: FiCompass, link: "/teams", children: [] },
   { name: "File Archives", icon: FiStar, link: "/file-archives", children: [] },
   { name: "Settings", icon: FiSettings, link: "/settings", children: [] },
@@ -117,7 +122,7 @@ export default function SidebarWithHeader({
               exit={{ opacity: 0, y: -20 }}
               transition={{
                 duration: 0.4,
-                ease: "easeInOut"
+                ease: "easeInOut",
               }}
               key={usePathname()}
             >
@@ -195,7 +200,7 @@ const NavItem = ({ data, mode, ...rest }: NavItemProps) => {
 
   const handleNavigation = async (e: React.MouseEvent) => {
     e.preventDefault();
-    
+
     if (hasChildren) {
       handleToggle();
       return;
@@ -208,7 +213,7 @@ const NavItem = ({ data, mode, ...rest }: NavItemProps) => {
 
     // Start loading
     setIsNavigating(true);
-    
+
     try {
       // Navigate to the new page
       await router.push(data.link);
@@ -248,9 +253,7 @@ const NavItem = ({ data, mode, ...rest }: NavItemProps) => {
               : "linear(to-r, transparent, transparent)"
           }
           color={
-            IsActiveNav
-              ? "white"
-              : useColorModeValue("gray.900", "gray.100")
+            IsActiveNav ? "white" : useColorModeValue("gray.900", "gray.100")
           }
           justifyContent={"center"}
           onClick={handleNavigation}

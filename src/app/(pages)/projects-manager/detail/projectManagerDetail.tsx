@@ -307,7 +307,7 @@ function ProjectManagerDetail() {
     const initializeCalendarEvents = () => {
       const projectStartDate = DataProject?.projectRegisterDate || "2024-01-15";
       const startDate = new Date(projectStartDate);
-      
+
       const events: EventInterface[] = [
         {
           title: "Project Kickoff",
@@ -317,32 +317,52 @@ function ProjectManagerDetail() {
         },
         {
           title: "Requirements Review",
-          start: new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          start: new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split("T")[0],
           allDay: true,
           color: "#3182CE", // blue
         },
         {
           title: "Design Phase",
-          start: new Date(startDate.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          end: new Date(startDate.getTime() + 28 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          start: new Date(startDate.getTime() + 14 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split("T")[0],
+          end: new Date(startDate.getTime() + 28 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split("T")[0],
           color: "#805AD5", // purple
         },
         {
           title: "Development Sprint 1",
-          start: new Date(startDate.getTime() + 21 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          end: new Date(startDate.getTime() + 35 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          start: new Date(startDate.getTime() + 21 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split("T")[0],
+          end: new Date(startDate.getTime() + 35 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split("T")[0],
           color: "#DD6B20", // orange
         },
         {
           title: "Team Meeting",
-          start: new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] + "T10:00:00",
-          end: new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] + "T11:00:00",
+          start:
+            new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000)
+              .toISOString()
+              .split("T")[0] + "T10:00:00",
+          end:
+            new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000)
+              .toISOString()
+              .split("T")[0] + "T11:00:00",
           color: "#E53E3E", // red
         },
         {
           title: "Testing Phase",
-          start: new Date(startDate.getTime() + 45 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          end: new Date(startDate.getTime() + 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          start: new Date(startDate.getTime() + 45 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split("T")[0],
+          end: new Date(startDate.getTime() + 60 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split("T")[0],
           color: "#D69E2E", // yellow
         },
       ];
@@ -364,7 +384,9 @@ function ProjectManagerDetail() {
     <LayoutAdmin>
       {/* Modern Enhanced Header with Custom Gradient */}
       <Box
-        bgGradient="linear(135deg, #0B79CA 0%, #0078FF 50%, #EDC817 100%)"
+        bgGradient={
+          "linear(to-br, secondary.800, secondary.600, secondary.400)"
+        }
         color="white"
         px={{ base: 4, md: 6 }}
         py={{ base: 4, md: 6 }}
@@ -471,7 +493,9 @@ function ProjectManagerDetail() {
                 </Button>
               </Link>
 
-              <Link href={`/projects-manager/development?projectId=${projectId}`}>
+              <Link
+                href={`/projects-manager/development?projectId=${projectId}`}
+              >
                 <Button
                   leftIcon={<FiCode />}
                   variant="ghost"
@@ -573,9 +597,9 @@ function ProjectManagerDetail() {
               <VStack spacing={3} align="center">
                 <Box position="relative">
                   <Box
-                    w={16}
-                    h={16}
-                    bgGradient="linear(135deg, blue.300, purple.400, pink.300)"
+                    w={"80px"}
+                    h={"80px"}
+                    bgGradient={"linear(to-br, secondary.800, secondary.400)"}
                     rounded="2xl"
                     display="flex"
                     alignItems="center"
@@ -831,8 +855,8 @@ function ProjectManagerDetail() {
               shadow="xl"
               rounded={radiusStyle}
               border="1px"
-              borderColor="gray.200"
-              bg="white"
+              borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+              bg={colorMode === "light" ? "white" : "gray.800"}
               overflow="hidden"
               _hover={{
                 shadow: "2xl",
@@ -843,11 +867,13 @@ function ProjectManagerDetail() {
               <CardBody p={0}>
                 <Tabs variant="unstyled" colorScheme="blue">
                   <TabList
-                    bg="white"
+                    bg={colorMode === "light" ? "white" : "gray.800"}
                     px={6}
                     py={4}
                     borderBottom="1px"
-                    borderColor="gray.200"
+                    borderColor={
+                      colorMode === "light" ? "gray.200" : "gray.700"
+                    }
                     roundedTop={radiusStyle}
                     gap={2}
                   >
@@ -1084,8 +1110,8 @@ function ProjectManagerDetail() {
                         color: "gray.800",
                         _selected: {
                           bg: "purple.500",
-                          color: "white"
-                        }
+                          color: "white",
+                        },
                       }}
                       transition="all 0.2s"
                     >
@@ -1105,15 +1131,22 @@ function ProjectManagerDetail() {
                   </TabList>
 
                   <TabPanels
-                    bg="white"
+                    bg={colorMode === "light" ? "white" : "gray.800"}
                     roundedBottom={radiusStyle}
                     minH="600px"
                   >
                     {/* Overview Tab */}
-                    <TabPanel p={8} bg="gray.50" roundedBottom={radiusStyle}>
+                    <TabPanel
+                      p={8}
+                      bg={colorMode === "light" ? "gray.50" : "gray.900"}
+                      roundedBottom={radiusStyle}
+                    >
                       <VStack spacing={8} align="stretch">
                         <HStack justify="space-between" align="center">
-                          <Heading size="lg" color="gray.800">
+                          <Heading
+                            size="lg"
+                            color={colorMode === "light" ? "gray.800" : "white"}
+                          >
                             Project Overview
                           </Heading>
                           <Badge
@@ -1776,21 +1809,33 @@ function ProjectManagerDetail() {
                     </TabPanel>
 
                     {/* Details Tab */}
-                    <TabPanel p={8} bg="gray.50" roundedBottom={radiusStyle}>
+                    <TabPanel
+                      p={8}
+                      bg={colorMode === "light" ? "gray.50" : "gray.900"}
+                      roundedBottom={radiusStyle}
+                    >
                       <Suspense fallback={<LoadingMiniSignature />}>
                         <ProjectInfoSection projectId={projectId} />
                       </Suspense>
                     </TabPanel>
 
                     {/* Features Tab */}
-                    <TabPanel p={8} bg="gray.50" roundedBottom={radiusStyle}>
+                    <TabPanel
+                      p={8}
+                      bg={colorMode === "light" ? "gray.50" : "gray.900"}
+                      roundedBottom={radiusStyle}
+                    >
                       <Suspense fallback={<LoadingMiniSignature />}>
                         <ProjectFeatureView DataProject={DataProject} />
                       </Suspense>
                     </TabPanel>
 
                     {/* Team Tab */}
-                    <TabPanel p={8} bg="gray.50" roundedBottom={radiusStyle}>
+                    <TabPanel
+                      p={8}
+                      bg={colorMode === "light" ? "gray.50" : "gray.900"}
+                      roundedBottom={radiusStyle}
+                    >
                       <VStack spacing={8} align="stretch">
                         {/* Header Section */}
                         <HStack justify="space-between" align="center">
@@ -2489,7 +2534,11 @@ function ProjectManagerDetail() {
                     </TabPanel>
 
                     {/* Analytics Tab */}
-                    <TabPanel p={8} bg="gray.50" roundedBottom={radiusStyle}>
+                    <TabPanel
+                      p={8}
+                      bg={colorMode === "light" ? "gray.50" : "gray.900"}
+                      roundedBottom={radiusStyle}
+                    >
                       <VStack spacing={8} align="stretch">
                         {/* Header Section */}
                         <HStack justify="space-between" align="center">
@@ -3394,7 +3443,11 @@ function ProjectManagerDetail() {
                     </TabPanel>
 
                     {/* Timeline Tab Panel */}
-                    <TabPanel p={0} bg="gray.50" roundedBottom={radiusStyle}>
+                    <TabPanel
+                      p={0}
+                      bg={colorMode === "light" ? "gray.50" : "gray.900"}
+                      roundedBottom={radiusStyle}
+                    >
                       <Box p={8}>
                         <VStack spacing={8} align="stretch">
                           {/* Timeline Header */}
@@ -3408,21 +3461,47 @@ function ProjectManagerDetail() {
                               </Text>
                             </VStack>
                             <HStack spacing={3}>
-                              <Badge colorScheme="blue" px={3} py={1} rounded="full">
-                                {DataProject && DataProject.projectRegisterDate ? 
-                                  `${Math.ceil((new Date().getTime() - new Date(DataProject.projectRegisterDate).getTime()) / (1000 * 60 * 60 * 24))} days active`
-                                  : "Active"
-                                }
+                              <Badge
+                                colorScheme="blue"
+                                px={3}
+                                py={1}
+                                rounded="full"
+                              >
+                                {DataProject && DataProject.projectRegisterDate
+                                  ? `${Math.ceil(
+                                      (new Date().getTime() -
+                                        new Date(
+                                          DataProject.projectRegisterDate
+                                        ).getTime()) /
+                                        (1000 * 60 * 60 * 24)
+                                    )} days active`
+                                  : "Active"}
                               </Badge>
-                              <Badge colorScheme="green" px={3} py={1} rounded="full">
+                              <Badge
+                                colorScheme="green"
+                                px={3}
+                                py={1}
+                                rounded="full"
+                              >
                                 On Track
                               </Badge>
                             </HStack>
                           </HStack>
 
                           {/* Timeline Stats Cards */}
-                          <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6}>
-                            <Card bg="white" shadow="md" rounded="xl" border="1px" borderColor="gray.200">
+                          <SimpleGrid
+                            columns={{ base: 1, md: 2, lg: 4 }}
+                            spacing={6}
+                          >
+                            <Card
+                              bg={colorMode === "light" ? "white" : "gray.800"}
+                              shadow="md"
+                              rounded="xl"
+                              border="1px"
+                              borderColor={
+                                colorMode === "light" ? "gray.200" : "gray.700"
+                              }
+                            >
                               <CardBody p={6}>
                                 <VStack spacing={3}>
                                   <Box
@@ -3437,19 +3516,39 @@ function ProjectManagerDetail() {
                                     <FiCalendar size={24} color="#3182CE" />
                                   </Box>
                                   <VStack spacing={1} textAlign="center">
-                                    <Text fontSize="2xl" fontWeight="bold" color="blue.600">
-                                      {DataProject && DataProject.projectRegisterDate ? 
-                                        Math.ceil((new Date().getTime() - new Date(DataProject.projectRegisterDate).getTime()) / (1000 * 60 * 60 * 24))
-                                        : 45
-                                      }
+                                    <Text
+                                      fontSize="2xl"
+                                      fontWeight="bold"
+                                      color="blue.600"
+                                    >
+                                      {DataProject &&
+                                      DataProject.projectRegisterDate
+                                        ? Math.ceil(
+                                            (new Date().getTime() -
+                                              new Date(
+                                                DataProject.projectRegisterDate
+                                              ).getTime()) /
+                                              (1000 * 60 * 60 * 24)
+                                          )
+                                        : 45}
                                     </Text>
-                                    <Text fontSize="sm" color="gray.600">Days Active</Text>
+                                    <Text fontSize="sm" color="gray.600">
+                                      Days Active
+                                    </Text>
                                   </VStack>
                                 </VStack>
                               </CardBody>
                             </Card>
 
-                            <Card bg="white" shadow="md" rounded="xl" border="1px" borderColor="gray.200">
+                            <Card
+                              bg={colorMode === "light" ? "white" : "gray.800"}
+                              shadow="md"
+                              rounded="xl"
+                              border="1px"
+                              borderColor={
+                                colorMode === "light" ? "gray.200" : "gray.700"
+                              }
+                            >
                               <CardBody p={6}>
                                 <VStack spacing={3}>
                                   <Box
@@ -3464,16 +3563,37 @@ function ProjectManagerDetail() {
                                     <FiTarget size={24} color="#38A169" />
                                   </Box>
                                   <VStack spacing={1} textAlign="center">
-                                    <Text fontSize="2xl" fontWeight="bold" color="green.600">
+                                    <Text
+                                      fontSize="2xl"
+                                      fontWeight="bold"
+                                      color="green.600"
+                                    >
                                       8
                                     </Text>
-                                    <Text fontSize="sm" color="gray.600">Milestones</Text>
+                                    <Text
+                                      fontSize="sm"
+                                      color={
+                                        colorMode === "light"
+                                          ? "gray.600"
+                                          : "gray.400"
+                                      }
+                                    >
+                                      Milestones
+                                    </Text>
                                   </VStack>
                                 </VStack>
                               </CardBody>
                             </Card>
 
-                            <Card bg="white" shadow="md" rounded="xl" border="1px" borderColor="gray.200">
+                            <Card
+                              bg={colorMode === "light" ? "white" : "gray.800"}
+                              shadow="md"
+                              rounded="xl"
+                              border="1px"
+                              borderColor={
+                                colorMode === "light" ? "gray.200" : "gray.700"
+                              }
+                            >
                               <CardBody p={6}>
                                 <VStack spacing={3}>
                                   <Box
@@ -3488,16 +3608,37 @@ function ProjectManagerDetail() {
                                     <FiClock size={24} color="#DD6B20" />
                                   </Box>
                                   <VStack spacing={1} textAlign="center">
-                                    <Text fontSize="2xl" fontWeight="bold" color="orange.600">
+                                    <Text
+                                      fontSize="2xl"
+                                      fontWeight="bold"
+                                      color="orange.600"
+                                    >
                                       3
                                     </Text>
-                                    <Text fontSize="sm" color="gray.600">Upcoming</Text>
+                                    <Text
+                                      fontSize="sm"
+                                      color={
+                                        colorMode === "light"
+                                          ? "gray.600"
+                                          : "gray.400"
+                                      }
+                                    >
+                                      Upcoming
+                                    </Text>
                                   </VStack>
                                 </VStack>
                               </CardBody>
                             </Card>
 
-                            <Card bg="white" shadow="md" rounded="xl" border="1px" borderColor="gray.200">
+                            <Card
+                              bg={colorMode === "light" ? "white" : "gray.800"}
+                              shadow="md"
+                              rounded="xl"
+                              border="1px"
+                              borderColor={
+                                colorMode === "light" ? "gray.200" : "gray.700"
+                              }
+                            >
                               <CardBody p={6}>
                                 <VStack spacing={3}>
                                   <Box
@@ -3512,10 +3653,25 @@ function ProjectManagerDetail() {
                                     <FiTrendingUp size={24} color="#805AD5" />
                                   </Box>
                                   <VStack spacing={1} textAlign="center">
-                                    <Text fontSize="2xl" fontWeight="bold" color="purple.600">
-                                      {DataProject?.projectStatusPercentage || 75}%
+                                    <Text
+                                      fontSize="2xl"
+                                      fontWeight="bold"
+                                      color="purple.600"
+                                    >
+                                      {DataProject?.projectStatusPercentage ||
+                                        75}
+                                      %
                                     </Text>
-                                    <Text fontSize="sm" color="gray.600">Progress</Text>
+                                    <Text
+                                      fontSize="sm"
+                                      color={
+                                        colorMode === "light"
+                                          ? "gray.600"
+                                          : "gray.400"
+                                      }
+                                    >
+                                      Progress
+                                    </Text>
                                   </VStack>
                                 </VStack>
                               </CardBody>
@@ -3523,10 +3679,26 @@ function ProjectManagerDetail() {
                           </SimpleGrid>
 
                           {/* Calendar and Timeline Section */}
-                          <Grid templateColumns={{ base: "1fr", lg: "2fr 1fr" }} gap={8}>
+                          <Grid
+                            templateColumns={{ base: "1fr", lg: "2fr 1fr" }}
+                            gap={8}
+                          >
                             {/* Calendar Section */}
-                            <Card bg="white" shadow="lg" rounded="xl" border="1px" borderColor="gray.200">
-                              <CardHeader bg="gradient.100" roundedTop="xl" borderBottom="1px" borderColor="gray.200">
+                            <Card
+                              bg={colorMode === "light" ? "white" : "gray.800"}
+                              shadow="lg"
+                              rounded="xl"
+                              border="1px"
+                              borderColor={
+                                colorMode === "light" ? "gray.200" : "gray.700"
+                              }
+                            >
+                              <CardHeader
+                                bg="gradient.100"
+                                roundedTop="xl"
+                                borderBottom="1px"
+                                borderColor="gray.200"
+                              >
                                 <HStack spacing={3}>
                                   <Box
                                     w={8}
@@ -3550,27 +3722,35 @@ function ProjectManagerDetail() {
                                 </HStack>
                               </CardHeader>
                               <CardBody p={6}>
-                                <Box bg="white" p={4} rounded="lg" minH="400px" className="fullcalendar-container">
+                                <Box
+                                  bg={
+                                    colorMode === "light" ? "white" : "gray.800"
+                                  }
+                                  p={4}
+                                  rounded="lg"
+                                  minH="400px"
+                                  className="fullcalendar-container"
+                                >
                                   <style jsx global>{`
                                     .fullcalendar-container {
                                       width: 100% !important;
                                       max-width: 100% !important;
                                     }
-                                    
+
                                     .fullcalendar-container .fc {
                                       font-family: inherit;
                                       width: 100% !important;
                                       max-width: 100% !important;
                                     }
-                                    
+
                                     .fullcalendar-container .fc-view-harness {
                                       width: 100% !important;
                                     }
-                                    
+
                                     .fullcalendar-container .fc-view {
                                       width: 100% !important;
                                     }
-                                    
+
                                     /* Force table to full width */
                                     .fullcalendar-container .fc-scrollgrid {
                                       border: 1px solid #e2e8f0;
@@ -3579,37 +3759,45 @@ function ProjectManagerDetail() {
                                       width: 100% !important;
                                       table-layout: fixed !important;
                                     }
-                                    
-                                    .fullcalendar-container .fc-scrollgrid-sync-table {
+
+                                    .fullcalendar-container
+                                      .fc-scrollgrid-sync-table {
                                       width: 100% !important;
                                       table-layout: fixed !important;
                                       border-collapse: separate;
                                       border-spacing: 0;
                                     }
-                                    
-                                    .fullcalendar-container .fc-scrollgrid-sync-table td,
-                                    .fullcalendar-container .fc-scrollgrid-sync-table th {
+
+                                    .fullcalendar-container
+                                      .fc-scrollgrid-sync-table
+                                      td,
+                                    .fullcalendar-container
+                                      .fc-scrollgrid-sync-table
+                                      th {
                                       width: 14.285714% !important; /* 100% / 7 days */
                                       min-width: 0 !important;
                                       max-width: none !important;
                                     }
-                                    
+
                                     .fullcalendar-container .fc-daygrid-body {
                                       width: 100% !important;
                                     }
-                                    
-                                    .fullcalendar-container .fc-daygrid-body table {
+
+                                    .fullcalendar-container
+                                      .fc-daygrid-body
+                                      table {
                                       width: 100% !important;
                                       table-layout: fixed !important;
                                     }
-                                    
+
                                     /* Header styling */
                                     .fullcalendar-container .fc-col-header {
                                       background-color: #f7fafc;
                                       width: 100% !important;
                                     }
-                                    
-                                    .fullcalendar-container .fc-col-header-cell {
+
+                                    .fullcalendar-container
+                                      .fc-col-header-cell {
                                       background-color: #f7fafc;
                                       font-weight: 600;
                                       color: #4a5568;
@@ -3620,11 +3808,12 @@ function ProjectManagerDetail() {
                                       width: 14.285714% !important;
                                       box-sizing: border-box;
                                     }
-                                    
-                                    .fullcalendar-container .fc-col-header-cell:last-child {
+
+                                    .fullcalendar-container
+                                      .fc-col-header-cell:last-child {
                                       border-right: none;
                                     }
-                                    
+
                                     /* Day cells */
                                     .fullcalendar-container .fc-daygrid-day {
                                       background-color: white;
@@ -3637,16 +3826,19 @@ function ProjectManagerDetail() {
                                       padding: 0;
                                       box-sizing: border-box;
                                     }
-                                    
-                                    .fullcalendar-container .fc-daygrid-day:last-child {
+
+                                    .fullcalendar-container
+                                      .fc-daygrid-day:last-child {
                                       border-right: none;
                                     }
-                                    
-                                    .fullcalendar-container .fc-daygrid-day:hover {
+
+                                    .fullcalendar-container
+                                      .fc-daygrid-day:hover {
                                       background-color: #f7fafc;
                                     }
-                                    
-                                    .fullcalendar-container .fc-daygrid-day-frame {
+
+                                    .fullcalendar-container
+                                      .fc-daygrid-day-frame {
                                       padding: 6px;
                                       height: 100%;
                                       position: relative;
@@ -3654,32 +3846,37 @@ function ProjectManagerDetail() {
                                       width: 100%;
                                       box-sizing: border-box;
                                     }
-                                    
-                                    .fullcalendar-container .fc-daygrid-day-top {
+
+                                    .fullcalendar-container
+                                      .fc-daygrid-day-top {
                                       display: flex;
                                       justify-content: flex-end;
                                       margin-bottom: 4px;
                                     }
-                                    
-                                    .fullcalendar-container .fc-daygrid-day-number {
+
+                                    .fullcalendar-container
+                                      .fc-daygrid-day-number {
                                       color: #2d3748;
                                       font-weight: 500;
                                       padding: 4px 6px;
                                       font-size: 14px;
                                       line-height: 1;
                                     }
-                                    
-                                    .fullcalendar-container .fc-daygrid-day-events {
+
+                                    .fullcalendar-container
+                                      .fc-daygrid-day-events {
                                       margin-top: 4px;
                                       width: 100%;
                                     }
-                                    
+
                                     /* Today highlighting */
                                     .fullcalendar-container .fc-day-today {
                                       background-color: #ebf8ff !important;
                                     }
-                                    
-                                    .fullcalendar-container .fc-day-today .fc-daygrid-day-number {
+
+                                    .fullcalendar-container
+                                      .fc-day-today
+                                      .fc-daygrid-day-number {
                                       background-color: #3182ce;
                                       color: white;
                                       border-radius: 50%;
@@ -3689,7 +3886,7 @@ function ProjectManagerDetail() {
                                       align-items: center;
                                       justify-content: center;
                                     }
-                                    
+
                                     /* Toolbar styling */
                                     .fullcalendar-container .fc-toolbar {
                                       margin-bottom: 16px;
@@ -3698,13 +3895,13 @@ function ProjectManagerDetail() {
                                       align-items: center;
                                       width: 100%;
                                     }
-                                    
+
                                     .fullcalendar-container .fc-toolbar-chunk {
                                       display: flex;
                                       align-items: center;
                                       gap: 8px;
                                     }
-                                    
+
                                     .fullcalendar-container .fc-button {
                                       background-color: #3182ce;
                                       border: 1px solid #3182ce;
@@ -3716,31 +3913,36 @@ function ProjectManagerDetail() {
                                       transition: all 0.2s ease;
                                       font-family: inherit;
                                     }
-                                    
+
                                     .fullcalendar-container .fc-button:hover {
                                       background-color: #2c5aa0;
                                       border-color: #2c5aa0;
                                     }
-                                    
-                                    .fullcalendar-container .fc-button:disabled {
+
+                                    .fullcalendar-container
+                                      .fc-button:disabled {
                                       background-color: #a0aec0;
                                       border-color: #a0aec0;
                                       cursor: not-allowed;
                                     }
-                                    
-                                    .fullcalendar-container .fc-button-primary:not(:disabled):active,
-                                    .fullcalendar-container .fc-button-primary:not(:disabled).fc-button-active {
+
+                                    .fullcalendar-container
+                                      .fc-button-primary:not(:disabled):active,
+                                    .fullcalendar-container
+                                      .fc-button-primary:not(
+                                        :disabled
+                                      ).fc-button-active {
                                       background-color: #2c5aa0;
                                       border-color: #2c5aa0;
                                     }
-                                    
+
                                     .fullcalendar-container .fc-toolbar-title {
                                       font-size: 1.25rem;
                                       font-weight: 600;
                                       color: #2d3748;
                                       margin: 0;
                                     }
-                                    
+
                                     /* Event styling */
                                     .fullcalendar-container .fc-event {
                                       border: none;
@@ -3753,12 +3955,12 @@ function ProjectManagerDetail() {
                                       width: calc(100% - 4px);
                                       box-sizing: border-box;
                                     }
-                                    
+
                                     .fullcalendar-container .fc-event:hover {
                                       opacity: 0.8;
                                       transform: scale(1.02);
                                     }
-                                    
+
                                     .fullcalendar-container .fc-daygrid-event {
                                       margin-top: 1px;
                                       margin-bottom: 1px;
@@ -3767,16 +3969,17 @@ function ProjectManagerDetail() {
                                       text-overflow: ellipsis;
                                       width: 100%;
                                     }
-                                    
-                                    .fullcalendar-container .fc-daygrid-event-harness {
+
+                                    .fullcalendar-container
+                                      .fc-daygrid-event-harness {
                                       margin-bottom: 2px;
                                       width: 100%;
                                     }
-                                    
+
                                     .fullcalendar-container .fc-event-title {
                                       font-weight: 500;
                                     }
-                                    
+
                                     /* More link styling */
                                     .fullcalendar-container .fc-more-link {
                                       color: #3182ce;
@@ -3787,63 +3990,73 @@ function ProjectManagerDetail() {
                                       border-radius: 3px;
                                       text-decoration: none;
                                     }
-                                    
-                                    .fullcalendar-container .fc-more-link:hover {
+
+                                    .fullcalendar-container
+                                      .fc-more-link:hover {
                                       background-color: #ebf8ff;
                                     }
-                                    
+
                                     /* Other month days */
-                                    .fullcalendar-container .fc-day-other .fc-daygrid-day-number {
+                                    .fullcalendar-container
+                                      .fc-day-other
+                                      .fc-daygrid-day-number {
                                       color: #a0aec0;
                                     }
-                                    
+
                                     .fullcalendar-container .fc-day-other {
                                       background-color: #fafafa;
                                     }
-                                    
+
                                     /* Week view adjustments */
                                     .fullcalendar-container .fc-timegrid-slot {
                                       height: 2em;
                                       border-bottom: 1px solid #e2e8f0;
                                     }
-                                    
+
                                     .fullcalendar-container .fc-timegrid-axis {
                                       border-right: 1px solid #e2e8f0;
                                       background-color: #f7fafc;
                                     }
-                                    
+
                                     /* Responsive adjustments */
                                     @media (max-width: 768px) {
                                       .fullcalendar-container .fc-toolbar {
                                         flex-direction: column;
                                         gap: 12px;
                                       }
-                                      
-                                      .fullcalendar-container .fc-toolbar-chunk {
+
+                                      .fullcalendar-container
+                                        .fc-toolbar-chunk {
                                         justify-content: center;
                                       }
-                                      
+
                                       .fullcalendar-container .fc-daygrid-day {
                                         min-height: 80px;
                                       }
-                                      
-                                      .fullcalendar-container .fc-daygrid-day-frame {
+
+                                      .fullcalendar-container
+                                        .fc-daygrid-day-frame {
                                         padding: 4px;
                                         min-height: 76px;
                                       }
-                                      
+
                                       .fullcalendar-container .fc-button {
                                         padding: 4px 8px;
                                         font-size: 12px;
                                       }
-                                      
-                                      .fullcalendar-container .fc-toolbar-title {
+
+                                      .fullcalendar-container
+                                        .fc-toolbar-title {
                                         font-size: 1.1rem;
                                       }
                                     }
                                   `}</style>
                                   <FullCalendar
-                                    plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                                    plugins={[
+                                      dayGridPlugin,
+                                      timeGridPlugin,
+                                      interactionPlugin,
+                                    ]}
                                     initialView="dayGridMonth"
                                     events={calendarEvents}
                                     timeZone="Asia/Jakarta"
@@ -3863,8 +4076,11 @@ function ProjectManagerDetail() {
                                     moreLinkClick="popover"
                                     eventDisplay="block"
                                     displayEventTime={false}
-                                    dayHeaderFormat={{ weekday: 'short' }}
-                                    titleFormat={{ year: 'numeric', month: 'long' }}
+                                    dayHeaderFormat={{ weekday: "short" }}
+                                    titleFormat={{
+                                      year: "numeric",
+                                      month: "long",
+                                    }}
                                     eventClick={handleCalendarEventClick}
                                     fixedWeekCount={false}
                                     showNonCurrentDates={true}
@@ -3874,8 +4090,21 @@ function ProjectManagerDetail() {
                             </Card>
 
                             {/* Timeline Events */}
-                            <Card bg="white" shadow="lg" rounded="xl" border="1px" borderColor="gray.200">
-                              <CardHeader bg="gradient.100" roundedTop="xl" borderBottom="1px" borderColor="gray.200">
+                            <Card
+                              bg={colorMode === "light" ? "white" : "gray.800"}
+                              shadow="lg"
+                              rounded="xl"
+                              border="1px"
+                              borderColor={
+                                colorMode === "light" ? "gray.200" : "gray.700"
+                              }
+                            >
+                              <CardHeader
+                                bg="gradient.100"
+                                roundedTop="xl"
+                                borderBottom="1px"
+                                borderColor="gray.200"
+                              >
                                 <HStack spacing={3}>
                                   <Box
                                     w={8}
@@ -3904,41 +4133,47 @@ function ProjectManagerDetail() {
                                   {[
                                     {
                                       title: "Project Started",
-                                      date: DataProject?.projectRegisterDate || "2024-01-15",
+                                      date:
+                                        DataProject?.projectRegisterDate ||
+                                        "2024-01-15",
                                       type: "start",
                                       color: "green",
-                                      icon: FiPlayCircle
+                                      icon: FiPlayCircle,
                                     },
                                     {
                                       title: "Requirements Finalized",
                                       date: "2024-01-22",
                                       type: "milestone",
                                       color: "blue",
-                                      icon: FiFileText
+                                      icon: FiFileText,
                                     },
                                     {
                                       title: "Development Phase",
                                       date: "2024-02-01",
                                       type: "phase",
                                       color: "purple",
-                                      icon: FiZap
+                                      icon: FiZap,
                                     },
                                     {
                                       title: "Team Meeting",
                                       date: "2024-02-15",
                                       type: "meeting",
                                       color: "orange",
-                                      icon: FiUsers
+                                      icon: FiUsers,
                                     },
                                     {
                                       title: "Testing Phase",
                                       date: "2024-03-01",
                                       type: "upcoming",
                                       color: "yellow",
-                                      icon: FiTarget
-                                    }
+                                      icon: FiTarget,
+                                    },
                                   ].map((event, index) => (
-                                    <HStack key={index} spacing={4} align="start">
+                                    <HStack
+                                      key={index}
+                                      spacing={4}
+                                      align="start"
+                                    >
                                       <Box
                                         w={10}
                                         h={10}
@@ -3949,21 +4184,34 @@ function ProjectManagerDetail() {
                                         justifyContent="center"
                                         flexShrink={0}
                                       >
-                                        <event.icon size={16} color={`var(--chakra-colors-${event.color}-500)`} />
+                                        <event.icon
+                                          size={16}
+                                          color={`var(--chakra-colors-${event.color}-500)`}
+                                        />
                                       </Box>
-                                      <VStack align="start" spacing={1} flex={1}>
-                                        <Text fontWeight="semibold" color="gray.800" fontSize="sm">
+                                      <VStack
+                                        align="start"
+                                        spacing={1}
+                                        flex={1}
+                                      >
+                                        <Text
+                                          fontWeight="semibold"
+                                          color="gray.800"
+                                          fontSize="sm"
+                                        >
                                           {event.title}
                                         </Text>
                                         <Text fontSize="xs" color="gray.600">
-                                          {new Date(event.date).toLocaleDateString('en-US', {
-                                            month: 'short',
-                                            day: 'numeric',
-                                            year: 'numeric'
+                                          {new Date(
+                                            event.date
+                                          ).toLocaleDateString("en-US", {
+                                            month: "short",
+                                            day: "numeric",
+                                            year: "numeric",
                                           })}
                                         </Text>
-                                        <Badge 
-                                          size="sm" 
+                                        <Badge
+                                          size="sm"
                                           colorScheme={event.color}
                                           rounded="full"
                                           px={2}
@@ -3979,8 +4227,21 @@ function ProjectManagerDetail() {
                           </Grid>
 
                           {/* Project Phases Timeline */}
-                          <Card bg="white" shadow="lg" rounded="xl" border="1px" borderColor="gray.200">
-                            <CardHeader bg="gradient.100" roundedTop="xl" borderBottom="1px" borderColor="gray.200">
+                          <Card
+                            bg={colorMode === "light" ? "white" : "gray.800"}
+                            shadow="lg"
+                            rounded="xl"
+                            border="1px"
+                            borderColor={
+                              colorMode === "light" ? "gray.200" : "gray.700"
+                            }
+                          >
+                            <CardHeader
+                              bg="gradient.100"
+                              roundedTop="xl"
+                              borderBottom="1px"
+                              borderColor="gray.200"
+                            >
                               <HStack spacing={3}>
                                 <Box
                                   w={8}
@@ -4004,21 +4265,56 @@ function ProjectManagerDetail() {
                               </HStack>
                             </CardHeader>
                             <CardBody p={6}>
-                              <HStack spacing={4} align="center" overflowX="auto" pb={2}>
+                              <HStack
+                                spacing={4}
+                                align="center"
+                                overflowX="auto"
+                                pb={2}
+                              >
                                 {[
-                                  { phase: "Planning", status: "completed", progress: 100 },
-                                  { phase: "Design", status: "completed", progress: 100 },
-                                  { phase: "Development", status: "active", progress: DataProject?.projectStatusPercentage || 75 },
-                                  { phase: "Testing", status: "upcoming", progress: 0 },
-                                  { phase: "Deployment", status: "upcoming", progress: 0 }
+                                  {
+                                    phase: "Planning",
+                                    status: "completed",
+                                    progress: 100,
+                                  },
+                                  {
+                                    phase: "Design",
+                                    status: "completed",
+                                    progress: 100,
+                                  },
+                                  {
+                                    phase: "Development",
+                                    status: "active",
+                                    progress:
+                                      DataProject?.projectStatusPercentage ||
+                                      75,
+                                  },
+                                  {
+                                    phase: "Testing",
+                                    status: "upcoming",
+                                    progress: 0,
+                                  },
+                                  {
+                                    phase: "Deployment",
+                                    status: "upcoming",
+                                    progress: 0,
+                                  },
                                 ].map((phase, index) => (
-                                  <VStack key={index} spacing={3} minW="120px" align="center">
+                                  <VStack
+                                    key={index}
+                                    spacing={3}
+                                    minW="120px"
+                                    align="center"
+                                  >
                                     <Box
                                       w={12}
                                       h={12}
                                       bg={
-                                        phase.status === "completed" ? "green.500" :
-                                        phase.status === "active" ? "blue.500" : "gray.300"
+                                        phase.status === "completed"
+                                          ? "green.500"
+                                          : phase.status === "active"
+                                          ? "blue.500"
+                                          : "gray.300"
                                       }
                                       rounded="full"
                                       display="flex"
@@ -4026,7 +4322,11 @@ function ProjectManagerDetail() {
                                       justifyContent="center"
                                       position="relative"
                                     >
-                                      <Text color="white" fontWeight="bold" fontSize="sm">
+                                      <Text
+                                        color="white"
+                                        fontWeight="bold"
+                                        fontSize="sm"
+                                      >
                                         {index + 1}
                                       </Text>
                                       {index < 4 && (
@@ -4037,12 +4337,20 @@ function ProjectManagerDetail() {
                                           transform="translateY(-50%)"
                                           w="20px"
                                           h="2px"
-                                          bg={phase.status === "completed" ? "green.500" : "gray.300"}
+                                          bg={
+                                            phase.status === "completed"
+                                              ? "green.500"
+                                              : "gray.300"
+                                          }
                                         />
                                       )}
                                     </Box>
                                     <VStack spacing={1} textAlign="center">
-                                      <Text fontSize="sm" fontWeight="semibold" color="gray.800">
+                                      <Text
+                                        fontSize="sm"
+                                        fontWeight="semibold"
+                                        color="gray.800"
+                                      >
                                         {phase.phase}
                                       </Text>
                                       <Text fontSize="xs" color="gray.600">
@@ -4051,8 +4359,11 @@ function ProjectManagerDetail() {
                                       <Badge
                                         size="sm"
                                         colorScheme={
-                                          phase.status === "completed" ? "green" :
-                                          phase.status === "active" ? "blue" : "gray"
+                                          phase.status === "completed"
+                                            ? "green"
+                                            : phase.status === "active"
+                                            ? "blue"
+                                            : "gray"
                                         }
                                         rounded="full"
                                       >
@@ -4397,7 +4708,7 @@ function ProjectManagerDetail() {
                 shadow="lg"
                 rounded={radiusStyle}
                 border="1px"
-                borderColor="gray.200"
+                borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
                 _hover={{
                   shadow: "xl",
                   transform: "translateY(-2px)",
@@ -4405,10 +4716,10 @@ function ProjectManagerDetail() {
                 transition="all 0.3s ease"
               >
                 <CardHeader
-                  bg="blue.50"
+                  bg={colorMode === "light" ? "blue.50" : "gray.700"}
                   roundedTop={radiusStyle}
                   borderBottom="1px"
-                  borderColor="gray.200"
+                  borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
                 >
                   <HStack spacing={3}>
                     <Box
@@ -4496,7 +4807,7 @@ function ProjectManagerDetail() {
                 shadow="lg"
                 rounded={radiusStyle}
                 border="1px"
-                borderColor="gray.200"
+                borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
                 _hover={{
                   shadow: "xl",
                   transform: "translateY(-2px)",
@@ -4504,10 +4815,10 @@ function ProjectManagerDetail() {
                 transition="all 0.3s ease"
               >
                 <CardHeader
-                  bg="green.50"
+                  bg={colorMode === "light" ? "green.50" : "gray.700"}
                   roundedTop={radiusStyle}
                   borderBottom="1px"
-                  borderColor="gray.200"
+                  borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
                 >
                   <HStack spacing={3}>
                     <Box
@@ -4706,7 +5017,10 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
             <>
               {/* Header Section */}
               <HStack justify="space-between" align="center">
-                <Heading size="lg" color="gray.800">
+                <Heading
+                  size="lg"
+                  color={colorMode === "light" ? "gray.800" : "white"}
+                >
                   Project Information
                 </Heading>
                 <Button
@@ -4791,22 +5105,28 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
                       <VStack align="stretch" spacing={2}>
                         <Text
                           fontSize="sm"
-                          color="gray.600"
+                          color={
+                            colorMode === "light" ? "gray.600" : "gray.400"
+                          }
                           fontWeight="medium"
                         >
                           Description:
                         </Text>
                         <Box
-                          bg="gray.50"
+                          bg={colorMode === "light" ? "gray.50" : "gray.700"}
                           p={3}
                           rounded="lg"
                           border="1px"
-                          borderColor="gray.200"
+                          borderColor={
+                            colorMode === "light" ? "gray.200" : "gray.600"
+                          }
                           minH="60px"
                         >
                           <Text
                             fontSize="sm"
-                            color="gray.700"
+                            color={
+                              colorMode === "light" ? "gray.700" : "gray.300"
+                            }
                             lineHeight="tall"
                           >
                             {DataProject.projectDesc ||
@@ -5041,22 +5361,28 @@ const ProjectInfoSection = ({ projectId }: { projectId: string | null }) => {
                       <VStack align="stretch" spacing={2}>
                         <Text
                           fontSize="sm"
-                          color="gray.600"
+                          color={
+                            colorMode === "light" ? "gray.600" : "gray.400"
+                          }
                           fontWeight="medium"
                         >
                           Notes:
                         </Text>
                         <Box
-                          bg="gray.50"
+                          bg={colorMode === "light" ? "gray.50" : "gray.700"}
                           p={3}
                           rounded="lg"
                           border="1px"
-                          borderColor="gray.200"
+                          borderColor={
+                            colorMode === "light" ? "gray.200" : "gray.600"
+                          }
                           minH="60px"
                         >
                           <Text
                             fontSize="sm"
-                            color="gray.700"
+                            color={
+                              colorMode === "light" ? "gray.700" : "gray.300"
+                            }
                             lineHeight="tall"
                           >
                             {DataProject.note || "No additional notes"}

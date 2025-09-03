@@ -405,7 +405,7 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
 
   // Load Requirements
   useEffect(() => {
-    if (DataAuth && DataAuth.team && DataProject && DataProject.reqParentId) {
+    if (DataAuth && DataProject && DataProject.reqParentId) {
       // LOAD REQ DATA
       const GetDataRequirement = async () => {
         setIsLoadingProcess(true);
@@ -449,7 +449,7 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
             value: DataProject.reqParentId,
           },
         ],
-        fieldOrder: ["backlogName"],
+        fieldOrder: ["createdAt"],
         orderDir: "asc",
       };
 

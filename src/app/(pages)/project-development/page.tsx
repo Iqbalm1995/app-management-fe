@@ -153,7 +153,8 @@ const ProjectManagerPage = memo(() => {
   // Data fetching effect
   useEffect(() => {
     setIsEditMode(false);
-    if (DataAuth && DataAuth.team) {
+    // if (DataAuth && DataAuth.team) {
+    if (DataAuth) {
       // Build filter conditions
       const filterWhere: ListSearchByParam[] = [];
 
@@ -168,7 +169,7 @@ const ProjectManagerPage = memo(() => {
 
       const PayloadList: PaggingListPayloadCustom = {
         search: globalFilter,
-        teamId: DataAuth.team.id,
+        // teamId: DataAuth.team.id,
         limit: pageSize,
         page: pageIndex,
         filterWhere: filterWhere,
@@ -361,10 +362,10 @@ const ProjectManagerPage = memo(() => {
               {/* Title Section */}
               <HStack spacing={4}>
                 <Box
-                  w={14}
-                  h={14}
-                  bg="secondary.500"
-                  rounded="xl"
+                  w={"80px"}
+                  h={"80px"}
+                  bgGradient={"linear(to-br, secondary.700, secondary.400)"}
+                  rounded="2xl"
                   display="flex"
                   alignItems="center"
                   justifyContent="center"

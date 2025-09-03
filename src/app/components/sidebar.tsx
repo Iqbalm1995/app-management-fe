@@ -655,25 +655,27 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
           <Box minH={"100vh"}>
             <Box mx={"auto"}>
               <Container
-                maxW={"8xl"}
-                px={{ base: 5, sm: 5, md: 12, lg: 12 }}
+                maxW={"9xl"}
+                px={{ base: 2, sm: 2, md: 12, lg: 12 }}
+                // px={0}
                 pb={12}
-                pt={2}
+                pt={5}
                 minH={"100vh"}
+                // bg={"blue.100"}
               >
                 <AnimatePresence mode="wait">
-                <MotionBox
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{
-                    duration: 0.4,
-                    ease: "easeInOut"
-                  }}
-                  key={pathname} // Re-animate when route changes
-                >
-                  {children}
-                </MotionBox>
+                  <MotionBox
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{
+                      duration: 0.4,
+                      ease: "easeInOut",
+                    }}
+                    key={pathname} // Re-animate when route changes
+                  >
+                    {children}
+                  </MotionBox>
                 </AnimatePresence>
               </Container>
             </Box>
@@ -773,29 +775,48 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
   };
 
   const [IsActiveNav, setIsActiveNav] = useState(false);
+  const [hasActiveChild, setHasActiveChild] = useState(false);
 
   useEffect(() => {
-    // Split the pathname by "/" and get the first segment
-    const firstSegment = pathname.split("/")[1];
     const currentPath = pathname;
-    if (firstSegment === data.link.split("/")[1]) {
+
+    // Check if current item is active
+    const isCurrentActive =
+      currentPath === data.link && data.children.length <= 0;
+    setIsActiveNav(isCurrentActive);
+
+    // Check if any child is active
+    const checkActiveChild = (children: LinkItemProps[]): boolean => {
+      return children.some((child) => {
+        if (currentPath === child.link) return true;
+        if (child.children && child.children.length > 0) {
+          return checkActiveChild(child.children);
+        }
+        return false;
+      });
+    };
+
+    const childActive = hasChildren && checkActiveChild(data.children);
+    setHasActiveChild(childActive);
+
+    // Auto-expand if current item is active or has active child
+    if (isCurrentActive || childActive) {
       setIsOpen(true);
     } else {
-      setIsOpen(false);
+      // Only close if no active children and not manually opened
+      const firstSegment = pathname.split("/")[1];
+      if (firstSegment !== data.link.split("/")[1]) {
+        setIsOpen(false);
+      }
     }
 
-    if (currentPath === data.link && data.children.length <= 0) {
-      setIsActiveNav(true);
-    } else {
-      setIsActiveNav(false);
     // Reset loading state when pathname changes (navigation complete)
     setIsNavigating(false);
-    }
-  }, [pathname]);
+  }, [pathname, hasChildren, data.children, data.link]);
 
   const handleNavigation = async (e: React.MouseEvent) => {
     e.preventDefault();
-    
+
     if (hasChildren) {
       handleToggle();
       return;
@@ -808,7 +829,7 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
 
     // Start loading
     setIsNavigating(true);
-    
+
     try {
       // Navigate to the new page
       await router.push(data.link);
@@ -835,7 +856,7 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
             rounded={radiusStyle}
             role="group"
             cursor="pointer"
-            boxShadow={IsActiveNav ? "md" : "none"}
+            boxShadow={IsActiveNav ? "md" : hasActiveChild ? "sm" : "none"}
             _hover={{
               color: "white",
               // bg: "secondary.500",
@@ -847,11 +868,15 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
             bgGradient={
               IsActiveNav
                 ? "linear(to-r, secondary.500, secondary.600)"
+                : hasActiveChild
+                ? "linear(to-r, secondary.100, secondary.200)"
                 : "linear(to-r, transparent, transparent)"
             }
             color={
               IsActiveNav
                 ? "white" // When the navigation item is active, set color to white
+                : hasActiveChild
+                ? useColorModeValue("secondary.700", "secondary.300") // When has active child
                 : useColorModeValue("gray.900", "gray.100") // Otherwise, set color based on the color mode
             }
             justifyContent={"center"}
@@ -880,6 +905,8 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
                   color={
                     IsActiveNav
                       ? "white"
+                      : hasActiveChild
+                      ? useColorModeValue("secondary.700", "secondary.300")
                       : useColorModeValue("gray.900", "gray.100")
                   }
                   as={data.icon}
