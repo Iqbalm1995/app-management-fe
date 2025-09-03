@@ -3968,7 +3968,7 @@ const DroppableBoard: React.FC<DroppableBoardProps> = ({
       as={Stack}
       direction="column"
       spacing={4}
-      width={"320px"}
+      width={"full"}
       minWidth={"320px"}
       transition="all 0.3s ease"
       border={isOver ? "2px dashed blue" : "none"}
@@ -5558,7 +5558,7 @@ function KanbanBacklogPage() {
         </Flex>
       )}
 
-      <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"}>
+      <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"} py={2}>
         <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }} w={"full"}>
           <Flex
             w={"full"}
@@ -5609,7 +5609,8 @@ function KanbanBacklogPage() {
             </Button>
           </Flex>
         </GridItem>
-      </Grid>
+      </Grid> 
+
       <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"}>
         <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 12 }} w={"full"}>
           <Flex

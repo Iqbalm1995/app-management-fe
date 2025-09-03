@@ -748,6 +748,24 @@ function ProjectDevelopmentDetailContent() {
                                 </Button>
                               </Link>
 
+                              <Link href={`/project-development/development/kanban?projectId=${projectId}`}>
+                                <Button
+                                  leftIcon={<BsKanban />}
+                                  colorScheme="blue"
+                                  size="lg"
+                                  w="full"
+                                  h="60px"
+                                  rounded="xl"
+                                  _hover={{
+                                    transform: "translateY(-2px)",
+                                    shadow: "lg",
+                                  }}
+                                  transition="all 0.2s"
+                                >
+                                  Project Kanban
+                                </Button>
+                              </Link>
+
                               <Button
                                 leftIcon={<FiList />}
                                 colorScheme="blue"
