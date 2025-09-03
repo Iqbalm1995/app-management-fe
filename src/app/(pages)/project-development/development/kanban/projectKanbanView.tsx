@@ -333,8 +333,10 @@ interface TaskCardProps {
   onEdit: (task: TaskViewModel) => void;
   onDelete: (taskId: string) => void;
   onUpdateTask: (taskId: string, updates: Partial<TaskViewModel>) => void;
+  onRefreshTasks: () => void;
   isRecentlyMoved?: boolean;
   DataProject?: ProjectDataResponse | null;
+  DataBacklogs?: BacklogDataResponse[];
 }
 
 const TaskCard: React.FC<TaskCardProps> = ({ 
@@ -342,8 +344,10 @@ const TaskCard: React.FC<TaskCardProps> = ({
   onEdit, 
   onDelete, 
   onUpdateTask,
+  onRefreshTasks,
   isRecentlyMoved = false,
-  DataProject
+  DataProject,
+  DataBacklogs = []
 }) => {
   const { colorMode } = useColorMode();
   const showToast = useToastHelper();
@@ -378,6 +382,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [detailedTask, setDetailedTask] = useState<TaskViewModel | null>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const [taskBoards, setTaskBoards] = useState<TaskBoardViewModel[]>([]);
   const [newTaskItemName, setNewTaskItemName] = useState("");
   const [isAddingTaskItem, setIsAddingTaskItem] = useState(false);
   const [taskItems, setTaskItems] = useState<TaskItemResponse[]>([]);
@@ -665,6 +670,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
           // Fetch task items
           fetchTaskItems(task.id);
 
+          // Fetch task boards for board selection
+          if (response.data.backlogId) {
+            fetchTaskBoards(response.data.backlogId);
+          }
+
           // Reset and load comments
           resetCommentsState();
           loadTaskComments(task.id);
@@ -705,6 +715,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
     DeleteTaskComment,
     AssignUsersTask,
     MoveTask,
+    ListTasksBoard,
   } = useTasks();
 
   // Helper functions for current user
@@ -855,6 +866,25 @@ const TaskCard: React.FC<TaskCardProps> = ({
       setTaskItems([]);
     } finally {
       setIsLoadingTaskItems(false);
+    }
+  };
+
+  // Fetch task boards for the task's backlog
+  const fetchTaskBoards = async (backlogId: string) => {
+    if (!backlogId) return;
+
+    try {
+      const response = await ListTasksBoard(backlogId, getToken());
+      
+      if (response?.statusCode === RES_CODE_OK && response.data) {
+        setTaskBoards(response.data as TaskBoardViewModel[]);
+      } else {
+        console.error("Failed to fetch task boards:", response?.message);
+        setTaskBoards([]);
+      }
+    } catch (error) {
+      console.error("Error fetching task boards:", error);
+      setTaskBoards([]);
     }
   };
 
@@ -1291,6 +1321,53 @@ const TaskCard: React.FC<TaskCardProps> = ({
     }
   };
 
+  // Handle moving task to different board
+  const handleMoveTaskToBoard = async (targetBoard: TaskBoardViewModel) => {
+    if (!detailedTask) return;
+
+    try {
+      setIsLoadingDetails(true);
+
+      const payload: TaskMovePayload = {
+        id: detailedTask.id,
+        boardId: targetBoard.id,
+        indexTask: detailedTask.indexTask,
+        indexStage: targetBoard.indexStage,
+      };
+
+      const response = await MoveTask(payload, getToken());
+      
+      if (response?.statusCode === RES_CODE_OK) {
+        setDetailedTask({
+          ...detailedTask,
+          boardId: targetBoard.id,
+          boardName: targetBoard.boardName,
+        });
+
+        showToast({
+          description: `Task moved to ${targetBoard.boardName}`,
+          statusToast: "success",
+        });
+
+        // Refresh tasks data
+        onRefreshTasks();
+      } else {
+        showToast({
+          description: response?.message || "Failed to move task",
+          statusToast: "error",
+        });
+      }
+    } catch (error) {
+      console.error("Error moving task:", error);
+      showToast({
+        description: "An error occurred while moving task",
+        statusToast: "error",
+      });
+    } finally {
+      setIsLoadingDetails(false);
+    }
+  };
+
   // Handle archiving a task
   const handleArchiveTask = async (taskId: string) => {
     if (!taskId) return;
@@ -1562,11 +1639,12 @@ const TaskCard: React.FC<TaskCardProps> = ({
                           {detailedTask?.boardName || "Select Board"}
                         </MenuButton>
                         <MenuList fontWeight={600}>
-                          {(window.projectKanbanBoards || []).map((board: MasterBoardTaskResponse) => (
+                          {taskBoards.map((board: TaskBoardViewModel) => (
                             <MenuItem
                               fontWeight={600}
                               key={board.id}
                               isDisabled={board.boardName === detailedTask.boardName}
+                              onClick={() => handleMoveTaskToBoard(board)}
                             >
                               {board.boardName}
                             </MenuItem>
@@ -2228,6 +2306,30 @@ const TaskCard: React.FC<TaskCardProps> = ({
                       )}
                     </Box>
 
+                    {/* Backlog Information */}
+                    <Box w="full">
+                      <Text fontSize="sm" color="gray.500" mb={2}>
+                        Backlog
+                      </Text>
+                      {detailedTask?.backlogId ? (
+                        <Box
+                          p={3}
+                          bg="blue.50"
+                          border="1px solid"
+                          borderColor="blue.200"
+                          rounded="md"
+                        >
+                          <Text fontSize="sm" fontWeight="bold" color="blue.700">
+                            {DataBacklogs.find((b: BacklogDataResponse) => b.id === detailedTask.backlogId)?.backlogName || "Unknown Backlog"}
+                          </Text>
+                        </Box>
+                      ) : (
+                        <Text fontSize="sm" color="gray.400">
+                          No backlog assigned
+                        </Text>
+                      )}
+                    </Box>
+
                     {/* Dates */}
                     <Box w="full">
                       <Text fontSize="sm" color="gray.500" mb={1}>
@@ -2526,8 +2628,10 @@ interface KanbanColumnProps {
   onEditTask: (task: TaskViewModel) => void;
   onDeleteTask: (taskId: string) => void;
   onUpdateTask: (taskId: string, updates: Partial<TaskViewModel>) => void;
+  onRefreshTasks: () => void;
   recentlyMovedTaskId?: string | null;
   DataProject?: ProjectDataResponse | null;
+  DataBacklogs?: BacklogDataResponse[];
 }
 
 const KanbanColumn: React.FC<KanbanColumnProps> = ({
@@ -2538,8 +2642,10 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
   onEditTask,
   onDeleteTask,
   onUpdateTask,
+  onRefreshTasks,
   recentlyMovedTaskId,
   DataProject,
+  DataBacklogs = [],
 }) => {
   const { colorMode } = useColorMode();
   const [newTaskName, setNewTaskName] = useState("");
@@ -2665,48 +2771,6 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
               </HStack>
             </HStack>
           )}
-
-          {/* Quick Add Task */}
-          {isAddingTask ? (
-            <HStack spacing={2}>
-              <Input
-                value={newTaskName}
-                onChange={(e) => setNewTaskName(e.target.value)}
-                placeholder="Task name..."
-                size="sm"
-                onKeyPress={(e) => e.key === "Enter" && handleQuickAddTask()}
-                autoFocus
-              />
-              <IconButton
-                aria-label="Add"
-                icon={<CheckIcon />}
-                size="sm"
-                colorScheme="green"
-                onClick={handleQuickAddTask}
-              />
-              <IconButton
-                aria-label="Cancel"
-                icon={<FiAlertCircle />}
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setIsAddingTask(false);
-                  setNewTaskName("");
-                }}
-              />
-            </HStack>
-          ) : (
-            <Button
-              leftIcon={<FaPlus />}
-              size="sm"
-              variant="ghost"
-              colorScheme={getBoardColor(board.indexStage)}
-              onClick={() => setIsAddingTask(true)}
-              justifyContent="flex-start"
-            >
-              Add a task
-            </Button>
-          )}
         </VStack>
       </CardHeader>
 
@@ -2719,8 +2783,10 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
               onEdit={onEditTask}
               onDelete={onDeleteTask}
               onUpdateTask={onUpdateTask}
+              onRefreshTasks={onRefreshTasks}
               isRecentlyMoved={recentlyMovedTaskId === task.id}
               DataProject={DataProject}
+              DataBacklogs={DataBacklogs}
             />
           ))}
           
@@ -2832,17 +2898,20 @@ function ProjectKanbanView() {
     taskStartDate: "",
     taskEndDate: "",
     boardName: "",
+    backlogId: "",
   });
 
   // Filter and Search States
   const [searchTerm, setSearchTerm] = useState("");
   const [filterPriority, setFilterPriority] = useState<string>("");
+  const [filterBacklog, setFilterBacklog] = useState<string>("");
   const [filterAssignee, setFilterAssignee] = useState<string>("");
   const [showCompletedTasks, setShowCompletedTasks] = useState(true);
 
   // API Hooks
   const { GetDetailById: GetProjectDetail } = useProjects();
   const { List: GetMasterBoardTasks } = useMasterBoardTask();
+  const { ListBacklog } = useRequirements();
   const { 
     ListTasksBoard,
     ListTasksPaged, 
@@ -2854,6 +2923,7 @@ function ProjectKanbanView() {
 
   // Users data for assignment
   const [DataUsers, setDataUsers] = useState<UsersResponse[]>([]);
+  const [DataBacklogs, setDataBacklogs] = useState<BacklogDataResponse[]>([]);
 
   // Handle task creation - refresh data after task is created
   const handleTaskCreated = () => {
@@ -2934,6 +3004,41 @@ function ProjectKanbanView() {
       fetchMasterBoards();
     }
   }, [DataAuth, tokenData]);
+
+  // Fetch Backlogs for filtering
+  useEffect(() => {
+    if (DataAuth && DataProject?.reqParentId && tokenData) {
+      const fetchBacklogs = async () => {
+        try {
+          const PayloadList: PaggingListPayload = {
+            search: "",
+            limit: 100,
+            page: 0,
+            filterWhere: [
+              {
+                field: "reqId",
+                value: DataProject.reqParentId!,
+                operator: "=",
+              },
+            ],
+            fieldOrder: ["backlogName"],
+            orderDir: "asc",
+          };
+
+          const response = await ListBacklog(PayloadList, tokenData);
+          
+          if (response?.statusCode === RES_CODE_OK) {
+            const backlogs = response.data as BacklogDataResponse[];
+            setDataBacklogs(backlogs);
+          }
+        } catch (error) {
+          console.error("Error fetching backlogs:", error);
+        }
+      };
+
+      fetchBacklogs();
+    }
+  }, [DataAuth, DataProject, tokenData]);
 
   // Fetch Project Tasks (by projectId only)
   useEffect(() => {
@@ -3096,6 +3201,7 @@ function ProjectKanbanView() {
       taskStartDate: "",
       taskEndDate: "",
       boardName: targetBoard?.boardName || "", // Include boardName in form
+      backlogId: "",
     });
     onTaskModalOpen();
   };
@@ -3111,6 +3217,7 @@ function ProjectKanbanView() {
       taskStartDate: task.startDate || "",
       taskEndDate: task.endDate || "",
       boardName: task.boardName || "",
+      backlogId: task.backlogId || "",
     });
     onTaskModalOpen();
   };
@@ -3181,6 +3288,14 @@ function ProjectKanbanView() {
       return;
     }
 
+    if (!selectedTask && !taskForm.backlogId) {
+      showToast({
+        description: "Please select a backlog for the task",
+        statusToast: "error",
+      });
+      return;
+    }
+
     try {
       setIsLoadingProcess(true);
 
@@ -3222,7 +3337,7 @@ function ProjectKanbanView() {
           taskName: taskForm.taskName,
           boardId: selectedBoardId,
           projectId: projectId!,
-          backlogId: "", // Add default backlogId since it's required
+          backlogId: taskForm.backlogId,
         };
 
         const response = await CreateSimpleTask(payload, tokenData);
@@ -3276,6 +3391,11 @@ function ProjectKanbanView() {
     // Apply priority filter
     if (filterPriority) {
       filteredTasks = filteredTasks.filter(task => task.taskPriority === filterPriority);
+    }
+
+    // Apply backlog filter
+    if (filterBacklog) {
+      filteredTasks = filteredTasks.filter(task => task.backlogId === filterBacklog);
     }
 
     // Apply completed tasks filter
@@ -3423,6 +3543,20 @@ function ProjectKanbanView() {
                   <option value="LOW">Low Priority</option>
                 </Select>
 
+                <Select
+                  placeholder="All Backlogs"
+                  value={filterBacklog}
+                  onChange={(e) => setFilterBacklog(e.target.value)}
+                  maxW="200px"
+                  bg={colorMode === "light" ? "white" : "gray.700"}
+                >
+                  {DataBacklogs.map((backlog) => (
+                    <option key={backlog.id} value={backlog.id}>
+                      {backlog.backlogName}
+                    </option>
+                  ))}
+                </Select>
+
                 <Checkbox
                   isChecked={showCompletedTasks}
                   onChange={(e) => setShowCompletedTasks(e.target.checked)}
@@ -3489,8 +3623,10 @@ function ProjectKanbanView() {
                     onEditTask={handleEditTask}
                     onDeleteTask={handleDeleteTask}
                     onUpdateTask={handleUpdateTask}
+                    onRefreshTasks={() => setRefreshData(prev => prev + 1)}
                     recentlyMovedTaskId={recentlyMovedTaskId}
                     DataProject={DataProject}
+                    DataBacklogs={DataBacklogs}
                   />
                 </GridItem>
               ))}
@@ -3557,6 +3693,27 @@ function ProjectKanbanView() {
                       <option value="HIGH">High Priority</option>
                     </Select>
                   </Box>
+
+                  {!selectedTask && (
+                    <Box w="full">
+                      <Text mb={2} fontSize="sm" fontWeight="medium" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                        Backlog *
+                      </Text>
+                      <Select
+                        value={taskForm.backlogId}
+                        onChange={(e) => setTaskForm(prev => ({ ...prev, backlogId: e.target.value }))}
+                        bg={colorMode === "light" ? "white" : "gray.700"}
+                        borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
+                        placeholder="Select backlog"
+                      >
+                        {DataBacklogs.map((backlog) => (
+                          <option key={backlog.id} value={backlog.id}>
+                            {backlog.backlogName}
+                          </option>
+                        ))}
+                      </Select>
+                    </Box>
+                  )}
 
                   <HStack spacing={4} w="full">
                     <Box flex={1}>
