@@ -795,84 +795,85 @@ const ProjectManagerPage = () => {
               >
                 <CardBody p={{ base: 4, sm: 5, md: 6 }}>
                   <VStack spacing={{ base: 6, md: 8 }} w="full">
+                    <Box w="full">
+                      <VStack spacing={4} align="stretch">
+                        <Flex
+                          as={HStack}
+                          justifyContent={"space-between"}
+                          px={0}
+                          w={"full"}
+                        >
+                          <Flex
+                            as={HStack}
+                            justifyContent={"left"}
+                            px={0}
+                            w={"full"}
+                          >
+                            <HStack spacing={3} align="center">
+                              <Box
+                                w={{ base: 8, md: 10 }}
+                                h={{ base: 8, md: 10 }}
+                                bg="blue.500"
+                                rounded="lg"
+                                display="flex"
+                                alignItems="center"
+                                justifyContent="center"
+                                color="white"
+                                fontSize={{ base: "sm", md: "md" }}
+                                flexShrink={0}
+                              >
+                                <Icon
+                                  as={FiClipboard}
+                                  boxSize={{ base: 4, md: 5 }}
+                                />
+                              </Box>
+                              <VStack align="start" spacing={0}>
+                                <Heading
+                                  size={"md"}
+                                  color={
+                                    colorMode === "light" ? "gray.800" : "white"
+                                  }
+                                  lineHeight="1.2"
+                                >
+                                  Projects Management
+                                </Heading>
+                              </VStack>
+                            </HStack>
+                          </Flex>
+                          <Flex
+                            as={HStack}
+                            justifyContent={"right"}
+                            px={0}
+                            w={"full"}
+                          >
+                            <Button
+                              size={"md"}
+                              leftIcon={<FiRefreshCcw />}
+                              onClick={() => RefreshAction()}
+                              isLoading={ActionLoading}
+                            >
+                              Refresh
+                            </Button>
+                            <Button
+                              size={"md"}
+                              colorScheme={"secondary"}
+                              leftIcon={<FiPlusSquare />}
+                              type={"submit"}
+                              isLoading={ActionLoading}
+                              onClick={() => handleAddNew()}
+                            >
+                              Register Project
+                            </Button>
+                          </Flex>
+                        </Flex>
+
+                        <Divider />
+                      </VStack>
+                    </Box>
                     {/* Last Working Projects Section */}
                     {DataProjects.length > 0 && !IsLoadingProcess && (
                       <Box w="full">
                         <VStack spacing={4} align="stretch">
-                          <Flex
-                            as={HStack}
-                            justifyContent={"space-between"}
-                            px={0}
-                            w={"full"}
-                          >
-                            <Flex
-                              as={HStack}
-                              justifyContent={"left"}
-                              px={0}
-                              w={"full"}
-                            >
-                              <HStack spacing={3} align="center">
-                                <Box
-                                  w={{ base: 8, md: 10 }}
-                                  h={{ base: 8, md: 10 }}
-                                  bg="blue.500"
-                                  rounded="lg"
-                                  display="flex"
-                                  alignItems="center"
-                                  justifyContent="center"
-                                  color="white"
-                                  fontSize={{ base: "sm", md: "md" }}
-                                  flexShrink={0}
-                                >
-                                  <Icon
-                                    as={FiClipboard}
-                                    boxSize={{ base: 4, md: 5 }}
-                                  />
-                                </Box>
-                                <VStack align="start" spacing={0}>
-                                  <Heading
-                                    size={"md"}
-                                    color={
-                                      colorMode === "light"
-                                        ? "gray.800"
-                                        : "white"
-                                    }
-                                    lineHeight="1.2"
-                                  >
-                                    Projects Management
-                                  </Heading>
-                                </VStack>
-                              </HStack>
-                            </Flex>
-                            <Flex
-                              as={HStack}
-                              justifyContent={"right"}
-                              px={0}
-                              w={"full"}
-                            >
-                              <Button
-                                size={"md"}
-                                leftIcon={<FiRefreshCcw />}
-                                onClick={() => RefreshAction()}
-                                isLoading={ActionLoading}
-                              >
-                                Refresh
-                              </Button>
-                              <Button
-                                size={"md"}
-                                colorScheme={"secondary"}
-                                leftIcon={<FiPlusSquare />}
-                                type={"submit"}
-                                isLoading={ActionLoading}
-                                onClick={() => handleAddNew()}
-                              >
-                                Create New Project
-                              </Button>
-                            </Flex>
-                          </Flex>
-
-                          <Divider />
-
                           {/* Section Header */}
                           <HStack spacing={3} align="center">
                             <Box
