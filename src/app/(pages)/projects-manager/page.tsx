@@ -22,6 +22,15 @@ import {
   VStack,
   Icon,
   Divider,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  useDisclosure,
+  useColorModeValue,
 } from "@chakra-ui/react";
 import {
   FiFilter,
@@ -42,6 +51,7 @@ import {
   FiCheckCircle,
   FiClock,
   FiAlertCircle,
+  FiPlusSquare,
 } from "react-icons/fi";
 import {
   ColumnDef,
@@ -89,6 +99,7 @@ import {
 // Local Components
 import CardProject from "@/app/components/CardProject";
 import ManagerSidebar from "./components/ManagerSidebar";
+import ModalRegisterProject from "./components/ModalRegisterProject";
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Projects Manager",
@@ -305,12 +316,57 @@ const ProjectManagerPage = () => {
     setPagination({ pageIndex: 0, pageSize });
   }, [pageSize]);
 
+  const ModalForm = useDisclosure();
+
+  const handleAddNew = () => {
+    if (DataAuth && DataAuth.team) {
+      ModalForm.onOpen();
+    } else {
+      showToast({
+        description: "Team ID is invalid",
+        statusToast: "error",
+      });
+    }
+  };
+
   return (
     <LayoutAdmin>
       <HeaderContent
         titleName={HeaderDataContent.titleName}
         breadCrumb={HeaderDataContent.breadCrumb}
       />
+
+      {/* MODAL LIST REQUIREMENT FOR REGISTER PROJECT */}
+      <Modal
+        size={"6xl"}
+        isOpen={ModalForm.isOpen}
+        isCentered
+        onClose={ModalForm.onClose}
+      >
+        <ModalOverlay bg="blackAlpha.300" />
+        <ModalContent
+          rounded={radiusStyle}
+          m={2}
+          bg={useColorModeValue("white", "gray.900")}
+        >
+          <ModalHeader>Create New Project</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody w={"full"}>
+            <ModalRegisterProject />
+          </ModalBody>
+
+          <ModalFooter>
+            <Button
+              colorScheme={"gray"}
+              leftIcon={<FiX />}
+              onClick={ModalForm.onClose}
+              isLoading={ActionLoading}
+            >
+              Kembali
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
       {/* Modern Project Manager Header Section */}
       <Box
@@ -743,6 +799,80 @@ const ProjectManagerPage = () => {
                     {DataProjects.length > 0 && !IsLoadingProcess && (
                       <Box w="full">
                         <VStack spacing={4} align="stretch">
+                          <Flex
+                            as={HStack}
+                            justifyContent={"space-between"}
+                            px={0}
+                            w={"full"}
+                          >
+                            <Flex
+                              as={HStack}
+                              justifyContent={"left"}
+                              px={0}
+                              w={"full"}
+                            >
+                              <HStack spacing={3} align="center">
+                                <Box
+                                  w={{ base: 8, md: 10 }}
+                                  h={{ base: 8, md: 10 }}
+                                  bg="blue.500"
+                                  rounded="lg"
+                                  display="flex"
+                                  alignItems="center"
+                                  justifyContent="center"
+                                  color="white"
+                                  fontSize={{ base: "sm", md: "md" }}
+                                  flexShrink={0}
+                                >
+                                  <Icon
+                                    as={FiClipboard}
+                                    boxSize={{ base: 4, md: 5 }}
+                                  />
+                                </Box>
+                                <VStack align="start" spacing={0}>
+                                  <Heading
+                                    size={"md"}
+                                    color={
+                                      colorMode === "light"
+                                        ? "gray.800"
+                                        : "white"
+                                    }
+                                    lineHeight="1.2"
+                                  >
+                                    Projects Management
+                                  </Heading>
+                                </VStack>
+                              </HStack>
+                            </Flex>
+                            <Flex
+                              as={HStack}
+                              justifyContent={"right"}
+                              px={0}
+                              w={"full"}
+                            >
+                              <Button
+                                size={"md"}
+                                leftIcon={<FiRefreshCcw />}
+                                onClick={() => RefreshAction()}
+                                isLoading={ActionLoading}
+                              >
+                                Refresh
+                              </Button>
+                              <Button
+                                size={"md"}
+                                colorScheme={"secondary"}
+                                leftIcon={<FiPlusSquare />}
+                                type={"submit"}
+                                isLoading={ActionLoading}
+                                onClick={() => handleAddNew()}
+                              >
+                                Create New Project
+                              </Button>
+                            </Flex>
+                          </Flex>
+
+                          <Divider />
+
                           {/* Section Header */}
                           <HStack spacing={3} align="center">
                             <Box
@@ -899,10 +1029,7 @@ const ProjectManagerPage = () => {
                             fontSize={{ base: "sm", md: "md" }}
                             flexShrink={0}
                           >
-                            <Icon
-                              as={FiClipboard}
-                              boxSize={{ base: 4, md: 5 }}
-                            />
+                            <Icon as={FiGrid} boxSize={{ base: 4, md: 5 }} />
                           </Box>
                           <VStack align="start" spacing={0}>
                             <Heading
