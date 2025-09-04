@@ -709,6 +709,10 @@ export function truncateText(
 }
 
 export function buildUrlPort(baseUrl: string, port: string): string {
+  if (port.length <= 0) {
+    return `${baseUrl}`;
+  }
+
   return `${baseUrl}:${port}`;
 }
 
