@@ -25,9 +25,7 @@ import {
   TASK_BOARD_STATUS_NAME_DONE,
   radiusStyle,
 } from "@/app/constants/applicationConstants";
-import {
-  generateUUIDV1,
-} from "@/app/helper/MasterHelper";
+import { generateUUIDV1 } from "@/app/helper/MasterHelper";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
@@ -36,7 +34,9 @@ import useProjects, { ProjectDataResponse } from "@/app/services/useProjects";
 import useRequirements, {
   BacklogDataResponse,
 } from "@/app/services/useRequirements";
-import useMasterBoardTask, { MasterBoardTaskResponse } from "@/app/services/useMasterBoardTask";
+import useMasterBoardTask, {
+  MasterBoardTaskResponse,
+} from "@/app/services/useMasterBoardTask";
 import useTasks, {
   CreateSimpleTaskPayload,
   TaskBoardViewModel,
@@ -53,7 +53,11 @@ import useTasks, {
   AssignUsersTaskPayload,
   GenerateTaskBoardPayload,
 } from "@/app/services/useTasks";
-import { PaggingListPayload, PaggingListPayloadCustom, ListSearchByParam } from "@/app/types/masterTypes";
+import {
+  PaggingListPayload,
+  PaggingListPayloadCustom,
+  ListSearchByParam,
+} from "@/app/types/masterTypes";
 import {
   Avatar,
   AvatarGroup,
@@ -125,12 +129,7 @@ import {
   FaUsers,
   FaTrash,
 } from "react-icons/fa6";
-import {
-  FaSync,
-  FaEdit,
-  FaArchive,
-  FaCog,
-} from "react-icons/fa";
+import { FaSync, FaEdit, FaArchive, FaCog } from "react-icons/fa";
 import {
   FiAlertCircle,
   FiArchive,
@@ -155,7 +154,10 @@ import {
   FiUser,
 } from "react-icons/fi";
 import { HorizontalFadeDivider } from "@/app/components/divider";
-import { convertToCustomDateFormat, truncateText } from "@/app/helper/MasterHelper";
+import {
+  convertToCustomDateFormat,
+  truncateText,
+} from "@/app/helper/MasterHelper";
 import { LuGrip } from "react-icons/lu";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -165,7 +167,12 @@ import useUsers, {
 } from "@/app/services/useUsers";
 import { GoFilter } from "react-icons/go";
 import { MdOutlineSort } from "react-icons/md";
-import { CalendarIcon, CheckIcon, ChevronDownIcon, DeleteIcon } from "@chakra-ui/icons";
+import {
+  CalendarIcon,
+  CheckIcon,
+  ChevronDownIcon,
+  DeleteIcon,
+} from "@chakra-ui/icons";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { FaCheckCircle } from "react-icons/fa";
@@ -339,20 +346,20 @@ interface TaskCardProps {
   DataBacklogs?: BacklogDataResponse[];
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ 
-  task, 
-  onEdit, 
-  onDelete, 
+const TaskCard: React.FC<TaskCardProps> = ({
+  task,
+  onEdit,
+  onDelete,
   onUpdateTask,
   onRefreshTasks,
   isRecentlyMoved = false,
   DataProject,
-  DataBacklogs = []
+  DataBacklogs = [],
 }) => {
   const { colorMode } = useColorMode();
   const showToast = useToastHelper();
   const dragRef = useRef<HTMLDivElement>(null);
-  
+
   // SetUp auth data
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
@@ -363,13 +370,14 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
     if (DataAuth == null && storedData) {
       const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
-      const UserData: AuthDataResponse = StorageAuth.dataLogin as AuthDataResponse;
+      const UserData: AuthDataResponse =
+        StorageAuth.dataLogin as AuthDataResponse;
       setDataAuth(UserData);
     }
 
     if (token) setTokenData(token);
   }, [DataAuth]);
-  
+
   const [{ isDragging }, drag] = useDrag({
     type: ItemTypes.TASK,
     item: { id: task.id, boardName: task.boardName },
@@ -387,7 +395,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
   const [isAddingTaskItem, setIsAddingTaskItem] = useState(false);
   const [taskItems, setTaskItems] = useState<TaskItemResponse[]>([]);
   const [isLoadingTaskItems, setIsLoadingTaskItems] = useState(false);
-  
+
   // States for inline editing
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingDesc, setIsEditingDesc] = useState(false);
@@ -416,13 +424,17 @@ const TaskCard: React.FC<TaskCardProps> = ({
   const commentsPageSize = 5;
 
   // Delete comment state
-  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
-  
+  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(
+    null
+  );
+
   // User assignment states and handlers
   const [SearchUserInput, setSearchUserInput] = useState<string>("");
   const [DataUsers, setDataUsers] = useState<UsersResponse[]>([]);
-  const [ChoosedMemberProjects, setChoosedMemberProjects] = useState<UsersResponse[]>([]);
-  
+  const [ChoosedMemberProjects, setChoosedMemberProjects] = useState<
+    UsersResponse[]
+  >([]);
+
   const {
     isOpen: isAssignModalOpen,
     onOpen: onAssignModalOpen,
@@ -432,7 +444,10 @@ const TaskCard: React.FC<TaskCardProps> = ({
   const { List: ListUsers } = useUsers();
 
   // Get user data for assignment
-  const GetDataUser = async (searchValue: string, limit: number = 3): Promise<UsersResponse[]> => {
+  const GetDataUser = async (
+    searchValue: string,
+    limit: number = 3
+  ): Promise<UsersResponse[]> => {
     const PayloadList: PaggingListPayload = {
       search: searchValue,
       limit: limit,
@@ -548,7 +563,10 @@ const TaskCard: React.FC<TaskCardProps> = ({
   };
 
   // Handle updating task dates
-  const updateTaskDates = async (startDate: string | null, endDate: string | null) => {
+  const updateTaskDates = async (
+    startDate: string | null,
+    endDate: string | null
+  ) => {
     if (!detailedTask) return;
 
     const normalizedStartDate = startDate === undefined ? null : startDate;
@@ -626,42 +644,46 @@ const TaskCard: React.FC<TaskCardProps> = ({
           setDetailedTask(response.data);
 
           // Populate ChoosedMemberProjects with current assignUsers
-          if (response.data.assignUsers && response.data.assignUsers.length > 0) {
-            const assignedUsers: UsersResponse[] = response.data.assignUsers.map((user) => ({
-              id: user.id,
-              nrp: user.nrp,
-              nama: user.nama,
-              nip: user.nip,
-              userId: user.userId,
-              kodeCabang: null,
-              namaCabang: null,
-              kodeInduk: null,
-              namaInduk: null,
-              kodeKanwil: null,
-              namaKanwil: null,
-              jabatan: user.jabatan,
-              email: user.email,
-              idFungsi: null,
-              namaFungsi: null,
-              kodePenempatan: null,
-              namaPenempatan: null,
-              idUim: null,
-              costCentre: null,
-              isApproval: null,
-              kodeUnitKerja: user.kodeUnitKerja,
-              namaUnitKerja: user.namaUnitKerja,
-              kodeJabatan: user.kodeJabatan,
-              phoneNumber: null,
-              userStatus: "1", // Default active status
-              profilePict: user.profilePict,
-              lastSync: null,
-              createdAt: new Date().toISOString(), // Default current date
-              createdBy: "system", // Default value
-              updatedAt: null,
-              updatedBy: null,
-              team: null,
-              teamRole: null,
-            }));
+          if (
+            response.data.assignUsers &&
+            response.data.assignUsers.length > 0
+          ) {
+            const assignedUsers: UsersResponse[] =
+              response.data.assignUsers.map((user) => ({
+                id: user.id,
+                nrp: user.nrp,
+                nama: user.nama,
+                nip: user.nip,
+                userId: user.userId,
+                kodeCabang: null,
+                namaCabang: null,
+                kodeInduk: null,
+                namaInduk: null,
+                kodeKanwil: null,
+                namaKanwil: null,
+                jabatan: user.jabatan,
+                email: user.email,
+                idFungsi: null,
+                namaFungsi: null,
+                kodePenempatan: null,
+                namaPenempatan: null,
+                idUim: null,
+                costCentre: null,
+                isApproval: null,
+                kodeUnitKerja: user.kodeUnitKerja,
+                namaUnitKerja: user.namaUnitKerja,
+                kodeJabatan: user.kodeJabatan,
+                phoneNumber: null,
+                userStatus: "1", // Default active status
+                profilePict: user.profilePict,
+                lastSync: null,
+                createdAt: new Date().toISOString(), // Default current date
+                createdBy: "system", // Default value
+                updatedAt: null,
+                updatedBy: null,
+                team: null,
+                teamRole: null,
+              }));
             setChoosedMemberProjects(assignedUsers);
           } else {
             setChoosedMemberProjects([]);
@@ -769,7 +791,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
         taskPoint: detailedTask.taskPoint,
       };
 
-      if (detailedTask.startDate) updatePayload.startDate = detailedTask.startDate;
+      if (detailedTask.startDate)
+        updatePayload.startDate = detailedTask.startDate;
       if (detailedTask.endDate) updatePayload.endDate = detailedTask.endDate;
 
       const response = await UpdateTask(updatePayload, getToken());
@@ -817,7 +840,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
         taskPoint: detailedTask.taskPoint,
       };
 
-      if (detailedTask.startDate) updatePayload.startDate = detailedTask.startDate;
+      if (detailedTask.startDate)
+        updatePayload.startDate = detailedTask.startDate;
       if (detailedTask.endDate) updatePayload.endDate = detailedTask.endDate;
 
       const response = await UpdateTask(updatePayload, getToken());
@@ -875,7 +899,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
     try {
       const response = await ListTasksBoard(backlogId, getToken());
-      
+
       if (response?.statusCode === RES_CODE_OK && response.data) {
         setTaskBoards(response.data as TaskBoardViewModel[]);
       } else {
@@ -910,13 +934,17 @@ const TaskCard: React.FC<TaskCardProps> = ({
         percentageStatus: progressPercentage,
       };
 
-      if (detailedTask.startDate) updatePayload.startDate = detailedTask.startDate;
+      if (detailedTask.startDate)
+        updatePayload.startDate = detailedTask.startDate;
       if (detailedTask.endDate) updatePayload.endDate = detailedTask.endDate;
 
       const response = await UpdateTask(updatePayload, getToken());
 
       if (response?.statusCode === RES_CODE_OK) {
-        setDetailedTask({ ...detailedTask, percentageStatus: progressPercentage });
+        setDetailedTask({
+          ...detailedTask,
+          percentageStatus: progressPercentage,
+        });
         console.log(`Task progress updated to ${progressPercentage}%`);
       } else {
         console.error("Failed to update task progress:", response?.message);
@@ -1086,7 +1114,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
   };
 
   // Load task comments with pagination
-  const loadTaskComments = async (taskId: string, page: number = 0, append: boolean = false) => {
+  const loadTaskComments = async (
+    taskId: string,
+    page: number = 0,
+    append: boolean = false
+  ) => {
     if (!taskId) return;
 
     setIsLoadingComments(true);
@@ -1103,7 +1135,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
       const response = await ListTaskCommentsPaged(payload, token);
 
-      if (response?.statusCode === RES_CODE_OK && response.data && Array.isArray(response.data)) {
+      if (
+        response?.statusCode === RES_CODE_OK &&
+        response.data &&
+        Array.isArray(response.data)
+      ) {
         const comments = response.data as TaskCommentResponse[];
         if (append) {
           setTaskComments((prev) => [...prev, ...comments]);
@@ -1343,7 +1379,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
       };
 
       const response = await MoveTask(payload, getToken());
-      
+
       if (response?.statusCode === RES_CODE_OK) {
         setDetailedTask({
           ...detailedTask,
@@ -1431,8 +1467,20 @@ const TaskCard: React.FC<TaskCardProps> = ({
           variant="outline"
           boxShadow={isRecentlyMoved ? "lg" : "sm"}
           _hover={{ boxShadow: "lg", transform: "translateY(-2px)" }}
-          bg={isRecentlyMoved ? "blue.50" : colorMode === "light" ? "white" : "gray.800"}
-          borderColor={isRecentlyMoved ? "blue.300" : colorMode === "light" ? "gray.200" : "gray.600"}
+          bg={
+            isRecentlyMoved
+              ? "blue.50"
+              : colorMode === "light"
+              ? "white"
+              : "gray.800"
+          }
+          borderColor={
+            isRecentlyMoved
+              ? "blue.300"
+              : colorMode === "light"
+              ? "gray.200"
+              : "gray.600"
+          }
           transition="all 0.3s ease"
           rounded={radiusStyle}
           mb={3}
@@ -1449,7 +1497,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                 : "green.400"
             }
           />
-          
+
           <CardBody px={4} py={3}>
             <VStack align="start" spacing={3}>
               {/* Header with Priority and Menu */}
@@ -1460,7 +1508,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
                   px={3}
                   py={1}
                   colorScheme={
-                    task.taskPriority === "HIGH" || task.taskPriority === "CRITICAL"
+                    task.taskPriority === "HIGH" ||
+                    task.taskPriority === "CRITICAL"
                       ? "red"
                       : task.taskPriority === "MEDIUM"
                       ? "orange"
@@ -1470,39 +1519,40 @@ const TaskCard: React.FC<TaskCardProps> = ({
                 >
                   {task.taskPriority}
                 </Badge>
-                
+
                 {/* Task ID */}
                 <Text fontSize="xs" color="gray.500" fontFamily="mono">
                   #{task.id.slice(-6)}
                 </Text>
               </HStack>
-              
+
               {/* Task Title */}
-              <Text 
-                fontWeight="600" 
-                fontSize="md" 
+              <Text
+                fontWeight="600"
+                fontSize="md"
                 lineHeight="1.3"
                 color={colorMode === "light" ? "gray.800" : "white"}
                 noOfLines={2}
               >
                 {task.taskName}
               </Text>
-              
+
               {/* Backlog Info */}
               {task.backlogId && DataBacklogs.length > 0 && (
                 <HStack spacing={2}>
                   <Icon as={FiList} color="blue.500" boxSize={3} />
                   <Text fontSize="xs" color="blue.600" fontWeight="medium">
-                    {DataBacklogs.find(b => b.id === task.backlogId)?.backlogName || "Unknown"}
+                    {DataBacklogs.find((b) => b.id === task.backlogId)
+                      ?.backlogName || "Unknown"}
                   </Text>
                 </HStack>
               )}
-              
+
               {/* Description */}
               {task.taskDesc && (
-                <Text 
-                  fontSize="sm" 
-                  color="gray.600" 
+                <Text
+                  fontSize="sm"
+                  color="gray.600"
                   lineHeight="1.4"
                   noOfLines={2}
                 >
@@ -1521,11 +1571,19 @@ const TaskCard: React.FC<TaskCardProps> = ({
                       {task.percentageStatus}%
                     </Text>
                   </HStack>
-                  <Box w="full" h="6px" bg="gray.100" borderRadius="full" overflow="hidden">
+                  <Box
+                    w="full"
+                    h="6px"
+                    bg="gray.100"
+                    borderRadius="full"
+                    overflow="hidden"
+                  >
                     <Box
                       h="100%"
                       w={`${task.percentageStatus}%`}
-                      bg={task.percentageStatus === 100 ? "green.400" : "blue.400"}
+                      bg={
+                        task.percentageStatus === 100 ? "green.400" : "blue.400"
+                      }
                       borderRadius="full"
                       transition="width 0.3s ease"
                     />
@@ -1545,7 +1603,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                       </Text>
                     </HStack>
                   )}
-                  
+
                   {task.countTaskItem > 0 && (
                     <HStack spacing={1}>
                       <Icon as={FiCheckSquare} color="gray.500" boxSize={3} />
@@ -1562,11 +1620,13 @@ const TaskCard: React.FC<TaskCardProps> = ({
                     hasArrow
                     label={
                       <VStack spacing={1} align="start">
-                        {task.assignUsers.map((user: UserShortResponse, index: number) => (
-                          <Text key={index} fontSize="xs">
-                            {user.nama}
-                          </Text>
-                        ))}
+                        {task.assignUsers.map(
+                          (user: UserShortResponse, index: number) => (
+                            <Text key={index} fontSize="xs">
+                              {user.nama}
+                            </Text>
+                          )
+                        )}
                       </VStack>
                     }
                     bg="gray.700"
@@ -1602,10 +1662,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
               <HStack spacing={2} w="full">
                 <Icon as={FiRefreshCcw} color="gray.400" boxSize={3} />
                 <Text fontSize="xs" color="gray.500">
-                  {task.updatedAt 
+                  {task.updatedAt
                     ? `Updated ${convertToCustomDateFormat(task.updatedAt)}`
-                    : `Created ${convertToCustomDateFormat(task.createdAt)}`
-                  }
+                    : `Created ${convertToCustomDateFormat(task.createdAt)}`}
                 </Text>
               </HStack>
             </VStack>
@@ -1690,7 +1749,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
                             <MenuItem
                               fontWeight={600}
                               key={board.id}
-                              isDisabled={board.boardName === detailedTask.boardName}
+                              isDisabled={
+                                board.boardName === detailedTask.boardName
+                              }
                               onClick={() => handleMoveTaskToBoard(board)}
                             >
                               {board.boardName}
@@ -1732,16 +1793,24 @@ const TaskCard: React.FC<TaskCardProps> = ({
                           </Badge>
                         </MenuButton>
                         <MenuList>
-                          <MenuItem icon={<Badge colorScheme="green">LOW</Badge>}>
+                          <MenuItem
+                            icon={<Badge colorScheme="green">LOW</Badge>}
+                          >
                             Low Priority
                           </MenuItem>
-                          <MenuItem icon={<Badge colorScheme="orange">MEDIUM</Badge>}>
+                          <MenuItem
+                            icon={<Badge colorScheme="orange">MEDIUM</Badge>}
+                          >
                             Medium Priority
                           </MenuItem>
-                          <MenuItem icon={<Badge colorScheme="red">HIGH</Badge>}>
+                          <MenuItem
+                            icon={<Badge colorScheme="red">HIGH</Badge>}
+                          >
                             High Priority
                           </MenuItem>
-                          <MenuItem icon={<Badge colorScheme="purple">CRITICAL</Badge>}>
+                          <MenuItem
+                            icon={<Badge colorScheme="purple">CRITICAL</Badge>}
+                          >
                             Critical Priority
                           </MenuItem>
                         </MenuList>
@@ -1990,16 +2059,27 @@ const TaskCard: React.FC<TaskCardProps> = ({
                             >
                               <Checkbox
                                 isChecked={item.isDone === "Y"}
-                                onChange={() => handleToggleTaskItem(item.id, item.isDone === "Y" ? "N" : "Y")}
-                                colorScheme={item.isDone === "Y" ? "green" : "blue"}
+                                onChange={() =>
+                                  handleToggleTaskItem(
+                                    item.id,
+                                    item.isDone === "Y" ? "N" : "Y"
+                                  )
+                                }
+                                colorScheme={
+                                  item.isDone === "Y" ? "green" : "blue"
+                                }
                                 mr={2}
                               />
                               <Text
                                 as={item.isDone === "Y" ? "s" : "span"}
-                                color={item.isDone === "Y" ? "gray.500" : "inherit"}
+                                color={
+                                  item.isDone === "Y" ? "gray.500" : "inherit"
+                                }
                                 flex="1"
                                 cursor="pointer"
-                                onClick={() => handleEditTaskItem(item.id, item.taskItemName)}
+                                onClick={() =>
+                                  handleEditTaskItem(item.id, item.taskItemName)
+                                }
                               >
                                 {item.taskItemName}
                               </Text>
@@ -2171,7 +2251,13 @@ const TaskCard: React.FC<TaskCardProps> = ({
                           name={comment.userCreated.nama}
                           src={comment.userCreated.profilePict || undefined}
                         />
-                        <Flex as={VStack} spacing={1} alignItems="start" w="full" pl={3}>
+                        <Flex
+                          as={VStack}
+                          spacing={1}
+                          alignItems="start"
+                          w="full"
+                          pl={3}
+                        >
                           <Flex
                             as={HStack}
                             w="full"
@@ -2182,12 +2268,17 @@ const TaskCard: React.FC<TaskCardProps> = ({
                               <Text fontWeight={600} fontSize={15}>
                                 {comment.userCreated.nama}
                               </Text>
-                              <Text fontSize={12} color="gray.500" alignSelf="center">
+                              <Text
+                                fontSize={12}
+                                color="gray.500"
+                                alignSelf="center"
+                              >
                                 {convertToCustomDateFormat(comment.createdAt)}
                               </Text>
                             </Flex>
                             {/* Show menu only if user owns the comment */}
-                            {getCurrentUser()?.id === comment.userCreated.id && (
+                            {getCurrentUser()?.id ===
+                              comment.userCreated.id && (
                               <Menu>
                                 <MenuButton
                                   as={Button}
@@ -2202,17 +2293,30 @@ const TaskCard: React.FC<TaskCardProps> = ({
                                   <MenuItem
                                     icon={<FaEdit />}
                                     onClick={() =>
-                                      handleStartEditComment(comment.id, comment.comCaptions || "")
+                                      handleStartEditComment(
+                                        comment.id,
+                                        comment.comCaptions || ""
+                                      )
                                     }
-                                    isDisabled={editingCommentId === comment.id || isUpdatingComment || deletingCommentId === comment.id}
+                                    isDisabled={
+                                      editingCommentId === comment.id ||
+                                      isUpdatingComment ||
+                                      deletingCommentId === comment.id
+                                    }
                                   >
                                     Edit Comment
                                   </MenuItem>
                                   <MenuItem
                                     icon={<FaTrash />}
                                     color="red.500"
-                                    onClick={() => handleDeleteComment(comment.id)}
-                                    isDisabled={editingCommentId === comment.id || isUpdatingComment || deletingCommentId === comment.id}
+                                    onClick={() =>
+                                      handleDeleteComment(comment.id)
+                                    }
+                                    isDisabled={
+                                      editingCommentId === comment.id ||
+                                      isUpdatingComment ||
+                                      deletingCommentId === comment.id
+                                    }
                                   >
                                     Delete Comment
                                   </MenuItem>
@@ -2226,13 +2330,18 @@ const TaskCard: React.FC<TaskCardProps> = ({
                             <VStack w="full" spacing={2} align="stretch">
                               <Textarea
                                 value={editedCommentText}
-                                onChange={(e) => setEditedCommentText(e.target.value)}
+                                onChange={(e) =>
+                                  setEditedCommentText(e.target.value)
+                                }
                                 placeholder="Edit your comment..."
                                 size="sm"
                                 resize="vertical"
                                 minH="60px"
                                 onKeyDown={(e) => {
-                                  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                                  if (
+                                    e.key === "Enter" &&
+                                    (e.ctrlKey || e.metaKey)
+                                  ) {
                                     e.preventDefault();
                                     handleUpdateComment(comment.id);
                                   } else if (e.key === "Escape") {
@@ -2241,7 +2350,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
                                   }
                                 }}
                               />
-                              <Text fontSize="xs" color="gray.500" textAlign="right">
+                              <Text
+                                fontSize="xs"
+                                color="gray.500"
+                                textAlign="right"
+                              >
                                 Press Ctrl+Enter to save, Esc to cancel
                               </Text>
                               <HStack spacing={2} justify="flex-end">
@@ -2255,10 +2368,17 @@ const TaskCard: React.FC<TaskCardProps> = ({
                                 </Button>
                                 <Button
                                   size="sm"
-                                  colorScheme={isUpdatingComment ? "yellow" : "blue"}
-                                  onClick={() => handleUpdateComment(comment.id)}
+                                  colorScheme={
+                                    isUpdatingComment ? "yellow" : "blue"
+                                  }
+                                  onClick={() =>
+                                    handleUpdateComment(comment.id)
+                                  }
                                   isLoading={isUpdatingComment}
-                                  isDisabled={!editedCommentText.trim() || isUpdatingComment}
+                                  isDisabled={
+                                    !editedCommentText.trim() ||
+                                    isUpdatingComment
+                                  }
                                 >
                                   Save
                                 </Button>
@@ -2366,8 +2486,15 @@ const TaskCard: React.FC<TaskCardProps> = ({
                           borderColor="blue.200"
                           rounded="md"
                         >
-                          <Text fontSize="sm" fontWeight="bold" color="blue.700">
-                            {DataBacklogs.find((b: BacklogDataResponse) => b.id === detailedTask.backlogId)?.backlogName || "Unknown Backlog"}
+                          <Text
+                            fontSize="sm"
+                            fontWeight="bold"
+                            color="blue.700"
+                          >
+                            {DataBacklogs.find(
+                              (b: BacklogDataResponse) =>
+                                b.id === detailedTask.backlogId
+                            )?.backlogName || "Unknown Backlog"}
                           </Text>
                         </Box>
                       ) : (
@@ -2459,7 +2586,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
                         </Text>
                       )}
                       <Text fontSize="xs" color="gray.500" mt={1}>
-                        {detailedTask && new Date(detailedTask.createdAt).toLocaleString()}
+                        {detailedTask &&
+                          new Date(detailedTask.createdAt).toLocaleString()}
                       </Text>
                     </Box>
 
@@ -2472,7 +2600,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
                         w={"full"}
                         colorScheme={"red"}
                         leftIcon={<Icon as={FaArchive} />}
-                        onClick={() => detailedTask && handleArchiveTask(detailedTask.id)}
+                        onClick={() =>
+                          detailedTask && handleArchiveTask(detailedTask.id)
+                        }
                         isLoading={isArchiving}
                       >
                         Archive
@@ -2715,11 +2845,16 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
 
   const getBoardColor = (indexStage: number) => {
     switch (indexStage) {
-      case 1: return "gray";   // TODO
-      case 2: return "blue";   // IN PROGRESS  
-      case 3: return "orange"; // REVIEW
-      case 4: return "green";  // DONE
-      default: return "purple";
+      case 1:
+        return "gray"; // TODO
+      case 2:
+        return "blue"; // IN PROGRESS
+      case 3:
+        return "orange"; // REVIEW
+      case 4:
+        return "green"; // DONE
+      default:
+        return "purple";
     }
   };
 
@@ -2732,7 +2867,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
         taskPriority: "MEDIUM",
         boardId: board.id,
       };
-      
+
       // Call the add task function
       onAddTask(board.id);
       setNewTaskName("");
@@ -2742,9 +2877,13 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
 
   const getCompletionStats = () => {
     const total = tasks.length;
-    const completed = tasks.filter(task => task.percentageStatus === 100).length;
-    const inProgress = tasks.filter(task => task.percentageStatus > 0 && task.percentageStatus < 100).length;
-    
+    const completed = tasks.filter(
+      (task) => task.percentageStatus === 100
+    ).length;
+    const inProgress = tasks.filter(
+      (task) => task.percentageStatus > 0 && task.percentageStatus < 100
+    ).length;
+
     return { total, completed, inProgress };
   };
 
@@ -2763,117 +2902,135 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
     >
       <div ref={dropRef}>
         <CardHeader
-          bg={colorMode === "light" ? `${getBoardColor(board.indexStage)}.50` : `${getBoardColor(board.indexStage)}.900`}
+          bg={
+            colorMode === "light"
+              ? `${getBoardColor(board.indexStage)}.50`
+              : `${getBoardColor(board.indexStage)}.900`
+          }
           roundedTop={radiusStyle}
           borderBottom="1px"
           borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
           p={4}
         >
-        <VStack spacing={3} align="stretch">
-          <HStack justify="space-between">
-            <VStack align="start" spacing={1}>
-              <Heading 
-                size="sm" 
-                color={colorMode === "light" ? `${getBoardColor(board.indexStage)}.600` : `${getBoardColor(board.indexStage)}.200`}
-              >
-                {board.boardName}
-              </Heading>
-              <HStack spacing={2}>
-                <Badge colorScheme={getBoardColor(board.indexStage)} size="sm">
-                  {tasks.length} tasks
-                </Badge>
-              </HStack>
-            </VStack>
-            
-            <Menu>
-              <MenuButton
-                as={IconButton}
-                aria-label="Column options"
-                icon={<FaEllipsisVertical />}
-                size="sm"
-                variant="ghost"
-                colorScheme={getBoardColor(board.indexStage)}
-              />
-              <MenuList>
-                <MenuItem icon={<FaPlus />} onClick={() => onAddTask(board.id)}>
-                  Add Task
-                </MenuItem>
-                <MenuItem icon={<FiFilter />}>
-                  Filter Tasks
-                </MenuItem>
-                <MenuItem icon={<MdOutlineSort />}>
-                  Sort Tasks
-                </MenuItem>
-              </MenuList>
-            </Menu>
-          </HStack>
-
-          {/* Quick Stats */}
-          {tasks.length > 0 && (
-            <HStack spacing={4} fontSize="xs" color={colorMode === "light" ? "gray.600" : "gray.400"}>
-              <HStack spacing={1}>
-                <FiCheckCircle />
-                <Text>{stats.completed} done</Text>
-              </HStack>
-              <HStack spacing={1}>
-                <FiLoader />
-                <Text>{stats.inProgress} in progress</Text>
-              </HStack>
-            </HStack>
-          )}
-        </VStack>
-      </CardHeader>
-
-      <CardBody p={4} maxH="calc(100vh - 300px)" overflowY="auto">
-        <VStack spacing={3} align="stretch">
-          {tasks.map((task) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              onEdit={onEditTask}
-              onDelete={onDeleteTask}
-              onUpdateTask={onUpdateTask}
-              onRefreshTasks={onRefreshTasks}
-              isRecentlyMoved={recentlyMovedTaskId === task.id}
-              DataProject={DataProject}
-              DataBacklogs={DataBacklogs}
-            />
-          ))}
-          
-          {tasks.length === 0 && !isAddingTask && (
-            <Box
-              p={8}
-              textAlign="center"
-              color={colorMode === "light" ? "gray.500" : "gray.400"}
-              border="2px dashed"
-              borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
-              rounded={radiusStyle}
-            >
-              <VStack spacing={2}>
-                <FiInbox size={24} />
-                <Text fontSize="sm" fontWeight="medium">No tasks yet</Text>
-                <Text fontSize="xs">Drag tasks here or click "Add a task"</Text>
+          <VStack spacing={3} align="stretch">
+            <HStack justify="space-between">
+              <VStack align="start" spacing={1}>
+                <Heading
+                  size="sm"
+                  color={
+                    colorMode === "light"
+                      ? `${getBoardColor(board.indexStage)}.600`
+                      : `${getBoardColor(board.indexStage)}.200`
+                  }
+                >
+                  {board.boardName}
+                </Heading>
+                <HStack spacing={2}>
+                  <Badge
+                    colorScheme={getBoardColor(board.indexStage)}
+                    size="sm"
+                  >
+                    {tasks.length} tasks
+                  </Badge>
+                </HStack>
               </VStack>
-            </Box>
-          )}
 
-          {/* Drop indicator when dragging over */}
-          {isOver && (
-            <Box
-              p={4}
-              border="2px dashed"
-              borderColor="blue.400"
-              rounded={radiusStyle}
-              bg="blue.50"
-              textAlign="center"
-            >
-              <Text fontSize="sm" color="blue.600" fontWeight="medium">
-                Drop task here
-              </Text>
-            </Box>
-          )}
-        </VStack>
-      </CardBody>
+              <Menu>
+                <MenuButton
+                  as={IconButton}
+                  aria-label="Column options"
+                  icon={<FaEllipsisVertical />}
+                  size="sm"
+                  variant="ghost"
+                  colorScheme={getBoardColor(board.indexStage)}
+                />
+                <MenuList>
+                  <MenuItem
+                    icon={<FaPlus />}
+                    onClick={() => onAddTask(board.id)}
+                  >
+                    Add Task
+                  </MenuItem>
+                  <MenuItem icon={<FiFilter />}>Filter Tasks</MenuItem>
+                  <MenuItem icon={<MdOutlineSort />}>Sort Tasks</MenuItem>
+                </MenuList>
+              </Menu>
+            </HStack>
+
+            {/* Quick Stats */}
+            {tasks.length > 0 && (
+              <HStack
+                spacing={4}
+                fontSize="xs"
+                color={colorMode === "light" ? "gray.600" : "gray.400"}
+              >
+                <HStack spacing={1}>
+                  <FiCheckCircle />
+                  <Text>{stats.completed} done</Text>
+                </HStack>
+                <HStack spacing={1}>
+                  <FiLoader />
+                  <Text>{stats.inProgress} in progress</Text>
+                </HStack>
+              </HStack>
+            )}
+          </VStack>
+        </CardHeader>
+
+        <CardBody p={4} maxH="calc(100vh - 300px)" overflowY="auto">
+          <VStack spacing={3} align="stretch">
+            {tasks.map((task) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                onEdit={onEditTask}
+                onDelete={onDeleteTask}
+                onUpdateTask={onUpdateTask}
+                onRefreshTasks={onRefreshTasks}
+                isRecentlyMoved={recentlyMovedTaskId === task.id}
+                DataProject={DataProject}
+                DataBacklogs={DataBacklogs}
+              />
+            ))}
+
+            {tasks.length === 0 && !isAddingTask && (
+              <Box
+                p={8}
+                textAlign="center"
+                color={colorMode === "light" ? "gray.500" : "gray.400"}
+                border="2px dashed"
+                borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
+                rounded={radiusStyle}
+              >
+                <VStack spacing={2}>
+                  <FiInbox size={24} />
+                  <Text fontSize="sm" fontWeight="medium">
+                    No tasks yet
+                  </Text>
+                  <Text fontSize="xs">
+                    Drag tasks here or click "Add a task"
+                  </Text>
+                </VStack>
+              </Box>
+            )}
+
+            {/* Drop indicator when dragging over */}
+            {isOver && (
+              <Box
+                p={4}
+                border="2px dashed"
+                borderColor="blue.400"
+                rounded={radiusStyle}
+                bg="blue.50"
+                textAlign="center"
+              >
+                <Text fontSize="sm" color="blue.600" fontWeight="medium">
+                  Drop task here
+                </Text>
+              </Box>
+            )}
+          </VStack>
+        </CardBody>
       </div>
     </Card>
   );
@@ -2900,7 +3057,8 @@ function ProjectKanbanView() {
 
     if (DataAuth == null && storedData) {
       const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
-      const UserData: AuthDataResponse = StorageAuth.dataLogin as AuthDataResponse;
+      const UserData: AuthDataResponse =
+        StorageAuth.dataLogin as AuthDataResponse;
       setDataAuth(UserData);
     }
 
@@ -2909,7 +3067,7 @@ function ProjectKanbanView() {
 
   // Project ID from URL (no backlogId needed)
   const [projectId, setProjectId] = useState<string | null>(null);
-  
+
   useEffect(() => {
     const projId = searchParams.get("projectId");
     if (projId) {
@@ -2918,7 +3076,9 @@ function ProjectKanbanView() {
   }, [searchParams]);
 
   // Data States
-  const [DataProject, setDataProject] = useState<ProjectDataResponse | null>(null);
+  const [DataProject, setDataProject] = useState<ProjectDataResponse | null>(
+    null
+  );
   const [DataBoard, setDataBoard] = useState<MasterBoardTaskResponse[]>([]);
   const [DataTasks, setDataTasks] = useState<TaskViewModel[]>([]);
   const [RefreshData, setRefreshData] = useState<number>(0);
@@ -2926,7 +3086,9 @@ function ProjectKanbanView() {
   const [isAutoSaving, setIsAutoSaving] = useState(false);
 
   // Track recently moved task for visual feedback
-  const [recentlyMovedTaskId, setRecentlyMovedTaskId] = useState<string | null>(null);
+  const [recentlyMovedTaskId, setRecentlyMovedTaskId] = useState<string | null>(
+    null
+  );
 
   // Track drop preview position for visual feedback during drag
   const [dropPreview, setDropPreview] = useState<{
@@ -2936,9 +3098,17 @@ function ProjectKanbanView() {
   } | null>(null);
 
   // Modal States
-  const { isOpen: isTaskModalOpen, onOpen: onTaskModalOpen, onClose: onTaskModalClose } = useDisclosure();
-  const { isOpen: isDetailModalOpen, onOpen: onDetailModalOpen, onClose: onDetailModalClose } = useDisclosure();
-  
+  const {
+    isOpen: isTaskModalOpen,
+    onOpen: onTaskModalOpen,
+    onClose: onTaskModalClose,
+  } = useDisclosure();
+  const {
+    isOpen: isDetailModalOpen,
+    onOpen: onDetailModalOpen,
+    onClose: onDetailModalClose,
+  } = useDisclosure();
+
   const [selectedTask, setSelectedTask] = useState<TaskViewModel | null>(null);
   const [selectedBoardId, setSelectedBoardId] = useState<string>("");
   const [taskForm, setTaskForm] = useState({
@@ -2962,12 +3132,12 @@ function ProjectKanbanView() {
   const { GetDetailById: GetProjectDetail } = useProjects();
   const { List: GetMasterBoardTasks } = useMasterBoardTask();
   const { ListBacklog } = useRequirements();
-  const { 
+  const {
     ListTasksBoard,
-    ListTasksPaged, 
-    CreateSimpleTask, 
-    MoveTask, 
-    UpdateTask
+    ListTasksPaged,
+    CreateSimpleTask,
+    MoveTask,
+    UpdateTask,
   } = useTasks();
   const { List: ListUsers } = useUsers();
 
@@ -2987,7 +3157,7 @@ function ProjectKanbanView() {
         try {
           setIsLoadingProcess(true);
           const response = await GetProjectDetail(projectId, tokenData);
-          
+
           if (response?.statusCode === RES_CODE_OK) {
             setDataProject(response.data as ProjectDataResponse);
           } else {
@@ -3032,13 +3202,14 @@ function ProjectKanbanView() {
           };
 
           const response = await GetMasterBoardTasks(PayloadList, tokenData);
-          
+
           if (response?.statusCode === RES_CODE_OK) {
             const boards = response.data as MasterBoardTaskResponse[];
             setDataBoard(boards);
           } else {
             showToast({
-              description: response?.message || "Failed to load board configuration",
+              description:
+                response?.message || "Failed to load board configuration",
               statusToast: "error",
             });
           }
@@ -3076,7 +3247,7 @@ function ProjectKanbanView() {
           };
 
           const response = await ListBacklog(PayloadList, tokenData);
-          
+
           if (response?.statusCode === RES_CODE_OK) {
             const backlogs = response.data as BacklogDataResponse[];
             setDataBacklogs(backlogs);
@@ -3096,7 +3267,7 @@ function ProjectKanbanView() {
       const fetchProjectTasks = async () => {
         try {
           setIsLoadingProcess(true);
-          
+
           const PayloadList: PaggingListPayloadCustom = {
             search: "",
             limit: 1000,
@@ -3113,7 +3284,7 @@ function ProjectKanbanView() {
           };
 
           const response = await ListTasksPaged(PayloadList, tokenData);
-          
+
           if (response?.statusCode === RES_CODE_OK) {
             const tasks = response.data as TaskViewModel[];
             setDataTasks(tasks);
@@ -3142,9 +3313,9 @@ function ProjectKanbanView() {
   const handleTaskDrop = async (taskId: string, targetBoardName: string) => {
     try {
       setIsLoadingProcess(true);
-      
+
       // 1. Find the task being moved
-      const taskToMove = DataTasks.find(task => task.id === taskId);
+      const taskToMove = DataTasks.find((task) => task.id === taskId);
       if (!taskToMove) {
         showToast({
           description: "Task not found",
@@ -3153,12 +3324,20 @@ function ProjectKanbanView() {
         return;
       }
 
-      console.log("Moving task:", taskToMove.taskName, "to board:", targetBoardName);
+      console.log(
+        "Moving task:",
+        taskToMove.taskName,
+        "to board:",
+        targetBoardName
+      );
       console.log("Task backlogId:", taskToMove.backlogId);
 
       // 2. Load task boards from the task's backlog using v1/Task/list-task-board
-      const taskBoardResponse = await ListTasksBoard(taskToMove.backlogId!, tokenData);
-      
+      const taskBoardResponse = await ListTasksBoard(
+        taskToMove.backlogId!,
+        tokenData
+      );
+
       if (taskBoardResponse?.statusCode !== RES_CODE_OK) {
         showToast({
           description: "Failed to load task board configuration from backlog",
@@ -3170,12 +3349,20 @@ function ProjectKanbanView() {
       // The API returns boards directly in data array, not { boards: [], tasks: [] }
       const taskBoards = taskBoardResponse.data as TaskBoardViewModel[];
 
-      console.log("Loaded task boards from backlog:", taskBoards.map(b => b.boardName));
+      console.log(
+        "Loaded task boards from backlog:",
+        taskBoards.map((b) => b.boardName)
+      );
 
       // 3. Find target board by matching boardName in the task's backlog boards
-      const targetBoard = taskBoards.find(board => board.boardName === targetBoardName);
+      const targetBoard = taskBoards.find(
+        (board) => board.boardName === targetBoardName
+      );
       if (!targetBoard) {
-        console.error("Available boards:", taskBoards.map(b => b.boardName));
+        console.error(
+          "Available boards:",
+          taskBoards.map((b) => b.boardName)
+        );
         console.error("Looking for board:", targetBoardName);
         showToast({
           description: `Target board "${targetBoardName}" not found in task's backlog configuration`,
@@ -3187,17 +3374,20 @@ function ProjectKanbanView() {
       console.log("Found target board:", targetBoard);
 
       // 4. Calculate new index for the task
-      const tasksInTargetBoard = DataTasks.filter(task => 
-        task.boardName === targetBoardName && task.backlogId === taskToMove.backlogId
+      const tasksInTargetBoard = DataTasks.filter(
+        (task) =>
+          task.boardName === targetBoardName &&
+          task.backlogId === taskToMove.backlogId
       );
-      const newIndex = tasksInTargetBoard.length > 0 
-        ? Math.max(...tasksInTargetBoard.map(t => t.indexTask)) + 10 
-        : 10;
+      const newIndex =
+        tasksInTargetBoard.length > 0
+          ? Math.max(...tasksInTargetBoard.map((t) => t.indexTask)) + 10
+          : 10;
 
       // 5. Update task with target board data from backlog task board
       const payload: TaskMovePayload = {
         id: taskId,
-        boardId: targetBoard.id,                        // ✅ From backlog task board
+        boardId: targetBoard.id, // ✅ From backlog task board
         indexTask: newIndex,
         indexStage: targetBoard.indexStage,
       };
@@ -3205,17 +3395,17 @@ function ProjectKanbanView() {
       console.log("Move task payload:", payload);
 
       const response = await MoveTask(payload, tokenData);
-      
+
       if (response?.statusCode === RES_CODE_OK) {
         // Set recently moved task for visual feedback
         setRecentlyMovedTaskId(taskId);
-        
+
         // Clear the highlight after 2 seconds
         setTimeout(() => {
           setRecentlyMovedTaskId(null);
         }, 2000);
 
-        setRefreshData(prev => prev + 1);
+        setRefreshData((prev) => prev + 1);
         showToast({
           description: `Task moved to ${targetBoard.boardName}`,
           statusToast: "success",
@@ -3240,8 +3430,8 @@ function ProjectKanbanView() {
   // Handle Add Task
   const handleAddTask = (boardId: string) => {
     // Find the target board to get its name
-    const targetBoard = DataBoard.find(board => board.id === boardId);
-    
+    const targetBoard = DataBoard.find((board) => board.id === boardId);
+
     setSelectedTask(null);
     setSelectedBoardId(boardId);
     setTaskForm({
@@ -3273,11 +3463,14 @@ function ProjectKanbanView() {
   };
 
   // Handle Update Task (for inline edits)
-  const handleUpdateTask = async (taskId: string, updates: Partial<TaskViewModel>) => {
+  const handleUpdateTask = async (
+    taskId: string,
+    updates: Partial<TaskViewModel>
+  ) => {
     try {
       setIsAutoSaving(true);
-      
-      const task = DataTasks.find(t => t.id === taskId);
+
+      const task = DataTasks.find((t) => t.id === taskId);
       if (!task) return;
 
       const payload: TaskUpdatePayload = {
@@ -3290,19 +3483,20 @@ function ProjectKanbanView() {
         endDate: updates.endDate || task.endDate || undefined,
         indexTask: task.indexTask || 0,
         taskPoint: task.taskPoint || 0,
-        percentageStatus: updates.percentageStatus || task.percentageStatus || 0,
+        percentageStatus:
+          updates.percentageStatus || task.percentageStatus || 0,
       };
 
       const response = await UpdateTask(payload, tokenData);
-      
+
       if (response?.statusCode === RES_CODE_OK) {
         // Update local state immediately for better UX
-        setDataTasks(prevTasks => 
-          prevTasks.map(task => 
+        setDataTasks((prevTasks) =>
+          prevTasks.map((task) =>
             task.id === taskId ? { ...task, ...updates } : task
           )
         );
-        
+
         showToast({
           description: "Task updated successfully",
           statusToast: "success",
@@ -3313,7 +3507,7 @@ function ProjectKanbanView() {
           statusToast: "error",
         });
         // Refresh to get correct data
-        setRefreshData(prev => prev + 1);
+        setRefreshData((prev) => prev + 1);
       }
     } catch (error) {
       console.error("Error updating task:", error);
@@ -3322,7 +3516,7 @@ function ProjectKanbanView() {
         statusToast: "error",
       });
       // Refresh to get correct data
-      setRefreshData(prev => prev + 1);
+      setRefreshData((prev) => prev + 1);
     } finally {
       setIsAutoSaving(false);
     }
@@ -3365,9 +3559,9 @@ function ProjectKanbanView() {
         };
 
         const response = await UpdateTask(payload, tokenData);
-        
+
         if (response?.statusCode === RES_CODE_OK) {
-          setRefreshData(prev => prev + 1);
+          setRefreshData((prev) => prev + 1);
           showToast({
             description: "Task updated successfully",
             statusToast: "success",
@@ -3381,8 +3575,10 @@ function ProjectKanbanView() {
         }
       } else {
         // Create new task
-        const targetBoard = DataBoard.find(board => board.id === selectedBoardId);
-        
+        const targetBoard = DataBoard.find(
+          (board) => board.id === selectedBoardId
+        );
+
         const payload: CreateSimpleTaskPayload = {
           taskName: taskForm.taskName,
           boardId: selectedBoardId,
@@ -3391,9 +3587,9 @@ function ProjectKanbanView() {
         };
 
         const response = await CreateSimpleTask(payload, tokenData);
-        
+
         if (response?.statusCode === RES_CODE_OK) {
-          setRefreshData(prev => prev + 1);
+          setRefreshData((prev) => prev + 1);
           showToast({
             description: "Task created successfully",
             statusToast: "success",
@@ -3428,29 +3624,39 @@ function ProjectKanbanView() {
   // Get tasks for specific board with filtering
   const getTasksForBoard = (boardName: string) => {
     // Filter tasks by boardName from master board
-    let filteredTasks = DataTasks.filter(task => task.boardName === boardName);
+    let filteredTasks = DataTasks.filter(
+      (task) => task.boardName === boardName
+    );
 
     // Apply search filter
     if (searchTerm) {
-      filteredTasks = filteredTasks.filter(task =>
-        task.taskName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (task.taskDesc && task.taskDesc.toLowerCase().includes(searchTerm.toLowerCase()))
+      filteredTasks = filteredTasks.filter(
+        (task) =>
+          task.taskName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (task.taskDesc &&
+            task.taskDesc.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
 
     // Apply priority filter
     if (filterPriority) {
-      filteredTasks = filteredTasks.filter(task => task.taskPriority === filterPriority);
+      filteredTasks = filteredTasks.filter(
+        (task) => task.taskPriority === filterPriority
+      );
     }
 
     // Apply backlog filter
     if (filterBacklog) {
-      filteredTasks = filteredTasks.filter(task => task.backlogId === filterBacklog);
+      filteredTasks = filteredTasks.filter(
+        (task) => task.backlogId === filterBacklog
+      );
     }
 
     // Apply completed tasks filter
     if (!showCompletedTasks) {
-      filteredTasks = filteredTasks.filter(task => task.percentageStatus < 100);
+      filteredTasks = filteredTasks.filter(
+        (task) => task.percentageStatus < 100
+      );
     }
 
     return filteredTasks.sort((a, b) => a.indexTask - b.indexTask);
@@ -3459,11 +3665,18 @@ function ProjectKanbanView() {
   // Get project statistics
   const getProjectStats = () => {
     const totalTasks = DataTasks.length;
-    const completedTasks = DataTasks.filter(task => task.percentageStatus === 100).length;
-    const inProgressTasks = DataTasks.filter(task => task.percentageStatus > 0 && task.percentageStatus < 100).length;
-    const todoTasks = DataTasks.filter(task => task.percentageStatus === 0).length;
-    
-    const completionPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+    const completedTasks = DataTasks.filter(
+      (task) => task.percentageStatus === 100
+    ).length;
+    const inProgressTasks = DataTasks.filter(
+      (task) => task.percentageStatus > 0 && task.percentageStatus < 100
+    ).length;
+    const todoTasks = DataTasks.filter(
+      (task) => task.percentageStatus === 0
+    ).length;
+
+    const completionPercentage =
+      totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
     return {
       totalTasks,
@@ -3506,13 +3719,15 @@ function ProjectKanbanView() {
           >
             {/* Gradient Header */}
             <Box
-              bgGradient="linear(135deg, blue.500, purple.600, pink.500)"
+              bgGradient="linear(to-br, secondary.500, secondary.900)"
               p={6}
               color="white"
             >
               <HStack justify="space-between" align="center">
                 <HStack spacing={4}>
-                  <Link href={`/project-development/development?projectId=${projectId}`}>
+                  <Link
+                    href={`/project-development/development?projectId=${projectId}`}
+                  >
                     <IconButton
                       aria-label="Back to project"
                       icon={<FiArrowLeft />}
@@ -3537,15 +3752,21 @@ function ProjectKanbanView() {
                   {/* Project Stats */}
                   <HStack spacing={4} color="whiteAlpha.900" fontSize="sm">
                     <VStack spacing={0}>
-                      <Text fontWeight="bold" fontSize="lg">{projectStats.totalTasks}</Text>
+                      <Text fontWeight="bold" fontSize="lg">
+                        {projectStats.totalTasks}
+                      </Text>
                       <Text fontSize="xs">Total</Text>
                     </VStack>
                     <VStack spacing={0}>
-                      <Text fontWeight="bold" fontSize="lg">{projectStats.completedTasks}</Text>
+                      <Text fontWeight="bold" fontSize="lg">
+                        {projectStats.completedTasks}
+                      </Text>
                       <Text fontSize="xs">Done</Text>
                     </VStack>
                     <VStack spacing={0}>
-                      <Text fontWeight="bold" fontSize="lg">{projectStats.completionPercentage}%</Text>
+                      <Text fontWeight="bold" fontSize="lg">
+                        {projectStats.completionPercentage}%
+                      </Text>
                       <Text fontSize="xs">Complete</Text>
                     </VStack>
                   </HStack>
@@ -3554,7 +3775,7 @@ function ProjectKanbanView() {
                     leftIcon={<FiRefreshCcw />}
                     variant="outline"
                     size="sm"
-                    onClick={() => setRefreshData(prev => prev + 1)}
+                    onClick={() => setRefreshData((prev) => prev + 1)}
                     isLoading={IsLoadingProcess}
                     color="white"
                     borderColor="whiteAlpha.300"
@@ -3571,7 +3792,9 @@ function ProjectKanbanView() {
               <HStack spacing={4} wrap="wrap">
                 <InputGroup maxW="300px">
                   <InputLeftElement>
-                    <FiSearch color={colorMode === "light" ? "gray.400" : "gray.500"} />
+                    <FiSearch
+                      color={colorMode === "light" ? "gray.400" : "gray.500"}
+                    />
                   </InputLeftElement>
                   <Input
                     placeholder="Search tasks..."
@@ -3653,7 +3876,10 @@ function ProjectKanbanView() {
           {IsLoadingProcess && DataBoard.length === 0 ? (
             <Box textAlign="center" py={12}>
               <Spinner size="xl" color="blue.500" />
-              <Text mt={4} color={colorMode === "light" ? "gray.500" : "gray.400"}>
+              <Text
+                mt={4}
+                color={colorMode === "light" ? "gray.500" : "gray.400"}
+              >
                 Loading kanban board...
               </Text>
             </Box>
@@ -3673,7 +3899,7 @@ function ProjectKanbanView() {
                     onEditTask={handleEditTask}
                     onDeleteTask={handleDeleteTask}
                     onUpdateTask={handleUpdateTask}
-                    onRefreshTasks={() => setRefreshData(prev => prev + 1)}
+                    onRefreshTasks={() => setRefreshData((prev) => prev + 1)}
                     recentlyMovedTaskId={recentlyMovedTaskId}
                     DataProject={DataProject}
                     DataBacklogs={DataBacklogs}
@@ -3686,7 +3912,8 @@ function ProjectKanbanView() {
               <AlertIcon />
               <AlertTitle>No Kanban Board Configuration Found!</AlertTitle>
               <AlertDescription>
-                Please configure the master board tasks in the system settings to use the kanban board.
+                Please configure the master board tasks in the system settings
+                to use the kanban board.
               </AlertDescription>
             </Alert>
           )}
@@ -3702,41 +3929,77 @@ function ProjectKanbanView() {
               <ModalBody>
                 <VStack spacing={4}>
                   <Box w="full">
-                    <Text mb={2} fontSize="sm" fontWeight="medium" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                    <Text
+                      mb={2}
+                      fontSize="sm"
+                      fontWeight="medium"
+                      color={colorMode === "light" ? "gray.700" : "gray.300"}
+                    >
                       Task Name *
                     </Text>
                     <Input
                       value={taskForm.taskName}
-                      onChange={(e) => setTaskForm(prev => ({ ...prev, taskName: e.target.value }))}
+                      onChange={(e) =>
+                        setTaskForm((prev) => ({
+                          ...prev,
+                          taskName: e.target.value,
+                        }))
+                      }
                       placeholder="Enter task name"
                       bg={colorMode === "light" ? "white" : "gray.700"}
-                      borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
+                      borderColor={
+                        colorMode === "light" ? "gray.300" : "gray.600"
+                      }
                     />
                   </Box>
 
                   <Box w="full">
-                    <Text mb={2} fontSize="sm" fontWeight="medium" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                    <Text
+                      mb={2}
+                      fontSize="sm"
+                      fontWeight="medium"
+                      color={colorMode === "light" ? "gray.700" : "gray.300"}
+                    >
                       Description
                     </Text>
                     <Textarea
                       value={taskForm.taskDesc}
-                      onChange={(e) => setTaskForm(prev => ({ ...prev, taskDesc: e.target.value }))}
+                      onChange={(e) =>
+                        setTaskForm((prev) => ({
+                          ...prev,
+                          taskDesc: e.target.value,
+                        }))
+                      }
                       placeholder="Enter task description"
                       rows={3}
                       bg={colorMode === "light" ? "white" : "gray.700"}
-                      borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
+                      borderColor={
+                        colorMode === "light" ? "gray.300" : "gray.600"
+                      }
                     />
                   </Box>
 
                   <Box w="full">
-                    <Text mb={2} fontSize="sm" fontWeight="medium" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                    <Text
+                      mb={2}
+                      fontSize="sm"
+                      fontWeight="medium"
+                      color={colorMode === "light" ? "gray.700" : "gray.300"}
+                    >
                       Priority
                     </Text>
                     <Select
                       value={taskForm.taskPriority}
-                      onChange={(e) => setTaskForm(prev => ({ ...prev, taskPriority: e.target.value }))}
+                      onChange={(e) =>
+                        setTaskForm((prev) => ({
+                          ...prev,
+                          taskPriority: e.target.value,
+                        }))
+                      }
                       bg={colorMode === "light" ? "white" : "gray.700"}
-                      borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
+                      borderColor={
+                        colorMode === "light" ? "gray.300" : "gray.600"
+                      }
                     >
                       <option value="LOW">Low Priority</option>
                       <option value="MEDIUM">Medium Priority</option>
@@ -3746,14 +4009,26 @@ function ProjectKanbanView() {
 
                   {!selectedTask && (
                     <Box w="full">
-                      <Text mb={2} fontSize="sm" fontWeight="medium" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                      <Text
+                        mb={2}
+                        fontSize="sm"
+                        fontWeight="medium"
+                        color={colorMode === "light" ? "gray.700" : "gray.300"}
+                      >
                         Backlog *
                       </Text>
                       <Select
                         value={taskForm.backlogId}
-                        onChange={(e) => setTaskForm(prev => ({ ...prev, backlogId: e.target.value }))}
+                        onChange={(e) =>
+                          setTaskForm((prev) => ({
+                            ...prev,
+                            backlogId: e.target.value,
+                          }))
+                        }
                         bg={colorMode === "light" ? "white" : "gray.700"}
-                        borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
+                        borderColor={
+                          colorMode === "light" ? "gray.300" : "gray.600"
+                        }
                         placeholder="Select backlog"
                       >
                         {DataBacklogs.map((backlog) => (
@@ -3767,28 +4042,52 @@ function ProjectKanbanView() {
 
                   <HStack spacing={4} w="full">
                     <Box flex={1}>
-                      <Text mb={2} fontSize="sm" fontWeight="medium" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                      <Text
+                        mb={2}
+                        fontSize="sm"
+                        fontWeight="medium"
+                        color={colorMode === "light" ? "gray.700" : "gray.300"}
+                      >
                         Start Date
                       </Text>
                       <Input
                         type="datetime-local"
                         value={taskForm.taskStartDate}
-                        onChange={(e) => setTaskForm(prev => ({ ...prev, taskStartDate: e.target.value }))}
+                        onChange={(e) =>
+                          setTaskForm((prev) => ({
+                            ...prev,
+                            taskStartDate: e.target.value,
+                          }))
+                        }
                         bg={colorMode === "light" ? "white" : "gray.700"}
-                        borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
+                        borderColor={
+                          colorMode === "light" ? "gray.300" : "gray.600"
+                        }
                       />
                     </Box>
 
                     <Box flex={1}>
-                      <Text mb={2} fontSize="sm" fontWeight="medium" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                      <Text
+                        mb={2}
+                        fontSize="sm"
+                        fontWeight="medium"
+                        color={colorMode === "light" ? "gray.700" : "gray.300"}
+                      >
                         Due Date
                       </Text>
                       <Input
                         type="datetime-local"
                         value={taskForm.taskEndDate}
-                        onChange={(e) => setTaskForm(prev => ({ ...prev, taskEndDate: e.target.value }))}
+                        onChange={(e) =>
+                          setTaskForm((prev) => ({
+                            ...prev,
+                            taskEndDate: e.target.value,
+                          }))
+                        }
                         bg={colorMode === "light" ? "white" : "gray.700"}
-                        borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
+                        borderColor={
+                          colorMode === "light" ? "gray.300" : "gray.600"
+                        }
                       />
                     </Box>
                   </HStack>

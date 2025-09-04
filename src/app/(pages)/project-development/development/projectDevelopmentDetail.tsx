@@ -730,25 +730,9 @@ function ProjectDevelopmentDetailContent() {
                               columns={{ base: 1, md: 2, lg: 3 }}
                               spacing={4}
                             >
-                              <Link href={`/kanban?projectId=${projectId}`}>
-                                <Button
-                                  leftIcon={<BsKanban />}
-                                  colorScheme="purple"
-                                  size="lg"
-                                  w="full"
-                                  h="60px"
-                                  rounded="xl"
-                                  _hover={{
-                                    transform: "translateY(-2px)",
-                                    shadow: "lg",
-                                  }}
-                                  transition="all 0.2s"
-                                >
-                                  Open Kanban Board
-                                </Button>
-                              </Link>
-
-                              <Link href={`/project-development/development/kanban?projectId=${projectId}`}>
+                              <Link
+                                href={`/project-development/development/kanban?projectId=${projectId}`}
+                              >
                                 <Button
                                   leftIcon={<BsKanban />}
                                   colorScheme="blue"
@@ -781,23 +765,6 @@ function ProjectDevelopmentDetailContent() {
                                 transition="all 0.2s"
                               >
                                 View Backlog
-                              </Button>
-
-                              <Button
-                                leftIcon={<FiGitBranch />}
-                                colorScheme="green"
-                                variant="outline"
-                                size="lg"
-                                w="full"
-                                h="60px"
-                                rounded="xl"
-                                _hover={{
-                                  transform: "translateY(-2px)",
-                                  shadow: "lg",
-                                }}
-                                transition="all 0.2s"
-                              >
-                                Code Repository
                               </Button>
                             </SimpleGrid>
                           </CardBody>
