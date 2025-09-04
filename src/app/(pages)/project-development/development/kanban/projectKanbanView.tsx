@@ -1540,8 +1540,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
               {/* Backlog Info */}
               {task.backlogId && DataBacklogs.length > 0 && (
                 <HStack spacing={2}>
-                  <Icon as={FiList} color="blue.500" boxSize={3} />
-                  <Text fontSize="xs" color="blue.600" fontWeight="medium">
+                  <Icon as={FiList} color="secondary.500" boxSize={3} />
+                  <Text fontSize="xs" color="secondary.600" fontWeight="medium">
                     {DataBacklogs.find((b) => b.id === task.backlogId)
                       ?.backlogName || "Unknown"}
                   </Text>
@@ -1582,7 +1582,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                       h="100%"
                       w={`${task.percentageStatus}%`}
                       bg={
-                        task.percentageStatus === 100 ? "green.400" : "blue.400"
+                        task.percentageStatus === 100 ? "green.400" : "secondary.400"
                       }
                       borderRadius="full"
                       transition="width 0.3s ease"
@@ -2481,15 +2481,15 @@ const TaskCard: React.FC<TaskCardProps> = ({
                       {detailedTask?.backlogId ? (
                         <Box
                           p={3}
-                          bg="blue.50"
+                          bg="secondary.50"
                           border="1px solid"
-                          borderColor="blue.200"
+                          borderColor="secondary.200"
                           rounded="md"
                         >
                           <Text
                             fontSize="sm"
                             fontWeight="bold"
-                            color="blue.700"
+                            color="secondary.700"
                           >
                             {DataBacklogs.find(
                               (b: BacklogDataResponse) =>
@@ -2551,7 +2551,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                           <Box
                             h="100%"
                             w={`${detailedTask?.percentageStatus || 0}%`}
-                            bg="blue.400"
+                            bg="secondary.400"
                             borderRadius="full"
                           />
                         </Box>
@@ -2911,6 +2911,8 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
           borderBottom="1px"
           borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
           p={4}
+          h="120px"
+          minH="120px"
         >
           <VStack spacing={3} align="stretch">
             <HStack justify="space-between">
@@ -2935,26 +2937,6 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
                 </HStack>
               </VStack>
 
-              <Menu>
-                <MenuButton
-                  as={IconButton}
-                  aria-label="Column options"
-                  icon={<FaEllipsisVertical />}
-                  size="sm"
-                  variant="ghost"
-                  colorScheme={getBoardColor(board.indexStage)}
-                />
-                <MenuList>
-                  <MenuItem
-                    icon={<FaPlus />}
-                    onClick={() => onAddTask(board.id)}
-                  >
-                    Add Task
-                  </MenuItem>
-                  <MenuItem icon={<FiFilter />}>Filter Tasks</MenuItem>
-                  <MenuItem icon={<MdOutlineSort />}>Sort Tasks</MenuItem>
-                </MenuList>
-              </Menu>
             </HStack>
 
             {/* Quick Stats */}
@@ -3707,24 +3689,35 @@ function ProjectKanbanView() {
     <LayoutAdmin>
       <DndProvider backend={HTML5Backend}>
         <Box p={6}>
-          {/* Header with Project Info and Controls */}
+          {/* Enhanced Modern Header */}
           <Card
-            shadow="xl"
-            rounded={radiusStyle}
+            shadow="2xl"
+            rounded="2xl"
             border="1px"
-            borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+            borderColor={colorMode === "light" ? "gray.100" : "gray.700"}
             bg={colorMode === "light" ? "white" : "gray.800"}
-            mb={6}
+            mb={8}
             overflow="hidden"
+            position="relative"
           >
-            {/* Gradient Header */}
+            {/* Enhanced Gradient Header */}
             <Box
-              bgGradient="linear(to-br, secondary.500, secondary.900)"
-              p={6}
+              bgGradient="linear(135deg, secondary.500, secondary.600, blue.500, blue.600)"
+              p={8}
               color="white"
+              position="relative"
+              _before={{
+                content: '""',
+                position: "absolute",
+                top: "0",
+                left: "0",
+                right: "0",
+                bottom: "0",
+                bgImage: "radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%)",
+              }}
             >
-              <HStack justify="space-between" align="center">
-                <HStack spacing={4}>
+              <HStack justify="space-between" align="center" position="relative" zIndex="1">
+                <HStack spacing={6}>
                   <Link
                     href={`/project-development/development?projectId=${projectId}`}
                   >
@@ -3733,53 +3726,101 @@ function ProjectKanbanView() {
                       icon={<FiArrowLeft />}
                       variant="ghost"
                       color="white"
-                      _hover={{ bg: "whiteAlpha.200" }}
+                      size="lg"
+                      rounded="full"
+                      _hover={{ bg: "whiteAlpha.200", transform: "scale(1.05)" }}
+                      transition="all 0.2s"
                     />
                   </Link>
-                  <VStack align="start" spacing={1}>
-                    <Heading size="lg" color="white">
-                      Project Kanban Board
-                    </Heading>
-                    {DataProject && (
-                      <Text color="whiteAlpha.900" fontSize="sm">
-                        {DataProject.projectName}
-                      </Text>
-                    )}
-                  </VStack>
+                  
+                  <HStack spacing={4}>
+                    <Box
+                      p={3}
+                      bg="whiteAlpha.200"
+                      rounded="xl"
+                      backdropFilter="blur(10px)"
+                    >
+                      <FiTrello size={28} />
+                    </Box>
+                    <VStack align="start" spacing={1}>
+                      <Heading size="xl" color="white" fontWeight="700">
+                        Project Kanban Board
+                      </Heading>
+                      {DataProject && (
+                        <Text color="whiteAlpha.900" fontSize="lg" fontWeight="500">
+                          {DataProject.projectName}
+                        </Text>
+                      )}
+                    </VStack>
+                  </HStack>
                 </HStack>
 
-                <HStack spacing={3}>
-                  {/* Project Stats */}
-                  <HStack spacing={4} color="whiteAlpha.900" fontSize="sm">
-                    <VStack spacing={0}>
-                      <Text fontWeight="bold" fontSize="lg">
-                        {projectStats.totalTasks}
-                      </Text>
-                      <Text fontSize="xs">Total</Text>
+                <HStack spacing={8}>
+                  {/* Enhanced Project Stats */}
+                  <HStack spacing={6} color="whiteAlpha.900">
+                    <VStack spacing={1} align="center">
+                      <Box
+                        p={3}
+                        bg="whiteAlpha.200"
+                        rounded="xl"
+                        backdropFilter="blur(10px)"
+                        minW="60px"
+                      >
+                        <Text fontWeight="bold" fontSize="2xl" color="white" textAlign="center">
+                          {projectStats.totalTasks}
+                        </Text>
+                      </Box>
+                      <Text fontSize="sm" fontWeight="medium">Total Tasks</Text>
                     </VStack>
-                    <VStack spacing={0}>
-                      <Text fontWeight="bold" fontSize="lg">
-                        {projectStats.completedTasks}
-                      </Text>
-                      <Text fontSize="xs">Done</Text>
+                    
+                    <VStack spacing={1} align="center">
+                      <Box
+                        p={3}
+                        bg="whiteAlpha.200"
+                        rounded="xl"
+                        backdropFilter="blur(10px)"
+                        minW="60px"
+                      >
+                        <Text fontWeight="bold" fontSize="2xl" color="white" textAlign="center">
+                          {projectStats.completedTasks}
+                        </Text>
+                      </Box>
+                      <Text fontSize="sm" fontWeight="medium">Completed</Text>
                     </VStack>
-                    <VStack spacing={0}>
-                      <Text fontWeight="bold" fontSize="lg">
-                        {projectStats.completionPercentage}%
-                      </Text>
-                      <Text fontSize="xs">Complete</Text>
+                    
+                    <VStack spacing={1} align="center">
+                      <Box
+                        p={3}
+                        bg="whiteAlpha.200"
+                        rounded="xl"
+                        backdropFilter="blur(10px)"
+                        minW="60px"
+                      >
+                        <Text fontWeight="bold" fontSize="2xl" color="white" textAlign="center">
+                          {projectStats.completionPercentage}%
+                        </Text>
+                      </Box>
+                      <Text fontSize="sm" fontWeight="medium">Progress</Text>
                     </VStack>
                   </HStack>
 
                   <Button
                     leftIcon={<FiRefreshCcw />}
                     variant="outline"
-                    size="sm"
+                    size="lg"
                     onClick={() => setRefreshData((prev) => prev + 1)}
                     isLoading={IsLoadingProcess}
                     color="white"
                     borderColor="whiteAlpha.300"
-                    _hover={{ bg: "whiteAlpha.200" }}
+                    rounded="full"
+                    px={6}
+                    _hover={{ 
+                      bg: "whiteAlpha.200", 
+                      borderColor: "whiteAlpha.500",
+                      transform: "translateY(-2px)"
+                    }}
+                    transition="all 0.2s"
+                    backdropFilter="blur(10px)"
                   >
                     Refresh
                   </Button>
@@ -3787,67 +3828,107 @@ function ProjectKanbanView() {
               </HStack>
             </Box>
 
-            {/* Filters and Search */}
-            <CardBody p={6}>
-              <HStack spacing={4} wrap="wrap">
-                <InputGroup maxW="300px">
-                  <InputLeftElement>
-                    <FiSearch
-                      color={colorMode === "light" ? "gray.400" : "gray.500"}
+            {/* Enhanced Filters Section */}
+            <CardBody p={8} bg={colorMode === "light" ? "gray.50" : "gray.900"}>
+              <VStack spacing={6}>
+                {/* Filter Controls */}
+                <HStack spacing={4} wrap="wrap" w="full" justify="center">
+                  <InputGroup maxW="350px">
+                    <InputLeftElement>
+                      <FiSearch color={colorMode === "light" ? "gray.400" : "gray.500"} />
+                    </InputLeftElement>
+                    <Input
+                      placeholder="Search tasks..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      bg={colorMode === "light" ? "white" : "gray.800"}
+                      border="2px"
+                      borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                      rounded="full"
+                      _focus={{
+                        borderColor: "secondary.400",
+                        boxShadow: "0 0 0 1px var(--chakra-colors-secondary-400)"
+                      }}
+                      size="lg"
                     />
-                  </InputLeftElement>
-                  <Input
-                    placeholder="Search tasks..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    bg={colorMode === "light" ? "white" : "gray.700"}
-                  />
-                </InputGroup>
+                  </InputGroup>
 
-                <Select
-                  placeholder="All Priorities"
-                  value={filterPriority}
-                  onChange={(e) => setFilterPriority(e.target.value)}
-                  maxW="150px"
-                  bg={colorMode === "light" ? "white" : "gray.700"}
-                >
-                  <option value="HIGH">High Priority</option>
-                  <option value="MEDIUM">Medium Priority</option>
-                  <option value="LOW">Low Priority</option>
-                </Select>
+                  <Select
+                    placeholder="All Priorities"
+                    value={filterPriority}
+                    onChange={(e) => setFilterPriority(e.target.value)}
+                    maxW="180px"
+                    bg={colorMode === "light" ? "white" : "gray.800"}
+                    border="2px"
+                    borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                    rounded="full"
+                    size="lg"
+                    _focus={{
+                      borderColor: "secondary.400",
+                      boxShadow: "0 0 0 1px var(--chakra-colors-secondary-400)"
+                    }}
+                  >
+                    <option value="HIGH">🔴 High Priority</option>
+                    <option value="MEDIUM">🟡 Medium Priority</option>
+                    <option value="LOW">🟢 Low Priority</option>
+                  </Select>
 
-                <Select
-                  placeholder="All Backlogs"
-                  value={filterBacklog}
-                  onChange={(e) => setFilterBacklog(e.target.value)}
-                  maxW="200px"
-                  bg={colorMode === "light" ? "white" : "gray.700"}
-                >
-                  {DataBacklogs.map((backlog) => (
-                    <option key={backlog.id} value={backlog.id}>
-                      {backlog.backlogName}
-                    </option>
-                  ))}
-                </Select>
+                  <Select
+                    placeholder="All Backlogs"
+                    value={filterBacklog}
+                    onChange={(e) => setFilterBacklog(e.target.value)}
+                    maxW="220px"
+                    bg={colorMode === "light" ? "white" : "gray.800"}
+                    border="2px"
+                    borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                    rounded="full"
+                    size="lg"
+                    _focus={{
+                      borderColor: "secondary.400",
+                      boxShadow: "0 0 0 1px var(--chakra-colors-secondary-400)"
+                    }}
+                  >
+                    {DataBacklogs.map((backlog) => (
+                      <option key={backlog.id} value={backlog.id}>
+                        📋 {backlog.backlogName}
+                      </option>
+                    ))}
+                  </Select>
 
-                <Checkbox
-                  isChecked={showCompletedTasks}
-                  onChange={(e) => setShowCompletedTasks(e.target.checked)}
-                  colorScheme="blue"
-                >
-                  Show completed tasks
-                </Checkbox>
+                  <Button
+                    leftIcon={<FiPlusCircle />}
+                    colorScheme="secondary"
+                    size="lg"
+                    onClick={() => handleAddTask(DataBoard[0]?.id || "")}
+                    isDisabled={DataBoard.length === 0}
+                    rounded="full"
+                    px={8}
+                    shadow="lg"
+                    _hover={{ 
+                      transform: "translateY(-2px)",
+                      shadow: "xl"
+                    }}
+                    transition="all 0.2s"
+                  >
+                    Add Task
+                  </Button>
+                </HStack>
 
-                <Button
-                  leftIcon={<FiPlusCircle />}
-                  colorScheme="blue"
-                  size="sm"
-                  onClick={() => handleAddTask(DataBoard[0]?.id || "")}
-                  isDisabled={DataBoard.length === 0}
-                >
-                  Add Task
-                </Button>
-              </HStack>
+                {/* Enhanced Toggle */}
+                <HStack spacing={4} justify="center">
+                  <Checkbox
+                    isChecked={showCompletedTasks}
+                    onChange={(e) => setShowCompletedTasks(e.target.checked)}
+                    colorScheme="secondary"
+                    size="lg"
+                    iconColor="white"
+                  >
+                    <Text fontWeight="medium" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                      Show completed tasks
+                    </Text>
+                  </Checkbox>
+                </HStack>
+              </VStack>
             </CardBody>
           </Card>
 
@@ -3884,11 +3965,18 @@ function ProjectKanbanView() {
               </Text>
             </Box>
           ) : DataBoard.length > 0 ? (
-            <Grid
-              templateColumns={`repeat(${DataBoard.length}, 1fr)`}
-              gap={6}
-              minH="600px"
+            <Box
+              bg={colorMode === "light" ? "gray.50" : "gray.900"}
+              rounded="2xl"
+              p={6}
+              shadow="inner"
             >
+              <Grid
+                templateColumns={`repeat(${DataBoard.length}, 1fr)`}
+                gap={8}
+                minH="700px"
+                w="full"
+              >
               {DataBoard.map((board) => (
                 <GridItem key={board.id}>
                   <KanbanColumn
@@ -3907,6 +3995,7 @@ function ProjectKanbanView() {
                 </GridItem>
               ))}
             </Grid>
+            </Box>
           ) : (
             <Alert status="info" rounded={radiusStyle}>
               <AlertIcon />
