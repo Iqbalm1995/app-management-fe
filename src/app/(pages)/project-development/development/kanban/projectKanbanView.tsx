@@ -950,6 +950,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
           updateTaskProgress(updatedItems);
           return updatedItems;
         });
+        onRefreshTasks(); // Refresh tasks data
       } else {
         showToast({
           description: response?.message || "Failed to update task item",
@@ -983,6 +984,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
       if (response?.statusCode === RES_CODE_OK) {
         setNewTaskItemName("");
         fetchTaskItems(detailedTask.id);
+        onRefreshTasks(); // Refresh tasks data
         showToast({
           description: "Task item added successfully",
           statusToast: "success",
@@ -1018,6 +1020,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
           return updatedItems;
         });
 
+        onRefreshTasks(); // Refresh tasks data
         showToast({
           description: "Task item deleted successfully",
           statusToast: "success",
@@ -1062,6 +1065,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
           )
         );
 
+        onRefreshTasks(); // Refresh tasks data
         showToast({
           description: "Task item updated successfully",
           statusToast: "success",
@@ -1155,6 +1159,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
       if (response?.statusCode === RES_CODE_OK) {
         setNewComment("");
         refreshTaskComments();
+        onRefreshTasks(); // Refresh tasks data
         showToast({
           description: "Comment added successfully",
           statusToast: "success",
@@ -1214,6 +1219,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
         setEditingCommentId(null);
         setEditedCommentText("");
 
+        onRefreshTasks(); // Refresh tasks data
         showToast({
           description: "Comment updated successfully",
           statusToast: "success",
@@ -1252,6 +1258,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
           prev.filter((comment) => comment.id !== commentId)
         );
 
+        onRefreshTasks(); // Refresh tasks data
         showToast({
           description: "Comment deleted successfully",
           statusToast: "success",
@@ -1422,145 +1429,185 @@ const TaskCard: React.FC<TaskCardProps> = ({
         <Card
           size="sm"
           variant="outline"
-          boxShadow={isRecentlyMoved ? "md" : "sm"}
-          _hover={{ boxShadow: "md" }}
-          bg={isRecentlyMoved ? "blue.50" : undefined}
-          borderColor={isRecentlyMoved ? "blue.300" : undefined}
+          boxShadow={isRecentlyMoved ? "lg" : "sm"}
+          _hover={{ boxShadow: "lg", transform: "translateY(-2px)" }}
+          bg={isRecentlyMoved ? "blue.50" : colorMode === "light" ? "white" : "gray.800"}
+          borderColor={isRecentlyMoved ? "blue.300" : colorMode === "light" ? "gray.200" : "gray.600"}
           transition="all 0.3s ease"
           rounded={radiusStyle}
           mb={3}
+          overflow="hidden"
         >
-          <CardBody px={3}>
-            <VStack align="start" spacing={2}>
-              {/* Task metadata */}
-              <HStack w="full" justify="space-between">
+          {/* Priority Color Bar */}
+          <Box
+            h="3px"
+            bg={
+              task.taskPriority === "HIGH" || task.taskPriority === "CRITICAL"
+                ? "red.400"
+                : task.taskPriority === "MEDIUM"
+                ? "orange.400"
+                : "green.400"
+            }
+          />
+          
+          <CardBody px={4} py={3}>
+            <VStack align="start" spacing={3}>
+              {/* Header with Priority and Menu */}
+              <HStack w="full" justify="space-between" align="start">
                 <Badge
-                  rounded={"md"}
-                  px={2}
+                  size="sm"
+                  rounded="full"
+                  px={3}
+                  py={1}
                   colorScheme={
-                    task.taskPriority === "HIGH"
+                    task.taskPriority === "HIGH" || task.taskPriority === "CRITICAL"
                       ? "red"
                       : task.taskPriority === "MEDIUM"
                       ? "orange"
-                      : task.taskPriority === "CRITICAL"
-                      ? "purple"
                       : "green"
                   }
+                  variant="subtle"
                 >
                   {task.taskPriority}
                 </Badge>
+                
+                {/* Task ID */}
+                <Text fontSize="xs" color="gray.500" fontFamily="mono">
+                  #{task.id.slice(-6)}
+                </Text>
               </HStack>
               
-              <Text fontWeight={600} fontSize={"medium"}>
+              {/* Task Title */}
+              <Text 
+                fontWeight="600" 
+                fontSize="md" 
+                lineHeight="1.3"
+                color={colorMode === "light" ? "gray.800" : "white"}
+                noOfLines={2}
+              >
                 {task.taskName}
               </Text>
               
-              {/* Project Information */}
-              {DataProject && (
-                <Text
-                  fontSize={"xs"}
-                  color={"blue.600"}
-                  fontWeight={500}
-                  bg={"blue.50"}
-                  px={2}
-                  py={1}
-                  rounded={"md"}
-                  border={"1px solid"}
-                  borderColor={"blue.200"}
-                  display={"none"}
-                >
-                  {DataProject.projectName}
-                </Text>
+              {/* Backlog Info */}
+              {task.backlogId && DataBacklogs.length > 0 && (
+                <HStack spacing={2}>
+                  <Icon as={FiList} color="blue.500" boxSize={3} />
+                  <Text fontSize="xs" color="blue.600" fontWeight="medium">
+                    {DataBacklogs.find(b => b.id === task.backlogId)?.backlogName || "Unknown"}
+                  </Text>
+                </HStack>
               )}
               
-              <Text
-                fontSize={"smaller"}
-                lineHeight={1.3}
-                color={"gray"}
-                fontWeight={600}
-              >
-                Last Update
-                <Text fontWeight={500}>
-                  {task.updatedAt == null
-                    ? convertToCustomDateFormat(task.createdAt)
-                    : convertToCustomDateFormat(task.updatedAt)}
+              {/* Description */}
+              {task.taskDesc && (
+                <Text 
+                  fontSize="sm" 
+                  color="gray.600" 
+                  lineHeight="1.4"
+                  noOfLines={2}
+                >
+                  {task.taskDesc}
                 </Text>
-              </Text>
+              )}
 
-              <Text fontSize={"small"} color={"gray"} as={"p"}>
-                {truncateText(task.taskDesc, 100)}
-              </Text>
-
-              {/* Task progress */}
+              {/* Progress Bar */}
               {task.percentageStatus > 0 && (
-                <Box w="full" h="4px" bg="gray.100" borderRadius="full">
-                  <Box
-                    h="100%"
-                    w={`${task.percentageStatus}%`}
-                    bg="blue.400"
-                    borderRadius="full"
-                  />
+                <Box w="full">
+                  <HStack justify="space-between" mb={1}>
+                    <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                      Progress
+                    </Text>
+                    <Text fontSize="xs" color="gray.600" fontWeight="bold">
+                      {task.percentageStatus}%
+                    </Text>
+                  </HStack>
+                  <Box w="full" h="6px" bg="gray.100" borderRadius="full" overflow="hidden">
+                    <Box
+                      h="100%"
+                      w={`${task.percentageStatus}%`}
+                      bg={task.percentageStatus === 100 ? "green.400" : "blue.400"}
+                      borderRadius="full"
+                      transition="width 0.3s ease"
+                    />
+                  </Box>
                 </Box>
               )}
 
-              <Flex
-                as={HStack}
-                w={"full"}
-                justifyContent={"space-between"}
-                mt={2}
-              >
-                <Flex as={HStack} w={"full"} justifyContent={"start"}>
+              {/* Metadata Row */}
+              <HStack w="full" justify="space-between" align="center" pt={1}>
+                {/* Left side - Counts */}
+                <HStack spacing={3}>
                   {task.countCommnetTask > 0 && (
-                    <HStack spacing={1} alignItems="center">
-                      <Icon as={FiMessageSquare} color="gray.600" boxSize={4} />
-                      <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                    <HStack spacing={1}>
+                      <Icon as={FiMessageSquare} color="gray.500" boxSize={3} />
+                      <Text fontSize="xs" color="gray.600" fontWeight="medium">
                         {task.countCommnetTask}
                       </Text>
                     </HStack>
                   )}
-                  {/* Task item count (if available) */}
+                  
                   {task.countTaskItem > 0 && (
-                    <HStack spacing={1} alignItems="center">
-                      <Icon as={FiCheckSquare} color="gray.600" boxSize={4} />
-                      <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                    <HStack spacing={1}>
+                      <Icon as={FiCheckSquare} color="gray.500" boxSize={3} />
+                      <Text fontSize="xs" color="gray.600" fontWeight="medium">
                         {task.countTaskItemDone}/{task.countTaskItem}
                       </Text>
                     </HStack>
                   )}
-                </Flex>
-                <Flex as={HStack} w={"full"} justifyContent={"end"} spacing={1}>
-                  {/* Task assignees (if available) */}
-                  {task.assignUsers && task.assignUsers.length > 0 && (
-                    <Tooltip
-                      hasArrow
-                      label={
-                        <Box>
-                          {task.assignUsers.map(
-                            (user: UserShortResponse, index: number) => (
-                              <Text key={index} fontSize="x-small">
-                                {user.nama}
-                              </Text>
-                            )
-                          )}
-                        </Box>
-                      }
-                      bg="secondary.500"
-                      color="white"
-                      borderRadius={"md"}
-                    >
-                      <AvatarGroup size="sm" max={4}>
-                        {task.assignUsers.map((user: UserShortResponse) => (
-                          <Avatar
-                            key={user.id}
-                            name={user.nama}
-                            src={user.profilePict || undefined}
-                          />
+                </HStack>
+
+                {/* Right side - Assignees */}
+                {task.assignUsers && task.assignUsers.length > 0 && (
+                  <Tooltip
+                    hasArrow
+                    label={
+                      <VStack spacing={1} align="start">
+                        {task.assignUsers.map((user: UserShortResponse, index: number) => (
+                          <Text key={index} fontSize="xs">
+                            {user.nama}
+                          </Text>
                         ))}
-                      </AvatarGroup>
-                    </Tooltip>
-                  )}
-                </Flex>
-              </Flex>
+                      </VStack>
+                    }
+                    bg="gray.700"
+                    color="white"
+                    borderRadius="md"
+                    placement="top"
+                  >
+                    <AvatarGroup size="xs" max={3} spacing="-0.5">
+                      {task.assignUsers.map((user: UserShortResponse) => (
+                        <Avatar
+                          key={user.id}
+                          name={user.nama}
+                          src={user.profilePict || undefined}
+                          border="2px solid white"
+                        />
+                      ))}
+                    </AvatarGroup>
+                  </Tooltip>
+                )}
+              </HStack>
+
+              {/* Due Date */}
+              {task.endDate && (
+                <HStack spacing={2} w="full">
+                  <Icon as={FiNavigation} color="orange.500" boxSize={3} />
+                  <Text fontSize="xs" color="orange.600" fontWeight="medium">
+                    Due {new Date(task.endDate).toLocaleDateString()}
+                  </Text>
+                </HStack>
+              )}
+
+              {/* Last Updated */}
+              <HStack spacing={2} w="full">
+                <Icon as={FiRefreshCcw} color="gray.400" boxSize={3} />
+                <Text fontSize="xs" color="gray.500">
+                  {task.updatedAt 
+                    ? `Updated ${convertToCustomDateFormat(task.updatedAt)}`
+                    : `Created ${convertToCustomDateFormat(task.createdAt)}`
+                  }
+                </Text>
+              </HStack>
             </VStack>
           </CardBody>
           {task.percentageStatus < 100 &&
@@ -2716,7 +2763,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
     >
       <div ref={dropRef}>
         <CardHeader
-          bg={`${getBoardColor(board.indexStage)}.50`}
+          bg={colorMode === "light" ? `${getBoardColor(board.indexStage)}.50` : `${getBoardColor(board.indexStage)}.900`}
           roundedTop={radiusStyle}
           borderBottom="1px"
           borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
@@ -2725,7 +2772,10 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
         <VStack spacing={3} align="stretch">
           <HStack justify="space-between">
             <VStack align="start" spacing={1}>
-              <Heading size="sm" color={`${getBoardColor(board.indexStage)}.600`}>
+              <Heading 
+                size="sm" 
+                color={colorMode === "light" ? `${getBoardColor(board.indexStage)}.600` : `${getBoardColor(board.indexStage)}.200`}
+              >
                 {board.boardName}
               </Heading>
               <HStack spacing={2}>

@@ -731,10 +731,10 @@ For development questions or issues:
 
 ---
 
-## 🎯 **NEW: Project Kanban System (December 2024)**
+## 🎯 **Project Kanban System (December 2024)**
 
 ### ✨ **Overview**
-The Project Kanban is a specialized kanban board that displays tasks filtered by project ID only, with dynamic task board configuration loading based on each task's individual backlog relationship.
+The Project Kanban is a specialized kanban board that displays tasks filtered by project ID only, with dynamic task board configuration loading based on each task's individual backlog relationship. Features modern UI design, comprehensive filtering, and real-time task management.
 
 ### 🏗️ **Architecture**
 
@@ -756,39 +756,47 @@ The Project Kanban is a specialized kanban board that displays tasks filtered by
 graph TD
     A[Project Kanban Load] --> B[Load Tasks by ProjectId]
     A --> C[Load Master Board Config]
-    B --> D[Tasks with Individual BacklogIds]
-    C --> E[Display Structure from Master]
-    F[User Drags Task] --> G[Get Task's BacklogId]
-    G --> H[Load Task Board from Backlog]
-    H --> I[Find Target Board by Name]
-    I --> J[Update Task with Board Data]
+    A --> D[Load Project Backlogs]
+    B --> E[Tasks with Individual BacklogIds]
+    C --> F[Display Structure from Master]
+    D --> G[Backlog Filter Options]
+    H[User Drags Task] --> I[Get Task's BacklogId]
+    I --> J[Load Task Board from Backlog]
+    J --> K[Find Target Board by Name]
+    K --> L[Update Task with Board Data]
 ```
 
 ### 🎯 **Implementation Details**
 
-#### **✅ 1. Task Loading:**
+#### **✅ 1. Task Loading & Filtering:**
 ```typescript
 // Load all project tasks (mixed backlogs)
 const PayloadList: PaggingListPayloadCustom = {
   filterWhere: [{ field: "projectId", operator: "=", value: projectId }]
 };
-const tasks = await ListTasksPaged(PayloadList, tokenData);
 
-// Each task has its own backlogId
-Task1: { projectId: "123", backlogId: "backlog-A", boardName: "TO DO" }
-Task2: { projectId: "123", backlogId: "backlog-B", boardName: "IN PROGRESS" }
+// Backlog filtering
+const PayloadBacklogs: PaggingListPayload = {
+  filterWhere: [{ field: "reqId", operator: "=", value: DataProject.reqParentId }]
+};
+
+// Apply filters
+if (filterBacklog) {
+  filteredTasks = filteredTasks.filter(task => task.backlogId === filterBacklog);
+}
 ```
 
-#### **✅ 2. Board Display:**
+#### **✅ 2. Modern Task Card Design:**
 ```typescript
-// Master board configuration for display structure
-const masterBoards = await GetMasterBoardTasks(payload, tokenData);
-// Filtered by: isDisplay = "Y", sorted by indexStage
-
-// Tasks organized by boardName matching
-const getTasksForBoard = (boardName: string) => {
-  return DataTasks.filter(task => task.boardName === boardName);
-};
+// Enhanced task card with modern UI
+- Priority color bar at top
+- Task ID display (#abc123)
+- Backlog reference with icon
+- Progress bar with percentage
+- Due date indicators
+- Enhanced avatars and metadata
+- Smooth hover animations
+- Dark mode support
 ```
 
 #### **✅ 3. Dynamic Task Movement:**
@@ -806,48 +814,86 @@ const handleTaskDrop = async (taskId: string, targetBoardName: string) => {
   // 4. Update task with complete board data
   const payload: TaskMovePayload = {
     id: taskId,
-    boardId: targetBoard.id,                    // From backlog task board
-    boardCodeStage: targetBoard.boardCodeStage, // From backlog task board  
-    boardName: targetBoard.boardName,           // From backlog task board
-    backlogId: taskToMove.backlogId,            // Keep original backlog
+    boardId: targetBoard.id,
+    boardCodeStage: targetBoard.boardCodeStage,
+    boardName: targetBoard.boardName,
+    backlogId: taskToMove.backlogId,
   };
+};
+```
+
+#### **✅ 4. Task Creation with Backlog Selection:**
+```typescript
+// Required backlog selection for new tasks
+if (!selectedTask && !taskForm.backlogId) {
+  showToast({
+    description: "Please select a backlog for the task",
+    statusToast: "error",
+  });
+  return;
+}
+
+// Create task with backlog reference
+const payload: CreateSimpleTaskPayload = {
+  taskName: taskForm.taskName,
+  boardId: selectedBoardId,
+  projectId: projectId!,
+  backlogId: taskForm.backlogId, // Required
 };
 ```
 
 ### 🎯 **Key Features**
 
-#### **✅ Mixed Backlog Support:**
-- Single project can have tasks from multiple backlogs
-- Each task maintains its backlog relationship
-- Board configuration loaded dynamically per task
+#### **✅ Advanced Filtering System:**
+- **Search Tasks** - By name and description
+- **Priority Filter** - High, Medium, Low priority levels
+- **Backlog Filter** - Filter by specific project backlogs
+- **Completed Tasks** - Toggle to show/hide completed tasks
+- **Real-time Updates** - Filters apply instantly
 
-#### **✅ Smart Board Matching:**
-- Display structure from Master Board Task configuration
-- Task movement uses backlog-specific board configuration
-- Board name matching between master and backlog boards
+#### **✅ Modern Task Cards:**
+- **Priority Color Bar** - Visual priority indication
+- **Task Metadata** - ID, backlog, progress, dates
+- **Enhanced Progress** - Visual progress bar with percentage
+- **User Assignments** - Overlapping avatars with tooltips
+- **Hover Effects** - Smooth animations and shadows
+- **Dark Mode Support** - Complete theming compatibility
 
-#### **✅ Comprehensive UI:**
-- Full drag & drop functionality
-- Inline task editing
-- Interactive progress bars
-- Search and filtering
-- Visual feedback for moved tasks
+#### **✅ Comprehensive Task Management:**
+- **Drag & Drop** - Move tasks between boards
+- **Board Selector** - Click to move tasks in detail modal
+- **Task Items** - Checklist management with progress tracking
+- **Comments System** - Add, edit, delete comments with pagination
+- **User Assignment** - Search and assign users to tasks
+- **Date Management** - Start and due date selection
+- **Real-time Refresh** - Auto-refresh on all operations
+
+#### **✅ Task Detail Modal:**
+- **Inline Editing** - Edit task name and description directly
+- **Board Selection** - Dynamic board options from task's backlog
+- **Backlog Information** - Highlighted backlog display
+- **Progress Tracking** - Automatic progress calculation
+- **Activity Timeline** - Comments and updates history
+- **User Management** - Assign/unassign team members
 
 ### 🎯 **API Integration**
 
 #### **Required APIs:**
 ```typescript
-// Task loading
+// Task management
 v1/Task/paged-list (with projectId filter)
+v1/Task/move-task (with complete board data)
+v1/Task/create-simple (with backlog selection)
 
-// Master board configuration  
+// Board configuration  
 v1/MasterBoardTask/list (with isDisplay = "Y" filter)
-
-// Dynamic board loading (on task move)
 v1/Task/list-task-board?backlogId=${task.backlogId}
 
-// Task operations
-v1/Task/move-task (with complete board data)
+// Backlog management
+v1/Requirement/backlog/list (with reqId filter)
+
+// User management
+v1/User/list (for task assignment)
 ```
 
 #### **API Response Formats:**
@@ -855,11 +901,11 @@ v1/Task/move-task (with complete board data)
 // Task list response
 { statusCode: 200, data: TaskViewModel[] }
 
-// Master board response  
-{ statusCode: 200, data: MasterBoardTaskResponse[] }
+// Backlog response  
+{ statusCode: 200, data: BacklogDataResponse[] }
 
 // Task board response (on move)
-{ statusCode: 200, data: TaskBoardViewModel[] } // Direct array, not nested
+{ statusCode: 200, data: TaskBoardViewModel[] }
 ```
 
 ### 🎯 **Usage**
@@ -869,7 +915,7 @@ v1/Task/move-task (with complete board data)
 // Access project kanban
 /project-development/development/kanban?projectId=123
 
-// Quick Actions button (automatically includes projectId)
+// Auto-navigation from project detail
 <Link href={`/project-development/development/kanban?projectId=${projectId}`}>
   <Button>Project Kanban</Button>
 </Link>
@@ -885,11 +931,13 @@ project-development/development/kanban/
 ### 🎯 **Benefits**
 
 ✅ **Flexible Task Management** - Handle tasks from multiple backlogs  
+✅ **Modern UI/UX** - Beautiful, responsive design with animations  
 ✅ **Dynamic Configuration** - Board setup loaded per task's backlog  
-✅ **Consistent Data** - Tasks maintain proper board relationships  
-✅ **Performance Optimized** - Only loads board config when needed  
-✅ **User Friendly** - No backlog selection required  
-✅ **Scalable** - Works with any number of backlogs per project  
+✅ **Comprehensive Filtering** - Multiple filter options for task organization  
+✅ **Real-time Updates** - Instant refresh on all operations  
+✅ **Dark Mode Support** - Complete theming across all components  
+✅ **Performance Optimized** - Efficient data loading and caching  
+✅ **User Friendly** - Intuitive interface with helpful feedback  
 
 ### ⚠️ **Important Notes**
 
@@ -897,12 +945,20 @@ project-development/development/kanban/
 - Tasks must have valid `backlogId` for movement to work
 - Board names must match between master and backlog configurations
 - Task movement updates: `boardId`, `boardCodeStage`, `boardName`
+- Backlog selection is mandatory for new task creation
 
 #### **Error Handling:**
 - Validates task existence before movement
 - Checks backlog board configuration availability  
 - Provides detailed error messages for debugging
 - Console logging for development troubleshooting
+- Toast notifications for user feedback
+
+#### **Performance Considerations:**
+- Tasks auto-refresh on all CRUD operations
+- Efficient filtering with client-side processing
+- Optimized API calls with proper caching
+- Smooth animations without performance impact
 
 ---
 
@@ -914,23 +970,36 @@ project-development/development/kanban/
 - **CardProject** - Unified reusable component with variants
 - **Sidebar Navigation** - Smart submenu expansion with active detection
 - **ProjectManagerDetail** - Complete dark mode support with direct color checking
-- **Project Kanban** - NEW: Dynamic task board system with backlog integration
+- **Project Kanban** - MAJOR UPDATE: Complete kanban system with advanced features
+- **TaskCard** - Modern UI redesign with enhanced information display
 - **TypeScript** - Fixed syntax errors and improved code quality
+
+#### **✅ NEW: Advanced Project Kanban Features:**
+- **Backlog Filtering** - Filter tasks by specific project backlogs
+- **Modern Task Cards** - Beautiful UI with priority bars, progress indicators, and metadata
+- **Task Detail Modal** - Comprehensive task management with inline editing
+- **Board Selector** - Dynamic board options loaded from task's backlog
+- **Real-time Refresh** - Auto-refresh on all task operations
+- **Dark Mode Support** - Complete theming for kanban headers and components
+- **Required Backlog Selection** - Mandatory backlog assignment for new tasks
 
 #### **✅ Performance Optimizations:**
 - **Color Mode Checking** - Replaced useColorModeValue with direct colorMode checking
 - **Avatar Sizing** - Optimized xs size for better visual balance
 - **Navigation State** - Improved active state detection and visual feedback
 - **Dynamic Board Loading** - Efficient task board configuration loading
+- **Task Data Refresh** - Automatic refresh on task item and comment operations
 
 #### **✅ Code Quality:**
 - **Consistent Patterns** - Unified approach across components
 - **Better Maintainability** - Easier debugging and modification
 - **Documentation Updates** - Comprehensive pattern documentation
 - **Best Practices** - Following established coding standards
+- **TypeScript Safety** - Proper type checking and error handling
 
-#### **✅ NEW: Project Kanban System:**
-- **Dynamic Task Boards** - Loads board configuration from task's backlog
-- **Mixed Backlog Support** - Tasks from different backlogs in same project
-- **Smart Task Movement** - Automatic board data updates on drag & drop
-- **Master Board Integration** - Uses MasterBoardTask for display structure
+#### **✅ UI/UX Enhancements:**
+- **Task Card Redesign** - Modern cards with priority color bars and enhanced metadata
+- **Hover Animations** - Smooth lift effects and shadow transitions
+- **Information Labels** - Task ID, backlog reference, due dates, progress indicators
+- **Backlog Highlighting** - Important backlog information with blue highlight box
+- **Rounded Styling** - Consistent radiusStyle usage throughout kanban boards
