@@ -101,6 +101,7 @@ function WorkflowDetailView() {
   const searchParams = useSearchParams();
   const { colorMode } = useColorMode();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
 
   const [HeaderContentState, setHeaderContentState] =
     useState<HeaderContentProps>(HeaderDataContent);
@@ -171,6 +172,11 @@ function WorkflowDetailView() {
   // Delete confirmation dialog state
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [pendingDeleteItem, setPendingDeleteItem] = useState<{id: string; name: string} | null>(null);
+  
+  // Edit confirmation dialog state
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [pendingEditValues, setPendingEditValues] = useState<{id: string; wfgName: string; wfgDesc: string} | null>(null);
+  const [editingItem, setEditingItem] = useState<WorkflowGroupResponse | null>(null);
 
   const [ParamFilter, setParamFilter] = useState<ListSearchByParamProps[]>([]);
 
@@ -265,7 +271,7 @@ function WorkflowDetailView() {
       .min(3, "Minimal 3 karakter")
       .max(100, "Maksimal 100 karakter"),
     wfgDesc: Yup.string()
-      .max(255, "Maksimal 255 karakter"),
+      .max(300, "Maksimal 300 karakter"),
   });
 
   // Formik form handling
@@ -323,10 +329,77 @@ function WorkflowDetailView() {
     setPendingFormValues(null);
   };
 
+  // Formik form handling for edit
+  const editFormik = useFormik<{wfgName: string; wfgDesc: string}>({
+    initialValues: {
+      wfgName: "",
+      wfgDesc: "",
+    },
+    validationSchema: ValidationSchema,
+    validateOnChange: false,
+    validateOnBlur: false,
+    onSubmit: async (values) => {
+      if (!editingItem) return;
+      setPendingEditValues({
+        id: editingItem.id,
+        wfgName: values.wfgName,
+        wfgDesc: values.wfgDesc
+      });
+      setShowEditDialog(true);
+    },
+  });
+
+  // Handle confirmed edit submission
+  const handleConfirmedEdit = async () => {
+    if (!pendingEditValues) return;
+
+    const payload: WorkflowGroupUpdatePayload = {
+      id: pendingEditValues.id,
+      wfgName: pendingEditValues.wfgName,
+      wfgDesc: pendingEditValues.wfgDesc || null,
+      wfgOrder: editingItem?.wfgOrder || 1
+    };
+
+    const token = localStorage.getItem("tokenData") as string;
+    const result = await UpdateWorkflowGroup(payload, token);
+    
+    if (result?.statusCode === RES_CODE_OK) {
+      onEditClose();
+      editFormik.resetForm();
+      RefreshAction();
+      toast({
+        title: "Berhasil",
+        description: "Workflow berhasil diubah",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } else {
+      toast({
+        title: "Gagal",
+        description: result?.message || "Gagal mengubah workflow",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+    setPendingEditValues(null);
+  };
+
   // Open add modal
   const openAddModal = () => {
     formik.resetForm();
     onOpen();
+  };
+
+  // Open edit modal
+  const openEditModal = (item: WorkflowGroupResponse) => {
+    setEditingItem(item);
+    editFormik.setValues({
+      wfgName: item.wfgName,
+      wfgDesc: item.wfgDesc || ""
+    });
+    onEditOpen();
   };
 
   // Delete item function
@@ -702,7 +775,13 @@ function WorkflowDetailView() {
                             <Button size="xs" leftIcon={<FiPlus />} colorScheme="gray" variant="solid">
                               Add
                             </Button>
-                            <Button size="xs" leftIcon={<FiEdit3 />} colorScheme="gray" variant="ghost">
+                            <Button 
+                              size="xs" 
+                              leftIcon={<FiEdit3 />} 
+                              colorScheme="gray" 
+                              variant="ghost"
+                              onClick={() => openEditModal(group)}
+                            >
                               Edit
                             </Button>
                             {(!group.workflowChild || group.workflowChild.length === 0) && (
@@ -779,7 +858,13 @@ function WorkflowDetailView() {
                                     <Button size="xs" leftIcon={<FiPlus />} colorScheme="gray" variant="solid">
                                       Add
                                     </Button>
-                                    <Button size="xs" leftIcon={<FiEdit3 />} colorScheme="gray" variant="ghost">
+                                    <Button 
+                                      size="xs" 
+                                      leftIcon={<FiEdit3 />} 
+                                      colorScheme="gray" 
+                                      variant="ghost"
+                                      onClick={() => openEditModal(child)}
+                                    >
                                       Edit
                                     </Button>
                                     {(!child.workflowChild || child.workflowChild.length === 0) && (
@@ -840,7 +925,13 @@ function WorkflowDetailView() {
                                           >
                                             <FiChevronDown />
                                           </Button>
-                                          <Button size="xs" leftIcon={<FiEdit3 />} colorScheme="gray" variant="ghost">
+                                          <Button 
+                                            size="xs" 
+                                            leftIcon={<FiEdit3 />} 
+                                            colorScheme="gray" 
+                                            variant="ghost"
+                                            onClick={() => openEditModal(grandChild)}
+                                          >
                                             Edit
                                           </Button>
                                           <Button 
@@ -910,6 +1001,7 @@ function WorkflowDetailView() {
                     onBlur={formik.handleBlur}
                     placeholder="Masukkan deskripsi workflow"
                     rows={3}
+                    maxLength={300}
                   />
                   <FormErrorMessage>{formik.errors.wfgDesc}</FormErrorMessage>
                 </FormControl>
@@ -924,6 +1016,59 @@ function WorkflowDetailView() {
                 colorScheme="blue"
                 type="submit"
                 isLoading={formik.isSubmitting}
+              >
+                Simpan
+              </Button>
+            </ModalFooter>
+          </form>
+        </ModalContent>
+      </Modal>
+
+      {/* Edit Workflow Modal */}
+      <Modal isOpen={isEditOpen} onClose={onEditClose} size="md">
+        <ModalOverlay />
+        <ModalContent>
+          <form onSubmit={editFormik.handleSubmit}>
+            <ModalHeader>Edit Workflow</ModalHeader>
+            <ModalCloseButton />
+            <ModalBody>
+              <VStack spacing={4}>
+                <FormControl isInvalid={!!(editFormik.errors.wfgName && editFormik.touched.wfgName)}>
+                  <FormLabel>Nama Workflow</FormLabel>
+                  <Input
+                    name="wfgName"
+                    value={editFormik.values.wfgName}
+                    onChange={editFormik.handleChange}
+                    onBlur={editFormik.handleBlur}
+                    placeholder="Masukkan nama workflow"
+                  />
+                  <FormErrorMessage>{editFormik.errors.wfgName}</FormErrorMessage>
+                </FormControl>
+
+                <FormControl isInvalid={!!(editFormik.errors.wfgDesc && editFormik.touched.wfgDesc)}>
+                  <FormLabel>Deskripsi (Opsional)</FormLabel>
+                  <Textarea
+                    name="wfgDesc"
+                    value={editFormik.values.wfgDesc}
+                    onChange={editFormik.handleChange}
+                    onBlur={editFormik.handleBlur}
+                    placeholder="Masukkan deskripsi workflow"
+                    rows={3}
+                    maxLength={300}
+                  />
+                  <FormErrorMessage>{editFormik.errors.wfgDesc}</FormErrorMessage>
+                </FormControl>
+              </VStack>
+            </ModalBody>
+
+            <ModalFooter>
+              <Button variant="ghost" mr={3} onClick={onEditClose}>
+                Batal
+              </Button>
+              <Button
+                colorScheme="blue"
+                type="submit"
+                isLoading={editFormik.isSubmitting}
               >
                 Simpan
               </Button>
@@ -948,6 +1093,15 @@ function WorkflowDetailView() {
         trigger={setShowDeleteDialog}
         questionMsg={`Apakah Anda yakin akan menghapus workflow "${pendingDeleteItem?.name}"?`}
         captionMsg="Konfirmasi Hapus"
+      />
+
+      {/* Edit Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpenTrigger={showEditDialog}
+        action={handleConfirmedEdit}
+        trigger={setShowEditDialog}
+        questionMsg={`Apakah Anda yakin akan mengubah workflow "${pendingEditValues?.wfgName}"?`}
+        captionMsg="Konfirmasi Ubah"
       />
     </LayoutAdmin>
   );
