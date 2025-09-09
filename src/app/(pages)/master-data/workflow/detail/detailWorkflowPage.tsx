@@ -111,7 +111,7 @@ function WorkflowDetailView() {
 
   // hook services
   const { GetWorkflowCategoryById } = useWorkflowCategory();
-  const { ListWorkflowGroups, UpdateWorkflowGroup, InsertWorkflowGroup } = useWorkflow();
+  const { ListWorkflowGroups, UpdateWorkflowGroup, InsertWorkflowGroup, DeleteWorkflowGroup } = useWorkflow();
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
@@ -167,6 +167,10 @@ function WorkflowDetailView() {
   // Confirmation dialog state
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [pendingFormValues, setPendingFormValues] = useState<{wfgName: string; wfgDesc: string} | null>(null);
+  
+  // Delete confirmation dialog state
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [pendingDeleteItem, setPendingDeleteItem] = useState<{id: string; name: string} | null>(null);
 
   const [ParamFilter, setParamFilter] = useState<ListSearchByParamProps[]>([]);
 
@@ -323,6 +327,40 @@ function WorkflowDetailView() {
   const openAddModal = () => {
     formik.resetForm();
     onOpen();
+  };
+
+  // Delete item function
+  const deleteItem = (itemId: string, itemName: string) => {
+    setPendingDeleteItem({ id: itemId, name: itemName });
+    setShowDeleteDialog(true);
+  };
+
+  // Handle confirmed deletion
+  const handleConfirmedDelete = async () => {
+    if (!pendingDeleteItem) return;
+
+    const token = localStorage.getItem("tokenData") as string;
+    const result = await DeleteWorkflowGroup(pendingDeleteItem.id, token);
+    
+    if (result?.statusCode === RES_CODE_OK) {
+      RefreshAction();
+      toast({
+        title: "Berhasil",
+        description: "Workflow berhasil dihapus",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } else {
+      toast({
+        title: "Gagal",
+        description: result?.message || "Gagal menghapus workflow",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+    setPendingDeleteItem(null);
   };
 
   // Initialize local data when server data changes
@@ -668,7 +706,13 @@ function WorkflowDetailView() {
                               Edit
                             </Button>
                             {(!group.workflowChild || group.workflowChild.length === 0) && (
-                              <Button size="xs" leftIcon={<FiTrash2 />} colorScheme="red" variant="ghost">
+                              <Button 
+                                size="xs" 
+                                leftIcon={<FiTrash2 />} 
+                                colorScheme="red" 
+                                variant="ghost"
+                                onClick={() => deleteItem(group.id, group.wfgName)}
+                              >
                                 Delete
                               </Button>
                             )}
@@ -739,7 +783,13 @@ function WorkflowDetailView() {
                                       Edit
                                     </Button>
                                     {(!child.workflowChild || child.workflowChild.length === 0) && (
-                                      <Button size="xs" leftIcon={<FiTrash2 />} colorScheme="red" variant="ghost">
+                                      <Button 
+                                        size="xs" 
+                                        leftIcon={<FiTrash2 />} 
+                                        colorScheme="red" 
+                                        variant="ghost"
+                                        onClick={() => deleteItem(child.id, child.wfgName)}
+                                      >
                                         Delete
                                       </Button>
                                     )}
@@ -793,7 +843,13 @@ function WorkflowDetailView() {
                                           <Button size="xs" leftIcon={<FiEdit3 />} colorScheme="gray" variant="ghost">
                                             Edit
                                           </Button>
-                                          <Button size="xs" leftIcon={<FiTrash2 />} colorScheme="red" variant="ghost">
+                                          <Button 
+                                            size="xs" 
+                                            leftIcon={<FiTrash2 />} 
+                                            colorScheme="red" 
+                                            variant="ghost"
+                                            onClick={() => deleteItem(grandChild.id, grandChild.wfgName)}
+                                          >
                                             Delete
                                           </Button>
                                         </HStack>
@@ -883,6 +939,15 @@ function WorkflowDetailView() {
         trigger={setShowConfirmDialog}
         questionMsg={`Apakah Anda yakin akan menambahkan workflow "${pendingFormValues?.wfgName}"?`}
         captionMsg="Konfirmasi Simpan"
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpenTrigger={showDeleteDialog}
+        action={handleConfirmedDelete}
+        trigger={setShowDeleteDialog}
+        questionMsg={`Apakah Anda yakin akan menghapus workflow "${pendingDeleteItem?.name}"?`}
+        captionMsg="Konfirmasi Hapus"
       />
     </LayoutAdmin>
   );
