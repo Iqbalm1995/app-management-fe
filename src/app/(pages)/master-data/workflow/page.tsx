@@ -167,7 +167,12 @@ function MasterDataWorkflowPage() {
       <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"}>
         {/* TABLE SECTION */}
         <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 12 }} w={"full"}>
-          <Card w={"fill"} rounded={radiusStyle} minH={"500px"}>
+          <Card
+            w={"fill"}
+            rounded={radiusStyle}
+            minH={"500px"}
+            bgColor={colorMode == "light" ? "white" : "gray.800"}
+          >
             <CardHeader>
               <Heading as="h5" size="md" w={"full"}>
                 Kategori Workflow
@@ -271,7 +276,7 @@ function MasterDataWorkflowPage() {
                               </Text>
 
                               <Link
-                                href={`master-data/workflow/detail?id=${dt.id}`}
+                                href={`workflow/detail?categoryId=${dt.id}`}
                               >
                                 <Button
                                   size="sm"
