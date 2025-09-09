@@ -102,6 +102,7 @@ function WorkflowDetailView() {
   const { colorMode } = useColorMode();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
+  const { isOpen: isAddChildOpen, onOpen: onAddChildOpen, onClose: onAddChildClose } = useDisclosure();
 
   const [HeaderContentState, setHeaderContentState] =
     useState<HeaderContentProps>(HeaderDataContent);
@@ -177,8 +178,20 @@ function WorkflowDetailView() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [pendingEditValues, setPendingEditValues] = useState<{id: string; wfgName: string; wfgDesc: string} | null>(null);
   const [editingItem, setEditingItem] = useState<WorkflowGroupResponse | null>(null);
+  
+  // Add child confirmation dialog state
+  const [showAddChildDialog, setShowAddChildDialog] = useState(false);
+  const [pendingAddChildValues, setPendingAddChildValues] = useState<{parentId: string; wfgName: string; wfgDesc: string; level: number} | null>(null);
+  const [addingChildParent, setAddingChildParent] = useState<WorkflowGroupResponse | null>(null);
 
   const [ParamFilter, setParamFilter] = useState<ListSearchByParamProps[]>([]);
+
+  // Refresh function
+  const RefreshAction = () => {
+    setDataWorkflowCategory(null);
+    setDataWorkflowGroups([]);
+    setRefreshData(RefreshData + 1);
+  };
 
   const toggleExpand = (itemId: string) => {
     const newExpanded = new Set(expandedItems);
@@ -386,6 +399,82 @@ function WorkflowDetailView() {
     setPendingEditValues(null);
   };
 
+  // Formik form handling for add child
+  const addChildFormik = useFormik<{wfgName: string; wfgDesc: string}>({
+    initialValues: {
+      wfgName: "",
+      wfgDesc: "",
+    },
+    validationSchema: ValidationSchema,
+    validateOnChange: false,
+    validateOnBlur: false,
+    onSubmit: async (values) => {
+      if (!addingChildParent) return;
+      setPendingAddChildValues({
+        parentId: addingChildParent.id,
+        wfgName: values.wfgName,
+        wfgDesc: values.wfgDesc,
+        level: addingChildParent.wfgLevel + 1
+      });
+      setShowAddChildDialog(true);
+    },
+  });
+
+  // Handle confirmed add child submission
+  const handleConfirmedAddChild = async () => {
+    if (!pendingAddChildValues) return;
+
+    // Calculate order for new child
+    const parentItem = findItemById(localWorkflowData, pendingAddChildValues.parentId);
+    const childCount = parentItem?.workflowChild?.length || 0;
+
+    const payload: WorkflowGroupInsertPayload = {
+      parentId: pendingAddChildValues.parentId,
+      wfgOrder: childCount + 1,
+      wfgName: pendingAddChildValues.wfgName,
+      wfgDesc: pendingAddChildValues.wfgDesc || null,
+      wfgLevel: pendingAddChildValues.level,
+      wfgCategoryId: CategoryId || "",
+    };
+
+    const token = localStorage.getItem("tokenData") as string;
+    const result = await InsertWorkflowGroup(payload, token);
+    
+    if (result?.statusCode === RES_CODE_OK || result?.statusCode === 201) {
+      onAddChildClose();
+      addChildFormik.resetForm();
+      RefreshAction();
+      toast({
+        title: "Berhasil",
+        description: "Item child berhasil ditambahkan",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } else {
+      toast({
+        title: "Gagal",
+        description: result?.message || "Gagal menambah item child",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+    setPendingAddChildValues(null);
+  };
+
+  // Helper function to find item by ID
+  const findItemById = (items: WorkflowGroupResponse[], id: string): WorkflowGroupResponse | null => {
+    for (const item of items) {
+      if (item.id === id) return item;
+      if (item.workflowChild) {
+        const found = findItemById(item.workflowChild, id);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
   // Open add modal
   const openAddModal = () => {
     formik.resetForm();
@@ -400,6 +489,13 @@ function WorkflowDetailView() {
       wfgDesc: item.wfgDesc || ""
     });
     onEditOpen();
+  };
+
+  // Open add child modal
+  const openAddChildModal = (parentItem: WorkflowGroupResponse) => {
+    setAddingChildParent(parentItem);
+    addChildFormik.resetForm();
+    onAddChildOpen();
   };
 
   // Delete item function
@@ -443,8 +539,8 @@ function WorkflowDetailView() {
     }
   }, [DataWorkflowGroups]);
 
-  // Move item up/down within same level
-  const moveItemOrder = (itemId: string, direction: 'up' | 'down', parentId?: string) => {
+  // Move item up/down within same level - Auto save
+  const moveItemOrder = async (itemId: string, direction: 'up' | 'down', parentId?: string) => {
     const newData = [...localWorkflowData];
     
     // Find the target array to work with
@@ -490,14 +586,53 @@ function WorkflowDetailView() {
     targetItems[itemIndex].wfgOrder = itemIndex + 1;
     targetItems[newIndex].wfgOrder = newIndex + 1;
 
-    // Mark items as changed
-    setChangedItems(prev => ({
-      ...prev,
-      updated: new Set([...prev.updated, targetItems[itemIndex].id, targetItems[newIndex].id])
-    }));
-
+    // Update local data immediately
     setLocalWorkflowData(newData);
-    setHasChanges(true);
+
+    // Auto save both items to API
+    const token = localStorage.getItem("tokenData") as string;
+    
+    try {
+      // Update first item
+      const payload1: WorkflowGroupUpdatePayload = {
+        id: targetItems[itemIndex].id,
+        wfgName: targetItems[itemIndex].wfgName,
+        wfgDesc: targetItems[itemIndex].wfgDesc,
+        wfgOrder: targetItems[itemIndex].wfgOrder
+      };
+      
+      // Update second item
+      const payload2: WorkflowGroupUpdatePayload = {
+        id: targetItems[newIndex].id,
+        wfgName: targetItems[newIndex].wfgName,
+        wfgDesc: targetItems[newIndex].wfgDesc,
+        wfgOrder: targetItems[newIndex].wfgOrder
+      };
+
+      await Promise.all([
+        UpdateWorkflowGroup(payload1, token),
+        UpdateWorkflowGroup(payload2, token)
+      ]);
+
+      toast({
+        title: "Berhasil",
+        description: "Urutan workflow berhasil diubah",
+        status: "success",
+        duration: 2000,
+        isClosable: true,
+      });
+
+    } catch (error) {
+      // Revert changes on error
+      RefreshAction();
+      toast({
+        title: "Gagal",
+        description: "Gagal mengubah urutan workflow",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
   };
 
   // Function Detail Data Load Services Workflow Categories
@@ -614,12 +749,6 @@ function WorkflowDetailView() {
     }
   }, [RefreshData, CategoryId]);
 
-  const RefreshAction = () => {
-    setDataWorkflowCategory(null);
-    setDataWorkflowGroups([]);
-    setRefreshData(RefreshData + 1);
-  };
-
   return (
     <LayoutAdmin>
       <HeaderContent
@@ -667,7 +796,7 @@ function WorkflowDetailView() {
                     w={"full"}
                   >
                     {/* BUTTON ACTION */}
-                    <Flex as={Wrap} justifyContent={"end"} px={0} w={"full"}>
+                    <Flex as={Wrap} justifyContent={"end"} px={0} w={"full"} gap={2}>
                       <Button
                         size={"sm"}
                         leftIcon={<FiRefreshCcw />}
@@ -675,37 +804,6 @@ function WorkflowDetailView() {
                       >
                         Muat Ulang
                       </Button>
-                      <Button
-                        size={"sm"}
-                        colorScheme={"secondary"}
-                        leftIcon={<FiSave />}
-                        isLoading={ActionLoading}
-                        onClick={saveChanges}
-                        isDisabled={!hasChanges}
-                      >
-                        Simpan Perubahan
-                      </Button>
-                    </Flex>
-                  </GridItem>
-                </Grid>
-                {/* RENDER DATA */}
-                {hasChanges && (
-                  <Alert status="warning" rounded="md" mb={4}>
-                    <AlertIcon />
-                    <AlertTitle>Perubahan Belum Disimpan!</AlertTitle>
-                    <AlertDescription>
-                      Anda memiliki perubahan yang belum disimpan. Klik "Simpan Perubahan" untuk menyimpan.
-                    </AlertDescription>
-                  </Alert>
-                )}
-                {IsLoadingPage ? (
-                  <LoadingMiniSignature />
-                ) : DataWorkflowCategory == null ? (
-                  <InvalidLoadPageView />
-                ) : (
-                  <VStack spacing={4} align="stretch" w="full">
-                    {/* Add New Root Item Button */}
-                    <Box mb={4}>
                       <Button
                         size="sm"
                         leftIcon={<FiPlus />}
@@ -715,8 +813,16 @@ function WorkflowDetailView() {
                       >
                         Tambah Item Baru
                       </Button>
-                    </Box>
-
+                    </Flex>
+                  </GridItem>
+                </Grid>
+                {/* RENDER DATA */}
+                {IsLoadingPage ? (
+                  <LoadingMiniSignature />
+                ) : DataWorkflowCategory == null ? (
+                  <InvalidLoadPageView />
+                ) : (
+                  <VStack spacing={4} align="stretch" w="full">
                     {localWorkflowData.map((group, groupIdx) => (
                       <Box key={groupIdx} w="full">
                         {/* Level 1 - Main Group */}
@@ -730,17 +836,16 @@ function WorkflowDetailView() {
                           align="center"
                         >
                           <HStack spacing={3} flex={1} maxW="70%">
-                            {group.workflowChild && group.workflowChild.length > 0 && (
-                              <Button
-                                size="xs"
-                                variant="ghost"
-                                onClick={() => toggleExpand(group.id)}
-                                p={0}
-                                minW="auto"
-                              >
-                                {expandedItems.has(group.id) ? <FiChevronDown /> : <FiChevronRight />}
-                              </Button>
-                            )}
+                            <Button
+                              size="xs"
+                              variant="ghost"
+                              onClick={() => toggleExpand(group.id)}
+                              p={0}
+                              minW="auto"
+                              isDisabled={!group.workflowChild || group.workflowChild.length === 0}
+                            >
+                              {expandedItems.has(group.id) ? <FiChevronDown /> : <FiChevronRight />}
+                            </Button>
                             <Text fontSize="sm" color="gray.600" fontWeight="bold" minW="8" w="8">
                               {group.wfgOrder}
                             </Text>
@@ -772,7 +877,13 @@ function WorkflowDetailView() {
                             >
                               <FiChevronDown />
                             </Button>
-                            <Button size="xs" leftIcon={<FiPlus />} colorScheme="gray" variant="solid">
+                            <Button 
+                              size="xs" 
+                              leftIcon={<FiPlus />} 
+                              colorScheme="gray" 
+                              variant="solid"
+                              onClick={() => openAddChildModal(group)}
+                            >
                               Add
                             </Button>
                             <Button 
@@ -813,17 +924,16 @@ function WorkflowDetailView() {
                                   align="center"
                                 >
                                   <HStack spacing={3} flex={1} maxW="70%">
-                                    {child.workflowChild && child.workflowChild.length > 0 && (
-                                      <Button
-                                        size="xs"
-                                        variant="ghost"
-                                        onClick={() => toggleExpand(child.id)}
-                                        p={0}
-                                        minW="auto"
-                                      >
-                                        {expandedItems.has(child.id) ? <FiChevronDown /> : <FiChevronRight />}
-                                      </Button>
-                                    )}
+                                    <Button
+                                      size="xs"
+                                      variant="ghost"
+                                      onClick={() => toggleExpand(child.id)}
+                                      p={0}
+                                      minW="auto"
+                                      isDisabled={!child.workflowChild || child.workflowChild.length === 0}
+                                    >
+                                      {expandedItems.has(child.id) ? <FiChevronDown /> : <FiChevronRight />}
+                                    </Button>
                                     <Text fontSize="xs" color="gray.600" fontWeight="bold" minW="6" w="6">
                                       {child.wfgOrder}
                                     </Text>
@@ -855,7 +965,13 @@ function WorkflowDetailView() {
                                     >
                                       <FiChevronDown />
                                     </Button>
-                                    <Button size="xs" leftIcon={<FiPlus />} colorScheme="gray" variant="solid">
+                                    <Button 
+                                      size="xs" 
+                                      leftIcon={<FiPlus />} 
+                                      colorScheme="gray" 
+                                      variant="solid"
+                                      onClick={() => openAddChildModal(child)}
+                                    >
                                       Add
                                     </Button>
                                     <Button 
@@ -1077,6 +1193,59 @@ function WorkflowDetailView() {
         </ModalContent>
       </Modal>
 
+      {/* Add Child Workflow Modal */}
+      <Modal isOpen={isAddChildOpen} onClose={onAddChildClose} size="md">
+        <ModalOverlay />
+        <ModalContent>
+          <form onSubmit={addChildFormik.handleSubmit}>
+            <ModalHeader>Tambah Item Child</ModalHeader>
+            <ModalCloseButton />
+            <ModalBody>
+              <VStack spacing={4}>
+                <FormControl isInvalid={!!(addChildFormik.errors.wfgName && addChildFormik.touched.wfgName)}>
+                  <FormLabel>Nama Workflow</FormLabel>
+                  <Input
+                    name="wfgName"
+                    value={addChildFormik.values.wfgName}
+                    onChange={addChildFormik.handleChange}
+                    onBlur={addChildFormik.handleBlur}
+                    placeholder="Masukkan nama workflow"
+                  />
+                  <FormErrorMessage>{addChildFormik.errors.wfgName}</FormErrorMessage>
+                </FormControl>
+
+                <FormControl isInvalid={!!(addChildFormik.errors.wfgDesc && addChildFormik.touched.wfgDesc)}>
+                  <FormLabel>Deskripsi (Opsional)</FormLabel>
+                  <Textarea
+                    name="wfgDesc"
+                    value={addChildFormik.values.wfgDesc}
+                    onChange={addChildFormik.handleChange}
+                    onBlur={addChildFormik.handleBlur}
+                    placeholder="Masukkan deskripsi workflow"
+                    rows={3}
+                    maxLength={300}
+                  />
+                  <FormErrorMessage>{addChildFormik.errors.wfgDesc}</FormErrorMessage>
+                </FormControl>
+              </VStack>
+            </ModalBody>
+
+            <ModalFooter>
+              <Button variant="ghost" mr={3} onClick={onAddChildClose}>
+                Batal
+              </Button>
+              <Button
+                colorScheme="blue"
+                type="submit"
+                isLoading={addChildFormik.isSubmitting}
+              >
+                Simpan
+              </Button>
+            </ModalFooter>
+          </form>
+        </ModalContent>
+      </Modal>
+
       {/* Confirmation Dialog */}
       <ConfirmationDialog
         isOpenTrigger={showConfirmDialog}
@@ -1102,6 +1271,15 @@ function WorkflowDetailView() {
         trigger={setShowEditDialog}
         questionMsg={`Apakah Anda yakin akan mengubah workflow "${pendingEditValues?.wfgName}"?`}
         captionMsg="Konfirmasi Ubah"
+      />
+
+      {/* Add Child Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpenTrigger={showAddChildDialog}
+        action={handleConfirmedAddChild}
+        trigger={setShowAddChildDialog}
+        questionMsg={`Apakah Anda yakin akan menambahkan item child "${pendingAddChildValues?.wfgName}"?`}
+        captionMsg="Konfirmasi Simpan"
       />
     </LayoutAdmin>
   );
