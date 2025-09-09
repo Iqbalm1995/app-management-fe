@@ -206,7 +206,85 @@ function MasterDataWorkflowPage() {
                       w={"full"}
                       key={idx}
                     >
-                      <BoxButtonnavigation data={dt} />
+                      <Card
+                        w="full"
+                        shadow="lg"
+                        rounded="2xl"
+                        overflow="hidden"
+                        bg={colorMode === "light" ? "white" : "gray.800"}
+                        border="1px"
+                        borderColor={
+                          colorMode === "light" ? "gray.200" : "gray.600"
+                        }
+                        // cursor="pointer"
+                        transition="all 0.3s ease"
+                        _hover={{
+                          transform: "translateY(-8px)",
+                          shadow: "2xl",
+                          borderColor: "secondary.400",
+                        }}
+                      >
+                        <CardHeader
+                          bg="secondary.500"
+                          color="white"
+                          p={6}
+                          h={"120px"}
+                        >
+                          <HStack justify="space-between">
+                            <Heading size="md" fontWeight="700">
+                              {dt.wfcName}
+                            </Heading>
+                            <Text
+                              fontSize="xs"
+                              bg="whiteAlpha.200"
+                              px={2}
+                              py={1}
+                              rounded="full"
+                              fontFamily="mono"
+                            >
+                              #{dt.wfcCode}
+                            </Text>
+                          </HStack>
+                        </CardHeader>
+
+                        <CardBody p={6}>
+                          <Stack spacing={4} h={"120px"}>
+                            <Text
+                              fontSize="sm"
+                              color={
+                                colorMode === "light" ? "gray.600" : "gray.400"
+                              }
+                            >
+                              {dt.wfcDesc}
+                              <Divider my={2} />
+                              Workflow category for managing processes and
+                              procedures.
+                            </Text>
+
+                            <HStack justify="space-between">
+                              <Text
+                                fontSize="xs"
+                                color="gray.500"
+                                fontWeight="medium"
+                              >
+                                Workflow Category
+                              </Text>
+
+                              <Link
+                                href={`master-data/workflow/detail?id=${dt.id}`}
+                              >
+                                <Button
+                                  size="sm"
+                                  colorScheme="secondary"
+                                  variant="ghost"
+                                >
+                                  Detail →
+                                </Button>
+                              </Link>
+                            </HStack>
+                          </Stack>
+                        </CardBody>
+                      </Card>
                     </GridItem>
                   ))}
                 </Grid>
@@ -218,48 +296,5 @@ function MasterDataWorkflowPage() {
     </LayoutAdmin>
   );
 }
-
-const BoxButtonnavigation = ({ data }: { data: WorkflowCategoryResponse }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  return (
-    <Flex
-      w={"full"}
-      h={"200px"}
-      bgGradient={"linear(to-br, secondary.500, secondary.800)"}
-      rounded={radiusStyle}
-      boxShadow={"md"}
-      as={Stack}
-      justifyContent={"center"}
-      alignContent={"center"}
-      spacing={1}
-      px={5}
-      py={2}
-      cursor={"pointer"}
-      color={"white"}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      transition="transform 0.3s ease-in-out"
-      transform={isHovered ? "translateY(-10px)" : "translateY(0)"}
-    >
-      <Text
-        textAlign={"center"}
-        fontWeight={600}
-        color={"white"}
-        fontSize={"large"}
-      >
-        {data.wfcName}
-      </Text>
-      <Divider />
-      <Text
-        textAlign={"center"}
-        fontWeight={500}
-        color={"white"}
-        fontSize={"smaller"}
-      >
-        #{data.wfcCode}
-      </Text>
-    </Flex>
-  );
-};
 
 export default MasterDataWorkflowPage;
