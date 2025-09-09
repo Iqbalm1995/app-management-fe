@@ -7,6 +7,7 @@ import {
 import InvalidLoadPageView from "@/app/components/InvalidLoadPageView";
 import LayoutAdmin from "@/app/components/layoutAdmin";
 import LoadingMiniSignature from "@/app/components/loadingMini";
+import { ConfirmationDialog } from "@/app/components/confirmationDialog";
 import {
   MAX_SIZE_TABLE,
   radiusStyle,
@@ -16,7 +17,7 @@ import {
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
-import useWorkflow, { WorkflowGroupResponse } from "@/app/services/useWorkflow";
+import useWorkflow, { WorkflowGroupResponse, WorkflowGroupUpdatePayload, WorkflowGroupInsertPayload } from "@/app/services/useWorkflow";
 import useWorkflowCategory, {
   WorkflowCategoryResponse,
 } from "@/app/services/useWorkflowCategories";
@@ -46,10 +47,30 @@ import {
   useColorMode,
   VStack,
   Wrap,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
+  useDisclosure,
+  FormControl,
+  FormLabel,
+  Input,
+  Textarea,
+  FormErrorMessage,
+  useToast,
 } from "@chakra-ui/react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useFormik } from "formik";
+import * as Yup from "yup";
 import {
   FiArrowLeft,
   FiFilter,
@@ -76,8 +97,10 @@ const HeaderDataContent: HeaderContentProps = {
 
 function WorkflowDetailView() {
   const showToast = useToastHelper();
+  const toast = useToast();
   const searchParams = useSearchParams();
   const { colorMode } = useColorMode();
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   const [HeaderContentState, setHeaderContentState] =
     useState<HeaderContentProps>(HeaderDataContent);
@@ -88,7 +111,7 @@ function WorkflowDetailView() {
 
   // hook services
   const { GetWorkflowCategoryById } = useWorkflowCategory();
-  const { ListWorkflowGroups } = useWorkflow();
+  const { ListWorkflowGroups, UpdateWorkflowGroup, InsertWorkflowGroup } = useWorkflow();
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
@@ -127,6 +150,23 @@ function WorkflowDetailView() {
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
   const [ActionLoading, setActionLoading] = useState(false);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  
+  // Local data management for changes tracking
+  const [localWorkflowData, setLocalWorkflowData] = useState<WorkflowGroupResponse[]>([]);
+  const [hasChanges, setHasChanges] = useState(false);
+  const [changedItems, setChangedItems] = useState<{
+    updated: Set<string>;
+    added: Set<string>;
+    deleted: Set<string>;
+  }>({
+    updated: new Set(),
+    added: new Set(),
+    deleted: new Set()
+  });
+
+  // Confirmation dialog state
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [pendingFormValues, setPendingFormValues] = useState<{wfgName: string; wfgDesc: string} | null>(null);
 
   const [ParamFilter, setParamFilter] = useState<ListSearchByParamProps[]>([]);
 
@@ -138,6 +178,215 @@ function WorkflowDetailView() {
       newExpanded.add(itemId);
     }
     setExpandedItems(newExpanded);
+  };
+
+  // Save all changes to API
+  const saveChanges = async () => {
+    if (!hasChanges || changedItems.updated.size === 0) return;
+
+    setActionLoading(true);
+    const token = localStorage.getItem("tokenData") as string;
+    let successCount = 0;
+    let errorCount = 0;
+
+    try {
+      // Process all updated items
+      for (const itemId of changedItems.updated) {
+        const findItem = (items: WorkflowGroupResponse[]): WorkflowGroupResponse | null => {
+          for (const item of items) {
+            if (item.id === itemId) return item;
+            if (item.workflowChild) {
+              const found = findItem(item.workflowChild);
+              if (found) return found;
+            }
+          }
+          return null;
+        };
+
+        const item = findItem(localWorkflowData);
+        if (!item) continue;
+
+        const payload: WorkflowGroupUpdatePayload = {
+          id: item.id,
+          wfgName: item.wfgName,
+          wfgDesc: item.wfgDesc || null,
+          wfgOrder: item.wfgOrder
+        };
+
+        const result = await UpdateWorkflowGroup(payload, token);
+        if (result?.statusCode === RES_CODE_OK) {
+          successCount++;
+        } else {
+          errorCount++;
+        }
+      }
+
+      // Show result message
+      if (errorCount === 0) {
+        showToast({
+          description: `Berhasil menyimpan ${successCount} perubahan`,
+          statusToast: "success",
+        });
+        
+        // Reset change tracking
+        setHasChanges(false);
+        setChangedItems({
+          updated: new Set(),
+          added: new Set(),
+          deleted: new Set()
+        });
+        
+        // Refresh data from server
+        setRefreshData(prev => prev + 1);
+      } else {
+        showToast({
+          description: `${successCount} berhasil, ${errorCount} gagal disimpan`,
+          statusToast: "warning",
+        });
+      }
+    } catch (error) {
+      showToast({
+        description: "Terjadi kesalahan saat menyimpan perubahan",
+        statusToast: "error",
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Form validation schema
+  const ValidationSchema = Yup.object().shape({
+    wfgName: Yup.string()
+      .required("Nama workflow wajib diisi")
+      .min(3, "Minimal 3 karakter")
+      .max(100, "Maksimal 100 karakter"),
+    wfgDesc: Yup.string()
+      .max(255, "Maksimal 255 karakter"),
+  });
+
+  // Formik form handling
+  const formik = useFormik<{wfgName: string; wfgDesc: string}>({
+    initialValues: {
+      wfgName: "",
+      wfgDesc: "",
+    },
+    validationSchema: ValidationSchema,
+    validateOnChange: false,
+    validateOnBlur: false,
+    onSubmit: async (values) => {
+      // Show confirmation dialog instead of direct submit
+      setPendingFormValues(values);
+      setShowConfirmDialog(true);
+    },
+  });
+
+  // Handle confirmed submission
+  const handleConfirmedSubmit = async () => {
+    if (!pendingFormValues) return;
+
+    const payload: WorkflowGroupInsertPayload = {
+      parentId: null,
+      wfgOrder: localWorkflowData.length + 1,
+      wfgName: pendingFormValues.wfgName,
+      wfgDesc: pendingFormValues.wfgDesc || null,
+      wfgLevel: 1,
+      wfgCategoryId: CategoryId || "",
+    };
+
+    const token = localStorage.getItem("tokenData") as string;
+    const result = await InsertWorkflowGroup(payload, token);
+    
+    if (result?.statusCode === RES_CODE_OK || result?.statusCode === 201) {
+      onClose();
+      formik.resetForm();
+      RefreshAction();
+      toast({
+        title: "Berhasil",
+        description: "Workflow baru berhasil ditambahkan",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } else {
+      toast({
+        title: "Gagal",
+        description: result?.message || "Gagal menambah workflow",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+    setPendingFormValues(null);
+  };
+
+  // Open add modal
+  const openAddModal = () => {
+    formik.resetForm();
+    onOpen();
+  };
+
+  // Initialize local data when server data changes
+  useEffect(() => {
+    if (DataWorkflowGroups.length > 0) {
+      setLocalWorkflowData(JSON.parse(JSON.stringify(DataWorkflowGroups)));
+    }
+  }, [DataWorkflowGroups]);
+
+  // Move item up/down within same level
+  const moveItemOrder = (itemId: string, direction: 'up' | 'down', parentId?: string) => {
+    const newData = [...localWorkflowData];
+    
+    // Find the target array to work with
+    let targetItems: WorkflowGroupResponse[];
+    
+    if (!parentId) {
+      // Root level items
+      targetItems = newData;
+    } else {
+      // Find parent and get its children
+      const findParent = (items: WorkflowGroupResponse[]): WorkflowGroupResponse[] | null => {
+        for (const item of items) {
+          if (item.id === parentId) {
+            return item.workflowChild;
+          }
+          if (item.workflowChild && item.workflowChild.length > 0) {
+            const found = findParent(item.workflowChild);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+      
+      const foundItems = findParent(newData);
+      if (!foundItems) return;
+      targetItems = foundItems;
+    }
+
+    // Find item index in target array
+    const itemIndex = targetItems.findIndex(item => item.id === itemId);
+    if (itemIndex === -1) return;
+
+    // Calculate new index
+    const newIndex = direction === 'up' ? itemIndex - 1 : itemIndex + 1;
+    if (newIndex < 0 || newIndex >= targetItems.length) return;
+
+    // Swap items
+    const temp = targetItems[itemIndex];
+    targetItems[itemIndex] = targetItems[newIndex];
+    targetItems[newIndex] = temp;
+
+    // Update wfgOrder values
+    targetItems[itemIndex].wfgOrder = itemIndex + 1;
+    targetItems[newIndex].wfgOrder = newIndex + 1;
+
+    // Mark items as changed
+    setChangedItems(prev => ({
+      ...prev,
+      updated: new Set([...prev.updated, targetItems[itemIndex].id, targetItems[newIndex].id])
+    }));
+
+    setLocalWorkflowData(newData);
+    setHasChanges(true);
   };
 
   // Function Detail Data Load Services Workflow Categories
@@ -315,27 +564,49 @@ function WorkflowDetailView() {
                       >
                         Muat Ulang
                       </Button>
-                      <Link href={`#`}>
-                        <Button
-                          size={"sm"}
-                          colorScheme={"secondary"}
-                          leftIcon={<FiSave />}
-                          isLoading={ActionLoading}
-                        >
-                          Simpan Perubahan
-                        </Button>
-                      </Link>
+                      <Button
+                        size={"sm"}
+                        colorScheme={"secondary"}
+                        leftIcon={<FiSave />}
+                        isLoading={ActionLoading}
+                        onClick={saveChanges}
+                        isDisabled={!hasChanges}
+                      >
+                        Simpan Perubahan
+                      </Button>
                     </Flex>
                   </GridItem>
                 </Grid>
                 {/* RENDER DATA */}
+                {hasChanges && (
+                  <Alert status="warning" rounded="md" mb={4}>
+                    <AlertIcon />
+                    <AlertTitle>Perubahan Belum Disimpan!</AlertTitle>
+                    <AlertDescription>
+                      Anda memiliki perubahan yang belum disimpan. Klik "Simpan Perubahan" untuk menyimpan.
+                    </AlertDescription>
+                  </Alert>
+                )}
                 {IsLoadingPage ? (
                   <LoadingMiniSignature />
                 ) : DataWorkflowCategory == null ? (
                   <InvalidLoadPageView />
                 ) : (
                   <VStack spacing={4} align="stretch" w="full">
-                    {DataWorkflowGroups.map((group, groupIdx) => (
+                    {/* Add New Root Item Button */}
+                    <Box mb={4}>
+                      <Button
+                        size="sm"
+                        leftIcon={<FiPlus />}
+                        colorScheme="blue"
+                        variant="outline"
+                        onClick={openAddModal}
+                      >
+                        Tambah Item Baru
+                      </Button>
+                    </Box>
+
+                    {localWorkflowData.map((group, groupIdx) => (
                       <Box key={groupIdx} w="full">
                         {/* Level 1 - Main Group */}
                         <HStack
@@ -372,10 +643,22 @@ function WorkflowDetailView() {
                             )}
                           </HStack>
                           <HStack spacing={1} minW="300px" justify="flex-end">
-                            <Button size="xs" variant="ghost" colorScheme="gray">
+                            <Button 
+                              size="xs" 
+                              variant="ghost" 
+                              colorScheme="gray"
+                              onClick={() => moveItemOrder(group.id, 'up')}
+                              isDisabled={groupIdx === 0}
+                            >
                               <FiChevronUp />
                             </Button>
-                            <Button size="xs" variant="ghost" colorScheme="gray">
+                            <Button 
+                              size="xs" 
+                              variant="ghost" 
+                              colorScheme="gray"
+                              onClick={() => moveItemOrder(group.id, 'down')}
+                              isDisabled={groupIdx === localWorkflowData.length - 1}
+                            >
                               <FiChevronDown />
                             </Button>
                             <Button size="xs" leftIcon={<FiPlus />} colorScheme="gray" variant="solid">
@@ -431,10 +714,22 @@ function WorkflowDetailView() {
                                     )}
                                   </HStack>
                                   <HStack spacing={1} minW="280px" justify="flex-end">
-                                    <Button size="xs" variant="ghost" colorScheme="gray">
+                                    <Button 
+                                      size="xs" 
+                                      variant="ghost" 
+                                      colorScheme="gray"
+                                      onClick={() => moveItemOrder(child.id, 'up', group.id)}
+                                      isDisabled={childIdx === 0}
+                                    >
                                       <FiChevronUp />
                                     </Button>
-                                    <Button size="xs" variant="ghost" colorScheme="gray">
+                                    <Button 
+                                      size="xs" 
+                                      variant="ghost" 
+                                      colorScheme="gray"
+                                      onClick={() => moveItemOrder(child.id, 'down', group.id)}
+                                      isDisabled={childIdx === group.workflowChild.length - 1}
+                                    >
                                       <FiChevronDown />
                                     </Button>
                                     <Button size="xs" leftIcon={<FiPlus />} colorScheme="gray" variant="solid">
@@ -477,10 +772,22 @@ function WorkflowDetailView() {
                                           )}
                                         </HStack>
                                         <HStack spacing={1} minW="220px" justify="flex-end">
-                                          <Button size="xs" variant="ghost" colorScheme="gray">
+                                          <Button 
+                                            size="xs" 
+                                            variant="ghost" 
+                                            colorScheme="gray"
+                                            onClick={() => moveItemOrder(grandChild.id, 'up', child.id)}
+                                            isDisabled={grandChildIdx === 0}
+                                          >
                                             <FiChevronUp />
                                           </Button>
-                                          <Button size="xs" variant="ghost" colorScheme="gray">
+                                          <Button 
+                                            size="xs" 
+                                            variant="ghost" 
+                                            colorScheme="gray"
+                                            onClick={() => moveItemOrder(grandChild.id, 'down', child.id)}
+                                            isDisabled={grandChildIdx === child.workflowChild.length - 1}
+                                          >
                                             <FiChevronDown />
                                           </Button>
                                           <Button size="xs" leftIcon={<FiEdit3 />} colorScheme="gray" variant="ghost">
@@ -501,7 +808,7 @@ function WorkflowDetailView() {
                       </Box>
                     ))}
                     
-                    {DataWorkflowGroups.length === 0 && (
+                    {localWorkflowData.length === 0 && (
                       <Box textAlign="center" py={8}>
                         <FiFrown size={32} color="gray.400" style={{ margin: "0 auto 8px" }} />
                         <Text color="gray.500" fontSize="sm">
@@ -516,6 +823,67 @@ function WorkflowDetailView() {
           </Card>
         </GridItem>
       </Grid>
+
+      {/* Add Workflow Modal */}
+      <Modal isOpen={isOpen} onClose={onClose} size="md">
+        <ModalOverlay />
+        <ModalContent>
+          <form onSubmit={formik.handleSubmit}>
+            <ModalHeader>Tambah Workflow Baru</ModalHeader>
+            <ModalCloseButton />
+            <ModalBody>
+              <VStack spacing={4}>
+                <FormControl isInvalid={!!(formik.errors.wfgName && formik.touched.wfgName)}>
+                  <FormLabel>Nama Workflow</FormLabel>
+                  <Input
+                    name="wfgName"
+                    value={formik.values.wfgName}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    placeholder="Masukkan nama workflow"
+                  />
+                  <FormErrorMessage>{formik.errors.wfgName}</FormErrorMessage>
+                </FormControl>
+
+                <FormControl isInvalid={!!(formik.errors.wfgDesc && formik.touched.wfgDesc)}>
+                  <FormLabel>Deskripsi (Opsional)</FormLabel>
+                  <Textarea
+                    name="wfgDesc"
+                    value={formik.values.wfgDesc}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    placeholder="Masukkan deskripsi workflow"
+                    rows={3}
+                  />
+                  <FormErrorMessage>{formik.errors.wfgDesc}</FormErrorMessage>
+                </FormControl>
+              </VStack>
+            </ModalBody>
+
+            <ModalFooter>
+              <Button variant="ghost" mr={3} onClick={onClose}>
+                Batal
+              </Button>
+              <Button
+                colorScheme="blue"
+                type="submit"
+                isLoading={formik.isSubmitting}
+              >
+                Simpan
+              </Button>
+            </ModalFooter>
+          </form>
+        </ModalContent>
+      </Modal>
+
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpenTrigger={showConfirmDialog}
+        action={handleConfirmedSubmit}
+        trigger={setShowConfirmDialog}
+        questionMsg={`Apakah Anda yakin akan menambahkan workflow "${pendingFormValues?.wfgName}"?`}
+        captionMsg="Konfirmasi Simpan"
+      />
     </LayoutAdmin>
   );
 }
