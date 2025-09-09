@@ -74,6 +74,7 @@ import {
   FiSettings,
   FiPlayCircle,
   FiCode,
+  FiDatabase,
 } from "react-icons/fi";
 import { IconType } from "react-icons";
 import {
@@ -130,6 +131,7 @@ import { CiMemoPad, CiServer } from "react-icons/ci";
 import { RxActivityLog } from "react-icons/rx";
 import { TbLayoutDashboardFilled } from "react-icons/tb";
 import { FaDraftingCompass } from "react-icons/fa";
+import { PiFlowArrow } from "react-icons/pi";
 // import { useAuth } from "@/context/AuthContext";
 
 // Page Split
@@ -287,6 +289,31 @@ const LinkItems: LinkItemProps[] = [
     role: ["admin"],
     menuID: "1",
     children: [],
+  },
+  {
+    name: "Master Data",
+    icon: FiDatabase,
+    link: "/master-data",
+    role: ["admin"],
+    menuID: "1",
+    children: [
+      {
+        name: "Master Workflow",
+        icon: PiFlowArrow,
+        link: "/master-data/workflow",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Template Workflow",
+        icon: PiFlowArrow,
+        link: "/master-data/template-workflow",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+    ],
   },
   // {
   //   name: "Avtivities",

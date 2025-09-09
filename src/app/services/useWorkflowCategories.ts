@@ -12,78 +12,60 @@ import axiosInstance from "../utils/axiosInstance";
 import axios from "axios";
 import handleAxiosError from "../utils/handleAxiosError";
 
-// Response interface for Workflow Group
-export interface WorkflowGroupResponse {
+export interface WorkflowCategoryResponse {
   id: string;
-  parentId?: string | null;
-  wfgLevel: number;
-  wfgOrder: number;
-  wfgCode: string;
-  wfgName: string;
-  wfgDesc?: string | null;
-  wfgCategoryId: string;
-  wfgCategoryName: string;
-  wfgCategoryCode: string;
+  wfcCode: string;
+  wfcName: string;
+  wfcDesc: string;
   createdAt: string;
   createdBy: string;
-  updatedAt?: string | null;
-  updatedBy?: string | null;
-  workflowChild: WorkflowGroupResponse[];
+  updatedAt: string;
+  updatedBy: string;
 }
 
-// Payload interface for inserting workflow group
-export interface WorkflowGroupInsertPayload {
-  parentId?: string | null;
-  wfgOrder: number;
-  wfgName: string;
-  wfgDesc?: string | null;
-  wfgLevel: number;
-  wfgCategoryId: string;
+export interface WorkflowCategoryInsertPayload {
+  wfcName: string;
+  wfcDesc: string;
 }
 
-// Payload interface for updating workflow group
-export interface WorkflowGroupUpdatePayload {
+export interface WorkflowCategoryUpdatePayload {
   id: string;
-  wfgName: string;
-  wfgDesc?: string | null;
-  wfgOrder: number;
+  wfcName: string;
+  wfcDesc: string;
 }
 
-// Interface for the service hook
-interface useWorkflowService {
-  ListWorkflowGroups: (
+interface useWorkflowCategoryService {
+  ListWorkflowCategory: (
     payload: PaggingListPayload,
     token: string
-  ) => Promise<ApiGenericResponse<WorkflowGroupResponse[] | null> | null>;
-  GetWorkflowGroupByParentId: (
-    parentId: string,
-    token: string
-  ) => Promise<ApiGenericResponse<WorkflowGroupResponse[] | null> | null>;
-  GetWorkflowGroupById: (
+  ) => Promise<ApiGenericResponse<WorkflowCategoryResponse[] | null> | null>;
+
+  GetWorkflowCategoryById: (
     id: string,
     token: string
-  ) => Promise<ApiGenericResponse<WorkflowGroupResponse | null> | null>;
-  GetWorkflowGroupByCode: (
+  ) => Promise<ApiGenericResponse<WorkflowCategoryResponse | null> | null>;
+  GetWorkflowCategoryByCode: (
     code: string,
     token: string
-  ) => Promise<ApiGenericResponse<WorkflowGroupResponse | null> | null>;
-  InsertWorkflowGroup: (
-    payload: WorkflowGroupInsertPayload,
+  ) => Promise<ApiGenericResponse<WorkflowCategoryResponse | null> | null>;
+  InsertWorkflowCategory: (
+    payload: WorkflowCategoryInsertPayload,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
-  UpdateWorkflowGroup: (
-    payload: WorkflowGroupUpdatePayload,
+  UpdateWorkflowCategory: (
+    payload: WorkflowCategoryUpdatePayload,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
-  DeleteWorkflowGroup: (
+  DeleteWorkflowCategory: (
     id: string,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
+
   isLoading: boolean;
   error: string | null;
 }
 
-const useWorkflow = (): useWorkflowService => {
+const useWorkflowCategory = (): useWorkflowCategoryService => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -93,71 +75,22 @@ const useWorkflow = (): useWorkflowService => {
    * @param token Authentication token
    * @returns Array of workflow groups
    */
-  const ListWorkflowGroups = async (
+  const ListWorkflowCategory = async (
     payload: PaggingListPayload,
     token: string
-  ): Promise<ApiGenericResponse<WorkflowGroupResponse[] | null> | null> => {
+  ): Promise<ApiGenericResponse<WorkflowCategoryResponse[] | null> | null> => {
     setIsLoading(true);
     setError(null);
     const UrlEndpoint: string = buildUrlPort(
       ENDPOINT_API_BASEURL,
       ENDPOINT_PORT_BASIC
     );
-    const PathEndpoint: string = "/api/v1/WorkflowGroup/group/list";
+    const PathEndpoint: string = "/api/v1/WorkflowCategory/list";
 
     try {
       const response = await axiosInstance.post<
-        ApiGenericResponse<WorkflowGroupResponse[]>
+        ApiGenericResponse<WorkflowCategoryResponse[]>
       >(`${UrlEndpoint}${PathEndpoint}`, payload, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setIsLoading(false);
-      return response.data;
-    } catch (err) {
-      setIsLoading(false);
-      if (axios.isAxiosError(err)) {
-        const errorResponse = handleAxiosError(err);
-        setError(
-          err.response?.data?.message ||
-            "An error occurred while fetching workflow groups."
-        );
-        return errorResponse;
-      } else {
-        setError("An unknown error occurred. Please try again.");
-        return {
-          statusCode: RES_CODE_SERVER_ERROR,
-          data: null,
-          message: "Error connecting to API",
-          error: null,
-        };
-      }
-    }
-  };
-
-  /**
-   * Get list of workflow groups
-   * @param parentId parameters
-   * @param token Authentication token
-   * @returns Array of workflow groups
-   */
-  const GetWorkflowGroupByParentId = async (
-    parentId: string,
-    token: string
-  ): Promise<ApiGenericResponse<WorkflowGroupResponse[] | null> | null> => {
-    setIsLoading(true);
-    setError(null);
-    const UrlEndpoint: string = buildUrlPort(
-      ENDPOINT_API_BASEURL,
-      ENDPOINT_PORT_BASIC
-    );
-    const PathEndpoint: string = `/api/v1/WorkflowGroup/group/parent/${parentId}`;
-
-    try {
-      const response = await axiosInstance.get<
-        ApiGenericResponse<WorkflowGroupResponse[]>
-      >(`${UrlEndpoint}${PathEndpoint}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -191,21 +124,21 @@ const useWorkflow = (): useWorkflowService => {
    * @param token Authentication token
    * @returns Single workflow group details
    */
-  const GetWorkflowGroupById = async (
+  const GetWorkflowCategoryById = async (
     id: string,
     token: string
-  ): Promise<ApiGenericResponse<WorkflowGroupResponse | null> | null> => {
+  ): Promise<ApiGenericResponse<WorkflowCategoryResponse | null> | null> => {
     setIsLoading(true);
     setError(null);
     const UrlEndpoint: string = buildUrlPort(
       ENDPOINT_API_BASEURL,
       ENDPOINT_PORT_BASIC
     );
-    const PathEndpoint: string = `/api/v1/WorkflowGroup/group/detail/${id}`;
+    const PathEndpoint: string = `/api/v1/WorkflowCategory/detail/${id}`;
 
     try {
       const response = await axiosInstance.get<
-        ApiGenericResponse<WorkflowGroupResponse>
+        ApiGenericResponse<WorkflowCategoryResponse>
       >(`${UrlEndpoint}${PathEndpoint}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -240,21 +173,21 @@ const useWorkflow = (): useWorkflowService => {
    * @param token Authentication token
    * @returns Single workflow group details
    */
-  const GetWorkflowGroupByCode = async (
+  const GetWorkflowCategoryByCode = async (
     code: string,
     token: string
-  ): Promise<ApiGenericResponse<WorkflowGroupResponse | null> | null> => {
+  ): Promise<ApiGenericResponse<WorkflowCategoryResponse | null> | null> => {
     setIsLoading(true);
     setError(null);
     const UrlEndpoint: string = buildUrlPort(
       ENDPOINT_API_BASEURL,
       ENDPOINT_PORT_BASIC
     );
-    const PathEndpoint: string = `/api/v1/WorkflowGroup/group/detail/code/${code}`;
+    const PathEndpoint: string = `/api/v1/WorkflowCategory/detail/code/${code}`;
 
     try {
       const response = await axiosInstance.get<
-        ApiGenericResponse<WorkflowGroupResponse>
+        ApiGenericResponse<WorkflowCategoryResponse>
       >(`${UrlEndpoint}${PathEndpoint}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -289,8 +222,8 @@ const useWorkflow = (): useWorkflowService => {
    * @param token Authentication token
    * @returns ID of the newly created workflow group
    */
-  const InsertWorkflowGroup = async (
-    payload: WorkflowGroupInsertPayload,
+  const InsertWorkflowCategory = async (
+    payload: WorkflowCategoryInsertPayload,
     token: string
   ): Promise<ApiGenericResponse<string | null> | null> => {
     setIsLoading(true);
@@ -299,7 +232,7 @@ const useWorkflow = (): useWorkflowService => {
       ENDPOINT_API_BASEURL,
       ENDPOINT_PORT_BASIC
     );
-    const PathEndpoint: string = "/api/v1/WorkflowGroup/group/insert";
+    const PathEndpoint: string = "/api/v1/WorkflowCategory/insert";
 
     try {
       const response = await axiosInstance.post<ApiGenericResponse<string>>(
@@ -340,8 +273,8 @@ const useWorkflow = (): useWorkflowService => {
    * @param token Authentication token
    * @returns ID of the updated workflow group
    */
-  const UpdateWorkflowGroup = async (
-    payload: WorkflowGroupUpdatePayload,
+  const UpdateWorkflowCategory = async (
+    payload: WorkflowCategoryUpdatePayload,
     token: string
   ): Promise<ApiGenericResponse<string | null> | null> => {
     setIsLoading(true);
@@ -350,7 +283,7 @@ const useWorkflow = (): useWorkflowService => {
       ENDPOINT_API_BASEURL,
       ENDPOINT_PORT_BASIC
     );
-    const PathEndpoint: string = "/api/v1/WorkflowGroup/group/update";
+    const PathEndpoint: string = "/api/v1/WorkflowCategory/update";
 
     try {
       const response = await axiosInstance.put<ApiGenericResponse<string>>(
@@ -391,7 +324,7 @@ const useWorkflow = (): useWorkflowService => {
    * @param token Authentication token
    * @returns ID of the deleted workflow group
    */
-  const DeleteWorkflowGroup = async (
+  const DeleteWorkflowCategory = async (
     id: string,
     token: string
   ): Promise<ApiGenericResponse<string | null> | null> => {
@@ -401,7 +334,7 @@ const useWorkflow = (): useWorkflowService => {
       ENDPOINT_API_BASEURL,
       ENDPOINT_PORT_BASIC
     );
-    const PathEndpoint: string = `/api/v1/WorkflowGroup/group/delete/${id}`;
+    const PathEndpoint: string = `/api/v1/WorkflowCategory/delete/${id}`;
 
     try {
       const response = await axiosInstance.delete<ApiGenericResponse<string>>(
@@ -436,16 +369,15 @@ const useWorkflow = (): useWorkflowService => {
   };
 
   return {
-    ListWorkflowGroups,
-    GetWorkflowGroupByParentId,
-    GetWorkflowGroupById,
-    GetWorkflowGroupByCode,
-    InsertWorkflowGroup,
-    UpdateWorkflowGroup,
-    DeleteWorkflowGroup,
+    ListWorkflowCategory,
+    GetWorkflowCategoryById,
+    GetWorkflowCategoryByCode,
+    InsertWorkflowCategory,
+    UpdateWorkflowCategory,
+    DeleteWorkflowCategory,
     isLoading,
     error,
   };
 };
 
-export default useWorkflow;
+export default useWorkflowCategory;

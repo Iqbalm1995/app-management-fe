@@ -1,10 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  ApiGenericResponse,
-  PaggingListPayload,
-} from "../types/masterTypes";
+import { ApiGenericResponse, PaggingListPayload } from "../types/masterTypes";
 import { buildUrlPort } from "../helper/MasterHelper";
 import {
   ENDPOINT_API_BASEURL,
@@ -59,38 +56,38 @@ interface useNotificationsService {
     userId: string,
     token: string
   ) => Promise<ApiGenericResponse<NotificationResponse[] | null> | null>;
-  
+
   GetUserNotificationsPaged: (
     userId: string,
     payload: PaggingListPayload,
     token: string
   ) => Promise<ApiGenericResponse<NotificationResponse[] | null> | null>;
-  
+
   GetNotificationById: (
     id: string,
     token: string
   ) => Promise<ApiGenericResponse<NotificationResponse | null> | null>;
-  
+
   CreateNotification: (
     payload: CreateNotificationPayload,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
-  
+
   UpdateNotification: (
     payload: UpdateNotificationPayload,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
-  
+
   BulkUpdateNotifications: (
     payload: BulkUpdateNotificationsPayload,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
-  
+
   DeleteNotification: (
     id: string,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
-  
+
   isLoading: boolean;
   error: string | null;
 }
@@ -116,7 +113,7 @@ const useNotifications = (): useNotificationsService => {
       ENDPOINT_PORT_BASIC
     );
     const PathEndpoint: string = `/v1/Notifications/user/${userId}`;
-    
+
     try {
       const response = await axiosInstance.get<
         ApiGenericResponse<NotificationResponse[]>
@@ -132,7 +129,8 @@ const useNotifications = (): useNotificationsService => {
       if (axios.isAxiosError(err)) {
         const errorResponse = handleAxiosError(err);
         setError(
-          err.response?.data?.message || "An error occurred while fetching notifications."
+          err.response?.data?.message ||
+            "An error occurred while fetching notifications."
         );
         return errorResponse;
       } else {
@@ -166,7 +164,7 @@ const useNotifications = (): useNotificationsService => {
       ENDPOINT_PORT_BASIC
     );
     const PathEndpoint: string = `/v1/Notifications/user/${userId}/paged`;
-    
+
     try {
       const response = await axiosInstance.post<
         ApiGenericResponse<NotificationResponse[]>
@@ -182,7 +180,8 @@ const useNotifications = (): useNotificationsService => {
       if (axios.isAxiosError(err)) {
         const errorResponse = handleAxiosError(err);
         setError(
-          err.response?.data?.message || "An error occurred while fetching paginated notifications."
+          err.response?.data?.message ||
+            "An error occurred while fetching paginated notifications."
         );
         return errorResponse;
       } else {
@@ -214,7 +213,7 @@ const useNotifications = (): useNotificationsService => {
       ENDPOINT_PORT_BASIC
     );
     const PathEndpoint: string = `/v1/Notifications/${id}`;
-    
+
     try {
       const response = await axiosInstance.get<
         ApiGenericResponse<NotificationResponse>
@@ -230,7 +229,8 @@ const useNotifications = (): useNotificationsService => {
       if (axios.isAxiosError(err)) {
         const errorResponse = handleAxiosError(err);
         setError(
-          err.response?.data?.message || "An error occurred while fetching notification details."
+          err.response?.data?.message ||
+            "An error occurred while fetching notification details."
         );
         return errorResponse;
       } else {
@@ -262,15 +262,17 @@ const useNotifications = (): useNotificationsService => {
       ENDPOINT_PORT_BASIC
     );
     const PathEndpoint: string = "/v1/Notifications";
-    
+
     try {
-      const response = await axiosInstance.post<
-        ApiGenericResponse<string>
-      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axiosInstance.post<ApiGenericResponse<string>>(
+        `${UrlEndpoint}${PathEndpoint}`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       setIsLoading(false);
       return response.data;
     } catch (err) {
@@ -278,7 +280,8 @@ const useNotifications = (): useNotificationsService => {
       if (axios.isAxiosError(err)) {
         const errorResponse = handleAxiosError(err);
         setError(
-          err.response?.data?.message || "An error occurred while creating notification."
+          err.response?.data?.message ||
+            "An error occurred while creating notification."
         );
         return errorResponse;
       } else {
@@ -310,15 +313,17 @@ const useNotifications = (): useNotificationsService => {
       ENDPOINT_PORT_BASIC
     );
     const PathEndpoint: string = "/v1/Notifications";
-    
+
     try {
-      const response = await axiosInstance.put<
-        ApiGenericResponse<string>
-      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axiosInstance.put<ApiGenericResponse<string>>(
+        `${UrlEndpoint}${PathEndpoint}`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       setIsLoading(false);
       return response.data;
     } catch (err) {
@@ -326,7 +331,8 @@ const useNotifications = (): useNotificationsService => {
       if (axios.isAxiosError(err)) {
         const errorResponse = handleAxiosError(err);
         setError(
-          err.response?.data?.message || "An error occurred while updating notification."
+          err.response?.data?.message ||
+            "An error occurred while updating notification."
         );
         return errorResponse;
       } else {
@@ -358,15 +364,17 @@ const useNotifications = (): useNotificationsService => {
       ENDPOINT_PORT_BASIC
     );
     const PathEndpoint: string = "/v1/Notifications/bulk-update";
-    
+
     try {
-      const response = await axiosInstance.put<
-        ApiGenericResponse<string>
-      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axiosInstance.put<ApiGenericResponse<string>>(
+        `${UrlEndpoint}${PathEndpoint}`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       setIsLoading(false);
       return response.data;
     } catch (err) {
@@ -374,7 +382,8 @@ const useNotifications = (): useNotificationsService => {
       if (axios.isAxiosError(err)) {
         const errorResponse = handleAxiosError(err);
         setError(
-          err.response?.data?.message || "An error occurred while bulk updating notifications."
+          err.response?.data?.message ||
+            "An error occurred while bulk updating notifications."
         );
         return errorResponse;
       } else {
@@ -406,15 +415,16 @@ const useNotifications = (): useNotificationsService => {
       ENDPOINT_PORT_BASIC
     );
     const PathEndpoint: string = `/v1/Notifications/${id}`;
-    
+
     try {
-      const response = await axiosInstance.delete<
-        ApiGenericResponse<string>
-      >(`${UrlEndpoint}${PathEndpoint}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axiosInstance.delete<ApiGenericResponse<string>>(
+        `${UrlEndpoint}${PathEndpoint}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       setIsLoading(false);
       return response.data;
     } catch (err) {
@@ -422,7 +432,8 @@ const useNotifications = (): useNotificationsService => {
       if (axios.isAxiosError(err)) {
         const errorResponse = handleAxiosError(err);
         setError(
-          err.response?.data?.message || "An error occurred while deleting notification."
+          err.response?.data?.message ||
+            "An error occurred while deleting notification."
         );
         return errorResponse;
       } else {
