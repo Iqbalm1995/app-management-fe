@@ -154,35 +154,24 @@ function WorkflowDetailView() {
       const itemsData: WorkflowCategoryResponse =
         requestData.data as WorkflowCategoryResponse;
 
-      setHeaderContentState({
-        titleName: `Workflow ${itemsData.wfcName}`,
-        breadCrumb: [
-          "Home",
-          "Master Data",
-          "Workflow",
-          "#" + itemsData.wfcCode,
-        ],
-      });
-
       setDataWorkflowCategory(itemsData);
-      setIsLoadingPage(false);
       setIsLoadingProcess(false);
+      setIsLoadingPage(false);
 
       return itemsData;
     }
   };
-  // END - Function Detail Data Load Services Workflow Categories
 
   // Function Detail Data Load Services Workflow Group
-
   const GetDataWorkflowGroup = async (
     searchValue: string = ""
   ): Promise<WorkflowGroupResponse[]> => {
     setIsLoadingProcess(true);
+
     const PayloadList: PaggingListPayload = {
-      search: searchValue,
       limit: MAX_SIZE_TABLE,
       page: 0,
+      search: searchValue,
       filterWhere: [
         {
           field: "parentId",
@@ -326,16 +315,192 @@ function WorkflowDetailView() {
                 ) : DataWorkflowCategory == null ? (
                   <InvalidLoadPageView />
                 ) : (
-                  <Flex w={"full"} as={Stack}>
-                    <Box
-                      overflowY={"auto"}
-                      overflowX={"auto"}
-                      maxH={"350px"}
-                      p={2}
-                    >
-                      <pre>{JSON.stringify(DataWorkflowGroups, null, 2)}</pre>
-                    </Box>
-                  </Flex>
+                  <VStack spacing={8} align="stretch" w="full">
+                    {DataWorkflowGroups.map((group, groupIdx) => (
+                      <Box key={groupIdx} w="full">
+                        {/* Level 1 - Main Group */}
+                        <Box
+                          p={6}
+                          bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                          rounded="lg"
+                          mb={4}
+                        >
+                          <HStack justify="space-between" align="center">
+                            <VStack align="start" spacing={1}>
+                              <Heading
+                                size="lg"
+                                color={
+                                  colorMode === "light" ? "gray.800" : "white"
+                                }
+                              >
+                                {group.wfgName}
+                              </Heading>
+                              {group.wfgDesc && (
+                                <Text fontSize="sm" color="gray.500">
+                                  {group.wfgDesc}
+                                </Text>
+                              )}
+                            </VStack>
+                            <VStack align="end" spacing={1}>
+                              <Text
+                                fontSize="xs"
+                                color="gray.500"
+                                fontFamily="mono"
+                              >
+                                #{group.wfgCode}
+                              </Text>
+                              <Text fontSize="xs" color="gray.400">
+                                Level {group.wfgLevel} • Order {group.wfgOrder}
+                              </Text>
+                            </VStack>
+                          </HStack>
+                        </Box>
+
+                        {/* Level 2 - Children */}
+                        {group.workflowChild &&
+                          group.workflowChild.length > 0 && (
+                            <VStack spacing={3} align="stretch" pl={6}>
+                              {group.workflowChild.map((child, childIdx) => (
+                                <Box key={childIdx}>
+                                  <Box
+                                    p={4}
+                                    bg={
+                                      colorMode === "light"
+                                        ? "white"
+                                        : "gray.800"
+                                    }
+                                    rounded="md"
+                                    shadow="sm"
+                                  >
+                                    <HStack
+                                      justify="space-between"
+                                      align="center"
+                                    >
+                                      <VStack align="start" spacing={1}>
+                                        <Text
+                                          fontWeight="semibold"
+                                          color={
+                                            colorMode === "light"
+                                              ? "gray.700"
+                                              : "gray.200"
+                                          }
+                                        >
+                                          {child.wfgName}
+                                        </Text>
+                                        {child.wfgDesc && (
+                                          <Text fontSize="sm" color="gray.500">
+                                            {child.wfgDesc}
+                                          </Text>
+                                        )}
+                                      </VStack>
+                                      <VStack align="end" spacing={1}>
+                                        <Text
+                                          fontSize="xs"
+                                          color="gray.500"
+                                          fontFamily="mono"
+                                        >
+                                          #{child.wfgCode}
+                                        </Text>
+                                        <Text fontSize="xs" color="gray.400">
+                                          Level {child.wfgLevel} • Order{" "}
+                                          {child.wfgOrder}
+                                        </Text>
+                                      </VStack>
+                                    </HStack>
+                                  </Box>
+
+                                  {/* Level 3 - Grandchildren */}
+                                  {child.workflowChild &&
+                                    child.workflowChild.length > 0 && (
+                                      <VStack
+                                        spacing={2}
+                                        align="stretch"
+                                        pl={6}
+                                        mt={3}
+                                      >
+                                        {child.workflowChild.map(
+                                          (grandChild, grandChildIdx) => (
+                                            <Box
+                                              key={grandChildIdx}
+                                              p={3}
+                                              bg={
+                                                colorMode === "light"
+                                                  ? "gray.50"
+                                                  : "gray.700"
+                                              }
+                                              rounded="md"
+                                            >
+                                              <HStack
+                                                justify="space-between"
+                                                align="center"
+                                              >
+                                                <VStack
+                                                  align="start"
+                                                  spacing={1}
+                                                >
+                                                  <Text
+                                                    fontSize="sm"
+                                                    fontWeight="medium"
+                                                    color={
+                                                      colorMode === "light"
+                                                        ? "gray.600"
+                                                        : "gray.300"
+                                                    }
+                                                  >
+                                                    {grandChild.wfgName}
+                                                  </Text>
+                                                  {grandChild.wfgDesc && (
+                                                    <Text
+                                                      fontSize="xs"
+                                                      color="gray.500"
+                                                    >
+                                                      {grandChild.wfgDesc}
+                                                    </Text>
+                                                  )}
+                                                </VStack>
+                                                <VStack align="end" spacing={1}>
+                                                  <Text
+                                                    fontSize="xs"
+                                                    color="gray.500"
+                                                    fontFamily="mono"
+                                                  >
+                                                    #{grandChild.wfgCode}
+                                                  </Text>
+                                                  <Text
+                                                    fontSize="xs"
+                                                    color="gray.400"
+                                                  >
+                                                    Level {grandChild.wfgLevel}{" "}
+                                                    • Order{" "}
+                                                    {grandChild.wfgOrder}
+                                                  </Text>
+                                                </VStack>
+                                              </HStack>
+                                            </Box>
+                                          )
+                                        )}
+                                      </VStack>
+                                    )}
+                                </Box>
+                              ))}
+                            </VStack>
+                          )}
+                      </Box>
+                    ))}
+
+                    {DataWorkflowGroups.length === 0 && (
+                      <Box textAlign="center" py={12}>
+                        <FiFrown
+                          size={48}
+                          color="gray.400"
+                          style={{ margin: "0 auto 16px" }}
+                        />
+                        <Text color="gray.500" fontSize="lg">
+                          No workflow groups found
+                        </Text>
+                      </Box>
+                    )}
+                  </VStack>
                 )}
               </Flex>
             </CardBody>
