@@ -51,6 +51,7 @@ import {
   AlertIcon,
   AlertTitle,
   AlertDescription,
+  Badge,
   Modal,
   ModalOverlay,
   ModalContent,
@@ -178,6 +179,14 @@ function WorkflowDetailView() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [pendingEditValues, setPendingEditValues] = useState<{id: string; wfgName: string; wfgDesc: string} | null>(null);
   const [editingItem, setEditingItem] = useState<WorkflowGroupResponse | null>(null);
+  
+  // Inline editing state
+  const [editingInline, setEditingInline] = useState<{id: string; field: 'name' | 'desc'} | null>(null);
+  const [inlineValues, setInlineValues] = useState<{name: string; desc: string}>({name: '', desc: ''});
+  
+  // Dynamic add child state
+  const [addingChild, setAddingChild] = useState<{parentId: string; level: number} | null>(null);
+  const [newChildValues, setNewChildValues] = useState<{name: string; desc: string}>({name: '', desc: ''});
   
   // Add child confirmation dialog state
   const [showAddChildDialog, setShowAddChildDialog] = useState(false);
@@ -496,6 +505,115 @@ function WorkflowDetailView() {
     setAddingChildParent(parentItem);
     addChildFormik.resetForm();
     onAddChildOpen();
+  };
+
+  // Inline editing functions
+  const startInlineEdit = (item: WorkflowGroupResponse, field: 'name' | 'desc') => {
+    setEditingInline({id: item.id, field});
+    setInlineValues({
+      name: item.wfgName,
+      desc: item.wfgDesc || ''
+    });
+  };
+
+  const cancelInlineEdit = () => {
+    setEditingInline(null);
+    setInlineValues({name: '', desc: ''});
+  };
+
+  const saveInlineEdit = async () => {
+    if (!editingInline) return;
+
+    const item = findItemById(localWorkflowData, editingInline.id);
+    if (!item) return;
+
+    const newName = editingInline.field === 'name' ? inlineValues.name : item.wfgName;
+    const newDesc = editingInline.field === 'desc' ? inlineValues.desc : item.wfgDesc;
+
+    // Direct API call without confirmation
+    const payload: WorkflowGroupUpdatePayload = {
+      id: editingInline.id,
+      wfgName: newName,
+      wfgDesc: newDesc || null,
+      wfgOrder: item.wfgOrder
+    };
+
+    const token = localStorage.getItem("tokenData") as string;
+    const result = await UpdateWorkflowGroup(payload, token);
+    
+    if (result?.statusCode === RES_CODE_OK) {
+      RefreshAction();
+      toast({
+        title: "Berhasil",
+        description: "Workflow berhasil diubah",
+        status: "success",
+        duration: 2000,
+        isClosable: true,
+      });
+    } else {
+      toast({
+        title: "Gagal",
+        description: result?.message || "Gagal mengubah workflow",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+
+    // Reset inline editing state
+    setEditingInline(null);
+    setInlineValues({name: '', desc: ''});
+  };
+
+  // Dynamic add child functions
+  const startAddChild = (parentId: string, level: number) => {
+    setAddingChild({parentId, level});
+    setNewChildValues({name: '', desc: ''});
+  };
+
+  const cancelAddChild = () => {
+    setAddingChild(null);
+    setNewChildValues({name: '', desc: ''});
+  };
+
+  const saveNewChild = async () => {
+    if (!addingChild || !newChildValues.name.trim()) return;
+
+    // Calculate order for new child
+    const parentItem = findItemById(localWorkflowData, addingChild.parentId);
+    const childCount = parentItem?.workflowChild?.length || 0;
+
+    const payload: WorkflowGroupInsertPayload = {
+      parentId: addingChild.parentId,
+      wfgOrder: childCount + 1,
+      wfgName: newChildValues.name.trim(),
+      wfgDesc: newChildValues.desc.trim() || null,
+      wfgLevel: addingChild.level,
+      wfgCategoryId: CategoryId || "",
+    };
+
+    const token = localStorage.getItem("tokenData") as string;
+    const result = await InsertWorkflowGroup(payload, token);
+    
+    if (result?.statusCode === RES_CODE_OK || result?.statusCode === 201) {
+      RefreshAction();
+      toast({
+        title: "Berhasil",
+        description: "Item child berhasil ditambahkan",
+        status: "success",
+        duration: 2000,
+        isClosable: true,
+      });
+      cancelAddChild();
+    } else {
+      toast({
+        title: "Gagal",
+        description: result?.message || "Gagal menambah item child",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
   };
 
   // Delete item function
@@ -849,12 +967,89 @@ function WorkflowDetailView() {
                             <Text fontSize="sm" color="gray.600" fontWeight="bold" minW="8" w="8">
                               {group.wfgOrder}
                             </Text>
-                            <Text fontWeight="semibold" color={colorMode === "light" ? "gray.800" : "white"} minW="200px" w="200px" noOfLines={1}>
-                              {group.wfgName}
+                            <Text fontWeight="semibold" color={colorMode === "light" ? "gray.800" : "white"} minW="200px" w="200px">
+                              {editingInline?.id === group.id && editingInline?.field === 'name' ? (
+                                <Input
+                                  value={inlineValues.name}
+                                  onChange={(e) => setInlineValues(prev => ({...prev, name: e.target.value}))}
+                                  onBlur={saveInlineEdit}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') saveInlineEdit();
+                                    if (e.key === 'Escape') cancelInlineEdit();
+                                  }}
+                                  size="sm"
+                                  autoFocus
+                                  maxLength={100}
+                                />
+                              ) : (
+                                <HStack spacing={1} alignItems="center" position="relative" role="group">
+                                  <Text 
+                                    noOfLines={1} 
+                                    cursor="pointer" 
+                                    onClick={() => startInlineEdit(group, 'name')}
+                                    _hover={{bg: colorMode === "light" ? "gray.100" : "gray.700"}}
+                                    p={1}
+                                    rounded="sm"
+                                    flex={1}
+                                  >
+                                    {group.wfgName}
+                                  </Text>
+                                  {group.workflowChild && group.workflowChild.length > 0 && (
+                                    <Badge colorScheme="blue" fontSize="xs" ml={2}>
+                                      {group.workflowChild.length}
+                                    </Badge>
+                                  )}
+                                  <Box 
+                                    opacity={0} 
+                                    _groupHover={{opacity: 1}} 
+                                    transition="opacity 0.2s"
+                                    color="gray.500"
+                                    fontSize="xs"
+                                  >
+                                    <FiEdit3 />
+                                  </Box>
+                                </HStack>
+                              )}
                             </Text>
                             {group.wfgDesc && (
-                              <Text fontSize="sm" color="gray.500" noOfLines={1} flex={1}>
-                                - {group.wfgDesc}
+                              <Text fontSize="sm" color="gray.500" flex={1}>
+                                {editingInline?.id === group.id && editingInline?.field === 'desc' ? (
+                                  <Input
+                                    value={inlineValues.desc}
+                                    onChange={(e) => setInlineValues(prev => ({...prev, desc: e.target.value}))}
+                                    onBlur={saveInlineEdit}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') saveInlineEdit();
+                                      if (e.key === 'Escape') cancelInlineEdit();
+                                    }}
+                                    size="sm"
+                                    autoFocus
+                                    maxLength={300}
+                                  />
+                                ) : (
+                                  <HStack spacing={1} alignItems="center" position="relative" role="group">
+                                    <Text 
+                                      noOfLines={1} 
+                                      cursor="pointer" 
+                                      onClick={() => startInlineEdit(group, 'desc')}
+                                      _hover={{bg: colorMode === "light" ? "gray.100" : "gray.700"}}
+                                      p={1}
+                                      rounded="sm"
+                                      flex={1}
+                                    >
+                                      - {group.wfgDesc}
+                                    </Text>
+                                    <Box 
+                                      opacity={0} 
+                                      _groupHover={{opacity: 1}} 
+                                      transition="opacity 0.2s"
+                                      color="gray.500"
+                                      fontSize="xs"
+                                    >
+                                      <FiEdit3 />
+                                    </Box>
+                                  </HStack>
+                                )}
                               </Text>
                             )}
                           </HStack>
@@ -880,20 +1075,11 @@ function WorkflowDetailView() {
                             <Button 
                               size="xs" 
                               leftIcon={<FiPlus />} 
-                              colorScheme="gray" 
-                              variant="solid"
-                              onClick={() => openAddChildModal(group)}
+                              colorScheme="green" 
+                              variant="ghost"
+                              onClick={() => startAddChild(group.id, group.wfgLevel + 1)}
                             >
                               Add
-                            </Button>
-                            <Button 
-                              size="xs" 
-                              leftIcon={<FiEdit3 />} 
-                              colorScheme="gray" 
-                              variant="ghost"
-                              onClick={() => openEditModal(group)}
-                            >
-                              Edit
                             </Button>
                             {(!group.workflowChild || group.workflowChild.length === 0) && (
                               <Button 
@@ -937,13 +1123,93 @@ function WorkflowDetailView() {
                                     <Text fontSize="xs" color="gray.600" fontWeight="bold" minW="6" w="6">
                                       {child.wfgOrder}
                                     </Text>
-                                    <Text fontSize="sm" fontWeight="medium" color={colorMode === "light" ? "gray.700" : "gray.200"} minW="180px" w="180px" noOfLines={1}>
-                                      {child.wfgName}
+                                    <Text fontSize="sm" fontWeight="medium" color={colorMode === "light" ? "gray.700" : "gray.200"} minW="180px" w="180px">
+                                      {editingInline?.id === child.id && editingInline?.field === 'name' ? (
+                                        <Input
+                                          value={inlineValues.name}
+                                          onChange={(e) => setInlineValues(prev => ({...prev, name: e.target.value}))}
+                                          onBlur={saveInlineEdit}
+                                          onKeyDown={(e) => {
+                                            if (e.key === 'Enter') saveInlineEdit();
+                                            if (e.key === 'Escape') cancelInlineEdit();
+                                          }}
+                                          size="sm"
+                                          autoFocus
+                                          maxLength={100}
+                                        />
+                                      ) : (
+                                        <HStack spacing={1} alignItems="center" position="relative" role="group">
+                                          <Text 
+                                            noOfLines={1} 
+                                            cursor="pointer" 
+                                            onClick={() => startInlineEdit(child, 'name')}
+                                            _hover={{bg: colorMode === "light" ? "gray.100" : "gray.700"}}
+                                            p={1}
+                                            rounded="sm"
+                                            flex={1}
+                                          >
+                                            {child.wfgName}
+                                          </Text>
+                                          {child.workflowChild && child.workflowChild.length > 0 && (
+                                            <Badge colorScheme="green" fontSize="xs" ml={1}>
+                                              {child.workflowChild.length}
+                                            </Badge>
+                                          )}
+                                          <Box 
+                                            opacity={0} 
+                                            _groupHover={{opacity: 1}} 
+                                            transition="opacity 0.2s"
+                                            color="gray.500"
+                                            fontSize="xs"
+                                          >
+                                            <FiEdit3 />
+                                          </Box>
+                                        </HStack>
+                                      )}
                                     </Text>
                                     {child.wfgDesc && (
-                                      <Text fontSize="xs" color="gray.500" noOfLines={1} flex={1}>
-                                        - {child.wfgDesc}
-                                      </Text>
+                                      <HStack spacing={1} alignItems="center" position="relative" role="group" flex={1}>
+                                        {editingInline?.id === child.id && editingInline?.field === 'desc' ? (
+                                          <Input
+                                            value={inlineValues.desc}
+                                            onChange={(e) => setInlineValues(prev => ({...prev, desc: e.target.value}))}
+                                            onBlur={saveInlineEdit}
+                                            onKeyDown={(e) => {
+                                              if (e.key === 'Enter') saveInlineEdit();
+                                              if (e.key === 'Escape') cancelInlineEdit();
+                                            }}
+                                            size="sm"
+                                            autoFocus
+                                            maxLength={300}
+                                            placeholder="Description..."
+                                          />
+                                        ) : (
+                                          <>
+                                            <Text 
+                                              fontSize="xs" 
+                                              color="gray.500" 
+                                              noOfLines={1} 
+                                              flex={1}
+                                              cursor="pointer"
+                                              onClick={() => startInlineEdit(child, 'desc')}
+                                              _hover={{bg: colorMode === "light" ? "gray.100" : "gray.700"}}
+                                              p={1}
+                                              rounded="sm"
+                                            >
+                                              - {child.wfgDesc}
+                                            </Text>
+                                            <Box 
+                                              opacity={0} 
+                                              _groupHover={{opacity: 1}} 
+                                              transition="opacity 0.2s"
+                                              color="gray.500"
+                                              fontSize="xs"
+                                            >
+                                              <FiEdit3 />
+                                            </Box>
+                                          </>
+                                        )}
+                                      </HStack>
                                     )}
                                   </HStack>
                                   <HStack spacing={1} minW="280px" justify="flex-end">
@@ -968,20 +1234,11 @@ function WorkflowDetailView() {
                                     <Button 
                                       size="xs" 
                                       leftIcon={<FiPlus />} 
-                                      colorScheme="gray" 
-                                      variant="solid"
-                                      onClick={() => openAddChildModal(child)}
+                                      colorScheme="green" 
+                                      variant="ghost"
+                                      onClick={() => startAddChild(child.id, child.wfgLevel + 1)}
                                     >
                                       Add
-                                    </Button>
-                                    <Button 
-                                      size="xs" 
-                                      leftIcon={<FiEdit3 />} 
-                                      colorScheme="gray" 
-                                      variant="ghost"
-                                      onClick={() => openEditModal(child)}
-                                    >
-                                      Edit
                                     </Button>
                                     {(!child.workflowChild || child.workflowChild.length === 0) && (
                                       <Button 
@@ -996,6 +1253,56 @@ function WorkflowDetailView() {
                                     )}
                                   </HStack>
                                 </HStack>
+
+                                {/* Dynamic Add Child for Level 3 */}
+                                {addingChild?.parentId === child.id && (
+                                  <HStack
+                                    p={2}
+                                    bg={colorMode === "light" ? "blue.50" : "blue.900"}
+                                    border="2px dashed"
+                                    borderColor="blue.300"
+                                    rounded="md"
+                                    ml={8}
+                                    mt={1}
+                                    spacing={3}
+                                  >
+                                    <Text fontSize="xs" color="gray.600" fontWeight="bold" minW="4" w="4">
+                                      {(child.workflowChild?.length || 0) + 1}
+                                    </Text>
+                                    <Input
+                                      placeholder="Nama workflow..."
+                                      value={newChildValues.name}
+                                      onChange={(e) => setNewChildValues(prev => ({...prev, name: e.target.value}))}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && newChildValues.name.trim()) saveNewChild();
+                                        if (e.key === 'Escape') cancelAddChild();
+                                      }}
+                                      size="sm"
+                                      autoFocus
+                                      maxLength={100}
+                                      minW="140px"
+                                      w="140px"
+                                    />
+                                    <Input
+                                      placeholder="Deskripsi (opsional)..."
+                                      value={newChildValues.desc}
+                                      onChange={(e) => setNewChildValues(prev => ({...prev, desc: e.target.value}))}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && newChildValues.name.trim()) saveNewChild();
+                                        if (e.key === 'Escape') cancelAddChild();
+                                      }}
+                                      size="sm"
+                                      maxLength={300}
+                                      flex={1}
+                                    />
+                                    <Button size="xs" colorScheme="green" onClick={saveNewChild} isDisabled={!newChildValues.name.trim()}>
+                                      Save
+                                    </Button>
+                                    <Button size="xs" variant="ghost" onClick={cancelAddChild}>
+                                      Cancel
+                                    </Button>
+                                  </HStack>
+                                )}
 
                                 {/* Level 3 - Grandchildren */}
                                 {child.workflowChild && child.workflowChild.length > 0 && expandedItems.has(child.id) && (
@@ -1013,13 +1320,88 @@ function WorkflowDetailView() {
                                           <Text fontSize="xs" color="gray.600" fontWeight="bold" minW="6" w="6">
                                             {grandChild.wfgOrder}
                                           </Text>
-                                          <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.300"} minW="160px" w="160px" noOfLines={1}>
-                                            {grandChild.wfgName}
+                                          <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.300"} minW="160px" w="160px">
+                                            {editingInline?.id === grandChild.id && editingInline?.field === 'name' ? (
+                                              <Input
+                                                value={inlineValues.name}
+                                                onChange={(e) => setInlineValues(prev => ({...prev, name: e.target.value}))}
+                                                onBlur={saveInlineEdit}
+                                                onKeyDown={(e) => {
+                                                  if (e.key === 'Enter') saveInlineEdit();
+                                                  if (e.key === 'Escape') cancelInlineEdit();
+                                                }}
+                                                size="sm"
+                                                autoFocus
+                                                maxLength={100}
+                                              />
+                                            ) : (
+                                              <HStack spacing={1} alignItems="center" position="relative" role="group">
+                                                <Text 
+                                                  noOfLines={1} 
+                                                  cursor="pointer" 
+                                                  onClick={() => startInlineEdit(grandChild, 'name')}
+                                                  _hover={{bg: colorMode === "light" ? "gray.100" : "gray.700"}}
+                                                  p={1}
+                                                  rounded="sm"
+                                                  flex={1}
+                                                >
+                                                  {grandChild.wfgName}
+                                                </Text>
+                                                <Box 
+                                                  opacity={0} 
+                                                  _groupHover={{opacity: 1}} 
+                                                  transition="opacity 0.2s"
+                                                  color="gray.500"
+                                                  fontSize="xs"
+                                                >
+                                                  <FiEdit3 />
+                                                </Box>
+                                              </HStack>
+                                            )}
                                           </Text>
                                           {grandChild.wfgDesc && (
-                                            <Text fontSize="xs" color="gray.500" noOfLines={1} flex={1}>
-                                              - {grandChild.wfgDesc}
-                                            </Text>
+                                            <HStack spacing={1} alignItems="center" position="relative" role="group" flex={1}>
+                                              {editingInline?.id === grandChild.id && editingInline?.field === 'desc' ? (
+                                                <Input
+                                                  value={inlineValues.desc}
+                                                  onChange={(e) => setInlineValues(prev => ({...prev, desc: e.target.value}))}
+                                                  onBlur={saveInlineEdit}
+                                                  onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') saveInlineEdit();
+                                                    if (e.key === 'Escape') cancelInlineEdit();
+                                                  }}
+                                                  size="sm"
+                                                  autoFocus
+                                                  maxLength={300}
+                                                  placeholder="Description..."
+                                                />
+                                              ) : (
+                                                <>
+                                                  <Text 
+                                                    fontSize="xs" 
+                                                    color="gray.500" 
+                                                    noOfLines={1} 
+                                                    flex={1}
+                                                    cursor="pointer"
+                                                    onClick={() => startInlineEdit(grandChild, 'desc')}
+                                                    _hover={{bg: colorMode === "light" ? "gray.100" : "gray.700"}}
+                                                    p={1}
+                                                    rounded="sm"
+                                                  >
+                                                    - {grandChild.wfgDesc}
+                                                  </Text>
+                                                  <Box 
+                                                    opacity={0} 
+                                                    _groupHover={{opacity: 1}} 
+                                                    transition="opacity 0.2s"
+                                                    color="gray.500"
+                                                    fontSize="xs"
+                                                  >
+                                                    <FiEdit3 />
+                                                  </Box>
+                                                </>
+                                              )}
+                                            </HStack>
                                           )}
                                         </HStack>
                                         <HStack spacing={1} minW="220px" justify="flex-end">
@@ -1043,15 +1425,6 @@ function WorkflowDetailView() {
                                           </Button>
                                           <Button 
                                             size="xs" 
-                                            leftIcon={<FiEdit3 />} 
-                                            colorScheme="gray" 
-                                            variant="ghost"
-                                            onClick={() => openEditModal(grandChild)}
-                                          >
-                                            Edit
-                                          </Button>
-                                          <Button 
-                                            size="xs" 
                                             leftIcon={<FiTrash2 />} 
                                             colorScheme="red" 
                                             variant="ghost"
@@ -1066,8 +1439,56 @@ function WorkflowDetailView() {
                                 )}
                               </Box>
                             ))}
+
+                            {/* Dynamic Add Child for Level 2 */}
+                            {addingChild?.parentId === group.id && (
+                              <HStack
+                                p={2}
+                                bg={colorMode === "light" ? "green.50" : "green.900"}
+                                border="2px dashed"
+                                borderColor="green.300"
+                                rounded="md"
+                                spacing={3}
+                              >
+                                <Text fontSize="xs" color="gray.600" fontWeight="bold" minW="6" w="6">
+                                  {(group.workflowChild?.length || 0) + 1}
+                                </Text>
+                                <Input
+                                  placeholder="Nama workflow..."
+                                  value={newChildValues.name}
+                                  onChange={(e) => setNewChildValues(prev => ({...prev, name: e.target.value}))}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && newChildValues.name.trim()) saveNewChild();
+                                    if (e.key === 'Escape') cancelAddChild();
+                                  }}
+                                  size="sm"
+                                  autoFocus
+                                  maxLength={100}
+                                  minW="160px"
+                                  w="160px"
+                                />
+                                <Input
+                                  placeholder="Deskripsi (opsional)..."
+                                  value={newChildValues.desc}
+                                  onChange={(e) => setNewChildValues(prev => ({...prev, desc: e.target.value}))}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && newChildValues.name.trim()) saveNewChild();
+                                    if (e.key === 'Escape') cancelAddChild();
+                                  }}
+                                  size="sm"
+                                  maxLength={300}
+                                  flex={1}
+                                />
+                                <Button size="xs" colorScheme="green" onClick={saveNewChild} isDisabled={!newChildValues.name.trim()}>
+                                  Save
+                                </Button>
+                                <Button size="xs" variant="ghost" onClick={cancelAddChild}>
+                                  Cancel
+                                </Button>
+                              </HStack>
+                            )}
                           </VStack>
-                        )}
+                        )}                      
                       </Box>
                     ))}
                     
