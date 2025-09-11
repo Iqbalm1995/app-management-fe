@@ -2,12 +2,12 @@
 
 import { Suspense } from "react";
 import LoadingMiniSignature from "@/app/components/loadingMini";
-import WorkflowPresetListView from "./workflowPresetListView";
+import WorkflowPresetDetailView from "./workflowPresetDetailView";
 
-export default function WorkflowPresetPage() {
+export default function WorkflowPresetDetailPage() {
   return (
     <Suspense fallback={<LoadingMiniSignature />}>
-      <WorkflowPresetListView />
+      <WorkflowPresetDetailView />
     </Suspense>
   );
 }

@@ -17,9 +17,7 @@ import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useWorkflow, { WorkflowGroupResponse } from "@/app/services/useWorkflow";
-import useWorkflowCategory, {
-  WorkflowCategoryResponse,
-} from "@/app/services/useWorkflowCategories";
+import useWorkflowPreset, { WorkflowPresetResponse } from "@/app/services/useWorkflowPreset";
 import { PaggingListPayload } from "@/app/types/masterTypes";
 import {
   Box,
@@ -27,82 +25,68 @@ import {
   Card,
   CardBody,
   CardHeader,
+  Checkbox,
   Flex,
   Grid,
   GridItem,
   Heading,
+  HStack,
   Stack,
   Text,
   useColorMode,
   VStack,
+  Badge,
 } from "@chakra-ui/react";
-import { Checkbox, HStack } from "@chakra-ui/react";
-import { motion } from "framer-motion";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { FiArrowLeft } from "react-icons/fi";
+import { FiArrowLeft, FiSave } from "react-icons/fi";
 
 const HeaderDataContent: HeaderContentProps = {
-  titleName: `Data Workflow Preset`,
-  breadCrumb: ["Home", "Master Data", "Workflow Preset"],
+  titleName: `Configure Workflow Preset`,
+  breadCrumb: ["Home", "Master Data", "Workflow", "Preset", "Configure"],
 };
 
-// Motion-enhanced version of CardBody
-const MotionCardBody = motion(CardBody);
-
-function WorkflowPresetView() {
-  // SetUp auth data on current page
+function WorkflowPresetDetailView() {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
   const searchParams = useSearchParams();
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
-  const delay = (ms: number) =>
-    new Promise((resolve) => setTimeout(resolve, ms));
 
-  const { GetWorkflowCategoryById } = useWorkflowCategory();
+  const { GetWorkflowPresetById, UpdateWorkflowPreset } = useWorkflowPreset();
   const { ListWorkflowGroups } = useWorkflow();
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
     const token: string = localStorage.getItem("tokenData") as string;
 
-    if (DataAuth == null) {
-      if (storedData) {
-        const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
-        const UserData: AuthDataResponse =
-          StorageAuth.dataLogin as AuthDataResponse;
-        setDataAuth(UserData);
-      }
+    if (DataAuth == null && storedData) {
+      const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
+      const UserData: AuthDataResponse = StorageAuth.dataLogin as AuthDataResponse;
+      setDataAuth(UserData);
     }
 
     if (token) {
       setTokenData(token);
     }
   }, [DataAuth]);
-  // End SetUp auth data on current page
 
   const [IsLoadingPage, setIsLoadingPage] = useState(true);
-  const [CategoryId, setCategoryId] = useState<string | null>(null);
-  useEffect(() => {
-    // Get the 'projectId' from the search params (query string)
-    const id = searchParams.get("categoryId");
-    if (id) {
-      setCategoryId(id); // Set it to the state
-    }
-  }, [searchParams]);
-
-  const [DataWorkflowCategory, setDataWorkflowCategory] =
-    useState<WorkflowCategoryResponse | null>(null);
-  const [DataWorkflowGroups, setDataWorkflowGroups] = useState<
-    WorkflowGroupResponse[]
-  >([]);
-
+  const [PresetId, setPresetId] = useState<string | null>(null);
+  const [DataPreset, setDataPreset] = useState<WorkflowPresetResponse | null>(null);
+  const [DataWorkflowGroups, setDataWorkflowGroups] = useState<WorkflowGroupResponse[]>([]);
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [originalSelectedItems, setOriginalSelectedItems] = useState<Set<string>>(new Set());
   const [RefreshData, setRefreshData] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
-  const [ActionLoading, setActionLoading] = useState(false);
-  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const id = searchParams.get("presetId");
+    if (id) {
+      setPresetId(id);
+    }
+  }, [searchParams]);
 
   // Checkbox handler
   const handleCheckboxChange = (itemId: string, checked: boolean) => {
@@ -117,124 +101,128 @@ function WorkflowPresetView() {
     });
   };
 
-  // Function Detail Data Load Services Workflow Categories
-  const GetDetailWorkflowCategory = async (
-    id: string = ""
-  ): Promise<WorkflowCategoryResponse | null> => {
+  // Get all workflow IDs from tree (recursive)
+  const getAllWorkflowIds = (workflows: WorkflowGroupResponse[]): string[] => {
+    const ids: string[] = [];
+    workflows.forEach(workflow => {
+      ids.push(workflow.id);
+      if (workflow.workflowChild && workflow.workflowChild.length > 0) {
+        ids.push(...getAllWorkflowIds(workflow.workflowChild));
+      }
+    });
+    return ids;
+  };
+
+  // Load preset details
+  const GetDetailPreset = async (id: string) => {
     setIsLoadingProcess(true);
-
-    const token: string = localStorage.getItem("tokenData") as string;
-    const requestData = await GetWorkflowCategoryById(id, token);
-    const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
-
-    if (isErrorResponse || !requestData) {
+    const requestData = await GetWorkflowPresetById(id, tokenData);
+    
+    if (requestData?.statusCode === RES_CODE_OK && requestData.data) {
+      const preset = requestData.data;
+      setDataPreset(preset);
+      
+      // Set selected items from preset workflow data
+      const presetWorkflowIds = getAllWorkflowIds(preset.workflowData || []);
+      const selectedSet = new Set(presetWorkflowIds);
+      setSelectedItems(selectedSet);
+      setOriginalSelectedItems(selectedSet);
+    } else {
       showToast({
         description: requestData?.message || RES_GENERIC_ERROR_MSG,
         statusToast: "error",
       });
-      setIsLoadingProcess(false);
-      setIsLoadingPage(false);
-      return null;
-    } else {
-      console.log(requestData);
-      if (requestData.data == null) {
-        showToast({
-          description: "Data return error",
-          statusToast: "error",
-        });
-        setIsLoadingProcess(false);
-        setIsLoadingPage(false);
-        return null;
-      }
-
-      const itemsData: WorkflowCategoryResponse =
-        requestData.data as WorkflowCategoryResponse;
-
-      setDataWorkflowCategory(itemsData);
-      setIsLoadingProcess(false);
-      setIsLoadingPage(false);
-
-      return itemsData;
     }
+    setIsLoadingProcess(false);
+    setIsLoadingPage(false);
   };
 
-  // Function Detail Data Load Services Workflow Group
-  const GetDataWorkflowGroup = async (
-    searchValue: string = ""
-  ): Promise<WorkflowGroupResponse[]> => {
+  // Load all available workflows for the category
+  const GetDataWorkflowGroup = async (categoryId: string) => {
     setIsLoadingProcess(true);
-
     const PayloadList: PaggingListPayload = {
       limit: MAX_SIZE_TABLE,
       page: 0,
-      search: searchValue,
+      search: "",
       filterWhere: [
-        {
-          field: "parentId",
-          operator: "=",
-          value: "",
-        },
-        {
-          field: "wfgLevel",
-          operator: "=",
-          value: "1",
-        },
-        {
-          field: "wfgCategoryId",
-          operator: "=",
-          value: CategoryId || "",
-        },
+        { field: "parentId", operator: "=", value: "" },
+        { field: "wfgLevel", operator: "=", value: "1" },
+        { field: "wfgCategoryId", operator: "=", value: categoryId },
       ],
       fieldOrder: ["wfgOrder"],
       orderDir: "asc",
     };
-    const token: string = localStorage.getItem("tokenData") as string;
-    const requestData = await ListWorkflowGroups(PayloadList, token);
-    const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
 
-    if (isErrorResponse || !requestData) {
+    const requestData = await ListWorkflowGroups(PayloadList, tokenData);
+    if (requestData?.statusCode === RES_CODE_OK && requestData.data) {
+      setDataWorkflowGroups(requestData.data);
+    } else {
       showToast({
         description: requestData?.message || RES_GENERIC_ERROR_MSG,
         statusToast: "error",
       });
-      setIsLoadingProcess(false);
-      return [];
+    }
+    setIsLoadingProcess(false);
+  };
+
+  // Save preset configuration
+  const savePresetConfiguration = async () => {
+    if (!DataPreset) return;
+
+    setIsLoadingProcess(true);
+
+    // Calculate changes
+    const currentIds = Array.from(selectedItems);
+    const originalIds = Array.from(originalSelectedItems);
+    
+    const toAdd = currentIds.filter(id => !originalIds.includes(id));
+    const toRemove = originalIds.filter(id => !currentIds.includes(id));
+
+    const payload = {
+      id: DataPreset.id,
+      wfPresetName: DataPreset.wfPresetName,
+      wfPresetDesc: DataPreset.wfPresetDesc,
+      workflowGroupDataInsert: toAdd,
+      workflowGroupDataRemove: toRemove,
+    };
+
+    const result = await UpdateWorkflowPreset(payload, tokenData);
+
+    if (result?.statusCode === RES_CODE_OK) {
+      showToast({
+        description: "Preset configuration saved successfully",
+        statusToast: "success",
+      });
+      setOriginalSelectedItems(new Set(currentIds));
     } else {
-      console.log(requestData);
-      if (requestData.data == null) {
-        showToast({
-          description: "Data return error",
-          statusToast: "error",
-        });
-        setIsLoadingProcess(false);
-        return [];
-      }
-
-      const itemsData: WorkflowGroupResponse[] =
-        requestData.data as WorkflowGroupResponse[];
-
-      setDataWorkflowGroups(itemsData);
-      setIsLoadingProcess(false);
-
-      return itemsData;
+      showToast({
+        description: result?.message || RES_GENERIC_ERROR_MSG,
+        statusToast: "error",
+      });
     }
+
+    setIsLoadingProcess(false);
   };
 
-  // Refresh function
-  const RefreshAction = () => {
-    setDataWorkflowCategory(null);
-    setDataWorkflowGroups([]);
-    setRefreshData(RefreshData + 1);
+  // Check if there are unsaved changes
+  const hasChanges = () => {
+    const currentIds = Array.from(selectedItems).sort();
+    const originalIds = Array.from(originalSelectedItems).sort();
+    return JSON.stringify(currentIds) !== JSON.stringify(originalIds);
   };
 
-  // ON LOAD STATE
+  // Load data on mount
   useEffect(() => {
-    setIsLoadingPage(true);
-    if (CategoryId) {
-      GetDetailWorkflowCategory(CategoryId);
-      GetDataWorkflowGroup("");
+    if (PresetId && tokenData) {
+      GetDetailPreset(PresetId);
     }
-  }, [RefreshData, CategoryId]);
+  }, [PresetId, tokenData]);
+
+  useEffect(() => {
+    if (DataPreset && tokenData) {
+      GetDataWorkflowGroup(DataPreset.wfCategoryId);
+    }
+  }, [DataPreset, tokenData]);
 
   return (
     <LayoutAdmin>
@@ -243,48 +231,64 @@ function WorkflowPresetView() {
         breadCrumb={HeaderDataContent.breadCrumb}
       />
 
-      <Grid templateColumns="repeat(2, 1fr)" gap={5} w={"full"}>
-        <GridItem colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }} w={"full"}>
-          <Link href={`/master-data/workflow/detail?categoryId=${CategoryId}`}>
-            <Button leftIcon={<FiArrowLeft />} size={"md"}>
-              Kembali
+      <Grid templateColumns="repeat(2, 1fr)" gap={5} w="full">
+        <GridItem colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }} w="full">
+          <Link href={`/master-data/workflow/preset-workflow?categoryId=${DataPreset?.wfCategoryId}`}>
+            <Button leftIcon={<FiArrowLeft />} size="md">
+              Back to Presets
             </Button>
           </Link>
         </GridItem>
-        <GridItem
-          colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }}
-          w={"full"}
-        ></GridItem>
+        <GridItem colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }} w="full">
+          <Flex justify="end">
+            <Button
+              leftIcon={<FiSave />}
+              colorScheme="blue"
+              onClick={savePresetConfiguration}
+              isLoading={IsLoadingProcess}
+              isDisabled={!hasChanges()}
+            >
+              Save Configuration
+            </Button>
+          </Flex>
+        </GridItem>
       </Grid>
 
-      <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"}>
-        <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 12 }} w={"full"}>
+      <Grid templateColumns="repeat(12, 1fr)" gap={5} w="full">
+        <GridItem colSpan={12} w="full">
           <Card
-            w={"fill"}
+            w="full"
             rounded={radiusStyle}
-            bgColor={colorMode == "light" ? "white" : "gray.800"}
-            minH={"500px"}
+            bg={colorMode === "light" ? "white" : "gray.800"}
+            minH="500px"
           >
             <CardHeader>
-              <Heading as="h5" size="md" w={"full"}>
-                {DataWorkflowCategory != null && DataWorkflowCategory.wfcName}{" "}
-                WORKFLOW
-              </Heading>
-              <Text>
-                {DataWorkflowCategory != null && DataWorkflowCategory.wfcCode}
-              </Text>
+              <VStack align="start" spacing={2}>
+                <Heading as="h5" size="md">
+                  {DataPreset?.wfPresetName} Configuration
+                </Heading>
+                <HStack spacing={4}>
+                  <Badge colorScheme="blue">
+                    {DataPreset?.wfCategoryCode}
+                  </Badge>
+                  <Text fontSize="sm" color="gray.500">
+                    {DataPreset?.wfPresetDesc}
+                  </Text>
+                </HStack>
+                <Text fontSize="sm" color="gray.400">
+                  Select workflows to include in this preset
+                </Text>
+              </VStack>
             </CardHeader>
             <CardBody>
-              <Flex w={"full"} as={Stack} spacing={4}>
-                {/* RENDER DATA */}
+              <Flex w="full" as={Stack} spacing={4}>
                 {IsLoadingPage ? (
                   <LoadingMiniSignature />
-                ) : DataWorkflowCategory == null ? (
+                ) : !DataPreset ? (
                   <InvalidLoadPageView />
                 ) : (
                   <VStack spacing={4} align="stretch" w="full">
-                    {/* RENDER TREE DATA DataWorkflowGroups HERE */}
-                    {DataWorkflowGroups.map((group, index) => (
+                    {DataWorkflowGroups.map((group) => (
                       <Box key={group.id} w="full">
                         {/* Level 1 - Main Group */}
                         <Box
@@ -317,7 +321,7 @@ function WorkflowPresetView() {
                         {/* Level 2 - Children */}
                         {group.workflowChild && group.workflowChild.length > 0 && (
                           <VStack spacing={2} align="stretch" pl={6} mt={2}>
-                            {group.workflowChild.map((child, childIdx) => (
+                            {group.workflowChild.map((child) => (
                               <Box key={child.id}>
                                 <Box
                                   p={2}
@@ -349,7 +353,7 @@ function WorkflowPresetView() {
                                 {/* Level 3 - Grandchildren */}
                                 {child.workflowChild && child.workflowChild.length > 0 && (
                                   <VStack spacing={1} align="stretch" pl={6} mt={1}>
-                                    {child.workflowChild.map((grandChild, grandChildIdx) => (
+                                    {child.workflowChild.map((grandChild) => (
                                       <Box
                                         key={grandChild.id}
                                         p={2}
@@ -386,6 +390,14 @@ function WorkflowPresetView() {
                         )}
                       </Box>
                     ))}
+
+                    {DataWorkflowGroups.length === 0 && !IsLoadingProcess && (
+                      <Box textAlign="center" py={10}>
+                        <Text color="gray.500" fontSize="lg">
+                          No workflows available for this category
+                        </Text>
+                      </Box>
+                    )}
                   </VStack>
                 )}
               </Flex>
@@ -393,18 +405,8 @@ function WorkflowPresetView() {
           </Card>
         </GridItem>
       </Grid>
-
-      {/* DEBUGING */}
-      <Flex w={"full"} as={Stack}>
-        <Box p={2} w={"full"} bgColor={"gray.200"}>
-          <pre>{JSON.stringify(DataWorkflowCategory, null, 2)}</pre>
-        </Box>
-        <Box p={2} w={"full"} bgColor={"gray.200"}>
-          <pre>{JSON.stringify(DataWorkflowGroups, null, 2)}</pre>
-        </Box>
-      </Flex>
     </LayoutAdmin>
   );
 }
 
-export default WorkflowPresetView;
+export default WorkflowPresetDetailView;
