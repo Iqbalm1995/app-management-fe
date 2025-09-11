@@ -305,14 +305,6 @@ const LinkItems: LinkItemProps[] = [
         menuID: "1",
         children: [],
       },
-      {
-        name: "Template Workflow",
-        icon: PiFlowArrow,
-        link: "/master-data/template-workflow",
-        role: ["admin"],
-        menuID: "1",
-        children: [],
-      },
     ],
   },
   // {

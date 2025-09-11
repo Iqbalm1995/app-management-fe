@@ -204,10 +204,10 @@ function MasterDataWorkflowPage() {
                 </Grid>
                 {/* DATA RENDER */}
                 {IsLoadingProcess ? <LoadingMiniSignature /> : <></>}
-                <Grid templateColumns="repeat(4, 1fr)" gap={5} w={"full"}>
+                <Grid templateColumns="repeat(3, 1fr)" gap={5} w={"full"}>
                   {DataWorkflowCategories.map((dt, idx) => (
                     <GridItem
-                      colSpan={{ base: 4, sm: 4, md: 2, lg: 1 }}
+                      colSpan={{ base: 3, sm: 3, md: 1, lg: 1 }}
                       w={"full"}
                       key={idx}
                     >

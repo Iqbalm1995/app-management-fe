@@ -959,6 +959,45 @@ function WorkflowDetailView() {
 
       <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"} pt={3}>
         <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 12 }} w={"full"}>
+          {/* Category Information */}
+          {DataWorkflowCategory && (
+            <Card shadow="sm" rounded="lg" mb={4}>
+              <CardBody>
+                <HStack spacing={4} align="center">
+                  <Box
+                    w={12}
+                    h={12}
+                    bg="purple.500"
+                    rounded="lg"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                  >
+                    <Text color="white" fontWeight="bold" fontSize="lg">
+                      {DataWorkflowCategory.wfcName.charAt(0).toUpperCase()}
+                    </Text>
+                  </Box>
+                  <VStack align="start" spacing={1} flex={1}>
+                    <HStack spacing={2}>
+                      <Text fontSize="lg" fontWeight="bold">
+                        {DataWorkflowCategory.wfcName}
+                      </Text>
+                      <Badge colorScheme="purple" fontSize="xs">
+                        {DataWorkflowCategory.wfcCode}
+                      </Badge>
+                    </HStack>
+                    <Text fontSize="sm" color="gray.600">
+                      {DataWorkflowCategory.wfcDesc || "No description available"}
+                    </Text>
+                    <Text fontSize="xs" color="gray.500">
+                      Category ID: {DataWorkflowCategory.id}
+                    </Text>
+                  </VStack>
+                </HStack>
+              </CardBody>
+            </Card>
+          )}
+
           <Card
             w={"fill"}
             rounded={radiusStyle}
