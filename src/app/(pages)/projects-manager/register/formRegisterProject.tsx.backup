@@ -186,7 +186,7 @@ export const initialProjectsInsertValues: ProjectInsertPayload = {
   proManageByTeamId: "", // Optional
   reqParentId: "", // Optional
   userAssigns: [], // Required (at least an empty array)
-  projectPlanWorkflowIds: [],
+  projectPlanWorkflowIds: [], // Required (at least an empty array)
 };
 
 function FormRegisterProjectView() {
@@ -804,6 +804,85 @@ function FormRegisterProjectView() {
   // Load Workflow Groups
   const { ListWorkflowGroups } = useWorkflow();
 
+  // Hierarchical checkbox handler (from working preset modal)
+  const handleWorkflowCheckboxChange = (itemId: string, checked: boolean) => {
+    setSelectedWorkflowIds((prev) => {
+      const newSet = new Set(prev);
+
+      if (checked) {
+        newSet.add(itemId);
+        // Auto-check parents when child is checked
+        DataWorkflowGroups.forEach((group) => {
+          // Check if this is a level 2 item, then check level 1 parent
+          group.workflowChild?.forEach((child) => {
+            if (child.id === itemId) {
+              newSet.add(group.id);
+            }
+            // Check if this is a level 3 item, then check level 2 and level 1 parents
+            child.workflowChild?.forEach((grandChild) => {
+              if (grandChild.id === itemId) {
+                newSet.add(child.id);
+                newSet.add(group.id);
+              }
+            });
+          });
+        });
+      } else {
+        newSet.delete(itemId);
+        // Auto-uncheck parents if no children are selected
+        DataWorkflowGroups.forEach((group) => {
+          if (group.id === itemId) {
+            // Uncheck all children when parent is unchecked
+            group.workflowChild?.forEach((child) => {
+              newSet.delete(child.id);
+              child.workflowChild?.forEach((grandChild) => {
+                newSet.delete(grandChild.id);
+              });
+            });
+          } else {
+            // Check if this is a level 2 item being unchecked
+            group.workflowChild?.forEach((child) => {
+              if (child.id === itemId) {
+                // Uncheck all level 3 children
+                child.workflowChild?.forEach((grandChild) => {
+                  newSet.delete(grandChild.id);
+                });
+                // Check if level 1 parent should be unchecked
+                const hasOtherSelectedChildren = group.workflowChild?.some(
+                  (sibling) => sibling.id !== itemId && newSet.has(sibling.id)
+                );
+                if (!hasOtherSelectedChildren) {
+                  newSet.delete(group.id);
+                }
+              }
+              // Check if this is a level 3 item being unchecked
+              child.workflowChild?.forEach((grandChild) => {
+                if (grandChild.id === itemId) {
+                  // Check if level 2 parent should be unchecked
+                  const hasOtherSelectedGrandChildren = child.workflowChild?.some(
+                    (sibling) => sibling.id !== itemId && newSet.has(sibling.id)
+                  );
+                  if (!hasOtherSelectedGrandChildren) {
+                    newSet.delete(child.id);
+                    // Check if level 1 parent should be unchecked
+                    const hasOtherSelectedChildren = group.workflowChild?.some(
+                      (sibling) => newSet.has(sibling.id)
+                    );
+                    if (!hasOtherSelectedChildren) {
+                      newSet.delete(group.id);
+                    }
+                  }
+                }
+              });
+            });
+          }
+        });
+      }
+
+      return newSet;
+    });
+  };
+
   const LoadWorkflowGroups = async () => {
     setIsLoadingWorkflow(true);
     try {
@@ -1314,7 +1393,12 @@ function FormRegisterProjectView() {
       return;
     }
 
-    await RegisterProjectData(formik.values);
+    const projectPayload: ProjectInsertPayload = {
+      ...formik.values,
+      projectPlanWorkflowIds: Array.from(selectedWorkflowIds)
+    };
+
+    await RegisterProjectData(projectPayload);
 
     // if (DataAuth && DataAuth.team) {
     //   await AddRequirement(formik.values);
@@ -2054,220 +2138,39 @@ function FormRegisterProjectView() {
                               {DataWorkflowGroups.map((group) => (
                                 <Box key={group.id} w="full">
                                   <Checkbox
-                                    isChecked={selectedWorkflowIds.has(
-                                      group.id
-                                    )}
-                                    onChange={() => {
-                                      const newSelected = new Set(
-                                        selectedWorkflowIds
-                                      );
-                                      if (newSelected.has(group.id)) {
-                                        newSelected.delete(group.id);
-                                        group.workflowChild.forEach(
-                                          (level2) => {
-                                            newSelected.delete(level2.id);
-                                            level2.workflowChild.forEach(
-                                              (level3) => {
-                                                newSelected.delete(level3.id);
-                                              }
-                                            );
-                                          }
-                                        );
-                                      } else {
-                                        newSelected.add(group.id);
-                                        group.workflowChild.forEach(
-                                          (level2) => {
-                                            newSelected.add(level2.id);
-                                            level2.workflowChild.forEach(
-                                              (level3) => {
-                                                newSelected.add(level3.id);
-                                              }
-                                            );
-                                          }
-                                        );
-                                      }
-                                      setSelectedWorkflowIds(newSelected);
-                                        formik.setFieldValue("projectPlanWorkflowIds", Array.from(newSelected));
-                                    }}
+                                    isChecked={selectedWorkflowIds.has(group.id)}
+                                    onChange={(e) => handleWorkflowCheckboxChange(group.id, e.target.checked)}
                                     colorScheme="blue"
                                   >
-                                    <Text fontWeight="bold" color="blue.600">
-                                      {group.wfgName}
-                                    </Text>
+                                    <Text fontWeight="bold" color="blue.600">{group.wfgName}</Text>
                                   </Checkbox>
-                                  <VStack
-                                    align="start"
-                                    spacing={2}
-                                    pl={6}
-                                    mt={2}
-                                  >
+                                  <VStack align="start" spacing={2} pl={6} mt={2}>
                                     {group.workflowChild.map((level2) => (
                                       <Box key={level2.id} w="full">
                                         <Checkbox
-                                          isChecked={selectedWorkflowIds.has(
-                                            level2.id
-                                          )}
-                                          onChange={() => {
-                                            const newSelected = new Set(
-                                              selectedWorkflowIds
-                                            );
-                                            if (newSelected.has(level2.id)) {
-                                              newSelected.delete(level2.id);
-                                              level2.workflowChild.forEach(
-                                                (level3) => {
-                                                  newSelected.delete(level3.id);
-                                                }
-                                              );
-                                            } else {
-                                              newSelected.add(level2.id);
-                                              level2.workflowChild.forEach(
-                                                (level3) => {
-                                                  newSelected.add(level3.id);
-                                                }
-                                              );
-                                            }
-                                            const allLevel2Checked =
-                                              group.workflowChild.every((l2) =>
-                                                newSelected.has(l2.id)
-                                              );
-                                            if (allLevel2Checked) {
-                                              newSelected.add(group.id);
-                                            } else {
-                                              newSelected.delete(group.id);
-                                            }
-                                            setSelectedWorkflowIds(newSelected);
-                                        formik.setFieldValue("projectPlanWorkflowIds", Array.from(newSelected));
-                                          }}
+                                          isChecked={selectedWorkflowIds.has(level2.id)}
+                                          onChange={(e) => handleWorkflowCheckboxChange(level2.id, e.target.checked)}
                                           colorScheme="blue"
                                         >
-                                          <Text
-                                            fontWeight="semibold"
-                                            color="blue.500"
-                                          >
-                                            {level2.wfgName}
-                                          </Text>
+                                          <Text fontWeight="semibold" color="blue.500">{level2.wfgName}</Text>
                                         </Checkbox>
-                                        <VStack
-                                          align="start"
-                                          spacing={1}
-                                          pl={6}
-                                          mt={1}
-                                        >
-                                          {level2.workflowChild.map(
-                                            (level3) => (
-                                              <Checkbox
-                                                key={level3.id}
-                                                isChecked={selectedWorkflowIds.has(
-                                                  level3.id
-                                                )}
-                                                onChange={() => {
-                                                  const newSelected = new Set(
-                                                    selectedWorkflowIds
-                                                  );
-                                                  if (
-                                                    newSelected.has(level3.id)
-                                                  ) {
-                                                    newSelected.delete(
-                                                      level3.id
-                                                    );
-                                                  } else {
-                                                    newSelected.add(level3.id);
-                                                  }
-                                                  const allLevel3Checked =
-                                                    level2.workflowChild.every(
-                                                      (l3) =>
-                                                        newSelected.has(l3.id)
-                                                    );
-                                                  if (allLevel3Checked) {
-                                                    newSelected.add(level2.id);
-                                                  } else {
-                                                    newSelected.delete(
-                                                      level2.id
-                                                    );
-                                                  }
-                                                  const allLevel2Checked =
-                                                    group.workflowChild.every(
-                                                      (l2) =>
-                                                        newSelected.has(l2.id)
-                                                    );
-                                                  if (allLevel2Checked) {
-                                                    newSelected.add(group.id);
-                                                  } else {
-                                                    newSelected.delete(
-                                                      group.id
-                                                    );
-                                                  }
-                                                  setSelectedWorkflowIds(
-                                                    newSelected
-                                                  );
-                                                }}
-                                                colorScheme="blue"
-                                              >
-                                                <VStack
-                                                  align="start"
-                                                  spacing={0}
-                                                >
-                                                  <Text fontWeight="medium">
-                                                    {level3.wfgName}
-                                                  </Text>
-                                                  {level3.wfgDesc && (
-                                                    <Text
-                                                      fontSize="sm"
-                                                      color="gray.600"
-                                                    >
-                                                      {level3.wfgDesc}
-                                                    </Text>
-                                                  )}
-                                                </VStack>
-                                              </Checkbox>
-                                            )
-                                          )}
+                                        <VStack align="start" spacing={1} pl={6} mt={1}>
+                                          {level2.workflowChild.map((level3) => (
+                                            <Checkbox
+                                              key={level3.id}
+                                              isChecked={selectedWorkflowIds.has(level3.id)}
+                                              onChange={(e) => handleWorkflowCheckboxChange(level3.id, e.target.checked)}
+                                              colorScheme="blue"
+                                            >
+                                              <Text fontWeight="medium">{level3.wfgName}</Text>
+                                            </Checkbox>
+                                          ))}
                                         </VStack>
                                       </Box>
                                     ))}
                                   </VStack>
                                 </Box>
                               ))}
-
-                              <Box p={4} bg="gray.50" rounded="md">
-                                <pre>
-                                  {JSON.stringify(formik.values, null, 2)}
-                                </pre>
-                              </Box>
-
-                              {selectedWorkflowIds.size > 0 && (
-                                <Box
-                                  mt={4}
-                                  p={3}
-                                  bg="blue.50"
-                                  rounded="md"
-                                  w="full"
-                                >
-                                  <Text
-                                    fontSize="sm"
-                                    fontWeight="medium"
-                                    color="blue.800"
-                                  >
-                                    Selected: {selectedWorkflowIds.size}{" "}
-                                    workflow(s)
-                                  </Text>
-                                </Box>
-                              )}
-                            </VStack>
-                          ) : (
-                            <Text color="gray.500">
-                              No workflow groups available
-                            </Text>
-                          )}
-                        </CardBody>
-                      </Card>
-                    </Flex>
-                  )}
-
-                  <Flex
-                    mt={10}
-                    mb={2}
-                    w={"full"}
                     justifyContent={"space-between"}
                   >
                     <Button

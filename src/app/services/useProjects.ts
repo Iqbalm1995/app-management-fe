@@ -125,6 +125,7 @@ export interface ProjectInsertPayload {
   proManageByTeamId?: string | null;
   reqParentId?: string | null;
   userAssigns: ProjectUserInsertPayload[];
+  projectPlanWorkflowIds: string[];
 }
 
 export interface ProjectUserInsertPayload {
