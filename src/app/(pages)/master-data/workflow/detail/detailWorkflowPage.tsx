@@ -987,7 +987,8 @@ function WorkflowDetailView() {
                       </Badge>
                     </HStack>
                     <Text fontSize="sm" color="gray.600">
-                      {DataWorkflowCategory.wfcDesc || "No description available"}
+                      {DataWorkflowCategory.wfcDesc ||
+                        "No description available"}
                     </Text>
                     <Text fontSize="xs" color="gray.500">
                       Category ID: {DataWorkflowCategory.id}

@@ -26,6 +26,7 @@ import {
   radiusStyle,
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
+  WorkflowProjectDevelopmentId,
 } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import {
@@ -42,6 +43,9 @@ import useProjects, {
   ProjectInsertPayload,
   ProjectUserInsertPayload,
 } from "@/app/services/useProjects";
+import useWorkflow, {
+  WorkflowGroupResponse,
+} from "@/app/services/useWorkflow";
 import useRequirements, {
   BacklogDataResponse,
   BacklogUpdatePayload,
@@ -106,6 +110,7 @@ import {
   Tooltip,
   Textarea,
   Tab,
+  Checkbox,
   VStack,
 } from "@chakra-ui/react";
 import {
@@ -125,6 +130,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   FiArrowLeft,
   FiArrowRight,
+  FiBriefcase,
   FiInfo,
   FiMinusCircle,
   FiPlusCircle,
@@ -764,6 +770,11 @@ function FormRegisterProjectView() {
 
   const [globalFilter, setGlobalFilter] = useState<string>("");
 
+  // Workflow Groups State
+  const [DataWorkflowGroups, setDataWorkflowGroups] = useState<WorkflowGroupResponse[]>([]);
+  const [selectedWorkflowIds, setSelectedWorkflowIds] = useState<Set<string>>(new Set());
+  const [IsLoadingWorkflow, setIsLoadingWorkflow] = useState(false);
+
   const updateBacklog = (
     backlogId: string,
     updatedData: BacklogDataResponse
@@ -786,6 +797,56 @@ function FormRegisterProjectView() {
     //   statusToast: "success",
     // });
   };
+
+
+  // Load Workflow Groups
+  const { ListWorkflowGroups } = useWorkflow();
+  
+  const LoadWorkflowGroups = async () => {
+    setIsLoadingWorkflow(true);
+    try {
+      const PayloadList: PaggingListPayload = {
+        limit: MAX_SIZE_TABLE,
+        page: 0,
+        search: "",
+        filterWhere: [
+          {
+            field: "parentId",
+            operator: "=",
+            value: "",
+          },
+          {
+            field: "wfgLevel",
+            operator: "=",
+            value: "1",
+          },
+          {
+            field: "wfgCategoryId",
+            operator: "=",
+            value: WorkflowProjectDevelopmentId,
+          },
+        ],
+        fieldOrder: ["wfgOrder"],
+        orderDir: "asc",
+      };
+      
+      const requestData = await ListWorkflowGroups(PayloadList, tokenData);
+      if (requestData?.statusCode === RES_CODE_OK && requestData.data) {
+        setDataWorkflowGroups(requestData.data);
+      }
+    } catch (error) {
+      console.error("Error loading workflow groups:", error);
+    } finally {
+      setIsLoadingWorkflow(false);
+    }
+  };
+
+  // Load workflow groups when token is available
+  useEffect(() => {
+    if (tokenData) {
+      LoadWorkflowGroups();
+    }
+  }, [tokenData]);
 
   const columnsData = useMemo<ColumnDef<BacklogDataResponse>[]>(
     () => [
@@ -982,11 +1043,8 @@ function FormRegisterProjectView() {
         id: "id",
         cell: (info) => (
           <Flex w={"full"} justifyContent={"center"}>
-            <AdditionalInfoUpdate
-              idInput={info.row.original.backlogCode}
-              dataSource={info.row.original}
-              updateBacklog={updateBacklog}
-            />
+            <AdditionalInfoUpdate data={DataBacklogsRequirement} />
+            
 
             {/* <Button
               onClick={() => {
@@ -1102,6 +1160,15 @@ function FormRegisterProjectView() {
         <HStack>
           <FiSettings />
           <Text>Feature Information</Text>
+        </HStack>
+      ),
+    },
+    {
+      title: "Step 4",
+      description: (
+        <HStack>
+          <FiBriefcase />
+          <Text>Work Stages</Text>
         </HStack>
       ),
     },
@@ -1282,7 +1349,6 @@ function FormRegisterProjectView() {
       />
 
       {/* <form onSubmit={formik.handleSubmit} onReset={formik.handleReset}> */}
-      
 
       {/* Requirement Information */}
       {DataRequirement && (
@@ -1334,316 +1400,316 @@ function FormRegisterProjectView() {
         <InvalidLoadPageView />
       ) : (
         <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"}>
-        <GridItem colSpan={{ base: 12, sm: 12, md: 8, lg: 8 }} w={"full"}>
-          <Flex
-            w={"full"}
-            as={Wrap}
-            spacing={2}
-            overflowX={"auto"}
-            justifyContent={"start"}
-          >
-            <Link href={`/projects-manager/`}>
-              <Button size={"lg"} leftIcon={<FiArrowLeft />}>
-                Kembali
-              </Button>
-            </Link>
-          </Flex>
-        </GridItem>
+          <GridItem colSpan={{ base: 12, sm: 12, md: 8, lg: 8 }} w={"full"}>
+            <Flex
+              w={"full"}
+              as={Wrap}
+              spacing={2}
+              overflowX={"auto"}
+              justifyContent={"start"}
+            >
+              <Link href={`/projects-manager/`}>
+                <Button size={"lg"} leftIcon={<FiArrowLeft />}>
+                  Kembali
+                </Button>
+              </Link>
+            </Flex>
+          </GridItem>
 
-        <GridItem colSpan={{ base: 12, sm: 12, md: 4, lg: 4 }} w={"full"}>
-          <Flex
-            as={Wrap}
-            w={"full"}
-            justifyContent={"end"}
-            alignItems={"center"}
-          ></Flex>
-        </GridItem>
+          <GridItem colSpan={{ base: 12, sm: 12, md: 4, lg: 4 }} w={"full"}>
+            <Flex
+              as={Wrap}
+              w={"full"}
+              justifyContent={"end"}
+              alignItems={"center"}
+            ></Flex>
+          </GridItem>
 
-        <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 12 }} w={"full"}>
-          <Card w={"fill"} rounded={radiusStyle}>
-            <CardBody>
-              <Flex w={"full"} as={Stack} spacing={4}>
-                <Flex as={HStack} spacing={4} pb={6}>
-                  {steps.map((step, index) => (
-                    <Flex
-                      key={index}
-                      px={8}
-                      py={4}
-                      bgColor={
-                        activeStep == index ? "primary.500" : "transparent"
-                      }
-                      rounded={radiusStyle}
-                      color={activeStep == index ? "white" : "gray.500"}
-                      boxShadow={activeStep == index ? "md" : "none"}
-                      w={"280px"}
-                      justifyContent={"center"}
-                      textAlign={"center"}
-                      alignItems={"center"}
-                      cursor={"pointer"}
-                      onClick={() => {
-                        goToSection(index);
-                      }}
-                      _hover={{
-                        bg: "yellow.300",
-                        color: "gray.800",
-                        boxShadow: "md",
-                      }}
-                    >
-                      <Heading as="h4" size="md">
-                        {step.description}
-                      </Heading>
-                    </Flex>
-                  ))}
-                </Flex>
-                {activeStep === 0 && (
-                  <Flex as={Stack} w={"full"} spacing={5} p={4}>
-                    <FormControl id="initialAppReqCode">
-                      <InputLayout>
-                        <FormLabel h={"full"} mt={2}>
-                          Inisial Aplikasi
-                        </FormLabel>
-                        <Stack spacing={0} h={"full"}>
-                          <Input
-                            id="initialAppReqCode"
-                            name="initialAppReqCode"
-                            type="text"
-                            value={DataRequirement?.appInitialCode || ""}
-                            placeholder={`Initial Aplikasi`}
-                            minLength={3}
-                            maxLength={150}
-                            // isDisabled={true}
-                            isReadOnly
-                            variant={"filled"}
-                          />
-                        </Stack>
-                      </InputLayout>
-                    </FormControl>
-                    <FormControl id="initialAppReqName">
-                      <InputLayoutFull>
-                        <FormLabel h={"full"} mt={2}>
-                          Nama Aplikasi
-                        </FormLabel>
-                        <Stack spacing={0} h={"full"}>
-                          <Input
-                            id="initialAppReqName"
-                            name="initialAppReqName"
-                            type="text"
-                            value={DataRequirement?.appInitialName || ""}
-                            placeholder={`Nama Aplikasi`}
-                            minLength={3}
-                            maxLength={200}
-                            // isDisabled={true}
-                            isReadOnly
-                            variant={"filled"}
-                          />
-                        </Stack>
-                      </InputLayoutFull>
-                    </FormControl>
-                    <FormControl id="reqTypeProject">
-                      <InputLayout>
-                        <FormLabel h={"full"} mt={2}>
-                          Kategori Requirement
-                        </FormLabel>
-                        <Stack spacing={0} h={"full"}>
-                          <Input
-                            id="reqTypeProject"
-                            name="reqTypeProject"
-                            type="text"
-                            value={DataRequirement?.requirementType || ""}
-                            minLength={3}
-                            maxLength={200}
-                            // isDisabled={true}
-                            isReadOnly
-                            variant={"filled"}
-                          />
-                        </Stack>
-                      </InputLayout>
-                    </FormControl>
-                    {/* --------------------------- */}
+          <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 12 }} w={"full"}>
+            <Card w={"fill"} rounded={radiusStyle}>
+              <CardBody>
+                <Flex w={"full"} as={Stack} spacing={4}>
+                  <Flex as={HStack} spacing={4} pb={6}>
+                    {steps.map((step, index) => (
+                      <Flex
+                        key={index}
+                        px={8}
+                        py={4}
+                        bgColor={
+                          activeStep == index ? "primary.500" : "transparent"
+                        }
+                        rounded={radiusStyle}
+                        color={activeStep == index ? "white" : "gray.500"}
+                        boxShadow={activeStep == index ? "md" : "none"}
+                        w={"280px"}
+                        justifyContent={"center"}
+                        textAlign={"center"}
+                        alignItems={"center"}
+                        cursor={"pointer"}
+                        onClick={() => {
+                          goToSection(index);
+                        }}
+                        _hover={{
+                          bg: "yellow.300",
+                          color: "gray.800",
+                          boxShadow: "md",
+                        }}
+                      >
+                        <Heading as="h4" size="md">
+                          {step.description}
+                        </Heading>
+                      </Flex>
+                    ))}
+                  </Flex>
+                  {activeStep === 0 && (
+                    <Flex as={Stack} w={"full"} spacing={5} p={4}>
+                      <FormControl id="initialAppReqCode">
+                        <InputLayout>
+                          <FormLabel h={"full"} mt={2}>
+                            Inisial Aplikasi
+                          </FormLabel>
+                          <Stack spacing={0} h={"full"}>
+                            <Input
+                              id="initialAppReqCode"
+                              name="initialAppReqCode"
+                              type="text"
+                              value={DataRequirement?.appInitialCode || ""}
+                              placeholder={`Initial Aplikasi`}
+                              minLength={3}
+                              maxLength={150}
+                              // isDisabled={true}
+                              isReadOnly
+                              variant={"filled"}
+                            />
+                          </Stack>
+                        </InputLayout>
+                      </FormControl>
+                      <FormControl id="initialAppReqName">
+                        <InputLayoutFull>
+                          <FormLabel h={"full"} mt={2}>
+                            Nama Aplikasi
+                          </FormLabel>
+                          <Stack spacing={0} h={"full"}>
+                            <Input
+                              id="initialAppReqName"
+                              name="initialAppReqName"
+                              type="text"
+                              value={DataRequirement?.appInitialName || ""}
+                              placeholder={`Nama Aplikasi`}
+                              minLength={3}
+                              maxLength={200}
+                              // isDisabled={true}
+                              isReadOnly
+                              variant={"filled"}
+                            />
+                          </Stack>
+                        </InputLayoutFull>
+                      </FormControl>
+                      <FormControl id="reqTypeProject">
+                        <InputLayout>
+                          <FormLabel h={"full"} mt={2}>
+                            Kategori Requirement
+                          </FormLabel>
+                          <Stack spacing={0} h={"full"}>
+                            <Input
+                              id="reqTypeProject"
+                              name="reqTypeProject"
+                              type="text"
+                              value={DataRequirement?.requirementType || ""}
+                              minLength={3}
+                              maxLength={200}
+                              // isDisabled={true}
+                              isReadOnly
+                              variant={"filled"}
+                            />
+                          </Stack>
+                        </InputLayout>
+                      </FormControl>
+                      {/* --------------------------- */}
 
-                    <FormControl
-                      id="projectName"
-                      isInvalid={formik.errors.projectName ? true : false}
-                      isRequired
-                    >
-                      <InputLayout>
-                        <FormLabel h={"full"} mt={2}>
-                          Nama Project
-                        </FormLabel>
-                        <Stack spacing={0} h={"full"}>
-                          <Input
-                            id="projectName"
-                            name="projectName"
-                            type="text"
-                            // onChange={formik.handleChange}
+                      <FormControl
+                        id="projectName"
+                        isInvalid={formik.errors.projectName ? true : false}
+                        isRequired
+                      >
+                        <InputLayout>
+                          <FormLabel h={"full"} mt={2}>
+                            Nama Project
+                          </FormLabel>
+                          <Stack spacing={0} h={"full"}>
+                            <Input
+                              id="projectName"
+                              name="projectName"
+                              type="text"
+                              // onChange={formik.handleChange}
 
-                            onChange={(e) => {
-                              // const onlyAlphabets = e.target.value.replace(
-                              //   /[^a-zA-Z ]/g,
-                              //   ""
-                              // );
-                              formik.setFieldValue(
-                                `projectName`,
-                                e.target.value
-                              );
-                            }}
-                            value={formik.values.projectName ?? ""}
-                            placeholder={`Nama Project`}
-                            minLength={3}
-                            maxLength={200}
-                            // isDisabled={ActionLoading}
-                          />
-                          <FormErrorMessage>
-                            {formik.errors.projectName}
-                          </FormErrorMessage>
-                        </Stack>
-                      </InputLayout>
-                    </FormControl>
+                              onChange={(e) => {
+                                // const onlyAlphabets = e.target.value.replace(
+                                //   /[^a-zA-Z ]/g,
+                                //   ""
+                                // );
+                                formik.setFieldValue(
+                                  `projectName`,
+                                  e.target.value
+                                );
+                              }}
+                              value={formik.values.projectName ?? ""}
+                              placeholder={`Nama Project`}
+                              minLength={3}
+                              maxLength={200}
+                              // isDisabled={ActionLoading}
+                            />
+                            <FormErrorMessage>
+                              {formik.errors.projectName}
+                            </FormErrorMessage>
+                          </Stack>
+                        </InputLayout>
+                      </FormControl>
 
-                    <FormControl
-                      id="projectNo"
-                      isInvalid={formik.errors.projectNo ? true : false}
-                      isRequired
-                    >
-                      <InputLayout>
-                        <FormLabel h={"full"} mt={2}>
-                          Nomor Project
-                        </FormLabel>
-                        <Stack spacing={0} h={"full"}>
-                          <RegProjectNumberInput
-                            id="projectNo"
-                            // name="projectNo"
-                            type="text"
-                            // onChange={formik.handleChange}
-                            onChange={(val) =>
-                              formik.setFieldValue("projectNo", val)
-                            }
-                            value={formik.values.projectNo ?? ""}
-                            placeholder={`0000/00/BJB/XXXX/0000-A/0`}
-                            minLength={25}
-                            maxLength={27}
-                            // isDisabled={ActionLoading}
-                          />
-                          <FormErrorMessage>
-                            {formik.errors.projectNo}
-                          </FormErrorMessage>
-                        </Stack>
-                      </InputLayout>
-                    </FormControl>
+                      <FormControl
+                        id="projectNo"
+                        isInvalid={formik.errors.projectNo ? true : false}
+                        isRequired
+                      >
+                        <InputLayout>
+                          <FormLabel h={"full"} mt={2}>
+                            Nomor Project
+                          </FormLabel>
+                          <Stack spacing={0} h={"full"}>
+                            <RegProjectNumberInput
+                              id="projectNo"
+                              // name="projectNo"
+                              type="text"
+                              // onChange={formik.handleChange}
+                              onChange={(val) =>
+                                formik.setFieldValue("projectNo", val)
+                              }
+                              value={formik.values.projectNo ?? ""}
+                              placeholder={`0000/00/BJB/XXXX/0000-A/0`}
+                              minLength={25}
+                              maxLength={27}
+                              // isDisabled={ActionLoading}
+                            />
+                            <FormErrorMessage>
+                              {formik.errors.projectNo}
+                            </FormErrorMessage>
+                          </Stack>
+                        </InputLayout>
+                      </FormControl>
 
-                    <FormControl
-                      id="projectDesc"
-                      isInvalid={formik.errors.projectDesc ? true : false}
-                    >
-                      <InputLayout>
-                        <FormLabel h={"full"} mt={2}>
-                          Deskripsi
-                        </FormLabel>
-                        <Stack spacing={0} h={"full"}>
-                          <Textarea
-                            id="projectDesc"
-                            name="projectDesc"
-                            onChange={formik.handleChange}
-                            defaultValue={formik.values.projectDesc ?? ""}
-                            placeholder={`Perlihal`}
-                            maxLength={300}
-                            // isDisabled={ActionLoading}
-                          />
-                          <FormErrorMessage>
-                            {formik.errors.projectDesc}
-                          </FormErrorMessage>
-                        </Stack>
-                      </InputLayout>
-                    </FormControl>
+                      <FormControl
+                        id="projectDesc"
+                        isInvalid={formik.errors.projectDesc ? true : false}
+                      >
+                        <InputLayout>
+                          <FormLabel h={"full"} mt={2}>
+                            Deskripsi
+                          </FormLabel>
+                          <Stack spacing={0} h={"full"}>
+                            <Textarea
+                              id="projectDesc"
+                              name="projectDesc"
+                              onChange={formik.handleChange}
+                              defaultValue={formik.values.projectDesc ?? ""}
+                              placeholder={`Perlihal`}
+                              maxLength={300}
+                              // isDisabled={ActionLoading}
+                            />
+                            <FormErrorMessage>
+                              {formik.errors.projectDesc}
+                            </FormErrorMessage>
+                          </Stack>
+                        </InputLayout>
+                      </FormControl>
 
-                    <FormControl
-                      id="projectCategory"
-                      isInvalid={formik.errors.projectCategory ? true : false}
-                      isRequired
-                    >
-                      <InputLayout>
-                        <FormLabel>Karakteristik Project</FormLabel>
-                        <Stack spacing={0} h={"full"}>
-                          <SelectC
-                            value={formik.values.projectCategory}
-                            id="projectCategory"
-                            name="projectCategory"
-                            onChange={(e) => {
-                              formik.setFieldValue(
-                                `projectCategory`,
-                                e.target.value
-                              );
-                            }}
-                            placeholder="Select Karakteristik Project"
-                          >
-                            {PROJEC_CATEGORY_OPTIONS.map((option) => (
-                              <option key={option} value={option}>
-                                {option}
-                              </option>
-                            ))}
-                          </SelectC>
-                        </Stack>
-                      </InputLayout>
-                    </FormControl>
+                      <FormControl
+                        id="projectCategory"
+                        isInvalid={formik.errors.projectCategory ? true : false}
+                        isRequired
+                      >
+                        <InputLayout>
+                          <FormLabel>Karakteristik Project</FormLabel>
+                          <Stack spacing={0} h={"full"}>
+                            <SelectC
+                              value={formik.values.projectCategory}
+                              id="projectCategory"
+                              name="projectCategory"
+                              onChange={(e) => {
+                                formik.setFieldValue(
+                                  `projectCategory`,
+                                  e.target.value
+                                );
+                              }}
+                              placeholder="Select Karakteristik Project"
+                            >
+                              {PROJEC_CATEGORY_OPTIONS.map((option) => (
+                                <option key={option} value={option}>
+                                  {option}
+                                </option>
+                              ))}
+                            </SelectC>
+                          </Stack>
+                        </InputLayout>
+                      </FormControl>
 
-                    <FormControl
-                      id="projectType"
-                      isInvalid={formik.errors.projectType ? true : false}
-                      isRequired
-                    >
-                      <InputLayout>
-                        <FormLabel>Tipe Project</FormLabel>
-                        <Stack spacing={0} h={"full"}>
-                          <SelectC
-                            value={formik.values.projectType}
-                            id="projectType"
-                            name="projectType"
-                            onChange={(e) => {
-                              formik.setFieldValue(
-                                `projectType`,
-                                e.target.value
-                              );
-                            }}
-                            placeholder="Select Tipe Project"
-                          >
-                            {PROJEC_TYPE_OPTIONS.map((option) => (
-                              <option key={option} value={option}>
-                                {option}
-                              </option>
-                            ))}
-                          </SelectC>
-                        </Stack>
-                      </InputLayout>
-                    </FormControl>
+                      <FormControl
+                        id="projectType"
+                        isInvalid={formik.errors.projectType ? true : false}
+                        isRequired
+                      >
+                        <InputLayout>
+                          <FormLabel>Tipe Project</FormLabel>
+                          <Stack spacing={0} h={"full"}>
+                            <SelectC
+                              value={formik.values.projectType}
+                              id="projectType"
+                              name="projectType"
+                              onChange={(e) => {
+                                formik.setFieldValue(
+                                  `projectType`,
+                                  e.target.value
+                                );
+                              }}
+                              placeholder="Select Tipe Project"
+                            >
+                              {PROJEC_TYPE_OPTIONS.map((option) => (
+                                <option key={option} value={option}>
+                                  {option}
+                                </option>
+                              ))}
+                            </SelectC>
+                          </Stack>
+                        </InputLayout>
+                      </FormControl>
 
-                    <FormControl
-                      id="projectRegisterDate"
-                      isInvalid={
-                        formik.errors.projectRegisterDate ? true : false
-                      }
-                      isRequired
-                    >
-                      <InputLayout>
-                        <FormLabel h={"full"} mt={2}>
-                          Tanggal Register Project
-                        </FormLabel>
-                        <Stack spacing={0} h={"full"}>
-                          <Input
-                            id="projectRegisterDate"
-                            name="projectRegisterDate"
-                            type="date"
-                            onChange={formik.handleChange}
-                            value={formik.values.projectRegisterDate}
-                            // isDisabled={ActionLoading}
-                          />
-                          <FormErrorMessage>
-                            {formik.errors.projectRegisterDate}
-                          </FormErrorMessage>
-                        </Stack>
-                      </InputLayout>
-                    </FormControl>
+                      <FormControl
+                        id="projectRegisterDate"
+                        isInvalid={
+                          formik.errors.projectRegisterDate ? true : false
+                        }
+                        isRequired
+                      >
+                        <InputLayout>
+                          <FormLabel h={"full"} mt={2}>
+                            Tanggal Register Project
+                          </FormLabel>
+                          <Stack spacing={0} h={"full"}>
+                            <Input
+                              id="projectRegisterDate"
+                              name="projectRegisterDate"
+                              type="date"
+                              onChange={formik.handleChange}
+                              value={formik.values.projectRegisterDate}
+                              // isDisabled={ActionLoading}
+                            />
+                            <FormErrorMessage>
+                              {formik.errors.projectRegisterDate}
+                            </FormErrorMessage>
+                          </Stack>
+                        </InputLayout>
+                      </FormControl>
 
-                    {/* <FormControl
+                      {/* <FormControl
                       id="projectClosedDate"
                       isInvalid={formik.errors.projectClosedDate ? true : false}
                       isRequired
@@ -1668,7 +1734,7 @@ function FormRegisterProjectView() {
                       </InputLayout>
                     </FormControl> */}
 
-                    {/* <FormControl
+                      {/* <FormControl
                       id="projDateDuration"
                       isInvalid={
                         calculateDurationInDays(
@@ -1705,69 +1771,196 @@ function FormRegisterProjectView() {
                       </InputLayoutFull>
                     </FormControl> */}
 
-                    <FormControl
-                      id="note"
-                      isInvalid={formik.errors.note ? true : false}
-                    >
-                      <InputLayout>
-                        <FormLabel h={"full"} mt={2}>
-                          Note
-                        </FormLabel>
-                        <Stack spacing={0} h={"full"}>
-                          <Textarea
-                            id="note"
-                            name="note"
-                            onChange={formik.handleChange}
-                            defaultValue={formik.values.note ?? ""}
-                            placeholder={`Perlihal`}
-                            maxLength={300}
-                            // isDisabled={ActionLoading}
-                          />
-                          <FormErrorMessage>
-                            {formik.errors.note}
-                          </FormErrorMessage>
-                        </Stack>
-                      </InputLayout>
-                    </FormControl>
-                  </Flex>
-                )}
+                      <FormControl
+                        id="note"
+                        isInvalid={formik.errors.note ? true : false}
+                      >
+                        <InputLayout>
+                          <FormLabel h={"full"} mt={2}>
+                            Note
+                          </FormLabel>
+                          <Stack spacing={0} h={"full"}>
+                            <Textarea
+                              id="note"
+                              name="note"
+                              onChange={formik.handleChange}
+                              defaultValue={formik.values.note ?? ""}
+                              placeholder={`Perlihal`}
+                              maxLength={300}
+                              // isDisabled={ActionLoading}
+                            />
+                            <FormErrorMessage>
+                              {formik.errors.note}
+                            </FormErrorMessage>
+                          </Stack>
+                        </InputLayout>
+                      </FormControl>
+                    </Flex>
+                  )}
 
-                {activeStep === 1 && (
-                  <Flex as={Stack} w={"full"} spacing={5}>
-                    <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"}>
-                      <GridItem
-                        colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}
+                  {activeStep === 1 && (
+                    <Flex as={Stack} w={"full"} spacing={5}>
+                      <Grid
+                        templateColumns="repeat(12, 1fr)"
+                        gap={5}
                         w={"full"}
                       >
-                        <Card
-                          rounded={radiusStyle}
-                          boxShadow={"md"}
-                          bgGradient={
-                            "linear(to-br, secondary.500, secondary.800)"
-                          }
-                          color={"white"}
-                          minH={"10vh"}
+                        <GridItem
+                          colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}
+                          w={"full"}
                         >
-                          <CardHeader pb={1} fontWeight={600}>
-                            Project Assign ({ChoosedMemberProjects.length})
-                          </CardHeader>
-                          <CardBody>
+                          <Card
+                            rounded={radiusStyle}
+                            boxShadow={"md"}
+                            bgGradient={
+                              "linear(to-br, secondary.500, secondary.800)"
+                            }
+                            color={"white"}
+                            minH={"10vh"}
+                          >
+                            <CardHeader pb={1} fontWeight={600}>
+                              Project Assign ({ChoosedMemberProjects.length})
+                            </CardHeader>
+                            <CardBody>
+                              <Flex
+                                as={Stack}
+                                w={"full"}
+                                p={2}
+                                spacing={3}
+                                overflowX={"auto"}
+                                minH={"50vh"}
+                              >
+                                {ChoosedMemberProjects.length <= 0 && (
+                                  <Flex w={"full"} justifyContent={"center"}>
+                                    <Text pt={5}>
+                                      Belum ada personil yang menjadi reviewer
+                                    </Text>
+                                  </Flex>
+                                )}
+                                {ChoosedMemberProjects.map((dt, index) => {
+                                  return (
+                                    <Flex
+                                      bg={
+                                        colorMode == "light"
+                                          ? "gray.100"
+                                          : "gray.700"
+                                      }
+                                      w={"full"}
+                                      py={4}
+                                      px={5}
+                                      rounded={radiusStyle}
+                                      boxShadow={"md"}
+                                      as={HStack}
+                                      spacing={5}
+                                      key={index}
+                                    >
+                                      <Box>
+                                        <Avatar name={dt.nama} src="" />
+                                      </Box>
+                                      <Box>
+                                        <Stack spacing={0}>
+                                          <Text
+                                            color={"gray.900"}
+                                            fontWeight={600}
+                                          >
+                                            {dt.nama} ({dt.userId})
+                                          </Text>
+                                          <Text
+                                            fontWeight={500}
+                                            fontSize={"small"}
+                                            color={"secondary.700"}
+                                          >
+                                            {dt.team?.teamName} |{" "}
+                                            {dt.teamRole?.specName}
+                                          </Text>
+                                        </Stack>
+                                      </Box>
+                                      <Spacer />
+                                      <>
+                                        <Tooltip
+                                          label={"Remove"}
+                                          placement="right-end"
+                                          hasArrow
+                                        >
+                                          <Button
+                                            colorScheme={"red"}
+                                            rounded={radiusStyle}
+                                            size={"sm"}
+                                            onClick={() =>
+                                              handleRemoveUserAssign(dt.id)
+                                            }
+                                            leftIcon={<FiMinusCircle />}
+                                          >
+                                            Hapus
+                                          </Button>
+                                        </Tooltip>
+                                      </>
+                                    </Flex>
+                                  );
+                                })}
+                              </Flex>
+                            </CardBody>
+                          </Card>
+                        </GridItem>
+                        <GridItem
+                          colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}
+                          w={"full"}
+                          p={4}
+                        >
+                          <Flex as={Stack} w={"full"} spacing={5} py={4}>
+                            <FormControl id={"filterDivisionId"}>
+                              <InputLayoutFull>
+                                <FormLabel h={"full"} mt={2}>
+                                  Divisi
+                                </FormLabel>
+                                <Stack spacing={0}>
+                                  <InputSelectOptions
+                                    Id={"filterDivisionId"}
+                                    OptionData={OptionDivision}
+                                    SelectedData={SelectedDivision}
+                                    handleSelectedData={handleSelectedDivision}
+                                    handleUnSelectedData={
+                                      handleUnSelectedDivision
+                                    }
+                                    placeholder={"Pilih Divisi Pengirim"}
+                                    isDisable={true}
+                                  />
+                                </Stack>
+                              </InputLayoutFull>
+                            </FormControl>
+
+                            <FormControl id="searchAssignedToUser">
+                              <InputLayoutFull>
+                                <FormLabel h={"full"} mt={2}>
+                                  Ditugaskan Ke
+                                </FormLabel>
+                                <Stack spacing={0} h={"full"}>
+                                  <Input
+                                    id="searchAssignedToUser"
+                                    name="searchAssignedToUser"
+                                    type="text"
+                                    onChange={(e) => {
+                                      handleSearchUserAssign(e.target.value);
+                                    }}
+                                    value={SearchUserInput}
+                                    placeholder="Cari dengan ID Personel / Nama Personel"
+                                  />
+                                </Stack>
+                              </InputLayoutFull>
+                            </FormControl>
+
                             <Flex
                               as={Stack}
                               w={"full"}
                               p={2}
                               spacing={3}
                               overflowX={"auto"}
-                              minH={"50vh"}
                             >
-                              {ChoosedMemberProjects.length <= 0 && (
-                                <Flex w={"full"} justifyContent={"center"}>
-                                  <Text pt={5}>
-                                    Belum ada personil yang menjadi reviewer
-                                  </Text>
-                                </Flex>
-                              )}
-                              {ChoosedMemberProjects.map((dt, index) => {
+                              {DataUsers.map((dt, index) => {
+                                const availableData =
+                                  ChoosedMemberProjects.find(
+                                    (x) => x.id === dt.id
+                                  );
                                 return (
                                   <Flex
                                     bg={
@@ -1776,12 +1969,12 @@ function FormRegisterProjectView() {
                                         : "gray.700"
                                     }
                                     w={"full"}
-                                    py={4}
-                                    px={5}
+                                    py={3}
+                                    px={8}
                                     rounded={radiusStyle}
                                     boxShadow={"md"}
                                     as={HStack}
-                                    spacing={5}
+                                    spacing={8}
                                     key={index}
                                   >
                                     <Box>
@@ -1798,7 +1991,7 @@ function FormRegisterProjectView() {
                                         <Text
                                           fontWeight={500}
                                           fontSize={"small"}
-                                          color={"secondary.700"}
+                                          color={"gray.700"}
                                         >
                                           {dt.team?.teamName} |{" "}
                                           {dt.teamRole?.specName}
@@ -1807,285 +2000,239 @@ function FormRegisterProjectView() {
                                     </Box>
                                     <Spacer />
                                     <>
-                                      <Tooltip
-                                        label={"Remove"}
-                                        placement="right-end"
-                                        hasArrow
+                                      <Button
+                                        rounded={radiusStyle}
+                                        colorScheme={"green"}
+                                        size={"sm"}
+                                        isDisabled={availableData != null}
+                                        onClick={() => handleAddUserAssign(dt)}
+                                        leftIcon={<FiPlusCircle />}
                                       >
-                                        <Button
-                                          colorScheme={"red"}
-                                          rounded={radiusStyle}
-                                          size={"sm"}
-                                          onClick={() =>
-                                            handleRemoveUserAssign(dt.id)
-                                          }
-                                          leftIcon={<FiMinusCircle />}
-                                        >
-                                          Hapus
-                                        </Button>
-                                      </Tooltip>
+                                        Tambah
+                                      </Button>
                                     </>
                                   </Flex>
                                 );
                               })}
                             </Flex>
-                          </CardBody>
-                        </Card>
-                      </GridItem>
-                      <GridItem
-                        colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}
-                        w={"full"}
-                        p={4}
-                      >
-                        <Flex as={Stack} w={"full"} spacing={5} py={4}>
-                          <FormControl id={"filterDivisionId"}>
-                            <InputLayoutFull>
-                              <FormLabel h={"full"} mt={2}>
-                                Divisi
-                              </FormLabel>
-                              <Stack spacing={0}>
-                                <InputSelectOptions
-                                  Id={"filterDivisionId"}
-                                  OptionData={OptionDivision}
-                                  SelectedData={SelectedDivision}
-                                  handleSelectedData={handleSelectedDivision}
-                                  handleUnSelectedData={
-                                    handleUnSelectedDivision
-                                  }
-                                  placeholder={"Pilih Divisi Pengirim"}
-                                  isDisable={true}
-                                />
-                              </Stack>
-                            </InputLayoutFull>
-                          </FormControl>
-
-                          <FormControl id="searchAssignedToUser">
-                            <InputLayoutFull>
-                              <FormLabel h={"full"} mt={2}>
-                                Ditugaskan Ke
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <Input
-                                  id="searchAssignedToUser"
-                                  name="searchAssignedToUser"
-                                  type="text"
-                                  onChange={(e) => {
-                                    handleSearchUserAssign(e.target.value);
-                                  }}
-                                  value={SearchUserInput}
-                                  placeholder="Cari dengan ID Personel / Nama Personel"
-                                />
-                              </Stack>
-                            </InputLayoutFull>
-                          </FormControl>
-
-                          <Flex
-                            as={Stack}
-                            w={"full"}
-                            p={2}
-                            spacing={3}
-                            overflowX={"auto"}
-                          >
-                            {DataUsers.map((dt, index) => {
-                              const availableData = ChoosedMemberProjects.find(
-                                (x) => x.id === dt.id
-                              );
-                              return (
-                                <Flex
-                                  bg={
-                                    colorMode == "light"
-                                      ? "gray.100"
-                                      : "gray.700"
-                                  }
-                                  w={"full"}
-                                  py={3}
-                                  px={8}
-                                  rounded={radiusStyle}
-                                  boxShadow={"md"}
-                                  as={HStack}
-                                  spacing={8}
-                                  key={index}
-                                >
-                                  <Box>
-                                    <Avatar name={dt.nama} src="" />
-                                  </Box>
-                                  <Box>
-                                    <Stack spacing={0}>
-                                      <Text color={"gray.900"} fontWeight={600}>
-                                        {dt.nama} ({dt.userId})
-                                      </Text>
-                                      <Text
-                                        fontWeight={500}
-                                        fontSize={"small"}
-                                        color={"gray.700"}
-                                      >
-                                        {dt.team?.teamName} |{" "}
-                                        {dt.teamRole?.specName}
-                                      </Text>
-                                    </Stack>
-                                  </Box>
-                                  <Spacer />
-                                  <>
-                                    <Button
-                                      rounded={radiusStyle}
-                                      colorScheme={"green"}
-                                      size={"sm"}
-                                      isDisabled={availableData != null}
-                                      onClick={() => handleAddUserAssign(dt)}
-                                      leftIcon={<FiPlusCircle />}
-                                    >
-                                      Tambah
-                                    </Button>
-                                  </>
-                                </Flex>
-                              );
-                            })}
                           </Flex>
-                        </Flex>
-                      </GridItem>
-                    </Grid>
-                  </Flex>
-                )}
+                        </GridItem>
+                      </Grid>
+                    </Flex>
+                  )}
 
-                {activeStep === 2 && (
-                  <Flex as={Stack} w={"full"} spacing={5}>
-                    {IsLoadingProcess ? (
-                      <LoadingMiniSignature />
-                    ) : (
-                      // <TableComponentFull table={table} />
-                      // TABLE NEW DESIGN
-                      <TableComponentWithFilterCTX
-                        table={table}
-                        handleFilterChange={handleFilterChange}
-                      />
-                    )}
-                  </Flex>
-                )}
+                  {activeStep === 2 && (
+                    <Flex as={Stack} w={"full"} spacing={5}>
+                      {IsLoadingProcess ? (
+                        <LoadingMiniSignature />
+                      ) : (
+                        // <TableComponentFull table={table} />
+                        // TABLE NEW DESIGN
+                        <TableComponentWithFilterCTX
+                          table={table}
+                          handleFilterChange={handleFilterChange}
+                        />
+                      )}
+                    </Flex>
+                  )}
 
-                <Flex
-                  mt={10}
-                  mb={2}
-                  w={"full"}
-                  justifyContent={"space-between"}
-                >
-                  <Button
-                    onClick={goToPrev}
-                    isDisabled={activeStep === 0}
-                    variant="outline"
-                    leftIcon={<FiArrowLeft />}
-                  >
-                    Sebelumnya
-                  </Button>
-                  <Flex w={"full"} justifyContent={"end"} as={HStack}>
+
+                  {activeStep === 3 && (
+                    <Flex as={Stack} w={"full"} spacing={5}>
+                      <Card shadow="sm" rounded="lg">
+                        <CardHeader>
+                          <Heading size="md">Work Stages</Heading>
+                          <Text fontSize="sm" color="gray.600">
+                            Select workflow stages for this project
+                          </Text>
+                        </CardHeader>
+                        <CardBody>
+                          {IsLoadingWorkflow ? (
+                            <LoadingMiniSignature />
+                          ) : DataWorkflowGroups.length > 0 ? (
+                            <VStack align="start" spacing={4}>
+                               {DataWorkflowGroups.map((group) => (
+                                 <Box key={group.id} w="full">
+                                   <Checkbox
+                                     isChecked={selectedWorkflowIds.has(group.id)}
+                                     onChange={() => {
+                                       const newSelected = new Set(selectedWorkflowIds);
+                                       if (newSelected.has(group.id)) {
+                                         newSelected.delete(group.id);
+                                         group.workflowChild.forEach(level2 => {
+                                           newSelected.delete(level2.id);
+                                           level2.workflowChild.forEach(level3 => {
+                                             newSelected.delete(level3.id);
+                                           });
+                                         });
+                                       } else {
+                                         newSelected.add(group.id);
+                                         group.workflowChild.forEach(level2 => {
+                                           newSelected.add(level2.id);
+                                           level2.workflowChild.forEach(level3 => {
+                                             newSelected.add(level3.id);
+                                           });
+                                         });
+                                       }
+                                       setSelectedWorkflowIds(newSelected);
+                                     }}
+                                     colorScheme="blue"
+                                   >
+                                     <Text fontWeight="bold" color="blue.600">
+                                       {group.wfgName}
+                                     </Text>
+                                   </Checkbox>
+                                   <VStack align="start" spacing={2} pl={6} mt={2}>
+                                     {group.workflowChild.map((level2) => (
+                                       <Box key={level2.id} w="full">
+                                         <Checkbox
+                                           isChecked={selectedWorkflowIds.has(level2.id)}
+                                           onChange={() => {
+                                             const newSelected = new Set(selectedWorkflowIds);
+                                             if (newSelected.has(level2.id)) {
+                                               newSelected.delete(level2.id);
+                                               level2.workflowChild.forEach(level3 => {
+                                                 newSelected.delete(level3.id);
+                                               });
+                                             } else {
+                                               newSelected.add(level2.id);
+                                               level2.workflowChild.forEach(level3 => {
+                                                 newSelected.add(level3.id);
+                                               });
+                                             }
+                                             const allLevel2Checked = group.workflowChild.every(l2 => newSelected.has(l2.id));
+                                             if (allLevel2Checked) {
+                                               newSelected.add(group.id);
+                                             } else {
+                                               newSelected.delete(group.id);
+                                             }
+                                             setSelectedWorkflowIds(newSelected);
+                                           }}
+                                           colorScheme="blue"
+                                         >
+                                           <Text fontWeight="semibold" color="blue.500">
+                                             {level2.wfgName}
+                                           </Text>
+                                         </Checkbox>
+                                         <VStack align="start" spacing={1} pl={6} mt={1}>
+                                           {level2.workflowChild.map((level3) => (
+                                             <Checkbox
+                                               key={level3.id}
+                                               isChecked={selectedWorkflowIds.has(level3.id)}
+                                               onChange={() => {
+                                                 const newSelected = new Set(selectedWorkflowIds);
+                                                 if (newSelected.has(level3.id)) {
+                                                   newSelected.delete(level3.id);
+                                                 } else {
+                                                   newSelected.add(level3.id);
+                                                 }
+                                                 const allLevel3Checked = level2.workflowChild.every(l3 => newSelected.has(l3.id));
+                                                 if (allLevel3Checked) {
+                                                   newSelected.add(level2.id);
+                                                 } else {
+                                                   newSelected.delete(level2.id);
+                                                 }
+                                                 const allLevel2Checked = group.workflowChild.every(l2 => newSelected.has(l2.id));
+                                                 if (allLevel2Checked) {
+                                                   newSelected.add(group.id);
+                                                 } else {
+                                                   newSelected.delete(group.id);
+                                                 }
+                                                 setSelectedWorkflowIds(newSelected);
+                                               }}
+                                               colorScheme="blue"
+                                             >
+                                               <VStack align="start" spacing={0}>
+                                                 <Text fontWeight="medium">
+                                                   {level3.wfgName}
+                                                 </Text>
+                                                 {level3.wfgDesc && (
+                                                   <Text fontSize="sm" color="gray.600">
+                                                     {level3.wfgDesc}
+                                                   </Text>
+                                                 )}
+                                               </VStack>
+                                             </Checkbox>
+                                           ))}
+                                         </VStack>
+                                       </Box>
+                                     ))}
+                                   </VStack>
+                                 </Box>
+                               ))}
+                              
+                              {selectedWorkflowIds.size > 0 && (
+                                <Box mt={4} p={3} bg="blue.50" rounded="md" w="full">
+                                  <Text fontSize="sm" fontWeight="medium" color="blue.800">
+                                    Selected: {selectedWorkflowIds.size} workflow(s)
+                                  </Text>
+                                </Box>
+                              )}
+                            </VStack>
+                          ) : (
+                            <Text color="gray.500">No workflow groups available</Text>
+                          )}
+                        </CardBody>
+                      </Card>
+                    </Flex>
+                  )}
+
+                  <Flex mt={10} mb={2} w={"full"} justifyContent={"space-between"}>
                     <Button
-                      onClick={goToNext}
-                      isDisabled={activeStep === steps.length - 1}
-                      colorScheme="blue"
-                      rightIcon={<FiArrowRight />}
-                      display={
-                        activeStep === steps.length - 1 ? "none" : "flex"
-                      }
+                      onClick={() => {
+                        if (activeStep > 0) {
+                          setActiveStep(activeStep - 1);
+                        }
+                      }}
+                      isDisabled={activeStep === 0}
+                      variant="outline"
+                      leftIcon={<FiArrowLeft />}
                     >
-                      Selanjutnya
+                      Previous
                     </Button>
-                    <Button
-                      colorScheme={"green"}
-                      leftIcon={<FiSave />}
-                      type={"submit"}
-                      // onClick={() => setSaveAsDraft(false)}
-                      onClick={() => handleConfirmSaveData(formik.values)}
-                      // isLoading={ActionLoading}
-                      isDisabled={activeStep !== steps.length - 1}
-                      display={
-                        activeStep === steps.length - 1 ? "flex" : "none"
-                      }
-                      px={8}
-                    >
-                      Simpan
-                    </Button>
+                    <HStack spacing={4}>
+                      <Button
+                        onClick={() => {
+                          if (activeStep < steps.length - 1) {
+                            setActiveStep(activeStep + 1);
+                          }
+                        }}
+                        isDisabled={activeStep === steps.length - 1}
+                        colorScheme="blue"
+                        rightIcon={<FiArrowRight />}
+                        display={activeStep === steps.length - 1 ? "none" : "flex"}
+                      >
+                        Next
+                      </Button>
+                      <Button
+                        colorScheme="green"
+                        leftIcon={<FiSave />}
+                        onClick={() => handleConfirmSaveData(formik.values)}
+                        isDisabled={activeStep !== steps.length - 1}
+                        display={activeStep === steps.length - 1 ? "flex" : "none"}
+                        px={8}
+                      >
+                        Save Project
+                      </Button>
+                    </HStack>
                   </Flex>
-                </Flex>
-              </Flex>
-              {/* <Divider /> */}
-              <Flex w={"full"} as={Stack} spacing={3}>
-                <Box
-                  w={"full"}
-                  overflowY={"auto"}
-                  overflowX={"auto"}
-                  maxH={"350px"}
-                  p={4}
-                  bgColor={"gray.200"}
-                  rounded={radiusStyle}
-                  display={"none"}
-                >
-                  <Text fontWeight={600}>Data Payload Project</Text>
-                  <pre>{JSON.stringify(formik.values, null, 2)}</pre>
-                </Box>
-                <Box
-                  w={"full"}
-                  overflowY={"auto"}
-                  overflowX={"auto"}
-                  maxH={"350px"}
-                  p={4}
-                  bgColor={"gray.200"}
-                  rounded={radiusStyle}
-                  display={"none"}
-                >
-                  <Text fontWeight={600}>Data Requirement</Text>
-                  <pre>{JSON.stringify(DataRequirement, null, 2)}</pre>
-                </Box>
-              </Flex>
-
-              <Grid templateColumns="repeat(2, 1fr)" gap={5} w={"full"} mt={2}>
-                <GridItem colSpan={1} w={"full"}>
-                  <Box
-                    w={"full"}
-                    overflowY={"auto"}
-                    overflowX={"auto"}
-                    maxH={"350px"}
-                    p={4}
-                    bgColor={"gray.200"}
-                    rounded={radiusStyle}
-                    display={"none"}
-                  >
-                    <Text fontWeight={600}>Data Requirement</Text>
-                    <pre>{JSON.stringify(DataRequirement, null, 2)}</pre>
-                  </Box>
-                </GridItem>
-                <GridItem colSpan={1} w={"full"}>
-                  <Box
-                    w={"full"}
-                    mt={2}
-                    overflowY={"auto"}
-                    overflowX={"auto"}
-                    maxH={"350px"}
-                    p={4}
-                    bgColor={"gray.200"}
-                    rounded={radiusStyle}
-                    display={"none"}
-                  >
-                    <Text fontWeight={600}>Data Backlog Feature</Text>
-                    <pre>
-                      {JSON.stringify(DataBacklogsRequirement, null, 2)}
-                    </pre>
-                  </Box>
-                </GridItem>
-              </Grid>
-            </CardBody>
-          </Card>
-        </GridItem>
+                  </Flex>
+              </CardBody>
+            </Card>
+          </GridItem>
         </Grid>
       )}
     </LayoutAdmin>
   );
 }
 
-interface UrgencyImpactInput {
+// Helper Components
+interface UrgencyImpactInputProps {
   idInput: string;
-  fieldName: keyof BacklogDataResponse;
+  fieldName: string;
   dataSource: BacklogDataResponse;
   dataInput: string;
-  updateBacklog: (backlogId: string, updatedData: BacklogDataResponse) => void;
+  updateBacklog: (id: string, data: BacklogDataResponse) => void;
 }
 
 const UpdateUrgencyImpactInput = ({
@@ -2094,54 +2241,43 @@ const UpdateUrgencyImpactInput = ({
   dataSource,
   dataInput,
   updateBacklog,
-}: UrgencyImpactInput) => {
+}: UrgencyImpactInputProps) => {
   const [optionValue, setOptionValue] = useState<string>(dataInput);
-  const [dataBacklog, setDataBacklog] =
-    useState<BacklogDataResponse>(dataSource);
+  const [dataBacklog, setDataBacklog] = useState<BacklogDataResponse>(dataSource);
 
-  // Ensure local state follows props when it changes (edge case fix)
   useEffect(() => {
     setOptionValue(dataInput);
     setDataBacklog(dataSource);
   }, [dataInput, dataSource]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
+  const handleChange = (value: string) => {
     setOptionValue(value);
-
-    const updatedBacklog = {
-      ...dataBacklog,
-      [fieldName]: value,
-    };
-
+    const updatedBacklog = { ...dataBacklog, [fieldName]: value };
     setDataBacklog(updatedBacklog);
     updateBacklog(updatedBacklog.id, updatedBacklog);
   };
 
   return (
-    <Flex w="full">
-      <SelectC
-        size="sm"
-        variant="flushed"
-        id={idInput}
-        name={idInput}
-        value={optionValue ?? ""}
-        onChange={handleChange} // ensure this is always defined
-      >
-        <option value="LOW">LOW</option>
-        <option value="MEDIUM">MEDIUM</option>
-        <option value="HIGH">HIGH</option>
-      </SelectC>
-    </Flex>
+    <SelectC
+      id={idInput}
+      name={idInput}
+      value={optionValue}
+      onChange={(e) => handleChange(e.target.value)}
+      size="sm"
+    >
+      <option value="LOW">Low</option>
+      <option value="MEDIUM">Medium</option>
+      <option value="HIGH">High</option>
+    </SelectC>
   );
 };
 
 interface BacklogDateInputProps {
   idInput: string;
-  fieldName: keyof BacklogDataResponse; // Should be the date field (e.g., "backlogEnddate")
+  fieldName: string;
   dataSource: BacklogDataResponse;
-  dataInput: string | null; // ISO date string
-  updateBacklog: (backlogId: string, updatedData: BacklogDataResponse) => void;
+  dataInput: string | null;
+  updateBacklog: (id: string, data: BacklogDataResponse) => void;
 }
 
 const UpdateBacklogDateInput = ({
@@ -2152,232 +2288,37 @@ const UpdateBacklogDateInput = ({
   updateBacklog,
 }: BacklogDateInputProps) => {
   const [dateValue, setDateValue] = useState<string>(dataInput ?? "");
-  const [dataBacklog, setDataBacklog] =
-    useState<BacklogDataResponse>(dataSource);
+  const [dataBacklog, setDataBacklog] = useState<BacklogDataResponse>(dataSource);
 
   useEffect(() => {
     setDateValue(dataInput ?? "");
     setDataBacklog(dataSource);
   }, [dataInput, dataSource]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+  const handleChange = (value: string) => {
     setDateValue(value);
-
-    const updatedBacklog = {
-      ...dataBacklog,
-      [fieldName]: value,
-    };
-
+    const updatedBacklog = { ...dataBacklog, [fieldName]: value };
     setDataBacklog(updatedBacklog);
     updateBacklog(updatedBacklog.id, updatedBacklog);
   };
 
   return (
-    <Flex w="full">
-      <Input
-        id={idInput}
-        name={idInput}
-        size="sm"
-        variant="flushed"
-        type="date"
-        value={dateValue}
-        onChange={handleChange}
-      />
-    </Flex>
+    <Input
+      id={idInput}
+      name={idInput}
+      type="date"
+      value={dateValue}
+      onChange={(e) => handleChange(e.target.value)}
+      size="sm"
+    />
   );
 };
 
-interface AdditionalInfoUpdateProps {
-  idInput: string;
-  dataSource: BacklogDataResponse;
-  updateBacklog: (backlogId: string, updatedData: BacklogDataResponse) => void;
-}
-
-const AdditionalInfoUpdate = ({
-  idInput,
-  dataSource,
-  updateBacklog,
-}: AdditionalInfoUpdateProps) => {
-  const { colorMode } = useColorMode();
-  // Additional form
-  const AdditionalForm = useDisclosure();
-  const [backlogDetail, setBacklogDetail] =
-    useState<BacklogDataResponse>(dataSource);
-
-  const OpenAdditionalFormBacklog = () => {
-    AdditionalForm.onOpen();
-  };
-
-  // State for form inputs
-  const [formInputs, setFormInputs] = useState({
-    envSide: dataSource.envSide || "",
-    maintenanceCategory: dataSource.maintenanceCategory || "",
-    maintenanceType: dataSource.maintenanceType || "",
-    rppb: dataSource.rppb || "N",
-    licensing: dataSource.licensing || "N",
-  });
-
-  // Handle input changes
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormInputs({
-      ...formInputs,
-      [name]: value,
-    });
-  };
-
-  // Save changes
-  const handleSaveChanges = () => {
-    const updatedBacklog = {
-      ...backlogDetail,
-      ...formInputs,
-    };
-
-    setBacklogDetail(updatedBacklog);
-    updateBacklog(updatedBacklog.id, updatedBacklog);
-    AdditionalForm.onClose();
-  };
-
+const AdditionalInfoUpdate = ({ data }: { data: BacklogDataResponse[] }) => {
   return (
-    <Box>
-      <Button
-        onClick={() => {
-          OpenAdditionalFormBacklog();
-        }}
-        colorScheme="secondary"
-        size="xs"
-      >
-        <FiInfo />
-      </Button>
-
-      <Modal
-        size={"xl"}
-        isOpen={AdditionalForm.isOpen}
-        isCentered
-        onClose={AdditionalForm.onClose}
-        closeOnOverlayClick={true}
-        scrollBehavior={"inside"}
-      >
-        <ModalOverlay bg="blackAlpha.300" />
-        <ModalContent
-          rounded={radiusStyle}
-          m={2}
-          bg={colorMode == "light" ? "white" : "gray.900"}
-        >
-          <ModalHeader>{`Additional Info Backlog`}</ModalHeader>
-          <ModalCloseButton color={"red.500"} />
-          <ModalBody w={"full"}>
-            <Flex as={Stack} w={"full"} spacing={4}>
-              <Divider />
-
-              {/* Form inputs for additional fields */}
-              <FormControl>
-                <FormLabel>App Side</FormLabel>
-                <SelectC
-                  name="envSide"
-                  value={formInputs.envSide}
-                  onChange={handleInputChange}
-                  placeholder="Select Environment Side"
-                >
-                  {ENV_SIDE_OPTIONS.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </SelectC>
-              </FormControl>
-
-              <FormControl>
-                <FormLabel>Jenis Maintenance</FormLabel>
-                <SelectC
-                  name="maintenanceCategory"
-                  value={formInputs.maintenanceCategory}
-                  onChange={handleInputChange}
-                  placeholder="Select Maintenance Category"
-                >
-                  {MAINTENANCE_CATEGORY_OPTIONS.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </SelectC>
-              </FormControl>
-
-              <FormControl>
-                <FormLabel>Tipe Maintenance</FormLabel>
-                <SelectC
-                  name="maintenanceType"
-                  value={formInputs.maintenanceType}
-                  onChange={handleInputChange}
-                  placeholder="Select Maintenance Type"
-                >
-                  {MAINTENANCE_TYPE_OPTIONS.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </SelectC>
-              </FormControl>
-
-              <FormControl>
-                <FormLabel>Perizinan</FormLabel>
-                <RadioGroup
-                  name="licensing"
-                  value={formInputs.licensing}
-                  onChange={(value) => {
-                    setFormInputs({
-                      ...formInputs,
-                      licensing: value,
-                    });
-                  }}
-                >
-                  <HStack spacing={6}>
-                    <Radio value="Y">Ya</Radio>
-                    <Radio value="N">Tidak</Radio>
-                  </HStack>
-                </RadioGroup>
-              </FormControl>
-
-              <FormControl display="flex" alignItems="center">
-                <FormLabel mb="0">RPPB/ Non RPPB</FormLabel>
-                <Switch
-                  name="rppb"
-                  isChecked={formInputs.rppb === "Y"}
-                  onChange={(e) => {
-                    setFormInputs({
-                      ...formInputs,
-                      rppb: e.target.checked ? "Y" : "N",
-                    });
-                  }}
-                />
-              </FormControl>
-
-              <Box
-                overflowY={"auto"}
-                overflowX={"auto"}
-                maxH={"350px"}
-                p={4}
-                bgColor={"gray.200"}
-                rounded={radiusStyle}
-              >
-                <Text fontWeight={600}>Data Backlog</Text>
-                <pre>{JSON.stringify(dataSource, null, 2)}</pre>
-              </Box>
-            </Flex>
-          </ModalBody>
-          <ModalFooter>
-            <Button colorScheme="blue" mr={3} onClick={handleSaveChanges}>
-              Save Changes
-            </Button>
-            <Button variant="ghost" onClick={AdditionalForm.onClose}>
-              Cancel
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+    <Box p={4} bg="gray.50" rounded="md">
+      <Text fontWeight={600}>Data Backlog Feature</Text>
+      <pre>{JSON.stringify(data, null, 2)}</pre>
     </Box>
   );
 };
