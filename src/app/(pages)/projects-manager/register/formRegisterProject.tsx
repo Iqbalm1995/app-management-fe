@@ -13,6 +13,7 @@ import {
   InputLayoutFull,
 } from "@/app/components/layoutContentBody";
 import LoadingMiniSignature from "@/app/components/loadingMini";
+import InvalidLoadPageView from "@/app/components/InvalidLoadPageView";
 import { TableComponentWithFilterCTX } from "@/app/components/tableComponentV2";
 import {
   DELAY_MEDIUM,
@@ -105,6 +106,7 @@ import {
   Tooltip,
   Textarea,
   Tab,
+  VStack,
 } from "@chakra-ui/react";
 import {
   ColumnDef,
@@ -1280,7 +1282,58 @@ function FormRegisterProjectView() {
       />
 
       {/* <form onSubmit={formik.handleSubmit} onReset={formik.handleReset}> */}
-      <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"}>
+      
+
+      {/* Requirement Information */}
+      {DataRequirement && (
+        <Card shadow="sm" rounded="lg" mb={4}>
+          <CardBody>
+            <HStack spacing={4} align="center">
+              <Box
+                w={12}
+                h={12}
+                bg="blue.500"
+                rounded="lg"
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+              >
+                <Text color="white" fontWeight="bold" fontSize="lg">
+                  {DataRequirement.reqNarative.charAt(0).toUpperCase()}
+                </Text>
+              </Box>
+              <VStack align="start" spacing={1} flex={1}>
+                <HStack spacing={2}>
+                  <Text fontSize="lg" fontWeight="bold">
+                    {DataRequirement.reqNarative}
+                  </Text>
+                  <Badge colorScheme="blue" fontSize="xs">
+                    {DataRequirement.reqNumber}
+                  </Badge>
+                </HStack>
+                <Text fontSize="sm" color="gray.600">
+                  {DataRequirement.reqNarative || "No description available"}
+                </Text>
+                <HStack spacing={4}>
+                  <Text fontSize="xs" color="gray.500">
+                    Requirement ID: {DataRequirement.id}
+                  </Text>
+                  <Text fontSize="xs" color="gray.500">
+                    Status: {DataRequirement.reqStatus}
+                  </Text>
+                </HStack>
+              </VStack>
+            </HStack>
+          </CardBody>
+        </Card>
+      )}
+      {/* Requirement Validation */}
+      {IsLoadingProcess ? (
+        <LoadingMiniSignature />
+      ) : !DataRequirement ? (
+        <InvalidLoadPageView />
+      ) : (
+        <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"}>
         <GridItem colSpan={{ base: 12, sm: 12, md: 8, lg: 8 }} w={"full"}>
           <Flex
             w={"full"}
@@ -1342,34 +1395,6 @@ function FormRegisterProjectView() {
                     </Flex>
                   ))}
                 </Flex>
-                <Box
-                  w={"full"}
-                  p={4}
-                  border={"2px"}
-                  rounded={radiusStyle}
-                  borderColor={"secondary.200"}
-                  bgColor={"secondary.100"}
-                  boxShadow={"md"}
-                >
-                  <Heading as="h3" size="md">
-                    No. {DataRequirement?.reqNumber}
-                  </Heading>
-                  <Text fontWeight={600}>
-                    {DataRequirement?.requirementType} |{" "}
-                    {DataRequirement?.reqNarative}{" "}
-                  </Text>
-                  {DataRequirement && DataRequirement.isCarryOver == "Y" && (
-                    <Badge
-                      variant="solid"
-                      colorScheme="yellow"
-                      fontSize={"small"}
-                      rounded={radiusStyle}
-                      px={4}
-                    >
-                      CARRYOVER
-                    </Badge>
-                  )}
-                </Box>
                 {activeStep === 0 && (
                   <Flex as={Stack} w={"full"} spacing={5} p={4}>
                     <FormControl id="initialAppReqCode">
@@ -2049,8 +2074,8 @@ function FormRegisterProjectView() {
             </CardBody>
           </Card>
         </GridItem>
-      </Grid>
-      {/* </form> */}
+        </Grid>
+      )}
     </LayoutAdmin>
   );
 }

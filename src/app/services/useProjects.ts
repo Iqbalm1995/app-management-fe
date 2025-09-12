@@ -71,6 +71,43 @@ export interface ProjectUserAssignmentResponse {
   updatedBy: string | null;
 }
 
+export interface ProjectWorkflowResponse {
+  id: string;
+  projectId: string;
+  wfPresetId?: string | null;
+  wfPresetName?: string | null;
+  wfCategoryId: string;
+  wfCategoryCode: string;
+  wfCategoryName: string;
+  wfgId: string;
+  wfgOrder: number;
+  wfgCode: string;
+  wfgName: string;
+  wfgDesc?: string | null;
+  wfgLevel: number;
+  parentId?: string | null;
+  workflowChild: ProjectWorkflowResponse[];
+  workflowValues: ProjectWorkflowValueResponse[];
+}
+
+export interface ProjectWorkflowValueResponse {
+  id: string;
+  projectWorkflowId: string;
+  documentType: string;
+  documentName: string;
+  documentNumber: string;
+  documentDate: string;
+  documentVersion: string;
+  linkAttachment?: string | null;
+  mediaObjectId?: string | null;
+  createdAt: string;
+  createdBy: string;
+  updatedAt?: string | null;
+  updatedBy?: string | null;
+  reffParentId?: string | null;
+  workflowReffValues: ProjectWorkflowValueResponse[];
+}
+
 export interface ProjectInsertPayload {
   // id: string;
   projectNo?: string | null;
