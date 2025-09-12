@@ -44,6 +44,9 @@ import useProjects, {
   ProjectUserInsertPayload,
 } from "@/app/services/useProjects";
 import useWorkflow, { WorkflowGroupResponse } from "@/app/services/useWorkflow";
+import useWorkflowPreset, {
+  WorkflowPresetResponse,
+} from "@/app/services/useWorkflowPreset";
 import useRequirements, {
   BacklogDataResponse,
   BacklogUpdatePayload,
@@ -777,6 +780,9 @@ function FormRegisterProjectView() {
     new Set()
   );
   const [IsLoadingWorkflow, setIsLoadingWorkflow] = useState(false);
+  const [DataWorkflowPresets, setDataWorkflowPresets] = useState<
+    WorkflowPresetResponse[]
+  >([]);
 
   const updateBacklog = (
     backlogId: string,
@@ -803,6 +809,32 @@ function FormRegisterProjectView() {
 
   // Load Workflow Groups
   const { ListWorkflowGroups } = useWorkflow();
+  const { ListWorkflowPreset } = useWorkflowPreset();
+
+  const LoadWorkflowPresets = async () => {
+    try {
+      const PayloadList: PaggingListPayload = {
+        limit: MAX_SIZE_TABLE,
+        page: 0,
+        search: "",
+        filterWhere: [
+          {
+            field: "wfCategoryId",
+            operator: "=",
+            value: WorkflowProjectDevelopmentId,
+          },
+        ],
+        fieldOrder: ["wfPresetName"],
+        orderDir: "asc",
+      };
+      const requestData = await ListWorkflowPreset(PayloadList, tokenData);
+      if (requestData?.statusCode === RES_CODE_OK && requestData.data) {
+        setDataWorkflowPresets(requestData.data);
+      }
+    } catch (error) {
+      console.error("Error loading workflow presets:", error);
+    }
+  };
 
   const LoadWorkflowGroups = async () => {
     setIsLoadingWorkflow(true);
@@ -847,6 +879,7 @@ function FormRegisterProjectView() {
   useEffect(() => {
     if (tokenData) {
       LoadWorkflowGroups();
+      LoadWorkflowPresets();
     }
   }, [tokenData]);
 
@@ -2295,7 +2328,34 @@ function FormRegisterProjectView() {
                                           </Heading>
                                         </Flex>
                                         <Flex as={Stack} w={"full"}>
-                                          {/* WORKFLOW PRESET LIST IN HERE */}
+                                          <Text fontWeight="bold" mb={2}>
+                                            Workflow Presets
+                                          </Text>
+                                          {DataWorkflowPresets.length > 0 ? (
+                                            <VStack align="start" spacing={2}>
+                                              {DataWorkflowPresets.map(
+                                                (preset) => (
+                                                  <Button
+                                                    key={preset.id}
+                                                    variant="outline"
+                                                    size="sm"
+                                                    w="full"
+                                                    textAlign="left"
+                                                    justifyContent="flex-start"
+                                                  >
+                                                    {preset.wfPresetName}
+                                                  </Button>
+                                                )
+                                              )}
+                                            </VStack>
+                                          ) : (
+                                            <Text
+                                              fontSize="sm"
+                                              color="gray.500"
+                                            >
+                                              No presets available
+                                            </Text>
+                                          )}
                                         </Flex>
                                       </Flex>
                                     </CardBody>
