@@ -111,7 +111,7 @@ export function ControlTableCTX({ table }: any) {
                   pl={1}
                   display={{ base: "none", sm: "none", md: "none", lg: "flex" }}
                 >
-                  Awal
+                  First
                 </Text>
               </Button>
               <Button
@@ -126,7 +126,7 @@ export function ControlTableCTX({ table }: any) {
                   pl={1}
                   display={{ base: "none", sm: "none", md: "none", lg: "flex" }}
                 >
-                  Sebelumnya
+                  Previous
                 </Text>
               </Button>
               {/* Page numbers */}
@@ -191,7 +191,7 @@ export function ControlTableCTX({ table }: any) {
                   pr={1}
                   display={{ base: "none", sm: "none", md: "none", lg: "flex" }}
                 >
-                  Selanjutnya
+                  Next
                 </Text>
                 <FiChevronRight />
               </Button>
@@ -206,7 +206,7 @@ export function ControlTableCTX({ table }: any) {
                   pr={1}
                   display={{ base: "none", sm: "none", md: "none", lg: "flex" }}
                 >
-                  Akhir
+                  Last
                 </Text>
                 <FiChevronsRight />
               </Button>
@@ -230,7 +230,7 @@ export function ControlTableCTX({ table }: any) {
           >
             <Flex as={HStack}>
               <Text fontWeight={600} color={"secondary.500"}>
-                Halaman
+                Page
               </Text>
               <Input
                 type={"text"}
@@ -282,7 +282,7 @@ export function TableInputShowPageCTX({ table }: any) {
       alignItems={"center"}
     >
       <Text fontWeight={600} color={"secondary.500"}>
-        Tampil
+        Show
       </Text>
       <SelectC
         size="sm"

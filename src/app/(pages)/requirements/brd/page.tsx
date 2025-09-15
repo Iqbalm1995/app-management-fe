@@ -923,7 +923,11 @@ function ReuirementsBRDPage() {
           </Flex>
         </GridItem> */}
         <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 12 }} w={"full"}>
-          <Card w={"fill"} rounded={radiusStyle}>
+          <Card
+            w={"fill"}
+            rounded={radiusStyle}
+            bgColor={colorMode == "light" ? "white" : "gray.800"}
+          >
             <CardHeader>
               <Heading as="h5" size="md" w={"full"}>
                 Requirement Data {TYPE_REQ}
@@ -948,7 +952,7 @@ function ReuirementsBRDPage() {
                   >
                     <Popover closeOnBlur={false} placement={"bottom"}>
                       <PopoverTrigger>
-                        <Button size={"sm"} leftIcon={<FiFilter />}>
+                        <Button size={"md"} leftIcon={<FiFilter />}>
                           Filter{" "}
                           <Flex
                             as={"span"}
@@ -1033,7 +1037,7 @@ function ReuirementsBRDPage() {
                     {/* BUTTON ACTION */}
                     <Flex as={Wrap} justifyContent={"end"} px={0} w={"full"}>
                       <Button
-                        size={"sm"}
+                        size={"md"}
                         leftIcon={<FiRefreshCcw />}
                         onClick={() => RefreshAction()}
                       >
@@ -1043,7 +1047,7 @@ function ReuirementsBRDPage() {
                         href={`/requirements/${TYPE_REQ.toLocaleLowerCase()}/register`}
                       >
                         <Button
-                          size={"sm"}
+                          size={"md"}
                           colorScheme={"secondary"}
                           leftIcon={<FiPlusSquare />}
                           isLoading={ActionLoading}

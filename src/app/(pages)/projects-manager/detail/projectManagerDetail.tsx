@@ -68,6 +68,7 @@ import {
   AvatarGroup,
   VStack,
   SimpleGrid,
+  TabIndicator,
 } from "@chakra-ui/react";
 import { Select } from "chakra-react-select";
 import { useFormik } from "formik";
@@ -101,6 +102,7 @@ import {
   FiHeart,
   FiExternalLink,
   FiCode,
+  FiBriefcase,
 } from "react-icons/fi";
 import { FaCircle } from "react-icons/fa6";
 import * as Yup from "yup";
@@ -125,6 +127,7 @@ import AppsEnvirontmentSection from "./apps/appsEnvViewSection";
 import ProjectFeatureView from "./projectFeaturesView";
 import { calculateDurationInDays } from "@/app/helper/MasterHelper";
 import { InputLayoutFullHalf } from "@/app/components/layoutContentBody";
+import { TabButtonCustomStyle } from "@/app/components/TabsCustom";
 
 // Calendar Event Interface
 interface EventInterface {
@@ -384,9 +387,7 @@ function ProjectManagerDetail() {
     <LayoutAdmin>
       {/* Modern Enhanced Header with Custom Gradient */}
       <Box
-        bgGradient={
-          "linear(to-br, secondary.800, secondary.600, secondary.400)"
-        }
+        bgGradient={"linear(to-br, secondary.800, secondary.600)"}
         color="white"
         px={{ base: 4, md: 6 }}
         py={{ base: 4, md: 6 }}
@@ -865,269 +866,51 @@ function ProjectManagerDetail() {
               transition="all 0.3s ease"
             >
               <CardBody p={0}>
-                <Tabs variant="unstyled" colorScheme="blue">
-                  <TabList
-                    bg={colorMode === "light" ? "white" : "gray.800"}
-                    px={6}
-                    py={4}
-                    borderBottom="1px"
-                    borderColor={
-                      colorMode === "light" ? "gray.200" : "gray.700"
-                    }
-                    roundedTop={radiusStyle}
-                    gap={2}
-                  >
-                    <Tab
-                      fontWeight="semibold"
-                      fontSize="sm"
-                      px={6}
-                      py={3}
-                      rounded={radiusStyle}
-                      bg="gray.100"
-                      color="gray.600"
-                      _selected={{
-                        color: "white",
-                        bg: "blue.500",
-                        shadow: "md",
-                        transform: "translateY(-1px)",
-                      }}
-                      _hover={{
-                        bg: "blue.100",
-                        color: "gray.800",
-                        _selected: {
-                          bg: "purple.500",
-                          color: "white",
-                        },
-                      }}
-                      transition="all 0.2s"
-                    >
-                      <HStack spacing={3}>
-                        <Box
-                          w={5}
-                          h={5}
-                          display="flex"
-                          alignItems="center"
-                          justifyContent="center"
-                        >
-                          <FiTarget size={16} />
-                        </Box>
+                <Tabs variant="unstyled" colorScheme="secondary" size={"lg"}>
+                  <TabList gap={2} p={4} overflowX={"auto"}>
+                    <TabButtonCustomStyle>
+                      <HStack>
+                        <FiTarget size={16} />
                         <Text>Overview</Text>
                       </HStack>
-                    </Tab>
-                    <Tab
-                      fontWeight="semibold"
-                      fontSize="sm"
-                      px={6}
-                      py={3}
-                      rounded={radiusStyle}
-                      bg="gray.100"
-                      color="gray.600"
-                      _selected={{
-                        color: "white",
-                        bg: "blue.500",
-                        shadow: "md",
-                        transform: "translateY(-1px)",
-                      }}
-                      _hover={{
-                        bg: "blue.100",
-                        color: "gray.800",
-                        _selected: {
-                          bg: "purple.500",
-                          color: "white",
-                        },
-                      }}
-                      transition="all 0.2s"
-                    >
-                      <HStack spacing={3}>
-                        <Box
-                          w={5}
-                          h={5}
-                          display="flex"
-                          alignItems="center"
-                          justifyContent="center"
-                        >
-                          <FiInfo size={16} />
-                        </Box>
+                    </TabButtonCustomStyle>
+                    <TabButtonCustomStyle>
+                      <HStack>
+                        <FiInfo size={16} />
                         <Text>Details</Text>
                       </HStack>
-                    </Tab>
-                    <Tab
-                      fontWeight="semibold"
-                      fontSize="sm"
-                      px={6}
-                      py={3}
-                      rounded={radiusStyle}
-                      bg="gray.100"
-                      color="gray.600"
-                      isDisabled={!DataProject}
-                      _selected={{
-                        color: "white",
-                        bg: "blue.500",
-                        shadow: "md",
-                        transform: "translateY(-1px)",
-                      }}
-                      _hover={{
-                        bg: "blue.100",
-                        color: "gray.800",
-                        _selected: {
-                          bg: "purple.500",
-                          color: "white",
-                        },
-                      }}
-                      _disabled={{
-                        opacity: 0.4,
-                        cursor: "not-allowed",
-                        _hover: {
-                          bg: "gray.100",
-                          color: "gray.400",
-                        },
-                      }}
-                      transition="all 0.2s"
-                    >
-                      <HStack spacing={3}>
-                        <Box
-                          w={5}
-                          h={5}
-                          display="flex"
-                          alignItems="center"
-                          justifyContent="center"
-                        >
-                          <FiCpu size={16} />
-                        </Box>
+                    </TabButtonCustomStyle>
+                    <TabButtonCustomStyle>
+                      <HStack>
+                        <FiCpu size={16} />
                         <Text>Features</Text>
                       </HStack>
-                    </Tab>
-                    <Tab
-                      fontWeight="semibold"
-                      fontSize="sm"
-                      px={6}
-                      py={3}
-                      rounded={radiusStyle}
-                      bg="gray.100"
-                      color="gray.600"
-                      isDisabled={!DataProject}
-                      _selected={{
-                        color: "white",
-                        bg: "blue.500",
-                        shadow: "md",
-                        transform: "translateY(-1px)",
-                      }}
-                      _hover={{
-                        bg: "blue.100",
-                        color: "gray.800",
-                        _selected: {
-                          bg: "purple.500",
-                          color: "white",
-                        },
-                      }}
-                      _disabled={{
-                        opacity: 0.4,
-                        cursor: "not-allowed",
-                        _hover: {
-                          bg: "gray.100",
-                          color: "gray.400",
-                        },
-                      }}
-                      transition="all 0.2s"
-                    >
-                      <HStack spacing={3}>
-                        <Box
-                          w={5}
-                          h={5}
-                          display="flex"
-                          alignItems="center"
-                          justifyContent="center"
-                        >
-                          <FiUsers size={16} />
-                        </Box>
+                    </TabButtonCustomStyle>
+                    <TabButtonCustomStyle>
+                      <HStack>
+                        <FiBriefcase size={16} />
+                        <Text>Documentations</Text>
+                      </HStack>
+                    </TabButtonCustomStyle>
+                    <TabButtonCustomStyle>
+                      <HStack>
+                        <FiUsers size={16} />
                         <Text>Team</Text>
                       </HStack>
-                    </Tab>
-                    <Tab
-                      fontWeight="semibold"
-                      fontSize="sm"
-                      px={6}
-                      py={3}
-                      rounded={radiusStyle}
-                      bg="gray.100"
-                      color="gray.600"
-                      isDisabled={!DataProject}
-                      _selected={{
-                        color: "white",
-                        bg: "blue.500",
-                        shadow: "md",
-                        transform: "translateY(-1px)",
-                      }}
-                      _hover={{
-                        bg: "blue.100",
-                        color: "gray.800",
-                        _selected: {
-                          bg: "purple.500",
-                          color: "white",
-                        },
-                      }}
-                      _disabled={{
-                        opacity: 0.4,
-                        cursor: "not-allowed",
-                        _hover: {
-                          bg: "gray.100",
-                          color: "gray.400",
-                        },
-                      }}
-                      transition="all 0.2s"
-                    >
-                      <HStack spacing={3}>
-                        <Box
-                          w={5}
-                          h={5}
-                          display="flex"
-                          alignItems="center"
-                          justifyContent="center"
-                        >
-                          <FiBarChart size={16} />
-                        </Box>
+                    </TabButtonCustomStyle>
+                    <TabButtonCustomStyle>
+                      <HStack>
+                        <FiBarChart size={16} />
                         <Text>Analytics</Text>
                       </HStack>
-                    </Tab>
+                    </TabButtonCustomStyle>
 
-                    {/* Timeline Tab */}
-                    <Tab
-                      fontWeight="semibold"
-                      fontSize="sm"
-                      px={6}
-                      py={3}
-                      rounded={radiusStyle}
-                      bg="gray.100"
-                      color="gray.600"
-                      _selected={{
-                        color: "white",
-                        bg: "blue.500",
-                        shadow: "md",
-                        transform: "translateY(-1px)",
-                      }}
-                      _hover={{
-                        bg: "blue.100",
-                        color: "gray.800",
-                        _selected: {
-                          bg: "purple.500",
-                          color: "white",
-                        },
-                      }}
-                      transition="all 0.2s"
-                    >
-                      <HStack spacing={3}>
-                        <Box
-                          w={5}
-                          h={5}
-                          display="flex"
-                          alignItems="center"
-                          justifyContent="center"
-                        >
-                          <FiCalendar size={16} />
-                        </Box>
+                    <TabButtonCustomStyle>
+                      <HStack>
+                        <FiCalendar size={16} />
                         <Text>Timeline</Text>
                       </HStack>
-                    </Tab>
+                    </TabButtonCustomStyle>
                   </TabList>
 
                   <TabPanels
@@ -1828,6 +1611,43 @@ function ProjectManagerDetail() {
                       <Suspense fallback={<LoadingMiniSignature />}>
                         <ProjectFeatureView DataProject={DataProject} />
                       </Suspense>
+                    </TabPanel>
+
+                    {/* Team Tab */}
+                    <TabPanel
+                      p={8}
+                      bg={colorMode === "light" ? "gray.50" : "gray.900"}
+                      roundedBottom={radiusStyle}
+                    >
+                      <VStack spacing={8} align="stretch">
+                        {/* Header Section */}
+                        <HStack justify="space-between" align="center">
+                          <VStack align="start" spacing={1}>
+                            <Heading size="lg" color="gray.800">
+                              Project Documentation
+                            </Heading>
+                            <Text color="gray.600" fontSize="sm">
+                              Manage project documentation as workflow stage
+                              project
+                            </Text>
+                          </VStack>
+                          <HStack spacing={3}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              leftIcon={<FiRefreshCcw />}
+                              colorScheme="gray"
+                              rounded="full"
+                            >
+                              Refresh
+                            </Button>
+                          </HStack>
+                        </HStack>
+
+                        <Box p={4} bg="gray.50" rounded="md" display={"flex"}>
+                          <pre>{JSON.stringify(DataProject, null, 2)}</pre>
+                        </Box>
+                      </VStack>
                     </TabPanel>
 
                     {/* Team Tab */}

@@ -113,6 +113,7 @@ import {
   Tab,
   Checkbox,
   VStack,
+  Icon,
 } from "@chakra-ui/react";
 import {
   ColumnDef,
@@ -132,14 +133,22 @@ import {
   FiArrowLeft,
   FiArrowRight,
   FiBriefcase,
+  FiCheckCircle,
   FiInfo,
+  FiMinus,
   FiMinusCircle,
+  FiPlus,
   FiPlusCircle,
   FiSave,
   FiSettings,
+  FiTrash2,
   FiUsers,
+  FiX,
 } from "react-icons/fi";
 import * as yup from "yup";
+import { BsLightningChargeFill } from "react-icons/bs";
+import { FaCircle } from "react-icons/fa";
+import { TabButtonCustom } from "@/app/components/TabsCustom";
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Registrasi Project",
@@ -783,7 +792,8 @@ function FormRegisterProjectView() {
   const [DataWorkflowPresets, setDataWorkflowPresets] = useState<
     WorkflowPresetResponse[]
   >([]);
-  const [selectedPreset, setSelectedPreset] = useState<WorkflowPresetResponse | null>(null);
+  const [selectedPreset, setSelectedPreset] =
+    useState<WorkflowPresetResponse | null>(null);
 
   const updateBacklog = (
     backlogId: string,
@@ -825,7 +835,7 @@ function FormRegisterProjectView() {
       const requestData = await GetWorkflowPresetById(presetId, tokenData);
       if (requestData?.statusCode === RES_CODE_OK && requestData.data) {
         setSelectedPreset(requestData.data);
-        
+
         // Extract all workflow IDs including children
         const allWorkflowIds = new Set<string>();
         requestData.data.workflowData.forEach((group) => {
@@ -837,10 +847,13 @@ function FormRegisterProjectView() {
             });
           });
         });
-        
+
         // Update formik and selectedWorkflowIds
         setSelectedWorkflowIds(allWorkflowIds);
-        formik.setFieldValue("projectPlanWorkflowIds", Array.from(allWorkflowIds));
+        formik.setFieldValue(
+          "projectPlanWorkflowIds",
+          Array.from(allWorkflowIds)
+        );
       }
     } catch (error) {
       console.error("Error loading preset detail:", error);
@@ -1413,57 +1426,13 @@ function FormRegisterProjectView() {
       />
 
       {/* <form onSubmit={formik.handleSubmit} onReset={formik.handleReset}> */}
-
-      {/* Requirement Information */}
-      {DataRequirement && (
-        <Card shadow="sm" rounded="lg" mb={4}>
-          <CardBody>
-            <HStack spacing={4} align="center">
-              <Box
-                w={12}
-                h={12}
-                bg="blue.500"
-                rounded="lg"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-              >
-                <Text color="white" fontWeight="bold" fontSize="lg">
-                  {DataRequirement.reqNarative.charAt(0).toUpperCase()}
-                </Text>
-              </Box>
-              <VStack align="start" spacing={1} flex={1}>
-                <HStack spacing={2}>
-                  <Text fontSize="lg" fontWeight="bold">
-                    {DataRequirement.reqNarative}
-                  </Text>
-                  <Badge colorScheme="blue" fontSize="xs">
-                    {DataRequirement.reqNumber}
-                  </Badge>
-                </HStack>
-                <Text fontSize="sm" color="gray.600">
-                  {DataRequirement.reqNarative || "No description available"}
-                </Text>
-                <HStack spacing={4}>
-                  <Text fontSize="xs" color="gray.500">
-                    Requirement ID: {DataRequirement.id}
-                  </Text>
-                  <Text fontSize="xs" color="gray.500">
-                    Status: {DataRequirement.reqStatus}
-                  </Text>
-                </HStack>
-              </VStack>
-            </HStack>
-          </CardBody>
-        </Card>
-      )}
       {/* Requirement Validation */}
       {IsLoadingProcess ? (
         <LoadingMiniSignature />
       ) : !DataRequirement ? (
         <InvalidLoadPageView />
       ) : (
-        <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"}>
+        <Grid templateColumns="repeat(12, 1fr)" gap={4} w={"full"}>
           <GridItem colSpan={{ base: 12, sm: 12, md: 8, lg: 8 }} w={"full"}>
             <Flex
               w={"full"}
@@ -1474,7 +1443,7 @@ function FormRegisterProjectView() {
             >
               <Link href={`/projects-manager/`}>
                 <Button size={"lg"} leftIcon={<FiArrowLeft />}>
-                  Kembali
+                  Back
                 </Button>
               </Link>
             </Flex>
@@ -1486,45 +1455,103 @@ function FormRegisterProjectView() {
               w={"full"}
               justifyContent={"end"}
               alignItems={"center"}
-            ></Flex>
+            >
+              <Button
+                colorScheme="green"
+                leftIcon={<FiSave />}
+                onClick={() => handleConfirmSaveData(formik.values)}
+                isDisabled={activeStep !== steps.length - 1 || ActionLoading}
+                // display={activeStep === steps.length - 1 ? "flex" : "none"}
+                isLoading={ActionLoading}
+                px={8}
+                size={"lg"}
+              >
+                Submit Data
+              </Button>
+            </Flex>
           </GridItem>
 
           <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 12 }} w={"full"}>
-            <Card w={"fill"} rounded={radiusStyle}>
+            {/* Requirement Information */}
+            {DataRequirement && (
+              <Card
+                shadow="sm"
+                // bgColor={colorMode == "light" ? "white" : "gray.800"}
+                bgGradient={"linear(to-br, secondary.800, secondary.500)"}
+                rounded={radiusStyle}
+              >
+                <CardBody>
+                  <HStack spacing={4} align="center">
+                    <Box
+                      w={14}
+                      h={14}
+                      bg={"white"}
+                      rounded="lg"
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                    >
+                      <Text
+                        color="secondary.800"
+                        fontWeight="bold"
+                        fontSize={"x-large"}
+                      >
+                        {DataRequirement.reqNarative.charAt(0).toUpperCase()}
+                      </Text>
+                    </Box>
+                    <VStack align="start" spacing={0} flex={1}>
+                      <HStack spacing={3}>
+                        <Text fontSize="lg" fontWeight="bold" color={"white"}>
+                          {DataRequirement.reqNarative.toUpperCase()}
+                        </Text>
+                        <Badge
+                          colorScheme="blue"
+                          fontSize="xs"
+                          px={4}
+                          rounded={radiusStyle}
+                        >
+                          {DataRequirement.reqNumber}
+                        </Badge>
+                      </HStack>
+                      <Text fontSize="sm" color="secondary.200">
+                        {DataRequirement.reqNarative ||
+                          "No description available"}
+                      </Text>
+                      <HStack spacing={4}>
+                        <Text fontSize="xs" color="gray.300">
+                          Requirement ID: {DataRequirement.id}
+                        </Text>
+                        <Text fontSize="xs" color="gray.300">
+                          Status: {DataRequirement.reqStatus}
+                        </Text>
+                      </HStack>
+                    </VStack>
+                  </HStack>
+                </CardBody>
+              </Card>
+            )}
+          </GridItem>
+
+          <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 12 }} w={"full"}>
+            <Card
+              w={"fill"}
+              bgColor={colorMode == "light" ? "white" : "gray.800"}
+              rounded={radiusStyle}
+            >
               <CardBody>
                 <Flex w={"full"} as={Stack} spacing={4}>
                   <Flex as={HStack} spacing={4} pb={6}>
                     {steps.map((step, index) => (
-                      <Flex
+                      <TabButtonCustom
+                        activeStep={activeStep}
+                        goToSection={() => goToSection(index)}
+                        idx={index}
+                        tabProp={<>{step.description}</>}
                         key={index}
-                        px={8}
-                        py={4}
-                        bgColor={
-                          activeStep == index ? "primary.500" : "transparent"
-                        }
-                        rounded={radiusStyle}
-                        color={activeStep == index ? "white" : "gray.500"}
-                        boxShadow={activeStep == index ? "md" : "none"}
-                        w={"280px"}
-                        justifyContent={"center"}
-                        textAlign={"center"}
-                        alignItems={"center"}
-                        cursor={"pointer"}
-                        onClick={() => {
-                          goToSection(index);
-                        }}
-                        _hover={{
-                          bg: "yellow.300",
-                          color: "gray.800",
-                          boxShadow: "md",
-                        }}
-                      >
-                        <Heading as="h4" size="md">
-                          {step.description}
-                        </Heading>
-                      </Flex>
+                      />
                     ))}
                   </Flex>
+
                   {activeStep === 0 && (
                     <Flex as={Stack} w={"full"} spacing={5} p={4}>
                       <FormControl id="initialAppReqCode">
@@ -1877,13 +1904,13 @@ function FormRegisterProjectView() {
                             rounded={radiusStyle}
                             boxShadow={"md"}
                             bgGradient={
-                              "linear(to-br, secondary.500, secondary.800)"
+                              "linear(to-br, secondary.800, secondary.500)"
                             }
                             color={"white"}
                             minH={"10vh"}
                           >
                             <CardHeader pb={1} fontWeight={600}>
-                              Project Assign ({ChoosedMemberProjects.length})
+                              Project Assigns ({ChoosedMemberProjects.length})
                             </CardHeader>
                             <CardBody>
                               <Flex
@@ -1896,9 +1923,7 @@ function FormRegisterProjectView() {
                               >
                                 {ChoosedMemberProjects.length <= 0 && (
                                   <Flex w={"full"} justifyContent={"center"}>
-                                    <Text pt={5}>
-                                      Belum ada personil yang menjadi reviewer
-                                    </Text>
+                                    <Text pt={5}>Not have personel yet.</Text>
                                   </Flex>
                                 )}
                                 {ChoosedMemberProjects.map((dt, index) => {
@@ -1906,8 +1931,8 @@ function FormRegisterProjectView() {
                                     <Flex
                                       bg={
                                         colorMode == "light"
-                                          ? "gray.100"
-                                          : "gray.700"
+                                          ? "white"
+                                          : "gray.800"
                                       }
                                       w={"full"}
                                       py={4}
@@ -1924,7 +1949,11 @@ function FormRegisterProjectView() {
                                       <Box>
                                         <Stack spacing={0}>
                                           <Text
-                                            color={"gray.900"}
+                                            color={
+                                              colorMode == "light"
+                                                ? "gray.900"
+                                                : "gray.100"
+                                            }
                                             fontWeight={600}
                                           >
                                             {dt.nama} ({dt.userId})
@@ -1932,7 +1961,11 @@ function FormRegisterProjectView() {
                                           <Text
                                             fontWeight={500}
                                             fontSize={"small"}
-                                            color={"secondary.700"}
+                                            color={
+                                              colorMode == "light"
+                                                ? "secondary.800"
+                                                : "secondary.200"
+                                            }
                                           >
                                             {dt.team?.teamName} |{" "}
                                             {dt.teamRole?.specName}
@@ -1948,14 +1981,14 @@ function FormRegisterProjectView() {
                                         >
                                           <Button
                                             colorScheme={"red"}
+                                            variant={"ghost"}
                                             rounded={radiusStyle}
-                                            size={"sm"}
+                                            size={"md"}
                                             onClick={() =>
                                               handleRemoveUserAssign(dt.id)
                                             }
-                                            leftIcon={<FiMinusCircle />}
                                           >
-                                            Hapus
+                                            <FiX />
                                           </Button>
                                         </Tooltip>
                                       </>
@@ -2102,337 +2135,433 @@ function FormRegisterProjectView() {
 
                   {activeStep === 3 && (
                     <Flex as={Stack} w={"full"} spacing={5}>
-                      <Card shadow="sm" rounded="lg">
-                        <CardBody>
-                          {IsLoadingWorkflow ? (
-                            <LoadingMiniSignature />
-                          ) : DataWorkflowGroups.length > 0 ? (
-                            <VStack align="start" spacing={4}>
-                              <Grid
-                                templateColumns="repeat(12, 1fr)"
-                                gap={4}
-                                w={"full"}
-                              >
-                                <GridItem
-                                  colSpan={{ base: 12, sm: 12, md: 8, lg: 8 }}
-                                  w={"full"}
-                                >
-                                  <Flex as={Stack} w={"full"} spacing={4}>
-                                    <Flex as={Stack} w={"full"}>
-                                      <Heading size="md">Work Stages</Heading>
-                                      <Text fontSize="sm" color="gray.600">
-                                        Select workflow stages for this project
-                                      </Text>
-                                    </Flex>
+                      {IsLoadingWorkflow ? (
+                        <LoadingMiniSignature />
+                      ) : DataWorkflowGroups.length > 0 ? (
+                        <VStack align="start" spacing={4}>
+                          <Grid
+                            templateColumns="repeat(12, 1fr)"
+                            gap={4}
+                            w={"full"}
+                          >
+                            <GridItem
+                              colSpan={{ base: 12, sm: 12, md: 8, lg: 8 }}
+                              w={"full"}
+                            >
+                              <Flex as={Stack} px={6} w={"full"} spacing={4}>
+                                <Flex as={Stack} w={"full"}>
+                                  <Heading size="md">
+                                    Choose Work Stages
+                                  </Heading>
+                                  <Text
+                                    fontSize="sm"
+                                    color={
+                                      colorMode == "light"
+                                        ? "gray.500"
+                                        : "gray.400"
+                                    }
+                                  >
+                                    Select workflow stages for this project
+                                  </Text>
+                                </Flex>
 
-                                    {DataWorkflowGroups.map((group) => (
-                                      <Box key={group.id} w="full">
-                                        <Checkbox
-                                          isChecked={selectedWorkflowIds.has(
-                                            group.id
-                                          )}
-                                          onChange={() => {
-                                            const newSelected = new Set(
-                                              selectedWorkflowIds
-                                            );
-                                            if (newSelected.has(group.id)) {
-                                              newSelected.delete(group.id);
-                                              group.workflowChild.forEach(
-                                                (level2) => {
-                                                  newSelected.delete(level2.id);
-                                                  level2.workflowChild.forEach(
-                                                    (level3) => {
+                                {DataWorkflowGroups.map((group) => (
+                                  <Box key={group.id} w="full">
+                                    <Checkbox
+                                      isChecked={selectedWorkflowIds.has(
+                                        group.id
+                                      )}
+                                      size={"lg"}
+                                      onChange={() => {
+                                        const newSelected = new Set(
+                                          selectedWorkflowIds
+                                        );
+                                        if (newSelected.has(group.id)) {
+                                          newSelected.delete(group.id);
+                                          group.workflowChild.forEach(
+                                            (level2) => {
+                                              newSelected.delete(level2.id);
+                                              level2.workflowChild.forEach(
+                                                (level3) => {
+                                                  newSelected.delete(level3.id);
+                                                }
+                                              );
+                                            }
+                                          );
+                                        } else {
+                                          newSelected.add(group.id);
+                                          group.workflowChild.forEach(
+                                            (level2) => {
+                                              newSelected.add(level2.id);
+                                              level2.workflowChild.forEach(
+                                                (level3) => {
+                                                  newSelected.add(level3.id);
+                                                }
+                                              );
+                                            }
+                                          );
+                                        }
+                                        setSelectedWorkflowIds(newSelected);
+                                        formik.setFieldValue(
+                                          "projectPlanWorkflowIds",
+                                          Array.from(newSelected)
+                                        );
+                                        formik.setFieldValue(
+                                          "projectPlanWorkflowIds",
+                                          Array.from(newSelected)
+                                        );
+                                      }}
+                                      colorScheme={"blue"}
+                                    >
+                                      <Text fontWeight="bold" color="blue.600">
+                                        {group.wfgName}
+                                      </Text>
+                                    </Checkbox>
+                                    <VStack
+                                      align="start"
+                                      spacing={2}
+                                      pl={6}
+                                      mt={2}
+                                    >
+                                      {group.workflowChild.map((level2) => (
+                                        <Box key={level2.id} w="full">
+                                          <Checkbox
+                                            isChecked={selectedWorkflowIds.has(
+                                              level2.id
+                                            )}
+                                            size={"lg"}
+                                            onChange={() => {
+                                              const newSelected = new Set(
+                                                selectedWorkflowIds
+                                              );
+                                              if (newSelected.has(level2.id)) {
+                                                newSelected.delete(level2.id);
+                                                level2.workflowChild.forEach(
+                                                  (level3) => {
+                                                    newSelected.delete(
+                                                      level3.id
+                                                    );
+                                                  }
+                                                );
+                                              } else {
+                                                newSelected.add(level2.id);
+                                                level2.workflowChild.forEach(
+                                                  (level3) => {
+                                                    newSelected.add(level3.id);
+                                                  }
+                                                );
+                                              }
+                                              const allLevel2Checked =
+                                                group.workflowChild.every(
+                                                  (l2) => newSelected.has(l2.id)
+                                                );
+                                              if (allLevel2Checked) {
+                                                newSelected.add(group.id);
+                                              } else {
+                                                newSelected.delete(group.id);
+                                              }
+                                              setSelectedWorkflowIds(
+                                                newSelected
+                                              );
+                                              formik.setFieldValue(
+                                                "projectPlanWorkflowIds",
+                                                Array.from(newSelected)
+                                              );
+                                              formik.setFieldValue(
+                                                "projectPlanWorkflowIds",
+                                                Array.from(newSelected)
+                                              );
+                                            }}
+                                            colorScheme="blue"
+                                          >
+                                            <Text
+                                              fontWeight="semibold"
+                                              color="blue.500"
+                                            >
+                                              {level2.wfgName}
+                                            </Text>
+                                          </Checkbox>
+                                          <VStack
+                                            align="start"
+                                            spacing={1}
+                                            pl={6}
+                                            mt={1}
+                                          >
+                                            {level2.workflowChild.map(
+                                              (level3) => (
+                                                <Checkbox
+                                                  key={level3.id}
+                                                  isChecked={selectedWorkflowIds.has(
+                                                    level3.id
+                                                  )}
+                                                  size={"lg"}
+                                                  onChange={() => {
+                                                    const newSelected = new Set(
+                                                      selectedWorkflowIds
+                                                    );
+                                                    if (
+                                                      newSelected.has(level3.id)
+                                                    ) {
                                                       newSelected.delete(
                                                         level3.id
                                                       );
-                                                    }
-                                                  );
-                                                }
-                                              );
-                                            } else {
-                                              newSelected.add(group.id);
-                                              group.workflowChild.forEach(
-                                                (level2) => {
-                                                  newSelected.add(level2.id);
-                                                  level2.workflowChild.forEach(
-                                                    (level3) => {
+                                                    } else {
                                                       newSelected.add(
                                                         level3.id
                                                       );
                                                     }
-                                                  );
-                                                }
-                                              );
-                                            }
-                                            setSelectedWorkflowIds(newSelected);
-                                            formik.setFieldValue(
-                                              "projectPlanWorkflowIds",
-                                              Array.from(newSelected)
-                                            );
-                                            formik.setFieldValue(
-                                              "projectPlanWorkflowIds",
-                                              Array.from(newSelected)
-                                            );
-                                          }}
-                                          colorScheme="blue"
-                                        >
+                                                    const allLevel3Checked =
+                                                      level2.workflowChild.every(
+                                                        (l3) =>
+                                                          newSelected.has(l3.id)
+                                                      );
+                                                    if (allLevel3Checked) {
+                                                      newSelected.add(
+                                                        level2.id
+                                                      );
+                                                    } else {
+                                                      newSelected.delete(
+                                                        level2.id
+                                                      );
+                                                    }
+                                                    const allLevel2Checked =
+                                                      group.workflowChild.every(
+                                                        (l2) =>
+                                                          newSelected.has(l2.id)
+                                                      );
+                                                    if (allLevel2Checked) {
+                                                      newSelected.add(group.id);
+                                                    } else {
+                                                      newSelected.delete(
+                                                        group.id
+                                                      );
+                                                    }
+                                                    setSelectedWorkflowIds(
+                                                      newSelected
+                                                    );
+                                                  }}
+                                                  colorScheme="blue"
+                                                >
+                                                  <VStack
+                                                    align="start"
+                                                    spacing={0}
+                                                  >
+                                                    <Text fontWeight="medium">
+                                                      {level3.wfgName}
+                                                    </Text>
+                                                    {level3.wfgDesc && (
+                                                      <Text
+                                                        fontSize="sm"
+                                                        color="gray.600"
+                                                      >
+                                                        {level3.wfgDesc}
+                                                      </Text>
+                                                    )}
+                                                  </VStack>
+                                                </Checkbox>
+                                              )
+                                            )}
+                                          </VStack>
+                                        </Box>
+                                      ))}
+                                    </VStack>
+                                  </Box>
+                                ))}
+                              </Flex>
+                            </GridItem>
+                            <GridItem
+                              colSpan={{ base: 12, sm: 12, md: 4, lg: 4 }}
+                              w={"full"}
+                            >
+                              <Card
+                                rounded={radiusStyle}
+                                bgColor={
+                                  colorMode == "light" ? "gray.100" : "gray.900"
+                                }
+                              >
+                                <CardBody>
+                                  <Flex
+                                    w={"full"}
+                                    as={Stack}
+                                    minH={"500px"}
+                                    spacing={6}
+                                  >
+                                    <HStack spacing={4} align={"center"}>
+                                      <Box
+                                        w={12}
+                                        h={12}
+                                        bgColor={
+                                          colorMode == "light"
+                                            ? "secondary.500"
+                                            : "gray.800"
+                                        }
+                                        rounded="lg"
+                                        display="flex"
+                                        alignItems="center"
+                                        justifyContent="center"
+                                      >
+                                        <Icon
+                                          as={BsLightningChargeFill}
+                                          color={
+                                            colorMode == "light"
+                                              ? "white"
+                                              : "secondary.500"
+                                          }
+                                        />
+                                      </Box>
+                                      <VStack
+                                        align="start"
+                                        spacing={0}
+                                        flex={1}
+                                      >
+                                        <HStack spacing={3}>
                                           <Text
+                                            fontSize="lg"
                                             fontWeight="bold"
-                                            color="blue.600"
+                                            color={"secondary.500"}
                                           >
-                                            {group.wfgName}
+                                            Work Stage Preset
                                           </Text>
-                                        </Checkbox>
+                                        </HStack>
+                                        <Text
+                                          fontSize="sm"
+                                          color={
+                                            colorMode == "light"
+                                              ? "gray.500"
+                                              : "gray.400"
+                                          }
+                                          lineHeight={1.2}
+                                        >
+                                          Select workflow stages preset related
+                                          project work stage
+                                        </Text>
+                                      </VStack>
+                                    </HStack>
+                                    <Flex as={Stack} w={"full"}>
+                                      {DataWorkflowPresets.length > 0 ? (
                                         <VStack
                                           align="start"
-                                          spacing={2}
-                                          pl={6}
-                                          mt={2}
+                                          spacing={1}
+                                          // px={2}
                                         >
-                                          {group.workflowChild.map((level2) => (
-                                            <Box key={level2.id} w="full">
-                                              <Checkbox
-                                                isChecked={selectedWorkflowIds.has(
-                                                  level2.id
-                                                )}
-                                                onChange={() => {
-                                                  const newSelected = new Set(
-                                                    selectedWorkflowIds
-                                                  );
-                                                  if (
-                                                    newSelected.has(level2.id)
-                                                  ) {
-                                                    newSelected.delete(
-                                                      level2.id
-                                                    );
-                                                    level2.workflowChild.forEach(
-                                                      (level3) => {
-                                                        newSelected.delete(
-                                                          level3.id
-                                                        );
-                                                      }
-                                                    );
-                                                  } else {
-                                                    newSelected.add(level2.id);
-                                                    level2.workflowChild.forEach(
-                                                      (level3) => {
-                                                        newSelected.add(
-                                                          level3.id
-                                                        );
-                                                      }
-                                                    );
-                                                  }
-                                                  const allLevel2Checked =
-                                                    group.workflowChild.every(
-                                                      (l2) =>
-                                                        newSelected.has(l2.id)
-                                                    );
-                                                  if (allLevel2Checked) {
-                                                    newSelected.add(group.id);
-                                                  } else {
-                                                    newSelected.delete(
-                                                      group.id
-                                                    );
-                                                  }
-                                                  setSelectedWorkflowIds(
-                                                    newSelected
-                                                  );
-                                                  formik.setFieldValue(
-                                                    "projectPlanWorkflowIds",
-                                                    Array.from(newSelected)
-                                                  );
-                                                  formik.setFieldValue(
-                                                    "projectPlanWorkflowIds",
-                                                    Array.from(newSelected)
-                                                  );
-                                                }}
-                                                colorScheme="blue"
+                                          {DataWorkflowPresets.map((preset) => (
+                                            <Flex
+                                              as={HStack}
+                                              w={"full"}
+                                              justifyContent={"space-between"}
+                                              alignItems={"center"}
+                                              bgColor={
+                                                selectedPreset?.id === preset.id
+                                                  ? "secondary.100"
+                                                  : "trasnparent"
+                                              }
+                                              rounded={radiusStyle}
+                                              px={4}
+                                              py={3}
+                                            >
+                                              <Flex
+                                                justifyContent={"start"}
+                                                as={HStack}
+                                                spacing={4}
+                                                alignItems={"center"}
                                               >
+                                                <Icon
+                                                  as={FaCircle}
+                                                  color={"secondary.500"}
+                                                  boxSize={2}
+                                                />
                                                 <Text
-                                                  fontWeight="semibold"
-                                                  color="blue.500"
+                                                  fontWeight={
+                                                    selectedPreset?.id ===
+                                                    preset.id
+                                                      ? 600
+                                                      : 500
+                                                  }
+                                                  color={
+                                                    selectedPreset?.id ===
+                                                    preset.id
+                                                      ? "gray.900"
+                                                      : colorMode == "light"
+                                                      ? "gray.900"
+                                                      : "white"
+                                                  }
                                                 >
-                                                  {level2.wfgName}
+                                                  {preset.wfPresetName}
                                                 </Text>
-                                              </Checkbox>
-                                              <VStack
-                                                align="start"
-                                                spacing={1}
-                                                pl={6}
-                                                mt={1}
+                                              </Flex>
+                                              <Flex
+                                                justifyContent={"end"}
+                                                alignItems={"center"}
                                               >
-                                                {level2.workflowChild.map(
-                                                  (level3) => (
-                                                    <Checkbox
-                                                      key={level3.id}
-                                                      isChecked={selectedWorkflowIds.has(
-                                                        level3.id
-                                                      )}
-                                                      onChange={() => {
-                                                        const newSelected =
-                                                          new Set(
-                                                            selectedWorkflowIds
-                                                          );
-                                                        if (
-                                                          newSelected.has(
-                                                            level3.id
-                                                          )
-                                                        ) {
-                                                          newSelected.delete(
-                                                            level3.id
-                                                          );
-                                                        } else {
-                                                          newSelected.add(
-                                                            level3.id
-                                                          );
-                                                        }
-                                                        const allLevel3Checked =
-                                                          level2.workflowChild.every(
-                                                            (l3) =>
-                                                              newSelected.has(
-                                                                l3.id
-                                                              )
-                                                          );
-                                                        if (allLevel3Checked) {
-                                                          newSelected.add(
-                                                            level2.id
-                                                          );
-                                                        } else {
-                                                          newSelected.delete(
-                                                            level2.id
-                                                          );
-                                                        }
-                                                        const allLevel2Checked =
-                                                          group.workflowChild.every(
-                                                            (l2) =>
-                                                              newSelected.has(
-                                                                l2.id
-                                                              )
-                                                          );
-                                                        if (allLevel2Checked) {
-                                                          newSelected.add(
-                                                            group.id
-                                                          );
-                                                        } else {
-                                                          newSelected.delete(
-                                                            group.id
-                                                          );
-                                                        }
-                                                        setSelectedWorkflowIds(
-                                                          newSelected
-                                                        );
-                                                      }}
-                                                      colorScheme="blue"
-                                                    >
-                                                      <VStack
-                                                        align="start"
-                                                        spacing={0}
-                                                      >
-                                                        <Text fontWeight="medium">
-                                                          {level3.wfgName}
-                                                        </Text>
-                                                        {level3.wfgDesc && (
-                                                          <Text
-                                                            fontSize="sm"
-                                                            color="gray.600"
-                                                          >
-                                                            {level3.wfgDesc}
-                                                          </Text>
-                                                        )}
-                                                      </VStack>
-                                                    </Checkbox>
-                                                  )
-                                                )}
-                                              </VStack>
-                                            </Box>
+                                                <Button
+                                                  key={preset.id}
+                                                  variant={"solid"}
+                                                  colorScheme={
+                                                    selectedPreset?.id ===
+                                                    preset.id
+                                                      ? "red"
+                                                      : "secondary"
+                                                  }
+                                                  size={"xs"}
+                                                  w="full"
+                                                  textAlign="left"
+                                                  justifyContent="flex-start"
+                                                  onClick={() =>
+                                                    handleSelectPreset(
+                                                      preset.id
+                                                    )
+                                                  }
+                                                >
+                                                  {selectedPreset?.id ===
+                                                  preset.id ? (
+                                                    <FiMinus />
+                                                  ) : (
+                                                    <FiPlus />
+                                                  )}
+                                                </Button>
+                                              </Flex>
+                                            </Flex>
                                           ))}
                                         </VStack>
-                                      </Box>
-                                    ))}
+                                      ) : (
+                                        <Text fontSize="sm" color="gray.500">
+                                          No presets available
+                                        </Text>
+                                      )}
+                                    </Flex>
                                   </Flex>
-                                </GridItem>
-                                <GridItem
-                                  colSpan={{ base: 12, sm: 12, md: 4, lg: 4 }}
-                                  w={"full"}
-                                >
-                                  <Card rounded="lg">
-                                    <CardBody>
-                                      <Flex w={"full"} as={Stack}>
-                                        <Flex as={Stack} w={"full"}>
-                                          <Heading size="md">
-                                            Work Stages Preset
-                                          </Heading>
-                                        </Flex>
-                                        <Flex as={Stack} w={"full"}>
-                                          <Text fontWeight="bold" mb={2}>
-                                            Workflow Presets
-                                          </Text>
-                                          {DataWorkflowPresets.length > 0 ? (
-                                            <VStack align="start" spacing={2}>
-                                              {DataWorkflowPresets.map(
-                                                (preset) => (
-                                                  <Button
-                                                    key={preset.id}
-                                                    variant={selectedPreset?.id === preset.id ? "solid" : "outline"}
-                                                    colorScheme={selectedPreset?.id === preset.id ? "blue" : "gray"}
-                                                    size="sm"
-                                                    w="full"
-                                                    textAlign="left"
-                                                    justifyContent="flex-start"
-                                                    onClick={() => handleSelectPreset(preset.id)}
-                                                  >
-                                                    {preset.wfPresetName}
-                                                  </Button>
-                                                )
-                                              )}
-                                            </VStack>
-                                          ) : (
-                                            <Text
-                                              fontSize="sm"
-                                              color="gray.500"
-                                            >
-                                              No presets available
-                                            </Text>
-                                          )}
-                                        </Flex>
-                                      </Flex>
-                                    </CardBody>
-                                  </Card>
-                                </GridItem>
-                              </Grid>
+                                </CardBody>
+                              </Card>
+                            </GridItem>
+                          </Grid>
 
-                              <Box p={4} bg="gray.50" rounded="md">
-                                <pre>
-                                  {JSON.stringify(formik.values, null, 2)}
-                                </pre>
-                              </Box>
+                          <Box p={4} bg="gray.50" rounded="md" display={"none"}>
+                            <pre>{JSON.stringify(formik.values, null, 2)}</pre>
+                          </Box>
 
-                              {selectedWorkflowIds.size > 0 && (
-                                <Box
-                                  mt={4}
-                                  p={3}
-                                  bg="blue.50"
-                                  rounded="md"
-                                  w="full"
-                                >
-                                  <Text
-                                    fontSize="sm"
-                                    fontWeight="medium"
-                                    color="blue.800"
-                                  >
-                                    Selected: {selectedWorkflowIds.size}{" "}
-                                    workflow(s)
-                                  </Text>
-                                </Box>
-                              )}
-                            </VStack>
-                          ) : (
-                            <Text color="gray.500">
-                              No workflow groups available
-                            </Text>
+                          {selectedWorkflowIds.size > 0 && (
+                            <Box
+                              mt={4}
+                              p={3}
+                              bg="blue.50"
+                              rounded="md"
+                              w="full"
+                            >
+                              <Text
+                                fontSize="sm"
+                                fontWeight="medium"
+                                color="blue.800"
+                              >
+                                Selected: {selectedWorkflowIds.size} workflow(s)
+                              </Text>
+                            </Box>
                           )}
-                        </CardBody>
-                      </Card>
+                        </VStack>
+                      ) : (
+                        <Text color="gray.500">
+                          No workflow groups available
+                        </Text>
+                      )}
                     </Flex>
                   )}
 
@@ -2448,6 +2577,7 @@ function FormRegisterProjectView() {
                           setActiveStep(activeStep - 1);
                         }
                       }}
+                      size={"lg"}
                       isDisabled={activeStep === 0}
                       leftIcon={<FiArrowLeft />}
                     >
@@ -2460,6 +2590,7 @@ function FormRegisterProjectView() {
                             setActiveStep(activeStep + 1);
                           }
                         }}
+                        size={"lg"}
                         isDisabled={activeStep === steps.length - 1}
                         colorScheme="blue"
                         rightIcon={<FiArrowRight />}
@@ -2468,18 +2599,6 @@ function FormRegisterProjectView() {
                         }
                       >
                         Next
-                      </Button>
-                      <Button
-                        colorScheme="green"
-                        leftIcon={<FiSave />}
-                        onClick={() => handleConfirmSaveData(formik.values)}
-                        isDisabled={activeStep !== steps.length - 1}
-                        display={
-                          activeStep === steps.length - 1 ? "flex" : "none"
-                        }
-                        px={8}
-                      >
-                        Save Project
                       </Button>
                     </HStack>
                   </Flex>
@@ -2532,6 +2651,7 @@ const UpdateUrgencyImpactInput = ({
       value={optionValue}
       onChange={(e) => handleChange(e.target.value)}
       size="sm"
+      variant={"flushed"}
     >
       <option value="LOW">Low</option>
       <option value="MEDIUM">Medium</option>
@@ -2579,6 +2699,7 @@ const UpdateBacklogDateInput = ({
       value={dateValue}
       onChange={(e) => handleChange(e.target.value)}
       size="sm"
+      variant={"flushed"}
     />
   );
 };

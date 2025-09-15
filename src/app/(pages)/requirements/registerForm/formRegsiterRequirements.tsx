@@ -1321,7 +1321,7 @@ function RegsiterRequirementViewPage({
                 href={`/requirements/${type_req_param.toLocaleLowerCase()}/`}
               >
                 <Button size={"lg"} leftIcon={<FiArrowLeft />}>
-                  Kembali
+                  Back
                 </Button>
               </Link>
             </Flex>
@@ -1333,18 +1333,7 @@ function RegsiterRequirementViewPage({
               justifyContent={"end"}
               alignItems={"center"}
             >
-              {/* <Button
-                size={"lg"}
-                bg={"white"}
-                color={"gray.800"}
-                leftIcon={<RepeatIcon />}
-                type={"button"}
-                isLoading={ActionLoading}
-              >
-                Ulang
-              </Button> */}
-              {/* <Button
-                size={"lg"}
+              <Button
                 colorScheme={"green"}
                 leftIcon={<FiSave />}
                 // type={"submit"}
@@ -1352,14 +1341,20 @@ function RegsiterRequirementViewPage({
                 onClick={() => handleConfirmSaveData(formik.values)}
                 isLoading={ActionLoading}
                 isDisabled={activeStep !== steps.length - 1}
+                // display={activeStep === steps.length - 1 ? "flex" : "none"}
                 px={8}
+                size={"lg"}
               >
-                Simpan
-              </Button> */}
+                Submit Data
+              </Button>
             </Flex>
           </GridItem>
           <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 12 }} w={"full"}>
-            <Card w={"fill"} rounded={radiusStyle}>
+            <Card
+              w={"fill"}
+              rounded={radiusStyle}
+              bgColor={colorMode == "light" ? "white" : "gray.800"}
+            >
               <CardHeader>
                 <Heading as="h5" size="md" w={"full"}>
                   Form Registrasi {type_req_param}
@@ -4128,8 +4123,9 @@ function RegsiterRequirementViewPage({
                       isDisabled={activeStep === 0}
                       variant="outline"
                       leftIcon={<FiArrowLeft />}
+                      size={"lg"}
                     >
-                      Sebelumnya
+                      Previous
                     </Button>
                     <Flex w={"full"} justifyContent={"end"} as={HStack}>
                       <Button
@@ -4140,23 +4136,9 @@ function RegsiterRequirementViewPage({
                         display={
                           activeStep === steps.length - 1 ? "none" : "flex"
                         }
+                        size={"lg"}
                       >
-                        Selanjutnya
-                      </Button>
-                      <Button
-                        colorScheme={"green"}
-                        leftIcon={<FiSave />}
-                        // type={"submit"}
-                        //   onClick={() => setSaveAsDraft(false)}
-                        onClick={() => handleConfirmSaveData(formik.values)}
-                        isLoading={ActionLoading}
-                        // isDisabled={activeStep !== steps.length - 1}
-                        display={
-                          activeStep === steps.length - 1 ? "flex" : "none"
-                        }
-                        px={8}
-                      >
-                        Simpan
+                        Next
                       </Button>
                     </Flex>
                   </Flex>
