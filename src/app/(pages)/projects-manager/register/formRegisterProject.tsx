@@ -814,9 +814,33 @@ function FormRegisterProjectView() {
 
   const handleSelectPreset = async (presetId: string) => {
     try {
+      // If clicking the currently selected preset, clear selection
+      if (selectedPreset?.id === presetId) {
+        setSelectedPreset(null);
+        setSelectedWorkflowIds(new Set());
+        formik.setFieldValue("projectPlanWorkflowIds", []);
+        return;
+      }
+
       const requestData = await GetWorkflowPresetById(presetId, tokenData);
       if (requestData?.statusCode === RES_CODE_OK && requestData.data) {
         setSelectedPreset(requestData.data);
+        
+        // Extract all workflow IDs including children
+        const allWorkflowIds = new Set<string>();
+        requestData.data.workflowData.forEach((group) => {
+          allWorkflowIds.add(group.id);
+          group.workflowChild.forEach((level2) => {
+            allWorkflowIds.add(level2.id);
+            level2.workflowChild.forEach((level3) => {
+              allWorkflowIds.add(level3.id);
+            });
+          });
+        });
+        
+        // Update formik and selectedWorkflowIds
+        setSelectedWorkflowIds(allWorkflowIds);
+        formik.setFieldValue("projectPlanWorkflowIds", Array.from(allWorkflowIds));
       }
     } catch (error) {
       console.error("Error loading preset detail:", error);
