@@ -783,6 +783,7 @@ function FormRegisterProjectView() {
   const [DataWorkflowPresets, setDataWorkflowPresets] = useState<
     WorkflowPresetResponse[]
   >([]);
+  const [selectedPreset, setSelectedPreset] = useState<WorkflowPresetResponse | null>(null);
 
   const updateBacklog = (
     backlogId: string,
@@ -809,7 +810,18 @@ function FormRegisterProjectView() {
 
   // Load Workflow Groups
   const { ListWorkflowGroups } = useWorkflow();
-  const { ListWorkflowPreset } = useWorkflowPreset();
+  const { ListWorkflowPreset, GetWorkflowPresetById } = useWorkflowPreset();
+
+  const handleSelectPreset = async (presetId: string) => {
+    try {
+      const requestData = await GetWorkflowPresetById(presetId, tokenData);
+      if (requestData?.statusCode === RES_CODE_OK && requestData.data) {
+        setSelectedPreset(requestData.data);
+      }
+    } catch (error) {
+      console.error("Error loading preset detail:", error);
+    }
+  };
 
   const LoadWorkflowPresets = async () => {
     try {
@@ -2337,11 +2349,13 @@ function FormRegisterProjectView() {
                                                 (preset) => (
                                                   <Button
                                                     key={preset.id}
-                                                    variant="outline"
+                                                    variant={selectedPreset?.id === preset.id ? "solid" : "outline"}
+                                                    colorScheme={selectedPreset?.id === preset.id ? "blue" : "gray"}
                                                     size="sm"
                                                     w="full"
                                                     textAlign="left"
                                                     justifyContent="flex-start"
+                                                    onClick={() => handleSelectPreset(preset.id)}
                                                   >
                                                     {preset.wfPresetName}
                                                   </Button>
@@ -2411,7 +2425,6 @@ function FormRegisterProjectView() {
                         }
                       }}
                       isDisabled={activeStep === 0}
-                      variant="outline"
                       leftIcon={<FiArrowLeft />}
                     >
                       Previous
