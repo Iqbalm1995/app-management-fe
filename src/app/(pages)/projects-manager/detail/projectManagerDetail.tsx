@@ -69,6 +69,15 @@ import {
   VStack,
   SimpleGrid,
   TabIndicator,
+  Collapse,
+  useDisclosure,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  TableContainer,
 } from "@chakra-ui/react";
 import { Select } from "chakra-react-select";
 import { useFormik } from "formik";
@@ -103,6 +112,8 @@ import {
   FiExternalLink,
   FiCode,
   FiBriefcase,
+  FiUpload,
+  FiEye,
 } from "react-icons/fi";
 import { FaCircle } from "react-icons/fa6";
 import * as Yup from "yup";
@@ -185,6 +196,123 @@ const FormSchemaEditProject = Yup.object().shape({
   proManageByGroupId: Yup.string().nullable(),
   proManageByTeamId: Yup.string().nullable(),
 });
+
+// Workflow Level 2 Component
+interface WorkflowLevel2Props {
+  workflow: any;
+}
+
+const WorkflowLevel2Box = ({ workflow }: WorkflowLevel2Props) => {
+  const { colorMode } = useColorMode();
+  const { isOpen, onToggle } = useDisclosure({ defaultIsOpen: true });
+  
+  return (
+    <Box
+      border="1px solid"
+      borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
+      rounded="lg"
+      overflow="hidden"
+    >
+      <Box
+        p={4}
+        bg={colorMode === "light" ? "gray.50" : "gray.800"}
+        cursor="pointer"
+        onClick={onToggle}
+        _hover={{ bg: colorMode === "light" ? "gray.100" : "gray.700" }}
+      >
+        <HStack justify="space-between">
+          <Text fontWeight="medium" fontSize="sm">
+            {workflow.wfgName}
+          </Text>
+          <Text fontSize="xs" color="gray.500">
+            {isOpen ? "−" : "+"}
+          </Text>
+        </HStack>
+      </Box>
+      <Collapse in={isOpen}>
+        <Box p={4}>
+          <TableContainer>
+            <Table size="sm" variant="simple">
+              <Thead>
+                <Tr>
+                  <Th>Workflow Name</Th>
+                  <Th width="200px">Actions</Th>
+                </Tr>
+              </Thead>
+              <Tbody>
+                {workflow.workflowChild?.map((level3: any) => (
+                  <Tr key={level3.id}>
+                    <Td>
+                      <VStack align="start" spacing={1}>
+                        <Text fontWeight="medium" fontSize="sm">
+                          {level3.wfgName}
+                        </Text>
+                        {level3.wfgDesc && (
+                          <Text fontSize="xs" color="gray.500">
+                            {level3.wfgDesc}
+                          </Text>
+                        )}
+                      </VStack>
+                    </Td>
+                    <Td>
+                      <HStack spacing={2}>
+                        <Button size="xs" colorScheme="blue" variant="outline" leftIcon={<FiUpload />}>
+                          Upload
+                        </Button>
+                        <Button size="xs" colorScheme="gray" variant="outline" leftIcon={<FiEye />}>
+                          Detail
+                        </Button>
+                      </HStack>
+                    </Td>
+                  </Tr>
+                ))}
+              </Tbody>
+            </Table>
+          </TableContainer>
+        </Box>
+      </Collapse>
+    </Box>
+  );
+};
+
+// Workflow Level 1 Component
+interface WorkflowLevel1Props {
+  workflow: any;
+}
+
+const WorkflowLevel1Box = ({ workflow }: WorkflowLevel1Props) => {
+  const { colorMode } = useColorMode();
+  const { isOpen, onToggle } = useDisclosure({ defaultIsOpen: true });
+  
+  return (
+    <Card shadow="md" rounded="lg">
+      <CardHeader
+        p={4}
+        cursor="pointer"
+        onClick={onToggle}
+        _hover={{ bg: colorMode === "light" ? "gray.50" : "gray.700" }}
+      >
+        <HStack justify="space-between">
+          <Text fontWeight="bold" color="blue.600">
+            {workflow.wfgName}
+          </Text>
+          <Text fontSize="sm" color="gray.500">
+            {isOpen ? "−" : "+"}
+          </Text>
+        </HStack>
+      </CardHeader>
+      <Collapse in={isOpen}>
+        <CardBody pt={0}>
+          <VStack spacing={3} align="stretch">
+            {workflow.workflowChild?.map((level2: any) => (
+              <WorkflowLevel2Box key={level2.id} workflow={level2} />
+            ))}
+          </VStack>
+        </CardBody>
+      </Collapse>
+    </Card>
+  );
+};
 
 function ProjectManagerDetail() {
   const showToast = useToastHelper();
@@ -1613,7 +1741,7 @@ function ProjectManagerDetail() {
                       </Suspense>
                     </TabPanel>
 
-                    {/* Team Tab */}
+                    {/* Project Documentation Tab */}
                     <TabPanel
                       p={8}
                       bg={colorMode === "light" ? "gray.50" : "gray.900"}
@@ -1644,9 +1772,27 @@ function ProjectManagerDetail() {
                           </HStack>
                         </HStack>
 
-                        <Box p={4} bg="gray.50" rounded="md" display={"flex"}>
-                          <pre>{JSON.stringify(DataProject, null, 2)}</pre>
-                        </Box>
+                        {/* Workflow Content */}
+                        {(DataProject as any)?.projectWorkflowData && (DataProject as any).projectWorkflowData.length > 0 ? (
+                          <VStack spacing={4} align="stretch">
+                            {(DataProject as any).projectWorkflowData.map((workflow: any) => (
+                              <WorkflowLevel1Box key={workflow.id} workflow={workflow} />
+                            ))}
+                          </VStack>
+                        ) : (
+                          <Box
+                            p={8}
+                            textAlign="center"
+                            bg={colorMode === "light" ? "gray.50" : "gray.800"}
+                            rounded="lg"
+                            border="2px dashed"
+                            borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
+                          >
+                            <Text color="gray.500" fontSize="sm">
+                              No workflow documentation available
+                            </Text>
+                          </Box>
+                        )}
                       </VStack>
                     </TabPanel>
 
