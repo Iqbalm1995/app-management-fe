@@ -205,7 +205,7 @@ interface WorkflowLevel2Props {
 const WorkflowLevel2Box = ({ workflow }: WorkflowLevel2Props) => {
   const { colorMode } = useColorMode();
   const { isOpen, onToggle } = useDisclosure({ defaultIsOpen: true });
-  
+
   return (
     <Box
       border="1px solid"
@@ -221,7 +221,7 @@ const WorkflowLevel2Box = ({ workflow }: WorkflowLevel2Props) => {
         _hover={{ bg: colorMode === "light" ? "gray.100" : "gray.700" }}
       >
         <HStack justify="space-between">
-          <Text fontWeight="medium" fontSize="sm">
+          <Text fontWeight={600} fontSize="sm">
             {workflow.wfgName}
           </Text>
           <Text fontSize="xs" color="gray.500">
@@ -256,10 +256,20 @@ const WorkflowLevel2Box = ({ workflow }: WorkflowLevel2Props) => {
                     </Td>
                     <Td>
                       <HStack spacing={2}>
-                        <Button size="xs" colorScheme="blue" variant="outline" leftIcon={<FiUpload />}>
+                        <Button
+                          size="xs"
+                          colorScheme="blue"
+                          variant="outline"
+                          leftIcon={<FiUpload />}
+                        >
                           Upload
                         </Button>
-                        <Button size="xs" colorScheme="gray" variant="outline" leftIcon={<FiEye />}>
+                        <Button
+                          size="xs"
+                          colorScheme="gray"
+                          variant="outline"
+                          leftIcon={<FiEye />}
+                        >
                           Detail
                         </Button>
                       </HStack>
@@ -283,7 +293,7 @@ interface WorkflowLevel1Props {
 const WorkflowLevel1Box = ({ workflow }: WorkflowLevel1Props) => {
   const { colorMode } = useColorMode();
   const { isOpen, onToggle } = useDisclosure({ defaultIsOpen: true });
-  
+
   return (
     <Card shadow="md" rounded="lg">
       <CardHeader
@@ -293,7 +303,7 @@ const WorkflowLevel1Box = ({ workflow }: WorkflowLevel1Props) => {
         _hover={{ bg: colorMode === "light" ? "gray.50" : "gray.700" }}
       >
         <HStack justify="space-between">
-          <Text fontWeight="bold" color="blue.600">
+          <Text fontWeight={600} color="blue.600">
             {workflow.wfgName}
           </Text>
           <Text fontSize="sm" color="gray.500">
@@ -1773,11 +1783,17 @@ function ProjectManagerDetail() {
                         </HStack>
 
                         {/* Workflow Content */}
-                        {(DataProject as any)?.projectWorkflowData && (DataProject as any).projectWorkflowData.length > 0 ? (
+                        {(DataProject as any)?.projectWorkflowData &&
+                        (DataProject as any).projectWorkflowData.length > 0 ? (
                           <VStack spacing={4} align="stretch">
-                            {(DataProject as any).projectWorkflowData.map((workflow: any) => (
-                              <WorkflowLevel1Box key={workflow.id} workflow={workflow} />
-                            ))}
+                            {(DataProject as any).projectWorkflowData.map(
+                              (workflow: any) => (
+                                <WorkflowLevel1Box
+                                  key={workflow.id}
+                                  workflow={workflow}
+                                />
+                              )
+                            )}
                           </VStack>
                         ) : (
                           <Box
@@ -1786,7 +1802,9 @@ function ProjectManagerDetail() {
                             bg={colorMode === "light" ? "gray.50" : "gray.800"}
                             rounded="lg"
                             border="2px dashed"
-                            borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
+                            borderColor={
+                              colorMode === "light" ? "gray.300" : "gray.600"
+                            }
                           >
                             <Text color="gray.500" fontSize="sm">
                               No workflow documentation available

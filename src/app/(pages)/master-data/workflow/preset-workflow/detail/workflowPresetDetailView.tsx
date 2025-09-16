@@ -17,7 +17,9 @@ import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useWorkflow, { WorkflowGroupResponse } from "@/app/services/useWorkflow";
-import useWorkflowPreset, { WorkflowPresetResponse } from "@/app/services/useWorkflowPreset";
+import useWorkflowPreset, {
+  WorkflowPresetResponse,
+} from "@/app/services/useWorkflowPreset";
 import { PaggingListPayload } from "@/app/types/masterTypes";
 import {
   Box,
@@ -63,7 +65,8 @@ function WorkflowPresetDetailView() {
 
     if (DataAuth == null && storedData) {
       const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
-      const UserData: AuthDataResponse = StorageAuth.dataLogin as AuthDataResponse;
+      const UserData: AuthDataResponse =
+        StorageAuth.dataLogin as AuthDataResponse;
       setDataAuth(UserData);
     }
 
@@ -74,10 +77,16 @@ function WorkflowPresetDetailView() {
 
   const [IsLoadingPage, setIsLoadingPage] = useState(true);
   const [PresetId, setPresetId] = useState<string | null>(null);
-  const [DataPreset, setDataPreset] = useState<WorkflowPresetResponse | null>(null);
-  const [DataWorkflowGroups, setDataWorkflowGroups] = useState<WorkflowGroupResponse[]>([]);
+  const [DataPreset, setDataPreset] = useState<WorkflowPresetResponse | null>(
+    null
+  );
+  const [DataWorkflowGroups, setDataWorkflowGroups] = useState<
+    WorkflowGroupResponse[]
+  >([]);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
-  const [originalSelectedItems, setOriginalSelectedItems] = useState<Set<string>>(new Set());
+  const [originalSelectedItems, setOriginalSelectedItems] = useState<
+    Set<string>
+  >(new Set());
   const [RefreshData, setRefreshData] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
 
@@ -90,7 +99,7 @@ function WorkflowPresetDetailView() {
 
   // Checkbox handler
   const handleCheckboxChange = (itemId: string, checked: boolean) => {
-    setSelectedItems(prev => {
+    setSelectedItems((prev) => {
       const newSet = new Set(prev);
       if (checked) {
         newSet.add(itemId);
@@ -104,7 +113,7 @@ function WorkflowPresetDetailView() {
   // Get all workflow IDs from tree (recursive)
   const getAllWorkflowIds = (workflows: WorkflowGroupResponse[]): string[] => {
     const ids: string[] = [];
-    workflows.forEach(workflow => {
+    workflows.forEach((workflow) => {
       ids.push(workflow.id);
       if (workflow.workflowChild && workflow.workflowChild.length > 0) {
         ids.push(...getAllWorkflowIds(workflow.workflowChild));
@@ -117,11 +126,11 @@ function WorkflowPresetDetailView() {
   const GetDetailPreset = async (id: string) => {
     setIsLoadingProcess(true);
     const requestData = await GetWorkflowPresetById(id, tokenData);
-    
+
     if (requestData?.statusCode === RES_CODE_OK && requestData.data) {
       const preset = requestData.data;
       setDataPreset(preset);
-      
+
       // Set selected items from preset workflow data
       const presetWorkflowIds = getAllWorkflowIds(preset.workflowData || []);
       const selectedSet = new Set(presetWorkflowIds);
@@ -174,9 +183,9 @@ function WorkflowPresetDetailView() {
     // Calculate changes
     const currentIds = Array.from(selectedItems);
     const originalIds = Array.from(originalSelectedItems);
-    
-    const toAdd = currentIds.filter(id => !originalIds.includes(id));
-    const toRemove = originalIds.filter(id => !currentIds.includes(id));
+
+    const toAdd = currentIds.filter((id) => !originalIds.includes(id));
+    const toRemove = originalIds.filter((id) => !currentIds.includes(id));
 
     const payload = {
       id: DataPreset.id,
@@ -233,8 +242,10 @@ function WorkflowPresetDetailView() {
 
       <Grid templateColumns="repeat(2, 1fr)" gap={5} w="full">
         <GridItem colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }} w="full">
-          <Link href={`/master-data/workflow/preset-workflow?categoryId=${DataPreset?.wfCategoryId}`}>
-            <Button leftIcon={<FiArrowLeft />} size="md">
+          <Link
+            href={`/master-data/workflow/preset-workflow?categoryId=${DataPreset?.wfCategoryId}`}
+          >
+            <Button leftIcon={<FiArrowLeft />} size="lg">
               Back to Presets
             </Button>
           </Link>
@@ -242,6 +253,7 @@ function WorkflowPresetDetailView() {
         <GridItem colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }} w="full">
           <Flex justify="end">
             <Button
+              size="lg"
               leftIcon={<FiSave />}
               colorScheme="blue"
               onClick={savePresetConfiguration}
@@ -254,7 +266,7 @@ function WorkflowPresetDetailView() {
         </GridItem>
       </Grid>
 
-      <Grid templateColumns="repeat(12, 1fr)" gap={5} w="full">
+      <Grid templateColumns="repeat(12, 1fr)" gap={5} w="full" pt={4}>
         <GridItem colSpan={12} w="full">
           <Card
             w="full"
@@ -268,9 +280,7 @@ function WorkflowPresetDetailView() {
                   {DataPreset?.wfPresetName} Configuration
                 </Heading>
                 <HStack spacing={4}>
-                  <Badge colorScheme="blue">
-                    {DataPreset?.wfCategoryCode}
-                  </Badge>
+                  <Badge colorScheme="blue">{DataPreset?.wfCategoryCode}</Badge>
                   <Text fontSize="sm" color="gray.500">
                     {DataPreset?.wfPresetDesc}
                   </Text>
@@ -295,16 +305,25 @@ function WorkflowPresetDetailView() {
                           p={3}
                           bg={colorMode === "light" ? "blue.50" : "blue.900"}
                           border="1px solid"
-                          borderColor={colorMode === "light" ? "blue.200" : "blue.700"}
+                          borderColor={
+                            colorMode === "light" ? "blue.200" : "blue.700"
+                          }
                           rounded="md"
                         >
                           <HStack spacing={3} align="center">
                             <Checkbox
                               isChecked={selectedItems.has(group.id)}
-                              onChange={(e) => handleCheckboxChange(group.id, e.target.checked)}
+                              onChange={(e) =>
+                                handleCheckboxChange(group.id, e.target.checked)
+                              }
                               colorScheme="blue"
                             />
-                            <Text fontSize="sm" fontWeight="bold" color="blue.600" minW="6">
+                            <Text
+                              fontSize="sm"
+                              fontWeight="bold"
+                              color="blue.600"
+                              minW="6"
+                            >
                               {group.wfgOrder}
                             </Text>
                             <Text fontSize="md" fontWeight="semibold" flex={1}>
@@ -319,75 +338,143 @@ function WorkflowPresetDetailView() {
                         </Box>
 
                         {/* Level 2 - Children */}
-                        {group.workflowChild && group.workflowChild.length > 0 && (
-                          <VStack spacing={2} align="stretch" pl={6} mt={2}>
-                            {group.workflowChild.map((child) => (
-                              <Box key={child.id}>
-                                <Box
-                                  p={2}
-                                  bg={colorMode === "light" ? "green.50" : "green.900"}
-                                  border="1px solid"
-                                  borderColor={colorMode === "light" ? "green.200" : "green.700"}
-                                  rounded="sm"
-                                >
-                                  <HStack spacing={3} align="center">
-                                    <Checkbox
-                                      isChecked={selectedItems.has(child.id)}
-                                      onChange={(e) => handleCheckboxChange(child.id, e.target.checked)}
-                                      colorScheme="green"
-                                    />
-                                    <Text fontSize="xs" fontWeight="bold" color="green.600" minW="6">
-                                      {child.wfgOrder}
-                                    </Text>
-                                    <Text fontSize="sm" fontWeight="medium" flex={1}>
-                                      {child.wfgName}
-                                    </Text>
-                                  </HStack>
-                                  {child.wfgDesc && (
-                                    <Text fontSize="xs" color="gray.500" mt={1} ml={8}>
-                                      {child.wfgDesc}
-                                    </Text>
-                                  )}
-                                </Box>
-
-                                {/* Level 3 - Grandchildren */}
-                                {child.workflowChild && child.workflowChild.length > 0 && (
-                                  <VStack spacing={1} align="stretch" pl={6} mt={1}>
-                                    {child.workflowChild.map((grandChild) => (
-                                      <Box
-                                        key={grandChild.id}
-                                        p={2}
-                                        bg={colorMode === "light" ? "gray.50" : "gray.700"}
-                                        border="1px solid"
-                                        borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
-                                        rounded="sm"
+                        {group.workflowChild &&
+                          group.workflowChild.length > 0 && (
+                            <VStack spacing={2} align="stretch" pl={6} mt={2}>
+                              {group.workflowChild.map((child) => (
+                                <Box key={child.id}>
+                                  <Box
+                                    p={2}
+                                    bg={
+                                      colorMode === "light"
+                                        ? "green.50"
+                                        : "green.900"
+                                    }
+                                    border="1px solid"
+                                    borderColor={
+                                      colorMode === "light"
+                                        ? "green.200"
+                                        : "green.700"
+                                    }
+                                    rounded="sm"
+                                  >
+                                    <HStack spacing={3} align="center">
+                                      <Checkbox
+                                        isChecked={selectedItems.has(child.id)}
+                                        onChange={(e) =>
+                                          handleCheckboxChange(
+                                            child.id,
+                                            e.target.checked
+                                          )
+                                        }
+                                        colorScheme="green"
+                                      />
+                                      <Text
+                                        fontSize="xs"
+                                        fontWeight="bold"
+                                        color="green.600"
+                                        minW="6"
                                       >
-                                        <HStack spacing={3} align="center">
-                                          <Checkbox
-                                            isChecked={selectedItems.has(grandChild.id)}
-                                            onChange={(e) => handleCheckboxChange(grandChild.id, e.target.checked)}
-                                            colorScheme="gray"
-                                          />
-                                          <Text fontSize="xs" fontWeight="bold" color="gray.600" minW="6">
-                                            {grandChild.wfgOrder}
-                                          </Text>
-                                          <Text fontSize="sm" color="gray.700" flex={1}>
-                                            {grandChild.wfgName}
-                                          </Text>
-                                        </HStack>
-                                        {grandChild.wfgDesc && (
-                                          <Text fontSize="xs" color="gray.500" mt={1} ml={8}>
-                                            {grandChild.wfgDesc}
-                                          </Text>
+                                        {child.wfgOrder}
+                                      </Text>
+                                      <Text
+                                        fontSize="sm"
+                                        fontWeight="medium"
+                                        flex={1}
+                                      >
+                                        {child.wfgName}
+                                      </Text>
+                                    </HStack>
+                                    {child.wfgDesc && (
+                                      <Text
+                                        fontSize="xs"
+                                        color="gray.500"
+                                        mt={1}
+                                        ml={8}
+                                      >
+                                        {child.wfgDesc}
+                                      </Text>
+                                    )}
+                                  </Box>
+
+                                  {/* Level 3 - Grandchildren */}
+                                  {child.workflowChild &&
+                                    child.workflowChild.length > 0 && (
+                                      <VStack
+                                        spacing={1}
+                                        align="stretch"
+                                        pl={6}
+                                        mt={1}
+                                      >
+                                        {child.workflowChild.map(
+                                          (grandChild) => (
+                                            <Box
+                                              key={grandChild.id}
+                                              p={2}
+                                              bg={
+                                                colorMode === "light"
+                                                  ? "gray.50"
+                                                  : "gray.700"
+                                              }
+                                              border="1px solid"
+                                              borderColor={
+                                                colorMode === "light"
+                                                  ? "gray.200"
+                                                  : "gray.600"
+                                              }
+                                              rounded="sm"
+                                            >
+                                              <HStack
+                                                spacing={3}
+                                                align="center"
+                                              >
+                                                <Checkbox
+                                                  isChecked={selectedItems.has(
+                                                    grandChild.id
+                                                  )}
+                                                  onChange={(e) =>
+                                                    handleCheckboxChange(
+                                                      grandChild.id,
+                                                      e.target.checked
+                                                    )
+                                                  }
+                                                  colorScheme="gray"
+                                                />
+                                                <Text
+                                                  fontSize="xs"
+                                                  fontWeight="bold"
+                                                  color="gray.600"
+                                                  minW="6"
+                                                >
+                                                  {grandChild.wfgOrder}
+                                                </Text>
+                                                <Text
+                                                  fontSize="sm"
+                                                  color="gray.700"
+                                                  flex={1}
+                                                >
+                                                  {grandChild.wfgName}
+                                                </Text>
+                                              </HStack>
+                                              {grandChild.wfgDesc && (
+                                                <Text
+                                                  fontSize="xs"
+                                                  color="gray.500"
+                                                  mt={1}
+                                                  ml={8}
+                                                >
+                                                  {grandChild.wfgDesc}
+                                                </Text>
+                                              )}
+                                            </Box>
+                                          )
                                         )}
-                                      </Box>
-                                    ))}
-                                  </VStack>
-                                )}
-                              </Box>
-                            ))}
-                          </VStack>
-                        )}
+                                      </VStack>
+                                    )}
+                                </Box>
+                              ))}
+                            </VStack>
+                          )}
                       </Box>
                     ))}
 

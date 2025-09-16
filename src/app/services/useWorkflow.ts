@@ -11,6 +11,7 @@ import {
 import axiosInstance from "../utils/axiosInstance";
 import axios from "axios";
 import handleAxiosError from "../utils/handleAxiosError";
+import { MediaObjectResponse } from "./useMediaObject";
 
 // Response interface for Workflow Group
 export interface WorkflowGroupResponse {

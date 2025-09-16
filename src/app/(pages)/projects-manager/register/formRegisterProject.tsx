@@ -1218,7 +1218,7 @@ function FormRegisterProjectView() {
       description: (
         <HStack>
           <FiInfo />
-          <Text>Project Information</Text>
+          <Text>1. Project Information</Text>
         </HStack>
       ),
     },
@@ -1227,7 +1227,7 @@ function FormRegisterProjectView() {
       description: (
         <HStack>
           <FiUsers />
-          <Text>Team Information</Text>
+          <Text>2. Team Information</Text>
         </HStack>
       ),
     },
@@ -1236,7 +1236,7 @@ function FormRegisterProjectView() {
       description: (
         <HStack>
           <FiSettings />
-          <Text>Feature Information</Text>
+          <Text>3. Feature Information</Text>
         </HStack>
       ),
     },
@@ -1245,7 +1245,7 @@ function FormRegisterProjectView() {
       description: (
         <HStack>
           <FiBriefcase />
-          <Text>Work Stages</Text>
+          <Text>4. Work Stages</Text>
         </HStack>
       ),
     },
@@ -1540,7 +1540,7 @@ function FormRegisterProjectView() {
             >
               <CardBody>
                 <Flex w={"full"} as={Stack} spacing={4}>
-                  <Flex as={HStack} spacing={4} pb={6}>
+                  <Flex as={HStack} spacing={4} pb={6} overflowX={"auto"}>
                     {steps.map((step, index) => (
                       <TabButtonCustom
                         activeStep={activeStep}
@@ -2148,7 +2148,18 @@ function FormRegisterProjectView() {
                               colSpan={{ base: 12, sm: 12, md: 8, lg: 8 }}
                               w={"full"}
                             >
-                              <Flex as={Stack} px={6} w={"full"} spacing={4}>
+                              <Flex
+                                as={Stack}
+                                p={6}
+                                w={"full"}
+                                spacing={4}
+                                rounded={radiusStyle}
+                                borderWidth={1}
+                                boxShadow={"md"}
+                                borderColor={
+                                  colorMode == "light" ? "gray.100" : "gray.900"
+                                }
+                              >
                                 <Flex as={Stack} w={"full"}>
                                   <Heading size="md">
                                     Choose Work Stages

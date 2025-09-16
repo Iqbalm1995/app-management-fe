@@ -30,7 +30,7 @@ export const TabButtonCustom = ({
           : "gray.100"
       }
       boxShadow={activeStep == idx ? "md" : "none"}
-      w={"280px"}
+      minW={"280px"}
       justifyContent={"center"}
       textAlign={"center"}
       alignItems={"center"}
