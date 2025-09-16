@@ -167,7 +167,13 @@ function WorkflowPresetListView() {
       limit: MAX_SIZE_TABLE,
       page: 0,
       search: "",
-      filterWhere: [],
+      filterWhere: [
+        {
+          field: "wfCategoryId",
+          operator: "=",
+          value: CategoryId || "",
+        },
+      ],
       fieldOrder: ["wfPresetName"],
       orderDir: "asc",
     };
@@ -671,21 +677,6 @@ function WorkflowPresetListView() {
                     </VStack>
                   ) : (
                     <TableComponentFull table={table} />
-                  )}
-
-                  {!IsLoadingProcess && DataPresets.length === 0 && (
-                    <Box textAlign="center" py={10}>
-                      <Text color="gray.500" fontSize="lg" mb={4}>
-                        No workflow presets found
-                      </Text>
-                      <Button
-                        leftIcon={<FiPlus />}
-                        colorScheme="blue"
-                        onClick={handleCreate}
-                      >
-                        Create Your First Preset
-                      </Button>
-                    </Box>
                   )}
                 </CardBody>
               </Card>
