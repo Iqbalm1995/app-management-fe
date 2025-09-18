@@ -77,6 +77,7 @@ export function ControlTableCTX({ table }: any) {
       justifyContent="center"
       gap="2"
       my={4}
+      overflowX={"auto"}
     >
       <Grid templateColumns="repeat(12, 1fr)" gap={2} w={"full"}>
         <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}>
