@@ -4,12 +4,14 @@ import { ConfirmationDialog } from "@/app/components/confirmationDialog";
 import {
   DELAY_MEDIUM,
   radiusStyle,
+  RES_CODE_OK,
+  RES_GENERIC_ERROR_MSG,
 } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { convertToCustomDateFormat } from "@/app/helper/MasterHelper";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
-import {
+import useProjects, {
   ProjectWorkflowResponse,
   ProjectWorkflowValueInsertPayload,
 } from "@/app/services/useProjects";
@@ -102,6 +104,7 @@ export const WorkflowLevel2Box = ({ workflow }: WorkflowLevel2Props) => {
   const [tokenData, setTokenData] = useState<string>("");
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
+  const { InsertProjectWorkflowValue } = useProjects();
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
@@ -130,6 +133,34 @@ export const WorkflowLevel2Box = ({ workflow }: WorkflowLevel2Props) => {
     setRefreshData(RefreshData + 1);
   };
 
+  const InsertAttchmentWFVServ = async (
+    data: ProjectWorkflowValueInsertPayload
+  ) => {
+    const requestData = await InsertProjectWorkflowValue(data, tokenData);
+    const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+
+    if (isErrorResponse || !requestData) {
+      showToast({
+        description: requestData?.message || RES_GENERIC_ERROR_MSG,
+        statusToast: "error",
+      });
+      setActionLoading(false);
+      return;
+    } else {
+      console.log(requestData);
+
+      showToast({
+        description: "Creating new requirement data successfully",
+        statusToast: "success",
+      });
+
+      setActionLoading(false);
+      ModalForm.onClose();
+      RefreshAction();
+      return;
+    }
+  };
+
   const formik = useFormik<ProjectWorkflowValueInsertPayload>({
     initialValues: initValuePayloadWFV,
     validationSchema: FormSchemaWFV,
@@ -143,7 +174,7 @@ export const WorkflowLevel2Box = ({ workflow }: WorkflowLevel2Props) => {
       //   });
       //   return;
       // }
-      // await handleConfirmSaveData(values);
+      await handleConfirmSaveData(values);
       console.log(values);
     },
   });
@@ -163,7 +194,7 @@ export const WorkflowLevel2Box = ({ workflow }: WorkflowLevel2Props) => {
     setActionLoading(true);
     await delay(DELAY_MEDIUM);
     if (DataAuth) {
-      // await AddRequirement(formik.values);
+      await InsertAttchmentWFVServ(formik.values);
       console.log(formik.values);
     } else {
       showToast({
@@ -209,7 +240,7 @@ export const WorkflowLevel2Box = ({ workflow }: WorkflowLevel2Props) => {
       <Modal
         size={"xl"}
         isOpen={ModalForm.isOpen}
-        isCentered
+        // isCentered
         onClose={ModalForm.onClose}
         closeOnOverlayClick={false}
         scrollBehavior={"inside"}
@@ -219,11 +250,12 @@ export const WorkflowLevel2Box = ({ workflow }: WorkflowLevel2Props) => {
           rounded={radiusStyle}
           m={2}
           bg={colorMode == "light" ? "white" : "gray.900"}
+          maxH="90vh"
         >
           <form onSubmit={formik.handleSubmit} onReset={formik.handleReset}>
             <ModalHeader>{`Upload New Document`}</ModalHeader>
             <ModalCloseButton color={"red.500"} />
-            <ModalBody w={"full"}>
+            <ModalBody w={"full"} maxH="70vh" overflowY="auto" p={6}>
               <Flex as={Stack} w={"full"}>
                 {/* COMPLETE FORM UI FROM FORMIK HERE */}
                 <VStack spacing={4} align="stretch" w="full">
@@ -240,6 +272,7 @@ export const WorkflowLevel2Box = ({ workflow }: WorkflowLevel2Props) => {
                       value={formik.values.DocumentName}
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
+                      isDisabled={ActionLoading}
                     />
                     <FormErrorMessage>
                       {formik.errors.DocumentName}
@@ -261,6 +294,7 @@ export const WorkflowLevel2Box = ({ workflow }: WorkflowLevel2Props) => {
                           value={formik.values.DocumentNumber}
                           onChange={formik.handleChange}
                           onBlur={formik.handleBlur}
+                          isDisabled={ActionLoading}
                         />
                         <FormErrorMessage>
                           {formik.errors.DocumentNumber}
@@ -280,6 +314,7 @@ export const WorkflowLevel2Box = ({ workflow }: WorkflowLevel2Props) => {
                           value={formik.values.DocumentDate}
                           onChange={formik.handleChange}
                           onBlur={formik.handleBlur}
+                          isDisabled={ActionLoading}
                         />
                         <FormErrorMessage>
                           {formik.errors.DocumentDate}
@@ -324,6 +359,7 @@ export const WorkflowLevel2Box = ({ workflow }: WorkflowLevel2Props) => {
                           value={formik.values.DocumentVersion}
                           onChange={formik.handleChange}
                           onBlur={formik.handleBlur}
+                          isDisabled={ActionLoading}
                         />
                         <FormErrorMessage>
                           {formik.errors.DocumentVersion}
@@ -342,6 +378,7 @@ export const WorkflowLevel2Box = ({ workflow }: WorkflowLevel2Props) => {
                       value={formik.values.LinkAttachment || ""}
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
+                      isDisabled={ActionLoading}
                     />
                     <FormErrorMessage>
                       {formik.errors.LinkAttachment}
@@ -362,6 +399,7 @@ export const WorkflowLevel2Box = ({ workflow }: WorkflowLevel2Props) => {
                         formik.setFieldValue("file", file);
                       }}
                       p={1}
+                      isDisabled={ActionLoading}
                     />
                     <Text fontSize="xs" color="gray.500" mt={1}>
                       Format yang didukung: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX
@@ -396,7 +434,7 @@ export const WorkflowLevel2Box = ({ workflow }: WorkflowLevel2Props) => {
                   mt={2}
                   bgColor={colorMode === "light" ? "gray.200" : "gray.700"}
                   rounded={radiusStyle}
-                  // display={"none"}
+                  display={"none"}
                 >
                   <Text fontWeight={600}>Debug Formik</Text>
                   <pre>{JSON.stringify(formik.values, null, 2)}</pre>
@@ -554,7 +592,7 @@ export const WorkflowLevel2Box = ({ workflow }: WorkflowLevel2Props) => {
 
 // Workflow Level 1 Component
 interface WorkflowLevel1Props {
-  workflow: any;
+  workflow: ProjectWorkflowResponse;
 }
 
 export const WorkflowLevel1Box = ({ workflow }: WorkflowLevel1Props) => {

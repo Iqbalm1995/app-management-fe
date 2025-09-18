@@ -2404,10 +2404,11 @@ const useProjects = (): useProjectsServices => {
     // Create FormData and append payload fields
     const formData = new FormData();
 
+    formData.append("ProjectWorkflowId", payload.ProjectWorkflowId);
     formData.append("DocumentType", payload.DocumentType);
     formData.append("DocumentName", payload.DocumentName);
     formData.append("DocumentNumber", payload.DocumentNumber);
-    formData.append("DocumentDate", payload.DocumentDate);
+    formData.append("DocumentDate", new Date(payload.DocumentDate).toISOString());
     formData.append("DocumentVersion", payload.DocumentVersion);
 
     if (payload.file) {
