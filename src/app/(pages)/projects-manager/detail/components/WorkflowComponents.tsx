@@ -42,6 +42,12 @@ import {
   ModalHeader,
   ModalCloseButton,
   ModalBody,
+  FormControl,
+  FormLabel,
+  FormErrorMessage,
+  Input,
+  Grid,
+  GridItem,
 } from "@chakra-ui/react";
 import { useFormik } from "formik";
 import { useEffect, useState } from "react";
@@ -176,6 +182,7 @@ export const WorkflowLevel2Box = ({ workflow }: WorkflowLevel2Props) => {
   const ModalForm = useDisclosure();
 
   const handleOpenForm = (wfData: ProjectWorkflowResponse) => {
+    formik.resetForm();
     ModalForm.onOpen();
     formik.setFieldValue("DocumentType", wfData.wfgName);
     formik.setFieldValue("ProjectWorkflowId", wfData.id);
@@ -217,8 +224,171 @@ export const WorkflowLevel2Box = ({ workflow }: WorkflowLevel2Props) => {
             <ModalHeader>{`Upload New Document`}</ModalHeader>
             <ModalCloseButton color={"red.500"} />
             <ModalBody w={"full"}>
-              <Flex as={Stack} w={"full"} minH={"400px"}>
+              <Flex as={Stack} w={"full"}>
                 {/* COMPLETE FORM UI FROM FORMIK HERE */}
+                <VStack spacing={4} align="stretch" w="full">
+                  {/* Document Name */}
+                  <FormControl
+                    isInvalid={!!formik.errors.DocumentName}
+                    isRequired
+                  >
+                    <FormLabel>Nama Dokumen</FormLabel>
+                    <Input
+                      id="DocumentName"
+                      name="DocumentName"
+                      placeholder="Masukkan nama dokumen"
+                      value={formik.values.DocumentName}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                    />
+                    <FormErrorMessage>
+                      {formik.errors.DocumentName}
+                    </FormErrorMessage>
+                  </FormControl>
+
+                  {/* Document Number and Date */}
+                  <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+                    <GridItem>
+                      <FormControl
+                        isInvalid={!!formik.errors.DocumentNumber}
+                        isRequired
+                      >
+                        <FormLabel>Nomor Dokumen</FormLabel>
+                        <Input
+                          id="DocumentNumber"
+                          name="DocumentNumber"
+                          placeholder="Masukkan nomor dokumen"
+                          value={formik.values.DocumentNumber}
+                          onChange={formik.handleChange}
+                          onBlur={formik.handleBlur}
+                        />
+                        <FormErrorMessage>
+                          {formik.errors.DocumentNumber}
+                        </FormErrorMessage>
+                      </FormControl>
+                    </GridItem>
+                    <GridItem>
+                      <FormControl
+                        isInvalid={!!formik.errors.DocumentDate}
+                        isRequired
+                      >
+                        <FormLabel>Tanggal Dokumen</FormLabel>
+                        <Input
+                          id="DocumentDate"
+                          name="DocumentDate"
+                          type="date"
+                          value={formik.values.DocumentDate}
+                          onChange={formik.handleChange}
+                          onBlur={formik.handleBlur}
+                        />
+                        <FormErrorMessage>
+                          {formik.errors.DocumentDate}
+                        </FormErrorMessage>
+                      </FormControl>
+                    </GridItem>
+                  </Grid>
+
+                  {/* Document Type and Version */}
+                  <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+                    <GridItem>
+                      <FormControl
+                        isInvalid={!!formik.errors.DocumentType}
+                        isRequired
+                      >
+                        <FormLabel>Jenis Dokumen</FormLabel>
+                        <Input
+                          id="DocumentType"
+                          name="DocumentType"
+                          placeholder="Jenis dokumen"
+                          value={formik.values.DocumentType}
+                          onChange={formik.handleChange}
+                          onBlur={formik.handleBlur}
+                          isReadOnly
+                          bg={colorMode === "light" ? "gray.100" : "gray.700"}
+                        />
+                        <FormErrorMessage>
+                          {formik.errors.DocumentType}
+                        </FormErrorMessage>
+                      </FormControl>
+                    </GridItem>
+                    <GridItem>
+                      <FormControl
+                        isInvalid={!!formik.errors.DocumentVersion}
+                        isRequired
+                      >
+                        <FormLabel>Versi Dokumen</FormLabel>
+                        <Input
+                          id="DocumentVersion"
+                          name="DocumentVersion"
+                          placeholder="v1.0"
+                          value={formik.values.DocumentVersion}
+                          onChange={formik.handleChange}
+                          onBlur={formik.handleBlur}
+                        />
+                        <FormErrorMessage>
+                          {formik.errors.DocumentVersion}
+                        </FormErrorMessage>
+                      </FormControl>
+                    </GridItem>
+                  </Grid>
+
+                  {/* Link Attachment */}
+                  <FormControl isInvalid={!!formik.errors.LinkAttachment}>
+                    <FormLabel>Link Attachment (Opsional)</FormLabel>
+                    <Input
+                      id="LinkAttachment"
+                      name="LinkAttachment"
+                      placeholder="https://example.com/document"
+                      value={formik.values.LinkAttachment || ""}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                    />
+                    <FormErrorMessage>
+                      {formik.errors.LinkAttachment}
+                    </FormErrorMessage>
+                  </FormControl>
+
+                  {/* File Upload */}
+                  <FormControl isInvalid={!!formik.errors.file} isRequired>
+                    <FormLabel>Upload File</FormLabel>
+                    <Input
+                      id="file"
+                      name="file"
+                      type="file"
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null;
+                        setFiles(file);
+                        formik.setFieldValue("file", file);
+                      }}
+                      p={1}
+                    />
+                    <Text fontSize="xs" color="gray.500" mt={1}>
+                      Format yang didukung: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX
+                    </Text>
+                    <FormErrorMessage>{formik.errors.file}</FormErrorMessage>
+                  </FormControl>
+
+                  {/* Action Buttons */}
+                  <HStack spacing={3} justify="flex-end" pt={4}>
+                    <Button
+                      variant="outline"
+                      onClick={ModalForm.onClose}
+                      isDisabled={ActionLoading}
+                    >
+                      Batal
+                    </Button>
+                    <Button
+                      type="submit"
+                      colorScheme="blue"
+                      isLoading={ActionLoading}
+                      loadingText="Menyimpan..."
+                    >
+                      Simpan Dokumen
+                    </Button>
+                  </HStack>
+                </VStack>
+
                 <Box
                   w={"full"}
                   overflowX={"auto"}
