@@ -2142,7 +2142,7 @@ function RequirementsBRDRegisterView() {
                                   Nomor Memo
                                 </FormLabel>
                                 <Stack spacing={0} h={"full"}>
-                                  <RegistrationNumberInput
+                                  <Input
                                     id="reqNumber"
                                     // name="reqNumber"
                                     type="text"

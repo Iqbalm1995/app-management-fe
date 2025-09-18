@@ -3,6 +3,7 @@
 import { ConfirmationDialog } from "@/app/components/confirmationDialog";
 import {
   DELAY_MEDIUM,
+  MAX_SIZE_TABLE,
   radiusStyle,
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
@@ -14,7 +15,9 @@ import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useProjects, {
   ProjectWorkflowResponse,
   ProjectWorkflowValueInsertPayload,
+  ProjectWorkflowValueResponse,
 } from "@/app/services/useProjects";
+import { PaggingListPayload } from "@/app/types/masterTypes";
 import {
   Box,
   Card,
@@ -108,7 +111,8 @@ export const WorkflowLevel2Box = ({
   const [tokenData, setTokenData] = useState<string>("");
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
-  const { InsertProjectWorkflowValue } = useProjects();
+  const { InsertProjectWorkflowValue, ListProjectWorkflowValue } =
+    useProjects();
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
@@ -134,6 +138,7 @@ export const WorkflowLevel2Box = ({
   const [files, setFiles] = useState<File | null>(null);
 
   const RefreshAction = () => {
+    setListProjectWFValue([]);
     setRefreshData(RefreshData + 1);
   };
 
@@ -165,6 +170,63 @@ export const WorkflowLevel2Box = ({
       }
       RefreshAction();
       return;
+    }
+  };
+
+  const [IsLoadingWFV, setIsLoadingWFV] = useState(false);
+  const [ListProjectWFValue, setListProjectWFValue] = useState<
+    ProjectWorkflowValueResponse[]
+  >([]);
+
+  const GetDataProjectWorkflowValue = async (
+    searchValue: string = "",
+    projectWorkflowId: string,
+    limit: number = 1
+  ): Promise<ProjectWorkflowValueResponse[]> => {
+    setIsLoadingWFV(true);
+    const PayloadList: PaggingListPayload = {
+      search: searchValue,
+      limit: limit,
+      page: 0,
+      filterWhere: [
+        {
+          field: "projectWorkflowId",
+          operator: "=",
+          value: projectWorkflowId,
+        },
+      ],
+      fieldOrder: ["createdAt"],
+      orderDir: "desc",
+    };
+    const token: string = localStorage.getItem("tokenData") as string;
+    const requestData = await ListProjectWorkflowValue(PayloadList, token);
+    const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+
+    if (isErrorResponse || !requestData) {
+      showToast({
+        description: requestData?.message || RES_GENERIC_ERROR_MSG,
+        statusToast: "error",
+      });
+      setIsLoadingWFV(false);
+      return [];
+    } else {
+      console.log(requestData);
+      if (requestData.data == null) {
+        showToast({
+          description: "Data return error",
+          statusToast: "error",
+        });
+        setIsLoadingWFV(false);
+        return [];
+      }
+
+      const itemsData: ProjectWorkflowValueResponse[] =
+        requestData.data as ProjectWorkflowValueResponse[];
+
+      setListProjectWFValue(itemsData);
+      setIsLoadingWFV(false);
+
+      return itemsData;
     }
   };
 
@@ -233,6 +295,14 @@ export const WorkflowLevel2Box = ({
     ModalForm.onOpen();
     formik.setFieldValue("DocumentType", wfData.wfgName);
     formik.setFieldValue("ProjectWorkflowId", wfData.id);
+  };
+
+  // detail wf
+  const ModalDetailWF = useDisclosure();
+
+  const handleOpenDetail = async (wfData: ProjectWorkflowResponse) => {
+    await GetDataProjectWorkflowValue("", wfData.id, MAX_SIZE_TABLE);
+    ModalDetailWF.onOpen();
   };
 
   return (
@@ -461,6 +531,43 @@ export const WorkflowLevel2Box = ({
         </ModalContent>
       </Modal>
 
+      {/* MODAL DETAIL */}
+      <Modal
+        size={"xl"}
+        isOpen={ModalDetailWF.isOpen}
+        // isCentered
+        onClose={ModalDetailWF.onClose}
+        closeOnOverlayClick={true}
+        scrollBehavior={"inside"}
+      >
+        <ModalOverlay bg="blackAlpha.300" />
+        <ModalContent
+          rounded={radiusStyle}
+          m={2}
+          bg={colorMode == "light" ? "white" : "gray.900"}
+          maxH="90vh"
+        >
+          <ModalHeader>{`Detail Work`}</ModalHeader>
+          <ModalCloseButton color={"red.500"} />
+          <ModalBody w={"full"} maxH="70vh" overflowY="auto" p={6}>
+            <Flex as={Stack} w={"full"}>
+              <Box
+                w={"full"}
+                overflowX={"auto"}
+                p={4}
+                mt={2}
+                bgColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                rounded={radiusStyle}
+                // display={"none"}
+              >
+                <Text fontWeight={600}>Debug DATA</Text>
+                <pre>{JSON.stringify(ListProjectWFValue, null, 2)}</pre>
+              </Box>
+            </Flex>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+
       <Box
         p={4}
         bg={colorMode === "light" ? "gray.50" : "gray.700"}
@@ -591,6 +698,7 @@ export const WorkflowLevel2Box = ({
                         colorScheme="gray"
                         variant="outline"
                         leftIcon={<FiEye />}
+                        onClick={() => handleOpenDetail(level3)}
                       >
                         Detail
                       </Button>

@@ -1672,14 +1672,15 @@ function RegsiterRequirementViewPage({
                                   Nomor Memo
                                 </FormLabel>
                                 <Stack spacing={0} h={"full"}>
-                                  <RegistrationNumberInput
+                                  {/* <RegistrationNumberInput */}
+                                  <Input
                                     id="reqNumber"
                                     // name="reqNumber"
                                     type="text"
-                                    // onChange={formik.handleChange}
-                                    onChange={(val) =>
-                                      formik.setFieldValue("reqNumber", val)
-                                    }
+                                    onChange={formik.handleChange}
+                                    // onChange={(val) =>
+                                    //   formik.setFieldValue("reqNumber", val)
+                                    // }
                                     value={formik.values.reqNumber ?? ""}
                                     placeholder={`0000/XXX-XXX/X/YYYY`}
                                     minLength={3}
