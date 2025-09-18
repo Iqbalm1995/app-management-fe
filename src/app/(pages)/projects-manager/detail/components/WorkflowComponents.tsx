@@ -1,8 +1,18 @@
 "use client";
 
-import { radiusStyle } from "@/app/constants/applicationConstants";
+import { ConfirmationDialog } from "@/app/components/confirmationDialog";
+import {
+  DELAY_MEDIUM,
+  radiusStyle,
+} from "@/app/constants/applicationConstants";
+import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { convertToCustomDateFormat } from "@/app/helper/MasterHelper";
-import { ProjectWorkflowResponse } from "@/app/services/useProjects";
+import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
+import { AuthDataResponse } from "@/app/services/useAuthentications";
+import {
+  ProjectWorkflowResponse,
+  ProjectWorkflowValueInsertPayload,
+} from "@/app/services/useProjects";
 import {
   Box,
   Card,
@@ -26,22 +36,150 @@ import {
   Stack,
   Icon,
   Tooltip,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalCloseButton,
+  ModalBody,
 } from "@chakra-ui/react";
+import { useFormik } from "formik";
+import { useEffect, useState } from "react";
 import {
   FiUpload,
   FiEye,
   FiAlertTriangle,
   FiCheckCircle,
 } from "react-icons/fi";
+import * as yup from "yup";
 
 // Workflow Level 2 Component
 interface WorkflowLevel2Props {
   workflow: ProjectWorkflowResponse;
 }
 
+const initValuePayloadWFV: ProjectWorkflowValueInsertPayload = {
+  DocumentName: "",
+  DocumentDate: "",
+  DocumentNumber: "",
+  DocumentType: "",
+  DocumentVersion: "",
+  ProjectWorkflowId: "",
+  LinkAttachment: null,
+  ReffParentId: null,
+  file: null, // is type FILE
+};
+
+const FormSchemaWFV = yup.object().shape({
+  DocumentName: yup.string().required("Document Name is required"),
+  DocumentDate: yup
+    .date()
+    .typeError("Document Date must be a valid date")
+    .required("Document Date is required"),
+  DocumentNumber: yup.string().required("Document Number is required"),
+  DocumentType: yup.string().required("Document Type is required"),
+  DocumentVersion: yup.string().required("Document Version is required"),
+  ProjectWorkflowId: yup.string().required("Project Workflow ID is required"),
+  LinkAttachment: yup.string().nullable(),
+  ReffParentId: yup.string().nullable(),
+  file: yup
+    .mixed<File>()
+    .nullable()
+    .test("fileRequired", "File is required", (value) => value != null),
+});
+
 export const WorkflowLevel2Box = ({ workflow }: WorkflowLevel2Props) => {
+  const showToast = useToastHelper();
   const { colorMode } = useColorMode();
   const { isOpen, onToggle } = useDisclosure({ defaultIsOpen: true });
+  const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
+  const [tokenData, setTokenData] = useState<string>("");
+  const delay = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
+
+  useEffect(() => {
+    const storedData = localStorage.getItem("authData");
+    const token: string = localStorage.getItem("tokenData") as string;
+
+    if (DataAuth == null) {
+      if (storedData) {
+        const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
+        const UserData: AuthDataResponse =
+          StorageAuth.dataLogin as AuthDataResponse;
+        setDataAuth(UserData);
+      }
+    }
+
+    if (token) {
+      setTokenData(token);
+    }
+  }, [DataAuth]);
+
+  const [RefreshData, setRefreshData] = useState<number>(0);
+  const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
+  const [ActionLoading, setActionLoading] = useState(false);
+  const [files, setFiles] = useState<File | null>(null);
+
+  const RefreshAction = () => {
+    setRefreshData(RefreshData + 1);
+  };
+
+  const formik = useFormik<ProjectWorkflowValueInsertPayload>({
+    initialValues: initValuePayloadWFV,
+    validationSchema: FormSchemaWFV,
+    validateOnChange: false,
+    validateOnBlur: false,
+    onSubmit: async (values) => {
+      // if (files.length <= 0) {
+      //   showToast({
+      //     description: "File upload attachments, cannot be empty.",
+      //     statusToast: "warning",
+      //   });
+      //   return;
+      // }
+      // await handleConfirmSaveData(values);
+      console.log(values);
+    },
+  });
+
+  const [openConfirmSaveDialog, setOpenConfirmSaveDialog] = useState(false);
+  const [questionMsgDialog, setQuestionMsgDialog] = useState<string>("");
+  const [captionDialog, setCaptionDialog] = useState<string>("");
+  const [SaveAsDraft, setSaveAsDraft] = useState<boolean>(false);
+
+  const handleConfirmSaveData = (data: ProjectWorkflowValueInsertPayload) => {
+    setCaptionDialog("Konfirmasi Simpan");
+    setQuestionMsgDialog(`Apakah ada yakin akan submit data?`);
+    setOpenConfirmSaveDialog(true);
+  };
+
+  const handleSaveData = async () => {
+    setActionLoading(true);
+    await delay(DELAY_MEDIUM);
+    if (DataAuth) {
+      // await AddRequirement(formik.values);
+      console.log(formik.values);
+    } else {
+      showToast({
+        description: "ID is invalid",
+        statusToast: "error",
+      });
+      setActionLoading(false);
+    }
+  };
+
+  const handleDialogSaveTrigger = () => {
+    setOpenConfirmSaveDialog(!openConfirmSaveDialog);
+  };
+
+  // modal form
+  const ModalForm = useDisclosure();
+
+  const handleOpenForm = (wfData: ProjectWorkflowResponse) => {
+    ModalForm.onOpen();
+    formik.setFieldValue("DocumentType", wfData.wfgName);
+    formik.setFieldValue("ProjectWorkflowId", wfData.id);
+  };
 
   return (
     <Box
@@ -50,6 +188,55 @@ export const WorkflowLevel2Box = ({ workflow }: WorkflowLevel2Props) => {
       rounded={radiusStyle}
       overflow="hidden"
     >
+      {/* Confirmation */}
+      <ConfirmationDialog
+        key={"confirmSaveData"}
+        isOpenTrigger={openConfirmSaveDialog}
+        action={handleSaveData}
+        trigger={handleDialogSaveTrigger}
+        questionMsg={questionMsgDialog}
+        captionMsg={captionDialog}
+      />
+
+      {/* MODAL FORM */}
+      <Modal
+        size={"xl"}
+        isOpen={ModalForm.isOpen}
+        isCentered
+        onClose={ModalForm.onClose}
+        closeOnOverlayClick={false}
+        scrollBehavior={"inside"}
+      >
+        <ModalOverlay bg="blackAlpha.300" />
+        <ModalContent
+          rounded={radiusStyle}
+          m={2}
+          bg={colorMode == "light" ? "white" : "gray.900"}
+        >
+          <form onSubmit={formik.handleSubmit} onReset={formik.handleReset}>
+            <ModalHeader>{`Upload New Document`}</ModalHeader>
+            <ModalCloseButton color={"red.500"} />
+            <ModalBody w={"full"}>
+              <Flex as={Stack} w={"full"} minH={"400px"}>
+                {/* COMPLETE FORM UI FROM FORMIK HERE */}
+                <Box
+                  w={"full"}
+                  overflowX={"auto"}
+                  p={4}
+                  mt={2}
+                  bgColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                  rounded={radiusStyle}
+                  // display={"none"}
+                >
+                  <Text fontWeight={600}>Debug Formik</Text>
+                  <pre>{JSON.stringify(formik.values, null, 2)}</pre>
+                </Box>
+              </Flex>
+            </ModalBody>
+          </form>
+        </ModalContent>
+      </Modal>
+
       <Box
         p={4}
         bg={colorMode === "light" ? "gray.50" : "gray.700"}
@@ -171,6 +358,7 @@ export const WorkflowLevel2Box = ({ workflow }: WorkflowLevel2Props) => {
                         colorScheme="blue"
                         variant="outline"
                         leftIcon={<FiUpload />}
+                        onClick={() => handleOpenForm(level3)}
                       >
                         Upload
                       </Button>
