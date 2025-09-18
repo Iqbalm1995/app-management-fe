@@ -64,6 +64,7 @@ import * as yup from "yup";
 // Workflow Level 2 Component
 interface WorkflowLevel2Props {
   workflow: ProjectWorkflowResponse;
+  onRefresh?: () => void;
 }
 
 const initValuePayloadWFV: ProjectWorkflowValueInsertPayload = {
@@ -96,7 +97,10 @@ const FormSchemaWFV = yup.object().shape({
     .test("fileRequired", "File is required", (value) => value != null),
 });
 
-export const WorkflowLevel2Box = ({ workflow }: WorkflowLevel2Props) => {
+export const WorkflowLevel2Box = ({
+  workflow,
+  onRefresh,
+}: WorkflowLevel2Props) => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
   const { isOpen, onToggle } = useDisclosure({ defaultIsOpen: true });
@@ -156,6 +160,9 @@ export const WorkflowLevel2Box = ({ workflow }: WorkflowLevel2Props) => {
 
       setActionLoading(false);
       ModalForm.onClose();
+      if (onRefresh) {
+        onRefresh();
+      }
       RefreshAction();
       return;
     }
@@ -196,13 +203,22 @@ export const WorkflowLevel2Box = ({ workflow }: WorkflowLevel2Props) => {
     if (DataAuth) {
       await InsertAttchmentWFVServ(formik.values);
       console.log(formik.values);
+
+      // // Call refresh after successful save
+      // if (onRefresh) {
+      //   onRefresh();
+      // }
+
+      // Close modal and reset form
+      // ModalForm.onClose();
+      // formik.resetForm();
     } else {
       showToast({
         description: "ID is invalid",
         statusToast: "error",
       });
-      setActionLoading(false);
     }
+    setActionLoading(false);
   };
 
   const handleDialogSaveTrigger = () => {
@@ -310,7 +326,7 @@ export const WorkflowLevel2Box = ({ workflow }: WorkflowLevel2Props) => {
                         <Input
                           id="DocumentDate"
                           name="DocumentDate"
-                          type="date"
+                          type={"datetime-local"}
                           value={formik.values.DocumentDate}
                           onChange={formik.handleChange}
                           onBlur={formik.handleBlur}
@@ -593,9 +609,13 @@ export const WorkflowLevel2Box = ({ workflow }: WorkflowLevel2Props) => {
 // Workflow Level 1 Component
 interface WorkflowLevel1Props {
   workflow: ProjectWorkflowResponse;
+  onRefresh?: () => void;
 }
 
-export const WorkflowLevel1Box = ({ workflow }: WorkflowLevel1Props) => {
+export const WorkflowLevel1Box = ({
+  workflow,
+  onRefresh,
+}: WorkflowLevel1Props) => {
   const { colorMode } = useColorMode();
   const { isOpen, onToggle } = useDisclosure({ defaultIsOpen: true });
 
@@ -628,7 +648,11 @@ export const WorkflowLevel1Box = ({ workflow }: WorkflowLevel1Props) => {
         <CardBody pt={0}>
           <VStack spacing={3} align="stretch">
             {workflow.workflowChild?.map((level2: any) => (
-              <WorkflowLevel2Box key={level2.id} workflow={level2} />
+              <WorkflowLevel2Box
+                key={level2.id}
+                workflow={level2}
+                onRefresh={onRefresh}
+              />
             ))}
           </VStack>
         </CardBody>

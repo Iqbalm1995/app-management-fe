@@ -143,7 +143,11 @@ const ProjectDocumentationSection = ({
       ) : DataWorkflow && DataWorkflow.length > 0 ? (
         <VStack spacing={4} align="stretch">
           {DataWorkflow.map((workflow: ProjectWorkflowResponse) => (
-            <WorkflowLevel1Box key={workflow.id} workflow={workflow} />
+            <WorkflowLevel1Box 
+              key={workflow.id} 
+              workflow={workflow} 
+              onRefresh={RefreshAction}
+            />
           ))}
         </VStack>
       ) : (
