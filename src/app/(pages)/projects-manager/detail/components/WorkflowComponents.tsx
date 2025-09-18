@@ -7,9 +7,15 @@ import {
   radiusStyle,
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
+  ENDPOINT_API_BASEURL_OBJECT,
+  ENDPOINT_PORT_BASIC_OBJECT,
 } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
-import { convertToCustomDateFormat } from "@/app/helper/MasterHelper";
+import {
+  convertToCustomDateFormat,
+  buildUrlPort,
+  renderFileIconSTR,
+} from "@/app/helper/MasterHelper";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useProjects, {
@@ -53,6 +59,13 @@ import {
   Input,
   Grid,
   GridItem,
+  Accordion,
+  AccordionItem,
+  AccordionButton,
+  AccordionPanel,
+  AccordionIcon,
+  Badge,
+  Link,
 } from "@chakra-ui/react";
 import { useFormik } from "formik";
 import { useEffect, useState } from "react";
@@ -61,6 +74,7 @@ import {
   FiEye,
   FiAlertTriangle,
   FiCheckCircle,
+  FiDownload,
 } from "react-icons/fi";
 import * as yup from "yup";
 
@@ -111,6 +125,12 @@ export const WorkflowLevel2Box = ({
   const [tokenData, setTokenData] = useState<string>("");
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
+
+  // Build URL for file downloads
+  const UrlEndpoint: string = buildUrlPort(
+    ENDPOINT_API_BASEURL_OBJECT,
+    ENDPOINT_PORT_BASIC_OBJECT
+  );
   const { InsertProjectWorkflowValue, ListProjectWorkflowValue } =
     useProjects();
 
@@ -343,7 +363,6 @@ export const WorkflowLevel2Box = ({
             <ModalCloseButton color={"red.500"} />
             <ModalBody w={"full"} maxH="70vh" overflowY="auto" p={6}>
               <Flex as={Stack} w={"full"}>
-                {/* COMPLETE FORM UI FROM FORMIK HERE */}
                 <VStack spacing={4} align="stretch" w="full">
                   {/* Document Name */}
                   <FormControl
@@ -551,6 +570,212 @@ export const WorkflowLevel2Box = ({
           <ModalCloseButton color={"red.500"} />
           <ModalBody w={"full"} maxH="70vh" overflowY="auto" p={6}>
             <Flex as={Stack} w={"full"}>
+              {/* COMPLETE DETAIL UI ListProjectWFValue HERE */}
+              {ListProjectWFValue && ListProjectWFValue.length > 0 ? (
+                <VStack spacing={4} align="stretch" w="full">
+                  <Text
+                    fontSize="lg"
+                    fontWeight="bold"
+                    color={colorMode === "light" ? "gray.800" : "white"}
+                  >
+                    Document History ({ListProjectWFValue.length})
+                  </Text>
+
+                  <Accordion allowToggle defaultIndex={0}>
+                    {ListProjectWFValue.map((item, index) => (
+                      <AccordionItem
+                        key={item.id}
+                        border="1px"
+                        borderColor={
+                          colorMode === "light" ? "gray.200" : "gray.600"
+                        }
+                        rounded={radiusStyle}
+                        mb={2}
+                      >
+                        <AccordionButton
+                          p={4}
+                          _hover={{
+                            bg: colorMode === "light" ? "gray.50" : "gray.700",
+                          }}
+                        >
+                          <Box flex="1" textAlign="left">
+                            <HStack justify="space-between" w="full">
+                              <VStack align="start" spacing={1}>
+                                <Text fontWeight="bold" fontSize="md">
+                                  {item.documentName}
+                                </Text>
+                                <HStack spacing={2}>
+                                  <Badge colorScheme="blue" size="sm">
+                                    {item.documentType}
+                                  </Badge>
+                                  <Badge colorScheme="green" size="sm">
+                                    {item.documentVersion}
+                                  </Badge>
+                                  <Text fontSize="xs" color="gray.500">
+                                    {new Date(
+                                      item.documentDate
+                                    ).toLocaleDateString()}
+                                  </Text>
+                                </HStack>
+                              </VStack>
+                              <AccordionIcon />
+                            </HStack>
+                          </Box>
+                        </AccordionButton>
+
+                        <AccordionPanel
+                          p={4}
+                          bg={colorMode === "light" ? "gray.50" : "gray.800"}
+                        >
+                          <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+                            <GridItem>
+                              <VStack align="start" spacing={2}>
+                                <Text fontSize="sm" fontWeight="bold">
+                                  Document Details
+                                </Text>
+                                <Text fontSize="xs">
+                                  <strong>Number:</strong> {item.documentNumber}
+                                </Text>
+                                <Text fontSize="xs">
+                                  <strong>Type:</strong> {item.documentType}
+                                </Text>
+                                <Text fontSize="xs">
+                                  <strong>Version:</strong>{" "}
+                                  {item.documentVersion}
+                                </Text>
+                                <Text fontSize="xs">
+                                  <strong>Date:</strong>{" "}
+                                  {new Date(
+                                    item.documentDate
+                                  ).toLocaleDateString()}
+                                </Text>
+                              </VStack>
+                            </GridItem>
+
+                            <GridItem>
+                              <VStack align="start" spacing={2}>
+                                <Text fontSize="sm" fontWeight="bold">
+                                  System Info
+                                </Text>
+                                <Text fontSize="xs">
+                                  <strong>Created:</strong>{" "}
+                                  {new Date(item.createdAt).toLocaleString()}
+                                </Text>
+                                <Text fontSize="xs">
+                                  <strong>Created By:</strong> {item.createdBy}
+                                </Text>
+                                {item.linkAttachment && (
+                                  <Link
+                                    href={item.linkAttachment}
+                                    isExternal
+                                    color="blue.500"
+                                    fontSize="xs"
+                                  >
+                                    View Attachment
+                                  </Link>
+                                )}
+                              </VStack>
+                            </GridItem>
+                          </Grid>
+
+                          {/* Enhanced File Download Section */}
+                          {item.mediaObjectData && (
+                            <Box
+                              mt={4}
+                              p={3}
+                              bg={
+                                colorMode === "light" ? "blue.50" : "blue.900"
+                              }
+                              rounded="md"
+                              border="1px"
+                              borderColor={
+                                colorMode === "light" ? "blue.200" : "blue.700"
+                              }
+                            >
+                              <Text fontSize="sm" fontWeight="bold" mb={2}>
+                                Attached File
+                              </Text>
+                              <HStack spacing={3} align="center">
+                                <Box
+                                  display="flex"
+                                  justifyContent="center"
+                                  alignItems="center"
+                                  boxSize="40px"
+                                >
+                                  {renderFileIconSTR(
+                                    item.mediaObjectData.objectExtension?.trim() ||
+                                      "file"
+                                  )}
+                                </Box>
+                                <VStack align="start" spacing={1} flex="1">
+                                  <Text
+                                    fontSize="sm"
+                                    fontWeight="medium"
+                                    noOfLines={1}
+                                  >
+                                    {item.mediaObjectData.objectRawName ||
+                                      item.documentName}
+                                  </Text>
+                                  <HStack spacing={2}>
+                                    {item.mediaObjectData.objectExtension && (
+                                      <Badge colorScheme="gray" size="sm">
+                                        {item.mediaObjectData.objectExtension
+                                          .replace(".", "")
+                                          .toUpperCase()}
+                                      </Badge>
+                                    )}
+                                    {item.mediaObjectData.objectSize && (
+                                      <Badge colorScheme="blue" size="sm">
+                                        {Math.round(
+                                          item.mediaObjectData.objectSize / 1024
+                                        )}{" "}
+                                        KB
+                                      </Badge>
+                                    )}
+                                  </HStack>
+                                </VStack>
+                                <Button
+                                  size="sm"
+                                  colorScheme="green"
+                                  leftIcon={<FiDownload />}
+                                  as={Link}
+                                  href={`${UrlEndpoint}${item.mediaObjectData.objectData}`}
+                                  target="_blank"
+                                >
+                                  Download
+                                </Button>
+                              </HStack>
+                            </Box>
+                          )}
+
+                          <HStack spacing={2} mt={4}>
+                            {/* <Button size="xs" colorScheme="blue" variant="outline" leftIcon={<FiEye />}>
+                              View Details
+                            </Button> */}
+                            {item.linkAttachment && (
+                              <Button
+                                size="xs"
+                                colorScheme="purple"
+                                variant="outline"
+                                as={Link}
+                                href={item.linkAttachment}
+                                isExternal
+                              >
+                                External Link
+                              </Button>
+                            )}
+                          </HStack>
+                        </AccordionPanel>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
+                </VStack>
+              ) : (
+                <Box textAlign="center" py={8}>
+                  <Text color="gray.500">No document history available</Text>
+                </Box>
+              )}
+
               <Box
                 w={"full"}
                 overflowX={"auto"}
@@ -558,7 +783,7 @@ export const WorkflowLevel2Box = ({
                 mt={2}
                 bgColor={colorMode === "light" ? "gray.200" : "gray.700"}
                 rounded={radiusStyle}
-                // display={"none"}
+                display={"none"}
               >
                 <Text fontWeight={600}>Debug DATA</Text>
                 <pre>{JSON.stringify(ListProjectWFValue, null, 2)}</pre>

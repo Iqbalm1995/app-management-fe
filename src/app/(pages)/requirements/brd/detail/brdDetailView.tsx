@@ -2279,7 +2279,7 @@ const ReqInfoSummaryFileAttachmentsView = ({
                 colorScheme={"blue"}
                 leftIcon={<FiDownload />}
               >
-                Unggah
+                Unduh
               </Button>
             </Link>
             {info.row.original.objectExtension.replace(".", "").trim() ==
