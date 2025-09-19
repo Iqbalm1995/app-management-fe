@@ -89,7 +89,7 @@ import {
   OptionListProps,
   PaggingListPayload,
 } from "@/app/types/masterTypes";
-import { ChevronDownIcon, RepeatIcon } from "@chakra-ui/icons";
+import { ChevronDownIcon, ChevronUpIcon, RepeatIcon } from "@chakra-ui/icons";
 import {
   Alert,
   AlertDescription,
@@ -154,6 +154,7 @@ import {
   useColorMode,
   useDisclosure,
   useSteps,
+  VStack,
   Wrap,
   WrapItem,
 } from "@chakra-ui/react";
@@ -206,7 +207,7 @@ import useMediaObject, {
 import RegistrationNumberInput from "@/app/components/inputProps/RegistrationNumberInput";
 import EmailInputMask from "@/app/components/inputProps/emailInputMask";
 import VersionCodeInput from "@/app/components/inputProps/versionInput";
-import { FaTrashAlt } from "react-icons/fa";
+import { FaEdit, FaTrashAlt } from "react-icons/fa";
 import OtherInputAppsStringSeparator from "@/app/components/inputProps/InputMultiTags";
 import InputTagsArea from "@/app/components/inputProps/InputMultiTagsArea";
 import { FeatureRecomentionsBacklogs } from "@/app/helper/FeatureDataRecomendations";
@@ -4247,14 +4248,75 @@ const Section4BRDView = ({
   // Backlog Setup
   const ModalForm = useDisclosure();
   const [FormMode, setFormMode] = useState<"Add" | "Edit">("Add");
+  const movePriority = (backlogId: string, direction: "up" | "down") => {
+    const currentIndex = DataBackLogs.findIndex(
+      (item) => item.backlogId === backlogId
+    );
+    if (currentIndex === -1) return;
+
+    const newData = [...DataBackLogs];
+    const targetIndex =
+      direction === "up" ? currentIndex - 1 : currentIndex + 1;
+
+    if (targetIndex < 0 || targetIndex >= newData.length) return;
+
+    // Swap posOrder values
+    const temp = newData[currentIndex].posOrder;
+    newData[currentIndex].posOrder = newData[targetIndex].posOrder;
+    newData[targetIndex].posOrder = temp;
+
+    // Swap positions in array
+    [newData[currentIndex], newData[targetIndex]] = [
+      newData[targetIndex],
+      newData[currentIndex],
+    ];
+
+    setDataBackLogs(newData);
+  };
 
   const columnsData = useMemo<ColumnDef<ReqBacklogPayload>[]>(
     () => [
       {
-        accessorFn: (row) => row.backlogId,
-        id: "numbertd",
-        cell: (info) => <Flex>{info.row.index + 1}. </Flex>,
-        header: () => <span>No. </span>,
+        accessorFn: (row) => row.posOrder,
+        id: "posOrder",
+        cell: (info) => (
+          <Flex justifyContent="center" alignItems="center" gap={2}>
+            <VStack spacing={0}>
+              <Button
+                roundedTop={"md"}
+                roundedBottom={"none"}
+                size="xs"
+                colorScheme={"secondary"}
+                variant="solid"
+                onClick={() =>
+                  info.row.original.backlogId &&
+                  movePriority(info.row.original.backlogId, "up")
+                }
+                isDisabled={info.row.original.posOrder === 1}
+              >
+                <ChevronUpIcon />
+              </Button>
+              <Button
+                roundedTop={"none"}
+                roundedBottom={"md"}
+                size="xs"
+                colorScheme={"secondary"}
+                variant="solid"
+                onClick={() =>
+                  info.row.original.backlogId &&
+                  movePriority(info.row.original.backlogId, "down")
+                }
+                isDisabled={info.row.original.posOrder === DataBackLogs.length}
+              >
+                <ChevronDownIcon />
+              </Button>
+            </VStack>
+            <Badge colorScheme="blue" size="sm">
+              {info.row.original.posOrder}
+            </Badge>
+          </Flex>
+        ),
+        header: () => <Flex justifyContent="center">Priority</Flex>,
         footer: (props) => props.column.id,
       },
       {
@@ -4282,7 +4344,7 @@ const Section4BRDView = ({
               variant="ghost"
               onClick={() => logBacklog(info.row.original.backlogId)}
             >
-              Ubah
+              <FaEdit />
             </Button>
             <Button
               colorScheme="red"
@@ -4290,7 +4352,7 @@ const Section4BRDView = ({
               variant="ghost"
               onClick={() => removeBacklog(info.row.original.backlogId)}
             >
-              Hapus
+              <FaTrash />
             </Button>
           </Flex>
         ),
@@ -4302,7 +4364,7 @@ const Section4BRDView = ({
   );
   const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
     pageIndex: 0,
-    pageSize: 5,
+    pageSize: 10,
   });
   const pagination = useMemo(
     () => ({
@@ -4357,6 +4419,7 @@ const Section4BRDView = ({
       backlogId: generateFakeId(),
       backlogName: name,
       backlogDesc: desc || null,
+      posOrder: DataBackLogs.length + 1, // Auto-increment priority
     };
 
     setDataBackLogs((prev) => [...prev, newBacklog]);
@@ -4382,7 +4445,6 @@ const Section4BRDView = ({
     ModalForm.onClose();
     setFormMode("Add");
   };
-
   const removeBacklog = (backlogId: string | undefined | null) => {
     if (backlogId == undefined || backlogId == null) {
       showToast({
@@ -4415,11 +4477,15 @@ const Section4BRDView = ({
         });
         return;
       }
+      const currentItem = DataBackLogs.find(
+        (x) => x.backlogId === TextBackLogId
+      );
 
       updateBacklog(TextBackLogId, {
         backlogId: TextBackLogId,
         backlogName: TextBackLogName.trim(),
         backlogDesc: TextBackLogDesc?.trim() || null,
+        posOrder: currentItem?.posOrder || 1, // Preserve existing posOrder
       });
     }
 
@@ -6083,7 +6149,10 @@ const Section4RFCView = ({
           ? {
               ...item,
               backlog: choosedFeature,
-              changes: { backlogName: selectedOption.label },
+              changes: {
+                backlogName: selectedOption.label,
+                posOrder: 1,
+              },
             }
           : item
       )
