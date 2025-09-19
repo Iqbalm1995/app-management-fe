@@ -28,6 +28,6 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "src/app/(pages)/requirements/brd/detail/requirementDetailInfoSection.bak"
-, "src/app/(pages)/kanban/page copy.tsx.bak", "src/app/(pages)/projects-manager/page copy.tsx.bak", "src/app/(pages)/basePage.tsx.bak"  ],
+, "src/app/(pages)/kanban/page copy.tsx.bak", "src/app/(pages)/projects-manager/page copy.tsx.bak", "src/app/(pages)/basePage.tsx.bak", "src/app/(pages)/requirements/brd/detail/brdDetailView.bak", "src/app/(pages)/requirements/brd/detail/requirementBacklogsSection.tsx.bak", "src/app/(pages)/requirements/brd/detail/requirementApprovalSection.tsx.bak", "src/app/(pages)/requirements/brd/detail/requirementFilesSection.tsx.bak"  ],
   "exclude": ["node_modules"]
 }

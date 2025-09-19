@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function BrdDetailRedirect() {
+function BrdDetailRedirectComponent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -14,4 +14,12 @@ export default function BrdDetailRedirect() {
   }, [router, searchParams]);
 
   return <div>Redirecting...</div>;
+}
+
+export default function BrdDetailRedirect() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <BrdDetailRedirectComponent />
+    </Suspense>
+  );
 }

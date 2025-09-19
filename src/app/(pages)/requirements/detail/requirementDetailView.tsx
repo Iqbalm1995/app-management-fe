@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import CoverLockedFeature from "@/app/components/coverLockedFeature";
 import {
   CustomPanelAlert,
@@ -2824,4 +2825,12 @@ const RfcBacklogChangesView = ({
   );
 };
 
-export default RequirementDetailView;
+function RequirementDetailViewWithSuspense() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <RequirementDetailView />
+    </Suspense>
+  );
+}
+
+export default RequirementDetailViewWithSuspense;

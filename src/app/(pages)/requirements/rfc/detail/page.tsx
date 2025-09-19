@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function RfcDetailRedirect() {
+function RfcDetailRedirectComponent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -14,4 +14,12 @@ export default function RfcDetailRedirect() {
   }, [router, searchParams]);
 
   return <div>Redirecting...</div>;
+}
+
+export default function RfcDetailRedirect() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <RfcDetailRedirectComponent />
+    </Suspense>
+  );
 }
