@@ -5803,6 +5803,26 @@ const Section4RFCView = ({
   const { GetReqParentAppsByAppsId, ListBacklog, GetDetailBacklogById } =
     useRequirements();
 
+  const movePriority = (backlogId: string, direction: "up" | "down") => {
+    const currentIndex = DataBackLogs.findIndex((item) => item.backlogId === backlogId);
+    if (currentIndex === -1) return;
+
+    const newData = [...DataBackLogs];
+    const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+
+    if (targetIndex < 0 || targetIndex >= newData.length) return;
+
+    // Swap posOrder values
+    const temp = newData[currentIndex].posOrder;
+    newData[currentIndex].posOrder = newData[targetIndex].posOrder;
+    newData[targetIndex].posOrder = temp;
+
+    // Swap positions in array
+    [newData[currentIndex], newData[targetIndex]] = [newData[targetIndex], newData[currentIndex]];
+
+    setDataBackLogs(newData);
+  };
+
   // Backlog Setup
   // NEW BACKLOG RFC
 
@@ -5822,14 +5842,16 @@ const Section4RFCView = ({
         backlogName: dt.changes?.backlogName || "",
         backlogDesc: dt.changes?.backlogDesc || "",
         note: dt.changes?.note || "",
-        posOrder: dt.changes?.posOrder || 1,
+        posOrder: dt.changes?.posOrder || DataBackLogs.length + 1,
       })
     );
 
-    formik.setFieldValue("backlogFeatures", updatedBacklogData);
+    // Sort by posOrder
+    const sortedBacklogData = updatedBacklogData.sort((a, b) => a.posOrder - b.posOrder);
+    formik.setFieldValue("backlogFeatures", sortedBacklogData);
 
     // setBacklogData(updatedBacklogData);
-  }, [BacklogChanges]);
+  }, [BacklogChanges, DataBackLogs]);
 
   const GetListBacklog = async (
     searchValue: string = "",
@@ -6279,6 +6301,9 @@ const Section4RFCView = ({
   // APP MEDIA AKSES
   const [MediaAksesPublic, setMediaAksesPublic] = useState(false);
   const [MediaAksesIntranet, setMediaAksesIntranet] = useState(false);
+  // Sort DataBackLogs by posOrder
+  const sortedDataBackLogs = [...DataBackLogs].sort((a, b) => a.posOrder - b.posOrder);
+
 
   return (
     <Flex as={Stack} w={"full"} spacing={5}>
@@ -7320,6 +7345,60 @@ const Section4RFCView = ({
               </Stack>
             </InputLayoutFull>
           </FormControl>
+
+          {/* Backlog Priority Table */}
+          {sortedDataBackLogs.length > 0 && (
+            <FormControl>
+              <InputLayoutFull>
+                <FormLabel h={"full"} mt={2}>
+                  Daftar Perubahan Sistem (Priority Order)
+                </FormLabel>
+                <Stack spacing={3}>
+                  {sortedDataBackLogs.map((backlog, index) => (
+                    <Flex
+                      key={backlog.backlogId || index}
+                      p={3}
+                      border="1px"
+                      borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                      rounded="md"
+                      alignItems="center"
+                      gap={3}
+                    >
+                      <VStack spacing={0}>
+                        <Button
+                          size="xs"
+                          variant="ghost"
+                          onClick={() => backlog.backlogId && movePriority(backlog.backlogId, "up")}
+                          isDisabled={backlog.posOrder === 1}
+                        >
+                          <ChevronUpIcon />
+                        </Button>
+                        <Button
+                          size="xs"
+                          variant="ghost"
+                          onClick={() => backlog.backlogId && movePriority(backlog.backlogId, "down")}
+                          isDisabled={backlog.posOrder === sortedDataBackLogs.length}
+                        >
+                          <ChevronDownIcon />
+                        </Button>
+                      </VStack>
+                      <Badge colorScheme="blue" size="sm">
+                        {backlog.posOrder}
+                      </Badge>
+                      <Box flex={1}>
+                        <Text fontWeight="bold">{backlog.backlogName}</Text>
+                        {backlog.backlogDesc && (
+                          <Text fontSize="sm" color="gray.500">
+                            {backlog.backlogDesc}
+                          </Text>
+                        )}
+                      </Box>
+                    </Flex>
+                  ))}
+                </Stack>
+              </InputLayoutFull>
+            </FormControl>
+          )}
         </Flex>
       </InputGroupPanel>
     </Flex>
