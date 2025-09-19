@@ -6,7 +6,7 @@ import {
   PaggingListPayload,
   PaggingListPayloadCustom,
 } from "../types/masterTypes";
-import { buildUrlPort } from "../helper/MasterHelper";
+import { buildUrlPort, localToIsoWithOffset } from "../helper/MasterHelper";
 import {
   ENDPOINT_API_BASEURL,
   ENDPOINT_PORT_BASIC,
@@ -2408,7 +2408,7 @@ const useProjects = (): useProjectsServices => {
     formData.append("DocumentType", payload.DocumentType);
     formData.append("DocumentName", payload.DocumentName);
     formData.append("DocumentNumber", payload.DocumentNumber);
-    formData.append("DocumentDate", new Date(payload.DocumentDate).toISOString());
+    formData.append("DocumentDate", payload.DocumentDate);
     formData.append("DocumentVersion", payload.DocumentVersion);
 
     if (payload.file) {

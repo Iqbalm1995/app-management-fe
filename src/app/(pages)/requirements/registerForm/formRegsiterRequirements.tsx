@@ -416,6 +416,7 @@ function RegsiterRequirementViewPage({
         backlogId: "",
         backlogName: "",
         backlogDesc: "",
+        posOrder: 0,
       },
     ],
   };
@@ -5709,6 +5710,7 @@ const EmptyBacklogChangesData: BacklogChangesData = {
     note: null,
     isLive: "",
     appsId: "",
+    posOrder: 0,
     createdAt: "",
     createdBy: "",
     updatedAt: "",
@@ -5754,6 +5756,7 @@ const Section4RFCView = ({
         backlogName: dt.changes?.backlogName || "",
         backlogDesc: dt.changes?.backlogDesc || "",
         note: dt.changes?.note || "",
+        posOrder: dt.changes?.posOrder || 1,
       })
     );
 
@@ -6568,6 +6571,7 @@ const Section4RFCView = ({
                                     backlogName: "",
                                     backlogDesc: "",
                                     note: "",
+                                    posOrder: 1,
                                   };
                                 updated[index].changes!.backlogName =
                                   e.target.value;
@@ -6596,6 +6600,7 @@ const Section4RFCView = ({
                                     backlogName: "",
                                     backlogDesc: "",
                                     note: "",
+                                    posOrder: 1,
                                   };
                                 updated[index].changes!.backlogDesc =
                                   e.target.value;
@@ -6625,6 +6630,7 @@ const Section4RFCView = ({
                                     backlogName: "",
                                     backlogDesc: "",
                                     note: "",
+                                    posOrder: 1,
                                   };
                                 updated[index].changes!.note = e.target.value;
                                 setBacklogChanges(updated);

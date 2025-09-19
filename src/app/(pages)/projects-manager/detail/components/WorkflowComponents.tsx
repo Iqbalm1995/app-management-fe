@@ -15,6 +15,7 @@ import {
   convertToCustomDateFormat,
   buildUrlPort,
   renderFileIconSTR,
+  formatKBMB,
 } from "@/app/helper/MasterHelper";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
@@ -566,7 +567,6 @@ export const WorkflowLevel2Box = ({
           bg={colorMode == "light" ? "white" : "gray.900"}
           maxH="90vh"
         >
-          <ModalHeader>{`Detail Work`}</ModalHeader>
           <ModalCloseButton color={"red.500"} />
           <ModalBody w={"full"} maxH="70vh" overflowY="auto" p={6}>
             <Flex as={Stack} w={"full"}>
@@ -726,10 +726,9 @@ export const WorkflowLevel2Box = ({
                                     )}
                                     {item.mediaObjectData.objectSize && (
                                       <Badge colorScheme="blue" size="sm">
-                                        {Math.round(
-                                          item.mediaObjectData.objectSize / 1024
-                                        )}{" "}
-                                        KB
+                                        {formatKBMB(
+                                          item.mediaObjectData.objectSize
+                                        )}
                                       </Badge>
                                     )}
                                   </HStack>
