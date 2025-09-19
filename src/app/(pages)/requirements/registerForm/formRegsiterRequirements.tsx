@@ -89,7 +89,7 @@ import {
   OptionListProps,
   PaggingListPayload,
 } from "@/app/types/masterTypes";
-import { ChevronDownIcon, RepeatIcon } from "@chakra-ui/icons";
+import { ChevronDownIcon, ChevronUpIcon, RepeatIcon } from "@chakra-ui/icons";
 import {
   Alert,
   AlertDescription,
@@ -154,6 +154,7 @@ import {
   useColorMode,
   useDisclosure,
   useSteps,
+  VStack,
   Wrap,
   WrapItem,
 } from "@chakra-ui/react";
@@ -206,7 +207,7 @@ import useMediaObject, {
 import RegistrationNumberInput from "@/app/components/inputProps/RegistrationNumberInput";
 import EmailInputMask from "@/app/components/inputProps/emailInputMask";
 import VersionCodeInput from "@/app/components/inputProps/versionInput";
-import { FaTrashAlt } from "react-icons/fa";
+import { FaEdit, FaTrashAlt } from "react-icons/fa";
 import OtherInputAppsStringSeparator from "@/app/components/inputProps/InputMultiTags";
 import InputTagsArea from "@/app/components/inputProps/InputMultiTagsArea";
 import { FeatureRecomentionsBacklogs } from "@/app/helper/FeatureDataRecomendations";
@@ -416,6 +417,7 @@ function RegsiterRequirementViewPage({
         backlogId: "",
         backlogName: "",
         backlogDesc: "",
+        posOrder: 0,
       },
     ],
   };
@@ -1321,7 +1323,7 @@ function RegsiterRequirementViewPage({
                 href={`/requirements/${type_req_param.toLocaleLowerCase()}/`}
               >
                 <Button size={"lg"} leftIcon={<FiArrowLeft />}>
-                  Kembali
+                  Back
                 </Button>
               </Link>
             </Flex>
@@ -1333,18 +1335,7 @@ function RegsiterRequirementViewPage({
               justifyContent={"end"}
               alignItems={"center"}
             >
-              {/* <Button
-                size={"lg"}
-                bg={"white"}
-                color={"gray.800"}
-                leftIcon={<RepeatIcon />}
-                type={"button"}
-                isLoading={ActionLoading}
-              >
-                Ulang
-              </Button> */}
-              {/* <Button
-                size={"lg"}
+              <Button
                 colorScheme={"green"}
                 leftIcon={<FiSave />}
                 // type={"submit"}
@@ -1352,14 +1343,20 @@ function RegsiterRequirementViewPage({
                 onClick={() => handleConfirmSaveData(formik.values)}
                 isLoading={ActionLoading}
                 isDisabled={activeStep !== steps.length - 1}
+                // display={activeStep === steps.length - 1 ? "flex" : "none"}
                 px={8}
+                size={"lg"}
               >
-                Simpan
-              </Button> */}
+                Submit Data
+              </Button>
             </Flex>
           </GridItem>
           <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 12 }} w={"full"}>
-            <Card w={"fill"} rounded={radiusStyle}>
+            <Card
+              w={"fill"}
+              rounded={radiusStyle}
+              bgColor={colorMode == "light" ? "white" : "gray.800"}
+            >
               <CardHeader>
                 <Heading as="h5" size="md" w={"full"}>
                   Form Registrasi {type_req_param}
@@ -1677,14 +1674,15 @@ function RegsiterRequirementViewPage({
                                   Nomor Memo
                                 </FormLabel>
                                 <Stack spacing={0} h={"full"}>
-                                  <RegistrationNumberInput
+                                  {/* <RegistrationNumberInput */}
+                                  <Input
                                     id="reqNumber"
                                     // name="reqNumber"
                                     type="text"
-                                    // onChange={formik.handleChange}
-                                    onChange={(val) =>
-                                      formik.setFieldValue("reqNumber", val)
-                                    }
+                                    onChange={formik.handleChange}
+                                    // onChange={(val) =>
+                                    //   formik.setFieldValue("reqNumber", val)
+                                    // }
                                     value={formik.values.reqNumber ?? ""}
                                     placeholder={`0000/XXX-XXX/X/YYYY`}
                                     minLength={3}
@@ -4128,8 +4126,9 @@ function RegsiterRequirementViewPage({
                       isDisabled={activeStep === 0}
                       variant="outline"
                       leftIcon={<FiArrowLeft />}
+                      size={"lg"}
                     >
-                      Sebelumnya
+                      Previous
                     </Button>
                     <Flex w={"full"} justifyContent={"end"} as={HStack}>
                       <Button
@@ -4140,23 +4139,9 @@ function RegsiterRequirementViewPage({
                         display={
                           activeStep === steps.length - 1 ? "none" : "flex"
                         }
+                        size={"lg"}
                       >
-                        Selanjutnya
-                      </Button>
-                      <Button
-                        colorScheme={"green"}
-                        leftIcon={<FiSave />}
-                        // type={"submit"}
-                        //   onClick={() => setSaveAsDraft(false)}
-                        onClick={() => handleConfirmSaveData(formik.values)}
-                        isLoading={ActionLoading}
-                        // isDisabled={activeStep !== steps.length - 1}
-                        display={
-                          activeStep === steps.length - 1 ? "flex" : "none"
-                        }
-                        px={8}
-                      >
-                        Simpan
+                        Next
                       </Button>
                     </Flex>
                   </Flex>
@@ -4263,14 +4248,75 @@ const Section4BRDView = ({
   // Backlog Setup
   const ModalForm = useDisclosure();
   const [FormMode, setFormMode] = useState<"Add" | "Edit">("Add");
+  const movePriority = (backlogId: string, direction: "up" | "down") => {
+    const currentIndex = DataBackLogs.findIndex(
+      (item) => item.backlogId === backlogId
+    );
+    if (currentIndex === -1) return;
+
+    const newData = [...DataBackLogs];
+    const targetIndex =
+      direction === "up" ? currentIndex - 1 : currentIndex + 1;
+
+    if (targetIndex < 0 || targetIndex >= newData.length) return;
+
+    // Swap posOrder values
+    const temp = newData[currentIndex].posOrder;
+    newData[currentIndex].posOrder = newData[targetIndex].posOrder;
+    newData[targetIndex].posOrder = temp;
+
+    // Swap positions in array
+    [newData[currentIndex], newData[targetIndex]] = [
+      newData[targetIndex],
+      newData[currentIndex],
+    ];
+
+    setDataBackLogs(newData);
+  };
 
   const columnsData = useMemo<ColumnDef<ReqBacklogPayload>[]>(
     () => [
       {
-        accessorFn: (row) => row.backlogId,
-        id: "numbertd",
-        cell: (info) => <Flex>{info.row.index + 1}. </Flex>,
-        header: () => <span>No. </span>,
+        accessorFn: (row) => row.posOrder,
+        id: "posOrder",
+        cell: (info) => (
+          <Flex justifyContent="center" alignItems="center" gap={2}>
+            <VStack spacing={0}>
+              <Button
+                roundedTop={"md"}
+                roundedBottom={"none"}
+                size="xs"
+                colorScheme={"secondary"}
+                variant="solid"
+                onClick={() =>
+                  info.row.original.backlogId &&
+                  movePriority(info.row.original.backlogId, "up")
+                }
+                isDisabled={info.row.original.posOrder === 1}
+              >
+                <ChevronUpIcon />
+              </Button>
+              <Button
+                roundedTop={"none"}
+                roundedBottom={"md"}
+                size="xs"
+                colorScheme={"secondary"}
+                variant="solid"
+                onClick={() =>
+                  info.row.original.backlogId &&
+                  movePriority(info.row.original.backlogId, "down")
+                }
+                isDisabled={info.row.original.posOrder === DataBackLogs.length}
+              >
+                <ChevronDownIcon />
+              </Button>
+            </VStack>
+            <Badge colorScheme="blue" size="sm">
+              {info.row.original.posOrder}
+            </Badge>
+          </Flex>
+        ),
+        header: () => <Flex justifyContent="center">Priority</Flex>,
         footer: (props) => props.column.id,
       },
       {
@@ -4298,7 +4344,7 @@ const Section4BRDView = ({
               variant="ghost"
               onClick={() => logBacklog(info.row.original.backlogId)}
             >
-              Ubah
+              <FaEdit />
             </Button>
             <Button
               colorScheme="red"
@@ -4306,7 +4352,7 @@ const Section4BRDView = ({
               variant="ghost"
               onClick={() => removeBacklog(info.row.original.backlogId)}
             >
-              Hapus
+              <FaTrash />
             </Button>
           </Flex>
         ),
@@ -4318,7 +4364,7 @@ const Section4BRDView = ({
   );
   const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
     pageIndex: 0,
-    pageSize: 5,
+    pageSize: 10,
   });
   const pagination = useMemo(
     () => ({
@@ -4373,6 +4419,7 @@ const Section4BRDView = ({
       backlogId: generateFakeId(),
       backlogName: name,
       backlogDesc: desc || null,
+      posOrder: DataBackLogs.length + 1, // Auto-increment priority
     };
 
     setDataBackLogs((prev) => [...prev, newBacklog]);
@@ -4398,7 +4445,6 @@ const Section4BRDView = ({
     ModalForm.onClose();
     setFormMode("Add");
   };
-
   const removeBacklog = (backlogId: string | undefined | null) => {
     if (backlogId == undefined || backlogId == null) {
       showToast({
@@ -4431,11 +4477,15 @@ const Section4BRDView = ({
         });
         return;
       }
+      const currentItem = DataBackLogs.find(
+        (x) => x.backlogId === TextBackLogId
+      );
 
       updateBacklog(TextBackLogId, {
         backlogId: TextBackLogId,
         backlogName: TextBackLogName.trim(),
         backlogDesc: TextBackLogDesc?.trim() || null,
+        posOrder: currentItem?.posOrder || 1, // Preserve existing posOrder
       });
     }
 
@@ -5726,6 +5776,7 @@ const EmptyBacklogChangesData: BacklogChangesData = {
     note: null,
     isLive: "",
     appsId: "",
+    posOrder: 0,
     createdAt: "",
     createdBy: "",
     updatedAt: "",
@@ -5752,6 +5803,26 @@ const Section4RFCView = ({
   const { GetReqParentAppsByAppsId, ListBacklog, GetDetailBacklogById } =
     useRequirements();
 
+  const movePriority = (backlogId: string, direction: "up" | "down") => {
+    const currentIndex = DataBackLogs.findIndex((item) => item.backlogId === backlogId);
+    if (currentIndex === -1) return;
+
+    const newData = [...DataBackLogs];
+    const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+
+    if (targetIndex < 0 || targetIndex >= newData.length) return;
+
+    // Swap posOrder values
+    const temp = newData[currentIndex].posOrder;
+    newData[currentIndex].posOrder = newData[targetIndex].posOrder;
+    newData[targetIndex].posOrder = temp;
+
+    // Swap positions in array
+    [newData[currentIndex], newData[targetIndex]] = [newData[targetIndex], newData[currentIndex]];
+
+    setDataBackLogs(newData);
+  };
+
   // Backlog Setup
   // NEW BACKLOG RFC
 
@@ -5771,13 +5842,16 @@ const Section4RFCView = ({
         backlogName: dt.changes?.backlogName || "",
         backlogDesc: dt.changes?.backlogDesc || "",
         note: dt.changes?.note || "",
+        posOrder: dt.changes?.posOrder || DataBackLogs.length + 1,
       })
     );
 
-    formik.setFieldValue("backlogFeatures", updatedBacklogData);
+    // Sort by posOrder
+    const sortedBacklogData = updatedBacklogData.sort((a, b) => a.posOrder - b.posOrder);
+    formik.setFieldValue("backlogFeatures", sortedBacklogData);
 
     // setBacklogData(updatedBacklogData);
-  }, [BacklogChanges]);
+  }, [BacklogChanges, DataBackLogs]);
 
   const GetListBacklog = async (
     searchValue: string = "",
@@ -6097,7 +6171,10 @@ const Section4RFCView = ({
           ? {
               ...item,
               backlog: choosedFeature,
-              changes: { backlogName: selectedOption.label },
+              changes: {
+                backlogName: selectedOption.label,
+                posOrder: 1,
+              },
             }
           : item
       )
@@ -6224,6 +6301,9 @@ const Section4RFCView = ({
   // APP MEDIA AKSES
   const [MediaAksesPublic, setMediaAksesPublic] = useState(false);
   const [MediaAksesIntranet, setMediaAksesIntranet] = useState(false);
+  // Sort DataBackLogs by posOrder
+  const sortedDataBackLogs = [...DataBackLogs].sort((a, b) => a.posOrder - b.posOrder);
+
 
   return (
     <Flex as={Stack} w={"full"} spacing={5}>
@@ -6585,6 +6665,7 @@ const Section4RFCView = ({
                                     backlogName: "",
                                     backlogDesc: "",
                                     note: "",
+                                    posOrder: 1,
                                   };
                                 updated[index].changes!.backlogName =
                                   e.target.value;
@@ -6613,6 +6694,7 @@ const Section4RFCView = ({
                                     backlogName: "",
                                     backlogDesc: "",
                                     note: "",
+                                    posOrder: 1,
                                   };
                                 updated[index].changes!.backlogDesc =
                                   e.target.value;
@@ -6642,6 +6724,7 @@ const Section4RFCView = ({
                                     backlogName: "",
                                     backlogDesc: "",
                                     note: "",
+                                    posOrder: 1,
                                   };
                                 updated[index].changes!.note = e.target.value;
                                 setBacklogChanges(updated);
@@ -7262,6 +7345,60 @@ const Section4RFCView = ({
               </Stack>
             </InputLayoutFull>
           </FormControl>
+
+          {/* Backlog Priority Table */}
+          {sortedDataBackLogs.length > 0 && (
+            <FormControl>
+              <InputLayoutFull>
+                <FormLabel h={"full"} mt={2}>
+                  Daftar Perubahan Sistem (Priority Order)
+                </FormLabel>
+                <Stack spacing={3}>
+                  {sortedDataBackLogs.map((backlog, index) => (
+                    <Flex
+                      key={backlog.backlogId || index}
+                      p={3}
+                      border="1px"
+                      borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                      rounded="md"
+                      alignItems="center"
+                      gap={3}
+                    >
+                      <VStack spacing={0}>
+                        <Button
+                          size="xs"
+                          variant="ghost"
+                          onClick={() => backlog.backlogId && movePriority(backlog.backlogId, "up")}
+                          isDisabled={backlog.posOrder === 1}
+                        >
+                          <ChevronUpIcon />
+                        </Button>
+                        <Button
+                          size="xs"
+                          variant="ghost"
+                          onClick={() => backlog.backlogId && movePriority(backlog.backlogId, "down")}
+                          isDisabled={backlog.posOrder === sortedDataBackLogs.length}
+                        >
+                          <ChevronDownIcon />
+                        </Button>
+                      </VStack>
+                      <Badge colorScheme="blue" size="sm">
+                        {backlog.posOrder}
+                      </Badge>
+                      <Box flex={1}>
+                        <Text fontWeight="bold">{backlog.backlogName}</Text>
+                        {backlog.backlogDesc && (
+                          <Text fontSize="sm" color="gray.500">
+                            {backlog.backlogDesc}
+                          </Text>
+                        )}
+                      </Box>
+                    </Flex>
+                  ))}
+                </Stack>
+              </InputLayoutFull>
+            </FormControl>
+          )}
         </Flex>
       </InputGroupPanel>
     </Flex>

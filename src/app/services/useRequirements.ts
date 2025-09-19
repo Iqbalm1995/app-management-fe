@@ -186,6 +186,7 @@ export interface ReqBacklogPayload {
   backlogName: string;
   backlogDesc?: string | null;
   note?: string | null;
+  posOrder: number;
 }
 
 export interface RequirementsInsertPayload {
@@ -280,10 +281,12 @@ export interface BacklogDataResponse {
   version: string;
   isLive: string;
   appsId: string;
+  posOrder: number;
   createdAt: string | null;
   createdBy: string;
   updatedAt: string | null;
   updatedBy: string;
+  reffData?: BacklogDataResponse | null;
 }
 
 export interface BacklogInsertPayload {
@@ -322,6 +325,12 @@ export interface BacklogUpdatePayload {
   priority: string;
   developmentStatus: string;
   reffId: string | null;
+  posOrder: number;
+}
+
+export interface BacklogUpdateOrderPayload {
+  id: string;
+  posOrder: number;
 }
 
 export function mapBacklogArrayToUpdatePayload(
@@ -344,6 +353,7 @@ export function mapBacklogArrayToUpdatePayload(
     priority: data.priority,
     developmentStatus: data.developmentStatus,
     reffId: data.reffId,
+    posOrder: data.posOrder,
   }));
 }
 
@@ -391,6 +401,10 @@ interface useRequirements {
   ) => Promise<ApiGenericResponse<string | null> | null>;
   UpdateBacklog: (
     payload: BacklogUpdatePayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  UpdateBacklogOrder: (
+    payload: BacklogUpdateOrderPayload,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
   UpdateBacklogBatch: (
@@ -865,6 +879,47 @@ const useRequirements = (): useRequirements => {
     }
   };
 
+  const UpdateBacklogOrder = async (
+    payload: BacklogUpdateOrderPayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Requirement/backlog/update/order`;
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
   const UpdateBacklogBatch = async (
     payload: BacklogUpdatePayload[],
     token: string
@@ -1000,6 +1055,7 @@ const useRequirements = (): useRequirements => {
     GetDetailBacklogById,
     InsertBacklog,
     UpdateBacklog,
+    UpdateBacklogOrder,
     UpdateBacklogBatch,
     DeleteBacklog,
     ListReqMedia,

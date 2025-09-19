@@ -167,7 +167,13 @@ function WorkflowPresetListView() {
       limit: MAX_SIZE_TABLE,
       page: 0,
       search: "",
-      filterWhere: [],
+      filterWhere: [
+        {
+          field: "wfCategoryId",
+          operator: "=",
+          value: CategoryId || "",
+        },
+      ],
       fieldOrder: ["wfPresetName"],
       orderDir: "asc",
     };
@@ -284,6 +290,23 @@ function WorkflowPresetListView() {
 
       return newSet;
     });
+  };
+
+  // Select All workflows function
+  const handleSelectAllWorkflows = () => {
+    const allWorkflowIds = new Set<string>();
+
+    DataWorkflowGroups.forEach((group) => {
+      allWorkflowIds.add(group.id);
+      group.workflowChild?.forEach((child) => {
+        allWorkflowIds.add(child.id);
+        child.workflowChild?.forEach((grandChild) => {
+          allWorkflowIds.add(grandChild.id);
+        });
+      });
+    });
+
+    setSelectedWorkflows(allWorkflowIds);
   };
 
   // Get all workflow IDs from tree (recursive)
@@ -672,21 +695,6 @@ function WorkflowPresetListView() {
                   ) : (
                     <TableComponentFull table={table} />
                   )}
-
-                  {!IsLoadingProcess && DataPresets.length === 0 && (
-                    <Box textAlign="center" py={10}>
-                      <Text color="gray.500" fontSize="lg" mb={4}>
-                        No workflow presets found
-                      </Text>
-                      <Button
-                        leftIcon={<FiPlus />}
-                        colorScheme="blue"
-                        onClick={handleCreate}
-                      >
-                        Create Your First Preset
-                      </Button>
-                    </Box>
-                  )}
                 </CardBody>
               </Card>
             </GridItem>
@@ -751,44 +759,6 @@ function WorkflowPresetListView() {
                           )}
                         </Box>
                       )}
-
-                      {/* Debug Section */}
-                      {!formData.id && (
-                        <Box w="full" mt={4}>
-                          <Text mb={2} fontSize="sm" fontWeight="medium">
-                            Debug - Selected Workflows JSON:
-                          </Text>
-                          <Box
-                            p={3}
-                            bg={colorMode === "light" ? "gray.50" : "gray.700"}
-                            border="1px solid"
-                            borderColor={
-                              colorMode === "light" ? "gray.200" : "gray.600"
-                            }
-                            rounded="md"
-                            maxH="200px"
-                            overflowY="auto"
-                          >
-                            <Text
-                              fontSize="xs"
-                              fontFamily="mono"
-                              whiteSpace="pre-wrap"
-                            >
-                              {JSON.stringify(
-                                {
-                                  selectedWorkflowIds:
-                                    Array.from(selectedWorkflows),
-                                  selectedCount: selectedWorkflows.size,
-                                  categoryId: CategoryId,
-                                  availableWorkflows: DataWorkflowGroups.length,
-                                },
-                                null,
-                                2
-                              )}
-                            </Text>
-                          </Box>
-                        </Box>
-                      )}
                     </VStack>
                   </GridItem>
 
@@ -796,10 +766,20 @@ function WorkflowPresetListView() {
                   {!formData.id && (
                     <GridItem>
                       <Box>
-                        <Text mb={3} fontSize="sm" fontWeight="medium">
-                          Select Workflows * ({DataWorkflowGroups.length}{" "}
-                          available)
-                        </Text>
+                        <HStack justify="space-between" align="center" mb={3}>
+                          <Text fontSize="sm" fontWeight="medium">
+                            Select Workflows * ({DataWorkflowGroups.length}{" "}
+                            available)
+                          </Text>
+                          <Button
+                            size="xs"
+                            colorScheme="blue"
+                            variant="outline"
+                            onClick={handleSelectAllWorkflows}
+                          >
+                            Select All
+                          </Button>
+                        </HStack>
                         {DataWorkflowGroups.length === 0 ? (
                           <Box
                             p={4}

@@ -360,3 +360,5 @@ export const APP_INTEGRATED_OTHER_APPS = [
   "MIDDLEWARE",
   "DATA WAREHOUSE",
 ];
+// Workflow Constants
+export const WorkflowProjectDevelopmentId = "656435e1-a98e-4353-856c-5c5ffdf6d9bb";

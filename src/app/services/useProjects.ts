@@ -6,7 +6,7 @@ import {
   PaggingListPayload,
   PaggingListPayloadCustom,
 } from "../types/masterTypes";
-import { buildUrlPort } from "../helper/MasterHelper";
+import { buildUrlPort, localToIsoWithOffset } from "../helper/MasterHelper";
 import {
   ENDPOINT_API_BASEURL,
   ENDPOINT_PORT_BASIC,
@@ -17,6 +17,7 @@ import axios from "axios";
 import handleAxiosError from "../utils/handleAxiosError";
 import { UsersFullResponse, UsersResponse } from "./useUsers";
 import { ApplicationMasterShortResponse } from "./useApps";
+import { MediaObjectResponse } from "./useMediaObject";
 
 export interface ProjectDataResponse {
   id: string;
@@ -71,6 +72,44 @@ export interface ProjectUserAssignmentResponse {
   updatedBy: string | null;
 }
 
+export interface ProjectWorkflowResponse {
+  id: string;
+  projectId: string;
+  wfPresetId?: string | null;
+  wfPresetName?: string | null;
+  wfCategoryId: string;
+  wfCategoryCode: string;
+  wfCategoryName: string;
+  wfgId: string;
+  wfgOrder: number;
+  wfgCode: string;
+  wfgName: string;
+  wfgDesc?: string | null;
+  wfgLevel: number;
+  parentId?: string | null;
+  workflowChild: ProjectWorkflowResponse[];
+  workflowValues: ProjectWorkflowValueResponse[];
+}
+
+export interface ProjectWorkflowValueResponse {
+  id: string;
+  projectWorkflowId: string;
+  documentType: string;
+  documentName: string;
+  documentNumber: string;
+  documentDate: string;
+  documentVersion: string;
+  linkAttachment?: string | null;
+  mediaObjectId?: string | null;
+  createdAt: string;
+  createdBy: string;
+  updatedAt?: string | null;
+  updatedBy?: string | null;
+  reffParentId?: string | null;
+  workflowReffValues: ProjectWorkflowValueResponse[];
+  mediaObjectData?: MediaObjectResponse | null;
+}
+
 export interface ProjectInsertPayload {
   // id: string;
   projectNo?: string | null;
@@ -88,6 +127,20 @@ export interface ProjectInsertPayload {
   proManageByTeamId?: string | null;
   reqParentId?: string | null;
   userAssigns: ProjectUserInsertPayload[];
+  projectPlanWorkflowIds: string[];
+}
+
+export interface ProjectWorkflowValueInsertPayload {
+  // id: string;
+  ReffParentId?: string | null;
+  ProjectWorkflowId: string;
+  DocumentType: string;
+  DocumentName: string;
+  DocumentNumber: string;
+  DocumentDate: string;
+  DocumentVersion: string;
+  LinkAttachment?: string | null;
+  file?: File | null;
 }
 
 export interface ProjectUserInsertPayload {
@@ -516,6 +569,30 @@ interface useProjectsServices {
     projectId: string,
     token: string
   ) => Promise<ApiGenericResponse<ProjectBacklogProgressionResponse | null> | null>;
+
+  // project workflow data
+
+  ListProjectWorkflow: (
+    projectId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<ProjectWorkflowResponse[] | null> | null>;
+
+  ListProjectWorkflowValue: (
+    payload: PaggingListPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<
+    ProjectWorkflowValueResponse[] | null
+  > | null>;
+
+  GetDetailProjectWorkflowValueById: (
+    id: string,
+    token: string
+  ) => Promise<ApiGenericResponse<ProjectWorkflowValueResponse | null> | null>;
+
+  InsertProjectWorkflowValue: (
+    payload: ProjectWorkflowValueInsertPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
 
   isLoading: boolean;
   error: string | null;
@@ -2187,6 +2264,196 @@ const useProjects = (): useProjectsServices => {
     }
   };
 
+  const ListProjectWorkflow = async (
+    projectId: string,
+    token: string
+  ): Promise<ApiGenericResponse<ProjectWorkflowResponse[] | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Projects/ProjectWorkflowData/list/${projectId}`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<ProjectWorkflowResponse[]>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const ListProjectWorkflowValue = async (
+    payload: PaggingListPayload,
+    token: string
+  ): Promise<ApiGenericResponse<
+    ProjectWorkflowValueResponse[] | null
+  > | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/Projects/ProjectWorkflowValue/list-paged";
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<ProjectWorkflowValueResponse[]>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const GetDetailProjectWorkflowValueById = async (
+    id: string,
+    token: string
+  ): Promise<ApiGenericResponse<ProjectWorkflowValueResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Projects/ProjectWorkflowValue/detail/${id}`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<ProjectWorkflowValueResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const InsertProjectWorkflowValue = async (
+    payload: ProjectWorkflowValueInsertPayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/Projects/ProjectWorkflowValue/insert";
+
+    // Create FormData and append payload fields
+    const formData = new FormData();
+
+    formData.append("ProjectWorkflowId", payload.ProjectWorkflowId);
+    formData.append("DocumentType", payload.DocumentType);
+    formData.append("DocumentName", payload.DocumentName);
+    formData.append("DocumentNumber", payload.DocumentNumber);
+    formData.append("DocumentDate", payload.DocumentDate);
+    formData.append("DocumentVersion", payload.DocumentVersion);
+
+    if (payload.file) {
+      formData.append("file", payload.file);
+    }
+
+    if (payload.ReffParentId) {
+      formData.append("ReffParentId", payload.ReffParentId);
+    }
+
+    if (payload.LinkAttachment) {
+      formData.append("LinkAttachment", payload.LinkAttachment);
+    }
+
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
   return {
     List,
     GetDetailById,
@@ -2230,6 +2497,11 @@ const useProjects = (): useProjectsServices => {
     DeleteProjectFeature,
 
     GetProjectBacklogProgression,
+
+    ListProjectWorkflow,
+    ListProjectWorkflowValue,
+    GetDetailProjectWorkflowValueById,
+    InsertProjectWorkflowValue,
 
     isLoading,
     error,

@@ -174,6 +174,7 @@ export function ControlTable({ table }: any) {
       justifyContent="center"
       gap="2"
       my={4}
+      overflowX={"auto"}
     >
       <Grid templateColumns="repeat(12, 1fr)" gap={2} w={"full"}>
         <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}>
@@ -208,7 +209,7 @@ export function ControlTable({ table }: any) {
                   pl={1}
                   display={{ base: "none", sm: "none", md: "none", lg: "flex" }}
                 >
-                  Awal
+                  First
                 </Text>
               </Button>
               <Button
@@ -223,7 +224,7 @@ export function ControlTable({ table }: any) {
                   pl={1}
                   display={{ base: "none", sm: "none", md: "none", lg: "flex" }}
                 >
-                  Sebelumnya
+                  Previous
                 </Text>
               </Button>
               {/* Page numbers */}
@@ -288,7 +289,7 @@ export function ControlTable({ table }: any) {
                   pr={1}
                   display={{ base: "none", sm: "none", md: "none", lg: "flex" }}
                 >
-                  Selanjutnya
+                  Next
                 </Text>
                 <FiChevronRight />
               </Button>
@@ -303,7 +304,7 @@ export function ControlTable({ table }: any) {
                   pr={1}
                   display={{ base: "none", sm: "none", md: "none", lg: "flex" }}
                 >
-                  Akhir
+                  Last
                 </Text>
                 <FiChevronsRight />
               </Button>
@@ -327,7 +328,7 @@ export function ControlTable({ table }: any) {
           >
             <Flex as={HStack}>
               <Text fontWeight={600} color={"secondary.500"}>
-                Halaman
+                Page
               </Text>
               <Input
                 type={"text"}
@@ -657,7 +658,7 @@ export function TableInputShowPage({ table }: any) {
       alignItems={"center"}
     >
       <Text fontWeight={600} color={"secondary.500"}>
-        Tampil
+        Show
       </Text>
       <Select
         size="sm"
@@ -837,9 +838,9 @@ export function TableComponent({ table }: any) {
 export function TableComponentHeadlessGrid({ table }: any) {
   return (
     <Flex w={"full"} my={4}>
-      <Grid 
-        templateColumns="repeat(3, 1fr)" 
-        gap={{ base: 4, md: 6 }} 
+      <Grid
+        templateColumns="repeat(3, 1fr)"
+        gap={{ base: 4, md: 6 }}
         w={"full"}
         px={{ base: 2, md: 4 }}
       >
