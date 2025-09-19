@@ -663,7 +663,7 @@ function ReuirementsRFCPage() {
         id: "id",
         cell: (info) => (
           <Flex w={"full"} justifyContent={"center"}>
-            <Link href={`brd/detail?reqId=${info.row.original.id}`}>
+            <Link href={`/requirements/detail?reqId=${info.row.original.id}&type=RFC`}>
               <Button leftIcon={<FiInfo />} colorScheme="secondary" size="sm">
                 Detail
               </Button>
