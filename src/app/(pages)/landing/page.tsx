@@ -17,6 +17,8 @@ import {
   CardHeader,
   Container,
   Flex,
+  Grid,
+  GridItem,
   Heading,
   Image,
   Input,
@@ -57,92 +59,37 @@ function LandingPage() {
 
   return (
     <LayoutLanding>
-      <Flex w={"full"} minH={"86vh"}>
+      <Flex w={"full"} minH={"95vh"}>
         <Flex
-          zIndex={1}
+          // zIndex={1}
           w={"full"}
           minH={"35vh"}
-          bgGradient={"linear(to-r, primary.500, secondary.500, yellow.500)"}
-          backgroundPosition="center"
-          backgroundRepeat="no-repeat"
-          backgroundSize="cover"
-          backgroundImage={`url(./img/bjb-head-image.jpg)`}
+          // bgGradient={"linear(to-r, primary.500, secondary.500)"}
+          bgGradient={colorMode == "light" ? "white" : "gray.900"}
+          // backgroundPosition="center"
+          // backgroundRepeat="no-repeat"
+          // backgroundSize="cover"
+          // backgroundImage={`url(./img/bjb-head-image.jpg)`}
           // rounded={radiusStyle}
-          boxShadow={"md"}
+          // boxShadow={"md"}
         >
-          <Flex
-            w="full"
-            minH={"35vh"}
-            bgGradient="linear(to-b, rgba(0, 89, 144, 0.1) 0%, rgba(17, 17, 17, 1) 110%)"
-            // rounded={radiusStyle}
-            justifyContent={"center"}
-            alignItems={"start"}
-            p={5}
-          >
-            <VStack w={"full"} spacing={5} pt={"8vh"}>
-              <RealTimeClock />
-
-              {/* <InputGroup
-                w={{ base: "full", sm: "full", md: "60%", lg: "60%" }}
-              >
-                <InputLeftElement pointerEvents="none" boxSize={12} h={"full"}>
-                  <Search2Icon color={"primary.500"} />
-                </InputLeftElement>
-                <Input
-                  type="text"
-                  placeContent={"center"}
-                  placeholder="Cari Apps"
-                  rounded={"3xl"}
-                  bg={colorMode == "light" ? "white" : "gray.800"}
-                  size={"lg"}
-                  value={SearchChannels}
-                  onChange={(e) => setSearchChannels(e.target.value)}
-                />
-              </InputGroup> */}
-
-              {/* LIST CONTENT */}
-
-              {/* <Container
-                as={Stack}
-                maxW={"container.xl"}
-                mt={"60px"}
-                spacing={5}
-              >
-                <Flex as={Stack} rounded={radiusStyle} w={"full"} spacing={4}>
-                  <Flex
-                    as={Stack}
-                    rounded={radiusStyle}
-                    w={"full"}
-                    p={4}
-                    spacing={4}
-                  >
-                    <Heading as="h4" size="md" color={"white"}>
-                      SQUAD IBC APPS
-                    </Heading>
-                    <Box overflowX="auto" whiteSpace="nowrap" py={6}>
-                      <Box display="inline-flex" gap={4}>
-                        {DATA_APPS.filter(
-                          (x) =>
-                            x.appName &&
-                            x.appName
-                              .toLocaleLowerCase()
-                              .includes(SearchChannels.toLocaleLowerCase())
-                        ).map((item, idx) => (
-                          <AppsDrawSquareV2
-                            key={idx}
-                            data={{
-                              dataProduct: item,
-                              refreshAction: RefreshAction,
-                            }}
-                          />
-                        ))}
-                      </Box>
-                    </Box>
-                  </Flex>
-                </Flex>
-              </Container> */}
-            </VStack>
-          </Flex>
+          <VStack w={"full"} spacing={5}>
+            {/* <RealTimeClock /> */}
+            <Grid templateColumns="repeat(12, 1fr)" gap={0} w={"full"}>
+              <GridItem
+                colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}
+                w={"full"}
+                minH={"95vh"}
+                bg={"blue.100"}
+              ></GridItem>
+              <GridItem
+                colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}
+                w={"full"}
+                minH={"95vh"}
+                bg={"blue.200"}
+              ></GridItem>
+            </Grid>
+          </VStack>
         </Flex>
       </Flex>
     </LayoutLanding>

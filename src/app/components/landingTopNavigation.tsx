@@ -89,7 +89,7 @@ export default function TopNavigationLanding() {
 
   return (
     <Box
-      // position={"fixed"}
+      position={"fixed"}
       top={0}
       left={0}
       right={0}
@@ -99,21 +99,33 @@ export default function TopNavigationLanding() {
     >
       {/* <pre>{JSON.stringify(authData, null, 2)}</pre> */}
       {/* <pre>{JSON.stringify(isAuthenticated, null, 2)}</pre> */}
-      <Container as={Stack} maxW={"container.xl"}>
+      <Container
+        as={Stack}
+        w={scrollY > 0 ? "80%" : "95%"}
+        pt={scrollY > 0 ? 2 : 0}
+        maxW="1536px"
+        transitionProperty="width, padding-top"
+        transitionDuration="0.4s"
+        transitionTimingFunction="ease-in-out"
+      >
         <Flex
-          // backdropFilter={scrollY > 0 ? "blur(20px)" : "none"} // Apply Gaussian blur in light mode
+          backdropFilter={scrollY > 0 ? "blur(20px)" : "none"} // Apply Gaussian blur in light mode
           transition="0.2s ease"
           minH={"65px"}
           py={{ base: 2 }}
           align={"center"}
           pos={"relative"}
-          // bg={
-          //   scrollY > 0 ? useColorModeValue("white", "gray.900") : "transparent"
-          // }
-          // bg={useColorModeValue("white", "gray.900")}
-          // boxShadow={scrollY > 0 ? "xl" : "none"}
+          bg={
+            scrollY > 0
+              ? colorMode == "light"
+                ? "white"
+                : "gray.900"
+              : "transparent"
+          }
+          // bg={colorMode == "light" ? "white" : "gray.900"}
+          boxShadow={scrollY > 0 ? "xl" : "none"}
           // boxShadow={"xl"}
-          px={4}
+          px={8}
           rounded={radiusStyle}
         >
           <Flex
@@ -189,7 +201,7 @@ export default function TopNavigationLanding() {
                         boxShadow={"md"}
                       />
                       <Box
-                        color={"gray.800"}
+                        color={colorMode == "light" ? "gray.800" : "gray.300"}
                         display={{ base: "none", md: "flex" }}
                       >
                         <FiChevronDown />

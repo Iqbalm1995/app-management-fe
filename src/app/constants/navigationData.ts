@@ -22,12 +22,12 @@ export const NAV_ITEMS_LANDING: Array<NavItem> = [
   //     },
   //   ],
   // },
-  {
-    label: "Tentang Kami",
-    href: "https://www.bankbjb.co.id/page/tentang-bank-bjb",
-  },
-  {
-    label: "Hubungi Kami",
-    href: "https://bjbwbs.bankbjb.co.id/",
-  },
+  // {
+  //   label: "Tentang Kami",
+  //   href: "https://www.bankbjb.co.id/page/tentang-bank-bjb",
+  // },
+  // {
+  //   label: "Hubungi Kami",
+  //   href: "https://bjbwbs.bankbjb.co.id/",
+  // },
 ];

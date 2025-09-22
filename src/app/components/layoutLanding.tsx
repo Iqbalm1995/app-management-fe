@@ -27,7 +27,7 @@ const LayoutLanding = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // Show loading on route change
     setLoading(true);
-    
+
     // Simulate loading time for landing pages
     const timer = setTimeout(() => setLoading(false), DELAY_MEDIUM);
     return () => clearTimeout(timer);
@@ -35,13 +35,13 @@ const LayoutLanding = ({ children }: { children: ReactNode }) => {
 
   return (
     <>
-      <Box position="relative" minHeight="90vh">
+      <Box position="relative" minHeight="100vh">
         <Head>
           <title>KOBRA - Applications Management</title>
         </Head>
-        
+
         <LoadingOverlay isLoading={loading} />
-        
+
         <Box
           opacity={loading ? 0.5 : 1}
           pointerEvents={loading ? "none" : "auto"}
