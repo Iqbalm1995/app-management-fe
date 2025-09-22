@@ -43,6 +43,8 @@ import { AiOutlineInfoCircle } from "react-icons/ai";
 import { FaHeart, FaInfo, FaPlay } from "react-icons/fa6";
 import logoBjbFile from "../../json/bjb_loading_v01.json";
 import { motion } from "framer-motion";
+import { FiCode } from "react-icons/fi";
+import { TiFlowMerge } from "react-icons/ti";
 
 const MotionText = motion(Text);
 
@@ -80,13 +82,118 @@ function LandingPage() {
                 colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}
                 w={"full"}
                 minH={"95vh"}
-                bg={"blue.100"}
-              ></GridItem>
+                // bg={colorMode === "light" ? "gradient.primary" : "gray.900"}
+                // bgGradient={colorMode === "light"
+                //   ? "linear(135deg, blue.500, purple.600, pink.500)"
+                //   : "linear(135deg, gray.800, gray.900, black)"
+                // }
+                display="flex"
+                alignItems="center"
+                justifyContent="flex-start"
+                px={{ base: 5, sm: 5, md: 20, lg: 20 }}
+              >
+                <VStack
+                  spacing={6}
+                  textAlign="left"
+                  color={colorMode === "light" ? "white" : "gray.100"}
+                  alignItems="flex-start"
+                  w={"full"}
+                  // bg={"red"}
+                >
+                  <VStack spacing={3} alignItems="flex-start" w={"full"}>
+                    <MotionText
+                      fontSize={{ base: "3xl", md: "4xl", lg: "5xl" }}
+                      fontWeight="bold"
+                      lineHeight="1.2"
+                      bgGradient={
+                        colorMode === "light"
+                          ? "linear(to-r, secondary.500, secondary.900)"
+                          : "linear(to-r, gray.100, gray)"
+                      }
+                      bgClip="text"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.8 }}
+                    >
+                      Modern Project Management
+                    </MotionText>
+
+                    <MotionText
+                      fontSize={{ base: "lg", md: "xl" }}
+                      fontWeight="medium"
+                      color={colorMode === "light" ? "gray.800" : "gray.300"}
+                      lineHeight="1.4"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.8, delay: 0.2 }}
+                      display="flex"
+                      alignItems="center"
+                      gap={2}
+                    >
+                      <TiFlowMerge />
+                      <span>
+                        Streamline workflows and deliver projects with
+                        confidence
+                      </span>
+                    </MotionText>
+                  </VStack>
+
+                  <VStack spacing={2} alignItems="flex-start" w="full">
+                    {[
+                      "Requirements management",
+                      "Team collaboration",
+                      "Project tracking",
+                    ].map((feature, index) => (
+                      <MotionText
+                        key={index}
+                        fontSize="md"
+                        color={colorMode === "light" ? "gray.700" : "gray.400"}
+                        fontWeight="medium"
+                        lineHeight="1.1"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.6, delay: 0.4 + index * 0.1 }}
+                      >
+                        {feature}
+                      </MotionText>
+                    ))}
+                  </VStack>
+
+                  <MotionText
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.7 }}
+                  >
+                    <Button
+                      size="lg"
+                      bgGradient={
+                        colorMode === "light"
+                          ? "linear(to-r, secondary.500, secondary.900)"
+                          : "linear(to-r, gray.100, gray)"
+                      }
+                      color={"white"}
+                      _hover={{
+                        // bg: colorMode === "light" ? "gray.100" : "white",
+                        transform: "translateY(-2px)",
+                      }}
+                      _active={{ transform: "translateY(0)" }}
+                      transition="all 0.2s"
+                      fontWeight="semibold"
+                      px={6}
+                      py={4}
+                      onClick={() => {
+                        window.location.href = "/home";
+                      }}
+                    >
+                      Get Started
+                    </Button>
+                  </MotionText>
+                </VStack>
+              </GridItem>
               <GridItem
                 colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}
                 w={"full"}
                 minH={"95vh"}
-                bg={"blue.200"}
               ></GridItem>
             </Grid>
           </VStack>

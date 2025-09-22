@@ -112,7 +112,7 @@ export default function TopNavigationLanding() {
           backdropFilter={scrollY > 0 ? "blur(20px)" : "none"} // Apply Gaussian blur in light mode
           transition="0.2s ease"
           minH={"65px"}
-          py={{ base: 2 }}
+          py={{ base: 4 }}
           align={"center"}
           pos={"relative"}
           bg={
