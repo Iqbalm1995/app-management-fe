@@ -108,7 +108,7 @@ function LandingPage() {
                       bgGradient={
                         colorMode === "light"
                           ? "linear(to-r, secondary.500, secondary.900)"
-                          : "linear(to-r, gray.100, gray)"
+                          : "linear(to-r, secondary.700, secondary.500)"
                       }
                       bgClip="text"
                       initial={{ opacity: 0, y: 20 }}
@@ -121,7 +121,7 @@ function LandingPage() {
                     <MotionText
                       fontSize={{ base: "lg", md: "xl" }}
                       fontWeight="medium"
-                      color={colorMode === "light" ? "gray.800" : "gray.300"}
+                      color={colorMode === "light" ? "gray.600" : "gray.500"}
                       lineHeight="1.4"
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -129,6 +129,7 @@ function LandingPage() {
                       display="flex"
                       alignItems="center"
                       gap={2}
+                      px={2}
                     >
                       <TiFlowMerge />
                       <span>
@@ -145,11 +146,12 @@ function LandingPage() {
                       "Project tracking",
                     ].map((feature, index) => (
                       <MotionText
+                        px={10}
                         key={index}
                         fontSize="md"
-                        color={colorMode === "light" ? "gray.700" : "gray.400"}
+                        color={colorMode === "light" ? "gray.400" : "gray.600"}
                         fontWeight="medium"
-                        lineHeight="1.1"
+                        lineHeight="1"
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.6, delay: 0.4 + index * 0.1 }}
@@ -163,14 +165,11 @@ function LandingPage() {
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 0.7 }}
+                    px={10}
                   >
                     <Button
                       size="lg"
-                      bgGradient={
-                        colorMode === "light"
-                          ? "linear(to-r, secondary.500, secondary.900)"
-                          : "linear(to-r, gray.100, gray)"
-                      }
+                      bgGradient={"linear(to-r, secondary.500, secondary.900)"}
                       color={"white"}
                       _hover={{
                         // bg: colorMode === "light" ? "gray.100" : "white",
@@ -194,7 +193,32 @@ function LandingPage() {
                 colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}
                 w={"full"}
                 minH={"95vh"}
-              ></GridItem>
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                p={8}
+              >
+                <SimpleGrid columns={3} spacing={4} w="full" h="full" p={10}>
+                  {Array.from({ length: 9 }, (_, index) => (
+                    <Box
+                      key={index}
+                      bg="blue.500"
+                      rounded="lg"
+                      minH="120px"
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                      color="white"
+                      fontWeight="semibold"
+                      _hover={{ bg: "blue.600", transform: "scale(1.05)" }}
+                      transition="all 0.2s"
+                      cursor="pointer"
+                    >
+                      Card {index + 1}
+                    </Box>
+                  ))}
+                </SimpleGrid>
+              </GridItem>
             </Grid>
           </VStack>
         </Flex>
