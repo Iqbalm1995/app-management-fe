@@ -515,7 +515,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
             justifyContent={{ base: "space-between", md: "flex-end" }}
             backgroundPosition="left"
             backgroundRepeat="no-repeat"
-            backgroundSize="gray.900"
+            // backgroundSize="gray.900"
             color={"white"}
             boxShadow={scrollY > 0 ? "xl" : "none"}
             roundedTop={scrollY > 0 ? radiusStyle : 0}

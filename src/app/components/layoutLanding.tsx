@@ -61,7 +61,12 @@ export const FooterAdminPanel = () => {
   const { colorMode } = useColorMode();
   return (
     <Box
-      bg={colorMode == "light" ? "primary.800" : "gray.900"}
+      // bg={colorMode == "light" ? "primary.800" : "gray.900"}
+      bgGradient={
+        colorMode === "light"
+          ? "linear(to-r, secondary.800, secondary.500)"
+          : "linear(to-r, gray.800, gray.900)"
+      }
       color={"white"}
       px={3}
       py={3}
