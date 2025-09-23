@@ -361,7 +361,6 @@ function MasterDataConstantPage() {
       });
       setRefreshData((prev) => prev + 1);
       setDeletingId("");
-      onDeleteClose();
     } else {
       showToast({
         description: response?.message || "Failed to delete constant",

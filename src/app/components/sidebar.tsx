@@ -911,7 +911,9 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
             // onClick={() => {
             //   GoNavigationLink();
             // }}
-            onClick={handleNavigation}
+            onClick={hasChildren ? handleToggle : undefined}
+            as={hasChildren ? "div" : Link}
+            {...(!hasChildren && { href: data.link })}
           >
             <Flex
               w={"full"}
