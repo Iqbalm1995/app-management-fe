@@ -39,89 +39,114 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import Lottie from "lottie-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AiOutlineInfoCircle } from "react-icons/ai";
 import { FaHeart, FaInfo, FaPlay } from "react-icons/fa6";
 import logoBjbFile from "../../json/bjb_loading_v01.json";
-import { motion } from "framer-motion";
 import { FiCode } from "react-icons/fi";
 import { TiFlowMerge } from "react-icons/ti";
 
-const MotionText = motion(Text);
+// Removed Text to fix hydration issues
 
-// Card Component
-const LandingCard = ({ index }: { index: number }) => {
-  const offsetX = index * 25; // Straight diagonal to right
-  const offsetY = index * 25; // Straight diagonal down
-  const cardRotation = 15; // All cards slanted at same angle
+interface HighlightTextLandingProps {
+  title: string;
+  desc: string;
+  color: string;
+}
 
-  return (
-    <Box
-      bg="blue.500"
-      rounded="lg"
-      minH="120px"
-      w="180px"
-      display="flex"
-      alignItems="center"
-      justifyContent="center"
-      color="white"
-      fontWeight="semibold"
-      _hover={{
-        bg: "blue.600",
-        transform: `translateX(${offsetX}px) translateY(${offsetY}px) rotate(${cardRotation}deg) scale(1.05)`,
-        zIndex: 20,
-      }}
-      transition="all 0.3s ease"
-      cursor="pointer"
-      transform={`translateX(${offsetX}px) translateY(${offsetY}px) rotate(${cardRotation}deg)`}
-      position="absolute"
-      zIndex={9 - index}
-      boxShadow="xl"
-    >
-      Card {index + 1}
-    </Box>
-  );
-};
+interface AbstractUIDesignProps {
+  width: string;
+  color: string;
+}
+
+const HighlightTextLanding: HighlightTextLandingProps[] = [
+  {
+    title: "App Development",
+    desc: "Create custom project management applications",
+    color: "blue",
+  },
+  {
+    title: "Team Collaboration",
+    desc: "Real-time collaboration tools and workflows",
+    color: "purple",
+  },
+  {
+    title: "Analytics & Reports",
+    desc: "Advanced insights and performance tracking",
+    color: "pink",
+  },
+];
+
+const AbstractUIDesign: AbstractUIDesignProps[] = [
+  { width: "85%", color: "blue.500" },
+  { width: "70%", color: "purple.500" },
+  { width: "95%", color: "pink.500" },
+  { width: "60%", color: "cyan.500" },
+];
 
 function LandingPage() {
-  const [RefreshData, setRefreshData] = useState(0);
   const { colorMode } = useColorMode();
-  const { isAuthenticated, authData } = useAuth();
-  const RefreshAction = () => {
-    setRefreshData(RefreshData + 1);
-  };
-  const [SearchChannels, setSearchChannels] = useState<string>("");
+  const [mounted, setMounted] = useState(false);
 
-  const ModalForm = useDisclosure();
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Prevent hydration mismatch
+  if (!mounted) {
+    return (
+      <LayoutLanding>
+        <Flex
+          w={"full"}
+          minH={"95vh"}
+          bg="gray.50"
+          align="center"
+          justify="center"
+        >
+          <VStack spacing={4}>
+            <Box
+              w="60px"
+              h="60px"
+              border="4px solid"
+              borderColor="blue.100"
+              borderTopColor="blue.500"
+              rounded="full"
+              animation="spin 1s linear infinite"
+            />
+            <Text
+              fontSize="lg"
+              fontWeight="medium"
+              color="gray.600"
+              bgGradient="linear(to-r, blue.500, purple.500)"
+              bgClip="text"
+            >
+              Please wait...
+            </Text>
+            <style jsx>{`
+              @keyframes spin {
+                to { transform: rotate(360deg); }
+              }
+            `}</style>
+          </VStack>
+        </Flex>
+      </LayoutLanding>
+    );
+  }
 
   return (
     <LayoutLanding>
       <Flex w={"full"} minH={"95vh"}>
         <Flex
-          // zIndex={1}
           w={"full"}
           minH={"35vh"}
-          // bgGradient={"linear(to-r, primary.500, secondary.500)"}
           bgGradient={colorMode == "light" ? "white" : "gray.900"}
-          // backgroundPosition="center"
-          // backgroundRepeat="no-repeat"
-          // backgroundSize="cover"
-          // backgroundImage={`url(./img/bjb-head-image.jpg)`}
-          // rounded={radiusStyle}
-          // boxShadow={"md"}
         >
           <VStack w={"full"} spacing={5}>
-            {/* <RealTimeClock /> */}
             <Grid templateColumns="repeat(12, 1fr)" gap={0} w={"full"}>
               <GridItem
                 colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}
                 w={"full"}
                 minH={"95vh"}
-                // bg={colorMode === "light" ? "gradient.primary" : "gray.900"}
-                // bgGradient={colorMode === "light"
-                //   ? "linear(135deg, blue.500, purple.600, pink.500)"
-                //   : "linear(135deg, gray.800, gray.900, black)"
-                // }
                 display="flex"
                 alignItems="center"
                 justifyContent="flex-start"
@@ -135,7 +160,7 @@ function LandingPage() {
                   w={"full"}
                 >
                   <VStack spacing={6} alignItems="flex-start" w={"full"}>
-                    <MotionText
+                    <Box
                       fontSize={{ base: "4xl", md: "5xl", lg: "6xl" }}
                       fontWeight="bold"
                       lineHeight="1.1"
@@ -145,68 +170,37 @@ function LandingPage() {
                           : "linear(to-r, secondary.800, secondary.500)"
                       }
                       bgClip="text"
-                      initial={{ opacity: 0, y: 30 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.8 }}
                     >
                       Project Management
                       <br />
                       Apps Platform
-                    </MotionText>
+                    </Box>
 
-                    <MotionText
+                    <Box
                       fontSize={{ base: "xl", md: "2xl" }}
                       fontWeight="medium"
                       color={colorMode === "light" ? "gray.700" : "gray.300"}
                       lineHeight="1.4"
-                      initial={{ opacity: 0, y: 30 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.8, delay: 0.2 }}
                       display="flex"
                       alignItems="center"
                       gap={3}
                     >
                       <TiFlowMerge size="28px" />
-                      <span>
+                      <Text>
                         Build, manage, and deploy powerful project applications
                         with our comprehensive suite
-                      </span>
-                    </MotionText>
+                      </Text>
+                    </Box>
                   </VStack>
 
                   {/* Enhanced Feature Cards */}
                   <VStack spacing={2} alignItems="flex-start" w="full">
-                    {[
-                      {
-                        title: "App Development",
-                        desc: "Create custom project management applications",
-                        color: "blue",
-                      },
-                      {
-                        title: "Team Collaboration",
-                        desc: "Real-time collaboration tools and workflows",
-                        color: "purple",
-                      },
-                      {
-                        title: "Analytics & Reports",
-                        desc: "Advanced insights and performance tracking",
-                        color: "pink",
-                      },
-                    ].map((feature, index) => (
-                      <MotionText
-                        key={index}
-                        initial={{ opacity: 0, x: -30 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.6, delay: 0.4 + index * 0.1 }}
-                        w="full"
-                      >
+                    {HighlightTextLanding.map((feature, index) => (
+                      <Box key={index} w="full">
                         <Box
                           px={4}
                           py={4}
                           backdropFilter={"blur(20px)"}
-                          // bg={
-                          //   colorMode === "light" ? "gray.100" : "whiteAlpha.50"
-                          // }
                           rounded="xl"
                           border="1px solid"
                           borderColor={
@@ -254,17 +248,13 @@ function LandingPage() {
                             </VStack>
                           </HStack>
                         </Box>
-                      </MotionText>
+                      </Box>
                     ))}
                   </VStack>
 
                   {/* Enhanced CTA Section */}
                   <VStack spacing={4} alignItems="flex-start">
-                    <MotionText
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.6, delay: 0.8 }}
-                    >
+                    <Box>
                       <Button
                         size={"md"}
                         bgGradient={
@@ -291,18 +281,15 @@ function LandingPage() {
                       >
                         Launch Your Project Apps
                       </Button>
-                    </MotionText>
+                    </Box>
 
-                    <MotionText
+                    <Text
                       fontSize="md"
                       color={colorMode === "light" ? "gray.600" : "gray.400"}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.6, delay: 1 }}
                     >
                       Join thousands of teams building better project management
                       solutions
-                    </MotionText>
+                    </Text>
                   </VStack>
                 </VStack>
               </GridItem>
@@ -310,7 +297,6 @@ function LandingPage() {
                 colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}
                 w={"full"}
                 minH={"95vh"}
-                // bg={colorMode === "light" ? "gray.50" : "gray.900"}
                 display="flex"
                 alignItems="center"
                 justifyContent="center"
@@ -412,12 +398,7 @@ function LandingPage() {
 
                   {/* Large Progress Bars */}
                   <VStack spacing={6} w="350px">
-                    {[
-                      { width: "85%", color: "blue.500" },
-                      { width: "70%", color: "purple.500" },
-                      { width: "95%", color: "pink.500" },
-                      { width: "60%", color: "cyan.500" },
-                    ].map((bar, index) => (
+                    {AbstractUIDesign.map((bar, index) => (
                       <Box key={index} w="full">
                         <Box
                           w="full"

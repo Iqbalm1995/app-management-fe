@@ -75,6 +75,7 @@ import {
   FiPlayCircle,
   FiCode,
   FiDatabase,
+  FiKey,
 } from "react-icons/fi";
 import { IconType } from "react-icons";
 import {
@@ -301,6 +302,14 @@ const LinkItems: LinkItemProps[] = [
         name: "Master Workflow",
         icon: PiFlowArrow,
         link: "/master-data/workflow",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Master Constant",
+        icon: FiKey,
+        link: "/master-data/constants-data",
         role: ["admin"],
         menuID: "1",
         children: [],
