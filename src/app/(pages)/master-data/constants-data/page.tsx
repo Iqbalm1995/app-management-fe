@@ -9,6 +9,7 @@ import LayoutAdmin from "@/app/components/layoutAdmin";
 import LoadingMiniSignature from "@/app/components/loadingMini";
 import { TableComponentWithFilterCTX } from "@/app/components/tableComponentV2";
 import {
+  MAX_SIZE_TABLE,
   radiusStyle,
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
@@ -31,6 +32,7 @@ import {
 } from "@/app/types/masterTypes";
 import {
   Badge,
+  Box,
   Button,
   Card,
   CardBody,
@@ -59,8 +61,14 @@ import {
   PopoverTrigger,
   Portal,
   Stack,
+  Table,
+  Tbody,
+  Td,
   Text,
   Textarea,
+  Th,
+  Thead,
+  Tr,
   useColorMode,
   useDisclosure,
 } from "@chakra-ui/react";
@@ -79,6 +87,7 @@ import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import {
   FiEdit,
+  FiEye,
   FiFilter,
   FiPlusSquare,
   FiRefreshCcw,
@@ -90,6 +99,13 @@ import * as Yup from "yup";
 const HeaderDataContent: HeaderContentProps = {
   titleName: `Master Data Constants`,
   breadCrumb: ["Home", "Master Data", "Constants"],
+};
+
+const parentFilter: ListSearchByParamProps = {
+  field: "parentGroupCode",
+  operator: "=",
+  value: null,
+  filterLabel: "Parent Data",
 };
 
 const MotionCardBody = motion(CardBody);
@@ -137,6 +153,11 @@ function MasterDataConstantPage() {
     onOpen: onEditOpen,
     onClose: onEditClose,
   } = useDisclosure();
+  const {
+    isOpen: isViewGroupOpen,
+    onOpen: onViewGroupOpen,
+    onClose: onViewGroupClose,
+  } = useDisclosure();
 
   // Delete confirmation state
   const [isDeleteTrigger, setIsDeleteTrigger] = useState(false);
@@ -146,6 +167,12 @@ function MasterDataConstantPage() {
     useState<ConstantDataResponse | null>(null);
   const [deletingId, setDeletingId] = useState<string>("");
   const [prefilledGroupCode, setPrefilledGroupCode] = useState<string>("");
+  const [prefilledParentGroupCode, setPrefilledParentGroupCode] = useState<string | null>(null);
+  const [selectedGroupCode, setSelectedGroupCode] = useState<string>("");
+  const [selectedEntity, setSelectedEntity] = useState<ConstantDataResponse | null>(null);
+  const [groupConstants, setGroupConstants] = useState<ConstantDataResponse[]>(
+    []
+  );
 
   // Auth setup
   useEffect(() => {
@@ -226,6 +253,44 @@ function MasterDataConstantPage() {
     onAddOpen();
   };
 
+  const handleViewGroup = async (entity: ConstantDataResponse) => {
+    setSelectedGroupCode(entity.value);
+    setSelectedEntity(entity);
+    setGroupConstants([]);
+    onViewGroupOpen();
+
+    // Load data with API filter
+    await loadGroupConstants(entity.value);
+  };
+
+  const loadGroupConstants = async (groupCodeValue: string) => {
+    try {
+      const payloadList: PaggingListPayload = {
+        search: "",
+        limit: MAX_SIZE_TABLE,
+        page: 0,
+        filterWhere: [
+          {
+            field: "parentGroupCode",
+            operator: "=",
+            value: groupCodeValue,
+          },
+        ],
+        fieldOrder: ["index"],
+        orderDir: "asc",
+      };
+
+      const response = await ListConstantData(payloadList, tokenData);
+
+      if (response?.statusCode === RES_CODE_OK) {
+        const data = response.data as ConstantDataResponse[];
+        setGroupConstants(data);
+      }
+    } catch (error) {
+      console.error("Error loading group constants:", error);
+    }
+  };
+
   const removeFilterData = (filterToRemove: ListSearchByParamProps) => {
     setParamFilter(removeParamFilter(paramFilter, filterToRemove));
   };
@@ -279,7 +344,17 @@ function MasterDataConstantPage() {
         accessorKey: "value",
         header: "Value",
         cell: (info) => (
-          <Text color="gray.600">{info.getValue() as string}</Text>
+          <HStack spacing={2}>
+            <Text color="gray.600">{info.getValue() as string}</Text>
+            <IconButton
+              aria-label="View group data"
+              icon={<FiEye />}
+              size="xs"
+              variant="ghost"
+              colorScheme="blue"
+              onClick={() => handleViewGroup(info.row.original)}
+            />
+          </HStack>
         ),
         meta: { filterVariant: "text" } as ColumnMetaCustom,
       },
@@ -292,6 +367,37 @@ function MasterDataConstantPage() {
           </Text>
         ),
         meta: { filterVariant: "text" } as ColumnMetaCustom,
+      },
+      {
+        accessorKey: "parentGroupCode",
+        header: "Parent Group Code",
+        cell: (info) => (
+          <HStack spacing={2}>
+            <Text color="gray.600">{info.getValue() as string}</Text>
+            <IconButton
+              aria-label="View parent group data"
+              icon={<FiEye />}
+              size="xs"
+              variant="ghost"
+              colorScheme="blue"
+              onClick={() => handleViewGroup(info.row.original)}
+            />
+          </HStack>
+        ),
+
+        // Custom variable
+        meta: {
+          isFilterable: true,
+          filterData: [
+            {
+              field: "parentGroupCode",
+              operator: "=",
+              value: "",
+              filterType: "text",
+              filterLabel: "Group Code",
+            },
+          ],
+        } as ColumnMetaCustom,
       },
       {
         id: "actions",
@@ -385,6 +491,7 @@ function MasterDataConstantPage() {
   // Add form
   const addFormik = useFormik<ConstantInsertDataPayload>({
     initialValues: {
+      parentGroupCode: prefilledParentGroupCode,
       groupCode: prefilledGroupCode,
       label: "",
       value: "",
@@ -806,6 +913,69 @@ function MasterDataConstantPage() {
               </Button>
             </ModalFooter>
           </form>
+        </ModalContent>
+      </Modal>
+
+      {/* View Group Modal */}
+      <Modal isOpen={isViewGroupOpen} onClose={onViewGroupClose} size="lg">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Group: {selectedGroupCode}</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <Text mb={4} fontSize="sm" color="gray.600">
+              Showing {groupConstants.length} constants in this group
+            </Text>
+            <Box overflowX="auto">
+              <Table size="xs">
+                <Thead>
+                  <Tr>
+                    <Th fontSize="xs">Label</Th>
+                    <Th fontSize="xs">Value</Th>
+                    <Th fontSize="xs">Description</Th>
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {groupConstants.map((constant) => (
+                    <Tr key={constant.id}>
+                      <Td fontSize="xs">{constant.label}</Td>
+                      <Td>
+                        <Badge
+                          colorScheme="green"
+                          variant="subtle"
+                          fontSize="xs"
+                        >
+                          {constant.value}
+                        </Badge>
+                      </Td>
+                      <Td fontSize="xs">{constant.desc || "-"}</Td>
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
+            </Box>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              leftIcon={<FiPlusSquare />}
+              colorScheme="blue"
+              size="sm"
+              mr={3}
+              onClick={() => {
+                if (selectedEntity) {
+                  setPrefilledParentGroupCode(selectedEntity.value);  // parentGroupCode = entity.value
+                  setPrefilledGroupCode(selectedEntity.groupCode);    // groupCode = entity.groupCode
+                }
+                onViewGroupClose();
+                onAddOpen();
+              }}
+            >
+              Add New
+            </Button>
+            <Button size="sm" onClick={onViewGroupClose}>
+              Close
+            </Button>
+          </ModalFooter>
         </ModalContent>
       </Modal>
 
