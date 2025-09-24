@@ -132,6 +132,7 @@ import { RxActivityLog } from "react-icons/rx";
 import { TbLayoutDashboardFilled } from "react-icons/tb";
 import { FaDraftingCompass } from "react-icons/fa";
 import { PiFlowArrow } from "react-icons/pi";
+import { HiOutlineDesktopComputer } from "react-icons/hi";
 // import { useAuth } from "@/context/AuthContext";
 
 // Page Split
@@ -305,7 +306,14 @@ const LinkItems: LinkItemProps[] = [
         menuID: "1",
         children: [],
       },
-    ],
+      {
+        name: "Master Aplikasi",
+        icon: HiOutlineDesktopComputer,
+        link: "/master-data/aplikasi",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },    ],
   },
   // {
   //   name: "Avtivities",
