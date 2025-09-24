@@ -18,6 +18,7 @@ import handleAxiosError from "../utils/handleAxiosError";
 
 export interface ConstantDataResponse {
   id: string;
+  parentGroupCode?: string | null;
   groupCode: string;
   label: string;
   value: string;
@@ -26,6 +27,7 @@ export interface ConstantDataResponse {
 }
 
 export interface ConstantInsertDataPayload {
+  parentGroupCode?: string | null;
   groupCode: string;
   label: string;
   value: string;

@@ -62,6 +62,20 @@ export interface ApplicationMasterShortResponse {
   reqParentId?: string | null;
 }
 
+export interface ApplicationMasterInsertDataPayload {
+  id: string;
+  appShortName: string;
+  appName: string;
+  appsDesc?: string | null;
+  note?: string | null;
+  appOwnerDivisionId?: string | null;
+  appOwnerGroupId?: string | null;
+  appManageByDivisionId?: string | null;
+  appManageByGroupId?: string | null;
+  appManageByTeamId?: string | null;
+  reqParentId?: string | null;
+}
+
 export interface ApplicationMasterUpdateDataPayload {
   id: string;
   appShortName: string;

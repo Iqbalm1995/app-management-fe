@@ -75,6 +75,7 @@ import {
   FiPlayCircle,
   FiCode,
   FiDatabase,
+  FiKey,
 } from "react-icons/fi";
 import { IconType } from "react-icons";
 import {
@@ -307,13 +308,22 @@ const LinkItems: LinkItemProps[] = [
         children: [],
       },
       {
+        name: "Master Constant",
+        icon: FiKey,
+        link: "/master-data/constants-data",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
         name: "Master Aplikasi",
         icon: HiOutlineDesktopComputer,
         link: "/master-data/aplikasi",
         role: ["admin"],
         menuID: "1",
         children: [],
-      },    ],
+      },    
+    ],
   },
   // {
   //   name: "Avtivities",
@@ -523,7 +533,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
             justifyContent={{ base: "space-between", md: "flex-end" }}
             backgroundPosition="left"
             backgroundRepeat="no-repeat"
-            backgroundSize="gray.900"
+            // backgroundSize="gray.900"
             color={"white"}
             boxShadow={scrollY > 0 ? "xl" : "none"}
             roundedTop={scrollY > 0 ? radiusStyle : 0}
@@ -910,7 +920,9 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
             // onClick={() => {
             //   GoNavigationLink();
             // }}
-            onClick={handleNavigation}
+            onClick={hasChildren ? handleToggle : undefined}
+            as={hasChildren ? "div" : Link}
+            {...(!hasChildren && { href: data.link })}
           >
             <Flex
               w={"full"}

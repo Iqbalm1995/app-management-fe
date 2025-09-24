@@ -1667,19 +1667,20 @@ function FormRegisterProjectView() {
                             Nomor Project
                           </FormLabel>
                           <Stack spacing={0} h={"full"}>
-                            <RegProjectNumberInput
+                            {/* <RegProjectNumberInput */}
+                            <Input
                               id="projectNo"
-                              // name="projectNo"
+                              name="projectNo"
                               type="text"
-                              // onChange={formik.handleChange}
-                              onChange={(val) =>
-                                formik.setFieldValue("projectNo", val)
-                              }
+                              onChange={formik.handleChange}
+                              // onChange={(val) =>
+                              //   formik.setFieldValue("projectNo", val)
+                              // }
                               value={formik.values.projectNo ?? ""}
                               placeholder={`0000/00/BJB/XXXX/0000-A/0`}
                               minLength={25}
                               maxLength={27}
-                              // isDisabled={ActionLoading}
+                              isDisabled={ActionLoading}
                             />
                             <FormErrorMessage>
                               {formik.errors.projectNo}

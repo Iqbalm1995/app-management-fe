@@ -179,6 +179,7 @@ export const initialProjectsInsertValues: ProjectInsertPayload = {
   proManageByGroupId: "", // Optional
   proManageByTeamId: "", // Optional
   reqParentId: "", // Optional
+  projectPlanWorkflowIds: [],
   userAssigns: [], // Required (at least an empty array)
 };
 

@@ -6,7 +6,7 @@ import {
   PaggingListPayload,
   PaggingListPayloadCustom,
 } from "../types/masterTypes";
-import { buildUrlPort } from "../helper/MasterHelper";
+import { buildUrlPort, localToIsoWithOffset } from "../helper/MasterHelper";
 import {
   ENDPOINT_API_BASEURL,
   ENDPOINT_PORT_BASIC,
@@ -2404,6 +2404,7 @@ const useProjects = (): useProjectsServices => {
     // Create FormData and append payload fields
     const formData = new FormData();
 
+    formData.append("ProjectWorkflowId", payload.ProjectWorkflowId);
     formData.append("DocumentType", payload.DocumentType);
     formData.append("DocumentName", payload.DocumentName);
     formData.append("DocumentNumber", payload.DocumentNumber);
