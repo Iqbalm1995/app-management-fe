@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import CoverLockedFeature from "@/app/components/coverLockedFeature";
 import {
   CustomPanelAlert,
@@ -111,6 +112,7 @@ import {
   AlertIcon,
   AlertTitle,
   AlertDescription,
+  Badge,
 } from "@chakra-ui/react";
 import {
   ColumnDef,
@@ -140,17 +142,58 @@ import {
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Detail",
-  breadCrumb: ["Home", "Project Manager", "Detail"],
+  breadCrumb: ["Home", "Requirements", "Detail"],
 };
 
 const PAGE_MODE: string = "VIEW_DETAIL";
 // const PAGE_MODE: string = "REVIEWER";
 
-function BrdDetailView() {
+function RequirementDetailView() {
   const showToast = useToastHelper();
   const searchParams = useSearchParams();
   const { colorMode } = useColorMode();
+  const reqId = searchParams.get("reqId");
+  const reqType = searchParams.get("type") || "BRD"; // Dynamic type from URL
   const [PageMode, setPageMode] = useState<string>(PAGE_MODE);
+
+  // Dynamic header based on type
+  const getHeaderTitle = () => {
+    switch (reqType) {
+      case "RFC":
+        return "Detail Requirement RFC";
+      case "BRD":
+      default:
+        return "Detail Requirement BRD";
+    }
+  };
+
+  const getHeaderBreadcrumb = () => {
+    switch (reqType) {
+      case "RFC":
+        return [
+          { name: "Requirements", href: "/requirements" },
+          { name: "RFC List", href: "/requirements?type=RFC" },
+          { name: "Detail RFC", href: "#" },
+        ];
+      case "BRD":
+      default:
+        return [
+          { name: "Requirements", href: "/requirements" },
+          { name: "BRD List", href: "/requirements?type=BRD" },
+          { name: "Detail BRD", href: "#" },
+        ];
+    }
+  };
+
+  const getTypeSpecificLabel = (baseLabel: string) => {
+    switch (reqType) {
+      case "RFC":
+        return baseLabel.replace("BRD", "RFC").replace("Business", "Change");
+      case "BRD":
+      default:
+        return baseLabel;
+    }
+  };
 
   const { GetDetailById, ListBacklog, ListReqMedia } = useRequirements();
 
@@ -370,12 +413,12 @@ function BrdDetailView() {
           setDataRequirement(itemsData);
 
           setHeaderContentState({
-            titleName: `${itemsData.requirementType} Detail #${itemsData.reqNumber}`,
+            titleName: `${reqType} Detail #${itemsData.reqNumber}`,
             breadCrumb: [
               "Home",
-              `Requirement`,
+              "Requirements",
+              reqType === "RFC" ? "RFC List" : "BRD List",
               "Detail",
-              `${itemsData.requirementType}`,
             ],
           });
 
@@ -488,8 +531,17 @@ function BrdDetailView() {
     { title: "Step 2", description: "Penugasan Personil & User" },
     { title: "Step 3", description: "Program Kerja" },
     { title: "Step 4", description: "Ringkasan Ruanglingkup" },
-    { title: "Step 5", description: "Lampiran & Approval" },
-    { title: "Step 6", description: "BRD Acceptance" },
+    ...(reqType === "RFC"
+      ? [{ title: "Step 5", description: "Perubahan Sistem" }]
+      : []),
+    {
+      title: reqType === "RFC" ? "Step 6" : "Step 5",
+      description: "Lampiran & Approval",
+    },
+    {
+      title: reqType === "RFC" ? "Step 7" : "Step 6",
+      description: `${reqType} Acceptance`,
+    },
   ];
 
   // Only initialize steps on client-side to prevent hydration mismatch
@@ -531,9 +583,9 @@ function BrdDetailView() {
         breadCrumb={HeaderContentState.breadCrumb}
       />
 
-      <Grid templateColumns="repeat(2, 1fr)" gap={5} w={"full"}>
+      <Grid templateColumns="repeat(2, 1fr)" gap={5} w={"full"} pb={2}>
         <GridItem colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }} w={"full"}>
-          <Link href={"/requirements/brd"}>
+          <Link href={`/requirements/${reqType.toLowerCase()}`}>
             <Button leftIcon={<FiArrowLeft />} size={"md"}>
               Back
             </Button>
@@ -1175,7 +1227,20 @@ function BrdDetailView() {
                       </Flex>
                     )}
 
-                    {activeStep === 5 && (
+                    {reqType === "RFC" && activeStep === 5 && (
+                      <Flex as={Stack} w={"full"} spacing={5}>
+                        <InputGroupPanel
+                          headerTitle={steps[activeStep].description}
+                        >
+                          <RfcBacklogChangesView
+                            DataBacklogs={DataBacklogsRequirement}
+                            colorMode={colorMode}
+                          />
+                        </InputGroupPanel>
+                      </Flex>
+                    )}
+
+                    {activeStep === (reqType === "RFC" ? 6 : 5) && (
                       <Flex as={Stack} w={"full"} spacing={5}>
                         <ReqInfoGeneralSectionView
                           DataRequirement={DataRequirement}
@@ -2279,7 +2344,7 @@ const ReqInfoSummaryFileAttachmentsView = ({
                 colorScheme={"blue"}
                 leftIcon={<FiDownload />}
               >
-                Unggah
+                Unduh
               </Button>
             </Link>
             {info.row.original.objectExtension.replace(".", "").trim() ==
@@ -2578,4 +2643,194 @@ const ReqInfoAcceptanceView = ({
   );
 };
 
-export default BrdDetailView;
+// RFC Backlog Changes View Component
+interface RfcBacklogChangesViewProps {
+  DataBacklogs: BacklogDataResponse[];
+  colorMode: string;
+}
+
+const RfcBacklogChangesView = ({
+  DataBacklogs,
+  colorMode,
+}: RfcBacklogChangesViewProps) => {
+  // Sort by posOrder descending
+  const sortedBacklogs = [...DataBacklogs].sort(
+    (a, b) => (b.posOrder || 0) - (a.posOrder || 0)
+  );
+
+  return (
+    <Flex as={Stack} w={"full"} spacing={5}>
+      {sortedBacklogs.length > 0 ? (
+        sortedBacklogs.map((backlog, index) => (
+          <Grid
+            key={backlog.id}
+            templateColumns="repeat(2, 1fr)"
+            gap={4}
+            w={"full"}
+          >
+            <GridItem colSpan={2} w={"full"}>
+              <Flex as={HStack} w={"full"} justifyContent={"space-between"}>
+                <Heading as="h5" size="sm">
+                  Perubahan Sistem - {index + 1}
+                </Heading>
+                <Badge colorScheme="blue" size="sm">
+                  {backlog.posOrder || index + 1}
+                </Badge>
+              </Flex>
+            </GridItem>
+
+            {/* BEFORE - Left Column */}
+            <GridItem colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }} w={"full"}>
+              <Flex
+                as={Stack}
+                w={"full"}
+                p={5}
+                rounded={radiusStyle}
+                border={"2px"}
+                borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                spacing={2}
+                boxShadow={"md"}
+                minH={"280px"}
+              >
+                <Flex w={"full"} as={HStack} justifyContent={"space-between"}>
+                  <Heading as="h5" size="sm">
+                    Kondisi Eksisting
+                  </Heading>
+                  <Badge
+                    colorScheme={"gray"}
+                    fontSize={"medium"}
+                    px={2}
+                    rounded={"md"}
+                  >
+                    Lama
+                  </Badge>
+                </Flex>
+                <Divider borderColor={"gray.300"} />
+
+                <FormControl>
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Nama Fitur
+                    </FormLabel>
+                    <Text>{backlog.reffData?.backlogName || "-"}</Text>
+                  </InputLayoutFull>
+                </FormControl>
+
+                <FormControl>
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Deskripsi
+                    </FormLabel>
+                    <Text>{backlog.reffData?.backlogDesc || "-"}</Text>
+                  </InputLayoutFull>
+                </FormControl>
+
+                <FormControl>
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Catatan
+                    </FormLabel>
+                    <Text>{backlog.reffData?.note || "-"}</Text>
+                  </InputLayoutFull>
+                </FormControl>
+
+                <FormControl>
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Priority
+                    </FormLabel>
+                    <Badge colorScheme="gray">
+                      {backlog.reffData?.posOrder || 0}
+                    </Badge>
+                  </InputLayoutFull>
+                </FormControl>
+              </Flex>
+            </GridItem>
+
+            {/* AFTER - Right Column */}
+            <GridItem colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }} w={"full"}>
+              <Flex
+                as={Stack}
+                w={"full"}
+                p={5}
+                rounded={radiusStyle}
+                border={"2px"}
+                borderColor={"secondary.300"}
+                spacing={2}
+                boxShadow={"md"}
+                minH={"280px"}
+              >
+                <Flex w={"full"} as={HStack} justifyContent={"space-between"}>
+                  <Heading as="h5" size="sm">
+                    Kondisi Perubahan
+                  </Heading>
+                  <Badge
+                    colorScheme={"secondary"}
+                    fontSize={"medium"}
+                    px={2}
+                    rounded={"md"}
+                  >
+                    Baru
+                  </Badge>
+                </Flex>
+                <Divider borderColor={"gray.300"} />
+
+                <FormControl>
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Nama Fitur
+                    </FormLabel>
+                    <Text>{backlog.backlogName || "-"}</Text>
+                  </InputLayoutFull>
+                </FormControl>
+
+                <FormControl>
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Deskripsi
+                    </FormLabel>
+                    <Text>{backlog.backlogDesc || "-"}</Text>
+                  </InputLayoutFull>
+                </FormControl>
+
+                <FormControl>
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Catatan
+                    </FormLabel>
+                    <Text>{backlog.note || "-"}</Text>
+                  </InputLayoutFull>
+                </FormControl>
+
+                <FormControl>
+                  <InputLayoutFull>
+                    <FormLabel h={"full"} mt={2}>
+                      Priority
+                    </FormLabel>
+                    <Badge colorScheme="secondary">
+                      {backlog.posOrder || 0}
+                    </Badge>
+                  </InputLayoutFull>
+                </FormControl>
+              </Flex>
+            </GridItem>
+          </Grid>
+        ))
+      ) : (
+        <Text color="gray.500" textAlign="center" py={8}>
+          Tidak ada data perubahan sistem
+        </Text>
+      )}
+    </Flex>
+  );
+};
+
+function RequirementDetailViewWithSuspense() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <RequirementDetailView />
+    </Suspense>
+  );
+}
+
+export default RequirementDetailViewWithSuspense;

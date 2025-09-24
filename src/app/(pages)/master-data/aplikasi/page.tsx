@@ -6,6 +6,7 @@ import {
 } from "@/app/components/headerContent";
 import LayoutAdmin from "@/app/components/layoutAdmin";
 import LoadingMiniSignature from "@/app/components/loadingMini";
+import { ControlTable } from "@/app/components/tableComponents";
 import {
   MAX_SIZE_TABLE,
   radiusStyle,
@@ -15,41 +16,39 @@ import {
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
+import useApps, { ApplicationMasterResponse } from "@/app/services/useApps";
 import {
-  addParamFilter,
-  addParamFilterUpdate,
   ListSearchByParamProps,
   PaggingListPayload,
-  removeParamFilter,
 } from "@/app/types/masterTypes";
 import {
+  Badge,
   Button,
   Card,
   CardBody,
   CardHeader,
-  Divider,
   Flex,
   Grid,
   GridItem,
   Heading,
   HStack,
-  Popover,
-  PopoverBody,
-  PopoverContent,
-  PopoverTrigger,
-  Portal,
+  Image,
   Select,
   Stack,
   Text,
   useColorMode,
   VStack,
-  Wrap,
 } from "@chakra-ui/react";
-import { PaginationState } from "@tanstack/react-table";
+import {
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  PaginationState,
+  useReactTable,
+} from "@tanstack/react-table";
 import { motion } from "framer-motion";
-import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { FiFilter, FiPlusSquare, FiRefreshCcw, FiX } from "react-icons/fi";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { FiPlusSquare, FiRefreshCcw } from "react-icons/fi";
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: `Master Data Aplikasi`,
@@ -59,98 +58,157 @@ const HeaderDataContent: HeaderContentProps = {
 // Motion-enhanced version of CardBody
 const MotionCardBody = motion(CardBody);
 
-// Temporary interface for aplikasi data (replace with actual interface later)
-interface AplikasiResponse {
-  id: string;
-  appName: string;
-  appCode: string;
-  appDesc: string;
-  appStatus: string;
-}
-
 function MasterDataAplikasiPage() {
   // SetUp auth data on current page
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
-  const delay = (ms: number) =>
-    new Promise((resolve) => setTimeout(resolve, ms));
 
+  // Services
+  const { List: ListApps, isLoading } = useApps();
+
+  // Data state
+  const [DataAplikasi, setDataAplikasi] = useState<ApplicationMasterResponse[]>([]);
+  const [RefreshData, setRefreshData] = useState<number>(0);
+  const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
+  const [ActionLoading, setActionLoading] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [totalPages, setTotalPageData] = useState<number>(0);
+  const [globalFilter, setGlobalFilter] = useState<string>("");
+
+  // Pagination state
+  const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 9,
+  });
+
+  const [ParamFilter, setParamFilter] = useState<ListSearchByParamProps[]>([]);
+
+  // Memoized values
+  const delay = useCallback(
+    (ms: number) => new Promise((resolve) => setTimeout(resolve, ms)),
+    []
+  );
+
+  const pagination = useMemo(
+    () => ({
+      pageIndex,
+      pageSize,
+    }),
+    [pageIndex, pageSize]
+  );
+
+  // Auth setup effect
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
     const token: string = localStorage.getItem("tokenData") as string;
 
-    if (DataAuth == null) {
-      if (storedData) {
-        const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
-        const UserData: AuthDataResponse =
-          StorageAuth.dataLogin as AuthDataResponse;
-        setDataAuth(UserData);
-      }
+    if (storedData) {
+      const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
+      const UserData: AuthDataResponse =
+        StorageAuth.dataLogin as AuthDataResponse;
+      setDataAuth(UserData);
     }
 
     if (token) {
       setTokenData(token);
     }
-  }, [DataAuth]);
-  // End SetUp auth data on current page
+  }, []);
 
-  const [DataAplikasi, setDataAplikasi] = useState<AplikasiResponse[]>([]);
-  const [RefreshData, setRefreshData] = useState<number>(0);
-  const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
-  const [ActionLoading, setActionLoading] = useState(false);
-  const [selectedKategori, setSelectedKategori] = useState<string>("all");
-
-  const [ParamFilter, setParamFilter] = useState<ListSearchByParamProps[]>([]);
-
-  // Function Data Load Services Aplikasi (placeholder)
+  // Function Data Load Services Aplikasi
   const GetDataAplikasi = async (
     searchValue: string = "",
-    limit: number = 1
-  ): Promise<AplikasiResponse[]> => {
+    pageIdx: number = 0,
+    limit: number = 9
+  ): Promise<ApplicationMasterResponse[]> => {
     setIsLoadingProcess(true);
     
-    // Simulate API call with dummy data
-    await delay(1000);
-    
-    const dummyData: AplikasiResponse[] = [
-      {
-        id: "1",
-        appName: "Project Management System",
-        appCode: "PMS001",
-        appDesc: "Comprehensive project management application for enterprise use",
-        appStatus: "ACTIVE"
-      },
-      {
-        id: "2", 
-        appName: "Human Resource Management",
-        appCode: "HRM002",
-        appDesc: "Complete HR management solution with payroll integration",
-        appStatus: "ACTIVE"
-      },
-      {
-        id: "3",
-        appName: "Customer Relationship Management", 
-        appCode: "CRM003",
-        appDesc: "Advanced CRM system for customer engagement and sales tracking",
-        appStatus: "INACTIVE"
-      }
-    ];
+    const PayloadList: PaggingListPayload = {
+      search: searchValue,
+      limit: limit,
+      page: pageIdx,
+      filterWhere: [],
+      fieldOrder: ["createdAt"],
+      orderDir: "desc",
+    };
 
-    setDataAplikasi(dummyData);
-    setIsLoadingProcess(false);
-    return dummyData;
+    // Add status filter if not "all"
+    if (selectedStatus !== "all") {
+      PayloadList.filterWhere?.push({
+        field: "appsStatus",
+        operator: "=",
+        value: selectedStatus,
+      });
+    }
+
+    const token: string = localStorage.getItem("tokenData") as string;
+    const requestData = await ListApps(PayloadList, token);
+    const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+
+    if (isErrorResponse || !requestData) {
+      showToast({
+        description: requestData?.message || RES_GENERIC_ERROR_MSG,
+        statusToast: "error",
+      });
+      setIsLoadingProcess(false);
+      return [];
+    } else {
+      if (requestData.data == null) {
+        showToast({
+          description: "Data return error",
+          statusToast: "error",
+        });
+        setIsLoadingProcess(false);
+        return [];
+      }
+
+      const itemsData: ApplicationMasterResponse[] =
+        requestData.data as ApplicationMasterResponse[];
+
+      setDataAplikasi(itemsData);
+      setIsLoadingProcess(false);
+
+      return itemsData;
+    }
   };
-  // END - Function Data Load Services Aplikasi
+
+  // Data fetching effect
+  useEffect(() => {
+    if (DataAuth && tokenData) {
+      GetDataAplikasi(globalFilter, pageIndex, pageSize);
+    }
+  }, [DataAuth, tokenData, RefreshData, pageIndex, pageSize, selectedStatus, globalFilter]);
 
   const RefreshAction = () => {
     setRefreshData(RefreshData + 1);
   };
 
-  useEffect(() => {
-    GetDataAplikasi();
-  }, [RefreshData]);
+  // Clear filters
+  const clearFilters = useCallback(() => {
+    setGlobalFilter("");
+    setSelectedStatus("all");
+    setPagination({ pageIndex: 0, pageSize });
+  }, [pageSize]);
+
+  // Table setup for pagination
+  const table = useReactTable({
+    data: DataAplikasi,
+    columns: [], // We're using grid view, so no columns needed
+    state: {
+      globalFilter,
+      pagination,
+    },
+    onPaginationChange: setPagination,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    onGlobalFilterChange: setGlobalFilter,
+    debugTable: false,
+    manualFiltering: true,
+    manualPagination: true,
+    pageCount: Math.ceil(totalPages / pageSize),
+  });
 
   return (
     <LayoutAdmin>
@@ -160,6 +218,7 @@ function MasterDataAplikasiPage() {
       />
 
       <VStack spacing={5} alignItems={"start"} w={"full"} pt={5}>
+        {/* Action Bar */}
         <Grid templateColumns="repeat(12, 1fr)" gap={2} w={"full"}>
           <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}>
             <Flex justifyContent={"start"} px={0} w={"full"}>
@@ -170,19 +229,20 @@ function MasterDataAplikasiPage() {
                 justifyContent={"start"}
               >
                 <Select
-                  value={selectedKategori}
+                  value={selectedStatus}
                   size={"md"}
-                  onChange={(e) => setSelectedKategori(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedStatus(e.target.value);
+                    setPagination({ pageIndex: 0, pageSize });
+                  }}
                   minW={"200px"}
                   maxW={"250px"}
                   bg={colorMode === "light" ? "white" : "gray.800"}
                   borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
                 >
-                  <option value="all">Semua Kategori</option>
-                  <option value="enterprise">Enterprise</option>
-                  <option value="web">Web Application</option>
-                  <option value="mobile">Mobile Application</option>
-                  <option value="desktop">Desktop Application</option>
+                  <option value="all">Semua Status</option>
+                  <option value="ACTIVE">Active</option>
+                  <option value="INACTIVE">Inactive</option>
                 </Select>
               </Stack>
             </Flex>
@@ -222,92 +282,146 @@ function MasterDataAplikasiPage() {
         
         {/* DATA RENDER */}
         {IsLoadingProcess ? <LoadingMiniSignature /> : <></>}
+        
+        {/* Grid View */}
         <Grid templateColumns="repeat(3, 1fr)" gap={5} w={"full"}>
           {DataAplikasi.map((dt, idx) => (
             <GridItem
               colSpan={{ base: 3, sm: 3, md: 1, lg: 1 }}
               w={"full"}
-              key={idx}
+              key={dt.id}
             >
-              <Card
-                w="full"
-                shadow="lg"
-                rounded="2xl"
-                overflow="hidden"
-                bg={colorMode === "light" ? "white" : "gray.800"}
-                border="1px"
-                borderColor={
-                  colorMode === "light" ? "gray.200" : "gray.600"
-                }
-                transition="all 0.3s ease"
-                _hover={{
-                  transform: "translateY(-8px)",
-                  shadow: "2xl",
-                  borderColor: "secondary.400",
-                }}
+              <MotionCardBody
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: idx * 0.1 }}
               >
-                <CardHeader
-                  bg="secondary.500"
-                  color="white"
-                  p={6}
-                  h={"120px"}
+                <Card
+                  w="full"
+                  shadow="lg"
+                  rounded="2xl"
+                  overflow="hidden"
+                  bg={colorMode === "light" ? "white" : "gray.800"}
+                  border="1px"
+                  borderColor={
+                    colorMode === "light" ? "gray.200" : "gray.600"
+                  }
+                  transition="all 0.3s ease"
+                  _hover={{
+                    transform: "translateY(-8px)",
+                    shadow: "2xl",
+                    borderColor: "secondary.400",
+                  }}
                 >
-                  <HStack justify="space-between">
-                    <Heading size="md" fontWeight="700">
-                      {dt.appName}
-                    </Heading>
-                    <Text
-                      fontSize="xs"
-                      bg="whiteAlpha.200"
-                      px={2}
-                      py={1}
-                      rounded="full"
-                      fontFamily="mono"
-                    >
-                      #{dt.appCode}
-                    </Text>
-                  </HStack>
-                </CardHeader>
+                  <CardHeader
+                    bg="secondary.500"
+                    color="white"
+                    p={6}
+                    h={"140px"}
+                  >
+                    <VStack spacing={3} align="start">
+                      <HStack justify="space-between" w="full">
+                        <Badge
+                          colorScheme={dt.appsStatus === "ACTIVE" ? "green" : "red"}
+                          variant="solid"
+                          fontSize="xs"
+                        >
+                          {dt.appsStatus}
+                        </Badge>
+                        <Text
+                          fontSize="xs"
+                          bg="whiteAlpha.200"
+                          px={2}
+                          py={1}
+                          rounded="full"
+                          fontFamily="mono"
+                        >
+                          #{dt.appCode}
+                        </Text>
+                      </HStack>
+                      <Heading size="md" fontWeight="700" noOfLines={2}>
+                        {dt.appName}
+                      </Heading>
+                    </VStack>
+                  </CardHeader>
 
-                <CardBody p={6}>
-                  <Stack spacing={4} h={"120px"}>
-                    <Text
-                      fontSize="sm"
-                      color={
-                        colorMode === "light" ? "gray.600" : "gray.400"
-                      }
-                    >
-                      {dt.appDesc}
-                      <Divider my={2} />
-                      Application management for enterprise systems.
-                    </Text>
-
-                    <HStack justify="space-between">
+                  <CardBody p={6}>
+                    <Stack spacing={4} h={"140px"}>
+                      {dt.iconApps && (
+                        <Image
+                          src={dt.iconApps}
+                          alt={dt.appName}
+                          w="50px"
+                          h="50px"
+                          rounded="lg"
+                          objectFit="cover"
+                        />
+                      )}
+                      
                       <Text
-                        fontSize="xs"
-                        color="gray.500"
-                        fontWeight="medium"
+                        fontSize="sm"
+                        color={
+                          colorMode === "light" ? "gray.600" : "gray.400"
+                        }
+                        noOfLines={3}
                       >
-                        Status: {dt.appStatus}
+                        {dt.appsDesc || "No description available"}
                       </Text>
 
-                      <Button
-                        size="sm"
-                        colorScheme="secondary"
-                        variant="outline"
-                        onClick={() => {
-                          // Detail functionality here
-                        }}
-                      >
-                        Detail
-                      </Button>
-                    </HStack>
-                  </Stack>
-                </CardBody>
-              </Card>
+                      <HStack justify="space-between" mt="auto">
+                        <VStack align="start" spacing={0}>
+                          <Text fontSize="xs" color="gray.500">
+                            Projects: {dt.countProjectAll || 0}
+                          </Text>
+                          <Text fontSize="xs" color="gray.500">
+                            Completed: {dt.countProjectCompleted || 0}
+                          </Text>
+                        </VStack>
+
+                        <Button
+                          size="sm"
+                          colorScheme="secondary"
+                          variant="outline"
+                          onClick={() => {
+                            // Detail functionality here
+                          }}
+                        >
+                          Detail
+                        </Button>
+                      </HStack>
+                    </Stack>
+                  </CardBody>
+                </Card>
+              </MotionCardBody>
             </GridItem>
           ))}
         </Grid>
+
+        {/* Pagination Controls */}
+        {DataAplikasi.length > 0 && (
+          <Flex w="full" px={0} mt={6}>
+            <ControlTable table={table} />
+          </Flex>
+        )}
+
+        {/* Empty State */}
+        {!IsLoadingProcess && DataAplikasi.length === 0 && (
+          <Flex
+            w="full"
+            h="200px"
+            justify="center"
+            align="center"
+            direction="column"
+            color="gray.500"
+          >
+            <Text fontSize="lg" fontWeight="medium">
+              No applications found
+            </Text>
+            <Text fontSize="sm">
+              Try adjusting your filters or add a new application
+            </Text>
+          </Flex>
+        )}
       </VStack>
     </LayoutAdmin>
   );

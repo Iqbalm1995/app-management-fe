@@ -41,6 +41,24 @@ export function capitalizeWords(str: string) {
   return result;
 }
 
+export function formatKBMB(bytes: number): string {
+  const kb = bytes / 1024;
+  if (kb < 1024) {
+    return (kb % 1 === 0 ? kb.toFixed(0) : kb.toFixed(2)) + " KB";
+  }
+  const mb = kb / 1024;
+  return (mb % 1 === 0 ? mb.toFixed(0) : mb.toFixed(2)) + " MB";
+}
+
+export function localToIsoWithOffset(local: string): string {
+  const [date, time] = local.split("T");
+  const [year, month, day] = date.split("-").map(Number);
+  const [hour, minute] = time.split(":").map(Number);
+
+  const d = new Date(year, month - 1, day, hour, minute);
+  return d.toISOString(); // UTC ISO
+}
+
 export const convertToCustomDateFormat = (dateString: string): string => {
   // Parse the date string into a Date object
   const date = new Date(dateString);
