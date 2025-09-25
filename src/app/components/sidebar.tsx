@@ -105,6 +105,7 @@ import { LogoApplications, LogoApplicationsLite } from "./logoApps";
 import { buildUrlPort, truncateToTwoWords } from "../helper/MasterHelper";
 import {
   FaChess,
+  FaCode,
   FaDiagramProject,
   FaFire,
   FaFlipboard,
@@ -116,7 +117,7 @@ import {
 } from "react-icons/fa6";
 import { FooterAdminPanel } from "./layoutLanding";
 import SignatureLineColor from "./signatureStyle";
-import { BsKanban } from "react-icons/bs";
+import { BsCloudUpload, BsKanban, BsRocketTakeoff } from "react-icons/bs";
 import { IoCalendarNumberOutline } from "react-icons/io5";
 import {
   MdChangeHistory,
@@ -130,7 +131,7 @@ import { AuthDataResponse } from "../services/useAuthentications";
 import { BiSolidReport } from "react-icons/bi";
 import { CiMemoPad, CiServer } from "react-icons/ci";
 import { RxActivityLog } from "react-icons/rx";
-import { TbLayoutDashboardFilled } from "react-icons/tb";
+import { TbContract, TbLayoutDashboardFilled } from "react-icons/tb";
 import { FaDraftingCompass } from "react-icons/fa";
 import { PiFlowArrow } from "react-icons/pi";
 // import { useAuth } from "@/context/AuthContext";
@@ -159,6 +160,23 @@ const LinkItems: LinkItemProps[] = [
     role: ["admin"],
     menuID: "1",
     children: [],
+  },
+  {
+    name: "My Workspace",
+    icon: BsRocketTakeoff,
+    link: "/workspace",
+    role: ["admin"],
+    menuID: "1",
+    children: [
+      {
+        name: "My Project",
+        icon: FaCode,
+        link: "/project-development",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+    ],
   },
   {
     name: "Requirements",
@@ -193,22 +211,6 @@ const LinkItems: LinkItemProps[] = [
       // },
     ],
   },
-  // {
-  //   name: "Memo",
-  //   icon: CiMemoPad,
-  //   link: "/memos",
-  //   role: ["admin"],
-  //   menuID: "1",
-  //   children: [],
-  // },
-  // {
-  //   name: "Apps",
-  //   icon: FiPlayCircle,
-  //   link: "/apps",
-  //   role: ["admin"],
-  //   menuID: "1",
-  //   children: [],
-  // },
   {
     name: "Projects",
     icon: FaDiagramProject,
@@ -217,29 +219,29 @@ const LinkItems: LinkItemProps[] = [
     menuID: "1",
     children: [
       {
-        name: "Projects Manager",
-        icon: FaDiagramProject,
+        name: "Internal Development",
+        icon: FaCode,
         link: "/projects-manager",
         role: ["admin"],
         menuID: "1",
         children: [],
       },
       {
-        name: "My Project",
-        icon: FiCode,
-        link: "/project-development",
+        name: "Procurement",
+        icon: TbContract,
+        link: "/projects-procurements",
         role: ["admin"],
         menuID: "1",
         children: [],
       },
-      // {
-      //   name: "Project Tasks",
-      //   icon: BsKanban,
-      //   link: "/project-tasks",
-      //   role: ["admin"],
-      //   menuID: "1",
-      //   children: [],
-      // },
+      {
+        name: "Deployment",
+        icon: BsCloudUpload,
+        link: "/projects-deployments",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
     ],
   },
   // {
@@ -1091,6 +1093,7 @@ function AdditionalProfileBar({
   LiteModeTrigger: boolean;
 }) {
   const { authData, goLogout } = useAuth();
+  const { colorMode } = useColorMode();
 
   // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -1118,15 +1121,16 @@ function AdditionalProfileBar({
   return (
     <>
       <Box
-        bgGradient={
-          LiteModeTrigger
-            ? "linear(to-r, transparent, transparent)"
-            : useColorModeValue(
-                "linear(to-br, gray.100, gray.200)", // for light mode
-                "linear(to-br, gray.700, gray.700)" // for dark mode
-              )
-        }
-        color={useColorModeValue("gray.900", "white")}
+        // bgGradient={
+        //   LiteModeTrigger
+        //     ? "linear(to-r, transparent, transparent)"
+        //     : colorMode == "light"
+        //     ? "linear(to-r, gray.100, gray.100)" // for light mode
+        //     : "linear(to-r, gray.700, gray.700)" // for dark mode
+        // }
+        bg={colorMode == "light" ? "gray.100" : "blackAlpha.500"}
+        // backdropFilter={"blur(20px)"}
+        color={colorMode == "light" ? "gray.900" : "white"}
         m={2}
         mr={LiteModeTrigger ? 2 : 3}
         py={LiteModeTrigger ? 0 : 2}
@@ -1181,7 +1185,8 @@ function AdditionalProfileBar({
             >
               <VStack w={"full"} h={"full"} spacing={0} align={"start"} p={1}>
                 <Text
-                  color={useColorModeValue("gray.900", "white")}
+                  color={colorMode == "light" ? "gray.900" : "white"}
+                  // color={"white"}
                   fontSize={"smaller"}
                   fontWeight={700}
                 >
@@ -1189,7 +1194,8 @@ function AdditionalProfileBar({
                 </Text>
                 <Text
                   fontSize="x-small"
-                  color={useColorModeValue("primary.500", "primary.100")}
+                  color={colorMode == "light" ? "primary.500" : "primary.100"}
+                  // color={"secondary.200"}
                 >
                   {(DataAuth && DataAuth.teamRole?.specName) ||
                     (DataAuth && DataAuth.jabatan)}

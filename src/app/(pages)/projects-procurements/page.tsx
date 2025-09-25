@@ -90,7 +90,7 @@ import {
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
   PROJECT_STATUS_LIST,
-  PROJECT_TYPE_INTERNAL_DEVELOPMENT,
+  PROJECT_TYPE_PROCUREMENT,
 } from "@/app/constants/applicationConstants";
 import {
   PaggingListPayloadCustom,
@@ -99,12 +99,10 @@ import {
 
 // Local Components
 import CardProject from "@/app/components/CardProject";
-import ManagerSidebar from "./components/ManagerSidebar";
-import ModalRegisterProject from "./components/ModalRegisterProject";
 
 const HeaderDataContent: HeaderContentProps = {
-  titleName: "Projects Manager",
-  breadCrumb: ["Home", "Projects Manager"],
+  titleName: "Projects Procurements",
+  breadCrumb: ["Home", "Projects Procurements"],
 };
 
 const ProjectManagerPage = () => {
@@ -189,7 +187,7 @@ const ProjectManagerPage = () => {
       filterWhere.push({
         field: "projectType",
         operator: "=",
-        value: PROJECT_TYPE_INTERNAL_DEVELOPMENT,
+        value: PROJECT_TYPE_PROCUREMENT,
       });
 
       const PayloadList: PaggingListPayloadCustom = {
@@ -324,57 +322,12 @@ const ProjectManagerPage = () => {
     setPagination({ pageIndex: 0, pageSize });
   }, [pageSize]);
 
-  const ModalForm = useDisclosure();
-
-  const handleAddNew = () => {
-    if (DataAuth && DataAuth.team) {
-      ModalForm.onOpen();
-    } else {
-      showToast({
-        description: "Team ID is invalid",
-        statusToast: "error",
-      });
-    }
-  };
-
   return (
     <LayoutAdmin>
       <HeaderContent
         titleName={HeaderDataContent.titleName}
         breadCrumb={HeaderDataContent.breadCrumb}
       />
-
-      {/* MODAL LIST REQUIREMENT FOR REGISTER PROJECT */}
-      <Modal
-        size={"6xl"}
-        isOpen={ModalForm.isOpen}
-        isCentered
-        onClose={ModalForm.onClose}
-      >
-        <ModalOverlay bg="blackAlpha.300" />
-        <ModalContent
-          rounded={radiusStyle}
-          m={2}
-          bg={useColorModeValue("white", "gray.900")}
-        >
-          <ModalHeader>Create New Project</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody w={"full"}>
-            <ModalRegisterProject />
-          </ModalBody>
-
-          <ModalFooter>
-            <Button
-              colorScheme={"gray"}
-              leftIcon={<FiX />}
-              onClick={ModalForm.onClose}
-              isLoading={ActionLoading}
-            >
-              Kembali
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
 
       {/* Modern Project Manager Header Section */}
       <Box
@@ -682,14 +635,14 @@ const ProjectManagerPage = () => {
         >
           {/* Enhanced Manager Sidebar */}
           <GridItem colSpan={{ base: 12, sm: 12, md: 3, lg: 3 }} w={"full"}>
-            <ManagerSidebar
+            {/* <ManagerSidebar
               globalFilter={globalFilter}
               setGlobalFilter={setGlobalFilter}
               statusFilter={statusFilter}
               setStatusFilter={setStatusFilter}
               DataProjects={DataProjects}
               colorMode={colorMode}
-            />
+            /> */}
           </GridItem>
           <GridItem colSpan={{ base: 12, sm: 12, md: 9, lg: 9 }} w={"full"}>
             {/* Main Content Area */}
@@ -868,7 +821,6 @@ const ProjectManagerPage = () => {
                               leftIcon={<FiPlusSquare />}
                               type={"submit"}
                               isLoading={ActionLoading}
-                              onClick={() => handleAddNew()}
                             >
                               Register Project
                             </Button>

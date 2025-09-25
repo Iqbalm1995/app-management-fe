@@ -361,4 +361,10 @@ export const APP_INTEGRATED_OTHER_APPS = [
   "DATA WAREHOUSE",
 ];
 // Workflow Constants
-export const WorkflowProjectDevelopmentId = "656435e1-a98e-4353-856c-5c5ffdf6d9bb";
+export const WorkflowProjectDevelopmentId =
+  "656435e1-a98e-4353-856c-5c5ffdf6d9bb";
+
+// PROJECT TYPE
+export const PROJECT_TYPE_INTERNAL_DEVELOPMENT = "INTERNAL DEVELOPMENT";
+export const PROJECT_TYPE_PROCUREMENT = "PROCUREMENT";
+export const PROJECT_TYPE_DEPLOYMENT = "PROCUREMENT";

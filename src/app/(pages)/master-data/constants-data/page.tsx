@@ -376,6 +376,24 @@ function MasterDataConstantPage() {
     setPagination({ pageIndex: 0, pageSize: MAX_SIZE_TABLE });
   };
 
+  // Handle edit constant from View Group Modal
+  const handleEditConstant = (constant: ConstantDataResponse) => {
+    setEditingConstant(constant);
+    editFormik.setValues({
+      id: constant.id,
+      label: constant.label,
+      value: constant.value,
+      desc: constant.desc || "",
+    });
+    onEditOpen();
+  };
+
+  // Handle delete constant from View Group Modal
+  const handleDeleteConstant = (constantId: string) => {
+    setDeletingId(constantId);
+    setIsDeleteTrigger(true);
+  };
+
   const removeFilterData = (filterToRemove: ListSearchByParamProps) => {
     setParamFilter(removeParamFilter(paramFilter, filterToRemove));
   };
@@ -545,6 +563,10 @@ function MasterDataConstantPage() {
         statusToast: "success",
       });
       setRefreshData((prev) => prev + 1);
+      // Refresh group constants if View Group Modal is open
+      if (selectedEntity) {
+        loadGroupConstants(selectedEntity.value);
+      }
       setDeletingId("");
     } else {
       showToast({
@@ -591,8 +613,18 @@ function MasterDataConstantPage() {
         });
         addFormik.resetForm();
         setRefreshData((prev) => prev + 1);
+        
+        // If adding sub constant, refresh and reopen View Group modal
+        if (prefilledParentGroupCode && selectedEntity) {
+          loadGroupConstants(selectedEntity.value);
+          onAddClose();
+          onViewGroupOpen();
+        } else {
+          onAddClose();
+        }
+        
         setPrefilledGroupCode("");
-        onAddClose();
+        setPrefilledParentGroupCode(null);
       } else {
         showToast({
           description: response?.message || "Failed to add constant",
@@ -623,6 +655,10 @@ function MasterDataConstantPage() {
           statusToast: "success",
         });
         setRefreshData((prev) => prev + 1);
+        // Refresh group constants if View Group Modal is open
+        if (selectedEntity) {
+          loadGroupConstants(selectedEntity.value);
+        }
         onEditClose();
       } else {
         showToast({
@@ -1030,14 +1066,23 @@ function MasterDataConstantPage() {
               <Table size="xs" variant="striped">
                 <Thead>
                   <Tr>
+                    <Th fontSize="xs">Group Code</Th>
                     <Th fontSize="xs">Label</Th>
                     <Th fontSize="xs">Value</Th>
                     <Th fontSize="xs">Description</Th>
+                    <Th fontSize="xs" textAlign="center">
+                      Actions
+                    </Th>
                   </Tr>
                 </Thead>
                 <Tbody>
                   {groupConstants.map((constant) => (
                     <Tr key={constant.id}>
+                      <Td fontSize="xs">
+                        <Badge colorScheme="secondary" variant="subtle">
+                          {constant.groupCode}
+                        </Badge>
+                      </Td>
                       <Td fontSize="xs">{constant.label}</Td>
                       <Td>
                         <Badge
@@ -1049,6 +1094,29 @@ function MasterDataConstantPage() {
                         </Badge>
                       </Td>
                       <Td fontSize="xs">{constant.desc || "-"}</Td>
+                      <Td>
+                        <HStack spacing={1} justify="center">
+                          <IconButton
+                            aria-label="Edit constant"
+                            icon={<FiEdit />}
+                            size="xs"
+                            colorScheme="blue"
+                            variant="ghost"
+                            onClick={() => {
+                              handleEditConstant(constant);
+                              onViewGroupClose();
+                            }}
+                          />
+                          <IconButton
+                            aria-label="Delete constant"
+                            icon={<FiTrash2 />}
+                            size="xs"
+                            colorScheme="red"
+                            variant="ghost"
+                            onClick={() => handleDeleteConstant(constant.id)}
+                          />
+                        </HStack>
+                      </Td>
                     </Tr>
                   ))}
                 </Tbody>
