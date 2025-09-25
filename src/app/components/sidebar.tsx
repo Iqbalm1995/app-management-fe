@@ -308,12 +308,13 @@ const LinkItems: LinkItemProps[] = [
         children: [],
       },
       {
-        name: "Master Aplikasi",
-        icon: HiOutlineDesktopComputer,
-        link: "/master-data/aplikasi",
+        name: "Master Constant",
+        icon: FiKey,
+        link: "/master-data/constants-data",
         role: ["admin"],
         menuID: "1",
         children: [],
+<<<<<<< HEAD
       },    
       {
         name: "Master Constant",
@@ -323,6 +324,17 @@ const LinkItems: LinkItemProps[] = [
         menuID: "1",
         children: [],
       },
+=======
+      },
+      {
+        name: "Master Application",
+        icon: HiOutlineDesktopComputer,
+        link: "/master-data/Application",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },    
+>>>>>>> dev-refan
     ],
   },
   // {
