@@ -316,9 +316,9 @@ const LinkItems: LinkItemProps[] = [
         children: [],
       },
       {
-        name: "Master Aplikasi",
+        name: "Master Application",
         icon: HiOutlineDesktopComputer,
-        link: "/master-data/aplikasi",
+        link: "/master-data/Application",
         role: ["admin"],
         menuID: "1",
         children: [],
