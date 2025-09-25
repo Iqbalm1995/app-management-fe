@@ -124,7 +124,9 @@ function LandingPage() {
             </Text>
             <style jsx>{`
               @keyframes spin {
-                to { transform: rotate(360deg); }
+                to {
+                  transform: rotate(360deg);
+                }
               }
             `}</style>
           </VStack>
@@ -151,6 +153,8 @@ function LandingPage() {
                 alignItems="center"
                 justifyContent="flex-start"
                 px={{ base: 5, sm: 5, md: 20, lg: 20 }}
+                py={10}
+                mt={8}
               >
                 <VStack
                   spacing={10}

@@ -662,7 +662,9 @@ function ReuirementsBRDPage() {
         id: "id",
         cell: (info) => (
           <Flex w={"full"} justifyContent={"center"}>
-            <Link href={`/requirements/detail?reqId=${info.row.original.id}&type=BRD`}>
+            <Link
+              href={`/requirements/detail?reqId=${info.row.original.id}&type=BRD`}
+            >
               <Button leftIcon={<FiInfo />} colorScheme="secondary" size="sm">
                 Detail
               </Button>

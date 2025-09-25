@@ -5804,11 +5804,14 @@ const Section4RFCView = ({
     useRequirements();
 
   const movePriority = (backlogId: string, direction: "up" | "down") => {
-    const currentIndex = DataBackLogs.findIndex((item) => item.backlogId === backlogId);
+    const currentIndex = DataBackLogs.findIndex(
+      (item) => item.backlogId === backlogId
+    );
     if (currentIndex === -1) return;
 
     const newData = [...DataBackLogs];
-    const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+    const targetIndex =
+      direction === "up" ? currentIndex - 1 : currentIndex + 1;
 
     if (targetIndex < 0 || targetIndex >= newData.length) return;
 
@@ -5818,7 +5821,10 @@ const Section4RFCView = ({
     newData[targetIndex].posOrder = temp;
 
     // Swap positions in array
-    [newData[currentIndex], newData[targetIndex]] = [newData[targetIndex], newData[currentIndex]];
+    [newData[currentIndex], newData[targetIndex]] = [
+      newData[targetIndex],
+      newData[currentIndex],
+    ];
 
     setDataBackLogs(newData);
   };
@@ -5847,7 +5853,9 @@ const Section4RFCView = ({
     );
 
     // Sort by posOrder
-    const sortedBacklogData = updatedBacklogData.sort((a, b) => a.posOrder - b.posOrder);
+    const sortedBacklogData = updatedBacklogData.sort(
+      (a, b) => a.posOrder - b.posOrder
+    );
     formik.setFieldValue("backlogFeatures", sortedBacklogData);
 
     // setBacklogData(updatedBacklogData);
@@ -6302,8 +6310,9 @@ const Section4RFCView = ({
   const [MediaAksesPublic, setMediaAksesPublic] = useState(false);
   const [MediaAksesIntranet, setMediaAksesIntranet] = useState(false);
   // Sort DataBackLogs by posOrder
-  const sortedDataBackLogs = [...DataBackLogs].sort((a, b) => a.posOrder - b.posOrder);
-
+  const sortedDataBackLogs = [...DataBackLogs].sort(
+    (a, b) => a.posOrder - b.posOrder
+  );
 
   return (
     <Flex as={Stack} w={"full"} spacing={5}>
@@ -7359,7 +7368,9 @@ const Section4RFCView = ({
                       key={backlog.backlogId || index}
                       p={3}
                       border="1px"
-                      borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                      borderColor={
+                        colorMode === "light" ? "gray.200" : "gray.600"
+                      }
                       rounded="md"
                       alignItems="center"
                       gap={3}
@@ -7368,7 +7379,10 @@ const Section4RFCView = ({
                         <Button
                           size="xs"
                           variant="ghost"
-                          onClick={() => backlog.backlogId && movePriority(backlog.backlogId, "up")}
+                          onClick={() =>
+                            backlog.backlogId &&
+                            movePriority(backlog.backlogId, "up")
+                          }
                           isDisabled={backlog.posOrder === 1}
                         >
                           <ChevronUpIcon />
@@ -7376,8 +7390,13 @@ const Section4RFCView = ({
                         <Button
                           size="xs"
                           variant="ghost"
-                          onClick={() => backlog.backlogId && movePriority(backlog.backlogId, "down")}
-                          isDisabled={backlog.posOrder === sortedDataBackLogs.length}
+                          onClick={() =>
+                            backlog.backlogId &&
+                            movePriority(backlog.backlogId, "down")
+                          }
+                          isDisabled={
+                            backlog.posOrder === sortedDataBackLogs.length
+                          }
                         >
                           <ChevronDownIcon />
                         </Button>

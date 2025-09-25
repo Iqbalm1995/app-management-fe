@@ -26,10 +26,13 @@ import {
   addParamFilter,
   addParamFilterUpdate,
   ColumnMetaCustom,
+  ListSearchByParam,
   ListSearchByParamProps,
+  OptionListProps,
   PaggingListPayload,
   removeParamFilter,
 } from "@/app/types/masterTypes";
+import { Select } from "chakra-react-select";
 import {
   Badge,
   Box,
@@ -95,6 +98,7 @@ import {
   FiX,
 } from "react-icons/fi";
 import * as Yup from "yup";
+import { BsDiagram3 } from "react-icons/bs";
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: `Master Data Constants`,
@@ -118,6 +122,7 @@ function MasterDataConstantPage() {
 
   const {
     ListConstantData,
+    ListConstantGroupCodeData,
     InsertConstantData,
     UpdateConstantData,
     DeleteConstantData,
@@ -167,12 +172,23 @@ function MasterDataConstantPage() {
     useState<ConstantDataResponse | null>(null);
   const [deletingId, setDeletingId] = useState<string>("");
   const [prefilledGroupCode, setPrefilledGroupCode] = useState<string>("");
-  const [prefilledParentGroupCode, setPrefilledParentGroupCode] = useState<string | null>(null);
+  const [prefilledParentGroupCode, setPrefilledParentGroupCode] = useState<
+    string | null
+  >(null);
   const [selectedGroupCode, setSelectedGroupCode] = useState<string>("");
-  const [selectedEntity, setSelectedEntity] = useState<ConstantDataResponse | null>(null);
+  const [selectedEntity, setSelectedEntity] =
+    useState<ConstantDataResponse | null>(null);
   const [groupConstants, setGroupConstants] = useState<ConstantDataResponse[]>(
     []
   );
+
+  // GroupCode filter options
+  const [groupCodeOptions, setGroupCodeOptions] = useState<OptionListProps[]>(
+    []
+  );
+  const [isLoadingGroupCodes, setIsLoadingGroupCodes] = useState(false);
+  const [selectedGroupCodeFilter, setSelectedGroupCodeFilter] =
+    useState<OptionListProps | null>(null);
 
   // Auth setup
   useEffect(() => {
@@ -191,17 +207,33 @@ function MasterDataConstantPage() {
     }
   }, [dataAuth]);
 
+  // Load GroupCode options when component mounts
+  useEffect(() => {
+    if (dataAuth && tokenData) {
+      loadGroupCodeOptions();
+    }
+  }, [dataAuth, tokenData]);
+
   // Data loading function
   const getDataConstants = async (
     searchValue: string = ""
   ): Promise<ConstantDataResponse[]> => {
     setIsLoadingProcess(true);
 
+    const whereDataParam: ListSearchByParam[] = [
+      ...paramFilter,
+      {
+        field: "parentGroupCode",
+        operator: "is null",
+        value: "null",
+      },
+    ];
+
     const payloadList: PaggingListPayload = {
       search: searchValue,
       limit: pagination.pageSize,
       page: pagination.pageIndex,
-      filterWhere: paramFilter,
+      filterWhere: whereDataParam,
       fieldOrder: ["groupCode"],
       orderDir: "asc",
     };
@@ -291,6 +323,59 @@ function MasterDataConstantPage() {
     }
   };
 
+  // Load GroupCode options for filter
+  const loadGroupCodeOptions = async (forceReload: boolean = false) => {
+    if ((groupCodeOptions.length <= 0 || forceReload) && tokenData) {
+      setIsLoadingGroupCodes(true);
+      try {
+        const response = await ListConstantGroupCodeData(tokenData);
+        if (response?.statusCode === RES_CODE_OK) {
+          const data = response.data as ConstantDataResponse[];
+          const options: OptionListProps[] = data.map((item) => ({
+            label: item.groupCode.replace(/_/g, " "),
+            value: item.groupCode,
+          }));
+          setGroupCodeOptions(options);
+        }
+      } catch (error) {
+        console.error("Error loading group codes:", error);
+      } finally {
+        setIsLoadingGroupCodes(false);
+      }
+    }
+  };
+
+  // Handle GroupCode filter change
+  const handleGroupCodeFilterChange = (
+    selectedOption: OptionListProps | null
+  ) => {
+    setSelectedGroupCodeFilter(selectedOption);
+
+    // Remove existing groupCode filter
+    const updatedParams = removeParamFilter(paramFilter, {
+      field: "groupCode",
+      operator: "=",
+      value: "",
+      filterLabel: "Group Code",
+    });
+
+    if (selectedOption) {
+      // Add new groupCode filter
+      const newParams = addParamFilter(updatedParams, {
+        field: "groupCode",
+        operator: "=",
+        value: selectedOption.value,
+        filterLabel: `Group Code: ${selectedOption.label}`,
+      });
+      setParamFilter(newParams);
+    } else {
+      setParamFilter(updatedParams);
+    }
+
+    // Reset pagination and refresh data
+    setPagination({ pageIndex: 0, pageSize: MAX_SIZE_TABLE });
+  };
+
   const removeFilterData = (filterToRemove: ListSearchByParamProps) => {
     setParamFilter(removeParamFilter(paramFilter, filterToRemove));
   };
@@ -346,14 +431,6 @@ function MasterDataConstantPage() {
         cell: (info) => (
           <HStack spacing={2}>
             <Text color="gray.600">{info.getValue() as string}</Text>
-            <IconButton
-              aria-label="View group data"
-              icon={<FiEye />}
-              size="xs"
-              variant="ghost"
-              colorScheme="blue"
-              onClick={() => handleViewGroup(info.row.original)}
-            />
           </HStack>
         ),
         meta: { filterVariant: "text" } as ColumnMetaCustom,
@@ -370,18 +447,20 @@ function MasterDataConstantPage() {
       },
       {
         accessorKey: "parentGroupCode",
-        header: "Parent Group Code",
+        header: "Child Data",
         cell: (info) => (
           <HStack spacing={2}>
             <Text color="gray.600">{info.getValue() as string}</Text>
-            <IconButton
-              aria-label="View parent group data"
-              icon={<FiEye />}
+            <Button
+              aria-label="View child group data"
+              leftIcon={<BsDiagram3 />}
               size="xs"
-              variant="ghost"
-              colorScheme="blue"
+              variant="outline"
+              colorScheme="secondary"
               onClick={() => handleViewGroup(info.row.original)}
-            />
+            >
+              Child Data
+            </Button>
           </HStack>
         ),
 
@@ -478,6 +557,8 @@ function MasterDataConstantPage() {
 
   const refreshAction = () => {
     setRefreshData(refreshData + 1);
+    // Force reload GroupCode options
+    loadGroupCodeOptions(true);
   };
 
   // Form validation
@@ -574,9 +655,28 @@ function MasterDataConstantPage() {
 
       <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"}>
         <GridItem colSpan={12}>
-          <Card rounded={radiusStyle} shadow={"md"}>
+          <Card
+            rounded={radiusStyle}
+            shadow={"md"}
+            bgColor={colorMode == "light" ? "white" : "gray.800"}
+          >
             <CardHeader>
-              <HStack justifyContent={"end"}>
+              <HStack justifyContent={"space-between"} w="full">
+                {/* GroupCode Filter - Left Side */}
+                <Box minW="250px">
+                  <Select
+                    placeholder="Filter by Group Code"
+                    options={groupCodeOptions}
+                    isSearchable={true}
+                    isClearable={true}
+                    isLoading={isLoadingGroupCodes}
+                    value={selectedGroupCodeFilter}
+                    onChange={handleGroupCodeFilterChange}
+                    // size="sm"
+                  />
+                </Box>
+
+                {/* Action Buttons - Right Side */}
                 <HStack>
                   <Popover closeOnBlur={false} placement="bottom">
                     <PopoverTrigger>
@@ -584,7 +684,7 @@ function MasterDataConstantPage() {
                         leftIcon={<FiFilter />}
                         colorScheme="gray"
                         variant="outline"
-                        size="sm"
+                        // size="sm"
                       >
                         Filter
                         {paramFilter.length > 0 && (
@@ -643,7 +743,7 @@ function MasterDataConstantPage() {
                     leftIcon={<FiRefreshCcw />}
                     colorScheme="gray"
                     variant="outline"
-                    size="sm"
+                    // size="sm"
                     onClick={refreshAction}
                     isLoading={isLoadingProcess}
                   >
@@ -652,7 +752,7 @@ function MasterDataConstantPage() {
                   <Button
                     leftIcon={<FiPlusSquare />}
                     colorScheme="blue"
-                    size="sm"
+                    // size="sm"
                     onClick={() => {
                       setPrefilledGroupCode("");
                       onAddOpen();
@@ -917,7 +1017,7 @@ function MasterDataConstantPage() {
       </Modal>
 
       {/* View Group Modal */}
-      <Modal isOpen={isViewGroupOpen} onClose={onViewGroupClose} size="lg">
+      <Modal isOpen={isViewGroupOpen} onClose={onViewGroupClose} size="5xl">
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>Group: {selectedGroupCode}</ModalHeader>
@@ -927,7 +1027,7 @@ function MasterDataConstantPage() {
               Showing {groupConstants.length} constants in this group
             </Text>
             <Box overflowX="auto">
-              <Table size="xs">
+              <Table size="xs" variant="striped">
                 <Thead>
                   <Tr>
                     <Th fontSize="xs">Label</Th>
@@ -963,8 +1063,8 @@ function MasterDataConstantPage() {
               mr={3}
               onClick={() => {
                 if (selectedEntity) {
-                  setPrefilledParentGroupCode(selectedEntity.value);  // parentGroupCode = entity.value
-                  setPrefilledGroupCode(selectedEntity.groupCode);    // groupCode = entity.groupCode
+                  setPrefilledParentGroupCode(selectedEntity.value); // parentGroupCode = entity.value
+                  setPrefilledGroupCode(selectedEntity.groupCode); // groupCode = entity.groupCode
                 }
                 onViewGroupClose();
                 onAddOpen();

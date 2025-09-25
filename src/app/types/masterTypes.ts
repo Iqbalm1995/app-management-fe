@@ -61,7 +61,18 @@ export interface PaggingListPayloadCustom {
 
 export interface ListSearchByParam {
   field: string;
-  operator: "%" | "=" | "!=" | ">" | "<" | ">=" | "<=" | "like" | "not like";
+  operator:
+    | "%"
+    | "="
+    | "!="
+    | ">"
+    | "<"
+    | ">="
+    | "<="
+    | "like"
+    | "not like"
+    | "is null"
+    | "is not null";
   value: string | null;
 }
 
