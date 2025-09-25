@@ -135,228 +135,177 @@ const CardProjectDeployment = memo(
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         w="full"
-        h="480px"
-        minH="480px"
-        maxH="480px"
-        bg={useColorModeValue("white", "gray.800")}
+        h="320px"
+        minH="320px"
+        maxH="320px"
+        bg={colorMode === "light" ? "white" : "gray.800"}
         border="1px"
-        borderColor={useColorModeValue("gray.200", "gray.700")}
-        rounded="2xl"
-        shadow={isHovered ? "2xl" : "lg"}
+        borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+        rounded="xl"
+        shadow={isHovered ? "xl" : "md"}
         transition="all 0.3s ease"
-        // transform={isHovered ? "translateY(-8px)" : "translateY(0)"}
+        transform={isHovered ? "translateY(-4px)" : "translateY(0)"}
         _hover={{
           cursor: "pointer",
-          // borderColor: variant === "manager" ? "blue.300" : "secondary.300",
+          borderColor:
+            variant === "deployment"
+              ? "green.300"
+              : variant === "procurement"
+              ? "yellow.300"
+              : variant === "manager"
+              ? "blue.300"
+              : "secondary.300",
         }}
         overflow="hidden"
         position="relative"
         display="flex"
         flexDirection="column"
       >
-        {/* Header with App Icon and Status */}
+        {/* Small Colored Header */}
         <CardHeader
           p={0}
           position="relative"
-          // bgGradient={
-          //   variant === "manager"
-          //     ? "linear(to-br, teal.700, teal.400)"
-          //     : "linear(to-br, secondary.700, secondary.400)"
-          // }
-          bgGradient={"linear(to-br, secondary.700, secondary.400)"}
+          bgGradient={
+            variant === "deployment"
+              ? "linear(to-r, green.500, teal.500)"
+              : variant === "procurement"
+              ? "linear(to-r, yellow.500, orange.500)"
+              : variant === "manager"
+              ? "linear(to-r, blue.500, purple.500)"
+              : "linear(to-r, purple.500, blue.500)"
+          }
           color="white"
-          h="200px"
+          h="120px"
           display="flex"
           alignItems="center"
-          justifyContent="center"
+          justifyContent="space-between"
+          px={4}
         >
-          {/* App Icon */}
-          <VStack spacing={3} position="relative" zIndex={1}>
+          {/* Project Initial */}
+          <HStack spacing={3}>
             <Box
-              w={"60px"}
-              h={"60px"}
-              bg="whiteAlpha.200"
-              rounded="xl"
+              w="40px"
+              h="40px"
+              minW="40px"
+              flexShrink={0}
+              bg="whiteAlpha.300"
+              rounded="md"
               display="flex"
               alignItems="center"
               justifyContent="center"
-              fontSize="3xl"
+              fontSize="lg"
               fontWeight="bold"
-              border="2px"
-              borderColor="whiteAlpha.300"
             >
-              {data.appsProject?.appShortName?.charAt(0) ||
-                data.appsProject?.appName?.charAt(0) ||
-                data.projectName.charAt(0)}
+              {data.projectName.charAt(0)}
             </Box>
-            <VStack spacing={0} align="center">
+            <VStack spacing={0} align="start">
               <Text
                 fontSize="sm"
-                fontWeight="bold"
+                fontWeight="semibold"
                 opacity="0.9"
-                textAlign="center"
+                noOfLines={1}
               >
-                {data.appsProject.appName}
+                {data.projectName}
               </Text>
-              <Text
-                fontSize="xs"
-                fontWeight="medium"
-                opacity="0.8"
-                textAlign="center"
-              >
-                {data.projectType} | {data.projectCategory}
+              <Text fontSize="xs" opacity="0.7">
+                {data.projectType}
               </Text>
             </VStack>
-          </VStack>
+          </HStack>
 
           {/* Status Badge */}
-          {/* <Badge
-            position="absolute"
-            top={4}
-            right={4}
+          <Badge
             colorScheme={getStatusColor(data.projectStatus)}
-            rounded="full"
+            rounded="md"
             px={2}
             py={1}
             fontSize="xs"
-            fontWeight="bold"
+            fontWeight="medium"
           >
             {data.projectStatus}
-          </Badge> */}
+          </Badge>
         </CardHeader>
 
-        {/* Card Body */}
-        <CardBody p={6} flex="1" display="flex" flexDirection="column">
+        {/* Compact Card Body */}
+        <CardBody p={4} flex="1" display="flex" flexDirection="column">
           <VStack spacing={4} align="stretch" flex="1">
-            {/* Project Info */}
-            <VStack spacing={2} align="start">
-              <HStack spacing={2} w="full" justify="space-between">
-                <Text fontSize="xs" color="gray.500" fontWeight="medium">
-                  #{data.projectNo || data.projectCode}
-                </Text>
-                <HStack spacing={1}>
-                  <Icon as={FiActivity} size="12px" color="gray.400" />
-                  <Text fontSize="xs" color="gray.500">
-                    {getProjectHealthRating(data.projectStatusPercentage)}
-                  </Text>
-                </HStack>
-              </HStack>
-
-              <Tooltip
-                label={data.projectName}
-                hasArrow
-                placement="top"
-                isDisabled={data.projectName.length <= 45}
+            {/* Project Code & Health */}
+            <HStack justify="space-between">
+              <Text fontSize="xs" color="gray.400" fontWeight="medium">
+                #{data.projectNo || data.projectCode}
+              </Text>
+              <Text
+                fontSize="xs"
+                color={`${getProgressColor(data.projectStatusPercentage)}.500`}
+                fontWeight="semibold"
               >
-                <Heading
-                  size="md"
-                  color={useColorModeValue("gray.800", "white")}
-                  noOfLines={2}
-                  minH="48px"
-                  maxH="48px"
-                  display="flex"
-                  alignItems="start"
-                  lineHeight="1.3"
-                  overflow="hidden"
-                >
-                  {data.projectName}
-                </Heading>
-              </Tooltip>
+                {getProjectHealthRating(data.projectStatusPercentage)}
+              </Text>
+            </HStack>
 
-              {/* App Name - Show if different from project name */}
-              {/* {data.appsProject?.appName &&
-                data.appsProject.appName !== data.projectName && (
+            {/* Progress & Team Row */}
+            <HStack spacing={4} align="start">
+              {/* Progress */}
+              <VStack spacing={2} align="start" flex="1">
+                <HStack justify="space-between" w="full">
+                  <Text fontSize="sm" color="gray.600" fontWeight="500">
+                    Progress
+                  </Text>
                   <Text
                     fontSize="sm"
-                    color="gray.600"
-                    fontWeight="medium"
-                    noOfLines={1}
+                    fontWeight="600"
+                    color={`${getProgressColor(
+                      data.projectStatusPercentage
+                    )}.500`}
                   >
-                    App: {data.appsProject.appName}
-                  </Text>
-                )} */}
-            </VStack>
-
-            {/* Progress Section */}
-            <VStack spacing={2} align="stretch">
-              <HStack justify="space-between">
-                <Text fontSize="sm" color="gray.600" fontWeight="medium">
-                  Progress
-                </Text>
-                <Text
-                  fontSize="sm"
-                  fontWeight="bold"
-                  color={`${getProgressColor(
-                    data.projectStatusPercentage
-                  )}.500`}
-                >
-                  {data.projectStatusPercentage}%
-                </Text>
-              </HStack>
-              <Progress
-                value={data.projectStatusPercentage}
-                colorScheme={getProgressColor(data.projectStatusPercentage)}
-                rounded="full"
-                size="md"
-                bg={useColorModeValue("gray.100", "gray.700")}
-              />
-            </VStack>
-
-            {/* Team Section */}
-            <VStack spacing={1} align="stretch" flex="1">
-              <HStack justify="space-between">
-                <HStack spacing={2}>
-                  <Icon as={FiUsers} size="14px" color="gray.500" />
-                  <Text fontSize="sm" color="gray.600" fontWeight="medium">
-                    Team
+                    {data.projectStatusPercentage}%
                   </Text>
                 </HStack>
-                <Text fontSize="xs" color="gray.500">
-                  {data.userAssignment?.length || 0} members
-                </Text>
-              </HStack>
+                <Progress
+                  value={data.projectStatusPercentage}
+                  colorScheme={getProgressColor(data.projectStatusPercentage)}
+                  rounded="full"
+                  size="sm"
+                  bg={colorMode === "light" ? "gray.100" : "gray.700"}
+                  w="full"
+                />
+              </VStack>
 
-              <HStack justify="space-between" align="center">
-                <AvatarGroup size="xs" max={4} spacing="-6px">
+              {/* Team */}
+              <VStack spacing={2} align="end" minW="80px">
+                <Text fontSize="sm" color="gray.600" fontWeight="500">
+                  Team
+                </Text>
+                <AvatarGroup size="xs" max={3} spacing="-4px">
                   {data.userAssignment?.map((user, idx) => (
                     <Avatar
                       key={idx}
                       name={user.userData?.nama || "Unknown"}
                       size="xs"
                       border="1px"
-                      borderColor={useColorModeValue("white", "gray.800")}
+                      borderColor={colorMode === "light" ? "white" : "gray.800"}
                     />
                   )) || []}
                 </AvatarGroup>
+              </VStack>
+            </HStack>
 
-                {data.userAssignment && data.userAssignment.length > 4 && (
-                  <Text fontSize="xs" color="gray.500">
-                    +{data.userAssignment.length - 4} more
-                  </Text>
-                )}
-              </HStack>
-            </VStack>
-
-            {/* Quick Actions - Always at bottom */}
+            {/* Action Button */}
             <Box mt="auto">
               <Link href={config.linkPath} style={{ width: "100%" }}>
                 <Button
-                  size="md"
+                  size="sm"
                   colorScheme={config.colorScheme}
                   leftIcon={<Icon as={config.actionIcon} />}
                   w="full"
                   rounded="lg"
+                  fontWeight="500"
+                  h="40px"
                   _hover={{
                     transform: "translateY(-1px)",
-                    shadow: "lg",
+                    shadow: "md",
                   }}
                   transition="all 0.2s"
-                  fontWeight="bold"
-                  // bgGradient={
-                  //   variant === "manager"
-                  //     ? "linear(to-r, teal.700, teal.400)"
-                  //     : "linear(to-r, secondary.700, secondary.400)"
-                  // }
                 >
                   {config.actionLabel}
                 </Button>
@@ -364,29 +313,6 @@ const CardProjectDeployment = memo(
             </Box>
           </VStack>
         </CardBody>
-
-        {/* Hover Overlay */}
-        {isHovered && (
-          <Box
-            position="absolute"
-            top="0"
-            left="0"
-            right="0"
-            bottom="0"
-            bg={
-              variant === "manager"
-                ? "blue.500"
-                : variant === "procurement"
-                ? "yellow.500"
-                : variant === "deployment"
-                ? "green.500"
-                : "secondary.500"
-            }
-            opacity="0.05"
-            rounded="2xl"
-            pointerEvents="none"
-          />
-        )}
       </Card>
     );
   }
