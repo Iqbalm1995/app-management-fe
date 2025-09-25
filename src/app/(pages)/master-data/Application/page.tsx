@@ -23,6 +23,8 @@ import {
   removeParamFilter,
 } from "@/app/types/masterTypes";
 import {
+  Badge,
+  Box,
   Button,
   Card,
   CardBody,
@@ -61,7 +63,7 @@ import {
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FiFilter, FiPlusSquare, FiRefreshCcw, FiSearch, FiX } from "react-icons/fi";
+import { FiFilter, FiGrid, FiList, FiPlusSquare, FiRefreshCcw, FiSearch, FiX } from "react-icons/fi";
 
 // Import table components
 import {
@@ -118,6 +120,7 @@ function MasterDataAplikasiPage() {
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
   const [ActionLoading, setActionLoading] = useState(false);
   const [selectedKategori, setSelectedKategori] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   // Pagination state
   const [totalPages, setTotalPageData] = useState<number>(0);
@@ -325,7 +328,7 @@ function MasterDataAplikasiPage() {
                     colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }}
                     w={"full"}
                   >
-                    <InputGroup>
+                    <InputGroup maxW={"300px"}>
                       <InputLeftElement pointerEvents="none" h="full">
                         <FiSearch color="gray.400" />
                       </InputLeftElement>
@@ -360,6 +363,37 @@ function MasterDataAplikasiPage() {
                         <option value="mobile">Mobile Application</option>
                         <option value="desktop">Desktop Application</option>
                       </Select>
+                      
+                      {/* View Mode Toggle */}
+                      <HStack
+                        spacing={0}
+                        bg={colorMode === "light" ? "gray.100" : "gray.700"}
+                        rounded="md"
+                        p={1}
+                      >
+                        <Button
+                          size="sm"
+                          variant={viewMode === "grid" ? "solid" : "ghost"}
+                          colorScheme={viewMode === "grid" ? "secondary" : "gray"}
+                          onClick={() => setViewMode("grid")}
+                          leftIcon={<FiGrid />}
+                          px={3}
+                          h={7}
+                        >
+                          Card
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={viewMode === "list" ? "solid" : "ghost"}
+                          colorScheme={viewMode === "list" ? "secondary" : "gray"}
+                          onClick={() => setViewMode("list")}
+                          leftIcon={<FiList />}
+                          px={3}
+                          h={7}
+                        >
+                          List
+                        </Button>
+                      </HStack>
                       <Button
                         colorScheme={"secondary"}
                         leftIcon={<FiPlusSquare />}
@@ -384,6 +418,8 @@ function MasterDataAplikasiPage() {
                 {/* DATA RENDER */}
                 {IsLoadingProcess ? <LoadingMiniSignature /> : <></>}
                 <Grid templateColumns="repeat(3, 1fr)" gap={5} w={"full"}>
+                {viewMode === "grid" && (
+                  <>
                   {DataAplikasi.map((dt, idx) => (
                     <GridItem
                       colSpan={{ base: 3, sm: 3, md: 1, lg: 1 }}
@@ -468,7 +504,142 @@ function MasterDataAplikasiPage() {
                       </Card>
                     </GridItem>
                   ))}
+                  </>
+                )}
                 </Grid>
+
+                {/* List View */}
+                {viewMode === "list" && (
+                  <VStack spacing={3} align="stretch" w={"full"}>
+                    {DataAplikasi.map((dt, idx) => (
+                      <Card
+                        key={idx}
+                        w="full"
+                        shadow="sm"
+                        rounded="lg"
+                        overflow="hidden"
+                        bg={colorMode === "light" ? "white" : "gray.800"}
+                        border="1px"
+                        borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                        transition="all 0.3s ease"
+                        _hover={{
+                          shadow: "md",
+                          borderColor: "secondary.400",
+                          transform: "translateY(-1px)",
+                        }}
+                      >
+                        <CardBody p={4}>
+                          <Grid
+                            templateColumns={{ base: "1fr", md: "auto 1fr auto auto" }}
+                            gap={4}
+                            alignItems="center"
+                          >
+                            <GridItem>
+                              <Box
+                                w={12}
+                                h={12}
+                                bg="secondary.500"
+                                rounded="lg"
+                                display="flex"
+                                alignItems="center"
+                                justifyContent="center"
+                                color="white"
+                                fontSize="sm"
+                                fontWeight="bold"
+                                flexShrink={0}
+                              >
+                                {dt.appCode.slice(-3)}
+                              </Box>
+                            </GridItem>
+                            <GridItem>
+                              <VStack align="start" spacing={1}>
+                                <HStack spacing={3}>
+                                  <Heading
+                                    size="sm"
+                                    color={colorMode === "light" ? "gray.800" : "white"}
+                                  >
+                                    {dt.appName}
+                                  </Heading>
+                                  <Text
+                                    fontSize="xs"
+                                    bg={colorMode === "light" ? "gray.100" : "gray.700"}
+                                    px={2}
+                                    py={1}
+                                    rounded="full"
+                                    fontFamily="mono"
+                                    color={colorMode === "light" ? "gray.600" : "gray.300"}
+                                  >
+                                    #{dt.appCode}
+                                  </Text>
+                                </HStack>
+                                <Text
+                                  fontSize="sm"
+                                  color={colorMode === "light" ? "gray.600" : "gray.400"}
+                                  noOfLines={2}
+                                >
+                                  {dt.appDesc}
+                                </Text>
+                              </VStack>
+                            </GridItem>
+                            <GridItem display={{ base: "none", md: "block" }}>
+                              <Badge
+                                colorScheme={dt.appStatus === "ACTIVE" ? "green" : "red"}
+                                px={3}
+                                py={1}
+                                rounded="full"
+                                fontSize="xs"
+                                fontWeight="medium"
+                              >
+                                {dt.appStatus}
+                              </Badge>
+                            </GridItem>
+                            <GridItem>
+                              <Button
+                                size="sm"
+                                colorScheme="secondary"
+                                variant="ghost"
+                                onClick={() => {}}
+                                _hover={{
+                                  transform: "translateY(-1px)",
+                                  shadow: "sm",
+                                }}
+                                transition="all 0.2s"
+                              >
+                                Detail →
+                              </Button>
+                            </GridItem>
+                          </Grid>
+                          <Box
+                            display={{ base: "block", md: "none" }}
+                            mt={3}
+                            pt={3}
+                            borderTop="1px"
+                            borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                          >
+                            <HStack justify="space-between">
+                              <Badge
+                                colorScheme={dt.appStatus === "ACTIVE" ? "green" : "red"}
+                                px={2}
+                                py={1}
+                                rounded="full"
+                                fontSize="xs"
+                              >
+                                {dt.appStatus}
+                              </Badge>
+                              <Text
+                                fontSize="xs"
+                                color="gray.500"
+                                fontWeight="medium"
+                              >
+                                Application management
+                              </Text>
+                            </HStack>
+                          </Box>
+                        </CardBody>
+                      </Card>
+                    ))}
+                  </VStack>
+                )}
                 
                 {/* Pagination Controls */}
                 {DataAplikasi.length > 0 && (
