@@ -48,6 +48,9 @@ import {
   FiGrid,
   FiList,
   FiSettings,
+  FiShoppingCart,
+  FiTruck,
+  FiDollarSign,
   FiCheckCircle,
   FiClock,
   FiAlertCircle,
@@ -99,6 +102,8 @@ import {
 
 // Local Components
 import CardProject from "@/app/components/CardProject";
+import ManagerSidebarProcurement from "./components/ManagerSidebarProcurement";
+import ModalRegisterProject from "../projects-manager/components/ModalRegisterProject";
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Projects Procurements",
@@ -132,7 +137,6 @@ const ProjectManagerPage = () => {
   // UI state
   const [ActionLoading, setActionLoading] = useState(false);
   const [IsEditMode, setIsEditMode] = useState(false);
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid"); // View mode state
 
   // Memoized values
   const delay = useCallback(
@@ -265,7 +269,7 @@ const ProjectManagerPage = () => {
           <CardProject
             data={info.row.original}
             key={info.row.original.projectCode}
-            variant="manager"
+            variant="procurement"
           />
         ),
         header: () => <span>Projects</span>,
@@ -329,300 +333,220 @@ const ProjectManagerPage = () => {
         breadCrumb={HeaderDataContent.breadCrumb}
       />
 
-      {/* Modern Project Manager Header Section */}
+      {/* Modern Abstract Procurement Header */}
       <Box
-        bg={colorMode === "light" ? "white" : "gray.800"}
-        border="1px"
-        borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-        rounded="2xl"
+        position="relative"
+        bgGradient={
+          colorMode == "light"
+            ? "linear(45deg, yellow.400, yellow.600, orange.600)"
+            : "linear(45deg, yellow.700, yellow.800, orange.800)"
+        }
+        rounded={radiusStyle}
         shadow="2xl"
-        px={2}
         mx={{ base: 4, sm: 5, md: 6 }}
-        // mx={{ base: 2, md: 4 }}
         mt={{ base: 2, md: 4 }}
         mb={{ base: 4, md: 6 }}
         overflow="hidden"
-        position="relative"
+        h={{ base: "160px", md: "180px" }}
       >
-        {/* BJB Logo Overlay Pattern */}
+        {/* Abstract Geometric Shapes */}
         <Box
           position="absolute"
-          top="50%"
-          left="-100px"
-          transform="translateY(-50%)"
-          w="300px"
-          h="300px"
-          opacity="0.15"
-          zIndex={0}
-          backgroundImage="url('/img/logo-bjb-black-wing.svg')"
-          backgroundSize="contain"
-          backgroundRepeat="no-repeat"
-          backgroundPosition="center"
-          filter="brightness(0) saturate(100%) invert(27%) sepia(98%) saturate(1352%) hue-rotate(170deg) brightness(96%) contrast(97%)"
-        />
-
-        {/* Decorative Background Elements */}
-        <Box
-          position="absolute"
-          top="-40px"
-          right="-40px"
-          w="160px"
-          h="160px"
-          bg="blue.100"
+          top="-20px"
+          right="20px"
+          w="80px"
+          h="80px"
+          bg="whiteAlpha.200"
           rounded="full"
-          opacity="0.3"
-          zIndex={0}
+          filter="blur(20px)"
+        />
+        <Box
+          position="absolute"
+          bottom="-10px"
+          left="30px"
+          w="60px"
+          h="60px"
+          bg="whiteAlpha.300"
+          transform="rotate(45deg)"
+          filter="blur(15px)"
+        />
+        <Box
+          position="absolute"
+          top="30px"
+          left="60%"
+          w="40px"
+          h="40px"
+          bg="whiteAlpha.200"
+          rounded="md"
+          transform="rotate(30deg)"
+          filter="blur(10px)"
         />
 
-        <Box
-          px={{ base: 4, sm: 5, md: 6 }}
-          py={{ base: 5, md: 6 }}
+        <VStack
+          h="full"
+          justify="center"
+          align="stretch"
+          px={{ base: 6, md: 8 }}
+          py={4}
           position="relative"
           zIndex={1}
+          spacing={4}
         >
-          <Grid
-            templateColumns={{ base: "1fr", lg: "1fr auto" }}
-            gap={6}
-            alignItems="center"
-          >
-            {/* Left Content */}
-            <VStack align="start" spacing={4}>
-              {/* Title Section */}
-              <HStack spacing={4}>
-                <Box
-                  w={"80px"}
-                  h={"80px"}
-                  bgGradient={"linear(to-br, secondary.700, secondary.400)"}
-                  rounded="2xl"
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
+          {/* Top Row */}
+          <Flex justify="space-between" align="center">
+            <HStack spacing={4}>
+              <Box
+                w="60px"
+                h="60px"
+                bg="whiteAlpha.200"
+                backdropFilter="blur(10px)"
+                rounded="xl"
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                border="1px solid"
+                borderColor="whiteAlpha.300"
+              >
+                <Icon as={FiTarget} boxSize={6} color="white" />
+              </Box>
+              <VStack align="start" spacing={1}>
+                <Heading
+                  size="lg"
                   color="white"
-                  fontSize="xl"
-                  shadow="lg"
+                  fontWeight="700"
+                  letterSpacing="tight"
                 >
-                  <Icon as={FiSettings} boxSize={6} color="white" />
-                </Box>
-                <VStack align="start" spacing={1}>
-                  <Heading
-                    size="xl"
-                    color={colorMode === "light" ? "gray.800" : "white"}
-                    fontWeight="bold"
-                  >
-                    Projects Management Hub
-                  </Heading>
-                  <Text
-                    fontSize="md"
-                    color={colorMode === "light" ? "gray.600" : "gray.300"}
-                    fontWeight="medium"
-                  >
-                    Oversee and manage all team projects
-                  </Text>
-                </VStack>
-              </HStack>
+                  Project Procurement
+                </Heading>
+                <Text fontSize="sm" color="whiteAlpha.800" fontWeight="500">
+                  Strategic project acquisition & delivery management
+                </Text>
+              </VStack>
+            </HStack>
 
-              {/* Feature Tags */}
-              <HStack spacing={3} flexWrap="wrap">
-                <Badge
-                  colorScheme="blue"
-                  px={4}
-                  py={2}
-                  rounded="full"
-                  fontSize="sm"
-                  fontWeight="medium"
+            {/* Quick Stats */}
+            <HStack spacing={6} display={{ base: "none", lg: "flex" }}>
+              <VStack spacing={0}>
+                <Text fontSize="2xl" fontWeight="bold" color="white">
+                  {DataProjects.length}
+                </Text>
+                <Text
+                  fontSize="xs"
+                  color="whiteAlpha.700"
+                  textTransform="uppercase"
                 >
-                  <Icon as={FiTarget} w={3} h={3} mr={2} />
-                  Project Management
-                </Badge>
-                <Badge
-                  colorScheme="blue"
-                  px={4}
-                  py={2}
-                  rounded="full"
-                  fontSize="sm"
-                  fontWeight="medium"
-                >
-                  <Icon as={FiUsers} w={3} h={3} mr={2} />
-                  Team Oversight
-                </Badge>
-                <Badge
-                  colorScheme="green"
-                  px={4}
-                  py={2}
-                  rounded="full"
-                  fontSize="sm"
-                  fontWeight="medium"
-                >
-                  <Icon as={FiBarChart2} w={3} h={3} mr={2} />
-                  Management Analytics
-                </Badge>
-              </HStack>
-            </VStack>
-
-            {/* Right Content - Stats Grid */}
-            <Box>
-              <Grid templateColumns="repeat(2, 1fr)" gap={3} minW="260px">
-                {/* Total Projects */}
-                <Card
-                  bg={colorMode === "light" ? "blue.50" : "blue.900"}
-                  border="1px"
-                  borderColor={colorMode === "light" ? "blue.200" : "blue.700"}
-                  rounded="lg"
-                >
-                  <CardBody p={4} textAlign="center">
-                    <VStack spacing={2}>
-                      <Box
-                        w={8}
-                        h={8}
-                        bg="blue.500"
-                        rounded="lg"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                        color="white"
-                        fontSize="md"
-                      >
-                        <Icon as={FiFolder} boxSize={4} />
-                      </Box>
-                      <Text fontSize="xl" fontWeight="bold" color="blue.600">
-                        {DataProjects.length}
-                      </Text>
-                      <Text
-                        fontSize="xs"
-                        color={colorMode === "light" ? "blue.600" : "blue.300"}
-                      >
-                        Total Projects
-                      </Text>
-                    </VStack>
-                  </CardBody>
-                </Card>
-
-                {/* Active Projects */}
-                <Card
-                  bg={colorMode === "light" ? "green.50" : "green.900"}
-                  border="1px"
-                  borderColor={
-                    colorMode === "light" ? "green.200" : "green.700"
+                  Projects
+                </Text>
+              </VStack>
+              <Box w="1px" h="40px" bg="whiteAlpha.300" />
+              <VStack spacing={0}>
+                <Text fontSize="2xl" fontWeight="bold" color="white">
+                  {
+                    DataProjects.filter((p) => p.projectStatus === "ACTIVE")
+                      .length
                   }
-                  rounded="lg"
+                </Text>
+                <Text
+                  fontSize="xs"
+                  color="whiteAlpha.700"
+                  textTransform="uppercase"
                 >
-                  <CardBody p={4} textAlign="center">
-                    <VStack spacing={2}>
-                      <Box
-                        w={8}
-                        h={8}
-                        bg="green.500"
-                        rounded="lg"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                        color="white"
-                        fontSize="md"
-                      >
-                        <Icon as={FiZap} boxSize={4} />
-                      </Box>
-                      <Text fontSize="xl" fontWeight="bold" color="green.600">
-                        {
-                          DataProjects.filter(
-                            (p) => p.projectStatus === "ACTIVE"
-                          ).length
-                        }
-                      </Text>
-                      <Text
-                        fontSize="xs"
-                        color={
-                          colorMode === "light" ? "green.600" : "green.300"
-                        }
-                      >
-                        Active Projects
-                      </Text>
-                    </VStack>
-                  </CardBody>
-                </Card>
-
-                {/* Average Progress */}
-                <Card
-                  bg={colorMode === "light" ? "blue.50" : "blue.900"}
-                  border="1px"
-                  borderColor={colorMode === "light" ? "blue.200" : "blue.700"}
-                  rounded="lg"
+                  Active
+                </Text>
+              </VStack>
+              <Box w="1px" h="40px" bg="whiteAlpha.300" />
+              <VStack spacing={0}>
+                <Text fontSize="2xl" fontWeight="bold" color="white">
+                  {Math.round(
+                    DataProjects.reduce(
+                      (acc, p) => acc + p.projectStatusPercentage,
+                      0
+                    ) / (DataProjects.length || 1)
+                  )}
+                  %
+                </Text>
+                <Text
+                  fontSize="xs"
+                  color="whiteAlpha.700"
+                  textTransform="uppercase"
                 >
-                  <CardBody p={4} textAlign="center">
-                    <VStack spacing={2}>
-                      <Box
-                        w={8}
-                        h={8}
-                        bg="blue.500"
-                        rounded="lg"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                        color="white"
-                        fontSize="md"
-                      >
-                        <Icon as={FiTrendingUp} boxSize={4} />
-                      </Box>
-                      <Text fontSize="xl" fontWeight="bold" color="blue.600">
-                        {Math.round(
-                          DataProjects.reduce(
-                            (acc, p) => acc + p.projectStatusPercentage,
-                            0
-                          ) / (DataProjects.length || 1)
-                        )}
-                        %
-                      </Text>
-                      <Text
-                        fontSize="xs"
-                        color={colorMode === "light" ? "blue.600" : "blue.300"}
-                      >
-                        Avg Progress
-                      </Text>
-                    </VStack>
-                  </CardBody>
-                </Card>
+                  Progress
+                </Text>
+              </VStack>
+            </HStack>
+          </Flex>
 
-                {/* Team Count */}
-                <Card
-                  bg={colorMode === "light" ? "orange.50" : "orange.900"}
-                  border="1px"
-                  borderColor={
-                    colorMode === "light" ? "orange.200" : "orange.700"
+          {/* Bottom Row - Feature Tags & Mobile Stats */}
+          <Flex justify="space-between" align="center" flexWrap="wrap" gap={3}>
+            <HStack spacing={2} flexWrap="wrap">
+              <Badge
+                bg="whiteAlpha.200"
+                color="white"
+                px={3}
+                py={1}
+                rounded="full"
+                fontSize="xs"
+                fontWeight="medium"
+                border="1px solid"
+                borderColor="whiteAlpha.300"
+              >
+                <Icon as={FiFolder} w={3} h={3} mr={1} />
+                Portfolio Management
+              </Badge>
+              <Badge
+                bg="whiteAlpha.200"
+                color="white"
+                px={3}
+                py={1}
+                rounded="full"
+                fontSize="xs"
+                fontWeight="medium"
+                border="1px solid"
+                borderColor="whiteAlpha.300"
+              >
+                <Icon as={FiUsers} w={3} h={3} mr={1} />
+                Team Coordination
+              </Badge>
+              <Badge
+                bg="whiteAlpha.200"
+                color="white"
+                px={3}
+                py={1}
+                rounded="full"
+                fontSize="xs"
+                fontWeight="medium"
+                border="1px solid"
+                borderColor="whiteAlpha.300"
+              >
+                <Icon as={FiTrendingUp} w={3} h={3} mr={1} />
+                Performance Tracking
+              </Badge>
+            </HStack>
+
+            {/* Mobile Stats */}
+            <HStack spacing={4} display={{ base: "flex", lg: "none" }}>
+              <VStack spacing={0}>
+                <Text fontSize="lg" fontWeight="bold" color="white">
+                  {DataProjects.length}
+                </Text>
+                <Text fontSize="xs" color="whiteAlpha.700">
+                  Total
+                </Text>
+              </VStack>
+              <VStack spacing={0}>
+                <Text fontSize="lg" fontWeight="bold" color="white">
+                  {
+                    DataProjects.filter((p) => p.projectStatus === "ACTIVE")
+                      .length
                   }
-                  rounded="lg"
-                >
-                  <CardBody p={4} textAlign="center">
-                    <VStack spacing={2}>
-                      <Box
-                        w={8}
-                        h={8}
-                        bg="orange.500"
-                        rounded="lg"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                        color="white"
-                        fontSize="md"
-                      >
-                        <Icon as={FiUsers} boxSize={4} />
-                      </Box>
-                      <Text fontSize="xl" fontWeight="bold" color="orange.600">
-                        {DataAuth?.team ? 1 : 0}
-                      </Text>
-                      <Text
-                        fontSize="xs"
-                        color={
-                          colorMode === "light" ? "orange.600" : "orange.300"
-                        }
-                      >
-                        Active Teams
-                      </Text>
-                    </VStack>
-                  </CardBody>
-                </Card>
-              </Grid>
-            </Box>
-          </Grid>
-        </Box>
+                </Text>
+                <Text fontSize="xs" color="whiteAlpha.700">
+                  Active
+                </Text>
+              </VStack>
+            </HStack>
+          </Flex>
+        </VStack>
       </Box>
 
       {/* Enhanced Main Content - Grid Layout with Sidebar */}
@@ -635,14 +559,14 @@ const ProjectManagerPage = () => {
         >
           {/* Enhanced Manager Sidebar */}
           <GridItem colSpan={{ base: 12, sm: 12, md: 3, lg: 3 }} w={"full"}>
-            {/* <ManagerSidebar
+            <ManagerSidebarProcurement
               globalFilter={globalFilter}
               setGlobalFilter={setGlobalFilter}
               statusFilter={statusFilter}
               setStatusFilter={setStatusFilter}
               DataProjects={DataProjects}
               colorMode={colorMode}
-            /> */}
+            />
           </GridItem>
           <GridItem colSpan={{ base: 12, sm: 12, md: 9, lg: 9 }} w={"full"}>
             {/* Main Content Area */}
@@ -746,7 +670,7 @@ const ProjectManagerPage = () => {
 
               {/* Projects Display Card */}
               <Card
-                rounded={{ base: "lg", md: "xl" }}
+                rounded={radiusStyle}
                 shadow={{ base: "md", md: "lg" }}
                 border="1px"
                 borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
@@ -774,7 +698,7 @@ const ProjectManagerPage = () => {
                               <Box
                                 w={{ base: 8, md: 10 }}
                                 h={{ base: 8, md: 10 }}
-                                bg="blue.500"
+                                bgGradient="linear(to-br, yellow.500, orange.500)"
                                 rounded="lg"
                                 display="flex"
                                 alignItems="center"
@@ -796,7 +720,7 @@ const ProjectManagerPage = () => {
                                   }
                                   lineHeight="1.2"
                                 >
-                                  Projects Management
+                                  Procuremnets Management
                                 </Heading>
                               </VStack>
                             </HStack>
@@ -817,12 +741,12 @@ const ProjectManagerPage = () => {
                             </Button>
                             <Button
                               size={"md"}
-                              colorScheme={"secondary"}
+                              colorScheme={"yellow"}
                               leftIcon={<FiPlusSquare />}
                               type={"submit"}
                               isLoading={ActionLoading}
                             >
-                              Register Project
+                              Register New Procuremet
                             </Button>
                           </Flex>
                         </Flex>
@@ -981,7 +905,7 @@ const ProjectManagerPage = () => {
                           <Box
                             w={{ base: 8, md: 10 }}
                             h={{ base: 8, md: 10 }}
-                            bg="blue.500"
+                            bgGradient="linear(to-br, yellow.500, orange.500)"
                             rounded="lg"
                             display="flex"
                             alignItems="center"
@@ -1052,61 +976,6 @@ const ProjectManagerPage = () => {
                               Active
                             </Badge>
                           )}
-
-                          {/* View Mode Toggle Buttons */}
-                          <HStack
-                            spacing={1}
-                            bg={colorMode === "light" ? "gray.100" : "gray.700"}
-                            rounded="lg"
-                            p={1}
-                          >
-                            <Button
-                              size="sm"
-                              variant={viewMode === "grid" ? "solid" : "ghost"}
-                              colorScheme={
-                                viewMode === "grid" ? "blue" : "gray"
-                              }
-                              onClick={() => setViewMode("grid")}
-                              leftIcon={<Icon as={FiGrid} boxSize={3} />}
-                              fontSize="xs"
-                              px={3}
-                              h={8}
-                              _hover={{
-                                bg:
-                                  viewMode === "grid"
-                                    ? "blue.500"
-                                    : colorMode === "light"
-                                    ? "gray.200"
-                                    : "gray.600",
-                              }}
-                              transition="all 0.2s"
-                            >
-                              Grid
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant={viewMode === "list" ? "solid" : "ghost"}
-                              colorScheme={
-                                viewMode === "list" ? "blue" : "gray"
-                              }
-                              onClick={() => setViewMode("list")}
-                              leftIcon={<Icon as={FiList} boxSize={3} />}
-                              fontSize="xs"
-                              px={3}
-                              h={8}
-                              _hover={{
-                                bg:
-                                  viewMode === "list"
-                                    ? "blue.500"
-                                    : colorMode === "light"
-                                    ? "gray.200"
-                                    : "gray.600",
-                              }}
-                              transition="all 0.2s"
-                            >
-                              List
-                            </Button>
-                          </HStack>
                         </HStack>
                       </HStack>
                     </Flex>
@@ -1211,12 +1080,12 @@ const ProjectManagerPage = () => {
                       ) : (
                         <>
                           {/* Grid View */}
-                          <Box display={viewMode === "grid" ? "block" : "none"}>
+                          <Box display="none">
                             <TableComponentFullHeadlessGrid table={table} />
                           </Box>
 
                           {/* List View */}
-                          <Box display={viewMode === "list" ? "block" : "none"}>
+                          <Box>
                             <VStack spacing={3} align="stretch">
                               {table.getRowModel().rows.map((row) => {
                                 const project = row.original;

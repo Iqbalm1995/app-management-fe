@@ -49,7 +49,7 @@ import { BsKanban } from "react-icons/bs";
 import Link from "next/link";
 import { memo, useState } from "react";
 
-interface CardProjectProps {
+interface CardProjectDeploymentProps {
   data: ProjectDataResponse;
   variant?: "manager" | "development" | "procurement" | "deployment";
   linkPath?: string;
@@ -57,14 +57,14 @@ interface CardProjectProps {
   actionIcon?: any;
 }
 
-const CardProject = memo(
+const CardProjectDeployment = memo(
   ({
     data,
     variant = "development",
     linkPath,
     actionLabel,
     actionIcon,
-  }: CardProjectProps) => {
+  }: CardProjectDeploymentProps) => {
     const [isHovered, setIsHovered] = useState(false);
     const { colorMode } = useColorMode();
 
@@ -392,6 +392,6 @@ const CardProject = memo(
   }
 );
 
-CardProject.displayName = "CardProject";
+CardProjectDeployment.displayName = "CardProjectDeployment";
 
-export default CardProject;
+export default CardProjectDeployment;
