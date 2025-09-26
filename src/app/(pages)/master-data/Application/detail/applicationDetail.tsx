@@ -39,13 +39,14 @@ import {
   useColorMode,
   Badge,
   HStack,
+  Icon,
   VStack,
   Divider,
   Avatar,
 } from "@chakra-ui/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { FiArrowLeft, FiEdit, FiSave, FiX } from "react-icons/fi";
+import { FiArrowLeft, FiEdit, FiSave, FiX, FiFileText, FiSettings, FiGlobe, FiFolder } from "react-icons/fi";
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Application Detail",
@@ -80,6 +81,58 @@ function ApplicationDetail() {
 
   // Services
   const { GetDetailById, UpdateData } = useApps();
+
+  // Handle Save
+  const handleSave = async () => {
+    if (!tokenData || !appId) return;
+
+    try {
+      setIsLoadingProcess(true);
+      
+      const payload = {
+        id: appId,
+        appName: formData.appName,
+        appShortName: formData.appShortName,
+        appsDesc: formData.appsDesc,
+        note: formData.note,
+      };
+
+      const requestData = await UpdateData(payload, tokenData);
+      
+      if (!requestData || requestData.statusCode !== RES_CODE_OK) {
+        showToast({
+          description: requestData?.message || RES_GENERIC_ERROR_MSG,
+          statusToast: "error",
+        });
+        return;
+      }
+
+      // Update local state directly instead of calling loadApplicationData
+      setDataApplication(prev => prev ? {
+        ...prev,
+        appName: formData.appName,
+        appShortName: formData.appShortName,
+        appsDesc: formData.appsDesc,
+        note: formData.note,
+      } : null);
+
+      showToast({
+        description: "Application updated successfully",
+        statusToast: "success",
+      });
+
+      setIsEditMode(false);
+
+    } catch (error) {
+      console.error("Error updating application:", error);
+      showToast({
+        description: "Failed to update application",
+        statusToast: "error",
+      });
+    } finally {
+      setIsLoadingProcess(false);
+    }
+  };
 
   // ID Effect
   useEffect(() => {
@@ -208,240 +261,679 @@ function ApplicationDetail() {
       {IsLoadingProcess ? (
         <LoadingMiniSignature />
       ) : (
-        <Grid templateColumns={{ base: "1fr", lg: "1fr 300px" }} gap={6}>
-          <GridItem>
-            {/* Main Content */}
-            <Card shadow="sm" rounded={radiusStyle}>
-              <CardHeader
-                bgGradient="linear(135deg, secondary.500, secondary.600, purple.500)"
+        <Box px={{ base: 4, md: 6 }} py={4}>
+          {/* Modern Header Section */}
+          <Card
+            shadow="2xl"
+            rounded={radiusStyle}
+            overflow="hidden"
+            border="1px"
+            borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+            mb={8}
+          >
+            <Box
+              bgGradient="linear(135deg, secondary.400, secondary.600, purple.500)"
+              position="relative"
+              _before={{
+                content: '""',
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                bgGradient: "linear(45deg, transparent 30%, whiteAlpha.100 50%, transparent 70%)",
+              }}
+            >
+              {/* Back Button - Edge positioned */}
+              <Button
+                leftIcon={<FiArrowLeft />}
+                variant="ghost"
                 color="white"
-                p={6}
-                rounded={`${radiusStyle} ${radiusStyle} 0 0`}
+                size="lg"
+                rounded="xl"
+                position="absolute"
+                top={4}
+                left={4}
+                zIndex={2}
+                _hover={{ 
+                  bg: "whiteAlpha.200",
+                  transform: "translateX(-2px)"
+                }}
+                transition="all 0.2s"
+                onClick={() => router.back()}
               >
-                <Flex justify="space-between" align="center">
+                Back
+              </Button>
+
+              <CardHeader p={8} pt={16} position="relative">
+                <Flex justify="space-between" align="center" wrap="wrap" gap={4}>
                   <HStack spacing={4}>
-                    <Button
-                      leftIcon={<FiArrowLeft />}
-                      variant="ghost"
+                    {/* Application Avatar */}
+                    <Avatar
+                      size="xl"
+                      name={DataApplication?.appShortName || "App"}
+                      bg="whiteAlpha.300"
                       color="white"
-                      _hover={{ bg: "whiteAlpha.200" }}
-                      onClick={() => router.back()}
-                    >
-                      Back
-                    </Button>
-                    <Box>
-                      <Heading size="lg" fontWeight="700">
+                      fontSize="2xl"
+                      fontWeight="bold"
+                      borderRadius={radiusStyle}
+                      border="3px"
+                      borderColor="whiteAlpha.400"
+                    />
+                    
+                    <VStack align="start" spacing={1}>
+                      <Heading size="lg" fontWeight="700" color="white">
                         {DataApplication?.appName || "Loading..."}
                       </Heading>
-                      <Text fontSize="sm" opacity={0.9}>
-                        Application Management
+                      <HStack spacing={3}>
+                        <Text fontSize="md" color="whiteAlpha.900" fontWeight="medium">
+                          {DataApplication?.appShortName}
+                        </Text>
+                        <Badge
+                          colorScheme={DataApplication?.appsStatus === "ACTIVE" ? "green" : "red"}
+                          variant="solid"
+                          px={4}
+                          py={2}
+                          rounded="full"
+                          fontSize="sm"
+                          fontWeight="bold"
+                        >
+                          {DataApplication?.appsStatus}
+                        </Badge>
+                      </HStack>
+                      <Text fontSize="sm" color="whiteAlpha.800">
+                        Application Management System
                       </Text>
-                    </Box>
+                    </VStack>
                   </HStack>
                   
-                  <HStack spacing={2}>
-                    <Badge
-                      colorScheme={DataApplication?.appsStatus === "ACTIVE" ? "green" : "red"}
+                  <HStack spacing={3}>
+                    <Button
+                      leftIcon={<FiEdit />}
+                      colorScheme="whiteAlpha"
                       variant="solid"
-                      px={3}
-                      py={1}
-                      rounded="full"
-                    >
-                      {DataApplication?.appsStatus}
-                    </Badge>
-                    <Text
-                      fontSize="xs"
+                      size="lg"
+                      rounded="xl"
                       bg="whiteAlpha.200"
-                      px={3}
-                      py={1}
-                      rounded="full"
-                      fontFamily="mono"
+                      color="white"
+                      _hover={{
+                        bg: "whiteAlpha.300",
+                        transform: "translateY(-2px)",
+                        boxShadow: "xl"
+                      }}
+                      transition="all 0.2s"
+                      onClick={() => setIsEditMode(!IsEditMode)}
                     >
-                      #{DataApplication?.appCode}
-                    </Text>
+                      {IsEditMode ? "Cancel" : "Edit"}
+                    </Button>
                   </HStack>
                 </Flex>
               </CardHeader>
+            </Box>
+          </Card>
 
-              <CardBody p={0}>
-                <Tabs variant="enclosed" colorScheme="secondary">
-                  <TabList px={6} pt={4}>
-                    <Tab>Overview</Tab>
-                    <Tab>Details</Tab>
-                    <Tab>Settings</Tab>
-                  </TabList>
-
-                  <TabPanels>
-                    {/* Overview Tab */}
-                    <TabPanel p={6}>
-                      <VStack spacing={6} align="stretch">
-                        <Box>
-                          <Heading size="md" mb={4}>Application Information</Heading>
-                          <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={6}>
-                            <Box>
-                              <Text fontSize="sm" color="gray.500" mb={1}>Application Name</Text>
-                              <Text fontWeight="600">{DataApplication?.appName}</Text>
-                            </Box>
-                            <Box>
-                              <Text fontSize="sm" color="gray.500" mb={1}>Application Code</Text>
-                              <Text fontWeight="600" fontFamily="mono">{DataApplication?.appCode}</Text>
-                            </Box>
-                          </Grid>
-                        </Box>
-
-                        <Divider />
-
-                        <Box>
-                          <Text fontSize="sm" color="gray.500" mb={2}>Description</Text>
-                          <Text>{DataApplication?.appsDesc || "No description available"}</Text>
-                        </Box>
-
-                        <Divider />
-
-                        <Box>
-                          <Text fontSize="sm" color="gray.500" mb={2}>Status</Text>
-                          <Badge
-                            colorScheme={DataApplication?.appsStatus === "ACTIVE" ? "green" : "red"}
-                            variant="subtle"
-                            px={3}
-                            py={1}
-                            rounded="full"
-                          >
-                            {DataApplication?.appsStatus}
-                          </Badge>
-                        </Box>
-                      </VStack>
-                    </TabPanel>
-
-                    {/* Details Tab */}
-                    <TabPanel p={6}>
-                      <VStack spacing={6} align="stretch">
-                        <Flex justify="space-between" align="center">
-                          <Heading size="md">Application Details</Heading>
-                          <Button
-                            leftIcon={IsEditMode ? <FiX /> : <FiEdit />}
-                            colorScheme={IsEditMode ? "red" : "secondary"}
-                            variant={IsEditMode ? "ghost" : "solid"}
-                            onClick={() => setIsEditMode(!IsEditMode)}
-                          >
-                            {IsEditMode ? "Cancel" : "Edit"}
-                          </Button>
-                        </Flex>
-
-                        <Stack spacing={4}>
-                          <FormControl>
-                            <FormLabel>Application Name</FormLabel>
-                            <Input
-                              value={formData.appName}
-                              onChange={(e) => setFormData({ ...formData, appName: e.target.value })}
-                              isReadOnly={!IsEditMode}
-                              bg={IsEditMode ? "white" : "gray.50"}
-                            />
-                          </FormControl>
-
-                          <FormControl>
-                            <FormLabel>Application Short Name</FormLabel>
-                            <Input
-                              value={formData.appShortName}
-                              onChange={(e) => setFormData({ ...formData, appShortName: e.target.value })}
-                              isReadOnly={!IsEditMode}
-                              bg={IsEditMode ? "white" : "gray.50"}
-                              fontFamily="mono"
-                            />
-                          </FormControl>
-
-                          <FormControl>
-                            <FormLabel>Description</FormLabel>
-                            <Textarea
-                              value={formData.appsDesc}
-                              onChange={(e) => setFormData({ ...formData, appsDesc: e.target.value })}
-                              isReadOnly={!IsEditMode}
-                              bg={IsEditMode ? "white" : "gray.50"}
-                              rows={4}
-                            />
-                          </FormControl>
-
-                          <FormControl>
-                            <FormLabel>Notes</FormLabel>
-                            <Textarea
-                              value={formData.note}
-                              onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-                              isReadOnly={!IsEditMode}
-                              bg={IsEditMode ? "white" : "gray.50"}
-                              rows={3}
-                            />
-                          </FormControl>
-
-                          {IsEditMode && (
-                            <Button
-                              leftIcon={<FiSave />}
-                              colorScheme="secondary"
-                              onClick={handleUpdate}
-                              isLoading={IsLoadingProcess}
-                            >
-                              Save Changes
-                            </Button>
-                          )}
-                        </Stack>
-                      </VStack>
-                    </TabPanel>
-
-                    {/* Settings Tab */}
-                    <TabPanel p={6}>
-                      <VStack spacing={6} align="stretch">
-                        <Heading size="md">Application Settings</Heading>
-                        <Text color="gray.500">
-                          Additional settings and configurations will be available here.
-                        </Text>
-                      </VStack>
-                    </TabPanel>
-                  </TabPanels>
-                </Tabs>
-              </CardBody>
-            </Card>
-          </GridItem>
-
-          <GridItem>
-            {/* Sidebar */}
-            <Card shadow="sm" rounded={radiusStyle}>
-              <CardHeader>
-                <Heading size="sm">Quick Info</Heading>
-              </CardHeader>
-              <CardBody>
-                <VStack spacing={4} align="stretch">
-                  <Box textAlign="center">
-                    <Avatar
-                      size="xl"
-                      name={DataApplication?.appName}
-                      bg="secondary.100"
-                      color="secondary.600"
-                      mb={3}
-                    />
-                    <Text fontWeight="600">{DataApplication?.appName}</Text>
-                    <Text fontSize="sm" color="gray.500">{DataApplication?.appCode}</Text>
-                  </Box>
-
-                  <Divider />
-
-                  <Box>
-                    <Text fontSize="sm" color="gray.500" mb={1}>Status</Text>
-                    <Badge
-                      colorScheme={DataApplication?.appsStatus === "ACTIVE" ? "green" : "red"}
-                      variant="subtle"
+          <Grid templateColumns={{ base: "1fr", lg: "2fr 1fr" }} gap={8}>
+            <GridItem>
+              {/* Main Content Card */}
+              <Card
+                shadow="xl"
+                rounded={radiusStyle}
+                border="1px"
+                borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                bg={colorMode === "light" ? "white" : "gray.800"}
+              >
+                <CardBody p={0}>
+                  <Tabs variant="unstyled" colorScheme="secondary">
+                    <TabList 
+                      px={6} 
+                      pt={6} 
+                      pb={2}
+                      bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                      borderBottom="1px"
+                      borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                      gap={2}
                     >
-                      {DataApplication?.appsStatus}
-                    </Badge>
-                  </Box>
+                      <Tab 
+                        fontWeight="semibold" 
+                        px={6}
+                        py={3}
+                        rounded="xl"
+                        color={colorMode === "light" ? "gray.600" : "gray.400"}
+                        _selected={{ 
+                          color: "white",
+                          bg: "secondary.500",
+                          boxShadow: "lg",
+                          transform: "translateY(-2px)"
+                        }}
+                        _hover={{
+                          bg: colorMode === "light" ? "gray.200" : "gray.600",
+                          transform: "translateY(-1px)"
+                        }}
+                        transition="all 0.2s"
+                      >
+                        <HStack spacing={2}>
+                          <Icon as={FiFileText} boxSize={4} />
+                          <Text>Main Information</Text>
+                        </HStack>
+                      </Tab>
+                      <Tab 
+                        fontWeight="semibold" 
+                        px={6}
+                        py={3}
+                        rounded="xl"
+                        color={colorMode === "light" ? "gray.600" : "gray.400"}
+                        _selected={{ 
+                          color: "white",
+                          bg: "secondary.500",
+                          boxShadow: "lg",
+                          transform: "translateY(-2px)"
+                        }}
+                        _hover={{
+                          bg: colorMode === "light" ? "gray.200" : "gray.600",
+                          transform: "translateY(-1px)"
+                        }}
+                        transition="all 0.2s"
+                      >
+                        <HStack spacing={2}>
+                          <Icon as={FiSettings} boxSize={4} />
+                          <Text>Features</Text>
+                        </HStack>
+                      </Tab>
+                      <Tab 
+                        fontWeight="semibold" 
+                        px={6}
+                        py={3}
+                        rounded="xl"
+                        color={colorMode === "light" ? "gray.600" : "gray.400"}
+                        _selected={{ 
+                          color: "white",
+                          bg: "secondary.500",
+                          boxShadow: "lg",
+                          transform: "translateY(-2px)"
+                        }}
+                        _hover={{
+                          bg: colorMode === "light" ? "gray.200" : "gray.600",
+                          transform: "translateY(-1px)"
+                        }}
+                        transition="all 0.2s"
+                      >
+                        <HStack spacing={2}>
+                          <Icon as={FiGlobe} boxSize={4} />
+                          <Text>Environment</Text>
+                        </HStack>
+                      </Tab>
+                      <Tab 
+                        fontWeight="semibold" 
+                        px={6}
+                        py={3}
+                        rounded="xl"
+                        color={colorMode === "light" ? "gray.600" : "gray.400"}
+                        _selected={{ 
+                          color: "white",
+                          bg: "secondary.500",
+                          boxShadow: "lg",
+                          transform: "translateY(-2px)"
+                        }}
+                        _hover={{
+                          bg: colorMode === "light" ? "gray.200" : "gray.600",
+                          transform: "translateY(-1px)"
+                        }}
+                        transition="all 0.2s"
+                      >
+                        <HStack spacing={2}>
+                          <Icon as={FiFolder} boxSize={4} />
+                          <Text>Projects</Text>
+                        </HStack>
+                      </Tab>
+                    </TabList>
 
-                  <Box>
-                    <Text fontSize="sm" color="gray.500" mb={1}>Application ID</Text>
-                    <Text fontSize="sm" fontFamily="mono">{appId}</Text>
-                  </Box>
-                </VStack>
-              </CardBody>
-            </Card>
-          </GridItem>
-        </Grid>
+                    <TabPanels>
+                      {/* Main Information Tab */}
+                      <TabPanel p={8}>
+                        <VStack spacing={8} align="stretch">
+                          {IsEditMode && (
+                            <Flex justify="end">
+                              <HStack spacing={2}>
+                                <Button
+                                  leftIcon={<FiX />}
+                                  variant="ghost"
+                                  colorScheme="red"
+                                  size="sm"
+                                  rounded="lg"
+                                  onClick={() => setIsEditMode(false)}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  leftIcon={<FiSave />}
+                                  colorScheme="secondary"
+                                  size="sm"
+                                  rounded="lg"
+                                  isLoading={IsLoadingProcess}
+                                  onClick={handleSave}
+                                >
+                                  Save Changes
+                                </Button>
+                              </HStack>
+                            </Flex>
+                          )}
+
+                          {/* Basic Information */}
+                          <Box>
+                            <Text
+                              fontSize="lg"
+                              fontWeight="bold"
+                              color={colorMode === "light" ? "gray.800" : "white"}
+                              mb={6}
+                            >
+                              Basic Information
+                            </Text>
+                            
+                            <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={6}>
+                              <FormControl>
+                                <FormLabel
+                                  fontSize="sm"
+                                  fontWeight="semibold"
+                                  color={colorMode === "light" ? "gray.700" : "gray.300"}
+                                  mb={2}
+                                >
+                                  Application Name
+                                </FormLabel>
+                                <Input
+                                  value={formData.appName}
+                                  onChange={(e) => setFormData({ ...formData, appName: e.target.value })}
+                                  isReadOnly={!IsEditMode}
+                                  size="lg"
+                                  bg={IsEditMode ? (colorMode === "light" ? "white" : "gray.700") : (colorMode === "light" ? "gray.50" : "gray.600")}
+                                  border="2px"
+                                  borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                                  rounded="xl"
+                                  _focus={{
+                                    borderColor: "secondary.500",
+                                    boxShadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
+                                  }}
+                                />
+                              </FormControl>
+
+                              <FormControl>
+                                <FormLabel
+                                  fontSize="sm"
+                                  fontWeight="semibold"
+                                  color={colorMode === "light" ? "gray.700" : "gray.300"}
+                                  mb={2}
+                                >
+                                  Short Name
+                                </FormLabel>
+                                <Input
+                                  value={formData.appShortName}
+                                  onChange={(e) => setFormData({ ...formData, appShortName: e.target.value })}
+                                  isReadOnly={!IsEditMode}
+                                  size="lg"
+                                  bg={IsEditMode ? (colorMode === "light" ? "white" : "gray.700") : (colorMode === "light" ? "gray.50" : "gray.600")}
+                                  border="2px"
+                                  borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                                  rounded="xl"
+                                  _focus={{
+                                    borderColor: "secondary.500",
+                                    boxShadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
+                                  }}
+                                />
+                              </FormControl>
+                            </Grid>
+                          </Box>
+
+                          <Divider />
+
+                          {/* Description Section */}
+                          <Box>
+                            <Text
+                              fontSize="lg"
+                              fontWeight="bold"
+                              color={colorMode === "light" ? "gray.800" : "white"}
+                              mb={6}
+                            >
+                              Description & Notes
+                            </Text>
+                            
+                            <VStack spacing={6} align="stretch">
+                              <FormControl>
+                                <FormLabel
+                                  fontSize="sm"
+                                  fontWeight="semibold"
+                                  color={colorMode === "light" ? "gray.700" : "gray.300"}
+                                  mb={2}
+                                >
+                                  Description
+                                </FormLabel>
+                                <Textarea
+                                  value={formData.appsDesc}
+                                  onChange={(e) => setFormData({ ...formData, appsDesc: e.target.value })}
+                                  isReadOnly={!IsEditMode}
+                                  rows={4}
+                                  size="lg"
+                                  bg={IsEditMode ? (colorMode === "light" ? "white" : "gray.700") : (colorMode === "light" ? "gray.50" : "gray.600")}
+                                  border="2px"
+                                  borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                                  rounded="xl"
+                                  resize="none"
+                                  _focus={{
+                                    borderColor: "secondary.500",
+                                    boxShadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
+                                  }}
+                                />
+                              </FormControl>
+
+                              <FormControl>
+                                <FormLabel
+                                  fontSize="sm"
+                                  fontWeight="semibold"
+                                  color={colorMode === "light" ? "gray.700" : "gray.300"}
+                                  mb={2}
+                                >
+                                  Notes
+                                </FormLabel>
+                                <Textarea
+                                  value={formData.note}
+                                  onChange={(e) => setFormData({ ...formData, note: e.target.value })}
+                                  isReadOnly={!IsEditMode}
+                                  rows={3}
+                                  size="lg"
+                                  bg={IsEditMode ? (colorMode === "light" ? "white" : "gray.700") : (colorMode === "light" ? "gray.50" : "gray.600")}
+                                  border="2px"
+                                  borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                                  rounded="xl"
+                                  resize="none"
+                                  _focus={{
+                                    borderColor: "secondary.500",
+                                    boxShadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
+                                  }}
+                                />
+                              </FormControl>
+                            </VStack>
+                          </Box>
+                        </VStack>
+                      </TabPanel>
+
+                      {/* Features Tab */}
+                      <TabPanel p={8}>
+                        <VStack spacing={8} align="center" justify="center" minH="500px">
+                          <Box
+                            p={12}
+                            bg={colorMode === "light" ? "white" : "gray.800"}
+                            rounded="3xl"
+                            border="3px dashed"
+                            borderColor="secondary.300"
+                            textAlign="center"
+                            maxW="500px"
+                            position="relative"
+                            _before={{
+                              content: '""',
+                              position: "absolute",
+                              top: "-2px",
+                              left: "-2px",
+                              right: "-2px",
+                              bottom: "-2px",
+                              bgGradient: "linear(45deg, secondary.400, purple.400, secondary.400)",
+                              rounded: "3xl",
+                              zIndex: -1,
+                              opacity: 0.1,
+                            }}
+                          >
+                            <Box
+                              w={20}
+                              h={20}
+                              bg="secondary.100"
+                              rounded="full"
+                              display="flex"
+                              alignItems="center"
+                              justifyContent="center"
+                              mx="auto"
+                              mb={6}
+                            >
+                              <Icon as={FiSettings} boxSize={10} color="secondary.600" />
+                            </Box>
+                            <Text fontSize="2xl" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"} mb={4}>
+                              Features Management
+                            </Text>
+                            <Text color={colorMode === "light" ? "gray.600" : "gray.400"} fontSize="lg" lineHeight="tall">
+                              Application features and capabilities will be managed here. Configure feature flags, permissions, and functionality modules.
+                            </Text>
+                            <Badge colorScheme="secondary" variant="subtle" mt={4} px={4} py={2} rounded="full">
+                              Coming Soon
+                            </Badge>
+                          </Box>
+                        </VStack>
+                      </TabPanel>
+
+                      {/* Environment Tab */}
+                      <TabPanel p={8}>
+                        <VStack spacing={8} align="center" justify="center" minH="500px">
+                          <Box
+                            p={12}
+                            bg={colorMode === "light" ? "white" : "gray.800"}
+                            rounded="3xl"
+                            border="3px dashed"
+                            borderColor="green.300"
+                            textAlign="center"
+                            maxW="500px"
+                            position="relative"
+                            _before={{
+                              content: '""',
+                              position: "absolute",
+                              top: "-2px",
+                              left: "-2px",
+                              right: "-2px",
+                              bottom: "-2px",
+                              bgGradient: "linear(45deg, green.400, teal.400, green.400)",
+                              rounded: "3xl",
+                              zIndex: -1,
+                              opacity: 0.1,
+                            }}
+                          >
+                            <Box
+                              w={20}
+                              h={20}
+                              bg="green.100"
+                              rounded="full"
+                              display="flex"
+                              alignItems="center"
+                              justifyContent="center"
+                              mx="auto"
+                              mb={6}
+                            >
+                              <Icon as={FiGlobe} boxSize={10} color="green.600" />
+                            </Box>
+                            <Text fontSize="2xl" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"} mb={4}>
+                              Environment Configuration
+                            </Text>
+                            <Text color={colorMode === "light" ? "gray.600" : "gray.400"} fontSize="lg" lineHeight="tall">
+                              Manage development, staging, and production environments. Configure deployment settings and environment variables.
+                            </Text>
+                            <Badge colorScheme="green" variant="subtle" mt={4} px={4} py={2} rounded="full">
+                              Coming Soon
+                            </Badge>
+                          </Box>
+                        </VStack>
+                      </TabPanel>
+
+                      {/* Project Attached Tab */}
+                      <TabPanel p={8}>
+                        <VStack spacing={8} align="center" justify="center" minH="500px">
+                          <Box
+                            p={12}
+                            bg={colorMode === "light" ? "white" : "gray.800"}
+                            rounded="3xl"
+                            border="3px dashed"
+                            borderColor="blue.300"
+                            textAlign="center"
+                            maxW="500px"
+                            position="relative"
+                            _before={{
+                              content: '""',
+                              position: "absolute",
+                              top: "-2px",
+                              left: "-2px",
+                              right: "-2px",
+                              bottom: "-2px",
+                              bgGradient: "linear(45deg, blue.400, cyan.400, blue.400)",
+                              rounded: "3xl",
+                              zIndex: -1,
+                              opacity: 0.1,
+                            }}
+                          >
+                            <Box
+                              w={20}
+                              h={20}
+                              bg="blue.100"
+                              rounded="full"
+                              display="flex"
+                              alignItems="center"
+                              justifyContent="center"
+                              mx="auto"
+                              mb={6}
+                            >
+                              <Icon as={FiFolder} boxSize={10} color="blue.600" />
+                            </Box>
+                            <Text fontSize="2xl" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"} mb={4}>
+                              Attached Projects
+                            </Text>
+                            <Text color={colorMode === "light" ? "gray.600" : "gray.400"} fontSize="lg" lineHeight="tall">
+                              View and manage all projects associated with this application. Track project status and relationships.
+                            </Text>
+                            <Badge colorScheme="blue" variant="subtle" mt={4} px={4} py={2} rounded="full">
+                              Coming Soon
+                            </Badge>
+                          </Box>
+                        </VStack>
+                      </TabPanel>
+                    </TabPanels>
+                  </Tabs>
+                </CardBody>
+              </Card>
+            </GridItem>
+
+            <GridItem>
+              {/* Sidebar Information */}
+              <VStack spacing={6} align="stretch">
+                {/* Quick Stats Card */}
+                <Card
+                  shadow="lg"
+                  rounded={radiusStyle}
+                  border="1px"
+                  borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                  bg={colorMode === "light" ? "white" : "gray.800"}
+                >
+                  <CardHeader
+                    bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                    borderBottom="1px"
+                    borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                    p={4}
+                  >
+                    <Text fontSize="lg" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"}>
+                      Quick Info
+                    </Text>
+                  </CardHeader>
+                  <CardBody p={6}>
+                    <VStack spacing={4} align="stretch">
+                      <HStack justify="space-between">
+                        <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"}>
+                          App Code
+                        </Text>
+                        <Text fontSize="sm" fontWeight="semibold" color={colorMode === "light" ? "gray.800" : "white"}>
+                          {DataApplication?.appCode || "-"}
+                        </Text>
+                      </HStack>
+                      
+                      <HStack justify="space-between">
+                        <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"}>
+                          Status
+                        </Text>
+                        <Badge
+                          colorScheme={DataApplication?.appsStatus === "ACTIVE" ? "green" : "red"}
+                          variant="subtle"
+                          px={2}
+                          py={1}
+                          rounded="md"
+                          fontSize="xs"
+                        >
+                          {DataApplication?.appsStatus}
+                        </Badge>
+                      </HStack>
+
+                      <HStack justify="space-between">
+                        <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"}>
+                          Created
+                        </Text>
+                        <Text fontSize="sm" fontWeight="semibold" color={colorMode === "light" ? "gray.800" : "white"}>
+                          {DataApplication?.createdAt ? new Date(DataApplication.createdAt).toLocaleDateString() : "-"}
+                        </Text>
+                      </HStack>
+
+                      <HStack justify="space-between">
+                        <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"}>
+                          Updated
+                        </Text>
+                        <Text fontSize="sm" fontWeight="semibold" color={colorMode === "light" ? "gray.800" : "white"}>
+                          {DataApplication?.updatedAt ? new Date(DataApplication.updatedAt).toLocaleDateString() : "-"}
+                        </Text>
+                      </HStack>
+                    </VStack>
+                  </CardBody>
+                </Card>
+
+                {/* Project Stats Card */}
+                <Card
+                  shadow="lg"
+                  rounded={radiusStyle}
+                  border="1px"
+                  borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                  bg={colorMode === "light" ? "white" : "gray.800"}
+                >
+                  <CardHeader
+                    bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                    borderBottom="1px"
+                    borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                    p={4}
+                  >
+                    <Text fontSize="lg" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"}>
+                      Project Statistics
+                    </Text>
+                  </CardHeader>
+                  <CardBody p={6}>
+                    <VStack spacing={4} align="stretch">
+                      <HStack justify="space-between">
+                        <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"}>
+                          Total Projects
+                        </Text>
+                        <Badge colorScheme="blue" variant="subtle" px={3} py={1} rounded="full">
+                          {DataApplication?.countProjectAll || 0}
+                        </Badge>
+                      </HStack>
+                      
+                      <HStack justify="space-between">
+                        <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"}>
+                          Completed
+                        </Text>
+                        <Badge colorScheme="green" variant="subtle" px={3} py={1} rounded="full">
+                          {DataApplication?.countProjectCompleted || 0}
+                        </Badge>
+                      </HStack>
+
+                      <HStack justify="space-between">
+                        <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"}>
+                          Ongoing
+                        </Text>
+                        <Badge colorScheme="orange" variant="subtle" px={3} py={1} rounded="full">
+                          {DataApplication?.countProjectOnGoing || 0}
+                        </Badge>
+                      </HStack>
+                    </VStack>
+                  </CardBody>
+                </Card>
+              </VStack>
+            </GridItem>
+          </Grid>
+        </Box>
       )}
     </LayoutAdmin>
   );

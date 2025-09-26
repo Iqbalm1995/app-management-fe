@@ -48,10 +48,21 @@ import {
   PopoverContent,
   PopoverTrigger,
   Portal,
+  FormControl,
+  FormLabel,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  Textarea,
   Select,
   Stack,
   Text,
   useColorMode,
+  useDisclosure,
   VStack,
   Wrap,
 } from "@chakra-ui/react";
@@ -124,6 +135,16 @@ function MasterDataAplikasiPage() {
   });
 
   const [ParamFilter, setParamFilter] = useState<ListSearchByParamProps[]>([]);
+
+  // Modal state
+  const ModalForm = useDisclosure();
+  const [formData, setFormData] = useState({
+    appName: "",
+    appShortName: "",
+    appsDesc: "",
+    note: "",
+    iconApps: null as File | null,
+  });
 
   // Memoized pagination
   const pagination = useMemo(
@@ -204,7 +225,42 @@ function MasterDataAplikasiPage() {
     setDataAplikasi([]);
     setRefreshData(RefreshData + 1);
   };
+  // Handle Add Application
+  const handleAddApplication = async () => {
+    if (!tokenData || !DataAuth) return;
 
+    try {
+      setActionLoading(true);
+      
+      const payload = {
+        id: `app_${Date.now()}`,
+        appName: formData.appName,
+        appShortName: formData.appShortName,
+        appsDesc: formData.appsDesc,
+        note: formData.note,
+      };
+
+      // Simulate API call for now
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      showToast({
+        description: "Application added successfully",
+        statusToast: "success",
+      });
+
+      setFormData({ appName: "", appShortName: "", appsDesc: "", note: "", iconApps: null });
+      ModalForm.onClose();
+      RefreshAction();
+
+    } catch (error) {
+      showToast({
+        description: "Failed to add application",
+        statusToast: "error",
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
   // Table configuration
   const columnsData = useMemo<ColumnDef<ApplicationMasterResponse>[]>(
     () => [
@@ -627,7 +683,7 @@ function MasterDataAplikasiPage() {
                           type={"submit"}
                           isLoading={ActionLoading}
                           onClick={() => {
-                            // Add new aplikasi functionality here
+                            ModalForm.onOpen();
                           }}
                         >
                           Add Application
@@ -1458,6 +1514,326 @@ function MasterDataAplikasiPage() {
           </Card>
         </VStack>
       </Box>
+      {/* Add Application Modal */}
+      <Modal isOpen={ModalForm.isOpen} onClose={ModalForm.onClose} size="4xl" isCentered>
+        <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(10px)" />
+        <ModalContent
+          bg={colorMode === "light" ? "white" : "gray.800"}
+          borderRadius="2xl"
+          boxShadow="2xl"
+          border="1px"
+          borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+          mx={4}
+          maxW="900px"
+        >
+          <ModalHeader
+            bg={colorMode === "light" ? "gray.50" : "gray.700"}
+            borderTopRadius="2xl"
+            borderBottom="1px"
+            borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+            py={6}
+          >
+            <HStack spacing={4}>
+              <Box
+                p={3}
+                bg="secondary.500"
+                rounded="xl"
+                color="white"
+              >
+                <Icon as={FiPlusSquare} boxSize={6} />
+              </Box>
+              <VStack align="start" spacing={0}>
+                <Text fontSize="2xl" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"}>
+                  Add New Application
+                </Text>
+                <Text fontSize="md" color={colorMode === "light" ? "gray.600" : "gray.400"}>
+                  Create a new application in the system
+                </Text>
+              </VStack>
+            </HStack>
+          </ModalHeader>
+          
+          <ModalCloseButton
+            top={6}
+            right={6}
+            bg={colorMode === "light" ? "gray.100" : "gray.600"}
+            rounded="full"
+            _hover={{
+              bg: colorMode === "light" ? "gray.200" : "gray.500",
+            }}
+          />
+          
+          <ModalBody p={8}>
+            <Grid templateColumns="300px 1fr" gap={8} alignItems="start">
+              {/* Left Side - Avatar Preview */}
+              <VStack spacing={6}>
+                <Box
+                  w="full"
+                  bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                  rounded="2xl"
+                  p={6}
+                  border="1px"
+                  borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                >
+                  <VStack spacing={4}>
+                    <Text
+                      fontSize="sm"
+                      fontWeight="semibold"
+                      color={colorMode === "light" ? "gray.700" : "gray.300"}
+                      textAlign="center"
+                    >
+                      Application Preview
+                    </Text>
+                    
+                    <Box position="relative">
+                      {formData.iconApps ? (
+                        <Box
+                          w={24}
+                          h={24}
+                          rounded="2xl"
+                          overflow="hidden"
+                          border="3px"
+                          borderColor="secondary.500"
+                        >
+                          <Box
+                            as="img"
+                            src={URL.createObjectURL(formData.iconApps)}
+                            w="full"
+                            h="full"
+                            objectFit="cover"
+                          />
+                        </Box>
+                      ) : (
+                        <Avatar
+                          size="2xl"
+                          name={formData.appShortName || "App"}
+                          bg="secondary.500"
+                          color="white"
+                          fontSize="2xl"
+                          fontWeight="bold"
+                          borderRadius="2xl"
+                          border="3px"
+                          borderColor="secondary.500"
+                        />
+                      )}
+                    </Box>
+
+                    <VStack spacing={2} textAlign="center">
+                      <Text
+                        fontSize="lg"
+                        fontWeight="bold"
+                        color={colorMode === "light" ? "gray.800" : "white"}
+                        noOfLines={1}
+                      >
+                        {formData.appName || "Application Name"}
+                      </Text>
+                      <Text
+                        fontSize="sm"
+                        color={colorMode === "light" ? "gray.600" : "gray.400"}
+                        noOfLines={1}
+                      >
+                        {formData.appShortName || "SHORT"}
+                      </Text>
+                    </VStack>
+
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null;
+                        setFormData({ ...formData, iconApps: file });
+                      }}
+                      display="none"
+                      id="icon-upload"
+                    />
+                    <Button
+                      as="label"
+                      htmlFor="icon-upload"
+                      size="sm"
+                      variant="outline"
+                      colorScheme="secondary"
+                      cursor="pointer"
+                      rounded="lg"
+                      w="full"
+                      leftIcon={<Icon as={FiPlusSquare} />}
+                    >
+                      {formData.iconApps ? "Change Icon" : "Upload Icon"}
+                    </Button>
+                    
+                    {formData.iconApps && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        colorScheme="red"
+                        onClick={() => setFormData({ ...formData, iconApps: null })}
+                        w="full"
+                      >
+                        Remove Icon
+                      </Button>
+                    )}
+                  </VStack>
+                </Box>
+              </VStack>
+
+              {/* Right Side - Form Fields */}
+              <VStack spacing={6} align="stretch">
+                <Grid templateColumns="1fr 1fr" gap={6}>
+                  <FormControl isRequired>
+                    <FormLabel
+                      fontSize="sm"
+                      fontWeight="semibold"
+                      color={colorMode === "light" ? "gray.700" : "gray.300"}
+                      mb={2}
+                    >
+                      Application Name
+                    </FormLabel>
+                    <Input
+                      value={formData.appName}
+                      onChange={(e) => setFormData({ ...formData, appName: e.target.value })}
+                      placeholder="Enter application name"
+                      size="lg"
+                      bg={colorMode === "light" ? "white" : "gray.700"}
+                      border="2px"
+                      borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                      rounded="xl"
+                      _focus={{
+                        borderColor: "secondary.500",
+                        boxShadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
+                      }}
+                    />
+                  </FormControl>
+
+                  <FormControl isRequired>
+                    <FormLabel
+                      fontSize="sm"
+                      fontWeight="semibold"
+                      color={colorMode === "light" ? "gray.700" : "gray.300"}
+                      mb={2}
+                    >
+                      Short Name
+                    </FormLabel>
+                    <Input
+                      value={formData.appShortName}
+                      onChange={(e) => setFormData({ ...formData, appShortName: e.target.value })}
+                      placeholder="Enter short name"
+                      size="lg"
+                      bg={colorMode === "light" ? "white" : "gray.700"}
+                      border="2px"
+                      borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                      rounded="xl"
+                      _focus={{
+                        borderColor: "secondary.500",
+                        boxShadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
+                      }}
+                    />
+                  </FormControl>
+                </Grid>
+
+                <FormControl>
+                  <FormLabel
+                    fontSize="sm"
+                    fontWeight="semibold"
+                    color={colorMode === "light" ? "gray.700" : "gray.300"}
+                    mb={2}
+                  >
+                    Description
+                  </FormLabel>
+                  <Textarea
+                    value={formData.appsDesc}
+                    onChange={(e) => setFormData({ ...formData, appsDesc: e.target.value })}
+                    placeholder="Enter application description"
+                    rows={4}
+                    size="lg"
+                    bg={colorMode === "light" ? "white" : "gray.700"}
+                    border="2px"
+                    borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                    rounded="xl"
+                    resize="none"
+                    _focus={{
+                      borderColor: "secondary.500",
+                      boxShadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
+                    }}
+                  />
+                </FormControl>
+
+                <FormControl>
+                  <FormLabel
+                    fontSize="sm"
+                    fontWeight="semibold"
+                    color={colorMode === "light" ? "gray.700" : "gray.300"}
+                    mb={2}
+                  >
+                    Notes
+                  </FormLabel>
+                  <Textarea
+                    value={formData.note}
+                    onChange={(e) => setFormData({ ...formData, note: e.target.value })}
+                    placeholder="Enter additional notes"
+                    rows={3}
+                    size="lg"
+                    bg={colorMode === "light" ? "white" : "gray.700"}
+                    border="2px"
+                    borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                    rounded="xl"
+                    resize="none"
+                    _focus={{
+                      borderColor: "secondary.500",
+                      boxShadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
+                    }}
+                  />
+                </FormControl>
+              </VStack>
+            </Grid>
+          </ModalBody>
+
+          <ModalFooter
+            bg={colorMode === "light" ? "gray.50" : "gray.700"}
+            borderBottomRadius="2xl"
+            borderTop="1px"
+            borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+            p={6}
+          >
+            <HStack spacing={4} w="full" justify="end">
+              <Button
+                variant="ghost"
+                onClick={ModalForm.onClose}
+                rounded="xl"
+                px={8}
+                py={6}
+                color={colorMode === "light" ? "gray.600" : "gray.400"}
+                _hover={{
+                  bg: colorMode === "light" ? "gray.100" : "gray.600",
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                colorScheme="secondary"
+                onClick={handleAddApplication}
+                isLoading={ActionLoading}
+                isDisabled={!formData.appName || !formData.appShortName}
+                rounded="xl"
+                px={10}
+                py={6}
+                size="lg"
+                bgGradient="linear(to-r, secondary.500, secondary.600)"
+                _hover={{
+                  bgGradient: "linear(to-r, secondary.600, secondary.700)",
+                  transform: "translateY(-2px)",
+                  boxShadow: "xl",
+                }}
+                _active={{
+                  transform: "translateY(0)",
+                }}
+                transition="all 0.2s"
+              >
+                Create Application
+              </Button>
+            </HStack>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
     </LayoutAdmin>
   );
 }
