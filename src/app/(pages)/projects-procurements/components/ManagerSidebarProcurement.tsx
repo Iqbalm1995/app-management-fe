@@ -107,7 +107,7 @@ const ManagerSidebarProcurement = ({
               <Box
                 w="40px"
                 h="40px"
-                bgGradient="linear(to-br, yellow.500, orange.500)"
+                bgGradient="linear(to-br, secondary.500, secondary.600)"
                 rounded="lg"
                 display="flex"
                 alignItems="center"

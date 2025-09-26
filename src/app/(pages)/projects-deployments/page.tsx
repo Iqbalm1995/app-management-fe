@@ -286,11 +286,7 @@ const ProjectDeploymentsPage = () => {
       {/* Modern Abstract Deployment Header */}
       <Box
         position="relative"
-        bgGradient={
-          colorMode === "light"
-            ? "linear(45deg, green.400, teal.500, blue.500)"
-            : "linear(45deg, green.700, teal.700, blue.700)"
-        }
+        bgColor={colorMode === "light" ? "white" : "gray.800"}
         rounded={radiusStyle}
         shadow="2xl"
         mx={{ base: 4, sm: 5, md: 6 }}
@@ -306,9 +302,9 @@ const ProjectDeploymentsPage = () => {
           right="20px"
           w="80px"
           h="80px"
-          bg="whiteAlpha.200"
+          bg={colorMode === "light" ? "secondary.100" : "whiteAlpha.200"}
           rounded="full"
-          filter="blur(20px)"
+          // filter="blur(20px)"
         />
         <Box
           position="absolute"
@@ -316,9 +312,9 @@ const ProjectDeploymentsPage = () => {
           left="30px"
           w="60px"
           h="60px"
-          bg="whiteAlpha.300"
+          bg={colorMode === "light" ? "secondary.200" : "whiteAlpha.300"}
           transform="rotate(45deg)"
-          filter="blur(15px)"
+          // filter="blur(15px)"
         />
         <Box
           position="absolute"
@@ -326,10 +322,11 @@ const ProjectDeploymentsPage = () => {
           left="60%"
           w="40px"
           h="40px"
-          bg="whiteAlpha.200"
+          // bg="whiteAlpha.200"
+          bg={colorMode === "light" ? "secondary.100" : "whiteAlpha.200"}
           rounded="md"
           transform="rotate(30deg)"
-          filter="blur(10px)"
+          // filter="blur(10px)"
         />
 
         <VStack
@@ -348,27 +345,33 @@ const ProjectDeploymentsPage = () => {
               <Box
                 w="60px"
                 h="60px"
-                bg="whiteAlpha.200"
+                bg="blue.500"
                 backdropFilter="blur(10px)"
                 rounded="xl"
                 display="flex"
                 alignItems="center"
                 justifyContent="center"
                 border="1px solid"
-                borderColor="whiteAlpha.300"
+                borderColor={
+                  colorMode === "light" ? "blackAlpha.100" : "whiteAlpha.200"
+                }
               >
                 <Icon as={FiServer} boxSize={6} color="white" />
               </Box>
               <VStack align="start" spacing={1}>
                 <Heading
                   size="lg"
-                  color="white"
+                  color={colorMode === "light" ? "gray.900" : "white"}
                   fontWeight="700"
                   letterSpacing="tight"
                 >
                   Project Deployments
                 </Heading>
-                <Text fontSize="sm" color="whiteAlpha.800" fontWeight="500">
+                <Text
+                  fontSize="sm"
+                  color={colorMode === "light" ? "gray.500" : "white"}
+                  fontWeight="500"
+                >
                   Infrastructure deployment & release management
                 </Text>
               </VStack>
@@ -377,20 +380,32 @@ const ProjectDeploymentsPage = () => {
             {/* Quick Stats */}
             <HStack spacing={6} display={{ base: "none", lg: "flex" }}>
               <VStack spacing={0}>
-                <Text fontSize="2xl" fontWeight="bold" color="white">
+                <Text
+                  fontSize="2xl"
+                  fontWeight="bold"
+                  color={colorMode === "light" ? "gray.900" : "white"}
+                >
                   {DataProjects.length}
                 </Text>
                 <Text
                   fontSize="xs"
-                  color="whiteAlpha.700"
+                  color={colorMode === "light" ? "gray.900" : "white"}
                   textTransform="uppercase"
                 >
                   Projects
                 </Text>
               </VStack>
-              <Box w="1px" h="40px" bg="whiteAlpha.300" />
+              <Box
+                w="1px"
+                h="40px"
+                bg={colorMode === "light" ? "blackAlpha.500" : "whiteAlpha.500"}
+              />
               <VStack spacing={0}>
-                <Text fontSize="2xl" fontWeight="bold" color="white">
+                <Text
+                  fontSize="2xl"
+                  fontWeight="bold"
+                  color={colorMode === "light" ? "gray.900" : "white"}
+                >
                   {
                     DataProjects.filter((p) => p.projectStatus === "ACTIVE")
                       .length
@@ -398,15 +413,23 @@ const ProjectDeploymentsPage = () => {
                 </Text>
                 <Text
                   fontSize="xs"
-                  color="whiteAlpha.700"
+                  color={colorMode === "light" ? "gray.900" : "white"}
                   textTransform="uppercase"
                 >
                   Active
                 </Text>
               </VStack>
-              <Box w="1px" h="40px" bg="whiteAlpha.300" />
+              <Box
+                w="1px"
+                h="40px"
+                bg={colorMode === "light" ? "blackAlpha.500" : "whiteAlpha.500"}
+              />
               <VStack spacing={0}>
-                <Text fontSize="2xl" fontWeight="bold" color="white">
+                <Text
+                  fontSize="2xl"
+                  fontWeight="bold"
+                  color={colorMode === "light" ? "gray.900" : "white"}
+                >
                   {Math.round(
                     DataProjects.reduce(
                       (acc, p) => acc + p.projectStatusPercentage,
@@ -417,7 +440,7 @@ const ProjectDeploymentsPage = () => {
                 </Text>
                 <Text
                   fontSize="xs"
-                  color="whiteAlpha.700"
+                  color={colorMode === "light" ? "gray.900" : "white"}
                   textTransform="uppercase"
                 >
                   Progress
@@ -428,45 +451,36 @@ const ProjectDeploymentsPage = () => {
 
           {/* Bottom Row - Feature Tags & Mobile Stats */}
           <Flex justify="space-between" align="center" flexWrap="wrap" gap={3}>
-            <HStack spacing={2} flexWrap="wrap">
+            <HStack spacing={3} flexWrap="wrap">
               <Badge
-                bg="whiteAlpha.200"
-                color="white"
+                colorScheme="blue"
                 px={3}
                 py={1}
                 rounded="full"
                 fontSize="xs"
                 fontWeight="medium"
-                border="1px solid"
-                borderColor="whiteAlpha.300"
               >
                 <Icon as={FiServer} w={3} h={3} mr={1} />
                 Infrastructure
               </Badge>
               <Badge
-                bg="whiteAlpha.200"
-                color="white"
+                colorScheme="blue"
                 px={3}
                 py={1}
                 rounded="full"
                 fontSize="xs"
                 fontWeight="medium"
-                border="1px solid"
-                borderColor="whiteAlpha.300"
               >
                 <Icon as={FiCloud} w={3} h={3} mr={1} />
                 Cloud Deployment
               </Badge>
               <Badge
-                bg="whiteAlpha.200"
-                color="white"
+                colorScheme="green"
                 px={3}
                 py={1}
                 rounded="full"
                 fontSize="xs"
                 fontWeight="medium"
-                border="1px solid"
-                borderColor="whiteAlpha.300"
               >
                 <Icon as={FiGitBranch} w={3} h={3} mr={1} />
                 Release Management
@@ -518,76 +532,325 @@ const ProjectDeploymentsPage = () => {
             <VStack spacing={{ base: 4, md: 6 }} w="full">
               {/* Enhanced Projects List */}
               <Card
-                w="full"
-                bg={colorMode === "light" ? "white" : "gray.800"}
+                rounded={radiusStyle}
+                shadow={{ base: "md", md: "lg" }}
                 border="1px"
                 borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-                shadow="sm"
-                rounded={radiusStyle}
+                bg={colorMode === "light" ? "white" : "gray.800"}
+                w="full"
+                minH={{ base: "300px", md: "400px" }}
               >
-                <CardBody p={0}>
-                  <VStack spacing={0} align="stretch">
-                    {/* Header */}
+                <CardBody p={{ base: 4, sm: 5, md: 6 }}>
+                  <VStack spacing={{ base: 6, md: 8 }} w="full">
+                    <Box w="full">
+                      <VStack spacing={4} align="stretch">
+                        <Flex
+                          as={HStack}
+                          justifyContent={"space-between"}
+                          px={0}
+                          w={"full"}
+                        >
+                          <Flex
+                            as={HStack}
+                            justifyContent={"left"}
+                            px={0}
+                            w={"full"}
+                          >
+                            <HStack spacing={3} align="center">
+                              <Box
+                                w={{ base: 8, md: 10 }}
+                                h={{ base: 8, md: 10 }}
+                                bgGradient="linear(to-br, blue.500, purple.500)"
+                                rounded="lg"
+                                display="flex"
+                                alignItems="center"
+                                justifyContent="center"
+                                color="white"
+                                fontSize={{ base: "sm", md: "md" }}
+                                flexShrink={0}
+                              >
+                                <Icon
+                                  as={FiClipboard}
+                                  boxSize={{ base: 4, md: 5 }}
+                                />
+                              </Box>
+                              <VStack align="start" spacing={0}>
+                                <Heading
+                                  size={"md"}
+                                  color={
+                                    colorMode === "light" ? "gray.800" : "white"
+                                  }
+                                  lineHeight="1.2"
+                                >
+                                  Deployment Management
+                                </Heading>
+                              </VStack>
+                            </HStack>
+                          </Flex>
+                          <Flex
+                            as={HStack}
+                            justifyContent={"right"}
+                            px={0}
+                            w={"full"}
+                          >
+                            <Button
+                              size={"md"}
+                              leftIcon={<FiRefreshCcw />}
+                              // onClick={() => RefreshAction()}
+                              isLoading={ActionLoading}
+                            >
+                              Refresh
+                            </Button>
+                            <Button
+                              size={"md"}
+                              colorScheme={"blue"}
+                              leftIcon={<FiPlusSquare />}
+                              type={"submit"}
+                              isLoading={ActionLoading}
+                            >
+                              Register New Deployment
+                            </Button>
+                          </Flex>
+                        </Flex>
+
+                        <Divider />
+                      </VStack>
+                    </Box>
+                    {/* Last Working Projects Section */}
+                    {DataProjects.length > 0 && !IsLoadingProcess && (
+                      <Box w="full">
+                        <VStack spacing={4} align="stretch">
+                          {/* Section Header */}
+                          <HStack spacing={3} align="center">
+                            <Box
+                              w={{ base: 8, md: 10 }}
+                              h={{ base: 8, md: 10 }}
+                              bg="purple.500"
+                              rounded="lg"
+                              display="flex"
+                              alignItems="center"
+                              justifyContent="center"
+                              color="white"
+                              fontSize={{ base: "sm", md: "md" }}
+                              flexShrink={0}
+                            >
+                              <Icon as={FiZap} boxSize={{ base: 4, md: 5 }} />
+                            </Box>
+                            <VStack align="start" spacing={0}>
+                              <Heading
+                                size={{ base: "sm", md: "md" }}
+                                color={
+                                  colorMode === "light" ? "gray.800" : "white"
+                                }
+                                lineHeight="1.2"
+                              >
+                                Last Working Projects
+                              </Heading>
+                              <Text
+                                fontSize={{ base: "xs", md: "sm" }}
+                                color={
+                                  colorMode === "light"
+                                    ? "gray.600"
+                                    : "gray.400"
+                                }
+                                lineHeight="1.3"
+                              >
+                                Recently active projects you've been working on
+                              </Text>
+                            </VStack>
+                          </HStack>
+
+                          {/* Last Working Projects List */}
+                          <VStack
+                            spacing={0}
+                            align="stretch"
+                            divider={<Divider />}
+                          >
+                            {DataProjects.slice(0, 3).map((project, index) => (
+                              <HStack
+                                key={`recent-${project.id}`}
+                                spacing={4}
+                                align="center"
+                                py={3}
+                                px={2}
+                                _hover={{
+                                  bg:
+                                    colorMode === "light"
+                                      ? "gray.50"
+                                      : "gray.700",
+                                }}
+                                transition="all 0.2s"
+                                cursor="pointer"
+                                onClick={() =>
+                                  (window.location.href = `project-development/development?projectId=${project.id}`)
+                                }
+                              >
+                                {/* Project Number */}
+                                <Text
+                                  fontSize="sm"
+                                  fontWeight="bold"
+                                  color="purple.500"
+                                  minW="20px"
+                                  textAlign="center"
+                                >
+                                  {index + 1}.
+                                </Text>
+
+                                {/* Project Info */}
+                                <VStack align="start" spacing={0} flex={1}>
+                                  <HStack spacing={2} align="center">
+                                    <Text
+                                      fontSize="sm"
+                                      fontWeight="bold"
+                                      color={
+                                        colorMode === "light"
+                                          ? "gray.800"
+                                          : "white"
+                                      }
+                                    >
+                                      {project.projectName}
+                                    </Text>
+                                    <Badge
+                                      colorScheme="purple"
+                                      size="sm"
+                                      variant="subtle"
+                                    >
+                                      {project.projectCategory}
+                                    </Badge>
+                                  </HStack>
+                                  <Text
+                                    fontSize="xs"
+                                    color={
+                                      colorMode === "light"
+                                        ? "gray.500"
+                                        : "gray.400"
+                                    }
+                                    noOfLines={1}
+                                  >
+                                    {project.projectNo} |{" "}
+                                    {project.appsProject.appName}
+                                  </Text>
+                                </VStack>
+
+                                {/* Progress */}
+                                <HStack spacing={2} align="center" minW="60px">
+                                  <Text
+                                    fontSize="xs"
+                                    fontWeight="medium"
+                                    color="orange.600"
+                                  >
+                                    {project.projectStatusPercentage}%
+                                  </Text>
+                                  <Icon
+                                    as={FiTarget}
+                                    boxSize={4}
+                                    color="purple.500"
+                                  />
+                                </HStack>
+                              </HStack>
+                            ))}
+                          </VStack>
+                        </VStack>
+                      </Box>
+                    )}
+
+                    {/* Projects Header */}
                     <Flex
                       justify="space-between"
-                      align="center"
-                      p={6}
-                      borderBottom="1px"
-                      borderColor={
-                        colorMode === "light" ? "gray.200" : "gray.700"
-                      }
+                      align={{ base: "start", sm: "center" }}
+                      w="full"
+                      direction={{ base: "column", sm: "row" }}
+                      gap={{ base: 3, sm: 0 }}
                     >
-                      <HStack spacing={3}>
-                        <Icon as={FiFolder} boxSize={5} color="green.500" />
-                        <Heading
-                          size="md"
-                          color={colorMode === "light" ? "gray.800" : "white"}
-                        >
-                          Deployment Projects
-                        </Heading>
-                        {DataProjects.length !== totalPages && (
-                          <Badge colorScheme="green" rounded="full">
-                            {DataProjects.length} items
-                          </Badge>
-                        )}
-                      </HStack>
+                      <HStack justify="space-between" align="center" w="full">
+                        <HStack spacing={3} align="center">
+                          <Box
+                            w={{ base: 8, md: 10 }}
+                            h={{ base: 8, md: 10 }}
+                            bgGradient="linear(to-br, blue.500, purple.500)"
+                            rounded="lg"
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
+                            color="white"
+                            fontSize={{ base: "sm", md: "md" }}
+                            flexShrink={0}
+                          >
+                            <Icon as={FiGrid} boxSize={{ base: 4, md: 5 }} />
+                          </Box>
+                          <VStack align="start" spacing={0}>
+                            <Heading
+                              size={{ base: "sm", md: "md" }}
+                              color={
+                                colorMode === "light" ? "gray.800" : "white"
+                              }
+                              lineHeight="1.2"
+                            >
+                              My Projects
+                            </Heading>
+                            <Text
+                              fontSize={{ base: "xs", md: "sm" }}
+                              color={
+                                colorMode === "light" ? "gray.600" : "gray.400"
+                              }
+                              lineHeight="1.3"
+                            >
+                              {DataProjects.length} projects found
+                              {statusFilter.length > 0 && (
+                                <Text
+                                  as="span"
+                                  color="blue.500"
+                                  fontWeight="medium"
+                                >
+                                  {" "}
+                                  • Status: {statusFilter.join(", ")}
+                                </Text>
+                              )}
+                              {globalFilter && (
+                                <Text
+                                  as="span"
+                                  display={{ base: "block", sm: "inline" }}
+                                >
+                                  {" "}
+                                  • Search: "{globalFilter}"
+                                </Text>
+                              )}
+                            </Text>
+                          </VStack>
+                        </HStack>
 
-                      <HStack spacing={2}>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          colorScheme="gray"
-                          leftIcon={<Icon as={FiRefreshCw} boxSize={3} />}
-                          onClick={refreshAction}
-                          isLoading={IsLoadingProcess}
-                          fontSize="xs"
-                        >
-                          Refresh
-                        </Button>
-                        <Button
-                          size="sm"
-                          colorScheme="green"
-                          leftIcon={<Icon as={FiTarget} boxSize={3} />}
-                          onClick={() => {
-                            // TODO: Implement register function
-                            console.log("Register new project");
-                          }}
-                          fontSize="xs"
-                        >
-                          New Project
-                        </Button>
+                        {/* View Mode Toggle & Active Badge */}
+                        <HStack spacing={3}>
+                          {DataProjects.length > 0 && (
+                            <Badge
+                              colorScheme="green"
+                              px={{ base: 2, md: 3 }}
+                              py={1}
+                              rounded="full"
+                              fontSize={{ base: "xs", md: "sm" }}
+                              flexShrink={0}
+                            >
+                              {
+                                DataProjects.filter(
+                                  (p) => p.projectStatus === "ACTIVE"
+                                ).length
+                              }{" "}
+                              Active
+                            </Badge>
+                          )}
+                        </HStack>
                       </HStack>
                     </Flex>
 
                     {/* Content */}
-                    <Box p={4}>
+                    <Box w="full">
                       {IsLoadingProcess ? (
-                        <VStack spacing={4} py={8}>
+                        <VStack spacing={4}>
                           <LoadingMiniSignature />
                           <Text color="gray.500">Loading projects...</Text>
                         </VStack>
                       ) : DataProjects.length === 0 ? (
-                        <VStack spacing={4} py={8}>
+                        <VStack spacing={4}>
                           <Icon as={FiFolder} boxSize={12} color="gray.300" />
                           <Text color="gray.500" textAlign="center">
                             No projects found. Create your first project to get

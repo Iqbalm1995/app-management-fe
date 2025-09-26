@@ -98,7 +98,7 @@ const CardProjectDeployment = memo(
             linkPath: "/projects-deployments/detail",
             actionLabel: "Manage Deployment",
             actionIcon: FiServer,
-            colorScheme: "green",
+            colorScheme: "blue",
           };
         case "procurement":
           return {
@@ -135,9 +135,7 @@ const CardProjectDeployment = memo(
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         w="full"
-        h="320px"
-        minH="320px"
-        maxH="320px"
+        h="230px"
         bg={colorMode === "light" ? "white" : "gray.800"}
         border="1px"
         borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
@@ -147,88 +145,71 @@ const CardProjectDeployment = memo(
         transform={isHovered ? "translateY(-4px)" : "translateY(0)"}
         _hover={{
           cursor: "pointer",
-          borderColor:
-            variant === "deployment"
-              ? "green.300"
-              : variant === "procurement"
-              ? "yellow.300"
-              : variant === "manager"
-              ? "blue.300"
-              : "secondary.300",
+          borderColor: "secondary.300",
         }}
         overflow="hidden"
         position="relative"
         display="flex"
         flexDirection="column"
       >
-        {/* Small Colored Header */}
-        <CardHeader
-          p={0}
-          position="relative"
-          bgGradient={
-            variant === "deployment"
-              ? "linear(to-r, green.500, teal.500)"
-              : variant === "procurement"
-              ? "linear(to-r, yellow.500, orange.500)"
-              : variant === "manager"
-              ? "linear(to-r, blue.500, purple.500)"
-              : "linear(to-r, purple.500, blue.500)"
-          }
-          color="white"
-          h="120px"
-          display="flex"
-          alignItems="center"
-          justifyContent="space-between"
-          px={4}
-        >
-          {/* Project Initial */}
-          <HStack spacing={3}>
-            <Box
-              w="40px"
-              h="40px"
-              minW="40px"
-              flexShrink={0}
-              bg="whiteAlpha.300"
-              rounded="md"
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-              fontSize="lg"
-              fontWeight="bold"
-            >
-              {data.projectName.charAt(0)}
-            </Box>
-            <VStack spacing={0} align="start">
-              <Text
-                fontSize="sm"
-                fontWeight="semibold"
-                opacity="0.9"
-                noOfLines={1}
-              >
-                {data.projectName}
-              </Text>
-              <Text fontSize="xs" opacity="0.7">
-                {data.projectType}
-              </Text>
-            </VStack>
-          </HStack>
-
-          {/* Status Badge */}
-          <Badge
-            colorScheme={getStatusColor(data.projectStatus)}
-            rounded="md"
-            px={2}
-            py={1}
-            fontSize="xs"
-            fontWeight="medium"
-          >
-            {data.projectStatus}
-          </Badge>
-        </CardHeader>
-
         {/* Compact Card Body */}
         <CardBody p={4} flex="1" display="flex" flexDirection="column">
           <VStack spacing={4} align="stretch" flex="1">
+            <HStack spacing={4}>
+              {/* Project Initial */}
+              <HStack spacing={3}>
+                <Box
+                  w="40px"
+                  h="40px"
+                  minW="40px"
+                  flexShrink={0}
+                  // bg="whiteAlpha.300"
+                  bgGradient={"linear(to-r, secondary.600, secondary.500)"}
+                  color={"white"}
+                  rounded="md"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  fontSize="lg"
+                  fontWeight="bold"
+                >
+                  {data.projectName.charAt(0)}
+                </Box>
+                <VStack spacing={0} align="start">
+                  <Tooltip
+                    label={data.projectName}
+                    hasArrow
+                    placement="top"
+                    isDisabled={data.projectName.length <= 30}
+                  >
+                    <Text
+                      fontSize="sm"
+                      fontWeight="semibold"
+                      opacity="0.9"
+                      noOfLines={1}
+                    >
+                      {data.projectName}
+                    </Text>
+                  </Tooltip>
+                  <Text fontSize="xs" opacity="0.7">
+                    {data.projectType}
+                  </Text>
+                </VStack>
+              </HStack>
+
+              {/* Status Badge */}
+              <Badge
+                colorScheme={getStatusColor(data.projectStatus)}
+                rounded="md"
+                px={2}
+                py={1}
+                fontSize="xs"
+                fontWeight="medium"
+              >
+                {data.projectStatus}
+              </Badge>
+            </HStack>
+
             {/* Project Code & Health */}
             <HStack justify="space-between">
               <Text fontSize="xs" color="gray.400" fontWeight="medium">
@@ -244,9 +225,9 @@ const CardProjectDeployment = memo(
             </HStack>
 
             {/* Progress & Team Row */}
-            <HStack spacing={4} align="start">
+            <HStack spacing={4} align="start" w={"full"}>
               {/* Progress */}
-              <VStack spacing={2} align="start" flex="1">
+              <VStack spacing={2} align="start" w={"full"}>
                 <HStack justify="space-between" w="full">
                   <Text fontSize="sm" color="gray.600" fontWeight="500">
                     Progress
@@ -272,7 +253,7 @@ const CardProjectDeployment = memo(
               </VStack>
 
               {/* Team */}
-              <VStack spacing={2} align="end" minW="80px">
+              <VStack spacing={2} align="end" w={"full"}>
                 <Text fontSize="sm" color="gray.600" fontWeight="500">
                   Team
                 </Text>
@@ -296,6 +277,7 @@ const CardProjectDeployment = memo(
                 <Button
                   size="sm"
                   colorScheme={config.colorScheme}
+                  variant={"outline"}
                   leftIcon={<Icon as={config.actionIcon} />}
                   w="full"
                   rounded="lg"

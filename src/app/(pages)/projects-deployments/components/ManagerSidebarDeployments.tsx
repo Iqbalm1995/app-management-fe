@@ -108,7 +108,7 @@ const ManagerSidebarDeployments = ({
               <Box
                 w="40px"
                 h="40px"
-                bgGradient="linear(to-br, green.500, teal.500)"
+                bgGradient="linear(to-br, secondary.600, secondary.500)"
                 rounded="lg"
                 display="flex"
                 alignItems="center"

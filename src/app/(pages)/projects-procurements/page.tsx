@@ -188,11 +188,11 @@ const ProjectManagerPage = () => {
         });
       }
 
-      filterWhere.push({
-        field: "projectType",
-        operator: "=",
-        value: PROJECT_TYPE_PROCUREMENT,
-      });
+      // filterWhere.push({
+      //   field: "projectType",
+      //   operator: "=",
+      //   value: PROJECT_TYPE_PROCUREMENT,
+      // });
 
       const PayloadList: PaggingListPayloadCustom = {
         search: globalFilter,
@@ -336,11 +336,12 @@ const ProjectManagerPage = () => {
       {/* Modern Abstract Procurement Header */}
       <Box
         position="relative"
-        bgGradient={
-          colorMode == "light"
-            ? "linear(45deg, yellow.400, yellow.600, orange.600)"
-            : "linear(45deg, yellow.700, yellow.800, orange.800)"
-        }
+        // bgGradient={
+        //   colorMode == "light"
+        //     ? "linear(45deg, yellow.400, yellow.600, orange.600)"
+        //     : "linear(45deg, yellow.700, yellow.800, orange.800)"
+        // }
+        bgColor={colorMode == "light" ? "white" : "gray.800"}
         rounded={radiusStyle}
         shadow="2xl"
         mx={{ base: 4, sm: 5, md: 6 }}
@@ -356,9 +357,9 @@ const ProjectManagerPage = () => {
           right="20px"
           w="80px"
           h="80px"
-          bg="whiteAlpha.200"
+          bg={colorMode == "light" ? "secondary.100" : "whiteAlpha.200"}
           rounded="full"
-          filter="blur(20px)"
+          // filter="blur(20px)"
         />
         <Box
           position="absolute"
@@ -366,9 +367,9 @@ const ProjectManagerPage = () => {
           left="30px"
           w="60px"
           h="60px"
-          bg="whiteAlpha.300"
+          bg={colorMode == "light" ? "secondary.200" : "whiteAlpha.300"}
           transform="rotate(45deg)"
-          filter="blur(15px)"
+          // filter="blur(15px)"
         />
         <Box
           position="absolute"
@@ -376,10 +377,11 @@ const ProjectManagerPage = () => {
           left="60%"
           w="40px"
           h="40px"
-          bg="whiteAlpha.200"
+          // bg="whiteAlpha.200"
+          bg={colorMode == "light" ? "secondary.100" : "whiteAlpha.200"}
           rounded="md"
           transform="rotate(30deg)"
-          filter="blur(10px)"
+          // filter="blur(10px)"
         />
 
         <VStack
@@ -398,27 +400,35 @@ const ProjectManagerPage = () => {
               <Box
                 w="60px"
                 h="60px"
-                bg="whiteAlpha.200"
+                bg="blue.500"
                 backdropFilter="blur(10px)"
                 rounded="xl"
                 display="flex"
                 alignItems="center"
                 justifyContent="center"
                 border="1px solid"
-                borderColor="whiteAlpha.300"
+                // borderColor="whiteAlpha.300"
+                borderColor={
+                  colorMode == "light" ? "blackAlpha.100" : "whiteAlpha.200"
+                }
               >
                 <Icon as={FiTarget} boxSize={6} color="white" />
               </Box>
               <VStack align="start" spacing={1}>
                 <Heading
                   size="lg"
-                  color="white"
+                  // color="white"
+                  color={colorMode == "light" ? "gray.900" : "white"}
                   fontWeight="700"
                   letterSpacing="tight"
                 >
                   Project Procurement
                 </Heading>
-                <Text fontSize="sm" color="whiteAlpha.800" fontWeight="500">
+                <Text
+                  fontSize="sm"
+                  color={colorMode == "light" ? "gray.500" : "white"}
+                  fontWeight="500"
+                >
                   Strategic project acquisition & delivery management
                 </Text>
               </VStack>
@@ -427,20 +437,33 @@ const ProjectManagerPage = () => {
             {/* Quick Stats */}
             <HStack spacing={6} display={{ base: "none", lg: "flex" }}>
               <VStack spacing={0}>
-                <Text fontSize="2xl" fontWeight="bold" color="white">
+                <Text
+                  fontSize="2xl"
+                  fontWeight="bold"
+                  color={colorMode == "light" ? "gray.900" : "white"}
+                >
                   {DataProjects.length}
                 </Text>
                 <Text
                   fontSize="xs"
-                  color="whiteAlpha.700"
+                  color={colorMode == "light" ? "gray.900" : "white"}
                   textTransform="uppercase"
                 >
                   Projects
                 </Text>
               </VStack>
-              <Box w="1px" h="40px" bg="whiteAlpha.300" />
+              <Box
+                w="1px"
+                h="40px"
+                bg={colorMode == "light" ? "blackAlpha.500" : "whiteAlpha.500"}
+                // bg="whiteAlpha.300"
+              />
               <VStack spacing={0}>
-                <Text fontSize="2xl" fontWeight="bold" color="white">
+                <Text
+                  fontSize="2xl"
+                  fontWeight="bold"
+                  color={colorMode == "light" ? "gray.900" : "white"}
+                >
                   {
                     DataProjects.filter((p) => p.projectStatus === "ACTIVE")
                       .length
@@ -448,15 +471,19 @@ const ProjectManagerPage = () => {
                 </Text>
                 <Text
                   fontSize="xs"
-                  color="whiteAlpha.700"
+                  color={colorMode == "light" ? "gray.900" : "white"}
                   textTransform="uppercase"
                 >
                   Active
                 </Text>
               </VStack>
-              <Box w="1px" h="40px" bg="whiteAlpha.300" />
+              <Box w="1px" h="40px" bg="blackAlpha.300" />
               <VStack spacing={0}>
-                <Text fontSize="2xl" fontWeight="bold" color="white">
+                <Text
+                  fontSize="2xl"
+                  fontWeight="bold"
+                  color={colorMode == "light" ? "gray.900" : "white"}
+                >
                   {Math.round(
                     DataProjects.reduce(
                       (acc, p) => acc + p.projectStatusPercentage,
@@ -467,7 +494,7 @@ const ProjectManagerPage = () => {
                 </Text>
                 <Text
                   fontSize="xs"
-                  color="whiteAlpha.700"
+                  color={colorMode == "light" ? "gray.900" : "white"}
                   textTransform="uppercase"
                 >
                   Progress
@@ -478,45 +505,36 @@ const ProjectManagerPage = () => {
 
           {/* Bottom Row - Feature Tags & Mobile Stats */}
           <Flex justify="space-between" align="center" flexWrap="wrap" gap={3}>
-            <HStack spacing={2} flexWrap="wrap">
+            <HStack spacing={3} flexWrap="wrap">
               <Badge
-                bg="whiteAlpha.200"
-                color="white"
+                colorScheme="blue"
                 px={3}
                 py={1}
                 rounded="full"
                 fontSize="xs"
                 fontWeight="medium"
-                border="1px solid"
-                borderColor="whiteAlpha.300"
               >
                 <Icon as={FiFolder} w={3} h={3} mr={1} />
                 Portfolio Management
               </Badge>
               <Badge
-                bg="whiteAlpha.200"
-                color="white"
+                colorScheme="blue"
                 px={3}
                 py={1}
                 rounded="full"
                 fontSize="xs"
                 fontWeight="medium"
-                border="1px solid"
-                borderColor="whiteAlpha.300"
               >
                 <Icon as={FiUsers} w={3} h={3} mr={1} />
                 Team Coordination
               </Badge>
               <Badge
-                bg="whiteAlpha.200"
-                color="white"
+                colorScheme="green"
                 px={3}
                 py={1}
                 rounded="full"
                 fontSize="xs"
                 fontWeight="medium"
-                border="1px solid"
-                borderColor="whiteAlpha.300"
               >
                 <Icon as={FiTrendingUp} w={3} h={3} mr={1} />
                 Performance Tracking
@@ -698,7 +716,7 @@ const ProjectManagerPage = () => {
                               <Box
                                 w={{ base: 8, md: 10 }}
                                 h={{ base: 8, md: 10 }}
-                                bgGradient="linear(to-br, yellow.500, orange.500)"
+                                bgGradient="linear(to-br, blue.500, purple.500)"
                                 rounded="lg"
                                 display="flex"
                                 alignItems="center"
@@ -741,7 +759,7 @@ const ProjectManagerPage = () => {
                             </Button>
                             <Button
                               size={"md"}
-                              colorScheme={"yellow"}
+                              colorScheme={"blue"}
                               leftIcon={<FiPlusSquare />}
                               type={"submit"}
                               isLoading={ActionLoading}
@@ -905,7 +923,7 @@ const ProjectManagerPage = () => {
                           <Box
                             w={{ base: 8, md: 10 }}
                             h={{ base: 8, md: 10 }}
-                            bgGradient="linear(to-br, yellow.500, orange.500)"
+                            bgGradient="linear(to-br, blue.500, purple.500)"
                             rounded="lg"
                             display="flex"
                             alignItems="center"
