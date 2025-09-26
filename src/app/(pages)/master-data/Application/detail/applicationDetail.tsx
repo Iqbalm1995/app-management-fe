@@ -73,9 +73,9 @@ function ApplicationDetail() {
   // Form State
   const [formData, setFormData] = useState({
     appName: "",
-    appCode: "",
+    appShortName: "",
     appsDesc: "",
-    appsStatus: "",
+    note: "",
   });
 
   // Services
@@ -124,9 +124,9 @@ function ApplicationDetail() {
       setDataApplication(data);
       setFormData({
         appName: data.appName,
-        appCode: data.appCode,
+        appShortName: data.appShortName,
         appsDesc: data.appsDesc || "",
-        appsStatus: data.appsStatus,
+        note: data.note || "",
       });
     } catch (error) {
       console.error("Error loading application:", error);
@@ -148,9 +148,9 @@ function ApplicationDetail() {
       const payload = {
         id: appId,
         appName: formData.appName,
-        appCode: formData.appCode,
+        appShortName: formData.appShortName,
         appsDesc: formData.appsDesc,
-        appsStatus: formData.appsStatus,
+        note: formData.note,
       };
 
       const requestData = await UpdateData(payload, tokenData);
@@ -186,7 +186,7 @@ function ApplicationDetail() {
     if (tokenData && appId) {
       LoadApplicationData();
     }
-  }, [tokenData, appId, LoadApplicationData]);
+  }, [tokenData, appId]); // Remove LoadApplicationData from dependencies
 
   if (!appId) {
     return (
@@ -340,10 +340,10 @@ function ApplicationDetail() {
                           </FormControl>
 
                           <FormControl>
-                            <FormLabel>Application Code</FormLabel>
+                            <FormLabel>Application Short Name</FormLabel>
                             <Input
-                              value={formData.appCode}
-                              onChange={(e) => setFormData({ ...formData, appCode: e.target.value })}
+                              value={formData.appShortName}
+                              onChange={(e) => setFormData({ ...formData, appShortName: e.target.value })}
                               isReadOnly={!IsEditMode}
                               bg={IsEditMode ? "white" : "gray.50"}
                               fontFamily="mono"
@@ -358,6 +358,17 @@ function ApplicationDetail() {
                               isReadOnly={!IsEditMode}
                               bg={IsEditMode ? "white" : "gray.50"}
                               rows={4}
+                            />
+                          </FormControl>
+
+                          <FormControl>
+                            <FormLabel>Notes</FormLabel>
+                            <Textarea
+                              value={formData.note}
+                              onChange={(e) => setFormData({ ...formData, note: e.target.value })}
+                              isReadOnly={!IsEditMode}
+                              bg={IsEditMode ? "white" : "gray.50"}
+                              rows={3}
                             />
                           </FormControl>
 

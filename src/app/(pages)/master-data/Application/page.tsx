@@ -1056,9 +1056,8 @@ function MasterDataAplikasiPage() {
                                           }}
                                           transition="all 0.2s"
                                           fontWeight="bold"
-                                          onClick={() => {
-                                            // Detail functionality here
-                                          }}
+                                          as={Link}
+                                          href={`/master-data/Application/detail?id=${app.id}`}
                                         >
                                           View Details
                                         </Button>
@@ -1119,7 +1118,7 @@ function MasterDataAplikasiPage() {
                                   left={0}
                                   right={0}
                                   h="4px"
-                                  bgGradient={`linear(to-r, ${getStatusColor(app.appStatus)}.400, ${getStatusColor(app.appStatus)}.600)`}
+                                  bgGradient={`linear(to-r, ${getStatusColor(app.appsStatus)}.400, ${getStatusColor(app.appsStatus)}.600)`}
                                 />
 
                                 <CardBody p={6}>
@@ -1164,7 +1163,7 @@ function MasterDataAplikasiPage() {
                                               {app.appName}
                                             </Heading>
                                             <Badge
-                                              colorScheme={getStatusColor(app.appStatus)}
+                                              colorScheme={getStatusColor(app.appsStatus)}
                                               px={3}
                                               py={1}
                                               rounded="full"
@@ -1172,7 +1171,7 @@ function MasterDataAplikasiPage() {
                                               fontWeight="bold"
                                               textTransform="uppercase"
                                             >
-                                              {app.appStatus}
+                                              {app.appsStatus}
                                             </Badge>
                                           </HStack>
                                           
@@ -1190,7 +1189,7 @@ function MasterDataAplikasiPage() {
                                             noOfLines={2}
                                             lineHeight="1.4"
                                           >
-                                            {app.appDesc}
+                                            {app.appsDesc}
                                           </Text>
                                         </VStack>
 
@@ -1265,9 +1264,9 @@ function MasterDataAplikasiPage() {
                                           <Text
                                             fontSize="lg"
                                             fontWeight="bold"
-                                            color={app.appStatus === "ACTIVE" ? "green.500" : "red.500"}
+                                            color={app.appsStatus === "ACTIVE" ? "green.500" : "red.500"}
                                           >
-                                            {app.appStatus === "ACTIVE" ? "98%" : "0%"}
+                                            {app.appsStatus === "ACTIVE" ? "98%" : "0%"}
                                           </Text>
                                         </VStack>
                                         <Box w="80px" position="relative">
@@ -1280,9 +1279,9 @@ function MasterDataAplikasiPage() {
                                           >
                                             <Box
                                               h="full"
-                                              bgGradient={app.appStatus === "ACTIVE" ? "linear(to-r, green.400, green.600)" : "linear(to-r, red.400, red.600)"}
+                                              bgGradient={app.appsStatus === "ACTIVE" ? "linear(to-r, green.400, green.600)" : "linear(to-r, red.400, red.600)"}
                                               rounded="full"
-                                              w={app.appStatus === "ACTIVE" ? "98%" : "0%"}
+                                              w={app.appsStatus === "ACTIVE" ? "98%" : "0%"}
                                               transition="all 0.3s ease"
                                             />
                                           </Box>
@@ -1309,9 +1308,8 @@ function MasterDataAplikasiPage() {
                                           _active={{
                                             bgGradient: "linear(to-r, secondary.600, secondary.700)",
                                           }}
-                                          onClick={() => {
-                                            // Detail functionality here
-                                          }}
+                                          as={Link}
+                                          href={`/master-data/Application/detail?id=${app.id}`}
                                         >
                                           Configure
                                         </Button>
@@ -1329,9 +1327,8 @@ function MasterDataAplikasiPage() {
                                           transition="all 0.2s"
                                           fontWeight="medium"
                                           px={4}
-                                          onClick={() => {
-                                            // Detail functionality here
-                                          }}
+                                          as={Link}
+                                          href={`/master-data/Application/detail?id=${app.id}`}
                                         >
                                           Details
                                         </Button>
@@ -1357,9 +1354,9 @@ function MasterDataAplikasiPage() {
                                           <Text
                                             fontSize="md"
                                             fontWeight="bold"
-                                            color={app.appStatus === "ACTIVE" ? "green.500" : "red.500"}
+                                            color={app.appsStatus === "ACTIVE" ? "green.500" : "red.500"}
                                           >
-                                            {app.appStatus === "ACTIVE" ? "98%" : "0%"}
+                                            {app.appsStatus === "ACTIVE" ? "98%" : "0%"}
                                           </Text>
                                           <Box flex={1} maxW="60px">
                                             <Box
@@ -1371,9 +1368,9 @@ function MasterDataAplikasiPage() {
                                             >
                                               <Box
                                                 h="full"
-                                                bgGradient={app.appStatus === "ACTIVE" ? "linear(to-r, green.400, green.600)" : "linear(to-r, red.400, red.600)"}
+                                                bgGradient={app.appsStatus === "ACTIVE" ? "linear(to-r, green.400, green.600)" : "linear(to-r, red.400, red.600)"}
                                                 rounded="full"
-                                                w={app.appStatus === "ACTIVE" ? "98%" : "0%"}
+                                                w={app.appsStatus === "ACTIVE" ? "98%" : "0%"}
                                               />
                                             </Box>
                                           </Box>
@@ -1415,9 +1412,8 @@ function MasterDataAplikasiPage() {
                                         flex={1}
                                         fontWeight="bold"
                                         bgGradient="linear(to-r, secondary.500, secondary.600)"
-                                        onClick={() => {
-                                          // Detail functionality here
-                                        }}
+                                        as={Link}
+                                        href={`/master-data/Application/detail?id=${app.id}`}
                                       >
                                         Configure
                                       </Button>
@@ -1429,9 +1425,8 @@ function MasterDataAplikasiPage() {
                                         rounded="lg"
                                         flex={1}
                                         fontWeight="medium"
-                                        onClick={() => {
-                                          // Detail functionality here
-                                        }}
+                                        as={Link}
+                                        href={`/master-data/Application/detail?id=${app.id}`}
                                       >
                                         Details
                                       </Button>
