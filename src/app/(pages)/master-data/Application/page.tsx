@@ -15,11 +15,13 @@ import {
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
+import useApps, { ApplicationMasterResponse } from "@/app/services/useApps";
 import {
   addParamFilter,
   addParamFilterUpdate,
   ListSearchByParamProps,
   PaggingListPayload,
+  PaggingListPayloadCustom,
   removeParamFilter,
 } from "@/app/types/masterTypes";
 import {
@@ -82,35 +84,22 @@ const HeaderDataContent: HeaderContentProps = {
 // Motion-enhanced version of CardBody
 const MotionCardBody = motion(CardBody);
 
-// Temporary interface for aplikasi data (replace with actual interface later)
-interface AplikasiResponse {
-  id: string;
-  appName: string;
-  appCode: string;
-  appDesc: string;
-  appStatus: string;
-}
-
 function MasterDataAplikasiPage() {
   // SetUp auth data on current page
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
+  const { List } = useApps();
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
-  const delay = (ms: number) =>
-    new Promise((resolve) => setTimeout(resolve, ms));
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
-    const token: string = localStorage.getItem("tokenData") as string;
+    const token = localStorage.getItem("tokenData") as string;
 
-    if (DataAuth == null) {
-      if (storedData) {
-        const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
-        const UserData: AuthDataResponse =
-          StorageAuth.dataLogin as AuthDataResponse;
-        setDataAuth(UserData);
-      }
+    if (DataAuth == null && storedData) {
+      const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
+      const UserData: AuthDataResponse = StorageAuth.dataLogin as AuthDataResponse;
+      setDataAuth(UserData);
     }
 
     if (token) {
@@ -119,7 +108,7 @@ function MasterDataAplikasiPage() {
   }, [DataAuth]);
   // End SetUp auth data on current page
 
-  const [DataAplikasi, setDataAplikasi] = useState<AplikasiResponse[]>([]);
+  const [DataAplikasi, setDataAplikasi] = useState<ApplicationMasterResponse[]>([]);
   const [RefreshData, setRefreshData] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
   const [ActionLoading, setActionLoading] = useState(false);
@@ -146,112 +135,67 @@ function MasterDataAplikasiPage() {
   );
 
   // Function Data Load Services Aplikasi with pagination
-  const GetDataAplikasi = async (): Promise<AplikasiResponse[]> => {
-    setIsLoadingProcess(true);
-    
-    // Simulate API call with dummy data and pagination
-    await delay(1000);
-    
-    const allDummyData: AplikasiResponse[] = [
-      {
-        id: "1",
-        appName: "Project Management System",
-        appCode: "PMS001",
-        appDesc: "Comprehensive project management application for enterprise use",
-        appStatus: "ACTIVE"
-      },
-      {
-        id: "2", 
-        appName: "Human Resource Management",
-        appCode: "HRM002",
-        appDesc: "Complete HR management solution with payroll integration",
-        appStatus: "ACTIVE"
-      },
-      {
-        id: "3",
-        appName: "Customer Relationship Management", 
-        appCode: "CRM003",
-        appDesc: "Advanced CRM system for customer engagement and sales tracking",
-        appStatus: "INACTIVE"
-      },
-      {
-        id: "4",
-        appName: "Financial Management System",
-        appCode: "FMS004",
-        appDesc: "Complete financial management and accounting solution",
-        appStatus: "ACTIVE"
-      },
-      {
-        id: "5",
-        appName: "Inventory Management",
-        appCode: "IMS005",
-        appDesc: "Advanced inventory tracking and management system",
-        appStatus: "ACTIVE"
-      },
-      {
-        id: "6",
-        appName: "Document Management System",
-        appCode: "DMS006",
-        appDesc: "Digital document storage and management platform",
-        appStatus: "INACTIVE"
-      },
-      {
-        id: "7",
-        appName: "Learning Management System",
-        appCode: "LMS007",
-        appDesc: "Online learning and training management platform",
-        appStatus: "ACTIVE"
-      },
-      {
-        id: "8",
-        appName: "Asset Management System",
-        appCode: "AMS008",
-        appDesc: "Complete asset tracking and management solution",
-        appStatus: "ACTIVE"
-      },
-      {
-        id: "9",
-        appName: "Quality Management System",
-        appCode: "QMS009",
-        appDesc: "Quality control and assurance management platform",
-        appStatus: "ACTIVE"
-      },
-      {
-        id: "10",
-        appName: "Supply Chain Management",
-        appCode: "SCM010",
-        appDesc: "End-to-end supply chain management solution",
-        appStatus: "INACTIVE"
+  const GetDataAplikasi = async () => {
+    if (!tokenData || !DataAuth) {
+      console.log("Missing auth data:", { tokenData: !!tokenData, DataAuth: !!DataAuth });
+      return;
+    }
+
+    try {
+      setIsLoadingProcess(true);
+      
+      console.log("Making API call with token:", tokenData.substring(0, 20) + "...");
+      
+      const PayloadList: PaggingListPayloadCustom = {
+        search: globalFilter,
+        limit: pageSize,
+        page: pageIndex + 1,
+        fieldOrder: ["createdAt"],
+        orderDir: "desc",
+        filterWhere: [],
+      };
+
+      const requestData = await List(PayloadList as any, tokenData);
+      
+      console.log("API Response:", requestData);
+      
+      const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+
+      if (isErrorResponse || !requestData) {
+        showToast({
+          description: requestData?.message || RES_GENERIC_ERROR_MSG,
+          statusToast: "error",
+        });
+        setIsLoadingProcess(false);
+        return;
       }
-    ];
 
-    // Apply category filter
-    let filteredData = allDummyData;
-    if (selectedKategori !== "all") {
-      // In real implementation, filter by category
-      filteredData = allDummyData.filter(app => app.appStatus === "ACTIVE");
+      if (requestData.data == null) {
+        showToast({
+          description: "Data return error",
+          statusToast: "error",
+        });
+        setIsLoadingProcess(false);
+        return;
+      }
+
+      const data = requestData.data as ApplicationMasterResponse[];
+      setDataAplikasi(data);
+      
+      // Use API pagination data
+      const totalData = requestData.countTotal || 0;
+      const totalPages = totalData > 0 ? Math.ceil(totalData / pageSize) : 0;
+      setTotalPageData(totalPages);
+
+    } catch (error) {
+      console.error("Error fetching applications:", error);
+      showToast({
+        description: "An unexpected error occurred",
+        statusToast: "error",
+      });
+    } finally {
+      setIsLoadingProcess(false);
     }
-
-    // Apply search filter
-    if (globalFilter) {
-      filteredData = filteredData.filter(app => 
-        app.appName.toLowerCase().includes(globalFilter.toLowerCase()) ||
-        app.appCode.toLowerCase().includes(globalFilter.toLowerCase()) ||
-        app.appDesc.toLowerCase().includes(globalFilter.toLowerCase())
-      );
-    }
-
-    // Calculate pagination
-    const totalData = filteredData.length;
-    const totalPages = totalData > 0 ? Math.ceil(totalData / pageSize) : 0;
-    const startIndex = pageIndex * pageSize;
-    const endIndex = startIndex + pageSize;
-    const paginatedData = filteredData.slice(startIndex, endIndex);
-
-    setDataAplikasi(paginatedData);
-    setTotalPageData(totalPages);
-    setIsLoadingProcess(false);
-    return paginatedData;
   };
   // END - Function Data Load Services Aplikasi
 
@@ -262,7 +206,7 @@ function MasterDataAplikasiPage() {
   };
 
   // Table configuration
-  const columnsData = useMemo<ColumnDef<AplikasiResponse>[]>(
+  const columnsData = useMemo<ColumnDef<ApplicationMasterResponse>[]>(
     () => [
       {
         accessorFn: (row) => row.appCode,
@@ -301,8 +245,10 @@ function MasterDataAplikasiPage() {
 
   // Update useEffect to include pagination dependencies
   useEffect(() => {
-    GetDataAplikasi();
-  }, [pageIndex, pageSize, globalFilter, selectedKategori, RefreshData]);
+    if (DataAuth && tokenData) {
+      GetDataAplikasi();
+    }
+  }, [pageIndex, pageSize, globalFilter, selectedKategori, RefreshData, DataAuth, tokenData]);
 
   return (
     <LayoutAdmin>
@@ -505,7 +451,7 @@ function MasterDataAplikasiPage() {
                       <Text fontSize="xl" fontWeight="bold" color="green.600">
                         {
                           DataAplikasi.filter(
-                            (app) => app.appStatus === "ACTIVE"
+                            (app) => app.appsStatus === "ACTIVE"
                           ).length
                         }
                       </Text>
@@ -761,7 +707,7 @@ function MasterDataAplikasiPage() {
                         >
                           {
                             DataAplikasi.filter(
-                              (app) => app.appStatus === "ACTIVE"
+                              (app) => app.appsStatus === "ACTIVE"
                             ).length
                           }{" "}
                           Active
@@ -1004,7 +950,7 @@ function MasterDataAplikasiPage() {
                                   left={0}
                                   right={0}
                                   h="4px"
-                                  bgGradient={`linear(to-r, ${getStatusColor(app.appStatus)}.400, ${getStatusColor(app.appStatus)}.600)`}
+                                  bgGradient={`linear(to-r, ${getStatusColor(app.appsStatus)}.400, ${getStatusColor(app.appsStatus)}.600)`}
                                 />
 
                                 {/* Header with App Icon */}
@@ -1072,7 +1018,7 @@ function MasterDataAplikasiPage() {
                                         lineHeight="1.4"
                                         minH="60px"
                                       >
-                                        {app.appDesc}
+                                        {app.appsDesc || "No description available"}
                                       </Text>
                                     </VStack>
 
@@ -1088,14 +1034,14 @@ function MasterDataAplikasiPage() {
                                             Status
                                           </Text>
                                           <Badge
-                                            colorScheme={getStatusColor(app.appStatus)}
+                                            colorScheme={getStatusColor(app.appsStatus)}
                                             px={2}
                                             py={1}
                                             rounded="full"
                                             fontSize="xs"
                                             fontWeight="bold"
                                           >
-                                            {app.appStatus}
+                                            {app.appsStatus}
                                           </Badge>
                                         </HStack>
                                         
