@@ -99,7 +99,7 @@ function MasterDataAplikasiPage() {
   // SetUp auth data on current page
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
-  const { List } = useApps();
+  const { List, InsertData } = useApps();
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
 
@@ -170,10 +170,11 @@ function MasterDataAplikasiPage() {
       const PayloadList: PaggingListPayloadCustom = {
         search: globalFilter,
         limit: pageSize,
-        page: pageIndex + 1,
+        page: pageIndex,
         fieldOrder: ["createdAt"],
         orderDir: "desc",
         filterWhere: [],
+
       };
 
       const requestData = await List(PayloadList as any, tokenData);
@@ -233,15 +234,29 @@ function MasterDataAplikasiPage() {
       setActionLoading(true);
       
       const payload = {
-        id: `app_${Date.now()}`,
+
         appName: formData.appName,
         appShortName: formData.appShortName,
-        appsDesc: formData.appsDesc,
-        note: formData.note,
+        appsDesc: formData.appsDesc || null,
+        note: formData.note || null,
+        appOwnerDivisionId: null,
+        appOwnerGroupId: null,
+        appManageByDivisionId: null,
+        appManageByGroupId: null,
+        appManageByTeamId: null,
+        reqParentId: null,
       };
 
       // Simulate API call for now
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const requestData = await InsertData(payload, tokenData);
+      
+      if (!requestData || requestData.statusCode !== RES_CODE_OK) {
+        showToast({
+          description: requestData?.message || RES_GENERIC_ERROR_MSG,
+          statusToast: "error",
+        });
+        return;
+      }
       
       showToast({
         description: "Application added successfully",
@@ -304,7 +319,7 @@ function MasterDataAplikasiPage() {
     if (DataAuth && tokenData) {
       GetDataAplikasi();
     }
-  }, [pageIndex, pageSize, globalFilter, selectedKategori, RefreshData, DataAuth, tokenData]);
+  }, [pageIndex, pageSize, globalFilter, /* selectedKategori, */ RefreshData, DataAuth, tokenData]);
 
   return (
     <LayoutAdmin>
@@ -791,7 +806,7 @@ function MasterDataAplikasiPage() {
                       <Select
                         value={selectedKategori}
                         size={"md"}
-                        onChange={(e) => setSelectedKategori(e.target.value)}
+                        // onChange={(e) => setSelectedKategori(e.target.value)}
                         maxW={"180px"}
                         bg={colorMode === "light" ? "white" : "gray.800"}
                         borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
