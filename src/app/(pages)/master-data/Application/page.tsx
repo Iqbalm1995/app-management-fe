@@ -328,558 +328,261 @@ function MasterDataAplikasiPage() {
         breadCrumb={HeaderDataContent.breadCrumb}
       />
 
-      {/* Modern Master Data Header Section */}
-      <Box
-        bg={colorMode === "light" ? "white" : "gray.800"}
+      {/* Modern Colorful Header Card with Actions */}
+      <Card
+        bgGradient={colorMode === "light" ? "linear(135deg, white, gray.50)" : "linear(135deg, gray.800, gray.900)"}
         border="1px"
         borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
         rounded="2xl"
-        shadow="2xl"
-        px={2}
-        mx={{ base: 4, sm: 5, md: 6 }}
-        mt={{ base: 2, md: 4 }}
-        mb={{ base: 4, md: 6 }}
-        overflow="hidden"
+        shadow="xl"
+        mx={{ base: 4, md: 6 }}
+        mt={4}
+        mb={6}
         position="relative"
+        overflow="hidden"
       >
-        {/* BJB Logo Overlay Pattern */}
+        {/* Animated Gradient Background */}
         <Box
           position="absolute"
-          top="50%"
-          left="-100px"
-          transform="translateY(-50%)"
-          w="300px"
-          h="300px"
-          opacity="0.15"
-          zIndex={0}
-          backgroundImage="url('/img/logo-bjb-black-wing.svg')"
-          backgroundSize="contain"
-          backgroundRepeat="no-repeat"
-          backgroundPosition="center"
-          filter="brightness(0) saturate(100%) invert(27%) sepia(98%) saturate(1352%) hue-rotate(170deg) brightness(96%) contrast(97%)"
+          top={0}
+          left={0}
+          right={0}
+          h="6px"
+          bgGradient="linear(90deg, secondary.500, blue.500, green.500, orange.500, secondary.500)"
+          backgroundSize="200% 100%"
+          animation="gradient 3s ease infinite"
+          sx={{
+            "@keyframes gradient": {
+              "0%, 100%": { backgroundPosition: "0% 50%" },
+              "50%": { backgroundPosition: "100% 50%" }
+            }
+          }}
         />
+        
+        <CardBody p={6}>
+          <Flex justify="space-between" align="center" wrap="wrap" gap={6}>
+            {/* Left Content with Gradient */}
+            <HStack spacing={4}>
+              <Box
+                w="60px"
+                h="60px"
+                bgGradient="linear(135deg, secondary.400, secondary.600, purple.500)"
+                rounded="2xl"
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                shadow="lg"
+                position="relative"
+                _before={{
+                  content: '""',
+                  position: "absolute",
+                  inset: "-2px",
+                  bgGradient: "linear(135deg, secondary.300, purple.400)",
+                  rounded: "2xl",
+                  zIndex: -1,
+                  opacity: 0.3
+                }}
+              >
+                <Icon as={HiOutlineDesktopComputer} boxSize={6} color="white" />
+              </Box>
+              <VStack align="start" spacing={1}>
+                <Heading 
+                  size="lg" 
+                  bgGradient="linear(to-r, secondary.600, blue.600)"
+                  bgClip="text"
+                  fontWeight="bold"
+                >
+                  Application Management
+                </Heading>
+                <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"}>
+                  System application configuration
+                </Text>
+              </VStack>
+            </HStack>
 
-        {/* Decorative Background Elements */}
-        <Box
-          position="absolute"
-          top="-40px"
-          right="-40px"
-          w="160px"
-          h="160px"
-          bg="secondary.100"
-          rounded="full"
-          opacity="0.3"
-          zIndex={0}
-        />
+            {/* Center - Minimalistic Stats */}
+            <HStack spacing={8}>
+              <VStack spacing={1} align="center">
+                <Text fontSize="2xl" fontWeight="bold" color="secondary.600">
+                  {DataAplikasi.length}
+                </Text>
+                <Text fontSize="xs" color="gray.500" fontWeight="medium">Total</Text>
+              </VStack>
+              
+              <VStack spacing={1} align="center">
+                <Text fontSize="2xl" fontWeight="bold" color="green.600">
+                  {DataAplikasi.filter((app) => app.appsStatus === "ACTIVE").length}
+                </Text>
+                <Text fontSize="xs" color="gray.500" fontWeight="medium">Active</Text>
+              </VStack>
+              
+              <VStack spacing={1} align="center">
+                <Text fontSize="2xl" fontWeight="bold" color="orange.600">98%</Text>
+                <Text fontSize="xs" color="gray.500" fontWeight="medium">Health</Text>
+              </VStack>
+            </HStack>
 
-        <Box
-          px={{ base: 4, sm: 5, md: 6 }}
-          py={{ base: 5, md: 6 }}
-          position="relative"
-          zIndex={1}
-        >
-          <Grid
-            templateColumns={{ base: "1fr", lg: "1fr auto" }}
-            gap={6}
-            alignItems="center"
-          >
-            {/* Left Content */}
-            <VStack align="start" spacing={4}>
-              {/* Title Section */}
-              <HStack spacing={4}>
+            {/* Right - Action Buttons */}
+            <HStack spacing={3}>
+              <Button
+                size="md"
+                variant="outline"
+                colorScheme="gray"
+                leftIcon={<FiRefreshCcw />}
+                onClick={() => RefreshAction()}
+                isLoading={ActionLoading}
+                rounded="xl"
+                _hover={{
+                  transform: "translateY(-2px)",
+                  shadow: "lg",
+                }}
+                transition="all 0.2s"
+              >
+                Refresh
+              </Button>
+              <Button
+                size="md"
+                bgGradient="linear(135deg, secondary.500, secondary.600)"
+                color="white"
+                leftIcon={<FiPlusSquare />}
+                onClick={() => ModalForm.onOpen()}
+                isLoading={ActionLoading}
+                rounded="xl"
+                shadow="lg"
+                _hover={{
+                  bgGradient: "linear(135deg, secondary.600, secondary.700)",
+                  transform: "translateY(-2px)",
+                  shadow: "xl",
+                }}
+                _active={{
+                  transform: "translateY(0)",
+                }}
+                transition="all 0.2s"
+              >
+                Add Application
+              </Button>
+            </HStack>
+          </Flex>
+        </CardBody>
+      </Card>
+      {/* Enhanced Main Content Card */}
+      <Card
+        rounded="2xl"
+        shadow="lg"
+        border="1px"
+        borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+        bg={colorMode === "light" ? "white" : "gray.800"}
+        mx={{ base: 4, md: 6 }}
+        mb={8}
+      >
+        <CardBody p={8}>
+          {/* Search and Controls Section */}
+          <VStack spacing={6} w="full">
+            <Flex justify="space-between" align="center" w="full">
+              {/* Left - App Count Info with Icon */}
+              <HStack spacing={3} align="center">
                 <Box
-                  w={"80px"}
-                  h={"80px"}
-                  bgGradient={"linear(to-br, secondary.700, secondary.400)"}
-                  rounded="2xl"
+                  w="40px"
+                  h="40px"
+                  bg="secondary.500"
+                  rounded="lg"
                   display="flex"
                   alignItems="center"
                   justifyContent="center"
                   color="white"
-                  fontSize="xl"
-                  shadow="lg"
                 >
-                  <Icon as={HiOutlineDesktopComputer} boxSize={6} color="white" />
+                  <Icon as={FiGrid} boxSize={4} />
                 </Box>
-                <VStack align="start" spacing={1}>
-                  <Heading
-                    size="xl"
-                    color={colorMode === "light" ? "gray.800" : "white"}
-                    fontWeight="bold"
-                  >
-                    Master Data Applications
+                <VStack align="start" spacing={0}>
+                  <Heading size="md" color={colorMode === "light" ? "gray.800" : "white"}>
+                    Master Data
                   </Heading>
-                  <Text
-                    fontSize="md"
-                    color={colorMode === "light" ? "gray.600" : "gray.300"}
-                    fontWeight="medium"
-                  >
-                    Manage and configure all system applications
+                  <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"}>
+                    {DataAplikasi.length} applications found
+                    {globalFilter && ` • Search: "${globalFilter}"`}
                   </Text>
                 </VStack>
               </HStack>
 
-              {/* Feature Tags */}
-              <HStack spacing={3} flexWrap="wrap">
-                <Badge
-                  colorScheme="secondary"
-                  px={4}
-                  py={2}
-                  rounded="full"
-                  fontSize="sm"
-                  fontWeight="medium"
+              {/* Right - Controls */}
+              <HStack spacing={4}>
+                {/* Search */}
+                <InputGroup maxW="300px">
+                  <InputLeftElement>
+                    <FiSearch color="gray.400" />
+                  </InputLeftElement>
+                  <Input
+                    placeholder="Search applications..."
+                    value={globalFilter}
+                    onChange={(e) => setGlobalFilter(e.target.value)}
+                    bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                    border="1px"
+                    borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
+                    rounded="xl"
+                    _focus={{
+                      borderColor: "secondary.500",
+                      bg: colorMode === "light" ? "white" : "gray.800",
+                    }}
+                  />
+                </InputGroup>
+
+                {/* Category Filter */}
+                <Select
+                  value={selectedKategori}
+                  maxW="180px"
+                  bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                  border="1px"
+                  borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
+                  rounded="xl"
+                  _focus={{
+                    borderColor: "secondary.500",
+                    bg: colorMode === "light" ? "white" : "gray.800",
+                  }}
                 >
-                  <Icon as={HiOutlineDesktopComputer} w={3} h={3} mr={2} />
-                  Application Management
-                </Badge>
-                <Badge
-                  colorScheme="secondary"
-                  px={4}
-                  py={2}
-                  rounded="full"
-                  fontSize="sm"
-                  fontWeight="medium"
+                  <option value="all">All Categories</option>
+                  <option value="enterprise">Enterprise</option>
+                  <option value="web">Web Application</option>
+                  <option value="mobile">Mobile Application</option>
+                </Select>
+
+                {/* View Toggle */}
+                <HStack
+                  bg={colorMode === "light" ? "gray.100" : "gray.700"}
+                  rounded="xl"
+                  p={1}
+                  spacing={1}
                 >
-                  <Icon as={FiSettings} w={3} h={3} mr={2} />
-                  Configuration
-                </Badge>
-                <Badge
-                  colorScheme="green"
-                  px={4}
-                  py={2}
-                  rounded="full"
-                  fontSize="sm"
-                  fontWeight="medium"
-                >
-                  <Icon as={FiBarChart} w={3} h={3} mr={2} />
-                  System Analytics
-                </Badge>
+                  <Button
+                    size="sm"
+                    variant={viewMode === "grid" ? "solid" : "ghost"}
+                    colorScheme={viewMode === "grid" ? "secondary" : "gray"}
+                    onClick={() => setViewMode("grid")}
+                    leftIcon={<FiGrid />}
+                    rounded="lg"
+                    px={4}
+                  >
+                    Grid
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={viewMode === "list" ? "solid" : "ghost"}
+                    colorScheme={viewMode === "list" ? "secondary" : "gray"}
+                    onClick={() => setViewMode("list")}
+                    leftIcon={<FiList />}
+                    rounded="lg"
+                    px={4}
+                  >
+                    List
+                  </Button>
+                </HStack>
               </HStack>
-            </VStack>
+            </Flex>
 
-            {/* Right Content - Stats Grid */}
-            <Box>
-              <Grid templateColumns="repeat(2, 1fr)" gap={3} minW="260px">
-                {/* Total Applications */}
-                <Card
-                  bg={colorMode === "light" ? "secondary.50" : "secondary.900"}
-                  border="1px"
-                  borderColor={colorMode === "light" ? "secondary.200" : "secondary.700"}
-                  rounded="lg"
-                >
-                  <CardBody p={4} textAlign="center">
-                    <VStack spacing={2}>
-                      <Box
-                        w={8}
-                        h={8}
-                        bg="secondary.500"
-                        rounded="lg"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                        color="white"
-                        fontSize="md"
-                      >
-                        <Icon as={HiOutlineDesktopComputer} boxSize={4} />
-                      </Box>
-                      <Text fontSize="xl" fontWeight="bold" color="secondary.600">
-                        {DataAplikasi.length}
-                      </Text>
-                      <Text
-                        fontSize="xs"
-                        color={colorMode === "light" ? "secondary.600" : "secondary.300"}
-                      >
-                        Total Apps
-                      </Text>
-                    </VStack>
-                  </CardBody>
-                </Card>
+            <Divider />
 
-                {/* Active Applications */}
-                <Card
-                  bg={colorMode === "light" ? "green.50" : "green.900"}
-                  border="1px"
-                  borderColor={
-                    colorMode === "light" ? "green.200" : "green.700"
-                  }
-                  rounded="lg"
-                >
-                  <CardBody p={4} textAlign="center">
-                    <VStack spacing={2}>
-                      <Box
-                        w={8}
-                        h={8}
-                        bg="green.500"
-                        rounded="lg"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                        color="white"
-                        fontSize="md"
-                      >
-                        <Icon as={FiZap} boxSize={4} />
-                      </Box>
-                      <Text fontSize="xl" fontWeight="bold" color="green.600">
-                        {
-                          DataAplikasi.filter(
-                            (app) => app.appsStatus === "ACTIVE"
-                          ).length
-                        }
-                      </Text>
-                      <Text
-                        fontSize="xs"
-                        color={
-                          colorMode === "light" ? "green.600" : "green.300"
-                        }
-                      >
-                        Active Apps
-                      </Text>
-                    </VStack>
-                  </CardBody>
-                </Card>
-
-                {/* Categories */}
-                <Card
-                  bg={colorMode === "light" ? "blue.50" : "blue.900"}
-                  border="1px"
-                  borderColor={colorMode === "light" ? "blue.200" : "blue.700"}
-                  rounded="lg"
-                >
-                  <CardBody p={4} textAlign="center">
-                    <VStack spacing={2}>
-                      <Box
-                        w={8}
-                        h={8}
-                        bg="blue.500"
-                        rounded="lg"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                        color="white"
-                        fontSize="md"
-                      >
-                        <Icon as={FiGrid} boxSize={4} />
-                      </Box>
-                      <Text fontSize="xl" fontWeight="bold" color="blue.600">
-                        4
-                      </Text>
-                      <Text
-                        fontSize="xs"
-                        color={colorMode === "light" ? "blue.600" : "blue.300"}
-                      >
-                        Categories
-                      </Text>
-                    </VStack>
-                  </CardBody>
-                </Card>
-
-                {/* System Health */}
-                <Card
-                  bg={colorMode === "light" ? "orange.50" : "orange.900"}
-                  border="1px"
-                  borderColor={
-                    colorMode === "light" ? "orange.200" : "orange.700"
-                  }
-                  rounded="lg"
-                >
-                  <CardBody p={4} textAlign="center">
-                    <VStack spacing={2}>
-                      <Box
-                        w={8}
-                        h={8}
-                        bg="orange.500"
-                        rounded="lg"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                        color="white"
-                        fontSize="md"
-                      >
-                        <Icon as={FiActivity} boxSize={4} />
-                      </Box>
-                      <Text fontSize="xl" fontWeight="bold" color="orange.600">
-                        98%
-                      </Text>
-                      <Text
-                        fontSize="xs"
-                        color={
-                          colorMode === "light" ? "orange.600" : "orange.300"
-                        }
-                      >
-                        System Health
-                      </Text>
-                    </VStack>
-                  </CardBody>
-                </Card>
-              </Grid>
-            </Box>
-          </Grid>
-        </Box>
-      </Box>
-      {/* Enhanced Main Content */}
-      <Box px={{ base: 4, sm: 5, md: 6 }} w="full">
-        <VStack spacing={{ base: 4, md: 6 }} w="full">
-          {/* Applications Display Card */}
-          <Card
-            rounded={{ base: "lg", md: "xl" }}
-            shadow={{ base: "md", md: "lg" }}
-            border="1px"
-            borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-            bg={colorMode === "light" ? "white" : "gray.800"}
-            w="full"
-            minH={{ base: "300px", md: "400px" }}
-          >
-            <CardBody p={{ base: 4, sm: 5, md: 6 }}>
-              <VStack spacing={{ base: 6, md: 8 }} w="full">
-                {/* Header with Controls */}
-                <Box w="full">
-                  <VStack spacing={4} align="stretch">
-                    <Flex
-                      as={HStack}
-                      justifyContent={"space-between"}
-                      px={0}
-                      w={"full"}
-                    >
-                      <Flex
-                        as={HStack}
-                        justifyContent={"left"}
-                        px={0}
-                        w={"full"}
-                      >
-                        <HStack spacing={3} align="center">
-                          <Box
-                            w={{ base: 8, md: 10 }}
-                            h={{ base: 8, md: 10 }}
-                            bg="secondary.500"
-                            rounded="lg"
-                            display="flex"
-                            alignItems="center"
-                            justifyContent="center"
-                            color="white"
-                            fontSize={{ base: "sm", md: "md" }}
-                            flexShrink={0}
-                          >
-                            <Icon
-                              as={HiOutlineDesktopComputer}
-                              boxSize={{ base: 4, md: 5 }}
-                            />
-                          </Box>
-                          <VStack align="start" spacing={0}>
-                            <Heading
-                              size={"md"}
-                              color={
-                                colorMode === "light" ? "gray.800" : "white"
-                              }
-                              lineHeight="1.2"
-                            >
-                              Applications Management
-                            </Heading>
-                          </VStack>
-                        </HStack>
-                      </Flex>
-                      <Flex
-                        as={HStack}
-                        justifyContent={"right"}
-                        px={0}
-                        w={"full"}
-                      >
-                        <Button
-                          size={"md"}
-                          leftIcon={<FiRefreshCcw />}
-                          onClick={() => RefreshAction()}
-                          isLoading={ActionLoading}
-                        >
-                          Refresh
-                        </Button>
-                        <Button
-                          size={"md"}
-                          colorScheme={"secondary"}
-                          leftIcon={<FiPlusSquare />}
-                          type={"submit"}
-                          isLoading={ActionLoading}
-                          onClick={() => {
-                            ModalForm.onOpen();
-                          }}
-                        >
-                          Add Application
-                        </Button>
-                      </Flex>
-                    </Flex>
-
-                    <Divider />
-                  </VStack>
-                </Box>
-
-                {/* Search and Filter Controls */}
-                <Flex
-                  justify="space-between"
-                  align={{ base: "start", sm: "center" }}
-                  w="full"
-                  direction={{ base: "column", sm: "row" }}
-                  gap={{ base: 3, sm: 0 }}
-                >
-                  <HStack justify="space-between" align="center" w="full">
-                    <HStack spacing={3} align="center">
-                      <Box
-                        w={{ base: 8, md: 10 }}
-                        h={{ base: 8, md: 10 }}
-                        bg="secondary.500"
-                        rounded="lg"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                        color="white"
-                        fontSize={{ base: "sm", md: "md" }}
-                        flexShrink={0}
-                      >
-                        <Icon as={FiGrid} boxSize={{ base: 4, md: 5 }} />
-                      </Box>
-                      <VStack align="start" spacing={0}>
-                        <Heading
-                          size={{ base: "sm", md: "md" }}
-                          color={
-                            colorMode === "light" ? "gray.800" : "white"
-                          }
-                          lineHeight="1.2"
-                        >
-                          My Applications
-                        </Heading>
-                        <Text
-                          fontSize={{ base: "xs", md: "sm" }}
-                          color={
-                            colorMode === "light" ? "gray.600" : "gray.400"
-                          }
-                          lineHeight="1.3"
-                        >
-                          {DataAplikasi.length} applications found
-                          {globalFilter && (
-                            <Text
-                              as="span"
-                              display={{ base: "block", sm: "inline" }}
-                            >
-                              {" "}
-                              • Search: "{globalFilter}"
-                            </Text>
-                          )}
-                        </Text>
-                      </VStack>
-                    </HStack>
-
-                    {/* View Mode Toggle & Controls */}
-                    <HStack spacing={3}>
-                      {DataAplikasi.length > 0 && (
-                        <Badge
-                          colorScheme="green"
-                          px={{ base: 2, md: 3 }}
-                          py={1}
-                          rounded="full"
-                          fontSize={{ base: "xs", md: "sm" }}
-                          flexShrink={0}
-                        >
-                          {
-                            DataAplikasi.filter(
-                              (app) => app.appsStatus === "ACTIVE"
-                            ).length
-                          }{" "}
-                          Active
-                        </Badge>
-                      )}
-
-                      {/* Search Input */}
-                      <InputGroup maxW={"250px"}>
-                        <InputLeftElement pointerEvents="none" h="full">
-                          <FiSearch color="gray.400" />
-                        </InputLeftElement>
-                        <Input
-                          type="text"
-                          placeholder="Search applications..."
-                          bg={colorMode === "light" ? "white" : "gray.800"}
-                          borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
-                          onChange={(e) => setGlobalFilter(e.target.value)}
-                          value={globalFilter}
-                          size="md"
-                          rounded="lg"
-                        />
-                      </InputGroup>
-
-                      {/* Category Filter */}
-                      <Select
-                        value={selectedKategori}
-                        size={"md"}
-                        // onChange={(e) => setSelectedKategori(e.target.value)}
-                        maxW={"180px"}
-                        bg={colorMode === "light" ? "white" : "gray.800"}
-                        borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
-                        rounded="lg"
-                      >
-                        <option value="all">All Categories</option>
-                        <option value="enterprise">Enterprise</option>
-                        <option value="web">Web Application</option>
-                        <option value="mobile">Mobile Application</option>
-                        <option value="desktop">Desktop Application</option>
-                      </Select>
-
-                      {/* View Mode Toggle Buttons */}
-                      <HStack
-                        spacing={1}
-                        bg={colorMode === "light" ? "gray.100" : "gray.700"}
-                        rounded="lg"
-                        p={1}
-                      >
-                        <Button
-                          size="sm"
-                          variant={viewMode === "grid" ? "solid" : "ghost"}
-                          colorScheme={
-                            viewMode === "grid" ? "secondary" : "gray"
-                          }
-                          onClick={() => setViewMode("grid")}
-                          leftIcon={<Icon as={FiGrid} boxSize={3} />}
-                          fontSize="xs"
-                          px={3}
-                          h={8}
-                          _hover={{
-                            bg:
-                              viewMode === "grid"
-                                ? "secondary.500"
-                                : colorMode === "light"
-                                ? "gray.200"
-                                : "gray.600",
-                          }}
-                          transition="all 0.2s"
-                        >
-                          Grid
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant={viewMode === "list" ? "solid" : "ghost"}
-                          colorScheme={
-                            viewMode === "list" ? "secondary" : "gray"
-                          }
-                          onClick={() => setViewMode("list")}
-                          leftIcon={<Icon as={FiList} boxSize={3} />}
-                          fontSize="xs"
-                          px={3}
-                          h={8}
-                          _hover={{
-                            bg:
-                              viewMode === "list"
-                                ? "secondary.500"
-                                : colorMode === "light"
-                                ? "gray.200"
-                                : "gray.600",
-                          }}
-                          transition="all 0.2s"
-                        >
-                          List
-                        </Button>
-                      </HStack>
-                    </HStack>
-                  </HStack>
-                </Flex>
-
-                {/* Applications Content */}
-                <Box w="full">
-                  {IsLoadingProcess ? (
+            {/* Applications Content */}
+            <Box w="full" minH="400px">
+              {IsLoadingProcess ? (
                     <VStack
                       spacing={{ base: 4, md: 6 }}
                       py={{ base: 12, md: 16 }}
@@ -1523,12 +1226,11 @@ function MasterDataAplikasiPage() {
                       </Box>
                     </>
                   )}
-                </Box>
-              </VStack>
-            </CardBody>
-          </Card>
-        </VStack>
-      </Box>
+            </Box>
+          </VStack>
+        </CardBody>
+      </Card>
+
       {/* Add Application Modal */}
       <Modal isOpen={ModalForm.isOpen} onClose={ModalForm.onClose} size="4xl" isCentered>
         <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(10px)" />
