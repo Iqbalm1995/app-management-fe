@@ -1376,6 +1376,9 @@ function ProjectRegisterView({
     setActionLoading(true);
     await delay(DELAY_MEDIUM);
 
+    formik.setFieldValue(`projectCategory`, "PROJECT");
+    formik.setFieldValue(`proManageByTeamId`, null);
+
     console.log(" Project Payload Insert : ");
     console.log(formik.values);
     console.log(" Backlog Data Payload Update : ");
@@ -1402,13 +1405,13 @@ function ProjectRegisterView({
       errorSum++;
     }
 
-    if (!formik.values.projectCategory) {
-      showToast({
-        description: "Karakteristik Project masih kosong",
-        statusToast: "warning",
-      });
-      errorSum++;
-    }
+    // if (!formik.values.projectCategory) {
+    //   showToast({
+    //     description: "Karakteristik Project masih kosong",
+    //     statusToast: "warning",
+    //   });
+    //   errorSum++;
+    // }
 
     if (!formik.values.projectType) {
       showToast({
@@ -1585,9 +1588,12 @@ function ProjectRegisterView({
   useEffect(() => {
     // projectTypeRegister;
     formik.setFieldValue(`projectType`, projectTypeRegister);
+    formik.setFieldValue(`projectCategory`, "PROJECT");
     if (DataAuth && DataRequirement && tokenData) {
       if (IsHaveMemo == "Y") {
         GetDataListBacklogs();
+
+        formik.setFieldValue(`reqParentId`, DataRequirement.id);
 
         formik.setFieldValue(
           "proOwnerDirectorateId",
@@ -1717,6 +1723,8 @@ function ProjectRegisterView({
     setWorkProgramInt("0");
     formik.setFieldValue("userAssigns", []);
     setApplicationData(null);
+
+    formik.setFieldValue(`reqParentId`, null);
   };
   // end reset filled data from req
 
@@ -5097,7 +5105,7 @@ function ProjectRegisterView({
                 p={4}
                 bgColor={"gray.200"}
                 rounded={radiusStyle}
-                display={"none"}
+                // display={"none"}
               >
                 <Text fontWeight={600}>Data Register Form</Text>
                 <pre>{JSON.stringify(formik.values, null, 2)}</pre>

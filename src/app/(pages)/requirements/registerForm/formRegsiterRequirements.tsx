@@ -4727,9 +4727,9 @@ const Section4BRDView = ({
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   const handleChangeAppCode = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const onlyAlphabets = e.target.value
-      .replace(/[^a-zA-Z ]/g, "")
-      .toUpperCase();
+    const onlyAlphabets = e.target.value;
+    // .replace(/[^a-zA-Z ]/g, "")
+    // .toUpperCase();
     formik.setFieldValue("appInitialCode", onlyAlphabets);
 
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
