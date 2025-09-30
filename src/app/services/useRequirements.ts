@@ -48,7 +48,8 @@ export interface RequirementApprovalDataResponse {
 
 export interface RequirementWorkProgramDataResponse {
   id: string;
-  reqId: string;
+  reqId?: string | null;
+  projectId?: string | null;
   workProgramSource: string;
   workProgramCode?: string | null;
   workProgramName?: string | null;

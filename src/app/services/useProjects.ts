@@ -18,6 +18,10 @@ import handleAxiosError from "../utils/handleAxiosError";
 import { UsersFullResponse, UsersResponse } from "./useUsers";
 import { ApplicationMasterShortResponse } from "./useApps";
 import { MediaObjectResponse } from "./useMediaObject";
+import {
+  RequirementWorkProgramDataResponse,
+  WorkProgramsPayload,
+} from "./useRequirements";
 
 export interface ProjectDataResponse {
   id: string;
@@ -33,6 +37,19 @@ export interface ProjectDataResponse {
   projectClosedDate: string | null;
   projectDurationDays: number;
   projectStatusPercentage: number;
+  projectAcquisitionCode: string | null;
+  projectAcquisitionName: string | null;
+  projectCharasteristicCode: string | null;
+  projectCharasteristicName: string | null;
+  projectSubCharasteristicCode: string | null;
+  projectSubCharasteristicName: string | null;
+  projectSubCharasteristicDesc: string | null;
+  proOwnerDirectorateId: string;
+  proOwnerDirectorateCode: string;
+  proOwnerDirectorateName: string;
+  proManageByDirectorateId: string;
+  proManageByDirectorateCode: string;
+  proManageByDirectorateName: string;
   proOwnerDivisionId: string;
   proOwnerDivisionCode: string;
   proOwnerDivisionName: string;
@@ -54,7 +71,8 @@ export interface ProjectDataResponse {
   updatedAt: string | null;
   updatedBy: string | null;
   userAssignment: ProjectUserAssignmentResponse[];
-  appsProject: ApplicationMasterShortResponse;
+  appsProject: ApplicationMasterShortResponse | null;
+  workPrograms: RequirementWorkProgramDataResponse[];
 }
 
 export interface ProjectUserAssignmentResponse {
@@ -120,14 +138,20 @@ export interface ProjectInsertPayload {
   projectType: string;
   projectRegisterDate: string;
   projectClosedDate?: string | null;
+  projectAcquisitionCode?: string | null;
+  projectCharasteristicCode?: string | null;
+  projectSubCharasteristicCode?: string | null;
+  proOwnerDirectorateId?: string | null;
   proOwnerDivisionId?: string | null;
   proOwnerGroupId?: string | null;
+  proManageByDirectorateId?: string | null;
   proManageByDivisionId?: string | null;
   proManageByGroupId?: string | null;
   proManageByTeamId?: string | null;
   reqParentId?: string | null;
   userAssigns: ProjectUserInsertPayload[];
   projectPlanWorkflowIds: string[];
+  workPrograms: WorkProgramsPayload[];
 }
 
 export interface ProjectWorkflowValueInsertPayload {

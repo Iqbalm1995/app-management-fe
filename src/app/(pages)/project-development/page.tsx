@@ -1166,7 +1166,7 @@ const ProjectManagerPage = memo(() => {
                                     noOfLines={1}
                                   >
                                     {project.projectNo} |{" "}
-                                    {project.appsProject.appName}
+                                    {project.appsProject?.appName}
                                   </Text>
                                 </VStack>
 

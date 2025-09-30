@@ -426,21 +426,25 @@ const ProjectSummary = ({ data, refreshActionMain }: ProjectSummaryProps) => {
                     textAlign="center"
                     shadow="md"
                   >
-                    {data.appsProject.appShortName}
+                    {data.appsProject?.appShortName}
                   </Box>
                   <Box flex={1}>
                     <Text fontSize="md" fontWeight="semibold" color="gray.800">
-                      {data.appsProject.appName}
+                      {data.appsProject?.appName}
                     </Text>
                     <Text fontSize="sm" color="gray.600">
-                      {data.appsProject.appCode}
+                      {data.appsProject?.appCode}
                     </Text>
-                    <Badge 
-                      colorScheme={data.appsProject.appsStatus === "ACTIVE" ? "green" : "gray"}
+                    <Badge
+                      colorScheme={
+                        data.appsProject?.appsStatus === "ACTIVE"
+                          ? "green"
+                          : "gray"
+                      }
                       mt={1}
                       fontSize="xs"
                     >
-                      {data.appsProject.appsStatus}
+                      {data.appsProject?.appsStatus}
                     </Badge>
                   </Box>
                 </HStack>

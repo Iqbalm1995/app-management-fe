@@ -18,12 +18,18 @@ import { TableComponentWithFilterCTX } from "@/app/components/tableComponentV2";
 import {
   DELAY_MEDIUM,
   ENV_SIDE_OPTIONS,
+  KEY_OPTION_PROJECT_ACQUISITIONS,
+  KEY_OPTION_PROJECT_CHARACTERISTICS,
   MAINTENANCE_CATEGORY_OPTIONS,
   MAINTENANCE_TYPE_OPTIONS,
   MAX_SIZE_TABLE,
+  ORG_CATEGORY_KEY_DIRECTORATE,
+  ORG_CATEGORY_KEY_DIVISION,
+  ORG_CATEGORY_KEY_GROUP,
   PROJEC_CATEGORY_OPTIONS,
   PROJEC_TYPE_OPTIONS,
   PROJECT_TYPE_INTERNAL_DEVELOPMENT,
+  PROJECT_TYPE_PROCUREMENT,
   radiusStyle,
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
@@ -115,6 +121,10 @@ import {
   Checkbox,
   VStack,
   Icon,
+  WrapItem,
+  FormHelperText,
+  Alert,
+  AlertIcon,
 } from "@chakra-ui/react";
 import {
   ColumnDef,
@@ -131,6 +141,7 @@ import Link from "next/link";
 import { redirect, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
+  FiAlertTriangle,
   FiArrowLeft,
   FiArrowRight,
   FiBriefcase,
@@ -148,9 +159,16 @@ import {
   FiX,
 } from "react-icons/fi";
 import * as yup from "yup";
+import { Select } from "chakra-react-select";
 import { BsLightningChargeFill } from "react-icons/bs";
 import { FaCircle } from "react-icons/fa";
 import { TabButtonCustom } from "@/app/components/TabsCustom";
+import { ApplicationMasterResponse } from "@/app/services/useApps";
+import { InputGroupPanel } from "@/app/components/customPanels";
+import useConstants, {
+  ConstantDataResponse,
+} from "@/app/services/useConstants";
+import ModalRegisterProject from "../../project-development/components/ModalRegisterProject";
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Registrasi Project",
@@ -160,8 +178,6 @@ const HeaderDataContent: HeaderContentProps = {
 const projectsAssignBindModelSchema = yup.object({
   userId: yup.string().required("User ID is required"),
 });
-
-const PRJ_TYPE_REGISTER: string = PROJECT_TYPE_INTERNAL_DEVELOPMENT;
 
 const projectsInsertBindModelSchema = yup.object({
   projectNo: yup.string().nullable(),
@@ -195,6 +211,11 @@ export const initialProjectsInsertValues: ProjectInsertPayload = {
   projectType: "", // Required
   projectRegisterDate: "", // Optional
   projectClosedDate: null, // Optional
+  projectAcquisitionCode: null, // Optional
+  projectCharasteristicCode: null, // Optional
+  projectSubCharasteristicCode: null, // Optional
+  proOwnerDirectorateId: "", // Optional
+  proManageByDirectorateId: "", // Optional
   proOwnerDivisionId: "", // Optional
   proOwnerGroupId: "", // Optional
   proManageByDivisionId: "", // Optional
@@ -206,9 +227,14 @@ export const initialProjectsInsertValues: ProjectInsertPayload = {
   workPrograms: [],
 };
 
-function FormRegisterProjectView() {
+interface ProjectRegisterViewProps {
+  projectTypeRegister: string;
+}
+
+function ProjectRegisterView({
+  projectTypeRegister,
+}: ProjectRegisterViewProps) {
   const showToast = useToastHelper();
-  const searchParams = useSearchParams();
   const { colorMode } = useColorMode();
 
   const {
@@ -216,7 +242,7 @@ function FormRegisterProjectView() {
     ListBacklog,
     UpdateBacklogBatch,
   } = useRequirements();
-
+  const { ListConstantData } = useConstants();
   const { InsertProjects } = useProjects();
   const {
     GetDetailByUserId: GetUserID,
@@ -314,6 +340,52 @@ function FormRegisterProjectView() {
     }
   };
 
+  const GetDataMasterOrg = async (
+    searchValue: string = "",
+    limit: number = 1,
+    whereData: ListSearchByParam[]
+  ): Promise<OrganizationResponse[]> => {
+    const PayloadList: PaggingListPayload = {
+      search: searchValue,
+      limit: limit,
+      page: 0,
+      filterWhere: whereData,
+      fieldOrder: ["orgName"],
+      orderDir: "asc",
+    };
+    const token: string = localStorage.getItem("tokenData") as string;
+    const requestData = await ListOrganization(PayloadList, token);
+    const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+
+    if (isErrorResponse || !requestData) {
+      showToast({
+        description: requestData?.message || RES_GENERIC_ERROR_MSG,
+        statusToast: "error",
+      });
+      return [];
+    } else {
+      console.log(requestData);
+      if (requestData.data == null) {
+        showToast({
+          description: "Data return error",
+          statusToast: "error",
+        });
+        return [];
+      }
+
+      const itemsData: OrganizationResponse[] =
+        requestData.data as OrganizationResponse[];
+
+      // Template Mapping
+      // const mapOptionData: OptionListProps[] = itemsData.map((d) => ({
+      //   label: `${d.orgName} | ${d.orgType}`,
+      //   value: d.id,
+      // }));
+
+      return itemsData;
+    }
+  };
+
   const UpdateBacklogProject = async (
     data: BacklogUpdatePayload[]
   ): Promise<boolean> => {
@@ -370,7 +442,231 @@ function FormRegisterProjectView() {
     }
   };
 
+  const GetOptionDataServ = async (
+    groupCode: string,
+    parentCode?: string | null
+  ): Promise<OptionListProps[]> => {
+    const PayloadList: PaggingListPayload = {
+      search: "",
+      limit: MAX_SIZE_TABLE,
+      page: 0,
+      filterWhere: [
+        {
+          field: "groupCode",
+          operator: "=",
+          value: groupCode || "",
+        },
+        {
+          field: "parentGroupCode",
+          operator: parentCode == null ? "is null" : "=",
+          value: parentCode == null ? "null" : parentCode,
+        },
+      ],
+      fieldOrder: ["createdAt"],
+      orderDir: "desc",
+    };
+
+    const requestData = await ListConstantData(PayloadList, tokenData);
+    const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+
+    if (isErrorResponse || !requestData) {
+      showToast({
+        description: requestData?.message || RES_GENERIC_ERROR_MSG,
+        statusToast: "error",
+      });
+      return [];
+    } else {
+      if (requestData.data == null) {
+        showToast({
+          description: "Load option data return error, try again letter",
+          statusToast: "error",
+        });
+        return [];
+      }
+
+      const itemsData: ConstantDataResponse[] =
+        requestData.data as ConstantDataResponse[];
+
+      if (itemsData.length > 0) {
+        const OptionData: OptionListProps[] = itemsData.map((dt) => ({
+          label: dt.label,
+          value: dt.value,
+        }));
+
+        setIsLoadingProcess(false);
+        setActionLoading(false);
+        return OptionData;
+      }
+      return [];
+    }
+  };
+
+  const handleSelectedCustom = (data: OptionListProps, fieldData: string) => {
+    formik.setFieldValue(fieldData, data.value);
+  };
+
+  const handleUnSelectedCustom = (fieldData: string) => {
+    formik.setFieldValue(fieldData, null);
+  };
+
   // End - Services
+
+  // load option acquisition project
+
+  const [OptionAcquisitionProject, setOptionAcquisitionProject] = useState<
+    OptionListProps[]
+  >([]);
+
+  const LoadAcquisitionProjectData = async () => {
+    const LoadData = await GetOptionDataServ(
+      KEY_OPTION_PROJECT_ACQUISITIONS,
+      null
+    );
+    setOptionAcquisitionProject(LoadData);
+  };
+
+  // end load option acquisition project
+
+  // load option characteristic project
+
+  const [OptionCharacteristicProject, setOptionCharacteristicProject] =
+    useState<OptionListProps[]>([]);
+  const [OptionSubCharacteristicProject, setOptionSubCharacteristicProject] =
+    useState<OptionListProps[]>([]);
+
+  const LoadCharacteristicsProjectData = async () => {
+    const LoadData = await GetOptionDataServ(
+      KEY_OPTION_PROJECT_CHARACTERISTICS,
+      null
+    );
+    setOptionCharacteristicProject(LoadData);
+  };
+
+  const LoadSubCharacteristicsProjectData = async (parentCode: string) => {
+    const LoadData = await GetOptionDataServ(
+      KEY_OPTION_PROJECT_CHARACTERISTICS,
+      parentCode
+    );
+    setOptionSubCharacteristicProject(LoadData);
+  };
+
+  // end load char ptoject
+
+  // load organization data
+
+  const [OptionDirectorate, setOptionDirectorate] = useState<OptionListProps[]>(
+    []
+  );
+  const [OptionDivisionOwner, setOptionDivisionOwner] = useState<
+    OptionListProps[]
+  >([]);
+  const [OptionGroupOwner, setOptionGroupOwner] = useState<OptionListProps[]>(
+    []
+  );
+
+  const [SelectedDivisionOwner, setSelectedDivisionOwner] =
+    useState<OptionListProps | null>(null);
+
+  const [OptionDivisionManage, setOptionDivisionManage] = useState<
+    OptionListProps[]
+  >([]);
+  const [OptionGroupManage, setOptionGroupManage] = useState<OptionListProps[]>(
+    []
+  );
+
+  const [SelectedDivisionManage, setSelectedDivisionManage] =
+    useState<OptionListProps | null>(null);
+
+  const LoadDataDirectorate = async () => {
+    if (OptionDirectorate.length <= 0) {
+      const whereParam: ListSearchByParam[] = [
+        {
+          field: "orgType",
+          operator: "=",
+          value: ORG_CATEGORY_KEY_DIRECTORATE,
+        },
+      ];
+
+      const dataDivision = await GetDataMasterOrg(
+        "",
+        MAX_SIZE_TABLE,
+        whereParam
+      );
+
+      const mapOptionData: OptionListProps[] = dataDivision.map((d) => ({
+        label: `${d.orgName} | ${d.orgType}`,
+        value: d.id,
+      }));
+
+      setOptionDirectorate(mapOptionData);
+    }
+  };
+
+  const LoadDataDivision = async (directorateId: string, fieldData: string) => {
+    if (directorateId.length > 0) {
+      const whereParam: ListSearchByParam[] = [
+        {
+          field: "parentId",
+          operator: "=",
+          value: directorateId,
+        },
+        {
+          field: "orgType",
+          operator: "=",
+          value: ORG_CATEGORY_KEY_DIVISION,
+        },
+      ];
+
+      const dataDivision = await GetDataMasterOrg(
+        "",
+        MAX_SIZE_TABLE,
+        whereParam
+      );
+
+      const mapOptionData: OptionListProps[] = dataDivision.map((d) => ({
+        label: `${d.orgName} | ${d.orgType}`,
+        value: d.id,
+      }));
+
+      if (fieldData == "proOwnerDivisionId") {
+        setOptionDivisionOwner(mapOptionData);
+      }
+    }
+  };
+
+  const LoadDataGroup = async (divisionId: string, fieldData: string) => {
+    if (divisionId.length > 0) {
+      const whereParam: ListSearchByParam[] = [
+        {
+          field: "parentId",
+          operator: "=",
+          value: divisionId,
+        },
+        {
+          field: "orgType",
+          operator: "=",
+          value: ORG_CATEGORY_KEY_GROUP,
+        },
+      ];
+
+      const dataDivision = await GetDataMasterOrg(
+        "",
+        MAX_SIZE_TABLE,
+        whereParam
+      );
+
+      const mapOptionData: OptionListProps[] = dataDivision.map((d) => ({
+        label: `${d.orgName} | ${d.orgType}`,
+        value: d.id,
+      }));
+
+      if (fieldData == "proOwnerGroupId") {
+        setOptionGroupOwner(mapOptionData);
+      }
+    }
+  };
+
+  // end load organization
 
   // Assign To Multiple
   const [SearchUserInput, setSearchUserInput] = useState<string>("");
@@ -384,11 +680,11 @@ function FormRegisterProjectView() {
     limit: number = 1
   ): Promise<UsersResponse[]> => {
     const whereDataFilter: ListSearchByParam[] = [
-      {
-        field: "kodeUnitKerja",
-        operator: "=",
-        value: SelectedDivision?.value || "",
-      },
+      //   {
+      //     field: "kodeUnitKerja",
+      //     operator: "=",
+      //     value: SelectedDivision?.value || "",
+      //   },
       // {
       //   field: "orgType",
       //   operator: "=",
@@ -473,175 +769,6 @@ function FormRegisterProjectView() {
 
   // END Assign To Multiple
 
-  // Division Select Option
-
-  const [IsLoadingDivisionSelect, setIsLoadingDivisionSelect] = useState(false);
-  const [OptionDivision, setOptionDivision] = useState<OptionListProps[]>([]);
-  const [SelectedDivision, setSelectedDivision] =
-    useState<OptionListProps | null>({
-      label: "DIVISI INFORMATION TECHNOLOGY",
-      value: "D440",
-    });
-
-  const handleSelectedDivision = (data: OptionListProps) => {
-    setSelectedDivision(data);
-  };
-  const handleUnSelectedDivision = () => {
-    setSelectedDivision(null);
-  };
-
-  const GetDataDivision = async (
-    searchValue: string = "",
-    limit: number = 1
-  ): Promise<OrganizationResponse[]> => {
-    setIsLoadingDivisionSelect(true);
-    const PayloadList: PaggingListPayload = {
-      search: searchValue,
-      limit: limit,
-      page: 0,
-      filterWhere: [
-        {
-          field: "orgType",
-          operator: "=",
-          value: "DIVISION",
-        },
-      ],
-      fieldOrder: ["orgName"],
-      orderDir: "asc",
-    };
-    const token: string = localStorage.getItem("tokenData") as string;
-    const requestData = await ListOrganization(PayloadList, token);
-    const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
-
-    if (isErrorResponse || !requestData) {
-      showToast({
-        description: requestData?.message || RES_GENERIC_ERROR_MSG,
-        statusToast: "error",
-      });
-      setIsLoadingDivisionSelect(false);
-      return [];
-    } else {
-      // console.log(requestData);
-      if (requestData.data == null) {
-        showToast({
-          description: "Data return error",
-          statusToast: "error",
-        });
-        setIsLoadingDivisionSelect(false);
-        return [];
-      }
-
-      const itemsData: OrganizationResponse[] =
-        requestData.data as OrganizationResponse[];
-
-      const mapOptionData: OptionListProps[] = itemsData.map((d) => ({
-        label: `${d.orgName}`,
-        value: d.id,
-      }));
-      setOptionDivision(mapOptionData);
-      setIsLoadingDivisionSelect(false);
-
-      return itemsData;
-    }
-  };
-
-  const LoadDataDivision = async () => {
-    if (OptionDivision.length <= 0) {
-      const dataDivision = await GetDataDivision("", MAX_SIZE_TABLE);
-    }
-  };
-
-  // End Division Select Option
-
-  // Group Select Option
-
-  const [IsLoadingGroupDivisionSelect, setIsLoadingGroupDivisionSelect] =
-    useState(false);
-  const [OptionGroupDivision, setOptionGroupDivision] = useState<
-    OptionListProps[]
-  >([]);
-  const [SelectedGroupDivision, setSelectedGroupDivision] =
-    useState<OptionListProps | null>(null);
-  const handleSelectedGroupDivision = (data: OptionListProps) => {
-    setSelectedGroupDivision(data);
-  };
-  const handleUnSelectedGroupDivision = () => {
-    setSelectedGroupDivision(null);
-  };
-
-  const GetDataDivisionGroup = async (
-    searchValue: string = "",
-    divisionId: string = "",
-    limit: number = 1
-  ): Promise<OrganizationResponse[]> => {
-    setIsLoadingGroupDivisionSelect(true);
-    const whereDataFilter: ListSearchByParam[] =
-      divisionId.length > 0
-        ? [
-            {
-              field: "parentId",
-              operator: "=",
-              value: divisionId || "",
-            },
-            {
-              field: "orgType",
-              operator: "=",
-              value: "GROUP",
-            },
-          ]
-        : [
-            {
-              field: "orgType",
-              operator: "=",
-              value: "GROUP",
-            },
-          ];
-    const PayloadList: PaggingListPayload = {
-      search: searchValue,
-      limit: limit,
-      page: 0,
-      filterWhere: whereDataFilter,
-      fieldOrder: ["orgName"],
-      orderDir: "asc",
-    };
-    const token: string = localStorage.getItem("tokenData") as string;
-    const requestData = await ListOrganization(PayloadList, token);
-    const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
-
-    if (isErrorResponse || !requestData) {
-      showToast({
-        description: requestData?.message || RES_GENERIC_ERROR_MSG,
-        statusToast: "error",
-      });
-      setIsLoadingGroupDivisionSelect(false);
-      return [];
-    } else {
-      console.log(requestData);
-      if (requestData.data == null) {
-        showToast({
-          description: "Data return error",
-          statusToast: "error",
-        });
-        setIsLoadingGroupDivisionSelect(false);
-        return [];
-      }
-
-      const itemsData: OrganizationResponse[] =
-        requestData.data as OrganizationResponse[];
-
-      const mapOptionData: OptionListProps[] = itemsData.map((d) => ({
-        label: `${d.orgName} | ${d.orgType}`,
-        value: d.id,
-      }));
-      setOptionGroupDivision(mapOptionData);
-      setIsLoadingGroupDivisionSelect(false);
-
-      return itemsData;
-    }
-  };
-
-  // End Group Select Option
-
   // formik
 
   const formik = useFormik<ProjectInsertPayload>({
@@ -656,134 +783,112 @@ function FormRegisterProjectView() {
 
   // end - formik
 
-  const [ReqId, setReqId] = useState<string | null>(null);
-  useEffect(() => {
-    // Get the 'projectId' from the search params (query string)
-    const id = searchParams.get("reqId");
-    if (id) {
-      setReqId(id); // Set it to the state
-    }
-  }, [searchParams]);
-
+  const [IsHaveMemo, setIsHaveMemo] = useState<"Y" | "N">("Y");
   const [DataRequirement, setDataRequirement] =
     useState<RequirementsResponse | null>(null);
   const [RefreshData, setRefreshData] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
 
+  const [ApplicationData, setApplicationData] =
+    useState<ApplicationMasterResponse | null>(null);
+
   // Load Requirements
-  useEffect(() => {
-    if (DataAuth && DataAuth.team && ReqId) {
-      setIsLoadingProcess(true);
-      const GetDataList = async () => {
-        const requestData = await GetReqDetail(ReqId, tokenData);
-        const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+  const GetRequirementData = async (reqId: string) => {
+    setIsLoadingProcess(true);
+    const requestData = await GetReqDetail(reqId, tokenData);
+    const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
 
-        if (isErrorResponse || !requestData) {
-          showToast({
-            description: requestData?.message || RES_GENERIC_ERROR_MSG,
-            statusToast: "error",
-          });
-          setIsLoadingProcess(false);
-          redirect(`/projects-manager/`);
-          return;
-        } else {
-          // console.log(requestData);
-          if (requestData.data == null) {
-            showToast({
-              description: "Data return error",
-              statusToast: "error",
-            });
-            setIsLoadingProcess(false);
-            return;
-          }
+    if (isErrorResponse || !requestData) {
+      showToast({
+        description: requestData?.message || RES_GENERIC_ERROR_MSG,
+        statusToast: "error",
+      });
+      setIsLoadingProcess(false);
+      redirect(`/projects-manager/`);
+      return;
+    } else {
+      // console.log(requestData);
+      if (requestData.data == null) {
+        showToast({
+          description: "Data return error",
+          statusToast: "error",
+        });
+        setIsLoadingProcess(false);
+        return;
+      }
 
-          const itemsData: RequirementsResponse =
-            requestData.data as RequirementsResponse;
+      const itemsData: RequirementsResponse =
+        requestData.data as RequirementsResponse;
 
-          setDataRequirement(itemsData);
+      setDataRequirement(itemsData);
 
-          // PRJ_TYPE_REGISTER;
-          formik.setFieldValue(`projectType`, PRJ_TYPE_REGISTER);
+      // projectTypeRegister;
+      formik.setFieldValue(`projectType`, projectTypeRegister);
 
-          // get user org project manage
-          if (itemsData.assignedFromId) {
-            const ProjectManageOrg: UserOrganizationResponse | null =
-              await GetUserOrganizationServices(itemsData.assignedFromId);
-            if (ProjectManageOrg) {
-              formik.setFieldValue(
-                `proManageByDivisionId`,
-                ProjectManageOrg.division.id
-              );
-              if (ProjectManageOrg.group) {
-                formik.setFieldValue(
-                  `proManageByGroupId`,
-                  ProjectManageOrg.group.id
-                );
-              }
-              if (ProjectManageOrg.team) {
-                formik.setFieldValue(
-                  `proManageByTeamId`,
-                  ProjectManageOrg.team.id
-                );
-              }
-            }
-          }
-
-          // get user org project manage
-          if (itemsData.userPicDivisionId) {
+      // get user org project manage
+      if (itemsData.assignedFromId) {
+        const ProjectManageOrg: UserOrganizationResponse | null =
+          await GetUserOrganizationServices(itemsData.assignedFromId);
+        if (ProjectManageOrg) {
+          formik.setFieldValue(
+            `proManageByDivisionId`,
+            ProjectManageOrg.division.id
+          );
+          if (ProjectManageOrg.group) {
             formik.setFieldValue(
-              `proOwnerDivisionId`,
-              itemsData.userPicDivisionId
+              `proManageByGroupId`,
+              ProjectManageOrg.group.id
             );
           }
-          if (itemsData.userPicDivisionId) {
-            formik.setFieldValue(`proOwnerGroupId`, itemsData.userPicGroupId);
+          if (ProjectManageOrg.team) {
+            formik.setFieldValue(`proManageByTeamId`, ProjectManageOrg.team.id);
           }
-
-          const userAssignPoject: UsersResponse[] = [];
-
-          // Set UserDefault Assign Project Member
-          if (itemsData.assignedFromId != null) {
-            const UserOwner = await GetUserIDServices(itemsData.assignedFromId);
-            if (UserOwner) {
-              userAssignPoject.push(UserOwner);
-            }
-          }
-
-          // insert user reviewer in parallel and wait for all
-          if (itemsData.approvalDatas.length > 0) {
-            const reviewers = await Promise.all(
-              itemsData.approvalDatas.map(async (dt) => {
-                return await GetUserIDServices(dt.approverUserCode);
-              })
-            );
-
-            reviewers.forEach((user) => {
-              if (user) {
-                userAssignPoject.push(user);
-              }
-            });
-          }
-
-          // Set state only after all async ops done
-          if (userAssignPoject.length > 0) {
-            setChoosedMemberProjects(userAssignPoject);
-          }
-
-          // End Set UserDefault Assign Project Member
-
-          setIsLoadingProcess(false);
         }
-      };
-      GetDataList();
+      }
 
-      // set value payload on load
+      // get user org project manage
+      if (itemsData.userPicDivisionId) {
+        formik.setFieldValue(`proOwnerDivisionId`, itemsData.userPicDivisionId);
+      }
+      if (itemsData.userPicDivisionId) {
+        formik.setFieldValue(`proOwnerGroupId`, itemsData.userPicGroupId);
+      }
 
-      formik.setFieldValue("reqParentId", ReqId);
+      const userAssignPoject: UsersResponse[] = [];
 
-      LoadDataDivision();
+      // Set UserDefault Assign Project Member
+      if (itemsData.assignedFromId != null) {
+        const UserOwner = await GetUserIDServices(itemsData.assignedFromId);
+        if (UserOwner) {
+          userAssignPoject.push(UserOwner);
+        }
+      }
+
+      // insert user reviewer in parallel and wait for all
+      if (itemsData.approvalDatas.length > 0) {
+        const reviewers = await Promise.all(
+          itemsData.approvalDatas.map(async (dt) => {
+            return await GetUserIDServices(dt.approverUserCode);
+          })
+        );
+
+        reviewers.forEach((user) => {
+          if (user) {
+            userAssignPoject.push(user);
+          }
+        });
+      }
+
+      // Set state only after all async ops done
+      if (userAssignPoject.length > 0) {
+        setChoosedMemberProjects(userAssignPoject);
+      }
+
+      formik.setFieldValue("reqParentId", reqId);
+      // End Set UserDefault Assign Project Member
+      setIsLoadingProcess(false);
     }
-  }, [DataAuth, RefreshData, ReqId]);
+  };
 
   // GetServiceListBacklog
   const [IsloadingBacklogs, setIsloadingBacklogs] = useState(false);
@@ -939,8 +1044,14 @@ function FormRegisterProjectView() {
   // Load workflow groups when token is available
   useEffect(() => {
     if (tokenData) {
+      LoadDataDirectorate();
       LoadWorkflowGroups();
       LoadWorkflowPresets();
+      LoadCharacteristicsProjectData();
+      LoadAcquisitionProjectData();
+      //   if (projectTypeRegister == PROJECT_TYPE_PROCUREMENT) {
+      //     LoadAcquisitionProjectData();
+      //   }
     }
   }, [tokenData]);
 
@@ -1421,6 +1532,15 @@ function FormRegisterProjectView() {
 
   // end - confirmation save data
 
+  // open modal memo
+
+  const ModalForm = useDisclosure();
+  const handleModalMemmo = () => {
+    ModalForm.onOpen();
+  };
+
+  // end open modal memo
+
   return (
     <LayoutAdmin>
       <HeaderContent
@@ -1437,12 +1557,43 @@ function FormRegisterProjectView() {
         captionMsg={captionDialog}
       />
 
+      {/* MODAL LIST REUQIREMENTS */}
+
+      <Modal
+        size={"6xl"}
+        isOpen={ModalForm.isOpen}
+        isCentered
+        onClose={ModalForm.onClose}
+      >
+        <ModalOverlay bg="blackAlpha.300" />
+        <ModalContent
+          rounded={radiusStyle}
+          m={2}
+          bg={colorMode == "light" ? "white" : "gray.900"}
+        >
+          <ModalHeader>Pilih Memo</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody w={"full"}>
+            <ModalRegisterProject />
+          </ModalBody>
+
+          <ModalFooter>
+            <Button
+              colorScheme={"gray"}
+              leftIcon={<FiX />}
+              onClick={ModalForm.onClose}
+              isLoading={ActionLoading}
+            >
+              Kembali
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
       {/* <form onSubmit={formik.handleSubmit} onReset={formik.handleReset}> */}
       {/* Requirement Validation */}
       {IsLoadingProcess ? (
         <LoadingMiniSignature />
-      ) : !DataRequirement ? (
-        <InvalidLoadPageView />
       ) : (
         <Grid templateColumns="repeat(12, 1fr)" gap={4} w={"full"}>
           <GridItem colSpan={{ base: 12, sm: 12, md: 8, lg: 8 }} w={"full"}>
@@ -1483,82 +1634,177 @@ function FormRegisterProjectView() {
             </Flex>
           </GridItem>
 
-          <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }} w={"full"}>
-            {/* Requirement Information */}
-            {DataRequirement && (
-              <Card
-                shadow="sm"
-                // bgColor={colorMode == "light" ? "white" : "gray.800"}
-                bgGradient={"linear(to-br, secondary.800, secondary.500)"}
-                rounded={radiusStyle}
-              >
-                <CardBody>
-                  <Flex as={Stack} spacing={2}>
-                    <Text fontSize="md" fontWeight="bold" color={"white"}>
-                      REQUIREMENT REFFERENCE (MEMO) :
-                    </Text>
-                    <Divider borderColor={"whiteAlpha.400"} />
-                    <HStack spacing={4} align="center">
-                      <Box
-                        w={14}
-                        h={14}
-                        bg={"white"}
-                        rounded="lg"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
+          {/* Requirement Information */}
+          <GridItem colSpan={{ base: 12, sm: 12, md: 8, lg: 8 }} w={"full"}>
+            <Card
+              shadow="md"
+              // bgColor={colorMode == "light" ? "white" : "gray.800"}
+              bgGradient={"linear(to-br, secondary.800, secondary.500)"}
+              rounded={radiusStyle}
+              h={"180px"}
+            >
+              <CardBody>
+                <Flex as={Stack} spacing={2}>
+                  <Text fontSize="md" fontWeight="bold" color={"white"}>
+                    REQUIREMENT REFERENCE (MEMO) :
+                  </Text>
+                  <Divider borderColor={"whiteAlpha.400"} />
+                  <HStack spacing={4} align="center">
+                    <Box
+                      w={14}
+                      h={14}
+                      bg={"white"}
+                      rounded="lg"
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                    >
+                      <Text
+                        color="secondary.800"
+                        fontWeight="bold"
+                        fontSize={"x-large"}
                       >
-                        <Text
-                          color="secondary.800"
-                          fontWeight="bold"
-                          fontSize={"x-large"}
-                        >
-                          {/* {DataRequirement.reqNarative.charAt(0).toUpperCase()} */}
-                          {DataRequirement.requirementType.toUpperCase()}
-                        </Text>
-                      </Box>
-                      <VStack align="start" spacing={0} flex={1}>
-                        <HStack spacing={3}>
+                        {/* {DataRequirement.reqNarative.charAt(0).toUpperCase()} */}
+                        {DataRequirement
+                          ? DataRequirement.requirementType.toUpperCase()
+                          : "-"}
+                      </Text>
+                    </Box>
+                    <VStack align="start" spacing={0} flex={1}>
+                      <Wrap spacing={{ base: 0, sm: 0, md: 3, lg: 3 }}>
+                        <WrapItem>
                           <Link
-                            href={`/requirements/detail?reqId=${DataRequirement.id}&type=BRD`}
+                            href={
+                              DataRequirement
+                                ? `/requirements/detail?reqId=${DataRequirement.id}&type=BRD`
+                                : "#"
+                            }
                           >
                             <Button
                               variant={"link"}
                               fontSize="lg"
                               fontWeight="bold"
                               color={"white"}
-                              rightIcon={<FiExternalLink />}
+                              rightIcon={
+                                DataRequirement ? (
+                                  <FiExternalLink />
+                                ) : (
+                                  <FiAlertTriangle color={"yellow.400"} />
+                                )
+                              }
                             >
-                              {DataRequirement.reqNarative.toUpperCase()}
+                              {DataRequirement
+                                ? DataRequirement.reqNarative.toUpperCase()
+                                : "NO REQUIREMENT REFERENCE"}
                             </Button>
                           </Link>
+                        </WrapItem>
+                        <WrapItem>
                           <Badge
                             colorScheme="blue"
                             fontSize="xs"
                             px={4}
                             rounded={radiusStyle}
                           >
-                            {DataRequirement.reqNumber}
+                            {DataRequirement ? DataRequirement.reqNumber : "-"}
                           </Badge>
-                        </HStack>
-                        <Text fontSize="sm" color="secondary.200">
-                          {DataRequirement.reqNarative ||
-                            "No description available"}
+                        </WrapItem>
+                      </Wrap>
+                      <Text fontSize="sm" color="secondary.200">
+                        {DataRequirement
+                          ? DataRequirement.reqNarative ||
+                            "No description available"
+                          : "-"}
+                      </Text>
+                      <HStack spacing={4}>
+                        <Text fontSize="xs" color="gray.300">
+                          Requirement ID:{" "}
+                          {DataRequirement ? DataRequirement.id : "-"}
                         </Text>
-                        <HStack spacing={4}>
-                          <Text fontSize="xs" color="gray.300">
-                            Requirement ID: {DataRequirement.id}
-                          </Text>
-                          <Text fontSize="xs" color="gray.300">
-                            Status: {DataRequirement.reqStatus}
-                          </Text>
-                        </HStack>
-                      </VStack>
-                    </HStack>
-                  </Flex>
-                </CardBody>
-              </Card>
-            )}
+                        <Text fontSize="xs" color="gray.300">
+                          Status:{" "}
+                          {DataRequirement ? DataRequirement.reqStatus : "-"}
+                        </Text>
+                      </HStack>
+                    </VStack>
+                  </HStack>
+                </Flex>
+              </CardBody>
+            </Card>
+          </GridItem>
+
+          {/* Application Information */}
+          <GridItem colSpan={{ base: 12, sm: 12, md: 4, lg: 4 }} w={"full"}>
+            <Card
+              shadow="md"
+              bgColor={colorMode == "light" ? "white" : "gray.800"}
+              //   bgGradient={"linear(to-br, secondary.800, secondary.500)"}
+              rounded={radiusStyle}
+              h={"180px"}
+            >
+              <CardBody>
+                <Flex
+                  as={Stack}
+                  spacing={2}
+                  justifyContent={"center"}
+                  alignItems={"center"}
+                >
+                  <Text
+                    fontSize="md"
+                    fontWeight="bold"
+                    color={colorMode == "light" ? "gray.800" : "white"}
+                    lineHeight={1}
+                  >
+                    APPS PROJECT
+                  </Text>
+                  <Box
+                    w={14}
+                    h={14}
+                    // bg={colorMode == "light" ? "blackAlpha.500" : "white"}
+                    bgGradient={"linear(to-br, secondary.800, secondary.500)"}
+                    rounded="lg"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                    boxShadow={"md"}
+                  >
+                    <Text
+                      color={"white"}
+                      fontWeight="bold"
+                      fontSize={"x-large"}
+                    >
+                      {/* {DataRequirement.reqNarative.charAt(0).toUpperCase()} */}
+                      {ApplicationData
+                        ? ApplicationData.appShortName.toUpperCase()
+                        : "-"}
+                    </Text>
+                  </Box>
+                  <Link href={`#`}>
+                    <Text
+                      fontSize="sm"
+                      fontWeight="bold"
+                      textAlign={"center"}
+                      lineHeight={1}
+                      color={
+                        colorMode == "light" ? "secondary.800" : "secondary.500"
+                      }
+                    >
+                      {DataRequirement
+                        ? DataRequirement.reqNarative.toUpperCase()
+                        : "NO APP REFERENCE"}
+                    </Text>
+                  </Link>
+                  <Badge
+                    colorScheme="blue"
+                    fontSize="xs"
+                    px={4}
+                    rounded={radiusStyle}
+                  >
+                    {ApplicationData ? "#" + ApplicationData.appShortName : "-"}
+                  </Badge>
+                </Flex>
+              </CardBody>
+            </Card>
           </GridItem>
 
           <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 12 }} w={"full"}>
@@ -1583,290 +1829,590 @@ function FormRegisterProjectView() {
 
                   {activeStep === 0 && (
                     <Flex as={Stack} w={"full"} spacing={5} p={4}>
-                      <FormControl id="initialAppReqCode">
-                        <InputLayout>
-                          <FormLabel h={"full"} mt={2}>
-                            Inisial Aplikasi
-                          </FormLabel>
-                          <Stack spacing={0} h={"full"}>
-                            <Input
-                              id="initialAppReqCode"
-                              name="initialAppReqCode"
-                              type="text"
-                              value={DataRequirement?.appInitialCode || ""}
-                              placeholder={`Initial Aplikasi`}
-                              minLength={3}
-                              maxLength={150}
-                              // isDisabled={true}
-                              isReadOnly
-                              variant={"filled"}
-                            />
-                          </Stack>
-                        </InputLayout>
-                      </FormControl>
-                      <FormControl id="initialAppReqName">
-                        <InputLayoutFull>
-                          <FormLabel h={"full"} mt={2}>
-                            Nama Aplikasi
-                          </FormLabel>
-                          <Stack spacing={0} h={"full"}>
-                            <Input
-                              id="initialAppReqName"
-                              name="initialAppReqName"
-                              type="text"
-                              value={DataRequirement?.appInitialName || ""}
-                              placeholder={`Nama Aplikasi`}
-                              minLength={3}
-                              maxLength={200}
-                              // isDisabled={true}
-                              isReadOnly
-                              variant={"filled"}
-                            />
-                          </Stack>
-                        </InputLayoutFull>
-                      </FormControl>
+                      <InputGroupPanel headerTitle={`Memo Pengantar`}>
+                        <Flex w={"full"} alignItems={"center"} minH={"15vh"}>
+                          <FormControl id={"isHaveMemo"} isRequired={true}>
+                            <InputLayout>
+                              <FormLabel h={"full"} mt={2}>
+                                Sudah Memiliki Memo Pengantar
+                              </FormLabel>
+                              <Stack spacing={0} h={"full"}>
+                                <RadioGroup
+                                  onChange={(val) => {
+                                    setIsHaveMemo(val as "Y" | "N");
+                                  }}
+                                  value={IsHaveMemo ?? "Y"}
+                                >
+                                  <Flex w={"full"} as={HStack} spacing={8}>
+                                    <Radio value={"Y"}>Sudah</Radio>
+                                    <Radio
+                                      value={"N"}
+                                      isDisabled={
+                                        projectTypeRegister !=
+                                        PROJECT_TYPE_PROCUREMENT
+                                      }
+                                    >
+                                      Belum
+                                    </Radio>
+                                  </Flex>
+                                </RadioGroup>
+                                <FormHelperText as={"i"} fontSize={"xs"}>
+                                  Jika belum memiliki Memo pengantar, ada
+                                  benerapa informasi yang akan inputkan lain
+                                  waktu jika Memo pengantar sudah ada.*
+                                </FormHelperText>
+                              </Stack>
+                            </InputLayout>
+                          </FormControl>
+                        </Flex>
 
-                      {/* --------------------------- */}
+                        <FormControl
+                          id="projectNo"
+                          isInvalid={formik.errors.projectNo ? true : false}
+                          isRequired={IsHaveMemo == "Y"}
+                        >
+                          <InputLayout>
+                            <FormLabel h={"full"} mt={2}>
+                              Pilih Requirement (Memo)
+                            </FormLabel>
+                            <Stack spacing={0}>
+                              {/* <RegProjectNumberInput */}
+                              <Wrap>
+                                <Input
+                                  id="reqDataId"
+                                  name="reqDataId"
+                                  type="text"
+                                  value={DataRequirement?.reqNumber || ""}
+                                  placeholder={`0000/00/BJB/XXXX/0000-A/0`}
+                                  // minLength={25}
+                                  // maxLength={27}
+                                  isRequired
+                                  isDisabled={ActionLoading}
+                                  w={{
+                                    base: "full",
+                                    sm: "full",
+                                    md: "350px",
+                                    lg: "350px",
+                                  }}
+                                />
+                                <Button
+                                  colorScheme={"secondary"}
+                                  onClick={() => handleModalMemmo()}
+                                >
+                                  Pilih Memo
+                                </Button>
+                              </Wrap>
+                              <FormErrorMessage>
+                                {formik.errors.projectNo}
+                              </FormErrorMessage>
+                            </Stack>
+                          </InputLayout>
+                        </FormControl>
+                      </InputGroupPanel>
 
-                      <FormControl
-                        id="projectName"
-                        isInvalid={formik.errors.projectName ? true : false}
-                        isRequired
-                      >
-                        <InputLayout>
-                          <FormLabel h={"full"} mt={2}>
-                            Nama Project
-                          </FormLabel>
-                          <Stack spacing={0} h={"full"}>
-                            <Input
-                              id="projectName"
-                              name="projectName"
-                              type="text"
-                              // onChange={formik.handleChange}
+                      <InputGroupPanel headerTitle={`Informasi Umum`}>
+                        <FormControl
+                          id="projectNo"
+                          isInvalid={formik.errors.projectNo ? true : false}
+                          isRequired
+                        >
+                          <InputLayout>
+                            <FormLabel h={"full"} mt={2}>
+                              Nomor Project
+                            </FormLabel>
+                            <Stack spacing={0}>
+                              {/* <RegProjectNumberInput */}
+                              <Input
+                                id="projectNo"
+                                name="projectNo"
+                                type="text"
+                                onChange={formik.handleChange}
+                                // onChange={(val) =>
+                                //   formik.setFieldValue("projectNo", val)
+                                // }
+                                value={formik.values.projectNo ?? ""}
+                                placeholder={`0000/00/BJB/XXXX/0000-A/0`}
+                                minLength={25}
+                                maxLength={27}
+                                isDisabled={ActionLoading}
+                                w={{
+                                  base: "full",
+                                  sm: "full",
+                                  md: "350px",
+                                  lg: "350px",
+                                }}
+                              />
+                              <FormErrorMessage>
+                                {formik.errors.projectNo}
+                              </FormErrorMessage>
+                            </Stack>
+                          </InputLayout>
+                        </FormControl>
 
-                              onChange={(e) => {
-                                // const onlyAlphabets = e.target.value.replace(
-                                //   /[^a-zA-Z ]/g,
-                                //   ""
-                                // );
-                                formik.setFieldValue(
-                                  `projectName`,
-                                  e.target.value
-                                );
-                              }}
-                              value={formik.values.projectName ?? ""}
-                              placeholder={`Nama Project`}
-                              minLength={3}
-                              maxLength={200}
-                              // isDisabled={ActionLoading}
-                            />
-                            <FormErrorMessage>
-                              {formik.errors.projectName}
-                            </FormErrorMessage>
-                          </Stack>
-                        </InputLayout>
-                      </FormControl>
+                        <FormControl
+                          id={"projectAcquisitionCode"}
+                          isInvalid={
+                            formik.errors.projectAcquisitionCode ? true : false
+                          }
+                          isRequired={
+                            projectTypeRegister == PROJECT_TYPE_PROCUREMENT
+                          }
+                        >
+                          <InputLayout>
+                            <FormLabel h={"full"}>Jenis Pengadaan</FormLabel>
+                            <Stack spacing={0} w={"full"}>
+                              <Select
+                                id={`projectAcquisitionCode`}
+                                options={OptionAcquisitionProject}
+                                isSearchable={true}
+                                onChange={(e) => {
+                                  if (e) {
+                                    const selected = {
+                                      label: e.label,
+                                      value: e.value,
+                                    };
+                                    handleSelectedCustom(
+                                      selected,
+                                      "projectAcquisitionCode"
+                                    );
+                                  } else {
+                                    handleUnSelectedCustom(
+                                      "projectAcquisitionCode"
+                                    );
+                                  }
+                                }}
+                                placeholder={"Pilih Jenis Pengadaan"}
+                                value={OptionAcquisitionProject.find(
+                                  (x) =>
+                                    x.value ==
+                                    formik.values.projectAcquisitionCode
+                                )}
+                              />
+                              <FormErrorMessage>
+                                {formik.errors.projectAcquisitionCode}
+                              </FormErrorMessage>
+                            </Stack>
+                          </InputLayout>
+                        </FormControl>
 
-                      <FormControl
-                        id="projectNo"
-                        isInvalid={formik.errors.projectNo ? true : false}
-                        isRequired
-                      >
-                        <InputLayout>
-                          <FormLabel h={"full"} mt={2}>
-                            Nomor Project
-                          </FormLabel>
-                          <Stack spacing={0} h={"full"}>
-                            {/* <RegProjectNumberInput */}
-                            <Input
-                              id="projectNo"
-                              name="projectNo"
-                              type="text"
-                              onChange={formik.handleChange}
-                              // onChange={(val) =>
-                              //   formik.setFieldValue("projectNo", val)
-                              // }
-                              value={formik.values.projectNo ?? ""}
-                              placeholder={`0000/00/BJB/XXXX/0000-A/0`}
-                              minLength={25}
-                              maxLength={27}
-                              isDisabled={ActionLoading}
-                            />
-                            <FormErrorMessage>
-                              {formik.errors.projectNo}
-                            </FormErrorMessage>
-                          </Stack>
-                        </InputLayout>
-                      </FormControl>
+                        <FormControl
+                          id="projectName"
+                          isInvalid={formik.errors.projectName ? true : false}
+                          isRequired
+                        >
+                          <InputLayout>
+                            <FormLabel h={"full"} mt={2}>
+                              Nama Project
+                            </FormLabel>
+                            <Stack spacing={0} h={"full"}>
+                              <Input
+                                id="projectName"
+                                name="projectName"
+                                type="text"
+                                // onChange={formik.handleChange}
 
-                      <FormControl
-                        id="projectDesc"
-                        isInvalid={formik.errors.projectDesc ? true : false}
-                      >
-                        <InputLayout>
-                          <FormLabel h={"full"} mt={2}>
-                            Deskripsi
-                          </FormLabel>
-                          <Stack spacing={0} h={"full"}>
-                            <Textarea
-                              id="projectDesc"
-                              name="projectDesc"
-                              onChange={formik.handleChange}
-                              defaultValue={formik.values.projectDesc ?? ""}
-                              placeholder={`Perlihal`}
-                              maxLength={300}
-                              // isDisabled={ActionLoading}
-                            />
-                            <FormErrorMessage>
-                              {formik.errors.projectDesc}
-                            </FormErrorMessage>
-                          </Stack>
-                        </InputLayout>
-                      </FormControl>
+                                onChange={(e) => {
+                                  // const onlyAlphabets = e.target.value.replace(
+                                  //   /[^a-zA-Z ]/g,
+                                  //   ""
+                                  // );
+                                  formik.setFieldValue(
+                                    `projectName`,
+                                    e.target.value
+                                  );
+                                }}
+                                value={formik.values.projectName ?? ""}
+                                placeholder={`Nama Project`}
+                                minLength={3}
+                                maxLength={200}
+                                // isDisabled={ActionLoading}
+                              />
+                              <FormErrorMessage>
+                                {formik.errors.projectName}
+                              </FormErrorMessage>
+                            </Stack>
+                          </InputLayout>
+                        </FormControl>
 
-                      <FormControl
-                        id="projectCategory"
-                        isInvalid={formik.errors.projectCategory ? true : false}
-                        isRequired
-                      >
-                        <InputLayout>
-                          <FormLabel>Karakteristik Project</FormLabel>
-                          <Stack spacing={0} h={"full"}>
-                            <SelectC
-                              value={formik.values.projectCategory}
-                              id="projectCategory"
-                              name="projectCategory"
-                              onChange={(e) => {
-                                formik.setFieldValue(
-                                  `projectCategory`,
-                                  e.target.value
-                                );
-                              }}
-                              placeholder="Select Karakteristik Project"
-                            >
-                              {PROJEC_CATEGORY_OPTIONS.map((option) => (
-                                <option key={option} value={option}>
-                                  {option}
-                                </option>
-                              ))}
-                            </SelectC>
-                          </Stack>
-                        </InputLayout>
-                      </FormControl>
+                        <FormControl>
+                          <InputLayoutFull>
+                            <FormLabel h={"full"} mt={2}>
+                              Divisi Yang Menginisiasi
+                            </FormLabel>
+                            <Stack spacing={0}>
+                              <Grid
+                                templateColumns="repeat(3, 1fr)"
+                                gap={3}
+                                w={"full"}
+                              >
+                                <GridItem
+                                  colSpan={{ base: 3, sm: 3, md: 1, lg: 1 }}
+                                  w={"full"}
+                                >
+                                  <FormControl
+                                    id={"proOwnerDirectorateId"}
+                                    isInvalid={
+                                      formik.errors.proOwnerDirectorateId
+                                        ? true
+                                        : false
+                                    }
+                                    isRequired
+                                  >
+                                    <FormLabel h={"full"} mt={2}>
+                                      Direktorat
+                                    </FormLabel>
+                                    <Select
+                                      id={`proOwnerDirectorateId`}
+                                      options={OptionDirectorate}
+                                      isSearchable={true}
+                                      onChange={(e) => {
+                                        if (e) {
+                                          const selected = {
+                                            label: e.label,
+                                            value: e.value,
+                                          };
+                                          handleSelectedCustom(
+                                            selected,
+                                            "proOwnerDirectorateId"
+                                          );
+                                        } else {
+                                          handleUnSelectedCustom(
+                                            "proOwnerDirectorateId"
+                                          );
+                                        }
+                                      }}
+                                      placeholder={"Pilih Directorate PIC"}
+                                      value={OptionDirectorate.find(
+                                        (x) =>
+                                          x.value ==
+                                          formik.values.proOwnerDirectorateId
+                                      )}
+                                    />
 
-                      <FormControl
-                        id="projectRegisterDate"
-                        isInvalid={
-                          formik.errors.projectRegisterDate ? true : false
-                        }
-                        isRequired
-                      >
-                        <InputLayout>
-                          <FormLabel h={"full"} mt={2}>
-                            Tanggal Register Project
-                          </FormLabel>
-                          <Stack spacing={0} h={"full"}>
-                            <Input
-                              id="projectRegisterDate"
-                              name="projectRegisterDate"
-                              type="date"
-                              onChange={formik.handleChange}
-                              value={formik.values.projectRegisterDate}
-                              // isDisabled={ActionLoading}
-                            />
-                            <FormErrorMessage>
-                              {formik.errors.projectRegisterDate}
-                            </FormErrorMessage>
-                          </Stack>
-                        </InputLayout>
-                      </FormControl>
+                                    <FormErrorMessage>
+                                      {formik.errors.proOwnerDirectorateId}
+                                    </FormErrorMessage>
+                                  </FormControl>
+                                </GridItem>
+                                <GridItem
+                                  colSpan={{ base: 3, sm: 3, md: 1, lg: 1 }}
+                                  w={"full"}
+                                >
+                                  <FormControl
+                                    id={"proOwnerDivisionId"}
+                                    isInvalid={
+                                      formik.errors.proOwnerDivisionId
+                                        ? true
+                                        : false
+                                    }
+                                    isRequired
+                                  >
+                                    <FormLabel h={"full"} mt={2}>
+                                      Divisi
+                                    </FormLabel>
+                                    <Select
+                                      id={`proOwnerDivisionId`}
+                                      options={OptionDivisionOwner}
+                                      isSearchable={true}
+                                      onMenuOpen={async () => {
+                                        setOptionDivisionOwner([]);
+                                        await LoadDataDivision(
+                                          formik.values.proOwnerDirectorateId ||
+                                            "",
+                                          "proOwnerDivisionId"
+                                        );
+                                      }}
+                                      onChange={(e) => {
+                                        if (e) {
+                                          const selected = {
+                                            label: e.label,
+                                            value: e.value,
+                                          };
+                                          handleSelectedCustom(
+                                            selected,
+                                            "proOwnerDivisionId"
+                                          );
+                                          //   setSelectedDivisionPIC(selected);
+                                        } else {
+                                          handleUnSelectedCustom(
+                                            "proOwnerDivisionId"
+                                          );
+                                          //   setSelectedDivisionPIC(null);
+                                        }
+                                      }}
+                                      placeholder={"Pilih Divisi"}
+                                      isLoading={IsLoadingProcess}
+                                      value={OptionDivisionOwner.find(
+                                        (x) =>
+                                          x.value ==
+                                          formik.values.proOwnerDivisionId
+                                      )}
+                                    />
 
-                      {/* <FormControl
-                      id="projectClosedDate"
-                      isInvalid={formik.errors.projectClosedDate ? true : false}
-                      isRequired
-                    >
-                      <InputLayout>
-                        <FormLabel h={"full"} mt={2}>
-                          Tanggal Closed Project
-                        </FormLabel>
-                        <Stack spacing={0} h={"full"}>
-                          <Input
-                            id="projectClosedDate"
-                            name="projectClosedDate"
-                            type="date"
-                            onChange={formik.handleChange}
-                            value={formik.values.projectClosedDate}
-                            // isDisabled={ActionLoading}
-                          />
-                          <FormErrorMessage>
-                            {formik.errors.projectClosedDate}
-                          </FormErrorMessage>
-                        </Stack>
-                      </InputLayout>
-                    </FormControl> */}
+                                    <FormErrorMessage>
+                                      {formik.errors.proOwnerDivisionId}
+                                    </FormErrorMessage>
+                                  </FormControl>
+                                </GridItem>
+                                <GridItem
+                                  colSpan={{ base: 3, sm: 3, md: 1, lg: 1 }}
+                                  w={"full"}
+                                >
+                                  <FormControl
+                                    id={"proOwnerGroupId"}
+                                    isInvalid={
+                                      formik.errors.proOwnerGroupId
+                                        ? true
+                                        : false
+                                    }
+                                    // isRequired
+                                  >
+                                    <FormLabel h={"full"} mt={2}>
+                                      Grup
+                                    </FormLabel>
 
-                      {/* <FormControl
-                      id="projDateDuration"
-                      isInvalid={
-                        calculateDurationInDays(
-                          formik.values.projectRegisterDate ||
-                            new Date().toISOString(),
-                          formik.values.projectClosedDate ||
-                            new Date().toISOString()
-                        ) < 0
-                      }
-                    >
-                      <InputLayoutFull>
-                        <FormLabel h={"full"} mt={2}>
-                          Durasi Project
-                        </FormLabel>
-                        <Stack spacing={0} h={"full"}>
-                          <Text px={2} fontWeight={600}>
-                            {calculateDurationInDays(
-                              formik.values.projectRegisterDate ||
-                                new Date().toISOString(),
-                              formik.values.projectClosedDate ||
-                                new Date().toISOString()
-                            )}{" "}
-                            Hari Kalendar
-                          </Text>
-                          <FormErrorMessage>
-                            {calculateDurationInDays(
-                              formik.values.projectRegisterDate ||
-                                new Date().toISOString(),
-                              formik.values.projectClosedDate ||
-                                new Date().toISOString()
-                            ) < 0 && "Durasi tidak boleh negatif"}
-                          </FormErrorMessage>
-                        </Stack>
-                      </InputLayoutFull>
-                    </FormControl> */}
+                                    <Select
+                                      id={`proOwnerGroupId`}
+                                      options={OptionGroupOwner}
+                                      isSearchable={true}
+                                      onMenuOpen={async () => {
+                                        setOptionGroupOwner([]);
+                                        await LoadDataGroup(
+                                          formik.values.proOwnerDivisionId ||
+                                            "",
+                                          "proOwnerGroupId"
+                                        );
+                                      }}
+                                      onChange={(e) => {
+                                        if (e) {
+                                          const selected = {
+                                            label: e.label,
+                                            value: e.value,
+                                          };
+                                          handleSelectedCustom(
+                                            selected,
+                                            "userPicGroupId"
+                                          );
+                                          //   setSelectedGroupOrgPIC(selected);
+                                        } else {
+                                          handleUnSelectedCustom(
+                                            "userPicGroupId"
+                                          );
+                                          //   setSelectedGroupOrgPIC(null);
+                                        }
+                                      }}
+                                      placeholder={"Pilih Group"}
+                                      isLoading={IsLoadingProcess}
+                                      value={OptionGroupOwner.find(
+                                        (x) =>
+                                          x.value ==
+                                          formik.values.proOwnerGroupId
+                                      )}
+                                    />
+                                    <FormErrorMessage>
+                                      {formik.errors.proOwnerGroupId}
+                                    </FormErrorMessage>
+                                  </FormControl>
+                                </GridItem>
+                              </Grid>
+                            </Stack>
+                          </InputLayoutFull>
+                        </FormControl>
 
-                      <FormControl
-                        id="note"
-                        isInvalid={formik.errors.note ? true : false}
-                      >
-                        <InputLayout>
-                          <FormLabel h={"full"} mt={2}>
-                            Note
-                          </FormLabel>
-                          <Stack spacing={0} h={"full"}>
-                            <Textarea
-                              id="note"
-                              name="note"
-                              onChange={formik.handleChange}
-                              defaultValue={formik.values.note ?? ""}
-                              placeholder={`Perlihal`}
-                              maxLength={300}
-                              // isDisabled={ActionLoading}
-                            />
-                            <FormErrorMessage>
-                              {formik.errors.note}
-                            </FormErrorMessage>
-                          </Stack>
-                        </InputLayout>
-                      </FormControl>
+                        <FormControl
+                          id={"projectCharasteristicCode"}
+                          isInvalid={
+                            formik.errors.projectCharasteristicCode
+                              ? true
+                              : false
+                          }
+                          isRequired
+                        >
+                          <InputLayout>
+                            <FormLabel h={"full"}>
+                              Karakteristik Project
+                            </FormLabel>
+                            <Stack spacing={0} w={"full"}>
+                              <Select
+                                id={`projectCharasteristicCode`}
+                                options={OptionCharacteristicProject}
+                                isSearchable={true}
+                                onChange={(e) => {
+                                  if (e) {
+                                    const selected = {
+                                      label: e.label,
+                                      value: e.value,
+                                    };
+                                    LoadSubCharacteristicsProjectData(
+                                      selected.value
+                                    );
+                                    handleSelectedCustom(
+                                      selected,
+                                      "projectCharasteristicCode"
+                                    );
+                                  } else {
+                                    handleUnSelectedCustom(
+                                      "projectCharasteristicCode"
+                                    );
+                                    setOptionSubCharacteristicProject([]);
+                                  }
+                                }}
+                                placeholder={"Pilih Karakteristik Projek"}
+                                value={OptionCharacteristicProject.find(
+                                  (x) =>
+                                    x.value ==
+                                    formik.values.projectCharasteristicCode
+                                )}
+                              />
+                              <FormErrorMessage>
+                                {formik.errors.projectCharasteristicCode}
+                              </FormErrorMessage>
+                            </Stack>
+                          </InputLayout>
+                        </FormControl>
+
+                        <FormControl
+                          id={"projectSubCharasteristicCode"}
+                          isInvalid={
+                            formik.errors.projectSubCharasteristicCode
+                              ? true
+                              : false
+                          }
+                          isRequired
+                        >
+                          <InputLayout>
+                            <FormLabel h={"full"}>
+                              Sub Karakteristik Project
+                            </FormLabel>
+                            <Stack spacing={2} w={"full"}>
+                              <Select
+                                id={`projectSubCharasteristicCode`}
+                                options={OptionSubCharacteristicProject}
+                                isDisabled={
+                                  OptionSubCharacteristicProject.length <= 0
+                                }
+                                isSearchable={true}
+                                onChange={(e) => {
+                                  if (e) {
+                                    const selected = {
+                                      label: e.label,
+                                      value: e.value,
+                                    };
+                                    handleSelectedCustom(
+                                      selected,
+                                      "projectSubCharasteristicCode"
+                                    );
+                                  } else {
+                                    handleUnSelectedCustom(
+                                      "projectSubCharasteristicCode"
+                                    );
+                                  }
+                                }}
+                                placeholder={"Pilih Sub Karakteristik Projek"}
+                                value={OptionCharacteristicProject.find(
+                                  (x) =>
+                                    x.value ==
+                                    formik.values.projectSubCharasteristicCode
+                                )}
+                              />
+
+                              <Alert
+                                status="info"
+                                rounded={"md"}
+                                display={
+                                  formik.values.projectSubCharasteristicCode !=
+                                  null
+                                    ? "flex"
+                                    : "none"
+                                }
+                              >
+                                <AlertIcon />
+                                Chakra is going live on August 30th. Get ready!
+                              </Alert>
+                              <FormErrorMessage>
+                                {formik.errors.projectSubCharasteristicCode}
+                              </FormErrorMessage>
+                            </Stack>
+                          </InputLayout>
+                        </FormControl>
+
+                        <FormControl
+                          id="projectDesc"
+                          isInvalid={formik.errors.projectDesc ? true : false}
+                        >
+                          <InputLayout>
+                            <FormLabel h={"full"} mt={2}>
+                              Deskripsi
+                            </FormLabel>
+                            <Stack spacing={0} h={"full"}>
+                              <Textarea
+                                id="projectDesc"
+                                name="projectDesc"
+                                onChange={formik.handleChange}
+                                defaultValue={formik.values.projectDesc ?? ""}
+                                placeholder={`Perlihal`}
+                                maxLength={300}
+                                // isDisabled={ActionLoading}
+                              />
+                              <FormErrorMessage>
+                                {formik.errors.projectDesc}
+                              </FormErrorMessage>
+                            </Stack>
+                          </InputLayout>
+                        </FormControl>
+
+                        <FormControl
+                          id="projectRegisterDate"
+                          isInvalid={
+                            formik.errors.projectRegisterDate ? true : false
+                          }
+                          isRequired
+                        >
+                          <InputLayout>
+                            <FormLabel h={"full"} mt={2}>
+                              Tanggal Register Project
+                            </FormLabel>
+                            <Stack spacing={0} h={"full"}>
+                              <Input
+                                id="projectRegisterDate"
+                                name="projectRegisterDate"
+                                type="date"
+                                onChange={formik.handleChange}
+                                value={formik.values.projectRegisterDate}
+                                // isDisabled={ActionLoading}
+                              />
+                              <FormErrorMessage>
+                                {formik.errors.projectRegisterDate}
+                              </FormErrorMessage>
+                            </Stack>
+                          </InputLayout>
+                        </FormControl>
+
+                        <FormControl
+                          id="note"
+                          isInvalid={formik.errors.note ? true : false}
+                        >
+                          <InputLayout>
+                            <FormLabel h={"full"} mt={2}>
+                              Note
+                            </FormLabel>
+                            <Stack spacing={0} h={"full"}>
+                              <Textarea
+                                id="note"
+                                name="note"
+                                onChange={formik.handleChange}
+                                defaultValue={formik.values.note ?? ""}
+                                placeholder={`Perlihal`}
+                                maxLength={300}
+                                // isDisabled={ActionLoading}
+                              />
+                              <FormErrorMessage>
+                                {formik.errors.note}
+                              </FormErrorMessage>
+                            </Stack>
+                          </InputLayout>
+                        </FormControl>
+                      </InputGroupPanel>
                     </Flex>
                   )}
 
@@ -1986,7 +2532,7 @@ function FormRegisterProjectView() {
                           p={4}
                         >
                           <Flex as={Stack} w={"full"} spacing={5} py={4}>
-                            <FormControl id={"filterDivisionId"}>
+                            {/* <FormControl id={"filterDivisionId"}>
                               <InputLayoutFull>
                                 <FormLabel h={"full"} mt={2}>
                                   Divisi
@@ -2005,7 +2551,7 @@ function FormRegisterProjectView() {
                                   />
                                 </Stack>
                               </InputLayoutFull>
-                            </FormControl>
+                            </FormControl> */}
 
                             <FormControl id="searchAssignedToUser">
                               <InputLayoutFull>
@@ -2598,6 +3144,60 @@ function FormRegisterProjectView() {
               </CardBody>
             </Card>
           </GridItem>
+
+          {/* DEBUG REQUIREMENT DATA */}
+          <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }} w={"full"}>
+            <Flex as={Stack} w={"full"}>
+              <Box
+                overflowY={"auto"}
+                overflowX={"auto"}
+                h={"350px"}
+                p={4}
+                bgColor={"gray.200"}
+                rounded={radiusStyle}
+                // display={"none"}
+              >
+                <Text fontWeight={600}>Data Requirement</Text>
+                <pre>{JSON.stringify(DataRequirement, null, 2)}</pre>
+              </Box>
+            </Flex>
+          </GridItem>
+
+          {/* DEBUG APLICATION DATA */}
+          <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }} w={"full"}>
+            <Flex as={Stack} w={"full"}>
+              <Box
+                overflowY={"auto"}
+                overflowX={"auto"}
+                h={"350px"}
+                p={4}
+                bgColor={"gray.200"}
+                rounded={radiusStyle}
+                // display={"none"}
+              >
+                <Text fontWeight={600}>Data Application</Text>
+                <pre>{JSON.stringify(ApplicationData, null, 2)}</pre>
+              </Box>
+            </Flex>
+          </GridItem>
+
+          {/* DEBUG FORM REGISTER DATA */}
+          <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 12 }} w={"full"}>
+            <Flex as={Stack} w={"full"}>
+              <Box
+                overflowY={"auto"}
+                overflowX={"auto"}
+                h={"350px"}
+                p={4}
+                bgColor={"gray.200"}
+                rounded={radiusStyle}
+                // display={"none"}
+              >
+                <Text fontWeight={600}>Data Register Form</Text>
+                <pre>{JSON.stringify(formik.values, null, 2)}</pre>
+              </Box>
+            </Flex>
+          </GridItem>
         </Grid>
       )}
     </LayoutAdmin>
@@ -2891,4 +3491,4 @@ const AdditionalInfoUpdate = ({
   );
 };
 
-export default FormRegisterProjectView;
+export default ProjectRegisterView;

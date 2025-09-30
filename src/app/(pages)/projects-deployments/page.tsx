@@ -727,8 +727,7 @@ const ProjectDeploymentsPage = () => {
                                     }
                                     noOfLines={1}
                                   >
-                                    {project.projectNo} |{" "}
-                                    {project.appsProject.appName}
+                                    {project.projectNo}
                                   </Text>
                                 </VStack>
 

@@ -866,12 +866,23 @@ const ProjectManagerPage = () => {
                               size={"md"}
                               colorScheme={"secondary"}
                               leftIcon={<FiPlusSquare />}
-                              type={"submit"}
+                              // type={"submit"}
                               isLoading={ActionLoading}
                               onClick={() => handleAddNew()}
                             >
-                              Register Project
+                              Register New Project
                             </Button>
+                            <Link href={`projects-manager/register`}>
+                              <Button
+                                size={"md"}
+                                colorScheme={"purple"}
+                                leftIcon={<FiPlusSquare />}
+                                // type={"submit"}
+                                isLoading={ActionLoading}
+                              >
+                                Register New Project Alt
+                              </Button>
+                            </Link>
                           </Flex>
                         </Flex>
 
@@ -990,7 +1001,7 @@ const ProjectManagerPage = () => {
                                     noOfLines={1}
                                   >
                                     {project.projectNo} |{" "}
-                                    {project.appsProject.appName}
+                                    {project.appsProject?.appName}
                                   </Text>
                                 </VStack>
 

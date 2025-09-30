@@ -196,7 +196,7 @@ const CardProject = memo(
                 opacity="0.9"
                 textAlign="center"
               >
-                {data.appsProject.appName}
+                {data.appsProject?.appName}
               </Text>
               <Text
                 fontSize="xs"
@@ -265,14 +265,14 @@ const CardProject = memo(
 
               {/* App Name - Show if different from project name */}
               {/* {data.appsProject?.appName &&
-                data.appsProject.appName !== data.projectName && (
+                data.appsProject?.appName !== data.projectName && (
                   <Text
                     fontSize="sm"
                     color="gray.600"
                     fontWeight="medium"
                     noOfLines={1}
                   >
-                    App: {data.appsProject.appName}
+                    App: {data.appsProject?.appName}
                   </Text>
                 )} */}
             </VStack>

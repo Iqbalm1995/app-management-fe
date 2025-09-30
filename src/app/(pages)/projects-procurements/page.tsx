@@ -107,7 +107,7 @@ import ModalRegisterProject from "../projects-manager/components/ModalRegisterPr
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Projects Procurements",
-  breadCrumb: ["Home", "Projects Procurements"],
+  breadCrumb: ["Home", "Project", "Procurement"],
 };
 
 const ProjectManagerPage = () => {
@@ -883,8 +883,7 @@ const ProjectManagerPage = () => {
                                     }
                                     noOfLines={1}
                                   >
-                                    {project.projectNo} |{" "}
-                                    {project.appsProject.appName}
+                                    {project.projectNo}
                                   </Text>
                                 </VStack>
 
