@@ -169,6 +169,7 @@ import useConstants, {
   ConstantDataResponse,
 } from "@/app/services/useConstants";
 import ModalRegisterProject from "../../project-development/components/ModalRegisterProject";
+import RequirementListChooseData from "../../project-development/components/RequirementListChooseData";
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Registrasi Project",
@@ -1574,7 +1575,10 @@ function ProjectRegisterView({
           <ModalHeader>Pilih Memo</ModalHeader>
           <ModalCloseButton />
           <ModalBody w={"full"}>
-            <ModalRegisterProject />
+            <RequirementListChooseData 
+              selectedRequirement={DataRequirement}
+              onRequirementSelect={setDataRequirement}
+            />
           </ModalBody>
 
           <ModalFooter>
