@@ -163,7 +163,7 @@ import { Select } from "chakra-react-select";
 import { BsLightningChargeFill } from "react-icons/bs";
 import { FaCircle } from "react-icons/fa";
 import { TabButtonCustom } from "@/app/components/TabsCustom";
-import { ApplicationMasterResponse } from "@/app/services/useApps";
+import useApps, { ApplicationMasterResponse } from "@/app/services/useApps";
 import { InputGroupPanel } from "@/app/components/customPanels";
 import useConstants, {
   ConstantDataResponse,
@@ -243,6 +243,7 @@ function ProjectRegisterView({
     ListBacklog,
     UpdateBacklogBatch,
   } = useRequirements();
+  const { GetDetailByInitial: GetAppByInitial } = useApps();
   const { ListConstantData } = useConstants();
   const { InsertProjects } = useProjects();
   const {
@@ -1318,6 +1319,38 @@ function ProjectRegisterView({
       GetDataList();
     }
   }, [DataAuth, DataRequirement]);
+
+  // Load application data when requirement is selected
+  useEffect(() => {
+    if (DataRequirement?.appInitialCode && tokenData) {
+      const loadApplicationData = async () => {
+        try {
+          const requestData = await GetAppByInitial(DataRequirement.appInitialCode, tokenData);
+          const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+
+          if (isErrorResponse || !requestData) {
+            showToast({
+              description: requestData?.message || RES_GENERIC_ERROR_MSG,
+              statusToast: "error",
+            });
+            return;
+          }
+
+          if (requestData.data) {
+            setApplicationData(requestData.data);
+          }
+        } catch (error) {
+          console.error("Error loading application data:", error);
+          showToast({
+            description: "Failed to load application data",
+            statusToast: "error",
+          });
+        }
+      };
+
+      loadApplicationData();
+    }
+  }, [DataRequirement?.appInitialCode, tokenData]);
 
   // auto page
   const table = useReactTable({
