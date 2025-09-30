@@ -1344,6 +1344,19 @@ function ProjectRegisterView({
   const goToSection = async (index: number) => {
     setActiveStep(index);
   };
+
+  useEffect(() => {
+    if (projectTypeRegister == PROJECT_TYPE_INTERNAL_DEVELOPMENT) {
+      if (DataRequirement == null) {
+        showToast({
+          description: "Diharuskan untuk memilih Requirement (Memo)",
+          statusToast: "warning",
+        });
+        setActiveStep(0);
+      }
+    }
+  }, [activeStep]);
+
   // End Step Form
 
   // confirmation save data
@@ -1614,24 +1627,24 @@ function ProjectRegisterView({
           if (DataRequirement.assignedFromId) {
             const ProjectManageOrg: UserOrganizationResponse | null =
               await GetUserOrganizationServices(DataRequirement.assignedFromId);
-            if (ProjectManageOrg) {
-              formik.setFieldValue(
-                `proManageByDivisionId`,
-                ProjectManageOrg.division.id
-              );
-              if (ProjectManageOrg.group) {
-                formik.setFieldValue(
-                  `proManageByGroupId`,
-                  ProjectManageOrg.group.id
-                );
-              }
-              if (ProjectManageOrg.team) {
-                formik.setFieldValue(
-                  `proManageByTeamId`,
-                  ProjectManageOrg.team.id
-                );
-              }
-            }
+            // if (ProjectManageOrg) {
+            //   formik.setFieldValue(
+            //     `proManageByDivisionId`,
+            //     ProjectManageOrg.division.id
+            //   );
+            //   if (ProjectManageOrg.group) {
+            //     formik.setFieldValue(
+            //       `proManageByGroupId`,
+            //       ProjectManageOrg.group.id
+            //     );
+            //   }
+            //   if (ProjectManageOrg.team) {
+            //     formik.setFieldValue(
+            //       `proManageByTeamId`,
+            //       ProjectManageOrg.team.id
+            //     );
+            //   }
+            // }
           }
 
           // Set UserDefault Assign Project Member
@@ -1931,7 +1944,6 @@ function ProjectRegisterView({
                     <Box
                       w={14}
                       h={14}
-                      // bg={colorMode == "light" ? "blackAlpha.500" : "white"}
                       bgGradient={"linear(to-br, secondary.800, secondary.500)"}
                       rounded="lg"
                       display="flex"
@@ -1939,13 +1951,16 @@ function ProjectRegisterView({
                       justifyContent="center"
                       boxShadow={"md"}
                       cursor={"pointer"}
+                      transition="box-shadow 0.3s ease"
+                      _hover={{
+                        boxShadow: "0 0 20px rgba(66, 153, 225, 0.6)",
+                      }}
                     >
                       <Text
                         color={"white"}
                         fontWeight="bold"
                         fontSize={"x-large"}
                       >
-                        {/* {DataRequirement.reqNarative.charAt(0).toUpperCase()} */}
                         {ApplicationData
                           ? ApplicationData.appShortName.toUpperCase()
                           : "-"}
@@ -5009,6 +5024,7 @@ function ProjectRegisterView({
                     >
                       Previous
                     </Button>
+                    {activeStep}
                     <HStack spacing={4}>
                       <Button
                         onClick={() => {
