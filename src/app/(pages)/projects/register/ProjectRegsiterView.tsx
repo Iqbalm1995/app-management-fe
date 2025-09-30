@@ -1347,7 +1347,7 @@ function ProjectRegisterView({
 
   useEffect(() => {
     if (projectTypeRegister == PROJECT_TYPE_INTERNAL_DEVELOPMENT) {
-      if (DataRequirement == null) {
+      if (DataRequirement == null && activeStep > 0) {
         showToast({
           description: "Diharuskan untuk memilih Requirement (Memo)",
           statusToast: "warning",
@@ -1681,6 +1681,8 @@ function ProjectRegisterView({
       } else {
         handleResetReffFromRequirementData();
       }
+    } else {
+      handleResetReffFromRequirementData();
     }
   }, [DataAuth, DataRequirement]);
 
@@ -1714,6 +1716,7 @@ function ProjectRegisterView({
     setWorkProgramExt("0");
     setWorkProgramInt("0");
     formik.setFieldValue("userAssigns", []);
+    setApplicationData(null);
   };
   // end reset filled data from req
 
@@ -5024,7 +5027,6 @@ function ProjectRegisterView({
                     >
                       Previous
                     </Button>
-                    {activeStep}
                     <HStack spacing={4}>
                       <Button
                         onClick={() => {
@@ -5059,7 +5061,7 @@ function ProjectRegisterView({
                 p={4}
                 bgColor={"gray.200"}
                 rounded={radiusStyle}
-                // display={"none"}
+                display={"none"}
               >
                 <Text fontWeight={600}>Data Requirement</Text>
                 <pre>{JSON.stringify(DataRequirement, null, 2)}</pre>
@@ -5077,7 +5079,7 @@ function ProjectRegisterView({
                 p={4}
                 bgColor={"gray.200"}
                 rounded={radiusStyle}
-                // display={"none"}
+                display={"none"}
               >
                 <Text fontWeight={600}>Data Application</Text>
                 <pre>{JSON.stringify(ApplicationData, null, 2)}</pre>
@@ -5095,7 +5097,7 @@ function ProjectRegisterView({
                 p={4}
                 bgColor={"gray.200"}
                 rounded={radiusStyle}
-                // display={"none"}
+                display={"none"}
               >
                 <Text fontWeight={600}>Data Register Form</Text>
                 <pre>{JSON.stringify(formik.values, null, 2)}</pre>
