@@ -120,6 +120,10 @@ function MasterDataAplikasiPage() {
   // End SetUp auth data on current page
 
   const [DataAplikasi, setDataAplikasi] = useState<ApplicationMasterResponse[]>([]);
+  const [StatsData, setStatsData] = useState({
+    total: 0,
+    active: 0,
+  });
   const [RefreshData, setRefreshData] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
   const [ActionLoading, setActionLoading] = useState(false);
@@ -155,6 +159,36 @@ function MasterDataAplikasiPage() {
     [pageIndex, pageSize]
   );
 
+  // Function to get stats data (total counts)
+  const GetStatsData = async () => {
+    if (!tokenData || !DataAuth) return;
+
+    try {
+      const PayloadStats: PaggingListPayloadCustom = {
+        search: "",
+        limit: 1000, // Large number to get all data for counting
+        page: 0,
+        fieldOrder: ["createdAt"],
+        orderDir: "desc",
+        filterWhere: [],
+      };
+
+      const requestData = await List(PayloadStats as any, tokenData);
+      
+      if (requestData?.statusCode === RES_CODE_OK && requestData.data) {
+        const allApps = requestData.data as ApplicationMasterResponse[];
+        const activeApps = allApps.filter(app => app.appsStatus === "ACTIVE");
+        
+        setStatsData({
+          total: allApps.length,
+          active: activeApps.length,
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+    }
+  };
+
   // Function Data Load Services Aplikasi with pagination
   const GetDataAplikasi = async () => {
     if (!tokenData || !DataAuth) {
@@ -174,7 +208,6 @@ function MasterDataAplikasiPage() {
         fieldOrder: ["createdAt"],
         orderDir: "desc",
         filterWhere: [],
-
       };
 
       const requestData = await List(PayloadList as any, tokenData);
@@ -318,8 +351,9 @@ function MasterDataAplikasiPage() {
   useEffect(() => {
     if (DataAuth && tokenData) {
       GetDataAplikasi();
+      GetStatsData(); // Get stats data separately
     }
-  }, [pageIndex, pageSize, globalFilter, /* selectedKategori, */ RefreshData, DataAuth, tokenData]);
+  }, [pageIndex, pageSize, globalFilter, RefreshData, DataAuth, tokenData]);
 
   return (
     <LayoutAdmin>
@@ -404,14 +438,14 @@ function MasterDataAplikasiPage() {
             <HStack spacing={8}>
               <VStack spacing={1} align="center">
                 <Text fontSize="2xl" fontWeight="bold" color="secondary.600">
-                  {DataAplikasi.length}
+                  {StatsData.total}
                 </Text>
                 <Text fontSize="xs" color="gray.500" fontWeight="medium">Total</Text>
               </VStack>
               
               <VStack spacing={1} align="center">
                 <Text fontSize="2xl" fontWeight="bold" color="green.600">
-                  {DataAplikasi.filter((app) => app.appsStatus === "ACTIVE").length}
+                  {StatsData.active}
                 </Text>
                 <Text fontSize="xs" color="gray.500" fontWeight="medium">Active</Text>
               </VStack>
