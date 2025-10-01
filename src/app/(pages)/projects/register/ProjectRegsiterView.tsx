@@ -238,6 +238,8 @@ export const initialProjectsInsertValues: ProjectInsertPayload = {
   reqParentId: "", // Optional
   userAssigns: [], // Required (at least an empty array)
   projectPlanWorkflowIds: [],
+  projectPlanWorkflowBacklogsIds: [],
+  workProgramsBacklogs: [],
   workPrograms: [],
 };
 
@@ -4654,15 +4656,42 @@ function ProjectRegisterView({
                   {/* FEATURE INFORMATION */}
                   {activeStep === 3 && (
                     <Flex as={Stack} w={"full"} spacing={5}>
-                      {IsLoadingProcess ? (
-                        <LoadingMiniSignature />
-                      ) : (
-                        // <TableComponentFull table={table} />
-                        // TABLE NEW DESIGN
-                        <TableComponentWithFilterCTX
-                          table={table}
-                          handleFilterChange={handleFilterChange}
-                        />
+                      {/* FOR TYPE PROJECT REGISTER INTERNAL DEVELOPMENT */}
+                      {projectTypeRegister ==
+                        PROJECT_TYPE_INTERNAL_DEVELOPMENT && (
+                        <>
+                          {IsLoadingProcess ? (
+                            <LoadingMiniSignature />
+                          ) : (
+                            // <TableComponentFull table={table} />
+                            // TABLE NEW DESIGN
+                            <TableComponentWithFilterCTX
+                              table={table}
+                              handleFilterChange={handleFilterChange}
+                            />
+                          )}
+                        </>
+                      )}
+
+                      {/* FOR TYPE PROJECT REGISTER PROCUREMENT */}
+                      {projectTypeRegister == PROJECT_TYPE_PROCUREMENT && (
+                        <Flex as={Stack} w={"full"} spacing={5}>
+                          {DataRequirement != null ? (
+                            <>
+                              {IsLoadingProcess ? (
+                                <LoadingMiniSignature />
+                              ) : (
+                                // TABLE NEW DESIGN
+                                <TableComponentWithFilterCTX
+                                  table={table}
+                                  handleFilterChange={handleFilterChange}
+                                />
+                              )}
+                            </>
+                          ) : (
+                            <Text>Choose Workstage For Procurement Here</Text>
+                          )}
+                        </Flex>
                       )}
                     </Flex>
                   )}

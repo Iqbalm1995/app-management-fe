@@ -19,6 +19,8 @@ import { UsersFullResponse, UsersResponse } from "./useUsers";
 import { ApplicationMasterShortResponse } from "./useApps";
 import { MediaObjectResponse } from "./useMediaObject";
 import {
+  BacklogDataResponse,
+  BacklogInsertPayload,
   RequirementWorkProgramDataResponse,
   WorkProgramsPayload,
 } from "./useRequirements";
@@ -73,6 +75,8 @@ export interface ProjectDataResponse {
   userAssignment: ProjectUserAssignmentResponse[];
   appsProject: ApplicationMasterShortResponse | null;
   workPrograms: RequirementWorkProgramDataResponse[];
+  projectWorkflowProjectData: ProjectWorkflowResponse[];
+  projectWorkflowData: ProjectWorkflowResponse[];
 }
 
 export interface ProjectUserAssignmentResponse {
@@ -107,6 +111,7 @@ export interface ProjectWorkflowResponse {
   parentId?: string | null;
   workflowChild: ProjectWorkflowResponse[];
   workflowValues: ProjectWorkflowValueResponse[];
+  workflowBacklog?: BacklogDataResponse | null;
 }
 
 export interface ProjectWorkflowValueResponse {
@@ -151,6 +156,8 @@ export interface ProjectInsertPayload {
   reqParentId?: string | null;
   userAssigns: ProjectUserInsertPayload[];
   projectPlanWorkflowIds: string[];
+  projectPlanWorkflowBacklogsIds: string[];
+  workProgramsBacklogs: BacklogInsertPayload[];
   workPrograms: WorkProgramsPayload[];
 }
 
