@@ -774,8 +774,8 @@ function MasterDataAplikasiPage() {
                                 >
                                   <VStack spacing={3} position="relative" zIndex={1}>
                                     <Box
-                                      w={"50px"}
-                                      h={"50px"}
+                                      w={"70px"}
+                                      h={"70px"}
                                       bg="whiteAlpha.200"
                                       rounded="xl"
                                       display="flex"
@@ -786,7 +786,7 @@ function MasterDataAplikasiPage() {
                                       border="2px"
                                       borderColor="whiteAlpha.300"
                                     >
-                                      {app.appCode.slice(-3)}
+                                      {(app.appShortName || app.appName || "APP").length > 5 ? (app.appShortName || app.appName || "A").charAt(0).toUpperCase() : (app.appShortName || app.appName || "APP")}
                                     </Box>
                                     <VStack spacing={0} align="center">
                                       <Text
@@ -941,8 +941,8 @@ function MasterDataAplikasiPage() {
                                     {/* Modern App Avatar */}
                                     <GridItem>
                                       <Box
-                                        w={16}
-                                        h={16}
+                                        w={24}
+                                        h={24}
                                         bgGradient="linear(135deg, secondary.500, secondary.600, secondary.700)"
                                         rounded="2xl"
                                         display="flex"
@@ -954,7 +954,7 @@ function MasterDataAplikasiPage() {
                                         flexShrink={0}
                                         shadow="lg"
                                       >
-                                        {app.appCode.slice(-3)}
+                                        {(app.appShortName || app.appName || "APP").length > 5 ? (app.appShortName || app.appName || "A").charAt(0).toUpperCase() : (app.appShortName || app.appName || "APP")}
                                       </Box>
                                     </GridItem>
 
@@ -1465,8 +1465,11 @@ function MasterDataAplikasiPage() {
                     </FormLabel>
                     <Input
                       value={formData.appShortName}
-                      onChange={(e) => setFormData({ ...formData, appShortName: e.target.value })}
-                      placeholder="Enter short name"
+                      onChange={(e) => {
+                        const value = e.target.value.slice(0, 10);
+                        setFormData({ ...formData, appShortName: value });
+                      }}
+                      placeholder="Enter short name (max 10 chars)"
                       size="lg"
                       bg={colorMode === "light" ? "white" : "gray.700"}
                       border="2px"
