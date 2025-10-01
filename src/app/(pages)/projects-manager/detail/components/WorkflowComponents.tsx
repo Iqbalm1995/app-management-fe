@@ -992,3 +992,429 @@ export const WorkflowLevel1Box = ({
     </Card>
   );
 };
+
+// Dynamic Workflow Component - Handles any level (1, 2, or 3)
+interface DynamicWorkflowProps {
+  workflow: ProjectWorkflowResponse;
+  onRefresh?: () => void;
+  level?: number;
+}
+
+export const DynamicWorkflowBox = ({
+  workflow,
+  onRefresh,
+  level = 1,
+}: DynamicWorkflowProps) => {
+  const { colorMode } = useColorMode();
+  const { isOpen, onToggle } = useDisclosure({ defaultIsOpen: level < 3 });
+
+  const hasChildren = workflow.workflowChild && workflow.workflowChild.length > 0;
+  const isLeafNode = !hasChildren;
+
+  if (isLeafNode) {
+    // Render as table row for leaf nodes (any level can be leaf)
+    return <WorkflowTableRow workflow={workflow} onRefresh={onRefresh} />;
+  }
+
+  // Render as container for parent nodes
+  return (
+    <Card
+      shadow="md"
+      rounded={radiusStyle}
+      bgColor={colorMode === "light" ? "white" : "gray.800"}
+      ml={level > 1 ? 4 : 0}
+    >
+      <CardHeader
+        p={4}
+        cursor="pointer"
+        onClick={onToggle}
+        _hover={{
+          rounded: radiusStyle,
+          bg: colorMode === "light" ? "gray.50" : "secondary.200",
+        }}
+        mb={2}
+      >
+        <HStack justify="space-between">
+          <Text fontWeight={600} color="secondary.600">
+            {workflow.wfgName} ({workflow.workflowChild.length})
+          </Text>
+          <Text fontSize="sm" color="gray.500">
+            {isOpen ? "−" : "+"}
+          </Text>
+        </HStack>
+      </CardHeader>
+      <Collapse in={isOpen}>
+        <CardBody pt={0}>
+          {/* Check if children are leaf nodes to render table */}
+          {workflow.workflowChild.some(child => !child.workflowChild || child.workflowChild.length === 0) ? (
+            // Render table if children are leaf nodes
+            <Flex
+              mt={2}
+              overflowX={"auto"}
+              w={"full"}
+              border={"1px solid"}
+              borderRadius={radiusStyle}
+              borderColor={colorMode == "light" ? "gray.100" : "gray.600"}
+              boxShadow={"md"}
+            >
+              <Table size="sm" variant="unstyled">
+                <Thead>
+                  <Tr
+                    bg={colorMode == "light" ? "secondary.50" : "gray.900"}
+                    color={colorMode == "light" ? "secondary.800" : "secondary.500"}
+                  >
+                    <Th py={3}>Jenis Dokumen</Th>
+                    <Th py={3}>Nama Dokumen</Th>
+                    <Th py={3}>Nomor Dokumen</Th>
+                    <Th py={3}>Tanggal Upload</Th>
+                    <Th py={3}>Versi</Th>
+                    <Th py={3}>Status</Th>
+                    <Th width="200px">Actions</Th>
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {workflow.workflowChild?.map((child) => (
+                    <DynamicWorkflowBox
+                      key={child.id}
+                      workflow={child}
+                      onRefresh={onRefresh}
+                      level={level + 1}
+                    />
+                  ))}
+                </Tbody>
+              </Table>
+            </Flex>
+          ) : (
+            // Render nested containers if children have their own children
+            <VStack spacing={3} align="stretch">
+              {workflow.workflowChild?.map((child) => (
+                <DynamicWorkflowBox
+                  key={child.id}
+                  workflow={child}
+                  onRefresh={onRefresh}
+                  level={level + 1}
+                />
+              ))}
+            </VStack>
+          )}
+        </CardBody>
+      </Collapse>
+    </Card>
+  );
+};
+
+// Reusable Table Row Component for leaf nodes
+interface WorkflowTableRowProps {
+  workflow: ProjectWorkflowResponse;
+  onRefresh?: () => void;
+}
+
+const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
+  const showToast = useToastHelper();
+  const { colorMode } = useColorMode();
+  const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
+  const [tokenData, setTokenData] = useState<string>("");
+  const [ActionLoading, setActionLoading] = useState(false);
+  const [ListProjectWFValue, setListProjectWFValue] = useState<ProjectWorkflowValueResponse[]>([]);
+
+  const UrlEndpoint: string = buildUrlPort(
+    ENDPOINT_API_BASEURL_OBJECT,
+    ENDPOINT_PORT_BASIC_OBJECT
+  );
+  const { InsertProjectWorkflowValue, ListProjectWorkflowValue } = useProjects();
+
+  useEffect(() => {
+    const storedData = localStorage.getItem("authData");
+    const token: string = localStorage.getItem("tokenData") as string;
+
+    if (DataAuth == null && storedData) {
+      const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
+      const UserData: AuthDataResponse = StorageAuth.dataLogin as AuthDataResponse;
+      setDataAuth(UserData);
+    }
+
+    if (token) setTokenData(token);
+  }, [DataAuth]);
+
+  // Modal states
+  const ModalForm = useDisclosure();
+  const ModalDetailWF = useDisclosure();
+
+  // Form setup (reuse existing form logic)
+  const formik = useFormik<ProjectWorkflowValueInsertPayload>({
+    initialValues: initValuePayloadWFV,
+    validationSchema: FormSchemaWFV,
+    validateOnChange: false,
+    validateOnBlur: false,
+    onSubmit: async (values) => {
+      setActionLoading(true);
+      const requestData = await InsertProjectWorkflowValue(values, tokenData);
+      
+      if (requestData?.statusCode === RES_CODE_OK) {
+        showToast({
+          description: "Creating new requirement data successfully",
+          statusToast: "success",
+        });
+        formik.resetForm();
+        ModalForm.onClose();
+        if (onRefresh) onRefresh();
+      } else {
+        showToast({
+          description: requestData?.message || RES_GENERIC_ERROR_MSG,
+          statusToast: "error",
+        });
+      }
+      setActionLoading(false);
+    },
+  });
+
+  const handleOpenForm = () => {
+    formik.resetForm();
+    ModalForm.onOpen();
+    formik.setFieldValue("DocumentType", workflow.wfgName);
+    formik.setFieldValue("ProjectWorkflowId", workflow.id);
+  };
+
+  const handleOpenDetail = async () => {
+    const PayloadList: PaggingListPayload = {
+      search: "",
+      limit: MAX_SIZE_TABLE,
+      page: 0,
+      filterWhere: [{ field: "projectWorkflowId", operator: "=", value: workflow.id }],
+      fieldOrder: ["createdAt"],
+      orderDir: "desc",
+    };
+    
+    const requestData = await ListProjectWorkflowValue(PayloadList, tokenData);
+    if (requestData?.statusCode === RES_CODE_OK && requestData.data) {
+      setListProjectWFValue(requestData.data as ProjectWorkflowValueResponse[]);
+      ModalDetailWF.onOpen();
+    }
+  };
+
+  return (
+    <>
+      <Tr fontWeight="medium" fontSize="sm">
+        <Td><Text>{workflow.wfgName}</Text></Td>
+        <Td>
+          {workflow.workflowValues?.length > 0 ? (
+            <Text>{workflow.workflowValues[0].documentName}</Text>
+          ) : (
+            <Text textAlign={"center"}>{"-"}</Text>
+          )}
+        </Td>
+        <Td>
+          {workflow.workflowValues?.length > 0 ? (
+            <Text>{workflow.workflowValues[0].documentNumber}</Text>
+          ) : (
+            <Text textAlign={"center"}>{"-"}</Text>
+          )}
+        </Td>
+        <Td>
+          {workflow.workflowValues?.length > 0 ? (
+            <Text>{convertToCustomDateFormat(workflow.workflowValues[0].documentDate)}</Text>
+          ) : (
+            <Text textAlign={"center"}>{"-"}</Text>
+          )}
+        </Td>
+        <Td>
+          {workflow.workflowValues?.length > 0 ? (
+            <Text textAlign={"center"}>{workflow.workflowValues[0].documentVersion}</Text>
+          ) : (
+            <Text textAlign={"center"}>{"-"}</Text>
+          )}
+        </Td>
+        <Td>
+          <Flex as={Stack} textAlign={"center"} justifyContent={"center"} align={"center"} w={"full"}>
+            {workflow.workflowValues?.length > 0 ? (
+              <Tooltip rounded={"md"} hasArrow label={"File sudah di upload"} bg={"secondary.500"} color={"white"}>
+                <Icon as={FiCheckCircle} color={"green.500"} />
+              </Tooltip>
+            ) : (
+              <Tooltip rounded={"md"} hasArrow label={"Belum ada upload files"} bg={"yellow.300"} color={"gray.800"}>
+                <Icon as={FiAlertTriangle} color={"yellow.300"} />
+              </Tooltip>
+            )}
+          </Flex>
+        </Td>
+        <Td>
+          <HStack spacing={2}>
+            <Button size="xs" colorScheme="blue" variant="outline" leftIcon={<FiUpload />} onClick={handleOpenForm}>
+              Upload
+            </Button>
+            <Button size="xs" colorScheme="gray" variant="outline" leftIcon={<FiEye />} onClick={handleOpenDetail}>
+              Detail
+            </Button>
+          </HStack>
+        </Td>
+      </Tr>
+
+      {/* Reuse existing modals from WorkflowLevel2Box */}
+      <Modal size={"xl"} isOpen={ModalForm.isOpen} onClose={ModalForm.onClose} closeOnOverlayClick={false} scrollBehavior={"inside"}>
+        <ModalOverlay bg="blackAlpha.300" />
+        <ModalContent rounded={radiusStyle} m={2} bg={colorMode == "light" ? "white" : "gray.900"} maxH="90vh">
+          <form onSubmit={formik.handleSubmit}>
+            <ModalHeader>Upload New Document</ModalHeader>
+            <ModalCloseButton color={"red.500"} />
+            <ModalBody w={"full"} maxH="70vh" overflowY="auto" p={6}>
+              <VStack spacing={4} align="stretch" w="full">
+                <FormControl isInvalid={!!formik.errors.DocumentName} isRequired>
+                  <FormLabel>Nama Dokumen</FormLabel>
+                  <Input
+                    name="DocumentName"
+                    placeholder="Masukkan nama dokumen"
+                    value={formik.values.DocumentName}
+                    onChange={formik.handleChange}
+                    isDisabled={ActionLoading}
+                  />
+                  <FormErrorMessage>{formik.errors.DocumentName}</FormErrorMessage>
+                </FormControl>
+
+                <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+                  <GridItem>
+                    <FormControl isInvalid={!!formik.errors.DocumentNumber} isRequired>
+                      <FormLabel>Nomor Dokumen</FormLabel>
+                      <Input
+                        name="DocumentNumber"
+                        placeholder="Masukkan nomor dokumen"
+                        value={formik.values.DocumentNumber}
+                        onChange={formik.handleChange}
+                        isDisabled={ActionLoading}
+                      />
+                      <FormErrorMessage>{formik.errors.DocumentNumber}</FormErrorMessage>
+                    </FormControl>
+                  </GridItem>
+                  <GridItem>
+                    <FormControl isInvalid={!!formik.errors.DocumentDate} isRequired>
+                      <FormLabel>Tanggal Dokumen</FormLabel>
+                      <Input
+                        name="DocumentDate"
+                        type="date"
+                        value={formik.values.DocumentDate}
+                        onChange={formik.handleChange}
+                        isDisabled={ActionLoading}
+                      />
+                      <FormErrorMessage>{formik.errors.DocumentDate}</FormErrorMessage>
+                    </FormControl>
+                  </GridItem>
+                </Grid>
+
+                <FormControl isInvalid={!!formik.errors.DocumentVersion} isRequired>
+                  <FormLabel>Versi Dokumen</FormLabel>
+                  <Input
+                    name="DocumentVersion"
+                    placeholder="Contoh: 1.0"
+                    value={formik.values.DocumentVersion}
+                    onChange={formik.handleChange}
+                    isDisabled={ActionLoading}
+                  />
+                  <FormErrorMessage>{formik.errors.DocumentVersion}</FormErrorMessage>
+                </FormControl>
+
+                <FormControl isInvalid={!!formik.errors.file} isRequired>
+                  <FormLabel>Upload File</FormLabel>
+                  <Input
+                    type="file"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      formik.setFieldValue("file", file);
+                    }}
+                    p={1}
+                    isDisabled={ActionLoading}
+                  />
+                  <Text fontSize="xs" color="gray.500" mt={1}>
+                    Format yang didukung: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX
+                  </Text>
+                  <FormErrorMessage>{formik.errors.file}</FormErrorMessage>
+                </FormControl>
+
+                <HStack spacing={3} justify="flex-end" pt={4}>
+                  <Button variant="outline" onClick={ModalForm.onClose} isDisabled={ActionLoading}>
+                    Batal
+                  </Button>
+                  <Button type="submit" colorScheme="blue" isLoading={ActionLoading} loadingText="Menyimpan...">
+                    Simpan Dokumen
+                  </Button>
+                </HStack>
+              </VStack>
+            </ModalBody>
+          </form>
+        </ModalContent>
+      </Modal>
+
+      <Modal size={"xl"} isOpen={ModalDetailWF.isOpen} onClose={ModalDetailWF.onClose} scrollBehavior={"inside"}>
+        <ModalOverlay bg="blackAlpha.300" />
+        <ModalContent rounded={radiusStyle} m={2} bg={colorMode == "light" ? "white" : "gray.900"} maxH="90vh">
+          <ModalCloseButton color={"red.500"} />
+          <ModalBody w={"full"} maxH="70vh" overflowY="auto" p={6}>
+            {ListProjectWFValue?.length > 0 ? (
+              <VStack spacing={4} align="stretch" w="full">
+                <Text fontSize="lg" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"}>
+                  Document History ({ListProjectWFValue.length})
+                </Text>
+                <Accordion allowToggle defaultIndex={0}>
+                  {ListProjectWFValue.map((item, index) => (
+                    <AccordionItem key={item.id} border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.600"} rounded={radiusStyle} mb={2}>
+                      <AccordionButton p={4} _hover={{ bg: colorMode === "light" ? "gray.50" : "gray.700" }}>
+                        <Box flex="1" textAlign="left">
+                          <Text fontWeight="medium">{item.documentName}</Text>
+                          <Text fontSize="sm" color="gray.500">
+                            {item.documentNumber} • v{item.documentVersion} • {convertToCustomDateFormat(item.documentDate)}
+                          </Text>
+                        </Box>
+                        <AccordionIcon />
+                      </AccordionButton>
+                      <AccordionPanel pb={4}>
+                        {item.mediaObjectData && (
+                          <Box p={3} bg={colorMode === "light" ? "gray.50" : "gray.700"} rounded="md" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.600"}>
+                            <HStack spacing={3}>
+                              <Box display="flex" justifyContent="center" alignItems="center" boxSize="40px">
+                                {renderFileIconSTR(item.mediaObjectData.objectExtension?.trim() || "file")}
+                              </Box>
+                              <VStack align="start" spacing={1} flex="1">
+                                <Text fontSize="sm" fontWeight="medium" noOfLines={1}>
+                                  {item.mediaObjectData.objectRawName || item.documentName}
+                                </Text>
+                                <HStack spacing={2}>
+                                  {item.mediaObjectData.objectExtension && (
+                                    <Badge colorScheme="gray" size="sm">
+                                      {item.mediaObjectData.objectExtension.replace(".", "").toUpperCase()}
+                                    </Badge>
+                                  )}
+                                  {item.mediaObjectData.objectSize && (
+                                    <Badge colorScheme="blue" size="sm">
+                                      {formatKBMB(item.mediaObjectData.objectSize)}
+                                    </Badge>
+                                  )}
+                                </HStack>
+                              </VStack>
+                              <Button
+                                size="sm"
+                                colorScheme="green"
+                                leftIcon={<FiDownload />}
+                                as={Link}
+                                href={`${UrlEndpoint}${item.mediaObjectData.objectData}`}
+                                target="_blank"
+                              >
+                                Download
+                              </Button>
+                            </HStack>
+                          </Box>
+                        )}
+                      </AccordionPanel>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </VStack>
+            ) : (
+              <Box textAlign="center" py={8}>
+                <Text color="gray.500">No document history available</Text>
+              </Box>
+            )}
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+    </>
+  );
+};
