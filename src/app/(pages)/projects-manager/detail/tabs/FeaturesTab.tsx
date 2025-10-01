@@ -9,10 +9,9 @@ import ProjectFeatureView from "../projectFeaturesView";
 
 interface FeaturesTabProps {
   DataProject: ProjectDataResponse | null;
-  projectId: string | null;
 }
 
-const FeaturesTab = ({ DataProject, projectId }: FeaturesTabProps) => {
+const FeaturesTab = ({ DataProject }: FeaturesTabProps) => {
   const { colorMode } = useColorMode();
 
   return (

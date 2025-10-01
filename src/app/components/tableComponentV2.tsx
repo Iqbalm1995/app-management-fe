@@ -400,21 +400,12 @@ export function TableComponentWithFilterCTX({
                         // justifyContent={"space-between"}
                       >
                         <Heading as="h5" size="sm">
-                          {header.isPlaceholder ? null : (
-                            <div>
-                              {flexRender(
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
                                 header.column.columnDef.header,
                                 header.getContext()
                               )}
-                              {/* <pre>
-                                                        {JSON.stringify(
-                                                          header.column.columnDef.meta,
-                                                          null,
-                                                          2
-                                                        )}
-                                                      </pre> */}
-                            </div>
-                          )}
                         </Heading>
                         <FilterColumnTable
                           key={header.column.id}

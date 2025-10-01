@@ -1,33 +1,27 @@
 "use client";
 
 import { ProjectDataResponse } from "@/app/services/useProjects";
-import { 
-  TabPanel, 
-  useColorMode, 
-  VStack, 
-  HStack, 
-  Heading, 
-  Text, 
+import {
+  TabPanel,
+  useColorMode,
+  VStack,
+  HStack,
+  Heading,
+  Text,
   Button,
   Card,
   CardBody,
   CardHeader,
-  Box
+  Box,
 } from "@chakra-ui/react";
 import { radiusStyle } from "@/app/constants/applicationConstants";
-import { 
-  FiCalendar, 
-  FiPlus, 
-  FiRefreshCcw,
-  FiClock
-} from "react-icons/fi";
+import { FiCalendar, FiPlus, FiRefreshCcw, FiClock } from "react-icons/fi";
 
 interface TimelineTabProps {
   DataProject: ProjectDataResponse | null;
-  projectId: string | null;
 }
 
-const TimelineTab = ({ DataProject, projectId }: TimelineTabProps) => {
+const TimelineTab = ({ DataProject }: TimelineTabProps) => {
   const { colorMode } = useColorMode();
 
   return (
@@ -40,7 +34,10 @@ const TimelineTab = ({ DataProject, projectId }: TimelineTabProps) => {
         {/* Header Section */}
         <HStack justify="space-between" align="center">
           <VStack align="start" spacing={1}>
-            <Heading size="lg" color={colorMode === "light" ? "gray.800" : "white"}>
+            <Heading
+              size="lg"
+              color={colorMode === "light" ? "gray.800" : "white"}
+            >
               Project Timeline
             </Heading>
             <Text color="gray.600" fontSize="sm">
@@ -57,24 +54,11 @@ const TimelineTab = ({ DataProject, projectId }: TimelineTabProps) => {
             >
               Refresh
             </Button>
-            <Button
-              size="sm"
-              colorScheme="blue"
-              leftIcon={<FiPlus />}
-              rounded="full"
-            >
-              Add Event
-            </Button>
           </HStack>
         </HStack>
 
         {/* Calendar/Timeline Content */}
-        <Card
-          shadow="lg"
-          rounded="xl"
-          border="1px"
-          borderColor="gray.100"
-        >
+        <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
           <CardHeader bg="blue.50" roundedTop="xl">
             <HStack spacing={3}>
               <Box
@@ -119,12 +103,7 @@ const TimelineTab = ({ DataProject, projectId }: TimelineTabProps) => {
         </Card>
 
         {/* Timeline Events */}
-        <Card
-          shadow="lg"
-          rounded="xl"
-          border="1px"
-          borderColor="gray.100"
-        >
+        <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
           <CardHeader bg="green.50" roundedTop="xl">
             <HStack spacing={3}>
               <Box
@@ -147,32 +126,21 @@ const TimelineTab = ({ DataProject, projectId }: TimelineTabProps) => {
             <VStack spacing={4} align="stretch">
               {/* Sample Timeline Events */}
               <HStack spacing={4}>
-                <Box
-                  w={3}
-                  h={3}
-                  bg="blue.400"
-                  rounded="full"
-                  mt={1}
-                />
+                <Box w={3} h={3} bg="blue.400" rounded="full" mt={1} />
                 <VStack align="start" spacing={1}>
                   <Text fontWeight="medium">Project Started</Text>
                   <Text fontSize="sm" color="gray.600">
-                    {DataProject?.projectRegisterDate ? 
-                      new Date(DataProject.projectRegisterDate).toLocaleDateString() : 
-                      "Date not available"
-                    }
+                    {DataProject?.projectRegisterDate
+                      ? new Date(
+                          DataProject.projectRegisterDate
+                        ).toLocaleDateString()
+                      : "Date not available"}
                   </Text>
                 </VStack>
               </HStack>
 
               <HStack spacing={4}>
-                <Box
-                  w={3}
-                  h={3}
-                  bg="green.400"
-                  rounded="full"
-                  mt={1}
-                />
+                <Box w={3} h={3} bg="green.400" rounded="full" mt={1} />
                 <VStack align="start" spacing={1}>
                   <Text fontWeight="medium">Team Assembled</Text>
                   <Text fontSize="sm" color="gray.600">
@@ -182,13 +150,7 @@ const TimelineTab = ({ DataProject, projectId }: TimelineTabProps) => {
               </HStack>
 
               <HStack spacing={4}>
-                <Box
-                  w={3}
-                  h={3}
-                  bg="orange.400"
-                  rounded="full"
-                  mt={1}
-                />
+                <Box w={3} h={3} bg="orange.400" rounded="full" mt={1} />
                 <VStack align="start" spacing={1}>
                   <Text fontWeight="medium">Current Progress</Text>
                   <Text fontSize="sm" color="gray.600">

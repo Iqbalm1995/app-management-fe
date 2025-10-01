@@ -1,33 +1,33 @@
 "use client";
 
 import { ProjectDataResponse } from "@/app/services/useProjects";
-import { 
-  TabPanel, 
-  useColorMode, 
-  VStack, 
-  HStack, 
-  Heading, 
-  Badge, 
-  SimpleGrid, 
-  Card, 
-  CardBody, 
-  CardHeader, 
-  Box, 
-  Text, 
-  Button 
+import {
+  TabPanel,
+  useColorMode,
+  VStack,
+  HStack,
+  Heading,
+  Badge,
+  SimpleGrid,
+  Card,
+  CardBody,
+  CardHeader,
+  Box,
+  Text,
+  Button,
 } from "@chakra-ui/react";
 import { radiusStyle } from "@/app/constants/applicationConstants";
-import { 
-  FiTrendingUp, 
-  FiUsers, 
-  FiClock, 
-  FiActivity, 
-  FiBarChart, 
-  FiTarget, 
-  FiZap, 
-  FiFileText, 
-  FiCpu, 
-  FiSettings 
+import {
+  FiTrendingUp,
+  FiUsers,
+  FiClock,
+  FiActivity,
+  FiBarChart,
+  FiTarget,
+  FiZap,
+  FiFileText,
+  FiCpu,
+  FiSettings,
 } from "react-icons/fi";
 import { calculateDurationInDays } from "@/app/helper/MasterHelper";
 import LoadingMiniSignature from "@/app/components/loadingMini";
@@ -38,10 +38,9 @@ const Chart = dynamic(() => import("react-apexcharts"), { ssr: false }) as any;
 
 interface OverviewTabProps {
   DataProject: ProjectDataResponse | null;
-  projectId: string | null;
 }
 
-const OverviewTab = ({ DataProject, projectId }: OverviewTabProps) => {
+const OverviewTab = ({ DataProject }: OverviewTabProps) => {
   const { colorMode } = useColorMode();
 
   return (
@@ -58,13 +57,7 @@ const OverviewTab = ({ DataProject, projectId }: OverviewTabProps) => {
           >
             Project Overview
           </Heading>
-          <Badge
-            colorScheme="blue"
-            px={4}
-            py={2}
-            rounded="full"
-            fontSize="md"
-          >
+          <Badge colorScheme="blue" px={4} py={2} rounded="full" fontSize="md">
             Dashboard
           </Badge>
         </HStack>
@@ -72,10 +65,7 @@ const OverviewTab = ({ DataProject, projectId }: OverviewTabProps) => {
         {DataProject ? (
           <>
             {/* Enhanced Quick Stats Cards */}
-            <SimpleGrid
-              columns={{ base: 2, md: 4 }}
-              spacing={6}
-            >
+            <SimpleGrid columns={{ base: 2, md: 4 }} spacing={6}>
               {/* Progress Card */}
               <Card
                 bg="blue.50"
@@ -104,18 +94,10 @@ const OverviewTab = ({ DataProject, projectId }: OverviewTabProps) => {
                   >
                     <FiTrendingUp size={24} color="white" />
                   </Box>
-                  <Text
-                    fontSize="3xl"
-                    fontWeight="bold"
-                    color="blue.600"
-                  >
+                  <Text fontSize="3xl" fontWeight="bold" color="blue.600">
                     {DataProject.projectStatusPercentage || 0}%
                   </Text>
-                  <Text
-                    fontSize="sm"
-                    color="gray.600"
-                    fontWeight="medium"
-                  >
+                  <Text fontSize="sm" color="gray.600" fontWeight="medium">
                     Progress
                   </Text>
                 </CardBody>
@@ -149,18 +131,10 @@ const OverviewTab = ({ DataProject, projectId }: OverviewTabProps) => {
                   >
                     <FiUsers size={24} color="white" />
                   </Box>
-                  <Text
-                    fontSize="3xl"
-                    fontWeight="bold"
-                    color="green.600"
-                  >
+                  <Text fontSize="3xl" fontWeight="bold" color="green.600">
                     {DataProject.userAssignment?.length || 0}
                   </Text>
-                  <Text
-                    fontSize="sm"
-                    color="gray.600"
-                    fontWeight="medium"
-                  >
+                  <Text fontSize="sm" color="gray.600" fontWeight="medium">
                     Team Members
                   </Text>
                 </CardBody>
@@ -194,11 +168,7 @@ const OverviewTab = ({ DataProject, projectId }: OverviewTabProps) => {
                   >
                     <FiClock size={24} color="white" />
                   </Box>
-                  <Text
-                    fontSize="3xl"
-                    fontWeight="bold"
-                    color="orange.600"
-                  >
+                  <Text fontSize="3xl" fontWeight="bold" color="orange.600">
                     {DataProject.projectRegisterDate
                       ? calculateDurationInDays(
                           DataProject.projectRegisterDate,
@@ -206,11 +176,7 @@ const OverviewTab = ({ DataProject, projectId }: OverviewTabProps) => {
                         )
                       : 0}
                   </Text>
-                  <Text
-                    fontSize="sm"
-                    color="gray.600"
-                    fontWeight="medium"
-                  >
+                  <Text fontSize="sm" color="gray.600" fontWeight="medium">
                     Days Active
                   </Text>
                 </CardBody>
@@ -244,20 +210,12 @@ const OverviewTab = ({ DataProject, projectId }: OverviewTabProps) => {
                   >
                     <FiActivity size={24} color="white" />
                   </Box>
-                  <Text
-                    fontSize="3xl"
-                    fontWeight="bold"
-                    color="purple.600"
-                  >
+                  <Text fontSize="3xl" fontWeight="bold" color="purple.600">
                     {DataProject.projectStatus === "ACTIVE"
                       ? "Active"
                       : "Inactive"}
                   </Text>
-                  <Text
-                    fontSize="sm"
-                    color="gray.600"
-                    fontWeight="medium"
-                  >
+                  <Text fontSize="sm" color="gray.600" fontWeight="medium">
                     Status
                   </Text>
                 </CardBody>
@@ -265,10 +223,7 @@ const OverviewTab = ({ DataProject, projectId }: OverviewTabProps) => {
             </SimpleGrid>
 
             {/* Charts Section */}
-            <SimpleGrid
-              columns={{ base: 1, lg: 2 }}
-              spacing={6}
-            >
+            <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6}>
               {/* Progress Chart */}
               <Card
                 shadow="lg"
@@ -343,10 +298,7 @@ const OverviewTab = ({ DataProject, projectId }: OverviewTabProps) => {
                         colors: ["#3182CE"],
                       }}
                       series={[
-                        Number(
-                          DataProject?.projectStatusPercentage ||
-                            0
-                        ),
+                        Number(DataProject?.projectStatusPercentage || 0),
                       ]}
                     />
                   </Box>
@@ -394,12 +346,7 @@ const OverviewTab = ({ DataProject, projectId }: OverviewTabProps) => {
                           "Pending",
                           "On Hold",
                         ],
-                        colors: [
-                          "#38A169",
-                          "#3182CE",
-                          "#ED8936",
-                          "#E53E3E",
-                        ],
+                        colors: ["#38A169", "#3182CE", "#ED8936", "#E53E3E"],
                         legend: {
                           position: "bottom",
                           horizontalAlign: "center",
@@ -439,10 +386,7 @@ const OverviewTab = ({ DataProject, projectId }: OverviewTabProps) => {
             </SimpleGrid>
 
             {/* Additional Information Cards */}
-            <SimpleGrid
-              columns={{ base: 1, md: 3 }}
-              spacing={6}
-            >
+            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
               {/* Recent Activity Card */}
               <Card
                 shadow="lg"
@@ -471,45 +415,25 @@ const OverviewTab = ({ DataProject, projectId }: OverviewTabProps) => {
                 <CardBody p={4}>
                   <VStack spacing={3} align="stretch">
                     <HStack spacing={3}>
-                      <Box
-                        w={2}
-                        h={2}
-                        bg="green.400"
-                        rounded="full"
-                      />
+                      <Box w={2} h={2} bg="green.400" rounded="full" />
                       <Text fontSize="sm" color="gray.600">
                         Task completed
                       </Text>
                     </HStack>
                     <HStack spacing={3}>
-                      <Box
-                        w={2}
-                        h={2}
-                        bg="blue.400"
-                        rounded="full"
-                      />
+                      <Box w={2} h={2} bg="blue.400" rounded="full" />
                       <Text fontSize="sm" color="gray.600">
                         Team member added
                       </Text>
                     </HStack>
                     <HStack spacing={3}>
-                      <Box
-                        w={2}
-                        h={2}
-                        bg="orange.400"
-                        rounded="full"
-                      />
+                      <Box w={2} h={2} bg="orange.400" rounded="full" />
                       <Text fontSize="sm" color="gray.600">
                         Status updated
                       </Text>
                     </HStack>
                     <HStack spacing={3}>
-                      <Box
-                        w={2}
-                        h={2}
-                        bg="purple.400"
-                        rounded="full"
-                      />
+                      <Box w={2} h={2} bg="purple.400" rounded="full" />
                       <Text fontSize="sm" color="gray.600">
                         Feature deployed
                       </Text>
@@ -650,12 +574,7 @@ const OverviewTab = ({ DataProject, projectId }: OverviewTabProps) => {
             </SimpleGrid>
 
             {/* Project Description - Enhanced */}
-            <Card
-              shadow="lg"
-              rounded="xl"
-              border="1px"
-              borderColor="gray.100"
-            >
+            <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
               <CardHeader bg="gray.50" roundedTop="xl">
                 <HStack spacing={3}>
                   <Box
@@ -675,30 +594,16 @@ const OverviewTab = ({ DataProject, projectId }: OverviewTabProps) => {
                 </HStack>
               </CardHeader>
               <CardBody p={6}>
-                <Text
-                  color="gray.600"
-                  lineHeight="tall"
-                  fontSize="md"
-                >
+                <Text color="gray.600" lineHeight="tall" fontSize="md">
                   {DataProject.projectDesc ||
                     "No description available for this project. Consider adding a detailed description to help team members understand the project goals and objectives."}
                 </Text>
                 {DataProject.projectDesc && (
                   <HStack mt={4} spacing={4}>
-                    <Badge
-                      colorScheme="blue"
-                      px={3}
-                      py={1}
-                      rounded="full"
-                    >
+                    <Badge colorScheme="blue" px={3} py={1} rounded="full">
                       {DataProject.projectCategory}
                     </Badge>
-                    <Badge
-                      colorScheme="purple"
-                      px={3}
-                      py={1}
-                      rounded="full"
-                    >
+                    <Badge colorScheme="purple" px={3} py={1} rounded="full">
                       {DataProject.projectType}
                     </Badge>
                   </HStack>

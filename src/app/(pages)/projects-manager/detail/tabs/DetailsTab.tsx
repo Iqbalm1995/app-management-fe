@@ -6,13 +6,13 @@ import { radiusStyle } from "@/app/constants/applicationConstants";
 import { Suspense } from "react";
 import LoadingMiniSignature from "@/app/components/loadingMini";
 import ProjectInfoSection from "../components/ProjectInfoSection";
+import LoadingMiniSquare from "@/app/components/loadingMiniSquare";
 
 interface DetailsTabProps {
   DataProject: ProjectDataResponse | null;
-  projectId: string | null;
 }
 
-const DetailsTab = ({ DataProject, projectId }: DetailsTabProps) => {
+const DetailsTab = ({ DataProject }: DetailsTabProps) => {
   const { colorMode } = useColorMode();
 
   return (
@@ -21,8 +21,8 @@ const DetailsTab = ({ DataProject, projectId }: DetailsTabProps) => {
       bg={colorMode === "light" ? "gray.50" : "gray.900"}
       roundedBottom={radiusStyle}
     >
-      <Suspense fallback={<LoadingMiniSignature />}>
-        <ProjectInfoSection projectId={projectId} />
+      <Suspense fallback={<LoadingMiniSquare />}>
+        <ProjectInfoSection DataProject={DataProject} />
       </Suspense>
     </TabPanel>
   );

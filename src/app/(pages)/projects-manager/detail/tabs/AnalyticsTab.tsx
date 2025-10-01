@@ -1,13 +1,13 @@
 "use client";
 
 import { ProjectDataResponse } from "@/app/services/useProjects";
-import { 
-  TabPanel, 
-  useColorMode, 
-  VStack, 
-  HStack, 
-  Heading, 
-  Text, 
+import {
+  TabPanel,
+  useColorMode,
+  VStack,
+  HStack,
+  Heading,
+  Text,
   Button,
   SimpleGrid,
   Card,
@@ -17,25 +17,24 @@ import {
   Stat,
   StatLabel,
   StatNumber,
-  StatHelpText
+  StatHelpText,
 } from "@chakra-ui/react";
 import { radiusStyle } from "@/app/constants/applicationConstants";
-import { 
-  FiBarChart, 
-  FiTrendingUp, 
-  FiDownload, 
+import {
+  FiBarChart,
+  FiTrendingUp,
+  FiDownload,
   FiRefreshCcw,
   FiActivity,
   FiClock,
-  FiTarget
+  FiTarget,
 } from "react-icons/fi";
 
 interface AnalyticsTabProps {
   DataProject: ProjectDataResponse | null;
-  projectId: string | null;
 }
 
-const AnalyticsTab = ({ DataProject, projectId }: AnalyticsTabProps) => {
+const AnalyticsTab = ({ DataProject }: AnalyticsTabProps) => {
   const { colorMode } = useColorMode();
 
   return (
@@ -48,7 +47,10 @@ const AnalyticsTab = ({ DataProject, projectId }: AnalyticsTabProps) => {
         {/* Header Section */}
         <HStack justify="space-between" align="center">
           <VStack align="start" spacing={1}>
-            <Heading size="lg" color={colorMode === "light" ? "gray.800" : "white"}>
+            <Heading
+              size="lg"
+              color={colorMode === "light" ? "gray.800" : "white"}
+            >
               Project Analytics
             </Heading>
             <Text color="gray.600" fontSize="sm">
@@ -79,12 +81,7 @@ const AnalyticsTab = ({ DataProject, projectId }: AnalyticsTabProps) => {
         {/* Analytics Cards */}
         <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6}>
           {/* Progress Analytics */}
-          <Card
-            shadow="lg"
-            rounded="xl"
-            border="1px"
-            borderColor="gray.100"
-          >
+          <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
             <CardHeader bg="blue.50" roundedTop="xl">
               <HStack spacing={3}>
                 <Box
@@ -118,12 +115,7 @@ const AnalyticsTab = ({ DataProject, projectId }: AnalyticsTabProps) => {
           </Card>
 
           {/* Team Performance */}
-          <Card
-            shadow="lg"
-            rounded="xl"
-            border="1px"
-            borderColor="gray.100"
-          >
+          <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
             <CardHeader bg="green.50" roundedTop="xl">
               <HStack spacing={3}>
                 <Box
@@ -157,12 +149,7 @@ const AnalyticsTab = ({ DataProject, projectId }: AnalyticsTabProps) => {
           </Card>
 
           {/* Time Tracking */}
-          <Card
-            shadow="lg"
-            rounded="xl"
-            border="1px"
-            borderColor="gray.100"
-          >
+          <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
             <CardHeader bg="orange.50" roundedTop="xl">
               <HStack spacing={3}>
                 <Box
@@ -183,9 +170,7 @@ const AnalyticsTab = ({ DataProject, projectId }: AnalyticsTabProps) => {
             </CardHeader>
             <CardBody>
               <Stat>
-                <StatNumber color="orange.600">
-                  24h
-                </StatNumber>
+                <StatNumber color="orange.600">24h</StatNumber>
                 <StatLabel>Time Logged</StatLabel>
                 <StatHelpText>
                   <FiClock />
@@ -196,12 +181,7 @@ const AnalyticsTab = ({ DataProject, projectId }: AnalyticsTabProps) => {
           </Card>
 
           {/* Goals Achievement */}
-          <Card
-            shadow="lg"
-            rounded="xl"
-            border="1px"
-            borderColor="gray.100"
-          >
+          <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
             <CardHeader bg="purple.50" roundedTop="xl">
               <HStack spacing={3}>
                 <Box
@@ -222,9 +202,7 @@ const AnalyticsTab = ({ DataProject, projectId }: AnalyticsTabProps) => {
             </CardHeader>
             <CardBody>
               <Stat>
-                <StatNumber color="purple.600">
-                  3/5
-                </StatNumber>
+                <StatNumber color="purple.600">3/5</StatNumber>
                 <StatLabel>Milestones</StatLabel>
                 <StatHelpText>
                   <FiTarget />
@@ -237,12 +215,7 @@ const AnalyticsTab = ({ DataProject, projectId }: AnalyticsTabProps) => {
 
         {/* Charts Placeholder */}
         <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6}>
-          <Card
-            shadow="lg"
-            rounded="xl"
-            border="1px"
-            borderColor="gray.100"
-          >
+          <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
             <CardHeader bg="gray.50" roundedTop="xl">
               <HStack spacing={3}>
                 <FiBarChart size={20} />
@@ -265,12 +238,7 @@ const AnalyticsTab = ({ DataProject, projectId }: AnalyticsTabProps) => {
             </CardBody>
           </Card>
 
-          <Card
-            shadow="lg"
-            rounded="xl"
-            border="1px"
-            borderColor="gray.100"
-          >
+          <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
             <CardHeader bg="gray.50" roundedTop="xl">
               <HStack spacing={3}>
                 <FiTrendingUp size={20} />
@@ -288,7 +256,9 @@ const AnalyticsTab = ({ DataProject, projectId }: AnalyticsTabProps) => {
                 border="2px dashed"
                 borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
               >
-                <Text color="gray.500">Trend chart will be implemented here</Text>
+                <Text color="gray.500">
+                  Trend chart will be implemented here
+                </Text>
               </Box>
             </CardBody>
           </Card>

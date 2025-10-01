@@ -18,6 +18,7 @@ import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useProjects, {
+  ProjectDataResponse,
   ProjectWorkflowResponse,
 } from "@/app/services/useProjects";
 import {
@@ -30,11 +31,11 @@ import { WorkflowLevel1Box } from "./WorkflowComponents";
 import { colorProgression } from "@/app/helper/MasterHelper";
 
 interface ProjectDocumentationSectionProps {
-  projectId: string | null;
+  DataProject: ProjectDataResponse | null;
 }
 
 const ProjectDocumentationSection = ({
-  projectId,
+  DataProject,
 }: ProjectDocumentationSectionProps) => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
@@ -78,10 +79,13 @@ const ProjectDocumentationSection = ({
   };
 
   useEffect(() => {
-    if (DataAuth && DataAuth.team && projectId) {
+    if (DataAuth && DataAuth.team && DataProject) {
       setIsLoadingProcess(true);
       const GetWorkflowData = async () => {
-        const requestData = await ListProjectWorkflow(projectId, tokenData);
+        const requestData = await ListProjectWorkflow(
+          DataProject.id,
+          tokenData
+        );
         const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
 
         if (isErrorResponse || !requestData) {
@@ -133,7 +137,7 @@ const ProjectDocumentationSection = ({
       };
       GetWorkflowData();
     }
-  }, [DataAuth, RefreshData, projectId, tokenData]);
+  }, [DataAuth, RefreshData, DataProject, tokenData]);
 
   return (
     <VStack spacing={8} align="stretch">

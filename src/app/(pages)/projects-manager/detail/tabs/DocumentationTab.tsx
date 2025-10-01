@@ -9,10 +9,9 @@ import ProjectDocumentationSection from "../components/ProjectDocumentationSecti
 
 interface DocumentationTabProps {
   DataProject: ProjectDataResponse | null;
-  projectId: string | null;
 }
 
-const DocumentationTab = ({ DataProject, projectId }: DocumentationTabProps) => {
+const DocumentationTab = ({ DataProject }: DocumentationTabProps) => {
   const { colorMode } = useColorMode();
 
   return (
@@ -22,7 +21,7 @@ const DocumentationTab = ({ DataProject, projectId }: DocumentationTabProps) => 
       roundedBottom={radiusStyle}
     >
       <Suspense fallback={<LoadingMiniSignature />}>
-        <ProjectDocumentationSection projectId={projectId} />
+        <ProjectDocumentationSection DataProject={DataProject} />
       </Suspense>
     </TabPanel>
   );

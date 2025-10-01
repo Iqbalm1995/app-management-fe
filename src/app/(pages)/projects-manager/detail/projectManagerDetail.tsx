@@ -150,6 +150,7 @@ import {
   AnalyticsTab,
   TimelineTab,
 } from "./tabs";
+import LoadingMiniSquare from "@/app/components/loadingMiniSquare";
 
 // Calendar Event Interface
 interface EventInterface {
@@ -217,6 +218,8 @@ function ProjectManagerDetail() {
   const showToast = useToastHelper();
   const searchParams = useSearchParams();
   const { colorMode } = useColorMode();
+  // Add initialization state
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
@@ -258,6 +261,20 @@ function ProjectManagerDetail() {
     }
   }, [searchParams]);
 
+  // Initialize component with delay
+  useEffect(() => {
+    const initializeComponent = async () => {
+      // Wait for searchParams and auth data to be ready
+      await delay(5000); // 500ms delay to ensure everything is loaded
+
+      if (searchParams && (DataAuth || localStorage.getItem("authData"))) {
+        setIsInitialized(true);
+      }
+    };
+
+    initializeComponent();
+  }, [searchParams, DataAuth]);
+
   const [DataProject, setDataProject] = useState<ProjectDataResponse | null>(
     null
   );
@@ -269,7 +286,7 @@ function ProjectManagerDetail() {
   const [calendarEvents, setCalendarEvents] = useState<EventInterface[]>([]);
 
   useEffect(() => {
-    if (DataAuth && DataAuth.team && projectId) {
+    if (DataAuth && DataAuth.team && projectId && isInitialized) {
       setIsLoadingProcess(true);
       const GetDataList = async () => {
         const requestData = await GetDetailById(projectId, tokenData);
@@ -306,11 +323,17 @@ function ProjectManagerDetail() {
       };
       GetDataList();
     }
-  }, [DataAuth, RefreshData, projectId]);
+  }, [DataAuth, RefreshData, projectId, isInitialized]);
 
   // Fetch application data when project is loaded
   useEffect(() => {
-    if (DataAuth && DataAuth.team && DataProject && !DataApps) {
+    if (
+      DataAuth &&
+      DataAuth.team &&
+      DataProject &&
+      !DataApps &&
+      isInitialized
+    ) {
       const GetAppData = async () => {
         try {
           const requestData = await GetDetailAppsByProjectId(
@@ -330,7 +353,7 @@ function ProjectManagerDetail() {
       };
       GetAppData();
     }
-  }, [DataAuth, DataProject, tokenData]);
+  }, [DataAuth, DataProject, tokenData, isInitialized]);
 
   // Initialize calendar events
   useEffect(() => {
@@ -410,6 +433,39 @@ function ProjectManagerDetail() {
     // You can add more functionality here like showing event details
   };
 
+  // Show loading screen until initialized
+  if (!isInitialized) {
+    return (
+      <LayoutAdmin>
+        <Box
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          minH="80vh"
+        >
+          <VStack spacing={6}>
+            <LoadingMiniSquare />
+            <VStack spacing={2}>
+              <Text
+                fontSize="lg"
+                fontWeight="semibold"
+                color={colorMode === "light" ? "gray.700" : "gray.300"}
+              >
+                Initializing Project Manager
+              </Text>
+              <Text
+                fontSize="sm"
+                color={colorMode === "light" ? "gray.500" : "gray.500"}
+              >
+                Please wait while we prepare your project details...
+              </Text>
+            </VStack>
+          </VStack>
+        </Box>
+      </LayoutAdmin>
+    );
+  }
+
   return (
     <LayoutAdmin>
       {/* Modern Enhanced Header with Custom Gradient */}
@@ -449,7 +505,7 @@ function ProjectManagerDetail() {
           bgSize="80px 80px, 80px 80px"
         />
 
-        {/* Reduced Floating Elements */}
+        {/* {/* Reduced Floating Elements} */}
         <Box
           position="absolute"
           top="15%"
@@ -473,7 +529,7 @@ function ProjectManagerDetail() {
           animation="spin 15s linear infinite"
         />
 
-        {/* BJB Logo in Bottom Right Corner - Responsive */}
+        {/* {/* BJB Logo in Bottom Right Corner - Responsive} */}
         <Box
           position="absolute"
           bottom={{ base: 2, md: 4 }}
@@ -493,9 +549,9 @@ function ProjectManagerDetail() {
           />
         </Box>
 
-        {/* Main Header Content */}
+        {/* {/* Main Header Content} */}
         <VStack spacing={4} align="stretch" position="relative" zIndex={2}>
-          {/* Compact Top Navigation */}
+          {/* // {/* Compact Top Navigation} */}
           <HStack justify="space-between" align="center">
             <HStack spacing={3}>
               <Link href={"/projects-manager"}>
@@ -614,14 +670,14 @@ function ProjectManagerDetail() {
             </HStack>
           </HStack>
 
-          {/* Compact Main Project Information - Responsive */}
+          {/* // {/* Compact Main Project Information - Responsive} */}
           {DataProject ? (
             <Stack
               direction={{ base: "column", md: "row" }}
               spacing={{ base: 4, md: 6 }}
               align={{ base: "center", md: "start" }}
             >
-              {/* Compact Application Avatar */}
+              {/* // {/* Compact Application Avatar} */}
               <VStack spacing={3} align="center">
                 <Box position="relative">
                   <Box
@@ -694,7 +750,7 @@ function ProjectManagerDetail() {
                 </VStack>
               </VStack>
 
-              {/* Compact Project Details */}
+              {/* // {/* Compact Project Details} */}
               <Box flex={1}>
                 <VStack spacing={3} align="start">
                   <Heading
@@ -795,7 +851,7 @@ function ProjectManagerDetail() {
                 </VStack>
               </Box>
 
-              {/* Compact Team & Progress */}
+              {/* // {/* Compact Team & Progress} */}
               <VStack spacing={3} align="center" minW="120px">
                 {DataProject.userAssignment &&
                   DataProject.userAssignment.length > 0 && (
@@ -842,23 +898,12 @@ function ProjectManagerDetail() {
               align="center"
               py={4}
             >
-              <Box
-                w={16}
-                h={16}
-                bg="whiteAlpha.200"
-                rounded="2xl"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-                backdropFilter="blur(10px)"
-                border="2px solid"
-                borderColor="whiteAlpha.300"
-              >
-                <LoadingMiniSignature />
+              <Box>
+                <LoadingMiniSquare />
               </Box>
               <Box flex={1}>
                 <Heading size="xl" color="whiteAlpha.800" fontWeight="700">
-                  Loading project...
+                  Just a moment...
                 </Heading>
                 <Text opacity={0.8} fontSize="sm" mt={1}>
                   Please wait while we fetch project details
@@ -869,7 +914,7 @@ function ProjectManagerDetail() {
         </VStack>
       </Box>
 
-      {/* Main Content Container - Fixed Responsive Layout */}
+      {/* // {/* Main Content Container - Fixed Responsive Layout} */}
       <Box px={{ base: 2, md: 4 }} w="full" maxW="100vw" overflow="hidden">
         <Stack
           direction={{ base: "column", lg: "row" }}
@@ -877,7 +922,7 @@ function ProjectManagerDetail() {
           align="stretch"
           w="full"
         >
-          {/* Main Content Area */}
+          {/* // {/* Main Content Area} */}
           <Box flex="1" minW="0" w={{ base: "full", lg: "auto" }}>
             <Card
               shadow="xl"
@@ -945,41 +990,23 @@ function ProjectManagerDetail() {
                     roundedBottom={radiusStyle}
                     minH="600px"
                   >
-                    <OverviewTab
-                      DataProject={DataProject}
-                      projectId={projectId}
-                    />
-                    <DetailsTab
-                      DataProject={DataProject}
-                      projectId={projectId}
-                    />
-                    <FeaturesTab
-                      DataProject={DataProject}
-                      projectId={projectId}
-                    />
-                    <DocumentationTab
-                      DataProject={DataProject}
-                      projectId={projectId}
-                    />
-                    <TeamTab DataProject={DataProject} projectId={projectId} />
-                    <AnalyticsTab
-                      DataProject={DataProject}
-                      projectId={projectId}
-                    />
-                    <TimelineTab
-                      DataProject={DataProject}
-                      projectId={projectId}
-                    />
+                    <OverviewTab DataProject={DataProject} />
+                    <DetailsTab DataProject={DataProject} />
+                    <FeaturesTab DataProject={DataProject} />
+                    <DocumentationTab DataProject={DataProject} />
+                    <TeamTab DataProject={DataProject} />
+                    <AnalyticsTab DataProject={DataProject} />
+                    <TimelineTab DataProject={DataProject} />
                   </TabPanels>
                 </Tabs>
               </CardBody>
             </Card>
           </Box>
 
-          {/* Sidebar - Responsive */}
+          {/* // {/* Sidebar - Responsive} */}
           <Box w={{ base: "full", lg: "300px" }} flexShrink={0}>
             <VStack spacing={{ base: 4, md: 6 }}>
-              {/* Application Information Card - Launcher Style */}
+              {/* // {/* Application Information Card - Launcher Style} */}
               {DataProject?.appsProject && (
                 <Card
                   w="full"
@@ -997,7 +1024,7 @@ function ProjectManagerDetail() {
                   overflow="hidden"
                   position="relative"
                 >
-                  {/* BJB Logo Background Overlay - Responsive */}
+                  {/* // {/* BJB Logo Background Overlay - Responsive} */}
                   <Box
                     position="absolute"
                     top={{ base: "-5px", md: "-10px" }}
@@ -1016,8 +1043,8 @@ function ProjectManagerDetail() {
                     />
                   </Box>
 
-                  {/* Floating Decorative Elements */}
-                  {/* <Box
+                  {/* // {/* Floating Decorative Elements} */}
+                  <Box
                     position="absolute"
                     top="15%"
                     right="10%"
@@ -1038,7 +1065,7 @@ function ProjectManagerDetail() {
                     transform="rotate(45deg)"
                     rounded="sm"
                     animation="spin 10s linear infinite"
-                  /> */}
+                  />
 
                   <CardBody
                     p={{ base: 6, md: 8 }}
@@ -1046,9 +1073,9 @@ function ProjectManagerDetail() {
                     zIndex={1}
                   >
                     <VStack spacing={{ base: 4, md: 6 }} align="center">
-                      {/* App Icon - Launcher Style */}
+                      {/* // {/* App Icon - Launcher Style} */}
                       <Box position="relative">
-                        {/* Glowing Ring Effect */}
+                        {/* {/* Glowing Ring Effect} */}
                         <Box
                           position="absolute"
                           top="-6px"
@@ -1062,7 +1089,7 @@ function ProjectManagerDetail() {
                           animation="pulse 2s ease-in-out infinite"
                         />
 
-                        {/* Main App Icon */}
+                        {/* // {/* Main App Icon} */}
                         <Box
                           w={{ base: 16, md: 20 }}
                           h={{ base: 16, md: 20 }}
@@ -1102,7 +1129,7 @@ function ProjectManagerDetail() {
                           )}
                         </Box>
 
-                        {/* Status Indicator Dot */}
+                        {/* // {/* Status Indicator Dot} */}
                         <Box
                           position="absolute"
                           top={-1}
@@ -1126,7 +1153,7 @@ function ProjectManagerDetail() {
                         />
                       </Box>
 
-                      {/* App Name - Launcher Style */}
+                      {/* // {/* App Name - Launcher Style} */}
                       <VStack spacing={2} align="center">
                         <Text
                           fontSize="xl"
@@ -1140,7 +1167,7 @@ function ProjectManagerDetail() {
                           {DataProject.appsProject.appName}
                         </Text>
 
-                        {/* App Short Name Badge */}
+                        {/* // {/* App Short Name Badge} */}
                         <Badge
                           bg="whiteAlpha.200"
                           color="white"
@@ -1156,13 +1183,13 @@ function ProjectManagerDetail() {
                         </Badge>
                       </VStack>
 
-                      {/* App Details Grid - Responsive */}
+                      {/* // {/* App Details Grid - Responsive} */}
                       <SimpleGrid
                         columns={{ base: 1, sm: 2 }}
                         spacing={4}
                         w="full"
                       >
-                        {/* Status */}
+                        {/* // {/* Status} */}
                         <VStack spacing={1} align="center">
                           <Text
                             fontSize="xs"
@@ -1194,7 +1221,7 @@ function ProjectManagerDetail() {
                           </Badge>
                         </VStack>
 
-                        {/* App Code */}
+                        {/* // {/* App Code} */}
                         <VStack spacing={1} align="center">
                           <Text
                             fontSize="xs"
@@ -1214,7 +1241,7 @@ function ProjectManagerDetail() {
                         </VStack>
                       </SimpleGrid>
 
-                      {/* Project Connection Info */}
+                      {/* // {/* Project Connection Info} */}
                       <Box
                         bg="whiteAlpha.100"
                         backdropFilter="blur(10px)"
@@ -1260,7 +1287,7 @@ function ProjectManagerDetail() {
                         </VStack>
                       </Box>
 
-                      {/* Quick Actions - Responsive */}
+                      {/* // {/* Quick Actions - Responsive} */}
                       <Stack
                         direction={{ base: "column", sm: "row" }}
                         spacing={3}
@@ -1294,7 +1321,7 @@ function ProjectManagerDetail() {
                 </Card>
               )}
 
-              {/* Project Info Card */}
+              {/* // {/* Project Info Card} */}
               <Card
                 w="full"
                 shadow="lg"
@@ -1393,7 +1420,7 @@ function ProjectManagerDetail() {
                 </CardBody>
               </Card>
 
-              {/* Quick Actions Card */}
+              {/* // {/* Quick Actions Card} */}
               <Card
                 w="full"
                 shadow="lg"
@@ -1640,7 +1667,7 @@ const AppsInfoDetail = ({ DataProject }: AppsInfoDetailProps) => {
                         Options
                       </Heading>
                       <TabList w={"full"} gap={4} pt={3}>
-                        {/* APPS DETAILS */}
+                        {/* // {/* APPS DETAILS} */}
                         <Tab
                           rounded={radiusStyle}
                           px={6}
@@ -1706,4 +1733,12 @@ const AppsInfoDetail = ({ DataProject }: AppsInfoDetailProps) => {
   );
 };
 
-export default ProjectManagerDetail;
+function ProjectManagerDetailWithSuspense() {
+  return (
+    <Suspense>
+      <ProjectManagerDetail />
+    </Suspense>
+  );
+}
+
+export default ProjectManagerDetailWithSuspense;

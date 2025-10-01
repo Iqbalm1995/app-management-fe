@@ -140,9 +140,6 @@ const MotionCardBody = motion(CardBody);
 const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
-  const searchParams = useSearchParams();
-  const delay = (ms: number) =>
-    new Promise((resolve) => setTimeout(resolve, ms));
 
   const {
     GetDetailById: GetReqDetail,
@@ -211,12 +208,6 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
     });
   const [OverallProgress, setOverallProgress] = useState<number>(0);
   const [ProgressColor, setProgressColor] = useState<string>("red");
-  // useEffect(() => {
-  //   const randomNumber = getRandomNumber(0, 100);
-  //   setOverallProgress(randomNumber);
-  //   const colorProgress = colorProgression(randomNumber);
-  //   setProgressColor(colorProgress);
-  // }, [RefreshData]);
 
   const columnsData = useMemo<ColumnDef<BacklogDataResponse>[]>(
     () => [
@@ -252,7 +243,7 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
             </Text>
           </Flex>
         ),
-        header: () => <span>Nama Fitur</span>,
+        header: () => <Flex justifyContent={"start"}>Feature</Flex>,
         footer: (props) => props.column.id,
         // Custom variable
         meta: {
@@ -271,19 +262,17 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
             as={Stack}
             spacing={1}
           >
-            <Text fontWeight={600}>
-              {info.row.original.backlogEnddate != null ? (
-                <DeadlineStatusTag
-                  deadline={info.row.original.backlogEnddate}
-                  remindBeforeDays={10}
-                />
-              ) : (
-                "-"
-              )}
-            </Text>
+            {info.row.original.backlogEnddate != null ? (
+              <DeadlineStatusTag
+                deadline={info.row.original.backlogEnddate}
+                remindBeforeDays={10}
+              />
+            ) : (
+              <Text fontWeight={600}>-</Text>
+            )}
           </Flex>
         ),
-        header: () => <span>Deadline</span>,
+        header: () => <Flex justifyContent={"start"}>Deadline</Flex>,
         footer: (props) => props.column.id,
         // Custom variable
         meta: {
@@ -310,7 +299,7 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
             </Text>
           </Flex>
         ),
-        header: () => <span>Priority</span>,
+        header: () => <Flex justifyContent={"start"}>Priority</Flex>,
         footer: (props) => props.column.id,
         // Custom variable
         meta: {
@@ -332,7 +321,7 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
             <Text fontWeight={600}>{info.row.original.developmentStatus}</Text>
           </Flex>
         ),
-        header: () => <span>Status</span>,
+        header: () => <Flex justifyContent={"start"}>Status</Flex>,
         footer: (props) => props.column.id,
         // Custom variable
         meta: {
@@ -366,7 +355,7 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
             />
           </Flex>
         ),
-        header: () => <span>Progress</span>,
+        header: () => <Flex justifyContent={"start"}>Progress</Flex>,
         footer: (props) => props.column.id,
         // Custom variable
         meta: {
@@ -392,7 +381,7 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
             </Link>
           </Flex>
         ),
-        header: () => <span>Action</span>,
+        header: () => <Flex justifyContent={"start"}>Action</Flex>,
         footer: (props) => props.column.id,
         // Custom variable
         meta: {
@@ -545,7 +534,7 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
           Data Invalid
         </Heading>
       ) : (
-        <>
+        <Flex w={"full"} as={Stack} spacing={6}>
           <Flex w={"full"} as={HStack} justifyContent={"space-between"}>
             <Heading as="h5" size="md" w={"full"}>
               Data Project Features
@@ -621,37 +610,36 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
               />
             )}
           </Flex>
-
-          {/* ------------ DEBUG DATA ------------------ */}
-
-          <Box
-            w={"full"}
-            overflowY={"auto"}
-            overflowX={"auto"}
-            maxH={"350px"}
-            p={4}
-            bgColor={"gray.200"}
-            rounded={radiusStyle}
-            display={"none"}
-          >
-            <Text fontWeight={600}>Data Requirement</Text>
-            <pre>{JSON.stringify(DataRequirement, null, 2)}</pre>
-          </Box>
-          <Box
-            w={"full"}
-            overflowY={"auto"}
-            overflowX={"auto"}
-            maxH={"350px"}
-            p={4}
-            bgColor={"gray.200"}
-            rounded={radiusStyle}
-            display={"none"}
-          >
-            <Text fontWeight={600}>Data Project</Text>
-            <pre>{JSON.stringify(DataProject, null, 2)}</pre>
-          </Box>
-        </>
+        </Flex>
       )}
+      {/* ------------ DEBUG DATA ------------------ */}
+
+      <Box
+        w={"full"}
+        overflowY={"auto"}
+        overflowX={"auto"}
+        maxH={"350px"}
+        p={4}
+        bgColor={"gray.200"}
+        rounded={radiusStyle}
+        display={"none"}
+      >
+        <Text fontWeight={600}>Data Requirement</Text>
+        <pre>{JSON.stringify(DataRequirement, null, 2)}</pre>
+      </Box>
+      <Box
+        w={"full"}
+        overflowY={"auto"}
+        overflowX={"auto"}
+        maxH={"350px"}
+        p={4}
+        bgColor={"gray.200"}
+        rounded={radiusStyle}
+        display={"none"}
+      >
+        <Text fontWeight={600}>Data Project</Text>
+        <pre>{JSON.stringify(DataProject, null, 2)}</pre>
+      </Box>
     </Flex>
   );
 };

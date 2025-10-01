@@ -1,29 +1,28 @@
 "use client";
 
 import { ProjectDataResponse } from "@/app/services/useProjects";
-import { 
-  TabPanel, 
-  useColorMode, 
-  VStack, 
-  HStack, 
-  Heading, 
-  Text, 
+import {
+  TabPanel,
+  useColorMode,
+  VStack,
+  HStack,
+  Heading,
+  Text,
   Button,
   SimpleGrid,
   Card,
   CardBody,
   Avatar,
-  Badge
+  Badge,
 } from "@chakra-ui/react";
 import { radiusStyle } from "@/app/constants/applicationConstants";
 import { FiUsers, FiUserPlus, FiSettings } from "react-icons/fi";
 
 interface TeamTabProps {
   DataProject: ProjectDataResponse | null;
-  projectId: string | null;
 }
 
-const TeamTab = ({ DataProject, projectId }: TeamTabProps) => {
+const TeamTab = ({ DataProject }: TeamTabProps) => {
   const { colorMode } = useColorMode();
 
   return (
@@ -36,7 +35,10 @@ const TeamTab = ({ DataProject, projectId }: TeamTabProps) => {
         {/* Header Section */}
         <HStack justify="space-between" align="center">
           <VStack align="start" spacing={1}>
-            <Heading size="lg" color={colorMode === "light" ? "gray.800" : "white"}>
+            <Heading
+              size="lg"
+              color={colorMode === "light" ? "gray.800" : "white"}
+            >
               Team Management
             </Heading>
             <Text color="gray.600" fontSize="sm">
@@ -65,7 +67,8 @@ const TeamTab = ({ DataProject, projectId }: TeamTabProps) => {
         </HStack>
 
         {/* Team Members Grid */}
-        {DataProject?.userAssignment && DataProject.userAssignment.length > 0 ? (
+        {DataProject?.userAssignment &&
+        DataProject.userAssignment.length > 0 ? (
           <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
             {DataProject.userAssignment.map((member, index) => (
               <Card
