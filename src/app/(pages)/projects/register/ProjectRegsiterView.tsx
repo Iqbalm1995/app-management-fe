@@ -39,6 +39,7 @@ import {
   WORK_PROGRAM_EXTERNAL,
   WORK_PROGRAM_INTERNAL,
   WorkflowProjectDevelopmentId,
+  WorkflowProjectProcurementId,
 } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import {
@@ -932,6 +933,12 @@ function ProjectRegisterView({
   };
 
   const LoadWorkflowPresets = async () => {
+    let WorkflowProject = WorkflowProjectDevelopmentId;
+
+    if (projectTypeRegister == PROJECT_TYPE_PROCUREMENT) {
+      WorkflowProject = WorkflowProjectProcurementId;
+    }
+
     try {
       const PayloadList: PaggingListPayload = {
         limit: MAX_SIZE_TABLE,
@@ -941,7 +948,7 @@ function ProjectRegisterView({
           {
             field: "wfCategoryId",
             operator: "=",
-            value: WorkflowProjectDevelopmentId,
+            value: WorkflowProject,
           },
         ],
         fieldOrder: ["wfPresetName"],
@@ -957,6 +964,12 @@ function ProjectRegisterView({
   };
 
   const LoadWorkflowGroups = async () => {
+    let WorkflowProject = WorkflowProjectDevelopmentId;
+
+    if (projectTypeRegister == PROJECT_TYPE_PROCUREMENT) {
+      WorkflowProject = WorkflowProjectProcurementId;
+    }
+
     setIsLoadingWorkflow(true);
     try {
       const PayloadList: PaggingListPayload = {
@@ -977,7 +990,7 @@ function ProjectRegisterView({
           {
             field: "wfgCategoryId",
             operator: "=",
-            value: WorkflowProjectDevelopmentId,
+            value: WorkflowProject,
           },
         ],
         fieldOrder: ["wfgOrder"],
@@ -1589,108 +1602,119 @@ function ProjectRegisterView({
     // projectTypeRegister;
     formik.setFieldValue(`projectType`, projectTypeRegister);
     formik.setFieldValue(`projectCategory`, "PROJECT");
-    if (DataAuth && DataRequirement && tokenData) {
-      if (IsHaveMemo == "Y") {
-        GetDataListBacklogs();
 
-        formik.setFieldValue(`reqParentId`, DataRequirement.id);
+    console.log(IsHaveMemo);
+    console.log(projectTypeRegister);
 
-        formik.setFieldValue(
-          "proOwnerDirectorateId",
-          DataRequirement.senderDirectorateId
-        );
-        // LoadDataDivision(
-        //   DataRequirement.senderDirectorateId || "",
-        //   "proOwnerDivisionId"
-        // );
-        formik.setFieldValue(
-          "proOwnerDivisionId",
-          DataRequirement.senderDivisionId
-        );
-
-        const mapDataWorkPrograms = mapWorkProgramData(
-          DataRequirement.workPrograms
-        );
-        formik.setFieldValue("workPrograms", mapDataWorkPrograms);
-
-        const CountInternalWorkPrograms = mapDataWorkPrograms.filter(
-          (f) => f.workProgramSource == WORK_PROGRAM_INTERNAL
-        ).length;
-        const CountExternalWorkPrograms = mapDataWorkPrograms.filter(
-          (f) => f.workProgramSource == WORK_PROGRAM_EXTERNAL
-        ).length;
-
-        if (CountInternalWorkPrograms > 0) {
-          setWorkProgramInt("1");
-        }
-        if (CountExternalWorkPrograms > 0) {
-          setWorkProgramExt("1");
-        }
-
-        const userAssignPoject: UsersResponse[] = [];
-        // get user org project manage
-        const GetUserManageProject = async () => {
-          if (DataRequirement.assignedFromId) {
-            const ProjectManageOrg: UserOrganizationResponse | null =
-              await GetUserOrganizationServices(DataRequirement.assignedFromId);
-            // if (ProjectManageOrg) {
-            //   formik.setFieldValue(
-            //     `proManageByDivisionId`,
-            //     ProjectManageOrg.division.id
-            //   );
-            //   if (ProjectManageOrg.group) {
-            //     formik.setFieldValue(
-            //       `proManageByGroupId`,
-            //       ProjectManageOrg.group.id
-            //     );
-            //   }
-            //   if (ProjectManageOrg.team) {
-            //     formik.setFieldValue(
-            //       `proManageByTeamId`,
-            //       ProjectManageOrg.team.id
-            //     );
-            //   }
-            // }
-          }
-
-          // Set UserDefault Assign Project Member
-          if (DataRequirement.assignedFromId != null) {
-            const UserOwner = await GetUserIDServices(
-              DataRequirement.assignedFromId
-            );
-            if (UserOwner) {
-              userAssignPoject.push(UserOwner);
-            }
-          }
-
-          // insert user reviewer in parallel and wait for all
-          if (DataRequirement.approvalDatas.length > 0) {
-            const reviewers = await Promise.all(
-              DataRequirement.approvalDatas.map(async (dt) => {
-                return await GetUserIDServices(dt.approverUserCode);
-              })
-            );
-
-            reviewers.forEach((user) => {
-              if (user) {
-                userAssignPoject.push(user);
-              }
-            });
-          }
-
-          // Set state only after all async ops done
-          if (userAssignPoject.length > 0) {
-            setChoosedMemberProjects(userAssignPoject);
-          }
-        };
-        GetUserManageProject();
-      } else {
-        handleResetReffFromRequirementData();
-      }
+    if (IsHaveMemo == "N" && projectTypeRegister == PROJECT_TYPE_PROCUREMENT) {
+      console.log(PROJECT_TYPE_PROCUREMENT);
+      handleResetReffFromRequirementData();
+      formik.setFieldValue(`reqParentId`, null);
+      formik.setFieldValue("proOwnerDirectorateId", DIRECTORATE_ID_IT_BJB);
+      formik.setFieldValue("proOwnerDivisionId", DIVISION_ID_IT_BJB);
+      formik.setFieldValue("proManageByDirectorateId", DIRECTORATE_ID_IT_BJB);
+      formik.setFieldValue("proManageByDivisionId", DIVISION_ID_IT_BJB);
     } else {
       handleResetReffFromRequirementData();
     }
-  }, [DataAuth, DataRequirement]);
+
+    if (DataAuth && DataRequirement && tokenData) {
+      console.log("DataRequirement Loaded");
+      GetDataListBacklogs();
+
+      formik.setFieldValue(`reqParentId`, DataRequirement.id);
+
+      formik.setFieldValue(
+        "proOwnerDirectorateId",
+        DataRequirement.senderDirectorateId
+      );
+      // LoadDataDivision(
+      //   DataRequirement.senderDirectorateId || "",
+      //   "proOwnerDivisionId"
+      // );
+      formik.setFieldValue(
+        "proOwnerDivisionId",
+        DataRequirement.senderDivisionId
+      );
+
+      const mapDataWorkPrograms = mapWorkProgramData(
+        DataRequirement.workPrograms
+      );
+      formik.setFieldValue("workPrograms", mapDataWorkPrograms);
+
+      const CountInternalWorkPrograms = mapDataWorkPrograms.filter(
+        (f) => f.workProgramSource == WORK_PROGRAM_INTERNAL
+      ).length;
+      const CountExternalWorkPrograms = mapDataWorkPrograms.filter(
+        (f) => f.workProgramSource == WORK_PROGRAM_EXTERNAL
+      ).length;
+
+      if (CountInternalWorkPrograms > 0) {
+        setWorkProgramInt("1");
+      }
+      if (CountExternalWorkPrograms > 0) {
+        setWorkProgramExt("1");
+      }
+
+      const userAssignPoject: UsersResponse[] = [];
+      // get user org project manage
+      const GetUserManageProject = async () => {
+        if (DataRequirement.assignedFromId) {
+          const ProjectManageOrg: UserOrganizationResponse | null =
+            await GetUserOrganizationServices(DataRequirement.assignedFromId);
+          // if (ProjectManageOrg) {
+          //   formik.setFieldValue(
+          //     `proManageByDivisionId`,
+          //     ProjectManageOrg.division.id
+          //   );
+          //   if (ProjectManageOrg.group) {
+          //     formik.setFieldValue(
+          //       `proManageByGroupId`,
+          //       ProjectManageOrg.group.id
+          //     );
+          //   }
+          //   if (ProjectManageOrg.team) {
+          //     formik.setFieldValue(
+          //       `proManageByTeamId`,
+          //       ProjectManageOrg.team.id
+          //     );
+          //   }
+          // }
+        }
+
+        // Set UserDefault Assign Project Member
+        if (DataRequirement.assignedFromId != null) {
+          const UserOwner = await GetUserIDServices(
+            DataRequirement.assignedFromId
+          );
+          if (UserOwner) {
+            userAssignPoject.push(UserOwner);
+          }
+        }
+
+        // insert user reviewer in parallel and wait for all
+        if (DataRequirement.approvalDatas.length > 0) {
+          const reviewers = await Promise.all(
+            DataRequirement.approvalDatas.map(async (dt) => {
+              return await GetUserIDServices(dt.approverUserCode);
+            })
+          );
+
+          reviewers.forEach((user) => {
+            if (user) {
+              userAssignPoject.push(user);
+            }
+          });
+        }
+
+        // Set state only after all async ops done
+        if (userAssignPoject.length > 0) {
+          setChoosedMemberProjects(userAssignPoject);
+        }
+      };
+      GetUserManageProject();
+    }
+  }, [DataAuth, DataRequirement, IsHaveMemo]);
 
   // end load reff from data requirements
 
@@ -1715,6 +1739,7 @@ function ProjectRegisterView({
 
   // reset filled data from req
   const handleResetReffFromRequirementData = () => {
+    setDataRequirement(null);
     formik.setFieldValue("proOwnerDirectorateId", null);
     formik.setFieldValue("proOwnerDivisionId", null);
     setDataBacklogsRequirement([]);
@@ -1825,7 +1850,16 @@ function ProjectRegisterView({
           </GridItem>
 
           {/* Requirement Information */}
-          <GridItem colSpan={{ base: 12, sm: 12, md: 8, lg: 8 }} w={"full"}>
+          <GridItem
+            colSpan={{ base: 12, sm: 12, md: 8, lg: 8 }}
+            w={"full"}
+            display={
+              projectTypeRegister == PROJECT_TYPE_PROCUREMENT &&
+              IsHaveMemo == "N"
+                ? "none"
+                : "box"
+            }
+          >
             <Card
               shadow="md"
               // bgColor={colorMode == "light" ? "white" : "gray.800"}
@@ -2060,7 +2094,10 @@ function ProjectRegisterView({
                                         PROJECT_TYPE_PROCUREMENT
                                       }
                                     >
-                                      Belum
+                                      {projectTypeRegister !=
+                                      PROJECT_TYPE_PROCUREMENT
+                                        ? "Belum"
+                                        : "Tidak (Dikhususkan untuk IT)"}
                                     </Radio>
                                   </Flex>
                                 </RadioGroup>
@@ -2075,9 +2112,13 @@ function ProjectRegisterView({
                         </Flex>
 
                         <FormControl
-                          id="projectNo"
-                          isInvalid={formik.errors.projectNo ? true : false}
                           isRequired={IsHaveMemo == "Y"}
+                          display={
+                            projectTypeRegister == PROJECT_TYPE_PROCUREMENT &&
+                            IsHaveMemo == "N"
+                              ? "none"
+                              : "flex"
+                          }
                         >
                           <InputLayout>
                             <FormLabel h={"full"} mt={2}>
@@ -2275,6 +2316,7 @@ function ProjectRegisterView({
                                       Direktorat
                                     </FormLabel>
                                     <Select
+                                      isDisabled={true}
                                       id={`proOwnerDirectorateId`}
                                       options={OrganizationData.filter(
                                         (f) =>
@@ -2336,6 +2378,7 @@ function ProjectRegisterView({
                                       Divisi
                                     </FormLabel>
                                     <Select
+                                      isDisabled={true}
                                       id={`proOwnerDivisionId`}
                                       options={OrganizationData.filter(
                                         (f) =>
@@ -4347,6 +4390,10 @@ function ProjectRegisterView({
                                             Direktorat
                                           </FormLabel>
                                           <Select
+                                            isDisabled={
+                                              projectTypeRegister ==
+                                              PROJECT_TYPE_PROCUREMENT
+                                            }
                                             id={`proManageByDirectorateId`}
                                             options={OrganizationData.filter(
                                               (f) =>
@@ -4419,6 +4466,10 @@ function ProjectRegisterView({
                                             Divisi
                                           </FormLabel>
                                           <Select
+                                            isDisabled={
+                                              projectTypeRegister ==
+                                              PROJECT_TYPE_PROCUREMENT
+                                            }
                                             id={`proManageByDivisionId`}
                                             options={OrganizationData.filter(
                                               (f) =>
@@ -5069,7 +5120,7 @@ function ProjectRegisterView({
                 p={4}
                 bgColor={"gray.200"}
                 rounded={radiusStyle}
-                display={"none"}
+                // display={"none"}
               >
                 <Text fontWeight={600}>Data Requirement</Text>
                 <pre>{JSON.stringify(DataRequirement, null, 2)}</pre>

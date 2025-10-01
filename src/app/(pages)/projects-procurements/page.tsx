@@ -188,11 +188,11 @@ const ProjectManagerPage = () => {
         });
       }
 
-      // filterWhere.push({
-      //   field: "projectType",
-      //   operator: "=",
-      //   value: PROJECT_TYPE_PROCUREMENT,
-      // });
+      filterWhere.push({
+        field: "projectType",
+        operator: "=",
+        value: PROJECT_TYPE_PROCUREMENT,
+      });
 
       const PayloadList: PaggingListPayloadCustom = {
         search: globalFilter,
@@ -422,7 +422,7 @@ const ProjectManagerPage = () => {
                   fontWeight="700"
                   letterSpacing="tight"
                 >
-                  Project Procurement
+                  Procurement Management Hub
                 </Heading>
                 <Text
                   fontSize="sm"
@@ -757,15 +757,16 @@ const ProjectManagerPage = () => {
                             >
                               Refresh
                             </Button>
-                            <Button
-                              size={"md"}
-                              colorScheme={"blue"}
-                              leftIcon={<FiPlusSquare />}
-                              type={"submit"}
-                              isLoading={ActionLoading}
-                            >
-                              Register New Procuremet
-                            </Button>
+                            <Link href={`projects-procurements/register`}>
+                              <Button
+                                size={"md"}
+                                colorScheme={"secondary"}
+                                leftIcon={<FiPlusSquare />}
+                                isLoading={ActionLoading}
+                              >
+                                Register New Procuremet
+                              </Button>
+                            </Link>
                           </Flex>
                         </Flex>
 

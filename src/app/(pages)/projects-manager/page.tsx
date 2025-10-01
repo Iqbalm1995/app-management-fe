@@ -862,25 +862,23 @@ const ProjectManagerPage = () => {
                             >
                               Refresh
                             </Button>
-                            <Button
+                            {/* <Button
                               size={"md"}
                               colorScheme={"secondary"}
                               leftIcon={<FiPlusSquare />}
-                              // type={"submit"}
                               isLoading={ActionLoading}
                               onClick={() => handleAddNew()}
                             >
                               Register New Project
-                            </Button>
+                            </Button> */}
                             <Link href={`projects-manager/register`}>
                               <Button
                                 size={"md"}
-                                colorScheme={"purple"}
+                                colorScheme={"secondary"}
                                 leftIcon={<FiPlusSquare />}
-                                // type={"submit"}
                                 isLoading={ActionLoading}
                               >
-                                Register New Project Alt
+                                Register New Project
                               </Button>
                             </Link>
                           </Flex>

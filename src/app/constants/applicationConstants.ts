@@ -363,6 +363,8 @@ export const APP_INTEGRATED_OTHER_APPS = [
 // Workflow Constants
 export const WorkflowProjectDevelopmentId =
   "656435e1-a98e-4353-856c-5c5ffdf6d9bb";
+export const WorkflowProjectProcurementId =
+  "d77d335f-f4fd-4c60-9105-0f62ceec9a15";
 
 // WORK PROGRAM
 export const WORK_PROGRAM_INTERNAL = "INTERNAL";
