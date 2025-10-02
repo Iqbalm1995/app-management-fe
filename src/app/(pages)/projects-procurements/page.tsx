@@ -55,6 +55,7 @@ import {
   FiClock,
   FiAlertCircle,
   FiPlusSquare,
+  FiArrowRightCircle,
 } from "react-icons/fi";
 import {
   ColumnDef,
@@ -576,7 +577,7 @@ const ProjectManagerPage = () => {
           gap={5}
         >
           {/* Enhanced Manager Sidebar */}
-          <GridItem colSpan={{ base: 12, sm: 12, md: 3, lg: 3 }} w={"full"}>
+          <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 3 }} w={"full"}>
             <ManagerSidebarProcurement
               globalFilter={globalFilter}
               setGlobalFilter={setGlobalFilter}
@@ -586,106 +587,9 @@ const ProjectManagerPage = () => {
               colorMode={colorMode}
             />
           </GridItem>
-          <GridItem colSpan={{ base: 12, sm: 12, md: 9, lg: 9 }} w={"full"}>
+          <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 9 }} w={"full"}>
             {/* Main Content Area */}
             <VStack spacing={{ base: 4, md: 6 }} w="full">
-              {/* Mobile Search & Filters - Show only on mobile */}
-              <Box display={{ base: "block", lg: "none" }} w="full">
-                <VStack spacing={3} align="stretch">
-                  {/* Mobile Search */}
-                  <InputGroup>
-                    <InputLeftElement pointerEvents="none" h="full">
-                      <Search2Icon color="gray.400" />
-                    </InputLeftElement>
-                    <Input
-                      type="text"
-                      placeholder="Search projects..."
-                      bg={colorMode === "light" ? "gray.50" : "gray.700"}
-                      border="2px"
-                      borderColor={
-                        colorMode === "light" ? "gray.200" : "gray.600"
-                      }
-                      _focus={{
-                        borderColor:
-                          colorMode === "light" ? "blue.400" : "blue.300",
-                        bg: colorMode === "light" ? "white" : "gray.600",
-                      }}
-                      _hover={{
-                        borderColor:
-                          colorMode === "light" ? "gray.300" : "gray.500",
-                      }}
-                      onChange={(e) => setGlobalFilter(e.target.value)}
-                      value={globalFilter}
-                      size="md"
-                      rounded="lg"
-                      fontSize="sm"
-                    />
-                  </InputGroup>
-
-                  {/* Mobile Status Filters */}
-                  <Flex wrap="wrap" gap={2}>
-                    <Button
-                      size="xs"
-                      variant={statusFilter.length === 0 ? "solid" : "ghost"}
-                      colorScheme={statusFilter.length === 0 ? "blue" : "gray"}
-                      onClick={() => setStatusFilter([])}
-                      rounded="full"
-                      fontSize="xs"
-                      px={3}
-                      h={7}
-                    >
-                      All ({DataProjects.length})
-                    </Button>
-                    {PROJECT_STATUS_LIST.map((status) => {
-                      const isActive = statusFilter.includes(status);
-                      const projectCount = DataProjects.filter(
-                        (p) => p.projectStatus === status
-                      ).length;
-
-                      return (
-                        <Button
-                          key={status}
-                          size="xs"
-                          variant={isActive ? "solid" : "outline"}
-                          colorScheme={
-                            status === "ACTIVE"
-                              ? "green"
-                              : status === "COMPLETED"
-                              ? "blue"
-                              : status === "ONHOLD"
-                              ? "orange"
-                              : "red"
-                          }
-                          onClick={() => handleStatusFilter(status)}
-                          rounded="full"
-                          fontSize="xs"
-                          px={3}
-                          h={7}
-                        >
-                          {status} ({projectCount})
-                        </Button>
-                      );
-                    })}
-                  </Flex>
-
-                  {/* Mobile Clear Filters */}
-                  {(statusFilter.length > 0 || globalFilter) && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      colorScheme="red"
-                      onClick={clearAllFilters}
-                      leftIcon={<Icon as={FiX} />}
-                      rounded="lg"
-                      fontSize="sm"
-                      w="fit-content"
-                    >
-                      Clear Filters
-                    </Button>
-                  )}
-                </VStack>
-              </Box>
-
               {/* Projects Display Card */}
               <Card
                 rounded={radiusStyle}
@@ -1103,7 +1007,7 @@ const ProjectManagerPage = () => {
                           </Box>
 
                           {/* List View */}
-                          <Box>
+                          <Box minH={"50vh"}>
                             <VStack spacing={3} align="stretch">
                               {table.getRowModel().rows.map((row) => {
                                 const project = row.original;
@@ -1150,7 +1054,7 @@ const ProjectManagerPage = () => {
                                               w={12}
                                               h={12}
                                               bgGradient={
-                                                "linear(to-br, teal.600, teal.400)"
+                                                "linear(to-br, secondary.600, secondary.800, yellow.400)"
                                               }
                                               rounded="lg"
                                               display="flex"
@@ -1270,14 +1174,14 @@ const ProjectManagerPage = () => {
                                         {/* Action Button */}
                                         <GridItem>
                                           <Link
-                                            href={`project-development/development?projectId=${project.id}`}
+                                            href={`project-procurement/manage?projectId=${project.id}`}
                                           >
                                             <Button
                                               size="sm"
                                               colorScheme="blue"
-                                              leftIcon={
+                                              rightIcon={
                                                 <Icon
-                                                  as={FiTarget}
+                                                  as={FiArrowRightCircle}
                                                   boxSize={3}
                                                 />
                                               }
@@ -1294,7 +1198,7 @@ const ProjectManagerPage = () => {
                                                   "linear(to-r, blue.600, blue.600)",
                                               }}
                                             >
-                                              Start Development
+                                              Manage
                                             </Button>
                                           </Link>
                                         </GridItem>
