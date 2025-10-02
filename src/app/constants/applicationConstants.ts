@@ -366,6 +366,8 @@ export const WorkflowProjectDevelopmentId =
 export const WorkflowProjectProcurementId =
   "d77d335f-f4fd-4c60-9105-0f62ceec9a15";
 
+export const WorkStageProcurementId = "2e7b59e6-b64f-4a95-9c27-36d5e91d6xxx";
+
 // WORK PROGRAM
 export const WORK_PROGRAM_INTERNAL = "INTERNAL";
 export const WORK_PROGRAM_EXTERNAL = "EXTERNAL";

@@ -40,6 +40,7 @@ import {
   WORK_PROGRAM_INTERNAL,
   WorkflowProjectDevelopmentId,
   WorkflowProjectProcurementId,
+  WorkStageProcurementId,
 } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import {
@@ -855,20 +856,6 @@ function ProjectRegisterView({
 
   const [globalFilter, setGlobalFilter] = useState<string>("");
 
-  // Workflow Groups State
-  const [DataWorkflowGroups, setDataWorkflowGroups] = useState<
-    WorkflowGroupResponse[]
-  >([]);
-  const [selectedWorkflowIds, setSelectedWorkflowIds] = useState<Set<string>>(
-    new Set()
-  );
-  const [IsLoadingWorkflow, setIsLoadingWorkflow] = useState(false);
-  const [DataWorkflowPresets, setDataWorkflowPresets] = useState<
-    WorkflowPresetResponse[]
-  >([]);
-  const [selectedPreset, setSelectedPreset] =
-    useState<WorkflowPresetResponse | null>(null);
-
   const updateBacklog = (
     backlogId: string,
     updatedData: BacklogDataResponse
@@ -892,48 +879,62 @@ function ProjectRegisterView({
     // });
   };
 
-  // Load Workflow Groups
   const { ListWorkflowGroups } = useWorkflow();
   const { ListWorkflowPreset, GetWorkflowPresetById } = useWorkflowPreset();
+  // Load Workflow Groups for procurements at features register project
+  const [DataWorkflowGroupsProcurements, setDataWorkflowGroupsProcurements] =
+    useState<WorkflowGroupResponse[]>([]);
+  const [selectedWorkflowProcurementsIds, setSelectedWorkflowProcurementsIds] =
+    useState<Set<string>>(new Set());
+  const [IsLoadingWorkflowProcurements, setIsLoadingWorkflowProcurements] =
+    useState(false);
+  const [DataWorkflowPresetsProcurements, setDataWorkflowPresetsProcurements] =
+    useState<WorkflowPresetResponse[]>([]);
+  const [selectedPresetProcurement, setSelectedPresetProcurement] =
+    useState<WorkflowPresetResponse | null>(null);
 
-  const handleSelectPreset = async (presetId: string) => {
+  const LoadWorkflowGroupsProcurements = async () => {
+    const WorkflowProject = WorkStageProcurementId;
+
+    setIsLoadingWorkflowProcurements(true);
     try {
-      // If clicking the currently selected preset, clear selection
-      if (selectedPreset?.id === presetId) {
-        setSelectedPreset(null);
-        setSelectedWorkflowIds(new Set());
-        formik.setFieldValue("projectPlanWorkflowIds", []);
-        return;
-      }
+      const PayloadList: PaggingListPayload = {
+        limit: MAX_SIZE_TABLE,
+        page: 0,
+        search: "",
+        filterWhere: [
+          {
+            field: "parentId",
+            operator: "=",
+            value: "",
+          },
+          {
+            field: "wfgLevel",
+            operator: "=",
+            value: "1",
+          },
+          {
+            field: "wfgCategoryId",
+            operator: "=",
+            value: WorkflowProject,
+          },
+        ],
+        fieldOrder: ["wfgOrder"],
+        orderDir: "asc",
+      };
 
-      const requestData = await GetWorkflowPresetById(presetId, tokenData);
+      const requestData = await ListWorkflowGroups(PayloadList, tokenData);
       if (requestData?.statusCode === RES_CODE_OK && requestData.data) {
-        setSelectedPreset(requestData.data);
-
-        // Extract all workflow IDs including children recursively
-        const allWorkflowIds = new Set<string>();
-        const extractIds = (workflows: WorkflowGroupResponse[]) => {
-          workflows.forEach((workflow) => {
-            allWorkflowIds.add(workflow.id);
-            if (workflow.workflowChild?.length > 0) {
-              extractIds(workflow.workflowChild);
-            }
-          });
-        };
-        extractIds(requestData.data.workflowData);
-
-        // Update formik and selectedWorkflowIds
-        setSelectedWorkflowIds(allWorkflowIds);
-        formik.setFieldValue(
-          "projectPlanWorkflowIds",
-          Array.from(allWorkflowIds)
-        );
+        setDataWorkflowGroupsProcurements(requestData.data);
       }
     } catch (error) {
-      console.error("Error loading preset detail:", error);
+      console.error("Error loading workflow groups:", error);
+    } finally {
+      setIsLoadingWorkflowProcurements(false);
     }
   };
-  const renderWorkflowLevel = (
+
+  const renderWorkflowLevelProcurement = (
     workflows: WorkflowGroupResponse[],
     level: number = 0
   ) => {
@@ -957,9 +958,9 @@ function ProjectRegisterView({
               }
             };
             toggleWorkflow(workflow, !newSelected.has(workflow.id));
-            setSelectedWorkflowIds(newSelected);
+            setSelectedWorkflowProcurementsIds(newSelected);
             formik.setFieldValue(
-              "projectPlanWorkflowIds",
+              "projectPlanWorkflowBacklogsIds",
               Array.from(newSelected)
             );
           }}
@@ -973,18 +974,53 @@ function ProjectRegisterView({
         </Checkbox>
         {workflow.workflowChild?.length > 0 && (
           <VStack align="start" spacing={1} mt={level === 0 ? 2 : 1}>
-            {renderWorkflowLevel(workflow.workflowChild, level + 1)}
+            {renderWorkflowLevelProcurement(workflow.workflowChild, level + 1)}
           </VStack>
         )}
       </Box>
     ));
   };
-  const LoadWorkflowPresets = async () => {
-    let WorkflowProject = WorkflowProjectDevelopmentId;
 
-    if (projectTypeRegister == PROJECT_TYPE_PROCUREMENT) {
-      WorkflowProject = WorkflowProjectProcurementId;
+  const handleSelectPresetProcurement = async (presetId: string) => {
+    try {
+      // If clicking the currently selected preset, clear selection
+      if (selectedPreset?.id === presetId) {
+        setSelectedPresetProcurement(null);
+        setSelectedWorkflowProcurementsIds(new Set());
+        formik.setFieldValue("projectPlanWorkflowBacklogsIds", []);
+        return;
+      }
+
+      const requestData = await GetWorkflowPresetById(presetId, tokenData);
+      if (requestData?.statusCode === RES_CODE_OK && requestData.data) {
+        setSelectedPresetProcurement(requestData.data);
+
+        // Extract all workflow IDs including children recursively
+        const allWorkflowIds = new Set<string>();
+        const extractIds = (workflows: WorkflowGroupResponse[]) => {
+          workflows.forEach((workflow) => {
+            allWorkflowIds.add(workflow.id);
+            if (workflow.workflowChild?.length > 0) {
+              extractIds(workflow.workflowChild);
+            }
+          });
+        };
+        extractIds(requestData.data.workflowData);
+
+        // Update formik and selectedWorkflowIds
+        setSelectedWorkflowProcurementsIds(allWorkflowIds);
+        formik.setFieldValue(
+          "projectPlanWorkflowBacklogsIds",
+          Array.from(allWorkflowIds)
+        );
+      }
+    } catch (error) {
+      console.error("Error loading preset detail:", error);
     }
+  };
+
+  const LoadWorkflowPresetsProcurement = async () => {
+    let WorkflowProject = WorkStageProcurementId;
 
     try {
       const PayloadList: PaggingListPayload = {
@@ -1003,12 +1039,28 @@ function ProjectRegisterView({
       };
       const requestData = await ListWorkflowPreset(PayloadList, tokenData);
       if (requestData?.statusCode === RES_CODE_OK && requestData.data) {
-        setDataWorkflowPresets(requestData.data);
+        setDataWorkflowPresetsProcurements(requestData.data);
       }
     } catch (error) {
       console.error("Error loading workflow presets:", error);
     }
   };
+
+  // END Load Workflow Groups for procurements at features register project
+
+  // Load Workflow Groups
+  const [DataWorkflowGroups, setDataWorkflowGroups] = useState<
+    WorkflowGroupResponse[]
+  >([]);
+  const [selectedWorkflowIds, setSelectedWorkflowIds] = useState<Set<string>>(
+    new Set()
+  );
+  const [IsLoadingWorkflow, setIsLoadingWorkflow] = useState(false);
+  const [DataWorkflowPresets, setDataWorkflowPresets] = useState<
+    WorkflowPresetResponse[]
+  >([]);
+  const [selectedPreset, setSelectedPreset] =
+    useState<WorkflowPresetResponse | null>(null);
 
   const LoadWorkflowGroups = async () => {
     let WorkflowProject = WorkflowProjectDevelopmentId;
@@ -1055,14 +1107,140 @@ function ProjectRegisterView({
     }
   };
 
+  const renderWorkflowLevel = (
+    workflows: WorkflowGroupResponse[],
+    level: number = 0
+  ) => {
+    if (level >= 3) return [];
+    return workflows.map((workflow) => (
+      <Box key={workflow.id} w="full" ml={level * 4}>
+        <Checkbox
+          isChecked={selectedWorkflowIds.has(workflow.id)}
+          colorScheme="blue"
+          size="lg"
+          onChange={() => {
+            const newSelected = new Set(selectedWorkflowIds);
+            const toggleWorkflow = (
+              wf: WorkflowGroupResponse,
+              add: boolean
+            ) => {
+              if (add) newSelected.add(wf.id);
+              else newSelected.delete(wf.id);
+              if (wf.workflowChild?.length > 0) {
+                wf.workflowChild.forEach((child) => toggleWorkflow(child, add));
+              }
+            };
+            toggleWorkflow(workflow, !newSelected.has(workflow.id));
+            setSelectedWorkflowIds(newSelected);
+            formik.setFieldValue(
+              "projectPlanWorkflowIds",
+              Array.from(newSelected)
+            );
+          }}
+        >
+          <Text
+            fontWeight={level === 0 ? "bold" : "normal"}
+            color={level === 0 ? "blue.600" : "inherit"}
+          >
+            {workflow.wfgName}
+          </Text>
+        </Checkbox>
+        {workflow.workflowChild?.length > 0 && (
+          <VStack align="start" spacing={1} mt={level === 0 ? 2 : 1}>
+            {renderWorkflowLevel(workflow.workflowChild, level + 1)}
+          </VStack>
+        )}
+      </Box>
+    ));
+  };
+
+  const handleSelectPreset = async (presetId: string) => {
+    try {
+      // If clicking the currently selected preset, clear selection
+      if (selectedPreset?.id === presetId) {
+        setSelectedPreset(null);
+        setSelectedWorkflowIds(new Set());
+        formik.setFieldValue("projectPlanWorkflowIds", []);
+        return;
+      }
+
+      const requestData = await GetWorkflowPresetById(presetId, tokenData);
+      if (requestData?.statusCode === RES_CODE_OK && requestData.data) {
+        setSelectedPreset(requestData.data);
+
+        // Extract all workflow IDs including children recursively
+        const allWorkflowIds = new Set<string>();
+        const extractIds = (workflows: WorkflowGroupResponse[]) => {
+          workflows.forEach((workflow) => {
+            allWorkflowIds.add(workflow.id);
+            if (workflow.workflowChild?.length > 0) {
+              extractIds(workflow.workflowChild);
+            }
+          });
+        };
+        extractIds(requestData.data.workflowData);
+
+        // Update formik and selectedWorkflowIds
+        setSelectedWorkflowIds(allWorkflowIds);
+        formik.setFieldValue(
+          "projectPlanWorkflowIds",
+          Array.from(allWorkflowIds)
+        );
+      }
+    } catch (error) {
+      console.error("Error loading preset detail:", error);
+    }
+  };
+
+  const LoadWorkflowPresets = async () => {
+    let WorkflowProject = WorkflowProjectDevelopmentId;
+
+    if (projectTypeRegister == PROJECT_TYPE_PROCUREMENT) {
+      WorkflowProject = WorkflowProjectProcurementId;
+    }
+
+    try {
+      const PayloadList: PaggingListPayload = {
+        limit: MAX_SIZE_TABLE,
+        page: 0,
+        search: "",
+        filterWhere: [
+          {
+            field: "wfCategoryId",
+            operator: "=",
+            value: WorkflowProject,
+          },
+        ],
+        fieldOrder: ["wfPresetName"],
+        orderDir: "asc",
+      };
+      const requestData = await ListWorkflowPreset(PayloadList, tokenData);
+      if (requestData?.statusCode === RES_CODE_OK && requestData.data) {
+        setDataWorkflowPresets(requestData.data);
+      }
+    } catch (error) {
+      console.error("Error loading workflow presets:", error);
+    }
+  };
+
   // Load workflow groups when token is available
   useEffect(() => {
     setIsLoadingProcess(true);
     if (tokenData) {
       LoadAllOrganizationData();
       // LoadDataDirectorate();
+
+      if (
+        projectTypeRegister == PROJECT_TYPE_PROCUREMENT &&
+        DataRequirement == null
+      ) {
+        LoadWorkflowGroupsProcurements();
+        LoadWorkflowPresetsProcurement();
+      }
+
       LoadWorkflowGroups();
       LoadWorkflowPresets();
+
       LoadCharacteristicsProjectData();
       LoadAcquisitionProjectData();
       //   if (projectTypeRegister == PROJECT_TYPE_PROCUREMENT) {
