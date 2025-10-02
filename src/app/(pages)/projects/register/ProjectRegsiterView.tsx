@@ -55,6 +55,7 @@ import useOrganization, {
   OrganizationResponse,
 } from "@/app/services/useOrganization";
 import useProjects, {
+  ProjectCountResponse,
   ProjectInsertPayload,
   ProjectUserInsertPayload,
 } from "@/app/services/useProjects";
@@ -262,7 +263,7 @@ function ProjectRegisterView({
   } = useRequirements();
   const { GetDetailByInitial: GetAppByInitial } = useApps();
   const { ListConstantData } = useConstants();
-  const { InsertProjects } = useProjects();
+  const { InsertProjects, GetProjectCount } = useProjects();
   const {
     GetDetailByUserId: GetUserID,
     List: ListUsers,
@@ -326,6 +327,34 @@ function ProjectRegisterView({
       const itemsData: UsersResponse = requestData.data as UsersResponse;
 
       return itemsData;
+    }
+  };
+
+  const ProjectCount = async (): Promise<number> => {
+    const token: string = localStorage.getItem("tokenData") as string;
+    const requestData = await GetProjectCount(token);
+    const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+
+    if (isErrorResponse || !requestData) {
+      showToast({
+        description: requestData?.message || RES_GENERIC_ERROR_MSG,
+        statusToast: "error",
+      });
+      return 0;
+    } else {
+      console.log(requestData);
+      if (requestData.data == null) {
+        showToast({
+          description: "Data project count return error",
+          statusToast: "error",
+        });
+        return 0;
+      }
+
+      const itemsData: ProjectCountResponse =
+        requestData.data as ProjectCountResponse;
+
+      return itemsData.countAllProjects;
     }
   };
 
@@ -444,11 +473,13 @@ function ProjectRegisterView({
     } else {
       console.log(requestData);
 
-      const updatePayloadList: BacklogUpdatePayload[] =
-        mapBacklogArrayToUpdatePayload(DataBacklogsRequirement);
-      console.log(updatePayloadList);
+      if (projectTypeRegister == PROJECT_TYPE_INTERNAL_DEVELOPMENT) {
+        const updatePayloadList: BacklogUpdatePayload[] =
+          mapBacklogArrayToUpdatePayload(DataBacklogsRequirement);
+        console.log(updatePayloadList);
 
-      await UpdateBacklogProject(updatePayloadList);
+        await UpdateBacklogProject(updatePayloadList);
+      }
 
       showToast({
         description: "Register new project data successfully",
@@ -456,7 +487,15 @@ function ProjectRegisterView({
       });
 
       setActionLoading(false);
-      redirect(`/projects-manager/`);
+
+      if (projectTypeRegister == PROJECT_TYPE_INTERNAL_DEVELOPMENT) {
+        redirect(`/projects-manager/`);
+      }
+
+      if (projectTypeRegister == PROJECT_TYPE_PROCUREMENT) {
+      }
+
+      redirect(`/projects-procurements/`);
       return;
     }
   };
@@ -617,6 +656,14 @@ function ProjectRegisterView({
     OrganizationResponse[]
   >([]);
 
+  const GetDetailOrganizationData = (
+    orgId: string
+  ): OrganizationResponse | undefined => {
+    if (OrganizationData.length <= 0) return undefined;
+
+    return OrganizationData.find((x) => x.id == orgId);
+  };
+
   const LoadAllOrganizationData = async () => {
     const getData = await GetDataMasterOrg("", MAX_SIZE_TABLE, []);
     if (getData.length > 0) {
@@ -730,6 +777,30 @@ function ProjectRegisterView({
 
   // formik
 
+  // Project Number Builder Function
+  const buildProjectNumber = (
+    projectCount: number,
+    organizationDivisionCode: string,
+    workProgramExternalCount: number,
+    workProgramInternalCount: number,
+    projectAcquisitionCode?: string
+  ): string => {
+    const currentYear = new Date().getFullYear();
+    const projectNumber = (projectCount + 1).toString().padStart(4, "0");
+    const externalRBB = workProgramExternalCount > 0 ? "RBB" : "NRBB";
+    const internalRBB = workProgramInternalCount > 0 ? "RBB" : "NRBB";
+
+    if (projectTypeRegister === PROJECT_TYPE_INTERNAL_DEVELOPMENT) {
+      return `${projectNumber}/${organizationDivisionCode}/BJB/${externalRBB}/${internalRBB}/${currentYear}`;
+    } else if (projectTypeRegister === PROJECT_TYPE_PROCUREMENT) {
+      return `${projectNumber}/${organizationDivisionCode}/BJB/${externalRBB}/${internalRBB}/${currentYear}/${
+        projectAcquisitionCode || ""
+      }`;
+    }
+
+    return "";
+  };
+
   const formik = useFormik<ProjectInsertPayload>({
     initialValues: initialProjectsInsertValues,
     validationSchema: projectsInsertBindModelSchema,
@@ -739,6 +810,58 @@ function ProjectRegisterView({
       console.log(values);
     },
   });
+
+  // generate Project Number
+  useEffect(() => {
+    const getProjectCount = async () => {
+      if (tokenData) {
+        try {
+          const requestData = await GetProjectCount(tokenData);
+          if (requestData?.statusCode === RES_CODE_OK && requestData.data) {
+            const countData = requestData.data.countAllProjects || 0;
+
+            // Generate project number when we have the count
+            if (
+              formik.values.proOwnerDivisionId &&
+              OrganizationData.length > 0
+            ) {
+              const division = OrganizationData.find(
+                (org) => org.id === formik.values.proManageByDivisionId
+              );
+              if (division) {
+                const externalCount = formik.values.workPrograms.filter(
+                  (wp) => wp.workProgramSource === WORK_PROGRAM_EXTERNAL
+                ).length;
+                const internalCount = formik.values.workPrograms.filter(
+                  (wp) => wp.workProgramSource === WORK_PROGRAM_INTERNAL
+                ).length;
+
+                const projectNumber = buildProjectNumber(
+                  countData,
+                  division.orgCode || division.orgName,
+                  externalCount,
+                  internalCount,
+                  formik.values.projectAcquisitionCode || undefined
+                );
+
+                formik.setFieldValue("projectNo", projectNumber);
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Error getting project count:", error);
+        }
+      }
+    };
+
+    getProjectCount();
+  }, [
+    tokenData,
+    formik.values.proManageByDivisionId,
+    formik.values.workPrograms,
+    formik.values.projectAcquisitionCode,
+    OrganizationData,
+  ]);
 
   // end - formik
 
@@ -1706,19 +1829,22 @@ function ProjectRegisterView({
     }
 
     var DeadlineUnfilledDataBacklog = 0;
-    if (updatePayloadList.length > 0) {
-      updatePayloadList.map((bl) => {
-        if (bl.backlogEnddate == null) {
-          DeadlineUnfilledDataBacklog++;
-        }
-      });
 
-      if (DeadlineUnfilledDataBacklog > 0) {
-        showToast({
-          description: `(${DeadlineUnfilledDataBacklog}) Data Deadline fitur belum diisi.`,
-          statusToast: "warning",
+    if (projectTypeRegister == PROJECT_TYPE_INTERNAL_DEVELOPMENT) {
+      if (updatePayloadList.length > 0) {
+        updatePayloadList.map((bl) => {
+          if (bl.backlogEnddate == null) {
+            DeadlineUnfilledDataBacklog++;
+          }
         });
-        errorSum++;
+
+        if (DeadlineUnfilledDataBacklog > 0) {
+          showToast({
+            description: `(${DeadlineUnfilledDataBacklog}) Data Deadline fitur belum diisi.`,
+            statusToast: "warning",
+          });
+          errorSum++;
+        }
       }
     }
 
@@ -2414,8 +2540,9 @@ function ProjectRegisterView({
                                 value={formik.values.projectNo ?? ""}
                                 placeholder={`0000/00/BJB/XXXX/0000-A/0`}
                                 minLength={25}
-                                maxLength={27}
+                                maxLength={100}
                                 isDisabled={ActionLoading}
+                                isReadOnly
                                 w={{
                                   base: "full",
                                   sm: "full",
