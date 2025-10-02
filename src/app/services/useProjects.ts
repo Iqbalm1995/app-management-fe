@@ -200,6 +200,10 @@ export interface ProjectUpdatePICPayload {
   dataUserId: string[];
 }
 
+export interface ProjectCountResponse {
+  countAllProjects: number;
+}
+
 export interface AppsResponse {
   id: string;
   projectId: string;
@@ -440,6 +444,9 @@ interface useProjectsServices {
     teamId: string,
     token: string
   ) => Promise<ApiGenericResponse<ProjectDataResponse | null> | null>;
+  GetProjectCount: (
+    token: string
+  ) => Promise<ApiGenericResponse<ProjectCountResponse | null> | null>;
   InsertProjects: (
     payload: ProjectInsertPayload,
     token: string
@@ -688,6 +695,46 @@ const useProjects = (): useProjectsServices => {
     try {
       const response = await axiosInstance.get<
         ApiGenericResponse<ProjectDataResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const GetProjectCount = async (
+    token: string
+  ): Promise<ApiGenericResponse<ProjectCountResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Projects/count`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<ProjectCountResponse>
       >(`${UrlEndpoint}${PathEndpoint}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -2488,6 +2535,7 @@ const useProjects = (): useProjectsServices => {
   return {
     List,
     GetDetailById,
+    GetProjectCount,
     InsertProjects,
     UpdateProjects,
     DeleteProjects,
