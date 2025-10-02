@@ -286,7 +286,7 @@ function ProjectManagerDetailView() {
   const [calendarEvents, setCalendarEvents] = useState<EventInterface[]>([]);
 
   useEffect(() => {
-    if (DataAuth && DataAuth.team && projectId && isInitialized) {
+    if (DataAuth && projectId && isInitialized) {
       setIsLoadingProcess(true);
       const GetDataList = async () => {
         const requestData = await GetDetailById(projectId, tokenData);
@@ -327,13 +327,7 @@ function ProjectManagerDetailView() {
 
   // Fetch application data when project is loaded
   useEffect(() => {
-    if (
-      DataAuth &&
-      DataAuth.team &&
-      DataProject &&
-      !DataApps &&
-      isInitialized
-    ) {
+    if (DataAuth && DataProject && !DataApps && isInitialized) {
       const GetAppData = async () => {
         try {
           const requestData = await GetDetailAppsByProjectId(
@@ -351,6 +345,7 @@ function ProjectManagerDetailView() {
           console.error("Error fetching app data:", error);
         }
       };
+
       GetAppData();
     }
   }, [DataAuth, DataProject, tokenData, isInitialized]);
@@ -468,272 +463,78 @@ function ProjectManagerDetailView() {
 
   return (
     <LayoutAdmin>
-      {/* Modern Enhanced Header with Custom Gradient */}
+      {/* Simplified Header for Procurement Projects */}
       <Box
-        bgGradient={"linear(to-br, secondary.800, secondary.600)"}
-        color="white"
+        bg={colorMode === "light" ? "white" : "gray.800"}
+        color={colorMode === "light" ? "gray.800" : "white"}
         px={{ base: 4, md: 6 }}
-        py={{ base: 4, md: 6 }}
+        py={{ base: 3, md: 4 }}
         mt={{ base: 2, md: 4 }}
         mb={{ base: 4, md: 6 }}
         mx={{ base: 2, md: 4 }}
         rounded={radiusStyle}
-        position="relative"
-        overflow="hidden"
-        shadow="xl"
-        _before={{
-          content: '""',
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          bgGradient:
-            "linear(45deg, whiteAlpha.100 0%, transparent 50%, whiteAlpha.150 100%)",
-          zIndex: 0,
-        }}
+        shadow="md"
+        border="1px"
+        borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
       >
-        {/* Simplified Background Pattern */}
-        <Box
-          position="absolute"
-          top={0}
-          left={0}
-          right={0}
-          bottom={0}
-          opacity={0.06}
-          bgImage="radial-gradient(circle at 30% 40%, white 1px, transparent 1px), radial-gradient(circle at 70% 60%, white 1px, transparent 1px)"
-          bgSize="80px 80px, 80px 80px"
-        />
-
-        {/* {/* Reduced Floating Elements} */}
-        <Box
-          position="absolute"
-          top="15%"
-          right="10%"
-          w={8}
-          h={8}
-          bg="whiteAlpha.100"
-          rounded="full"
-          blur="sm"
-          animation="pulse 4s ease-in-out infinite"
-        />
-        <Box
-          position="absolute"
-          bottom="20%"
-          left="8%"
-          w={6}
-          h={6}
-          bg="whiteAlpha.120"
-          transform="rotate(45deg)"
-          rounded="md"
-          animation="spin 15s linear infinite"
-        />
-
-        {/* {/* BJB Logo in Bottom Right Corner - Responsive} */}
-        <Box
-          position="absolute"
-          bottom={{ base: 2, md: 4 }}
-          right={{ base: 4, md: 6 }}
-          zIndex={3}
-          opacity={0.7}
-          _hover={{ opacity: 1 }}
-          transition="opacity 0.2s ease"
-        >
-          <Box
-            as="img"
-            src="/img/logo-bjb-black-wing.svg"
-            alt="BJB Logo"
-            w={{ base: "40px", md: "60px" }}
-            h="auto"
-            filter="brightness(0) invert(1)"
-          />
-        </Box>
-
-        {/* {/* Main Header Content} */}
-        <VStack spacing={4} align="stretch" position="relative" zIndex={2}>
-          {/* // {/* Compact Top Navigation} */}
+        <VStack spacing={3} align="stretch">
+          {/* Top Navigation */}
           <HStack justify="space-between" align="center">
-            <HStack spacing={3}>
-              <Link href={"/projects-manager"}>
-                <Button
-                  leftIcon={<FiArrowLeft />}
-                  variant="ghost"
-                  size="sm"
-                  color="white"
-                  bg="whiteAlpha.100"
-                  backdropFilter="blur(10px)"
-                  border="1px solid"
-                  borderColor="whiteAlpha.200"
-                  _hover={{
-                    bg: "whiteAlpha.200",
-                    borderColor: "whiteAlpha.300",
-                    transform: "translateY(-1px)",
-                  }}
-                  rounded="full"
-                  px={4}
-                  transition="all 0.2s ease"
-                >
-                  Back
-                </Button>
-              </Link>
-            </HStack>
+            <Link href={"/projects-manager"}>
+              <Button
+                leftIcon={<FiArrowLeft />}
+                variant="outline"
+                size="sm"
+                colorScheme="gray"
+                rounded="full"
+              >
+                Back
+              </Button>
+            </Link>
 
             <HStack spacing={2}>
               <Button
                 leftIcon={<FiHeart />}
                 variant="ghost"
                 size="sm"
-                color="white"
-                bg="whiteAlpha.100"
-                backdropFilter="blur(10px)"
-                border="1px solid"
-                borderColor="whiteAlpha.200"
-                _hover={{
-                  bg: "pink.400",
-                  borderColor: "pink.300",
-                  transform: "translateY(-1px)",
-                }}
+                colorScheme="pink"
                 rounded="full"
-                px={3}
-                transition="all 0.2s ease"
               >
                 Favorite
               </Button>
-
               <Button
                 leftIcon={<FiShare />}
                 variant="ghost"
                 size="sm"
-                color="white"
-                bg="whiteAlpha.100"
-                backdropFilter="blur(10px)"
-                border="1px solid"
-                borderColor="whiteAlpha.200"
-                _hover={{
-                  bg: "blue.400",
-                  borderColor: "blue.300",
-                  transform: "translateY(-1px)",
-                }}
+                colorScheme="blue"
                 rounded="full"
-                px={3}
-                transition="all 0.2s ease"
               >
                 Share
               </Button>
-
               <Button
                 leftIcon={<FiRefreshCcw />}
                 variant="outline"
                 size="sm"
+                colorScheme="gray"
                 onClick={() => setRefreshData((prev) => prev + 1)}
                 isLoading={IsLoadingProcess}
-                borderColor="whiteAlpha.300"
-                color="white"
-                bg="whiteAlpha.100"
-                backdropFilter="blur(10px)"
-                _hover={{
-                  bg: "whiteAlpha.200",
-                  borderColor: "whiteAlpha.400",
-                  transform: "translateY(-1px)",
-                }}
                 rounded="full"
-                px={3}
-                transition="all 0.2s ease"
               >
                 Refresh
               </Button>
             </HStack>
           </HStack>
 
-          {/* // {/* Compact Main Project Information - Responsive} */}
+          {/* Project Information */}
           {DataProject ? (
-            <Stack
-              direction={{ base: "column", md: "row" }}
-              spacing={{ base: 4, md: 6 }}
-              align={{ base: "center", md: "start" }}
-            >
-              {/* // {/* Compact Application Avatar} */}
-              <VStack spacing={3} align="center">
-                <Box position="relative">
-                  <Box
-                    w={"80px"}
-                    h={"80px"}
-                    bgGradient={"linear(to-br, secondary.800, secondary.400)"}
-                    rounded="2xl"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                    fontSize="xl"
-                    fontWeight="bold"
-                    shadow="lg"
-                    border="3px solid"
-                    borderColor="whiteAlpha.300"
-                    backdropFilter="blur(10px)"
-                    position="relative"
-                    _hover={{
-                      transform: "scale(1.05)",
-                    }}
-                    transition="all 0.2s ease"
-                  >
-                    {DataProject?.appsProject?.appName?.charAt(0) ||
-                      DataApps?.appName?.charAt(0) ||
-                      DataProject.projectName?.charAt(0) ||
-                      "A"}
-                  </Box>
-                </Box>
-
-                <VStack spacing={1} align="center">
-                  <Text
-                    fontSize="sm"
-                    fontWeight="semibold"
-                    opacity={0.95}
-                    textAlign="center"
-                    maxW="100px"
-                    noOfLines={1}
-                  >
-                    {DataProject?.appsProject?.appName ||
-                      DataApps?.appName ||
-                      "Application"}
-                  </Text>
-                  <Badge
-                    colorScheme={
-                      (DataProject?.appsProject?.appsStatus ||
-                        DataApps?.appsStatus) === "ACTIVE"
-                        ? "green"
-                        : (DataProject?.appsProject?.appsStatus ||
-                            DataApps?.appsStatus) === "INACTIVE"
-                        ? "red"
-                        : (DataProject?.appsProject?.appsStatus ||
-                            DataApps?.appsStatus) === "DEVELOPMENT"
-                        ? "blue"
-                        : (DataProject?.appsProject?.appsStatus ||
-                            DataApps?.appsStatus) === "TESTING"
-                        ? "orange"
-                        : "gray"
-                    }
-                    size="sm"
-                    px={2}
-                    py={1}
-                    rounded="full"
-                    fontSize="xs"
-                    fontWeight="bold"
-                  >
-                    {DataProject?.appsProject?.appsStatus ||
-                      DataApps?.appsStatus ||
-                      "Unknown"}
-                  </Badge>
-                </VStack>
-              </VStack>
-
-              {/* // {/* Compact Project Details} */}
+            <HStack spacing={4} align="center">
+              {/* Project Details */}
               <Box flex={1}>
-                <VStack spacing={3} align="start">
+                <VStack spacing={2} align="start">
                   <Heading
-                    size="xl"
-                    fontWeight="700"
-                    bgGradient="linear(to-r, white, whiteAlpha.900)"
-                    bgClip="text"
-                    lineHeight="shorter"
+                    size="lg"
+                    fontWeight="600"
+                    color={colorMode === "light" ? "gray.800" : "white"}
                   >
                     {DataProject.projectName}
                   </Heading>
@@ -749,142 +550,84 @@ function ProjectManagerDetailView() {
                           ? "blue"
                           : "gray"
                       }
-                      px={3}
+                      px={2}
                       py={1}
                       rounded="full"
-                      fontSize="sm"
-                      fontWeight="semibold"
-                      shadow="md"
+                      fontSize="xs"
                     >
                       {DataProject.projectStatus}
                     </Badge>
                     <Badge
                       colorScheme="purple"
-                      variant="solid"
-                      px={3}
+                      px={2}
                       py={1}
                       rounded="full"
-                      fontSize="sm"
-                      fontWeight="semibold"
-                      shadow="md"
+                      fontSize="xs"
                     >
                       {DataProject.projectType}
                     </Badge>
-                  </HStack>
-
-                  <Box
-                    bg="whiteAlpha.100"
-                    backdropFilter="blur(10px)"
-                    p={3}
-                    rounded="lg"
-                    border="1px solid"
-                    borderColor="whiteAlpha.200"
-                    maxW="500px"
-                  >
-                    <Text
-                      fontSize="sm"
-                      opacity={0.95}
-                      lineHeight="base"
-                      noOfLines={2}
-                    >
-                      {DataProject.projectDesc ||
-                        "Modern application with advanced features and best practices implementation."}
+                    <Text fontSize="sm" color="gray.500">
+                      {DataProject.projectNo}
                     </Text>
-                  </Box>
-
-                  <HStack spacing={6} fontSize="sm" opacity={0.95}>
-                    <VStack spacing={0} align="center">
-                      <Text fontSize="lg" fontWeight="bold" color="green.200">
-                        {DataProject.projectStatusPercentage || 0}%
-                      </Text>
-                      <Text fontSize="xs" opacity={0.8}>
-                        Progress
-                      </Text>
-                    </VStack>
-                    <VStack spacing={0} align="center">
-                      <Text fontSize="lg" fontWeight="bold" color="blue.200">
-                        {DataProject.userAssignment?.length || 0}
-                      </Text>
-                      <Text fontSize="xs" opacity={0.8}>
-                        Team
-                      </Text>
-                    </VStack>
-                    <VStack spacing={0} align="center">
-                      <Text fontSize="lg" fontWeight="bold" color="orange.200">
-                        {DataProject.projectRegisterDate
-                          ? calculateDurationInDays(
-                              DataProject.projectRegisterDate,
-                              new Date().toISOString()
-                            )
-                          : 0}
-                      </Text>
-                      <Text fontSize="xs" opacity={0.8}>
-                        Days
-                      </Text>
-                    </VStack>
                   </HStack>
                 </VStack>
               </Box>
 
-              {/* // {/* Compact Team & Progress} */}
-              <VStack spacing={3} align="center" minW="120px">
-                {DataProject.userAssignment &&
-                  DataProject.userAssignment.length > 0 && (
-                    <AvatarGroup size="md" max={4} spacing="-0.5rem">
-                      {DataProject.userAssignment
-                        .slice(0, 5)
-                        .map((assignment, index) => (
-                          <Avatar
-                            key={index}
-                            name={assignment.userData?.nama || "User"}
-                            src={assignment.userData?.profilePict || undefined}
-                            border="2px solid white"
-                            shadow="md"
-                            _hover={{
-                              transform: "scale(1.05)",
-                              zIndex: 10,
-                            }}
-                            transition="all 0.2s ease"
-                          />
-                        ))}
-                    </AvatarGroup>
-                  )}
-
-                <VStack spacing={2} align="center">
-                  <Progress
-                    value={DataProject.projectStatusPercentage || 0}
-                    size="md"
-                    colorScheme="whiteAlpha"
-                    bg="whiteAlpha.200"
-                    rounded="full"
-                    w="80px"
-                    shadow="inner"
-                  />
-                  <Text fontSize="sm" fontWeight="bold" opacity={0.9}>
+              {/* Stats */}
+              <HStack spacing={6} fontSize="sm">
+                <VStack spacing={0} align="center">
+                  <Text fontSize="md" fontWeight="bold" color="green.500">
                     {DataProject.projectStatusPercentage || 0}%
                   </Text>
+                  <Text fontSize="xs" color="gray.500">
+                    Progress
+                  </Text>
                 </VStack>
-              </VStack>
-            </Stack>
+                <VStack spacing={0} align="center">
+                  <Text fontSize="md" fontWeight="bold" color="blue.500">
+                    {DataProject.userAssignment?.length || 0}
+                  </Text>
+                  <Text fontSize="xs" color="gray.500">
+                    Team
+                  </Text>
+                </VStack>
+                <VStack spacing={0} align="center">
+                  <Text fontSize="md" fontWeight="bold" color="orange.500">
+                    {DataProject.projectRegisterDate
+                      ? calculateDurationInDays(
+                          DataProject.projectRegisterDate,
+                          new Date().toISOString()
+                        )
+                      : 0}
+                  </Text>
+                  <Text fontSize="xs" color="gray.500">
+                    Days
+                  </Text>
+                </VStack>
+              </HStack>
+
+              {/* Team Avatars */}
+              {DataProject.userAssignment && DataProject.userAssignment.length > 0 && (
+                <AvatarGroup size="sm" max={3} spacing="-0.5rem">
+                  {DataProject.userAssignment.slice(0, 4).map((assignment, index) => (
+                    <Avatar
+                      key={index}
+                      name={assignment.userData?.nama || "User"}
+                      src={assignment.userData?.profilePict || undefined}
+                      border="2px solid"
+                      borderColor={colorMode === "light" ? "white" : "gray.800"}
+                    />
+                  ))}
+                </AvatarGroup>
+              )}
+            </HStack>
           ) : (
-            <Stack
-              direction={{ base: "column", md: "row" }}
-              spacing={{ base: 4, md: 6 }}
-              align="center"
-              py={4}
-            >
-              <Box>
-                <LoadingMiniSquare />
-              </Box>
-              <Box flex={1}>
-                <Heading size="xl" color="whiteAlpha.800" fontWeight="700">
-                  Just a moment...
-                </Heading>
-                <Text opacity={0.8} fontSize="sm" mt={1}>
-                  Please wait while we fetch project details
-                </Text>
-              </Box>
-            </Stack>
+            <HStack spacing={4} align="center">
+              <LoadingMiniSquare />
+              <Text fontSize="md" color="gray.500">
+                Loading project details...
+              </Text>
+            </HStack>
           )}
         </VStack>
       </Box>
@@ -1545,7 +1288,7 @@ const AppsInfoDetail = ({ DataProject }: AppsInfoDetailProps) => {
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
 
   useEffect(() => {
-    if (DataAuth && DataAuth.team && DataProject && DataApps == null) {
+    if (DataAuth && DataProject && DataApps == null) {
       setIsLoadingProcess(true);
       const GetDataList = async () => {
         const requestData = await GetDetailAppsByProjectId(
