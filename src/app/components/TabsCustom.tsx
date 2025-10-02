@@ -66,7 +66,12 @@ export const TabButtonCustomStyle = ({ children }: { children: ReactNode }) => {
     <Tab
       px={8}
       py={4}
-      bgColor={"transparent"}
+      // bgColor={"secondary.100"}
+      bgGradient={
+        colorMode == "light"
+          ? "linear(to-br, whiteAlpha.900, whiteAlpha.900)"
+          : "linear(to-br, blackAlpha.500, blackAlpha.500)"
+      }
       rounded={radiusStyle}
       color={colorMode == "light" ? "gray.800" : "white"}
       justifyContent={"center"}
@@ -75,11 +80,17 @@ export const TabButtonCustomStyle = ({ children }: { children: ReactNode }) => {
       alignItems={"center"}
       cursor={"pointer"}
       _hover={{
-        bg: colorMode == "light" ? "gray.100" : "gray.800",
+        // bg: colorMode == "light" ? "gray.100" : "gray.800",
+        // bg: "secondary.200",
+        bgGradient:
+          colorMode == "light"
+            ? "linear(to-br, gray.300, gray.300)"
+            : "linear(to-br, gray.800, gray.800)",
         color: colorMode == "light" ? "gray.800" : "white",
       }}
       _selected={{
-        bg: "secondary.500",
+        // bg: "secondary.500",
+        bgGradient: "linear(to-br, secondary.500, secondary.800)",
         color: "white",
         boxShadow: "md",
       }}

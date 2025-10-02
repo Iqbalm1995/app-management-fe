@@ -607,19 +607,24 @@ function ProjectManagerDetailView() {
               </HStack>
 
               {/* Team Avatars */}
-              {DataProject.userAssignment && DataProject.userAssignment.length > 0 && (
-                <AvatarGroup size="sm" max={3} spacing="-0.5rem">
-                  {DataProject.userAssignment.slice(0, 4).map((assignment, index) => (
-                    <Avatar
-                      key={index}
-                      name={assignment.userData?.nama || "User"}
-                      src={assignment.userData?.profilePict || undefined}
-                      border="2px solid"
-                      borderColor={colorMode === "light" ? "white" : "gray.800"}
-                    />
-                  ))}
-                </AvatarGroup>
-              )}
+              {DataProject.userAssignment &&
+                DataProject.userAssignment.length > 0 && (
+                  <AvatarGroup size="sm" max={3} spacing="-0.5rem">
+                    {DataProject.userAssignment
+                      .slice(0, 4)
+                      .map((assignment, index) => (
+                        <Avatar
+                          key={index}
+                          name={assignment.userData?.nama || "User"}
+                          src={assignment.userData?.profilePict || undefined}
+                          border="2px solid"
+                          borderColor={
+                            colorMode === "light" ? "white" : "gray.800"
+                          }
+                        />
+                      ))}
+                  </AvatarGroup>
+                )}
             </HStack>
           ) : (
             <HStack spacing={4} align="center">
@@ -633,603 +638,633 @@ function ProjectManagerDetailView() {
       </Box>
 
       {/* // {/* Main Content Container - Fixed Responsive Layout} */}
-      <Box px={{ base: 2, md: 4 }} w="full" maxW="100vw" overflow="hidden">
-        <Stack
-          direction={{ base: "column", lg: "row" }}
-          spacing={{ base: 4, md: 6 }}
-          align="stretch"
+      <Box w="full" overflow="hidden">
+        <Grid
+          templateColumns="repeat(12, 1fr)"
+          // gap={{ base: 4, lg: 6 }}
           w="full"
+          gap={5}
+          px={{ base: 2, md: 4 }}
         >
-          {/* // {/* Main Content Area} */}
-          <Box flex="1" minW="0" w={{ base: "full", lg: "auto" }}>
-            <Card
-              shadow="xl"
-              rounded={radiusStyle}
-              border="1px"
-              borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-              bg={colorMode === "light" ? "white" : "gray.800"}
-              overflow="hidden"
-              _hover={{
-                shadow: "2xl",
-                transform: "translateY(-2px)",
-              }}
-              transition="all 0.3s ease"
-            >
-              <CardBody p={0}>
-                <Tabs variant="unstyled" colorScheme="secondary" size={"lg"}>
-                  <TabList gap={2} p={4} overflowX={"auto"}>
-                    <TabButtonCustomStyle>
-                      <HStack>
-                        <FiTarget size={16} />
-                        <Text>Overview</Text>
-                      </HStack>
-                    </TabButtonCustomStyle>
-                    <TabButtonCustomStyle>
-                      <HStack>
-                        <FiInfo size={16} />
-                        <Text>Details</Text>
-                      </HStack>
-                    </TabButtonCustomStyle>
-                    <TabButtonCustomStyle>
-                      <HStack>
-                        <FiCpu size={16} />
-                        <Text>Features</Text>
-                      </HStack>
-                    </TabButtonCustomStyle>
-                    <TabButtonCustomStyle>
-                      <HStack>
-                        <FiBriefcase size={16} />
-                        <Text>Documentations</Text>
-                      </HStack>
-                    </TabButtonCustomStyle>
-                    <TabButtonCustomStyle>
-                      <HStack>
-                        <FiUsers size={16} />
-                        <Text>Team</Text>
-                      </HStack>
-                    </TabButtonCustomStyle>
-                    <TabButtonCustomStyle>
-                      <HStack>
-                        <FiBarChart size={16} />
-                        <Text>Analytics</Text>
-                      </HStack>
-                    </TabButtonCustomStyle>
+          <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 9 }} w={"full"}>
+            {/* // {/* Main Content Area} */}
+            <Tabs variant="unstyled" colorScheme="secondary" size={"lg"}>
+              {/* Floating Tabs Container */}
+              <Box
+                // bg={colorMode === "light" ? "white" : "gray.800"}
+                // shadow="lg"
+                // rounded={radiusStyle}
+                // border="1px"
+                // borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                mb={4}
+                position="relative"
+                // zIndex={10}
+              >
+                <TabList
+                  gap={2}
+                  // p={4}
+                  overflowX={"auto"}
+                  justifyContent="start"
+                >
+                  <TabButtonCustomStyle>
+                    <HStack>
+                      <FiTarget size={16} />
+                      <Text>Overview</Text>
+                    </HStack>
+                  </TabButtonCustomStyle>
+                  <TabButtonCustomStyle>
+                    <HStack>
+                      <FiInfo size={16} />
+                      <Text>Details</Text>
+                    </HStack>
+                  </TabButtonCustomStyle>
+                  <TabButtonCustomStyle>
+                    <HStack>
+                      <FiCpu size={16} />
+                      <Text>Features</Text>
+                    </HStack>
+                  </TabButtonCustomStyle>
+                  <TabButtonCustomStyle>
+                    <HStack>
+                      <FiBriefcase size={16} />
+                      <Text>Documentations</Text>
+                    </HStack>
+                  </TabButtonCustomStyle>
+                  <TabButtonCustomStyle>
+                    <HStack>
+                      <FiUsers size={16} />
+                      <Text>Team</Text>
+                    </HStack>
+                  </TabButtonCustomStyle>
+                  <TabButtonCustomStyle>
+                    <HStack>
+                      <FiBarChart size={16} />
+                      <Text>Analytics</Text>
+                    </HStack>
+                  </TabButtonCustomStyle>
+                  <TabButtonCustomStyle>
+                    <HStack>
+                      <FiCalendar size={16} />
+                      <Text>Timeline</Text>
+                    </HStack>
+                  </TabButtonCustomStyle>
+                </TabList>
+              </Box>
 
-                    <TabButtonCustomStyle>
-                      <HStack>
-                        <FiCalendar size={16} />
-                        <Text>Timeline</Text>
-                      </HStack>
-                    </TabButtonCustomStyle>
-                  </TabList>
-
+              {/* Content Card */}
+              <Card
+                shadow="xl"
+                rounded={radiusStyle}
+                border="1px"
+                borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                bg={colorMode === "light" ? "white" : "gray.800"}
+                overflow="hidden"
+                _hover={{
+                  shadow: "2xl",
+                  transform: "translateY(-2px)",
+                }}
+                transition="all 0.3s ease"
+              >
+                <CardBody p={6}>
                   <TabPanels
                     bg={colorMode === "light" ? "white" : "gray.800"}
-                    roundedBottom={radiusStyle}
                     minH="600px"
                   >
-                    {/* <OverviewTab DataProject={DataProject} />
-                    <DetailsTab DataProject={DataProject} />
-                    <FeaturesTab DataProject={DataProject} />
-                    <DocumentationTab DataProject={DataProject} />
-                    <TeamTab DataProject={DataProject} />
-                    <AnalyticsTab DataProject={DataProject} />
-                    <TimelineTab DataProject={DataProject} /> */}
+                    <OverviewTab DataProject={DataProject} />
+                    {/* <DetailsTab DataProject={DataProject} />*/}
+                    {/* <FeaturesTab DataProject={DataProject} />*/}
+                    {/* <DocumentationTab DataProject={DataProject} />*/}
+                    {/* <TeamTab DataProject={DataProject} />*/}
+                    {/* <AnalyticsTab DataProject={DataProject} />*/}
+                    {/* <TimelineTab DataProject={DataProject} />*/}
                   </TabPanels>
-                </Tabs>
-              </CardBody>
-            </Card>
-          </Box>
+                </CardBody>
+              </Card>
+            </Tabs>
+          </GridItem>
+          {/* SIDE CONTENT */}
+          <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 3 }} w={"full"}>
+            {/* // {/* Sidebar - Responsive} */}
+            <Box w={"full"} flexShrink={0}>
+              <VStack spacing={{ base: 4, md: 6 }}>
+                {/* // {/* Application Information Card - Launcher Style} */}
+                {DataProject?.appsProject && (
+                  <Card
+                    w="full"
+                    shadow="lg"
+                    rounded={radiusStyle}
+                    border="1px"
+                    borderColor="gray.200"
+                    bgGradient="linear(to-b, secondary.500, secondary.800)"
+                    color="white"
+                    _hover={{
+                      shadow: "xl",
+                      transform: "translateY(-2px)",
+                    }}
+                    transition="all 0.3s ease"
+                    overflow="hidden"
+                    position="relative"
+                  >
+                    {/* // {/* BJB Logo Background Overlay - Responsive} */}
+                    <Box
+                      position="absolute"
+                      top={{ base: "-5px", md: "-10px" }}
+                      right={{ base: "-20px", md: "-40px" }}
+                      zIndex={0}
+                      opacity={0.08}
+                      transform="rotate(15deg)"
+                    >
+                      <Box
+                        as="img"
+                        src="/img/logo-bjb-black-wing.svg"
+                        alt="BJB Logo Background"
+                        w={{ base: "180px", md: "240px" }}
+                        h="auto"
+                        filter="brightness(0) invert(1)"
+                      />
+                    </Box>
 
-          {/* // {/* Sidebar - Responsive} */}
-          <Box w={{ base: "full", lg: "300px" }} flexShrink={0}>
-            <VStack spacing={{ base: 4, md: 6 }}>
-              {/* // {/* Application Information Card - Launcher Style} */}
-              {DataProject?.appsProject && (
+                    {/* // {/* Floating Decorative Elements} */}
+                    <Box
+                      position="absolute"
+                      top="15%"
+                      right="10%"
+                      w={6}
+                      h={6}
+                      bg="whiteAlpha.100"
+                      rounded="full"
+                      blur="sm"
+                      animation="pulse 3s ease-in-out infinite"
+                    />
+                    <Box
+                      position="absolute"
+                      bottom="20%"
+                      left="8%"
+                      w={4}
+                      h={4}
+                      bg="whiteAlpha.120"
+                      transform="rotate(45deg)"
+                      rounded="sm"
+                      animation="spin 10s linear infinite"
+                    />
+
+                    <CardBody
+                      p={{ base: 6, md: 8 }}
+                      position="relative"
+                      zIndex={1}
+                    >
+                      <VStack spacing={{ base: 4, md: 6 }} align="center">
+                        {/* // {/* App Icon - Launcher Style} */}
+                        <Box position="relative">
+                          {/* {/* Glowing Ring Effect} */}
+                          <Box
+                            position="absolute"
+                            top="-6px"
+                            left="-6px"
+                            right="-6px"
+                            bottom="-6px"
+                            bgGradient="linear(45deg, whiteAlpha.300, whiteAlpha.100)"
+                            rounded="3xl"
+                            blur="md"
+                            opacity={0.8}
+                            animation="pulse 2s ease-in-out infinite"
+                          />
+
+                          {/* // {/* Main App Icon} */}
+                          <Box
+                            w={{ base: 16, md: 20 }}
+                            h={{ base: 16, md: 20 }}
+                            bgGradient="linear(135deg, whiteAlpha.200, whiteAlpha.400)"
+                            rounded="3xl"
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
+                            fontSize={{ base: "2xl", md: "3xl" }}
+                            fontWeight="bold"
+                            shadow="2xl"
+                            border="3px solid"
+                            borderColor="whiteAlpha.300"
+                            backdropFilter="blur(10px)"
+                            position="relative"
+                            _hover={{
+                              transform: "scale(1.05)",
+                              shadow: "3xl",
+                            }}
+                            transition="all 0.3s ease"
+                          >
+                            {DataProject.appsProject.iconApps ? (
+                              <img
+                                src={DataProject.appsProject.iconApps}
+                                alt="App Icon"
+                                style={{
+                                  width: "60%",
+                                  height: "60%",
+                                  objectFit: "contain",
+                                }}
+                              />
+                            ) : (
+                              <Text color="white" fontSize="2xl">
+                                {DataProject.appsProject.appName?.charAt(0) ||
+                                  "A"}
+                              </Text>
+                            )}
+                          </Box>
+
+                          {/* // {/* Status Indicator Dot} */}
+                          <Box
+                            position="absolute"
+                            top={-1}
+                            right={-1}
+                            w={6}
+                            h={6}
+                            bg={
+                              DataProject.appsProject.appsStatus === "ACTIVE"
+                                ? "green.400"
+                                : DataProject.appsProject.appsStatus ===
+                                  "DEVELOPMENT"
+                                ? "blue.400"
+                                : DataProject.appsProject.appsStatus ===
+                                  "TESTING"
+                                ? "orange.400"
+                                : "red.400"
+                            }
+                            rounded="full"
+                            border="2px solid white"
+                            shadow="md"
+                            animation="pulse 2s ease-in-out infinite"
+                          />
+                        </Box>
+
+                        {/* // {/* App Name - Launcher Style} */}
+                        <VStack spacing={2} align="center">
+                          <Text
+                            fontSize="xl"
+                            fontWeight="bold"
+                            color="white"
+                            textAlign="center"
+                            lineHeight="shorter"
+                            noOfLines={2}
+                            maxW="200px"
+                          >
+                            {DataProject.appsProject.appName}
+                          </Text>
+
+                          {/* // {/* App Short Name Badge} */}
+                          <Badge
+                            bg="whiteAlpha.200"
+                            color="white"
+                            px={3}
+                            py={1}
+                            rounded="full"
+                            fontSize="xs"
+                            fontWeight="bold"
+                            border="1px solid"
+                            borderColor="whiteAlpha.300"
+                          >
+                            {DataProject.appsProject.appShortName}
+                          </Badge>
+                        </VStack>
+
+                        {/* // {/* App Details Grid - Responsive} */}
+                        <SimpleGrid
+                          columns={{ base: 1, sm: 2 }}
+                          spacing={4}
+                          w="full"
+                        >
+                          {/* // {/* Status} */}
+                          <VStack spacing={1} align="center">
+                            <Text
+                              fontSize="xs"
+                              color="whiteAlpha.700"
+                              fontWeight="medium"
+                            >
+                              STATUS
+                            </Text>
+                            <Badge
+                              colorScheme={
+                                DataProject.appsProject.appsStatus === "ACTIVE"
+                                  ? "green"
+                                  : DataProject.appsProject.appsStatus ===
+                                    "DEVELOPMENT"
+                                  ? "blue"
+                                  : DataProject.appsProject.appsStatus ===
+                                    "TESTING"
+                                  ? "orange"
+                                  : "red"
+                              }
+                              size="sm"
+                              px={2}
+                              py={1}
+                              rounded="full"
+                              fontSize="xs"
+                              fontWeight="bold"
+                            >
+                              {DataProject.appsProject.appsStatus}
+                            </Badge>
+                          </VStack>
+
+                          {/* // {/* App Code} */}
+                          <VStack spacing={1} align="center">
+                            <Text
+                              fontSize="xs"
+                              color="whiteAlpha.700"
+                              fontWeight="medium"
+                            >
+                              CODE
+                            </Text>
+                            <Text
+                              fontSize="sm"
+                              fontWeight="bold"
+                              color="white"
+                              fontFamily="mono"
+                            >
+                              {DataProject.appsProject.appCode}
+                            </Text>
+                          </VStack>
+                        </SimpleGrid>
+
+                        {/* // {/* Project Connection Info} */}
+                        <Box
+                          bg="whiteAlpha.100"
+                          backdropFilter="blur(10px)"
+                          p={3}
+                          rounded="lg"
+                          border="1px solid"
+                          borderColor="whiteAlpha.200"
+                          w="full"
+                        >
+                          <VStack spacing={2}>
+                            <HStack justify="space-between" w="full">
+                              <Text
+                                fontSize="xs"
+                                color="whiteAlpha.700"
+                                fontWeight="medium"
+                              >
+                                PROJECT
+                              </Text>
+                              <Text
+                                fontSize="xs"
+                                fontWeight="bold"
+                                color="white"
+                              >
+                                {DataProject.projectName}
+                              </Text>
+                            </HStack>
+                            <HStack justify="space-between" w="full">
+                              <Text
+                                fontSize="xs"
+                                color="whiteAlpha.700"
+                                fontWeight="medium"
+                              >
+                                CATEGORY
+                              </Text>
+                              <Badge
+                                bg="whiteAlpha.200"
+                                color="white"
+                                size="xs"
+                                px={2}
+                                py={1}
+                                rounded="full"
+                                fontSize="xs"
+                              >
+                                {DataProject.projectCategory}
+                              </Badge>
+                            </HStack>
+                          </VStack>
+                        </Box>
+
+                        {/* // {/* Quick Actions - Responsive} */}
+                        <Stack
+                          direction={{ base: "column", sm: "row" }}
+                          spacing={3}
+                          w="full"
+                        >
+                          <Button
+                            size="sm"
+                            bg="whiteAlpha.200"
+                            color="white"
+                            _hover={{ bg: "whiteAlpha.300" }}
+                            rounded="full"
+                            leftIcon={<FiExternalLink />}
+                            flex={1}
+                          >
+                            Launch
+                          </Button>
+                          <Button
+                            size="sm"
+                            bg="whiteAlpha.200"
+                            color="white"
+                            _hover={{ bg: "whiteAlpha.300" }}
+                            rounded="full"
+                            leftIcon={<FiSettings />}
+                            flex={1}
+                          >
+                            Settings
+                          </Button>
+                        </Stack>
+                      </VStack>
+                    </CardBody>
+                  </Card>
+                )}
+
+                {/* // {/* Project Info Card} */}
                 <Card
                   w="full"
                   shadow="lg"
                   rounded={radiusStyle}
                   border="1px"
-                  borderColor="gray.200"
-                  bgGradient="linear(to-b, secondary.500, secondary.800)"
-                  color="white"
+                  bgColor={colorMode === "light" ? "white" : "gray.800"}
+                  borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
                   _hover={{
                     shadow: "xl",
                     transform: "translateY(-2px)",
                   }}
                   transition="all 0.3s ease"
-                  overflow="hidden"
-                  position="relative"
                 >
-                  {/* // {/* BJB Logo Background Overlay - Responsive} */}
-                  <Box
-                    position="absolute"
-                    top={{ base: "-5px", md: "-10px" }}
-                    right={{ base: "-20px", md: "-40px" }}
-                    zIndex={0}
-                    opacity={0.08}
-                    transform="rotate(15deg)"
+                  <CardHeader
+                    bg={colorMode === "light" ? "blue.50" : "gray.800"}
+                    roundedTop={radiusStyle}
+                    borderBottom="1px"
+                    borderColor={
+                      colorMode === "light" ? "gray.200" : "gray.600"
+                    }
                   >
-                    <Box
-                      as="img"
-                      src="/img/logo-bjb-black-wing.svg"
-                      alt="BJB Logo Background"
-                      w={{ base: "180px", md: "240px" }}
-                      h="auto"
-                      filter="brightness(0) invert(1)"
-                    />
-                  </Box>
-
-                  {/* // {/* Floating Decorative Elements} */}
-                  <Box
-                    position="absolute"
-                    top="15%"
-                    right="10%"
-                    w={6}
-                    h={6}
-                    bg="whiteAlpha.100"
-                    rounded="full"
-                    blur="sm"
-                    animation="pulse 3s ease-in-out infinite"
-                  />
-                  <Box
-                    position="absolute"
-                    bottom="20%"
-                    left="8%"
-                    w={4}
-                    h={4}
-                    bg="whiteAlpha.120"
-                    transform="rotate(45deg)"
-                    rounded="sm"
-                    animation="spin 10s linear infinite"
-                  />
-
-                  <CardBody
-                    p={{ base: 6, md: 8 }}
-                    position="relative"
-                    zIndex={1}
-                  >
-                    <VStack spacing={{ base: 4, md: 6 }} align="center">
-                      {/* // {/* App Icon - Launcher Style} */}
-                      <Box position="relative">
-                        {/* {/* Glowing Ring Effect} */}
-                        <Box
-                          position="absolute"
-                          top="-6px"
-                          left="-6px"
-                          right="-6px"
-                          bottom="-6px"
-                          bgGradient="linear(45deg, whiteAlpha.300, whiteAlpha.100)"
-                          rounded="3xl"
-                          blur="md"
-                          opacity={0.8}
-                          animation="pulse 2s ease-in-out infinite"
-                        />
-
-                        {/* // {/* Main App Icon} */}
-                        <Box
-                          w={{ base: 16, md: 20 }}
-                          h={{ base: 16, md: 20 }}
-                          bgGradient="linear(135deg, whiteAlpha.200, whiteAlpha.400)"
-                          rounded="3xl"
-                          display="flex"
-                          alignItems="center"
-                          justifyContent="center"
-                          fontSize={{ base: "2xl", md: "3xl" }}
-                          fontWeight="bold"
-                          shadow="2xl"
-                          border="3px solid"
-                          borderColor="whiteAlpha.300"
-                          backdropFilter="blur(10px)"
-                          position="relative"
-                          _hover={{
-                            transform: "scale(1.05)",
-                            shadow: "3xl",
-                          }}
-                          transition="all 0.3s ease"
-                        >
-                          {DataProject.appsProject.iconApps ? (
-                            <img
-                              src={DataProject.appsProject.iconApps}
-                              alt="App Icon"
-                              style={{
-                                width: "60%",
-                                height: "60%",
-                                objectFit: "contain",
-                              }}
-                            />
-                          ) : (
-                            <Text color="white" fontSize="2xl">
-                              {DataProject.appsProject.appName?.charAt(0) ||
-                                "A"}
-                            </Text>
-                          )}
-                        </Box>
-
-                        {/* // {/* Status Indicator Dot} */}
-                        <Box
-                          position="absolute"
-                          top={-1}
-                          right={-1}
-                          w={6}
-                          h={6}
-                          bg={
-                            DataProject.appsProject.appsStatus === "ACTIVE"
-                              ? "green.400"
-                              : DataProject.appsProject.appsStatus ===
-                                "DEVELOPMENT"
-                              ? "blue.400"
-                              : DataProject.appsProject.appsStatus === "TESTING"
-                              ? "orange.400"
-                              : "red.400"
-                          }
-                          rounded="full"
-                          border="2px solid white"
-                          shadow="md"
-                          animation="pulse 2s ease-in-out infinite"
-                        />
-                      </Box>
-
-                      {/* // {/* App Name - Launcher Style} */}
-                      <VStack spacing={2} align="center">
-                        <Text
-                          fontSize="xl"
-                          fontWeight="bold"
-                          color="white"
-                          textAlign="center"
-                          lineHeight="shorter"
-                          noOfLines={2}
-                          maxW="200px"
-                        >
-                          {DataProject.appsProject.appName}
-                        </Text>
-
-                        {/* // {/* App Short Name Badge} */}
-                        <Badge
-                          bg="whiteAlpha.200"
-                          color="white"
-                          px={3}
-                          py={1}
-                          rounded="full"
-                          fontSize="xs"
-                          fontWeight="bold"
-                          border="1px solid"
-                          borderColor="whiteAlpha.300"
-                        >
-                          {DataProject.appsProject.appShortName}
-                        </Badge>
-                      </VStack>
-
-                      {/* // {/* App Details Grid - Responsive} */}
-                      <SimpleGrid
-                        columns={{ base: 1, sm: 2 }}
-                        spacing={4}
-                        w="full"
-                      >
-                        {/* // {/* Status} */}
-                        <VStack spacing={1} align="center">
-                          <Text
-                            fontSize="xs"
-                            color="whiteAlpha.700"
-                            fontWeight="medium"
-                          >
-                            STATUS
-                          </Text>
-                          <Badge
-                            colorScheme={
-                              DataProject.appsProject.appsStatus === "ACTIVE"
-                                ? "green"
-                                : DataProject.appsProject.appsStatus ===
-                                  "DEVELOPMENT"
-                                ? "blue"
-                                : DataProject.appsProject.appsStatus ===
-                                  "TESTING"
-                                ? "orange"
-                                : "red"
-                            }
-                            size="sm"
-                            px={2}
-                            py={1}
-                            rounded="full"
-                            fontSize="xs"
-                            fontWeight="bold"
-                          >
-                            {DataProject.appsProject.appsStatus}
-                          </Badge>
-                        </VStack>
-
-                        {/* // {/* App Code} */}
-                        <VStack spacing={1} align="center">
-                          <Text
-                            fontSize="xs"
-                            color="whiteAlpha.700"
-                            fontWeight="medium"
-                          >
-                            CODE
-                          </Text>
-                          <Text
-                            fontSize="sm"
-                            fontWeight="bold"
-                            color="white"
-                            fontFamily="mono"
-                          >
-                            {DataProject.appsProject.appCode}
-                          </Text>
-                        </VStack>
-                      </SimpleGrid>
-
-                      {/* // {/* Project Connection Info} */}
+                    <HStack spacing={3}>
                       <Box
-                        bg="whiteAlpha.100"
-                        backdropFilter="blur(10px)"
-                        p={3}
+                        w={8}
+                        h={8}
+                        bgGradient="linear(135deg, blue.400, blue.600)"
                         rounded="lg"
-                        border="1px solid"
-                        borderColor="whiteAlpha.200"
-                        w="full"
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
                       >
-                        <VStack spacing={2}>
-                          <HStack justify="space-between" w="full">
-                            <Text
-                              fontSize="xs"
-                              color="whiteAlpha.700"
-                              fontWeight="medium"
-                            >
-                              PROJECT
+                        <FiInfo size={16} color="white" />
+                      </Box>
+                      <Heading size="sm" color="blue.700">
+                        Project Info
+                      </Heading>
+                    </HStack>
+                  </CardHeader>
+                  <CardBody p={6}>
+                    <VStack spacing={3} align="stretch">
+                      {DataProject ? (
+                        <>
+                          <HStack justify="space-between">
+                            <Text fontSize="sm" color="gray.600">
+                              Code:
                             </Text>
-                            <Text fontSize="xs" fontWeight="bold" color="white">
-                              {DataProject.projectName}
+                            <Text fontSize="sm" fontWeight="medium">
+                              {DataProject.projectCode}
                             </Text>
                           </HStack>
-                          <HStack justify="space-between" w="full">
-                            <Text
-                              fontSize="xs"
-                              color="whiteAlpha.700"
-                              fontWeight="medium"
-                            >
-                              CATEGORY
+                          <HStack justify="space-between">
+                            <Text fontSize="sm" color="gray.600">
+                              Type:
+                            </Text>
+                            <Text fontSize="sm" fontWeight="medium">
+                              {DataProject.projectType}
+                            </Text>
+                          </HStack>
+                          <HStack justify="space-between">
+                            <Text fontSize="sm" color="gray.600">
+                              Status:
                             </Text>
                             <Badge
-                              bg="whiteAlpha.200"
-                              color="white"
-                              size="xs"
-                              px={2}
-                              py={1}
-                              rounded="full"
-                              fontSize="xs"
+                              size="sm"
+                              colorScheme={
+                                DataProject.projectStatus === "ACTIVE"
+                                  ? "green"
+                                  : DataProject.projectStatus === "ONHOLD"
+                                  ? "orange"
+                                  : DataProject.projectStatus === "COMPLETED"
+                                  ? "blue"
+                                  : "gray"
+                              }
                             >
-                              {DataProject.projectCategory}
+                              {DataProject.projectStatus}
                             </Badge>
                           </HStack>
-                        </VStack>
-                      </Box>
-
-                      {/* // {/* Quick Actions - Responsive} */}
-                      <Stack
-                        direction={{ base: "column", sm: "row" }}
-                        spacing={3}
-                        w="full"
-                      >
-                        <Button
-                          size="sm"
-                          bg="whiteAlpha.200"
-                          color="white"
-                          _hover={{ bg: "whiteAlpha.300" }}
-                          rounded="full"
-                          leftIcon={<FiExternalLink />}
-                          flex={1}
-                        >
-                          Launch
-                        </Button>
-                        <Button
-                          size="sm"
-                          bg="whiteAlpha.200"
-                          color="white"
-                          _hover={{ bg: "whiteAlpha.300" }}
-                          rounded="full"
-                          leftIcon={<FiSettings />}
-                          flex={1}
-                        >
-                          Settings
-                        </Button>
-                      </Stack>
+                          <HStack justify="space-between">
+                            <Text fontSize="sm" color="gray.600">
+                              Progress:
+                            </Text>
+                            <Text fontSize="sm" fontWeight="medium">
+                              {DataProject.projectStatusPercentage || 0}%
+                            </Text>
+                          </HStack>
+                          <Box>
+                            <Progress
+                              value={DataProject.projectStatusPercentage || 0}
+                              colorScheme="blue"
+                              size="sm"
+                              rounded="md"
+                            />
+                          </Box>
+                        </>
+                      ) : (
+                        <LoadingMiniSignature />
+                      )}
                     </VStack>
                   </CardBody>
                 </Card>
-              )}
 
-              {/* // {/* Project Info Card} */}
-              <Card
-                w="full"
-                shadow="lg"
-                rounded={radiusStyle}
-                border="1px"
-                borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-                _hover={{
-                  shadow: "xl",
-                  transform: "translateY(-2px)",
-                }}
-                transition="all 0.3s ease"
-              >
-                <CardHeader
-                  bg={colorMode === "light" ? "blue.50" : "gray.700"}
-                  roundedTop={radiusStyle}
-                  borderBottom="1px"
-                  borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                {/* // {/* Quick Actions Card} */}
+                <Card
+                  w="full"
+                  shadow="lg"
+                  rounded={radiusStyle}
+                  border="1px"
+                  bgColor={colorMode === "light" ? "white" : "gray.800"}
+                  borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                  _hover={{
+                    shadow: "xl",
+                    transform: "translateY(-2px)",
+                  }}
+                  transition="all 0.3s ease"
                 >
-                  <HStack spacing={3}>
-                    <Box
-                      w={8}
-                      h={8}
-                      bgGradient="linear(135deg, blue.400, blue.600)"
-                      rounded="lg"
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
-                    >
-                      <FiInfo size={16} color="white" />
-                    </Box>
-                    <Heading size="sm" color="blue.700">
-                      Project Info
-                    </Heading>
-                  </HStack>
-                </CardHeader>
-                <CardBody p={6}>
-                  <VStack spacing={3} align="stretch">
-                    {DataProject ? (
-                      <>
-                        <HStack justify="space-between">
-                          <Text fontSize="sm" color="gray.600">
-                            Code:
-                          </Text>
-                          <Text fontSize="sm" fontWeight="medium">
-                            {DataProject.projectCode}
-                          </Text>
-                        </HStack>
-                        <HStack justify="space-between">
-                          <Text fontSize="sm" color="gray.600">
-                            Type:
-                          </Text>
-                          <Text fontSize="sm" fontWeight="medium">
-                            {DataProject.projectType}
-                          </Text>
-                        </HStack>
-                        <HStack justify="space-between">
-                          <Text fontSize="sm" color="gray.600">
-                            Status:
-                          </Text>
-                          <Badge
-                            size="sm"
-                            colorScheme={
-                              DataProject.projectStatus === "ACTIVE"
-                                ? "green"
-                                : DataProject.projectStatus === "ONHOLD"
-                                ? "orange"
-                                : DataProject.projectStatus === "COMPLETED"
-                                ? "blue"
-                                : "gray"
-                            }
-                          >
-                            {DataProject.projectStatus}
-                          </Badge>
-                        </HStack>
-                        <HStack justify="space-between">
-                          <Text fontSize="sm" color="gray.600">
-                            Progress:
-                          </Text>
-                          <Text fontSize="sm" fontWeight="medium">
-                            {DataProject.projectStatusPercentage || 0}%
-                          </Text>
-                        </HStack>
-                        <Box>
-                          <Progress
-                            value={DataProject.projectStatusPercentage || 0}
-                            colorScheme="blue"
-                            size="sm"
-                            rounded="md"
-                          />
-                        </Box>
-                      </>
-                    ) : (
-                      <LoadingMiniSignature />
-                    )}
-                  </VStack>
-                </CardBody>
-              </Card>
-
-              {/* // {/* Quick Actions Card} */}
-              <Card
-                w="full"
-                shadow="lg"
-                rounded={radiusStyle}
-                border="1px"
-                borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-                _hover={{
-                  shadow: "xl",
-                  transform: "translateY(-2px)",
-                }}
-                transition="all 0.3s ease"
-              >
-                <CardHeader
-                  bg={colorMode === "light" ? "green.50" : "gray.700"}
-                  roundedTop={radiusStyle}
-                  borderBottom="1px"
-                  borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
-                >
-                  <HStack spacing={3}>
-                    <Box
-                      w={8}
-                      h={8}
-                      bgGradient="linear(135deg, green.400, green.600)"
-                      rounded="lg"
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
-                    >
-                      <FiZap size={16} color="white" />
-                    </Box>
-                    <Heading size="sm" color="green.700">
-                      Quick Actions
-                    </Heading>
-                  </HStack>
-                </CardHeader>
-                <CardBody p={6}>
-                  <VStack spacing={3}>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      w="full"
-                      justifyContent="flex-start"
-                      leftIcon={<FiActivity />}
-                      rounded={radiusStyle}
-                      _hover={{
-                        bg: "blue.50",
-                        color: "blue.600",
-                        transform: "translateX(4px)",
-                      }}
-                      transition="all 0.2s"
-                    >
-                      View Activity
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      w="full"
-                      justifyContent="flex-start"
-                      leftIcon={<FiSettings />}
-                      rounded={radiusStyle}
-                      _hover={{
-                        bg: "orange.50",
-                        color: "orange.600",
-                        transform: "translateX(4px)",
-                      }}
-                      transition="all 0.2s"
-                    >
-                      Settings
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      w="full"
-                      justifyContent="flex-start"
-                      leftIcon={<FiBarChart />}
-                      rounded={radiusStyle}
-                      _hover={{
-                        bg: "purple.50",
-                        color: "purple.600",
-                        transform: "translateX(4px)",
-                      }}
-                      transition="all 0.2s"
-                    >
-                      Reports
-                    </Button>
-                  </VStack>
-                </CardBody>
-              </Card>
-            </VStack>
-          </Box>
-        </Stack>
+                  <CardHeader
+                    bg={colorMode === "light" ? "green.50" : "gray.800"}
+                    roundedTop={radiusStyle}
+                    borderBottom="1px"
+                    borderColor={
+                      colorMode === "light" ? "gray.200" : "gray.600"
+                    }
+                  >
+                    <HStack spacing={3}>
+                      <Box
+                        w={8}
+                        h={8}
+                        bgGradient="linear(135deg, green.400, green.600)"
+                        rounded="lg"
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                      >
+                        <FiZap size={16} color="white" />
+                      </Box>
+                      <Heading size="sm" color="green.700">
+                        Quick Actions
+                      </Heading>
+                    </HStack>
+                  </CardHeader>
+                  <CardBody p={6}>
+                    <VStack spacing={3}>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        w="full"
+                        justifyContent="flex-start"
+                        leftIcon={<FiActivity />}
+                        rounded={radiusStyle}
+                        _hover={{
+                          bg: "blue.50",
+                          color: "blue.600",
+                          transform: "translateX(4px)",
+                        }}
+                        transition="all 0.2s"
+                      >
+                        View Activity
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        w="full"
+                        justifyContent="flex-start"
+                        leftIcon={<FiSettings />}
+                        rounded={radiusStyle}
+                        _hover={{
+                          bg: "orange.50",
+                          color: "orange.600",
+                          transform: "translateX(4px)",
+                        }}
+                        transition="all 0.2s"
+                      >
+                        Settings
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        w="full"
+                        justifyContent="flex-start"
+                        leftIcon={<FiBarChart />}
+                        rounded={radiusStyle}
+                        _hover={{
+                          bg: "purple.50",
+                          color: "purple.600",
+                          transform: "translateX(4px)",
+                        }}
+                        transition="all 0.2s"
+                      >
+                        Reports
+                      </Button>
+                    </VStack>
+                  </CardBody>
+                </Card>
+              </VStack>
+            </Box>
+          </GridItem>
+        </Grid>
       </Box>
     </LayoutAdmin>
   );
