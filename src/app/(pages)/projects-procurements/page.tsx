@@ -1054,7 +1054,7 @@ const ProjectManagerPage = () => {
                                               w={12}
                                               h={12}
                                               bgGradient={
-                                                "linear(to-br, secondary.600, secondary.800, yellow.400)"
+                                                "linear(to-br, secondary.800, secondary.600)"
                                               }
                                               rounded="lg"
                                               display="flex"
@@ -1174,7 +1174,7 @@ const ProjectManagerPage = () => {
                                         {/* Action Button */}
                                         <GridItem>
                                           <Link
-                                            href={`project-procurement/manage?projectId=${project.id}`}
+                                            href={`projects-procurements/manage?projectId=${project.id}`}
                                           >
                                             <Button
                                               size="sm"
