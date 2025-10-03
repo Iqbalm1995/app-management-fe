@@ -27,7 +27,7 @@ import {
   radiusStyle,
 } from "@/app/constants/applicationConstants";
 import LoadingMiniSignature from "@/app/components/loadingMini";
-import { DynamicWorkflowBox } from "./WorkflowComponents";
+import { WorkflowLevel1Box } from "./WorkflowComponents";
 import { colorProgression } from "@/app/helper/MasterHelper";
 
 interface ProjectDocumentationSectionProps {
@@ -71,36 +71,11 @@ const ProjectDocumentationSection = ({
 
   // Overall Progression State
   const [OverallProgress, setOverallProgress] = useState<number>(0);
-  const [TotalLeafNodes, setTotalLeafNodes] = useState<number>(0);
-  const [CompletedLeafNodes, setCompletedLeafNodes] = useState<number>(0);
+  const [TotalLevel3, setTotalLevel3] = useState<number>(0);
+  const [CompletedLevel3, setCompletedLevel3] = useState<number>(0);
 
   const RefreshAction = () => {
     setRefreshData((prev) => prev + 1);
-  };
-
-  // Count all leaf nodes (nodes without children) recursively
-  const countLeafNodes = (workflows: ProjectWorkflowResponse[]): { total: number; completed: number } => {
-    let totalLeaf = 0;
-    let completedLeaf = 0;
-    
-    workflows.forEach((workflow) => {
-      const hasChildren = workflow.workflowChild && workflow.workflowChild.length > 0;
-      
-      if (!hasChildren) {
-        // This is a leaf node - count it
-        totalLeaf++;
-        if (workflow.workflowValues && workflow.workflowValues.length > 0) {
-          completedLeaf++;
-        }
-      } else {
-        // Recursively count children
-        const childCounts = countLeafNodes(workflow.workflowChild!);
-        totalLeaf += childCounts.total;
-        completedLeaf += childCounts.completed;
-      }
-    });
-    
-    return { total: totalLeaf, completed: completedLeaf };
   };
 
   useEffect(() => {
@@ -133,15 +108,28 @@ const ProjectDocumentationSection = ({
           const workflowData: ProjectWorkflowResponse[] =
             requestData.data as ProjectWorkflowResponse[];
 
-          // Calculate overall progression using dynamic leaf nodes
-          const leafCounts = countLeafNodes(workflowData);
+          // Calculate overall progression
+          let totalLevel3Count = 0;
+          let completedLevel3Count = 0;
+
+          workflowData.forEach((level1) => {
+            level1.workflowChild?.forEach((level2) => {
+              level2.workflowChild?.forEach((level3) => {
+                totalLevel3Count++;
+                if (level3.workflowValues && level3.workflowValues.length > 0) {
+                  completedLevel3Count++;
+                }
+              });
+            });
+          });
+
           const progressPercentage =
-            leafCounts.total > 0
-              ? Math.round((leafCounts.completed / leafCounts.total) * 100)
+            totalLevel3Count > 0
+              ? Math.round((completedLevel3Count / totalLevel3Count) * 100)
               : 0;
 
-          setTotalLeafNodes(leafCounts.total);
-          setCompletedLeafNodes(leafCounts.completed);
+          setTotalLevel3(totalLevel3Count);
+          setCompletedLevel3(completedLevel3Count);
           setOverallProgress(progressPercentage);
           setDataWorkflow(workflowData);
           setIsLoadingProcess(false);
@@ -197,9 +185,9 @@ const ProjectDocumentationSection = ({
               Overall Progression - {OverallProgress}%
             </Text>
             <Text fontSize="sm" fontWeight={500}>
-              {CompletedLeafNodes}
+              {CompletedLevel3}
               <Text as="span" fontWeight={600} ml={1}>
-                / {TotalLeafNodes} Documents Completed
+                / {TotalLevel3} Documents Completed
               </Text>
             </Text>
           </HStack>
@@ -224,11 +212,10 @@ const ProjectDocumentationSection = ({
       ) : DataWorkflow && DataWorkflow.length > 0 ? (
         <VStack spacing={4} align="stretch">
           {DataWorkflow.map((workflow: ProjectWorkflowResponse) => (
-            <DynamicWorkflowBox
+            <WorkflowLevel1Box
               key={workflow.id}
               workflow={workflow}
               onRefresh={RefreshAction}
-              level={1}
             />
           ))}
         </VStack>

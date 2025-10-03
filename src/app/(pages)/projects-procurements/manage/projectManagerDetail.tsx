@@ -741,9 +741,9 @@ function ProjectManagerDetailView() {
                     <DetailsTab DataProject={DataProject} />
                     <FeaturesTab DataProject={DataProject} />
                     <DocumentationTab DataProject={DataProject} />
-                    {/* <TeamTab DataProject={DataProject} />*/}
-                    {/* <AnalyticsTab DataProject={DataProject} />*/}
-                    {/* <TimelineTab DataProject={DataProject} />*/}
+                    <TeamTab DataProject={DataProject} />
+                    <AnalyticsTab DataProject={DataProject} />
+                    <TimelineTab DataProject={DataProject} />
                   </TabPanels>
                 </CardBody>
               </Card>
