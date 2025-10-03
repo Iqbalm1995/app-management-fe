@@ -470,8 +470,8 @@ function ProjectManagerDetailView() {
         px={{ base: 4, md: 6 }}
         py={{ base: 3, md: 4 }}
         mt={{ base: 2, md: 4 }}
-        mb={{ base: 4, md: 6 }}
-        mx={{ base: 2, md: 4 }}
+        mb={2}
+        // mx={{ base: 2, md: 4 }}
         rounded={radiusStyle}
         shadow="md"
         border="1px"
@@ -644,7 +644,7 @@ function ProjectManagerDetailView() {
           // gap={{ base: 4, lg: 6 }}
           w="full"
           gap={5}
-          px={{ base: 2, md: 4 }}
+          // px={{ base: 2, md: 4 }}
         >
           <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 9 }} w={"full"}>
             {/* // {/* Main Content Area} */}
@@ -662,9 +662,16 @@ function ProjectManagerDetailView() {
               >
                 <TabList
                   gap={2}
-                  // p={4}
+                  p={2}
                   overflowX={"auto"}
                   justifyContent="start"
+                  sx={{
+                    scrollbarWidth: "none", // Firefox
+                    msOverflowStyle: "none", // IE 10+
+                    "&::-webkit-scrollbar": {
+                      display: "none", // Chrome, Safari
+                    },
+                  }}
                 >
                   <TabButtonCustomStyle>
                     <HStack>
@@ -725,15 +732,15 @@ function ProjectManagerDetailView() {
                 }}
                 transition="all 0.3s ease"
               >
-                <CardBody p={6}>
+                <CardBody>
                   <TabPanels
                     bg={colorMode === "light" ? "white" : "gray.800"}
                     minH="600px"
                   >
                     <OverviewTab DataProject={DataProject} />
-                    {/* <DetailsTab DataProject={DataProject} />*/}
-                    {/* <FeaturesTab DataProject={DataProject} />*/}
-                    {/* <DocumentationTab DataProject={DataProject} />*/}
+                    <DetailsTab DataProject={DataProject} />
+                    <FeaturesTab DataProject={DataProject} />
+                    <DocumentationTab DataProject={DataProject} />
                     {/* <TeamTab DataProject={DataProject} />*/}
                     {/* <AnalyticsTab DataProject={DataProject} />*/}
                     {/* <TimelineTab DataProject={DataProject} />*/}

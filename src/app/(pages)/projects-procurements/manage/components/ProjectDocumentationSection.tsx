@@ -79,7 +79,7 @@ const ProjectDocumentationSection = ({
   };
 
   useEffect(() => {
-    if (DataAuth && DataAuth.team && DataProject) {
+    if (DataAuth && DataProject) {
       setIsLoadingProcess(true);
       const GetWorkflowData = async () => {
         const requestData = await ListProjectWorkflow(

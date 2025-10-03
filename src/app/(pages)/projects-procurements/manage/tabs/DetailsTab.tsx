@@ -17,7 +17,6 @@ const DetailsTab = ({ DataProject }: DetailsTabProps) => {
 
   return (
     <TabPanel
-      p={8}
       bg={colorMode === "light" ? "gray.50" : "gray.900"}
       roundedBottom={radiusStyle}
     >
