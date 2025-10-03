@@ -23,7 +23,7 @@ import {
   Avatar,
   Divider,
 } from "@chakra-ui/react";
-import { FiUsers, FiBarChart3, FiCheckCircle, FiClock, FiTrendingUp } from "react-icons/fi";
+import { FiUsers, FiCheckCircle, FiClock, FiTrendingUp, FiBarChart } from "react-icons/fi";
 import { MdAssignment } from "react-icons/md";
 
 // Modern Stat Card Component
@@ -89,7 +89,7 @@ const QuickActionsCard = () => {
   const borderColor = useColorModeValue("gray.100", "gray.700");
   
   const actions = [
-    { label: "Kanban Board", icon: FiBarChart3, href: "/kanban" },
+    { label: "Kanban Board", icon: FiBarChart, href: "/kanban" },
     { label: "Projects", icon: MdAssignment, href: "/projects-manager" },
     { label: "Teams", icon: FiUsers, href: "/teams" },
     { label: "Calendar", icon: FiClock, href: "/calendar" },

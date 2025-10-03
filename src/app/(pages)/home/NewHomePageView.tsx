@@ -43,7 +43,7 @@ import {
   Avatar,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
-import { FiRefreshCcw, FiUsers, FiBarChart3, FiCheckCircle, FiTrendingUp } from "react-icons/fi";
+import { FiRefreshCcw, FiUsers, FiCheckCircle, FiTrendingUp, FiBarChart } from "react-icons/fi";
 import { MdAssignment } from "react-icons/md";
 import { AreaChart, DataSetProps } from "./charts/areaChart";
 import {
@@ -115,7 +115,7 @@ const QuickActionsCard = () => {
   const borderColor = useColorModeValue("gray.100", "gray.700");
   
   const actions = [
-    { label: "Kanban Board", icon: FiBarChart3, href: "/kanban" },
+    { label: "Kanban Board", icon: FiBarChart, href: "/kanban" },
     { label: "Projects", icon: MdAssignment, href: "/projects-manager" },
     { label: "Teams", icon: FiUsers, href: "/teams" },
     { label: "Calendar", icon: FiCheckCircle, href: "/calendar" },
