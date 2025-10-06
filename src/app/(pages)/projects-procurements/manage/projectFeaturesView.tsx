@@ -113,23 +113,6 @@ import { HamburgerIcon } from "@chakra-ui/icons";
 import { BsKanban } from "react-icons/bs";
 import Link from "next/link";
 
-const FormSchemaFeatures = Yup.object().shape({
-  projectId: Yup.string().required("Required"),
-  featureName: Yup.string().required("Required"),
-  featureDesc: Yup.string().nullable(),
-  featureSide: Yup.string().nullable(),
-  maintenanceCategory: Yup.string().nullable(),
-  maintenanceType: Yup.string().nullable(),
-  rppb: Yup.string().nullable(),
-  licensing: Yup.string().nullable(),
-  featureStartDate: Yup.string().nullable(),
-  featureEndDate: Yup.string().nullable(),
-  urgency: Yup.string().nullable(),
-  impact: Yup.string().nullable(),
-  priority: Yup.string().nullable(),
-  developmentStatus: Yup.string().nullable(),
-});
-
 interface ProjectFeatureViewProps {
   DataProject: ProjectDataResponse | null;
 }
@@ -138,6 +121,114 @@ interface ProjectFeatureViewProps {
 const MotionCardBody = motion(CardBody);
 
 const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
+  const showToast = useToastHelper();
+  const { colorMode } = useColorMode();
+
+  const {
+    GetDetailById: GetReqDetail,
+    ListBacklog,
+    UpdateBacklogBatch,
+  } = useRequirements();
+
+  const { GetProjectBacklogProgression } = useProjects();
+
+  // SetUp auth data on current page
+  const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
+  const [tokenData, setTokenData] = useState<string>("");
+  const [ActionLoading, setActionLoading] = useState(false);
+  const [RefreshData, setRefreshData] = useState<number>(0);
+
+  useEffect(() => {
+    const storedData = localStorage.getItem("authData");
+    const token: string = localStorage.getItem("tokenData") as string;
+
+    if (DataAuth == null) {
+      if (storedData) {
+        const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
+        const UserData: AuthDataResponse =
+          StorageAuth.dataLogin as AuthDataResponse;
+        setDataAuth(UserData);
+      }
+    }
+
+    if (token) {
+      setTokenData(token);
+    }
+  }, [DataAuth]);
+
+  // if (DataProject == null) {
+  //   return (
+  //     <Heading as="h4" size="md">
+  //       Data Invalid
+  //     </Heading>
+  //   );
+  // }
+
+  // Requirement Data
+  const [DataRequirement, setDataRequirement] =
+    useState<RequirementsResponse | null>(null);
+  const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
+
+  // Load Requirements
+  useEffect(() => {
+    if (DataAuth && DataProject && DataProject.reqParentId) {
+      // LOAD REQ DATA
+      const GetDataRequirement = async () => {
+        setIsLoadingProcess(true);
+        const requestData = await GetReqDetail(
+          DataProject.reqParentId || "",
+          tokenData
+        );
+        const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+        if (isErrorResponse || !requestData) {
+          showToast({
+            description: requestData?.message || RES_GENERIC_ERROR_MSG,
+            statusToast: "error",
+          });
+          setIsLoadingProcess(false);
+          return;
+        } else {
+          if (requestData.data == null) {
+            showToast({
+              description: "Data return error",
+              statusToast: "error",
+            });
+            setIsLoadingProcess(false);
+            return;
+          }
+          const itemsData: RequirementsResponse =
+            requestData.data as RequirementsResponse;
+          setDataRequirement(itemsData);
+          setIsLoadingProcess(false);
+        }
+      };
+
+      GetDataRequirement();
+    }
+  }, [DataAuth, RefreshData, DataProject]);
+
+  return (
+    <Flex w={"full"} as={Stack} spacing={6}>
+      {DataProject == null ? (
+        <Heading as="h4" size="md">
+          Data Invalid
+        </Heading>
+      ) : (
+        <Text>OK</Text>
+      )}
+    </Flex>
+  );
+};
+
+interface FeatureBacklogsViewProps {
+  DataProject: ProjectDataResponse;
+  DataRequirement: RequirementsResponse;
+}
+
+const FeatureBacklogsView = ({
+  DataProject,
+  DataRequirement,
+}: FeatureBacklogsViewProps) => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
 
@@ -188,9 +279,7 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
   );
 
   const [RefreshData, setRefreshData] = useState<number>(0);
-  // Requirement Data
-  const [DataRequirement, setDataRequirement] =
-    useState<RequirementsResponse | null>(null);
+
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
   // GetServiceListBacklog
   const [IsloadingBacklogs, setIsloadingBacklogs] = useState(false);
@@ -395,37 +484,6 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
   // Load Requirements
   useEffect(() => {
     if (DataAuth && DataProject && DataProject.reqParentId) {
-      // LOAD REQ DATA
-      const GetDataRequirement = async () => {
-        setIsLoadingProcess(true);
-        const requestData = await GetReqDetail(
-          DataProject.reqParentId || "",
-          tokenData
-        );
-        const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
-        if (isErrorResponse || !requestData) {
-          showToast({
-            description: requestData?.message || RES_GENERIC_ERROR_MSG,
-            statusToast: "error",
-          });
-          setIsLoadingProcess(false);
-          return;
-        } else {
-          if (requestData.data == null) {
-            showToast({
-              description: "Data return error",
-              statusToast: "error",
-            });
-            setIsLoadingProcess(false);
-            return;
-          }
-          const itemsData: RequirementsResponse =
-            requestData.data as RequirementsResponse;
-          setDataRequirement(itemsData);
-          setIsLoadingProcess(false);
-        }
-      };
-
       // LOAD BACKLOGS DATA
       const PayloadGetBacklogList: PaggingListPayload = {
         search: globalFilter,
@@ -498,7 +556,6 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
         }
       };
 
-      GetDataRequirement();
       GetDataBacklogsList();
       GetProgression();
     }
@@ -522,96 +579,86 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
 
   const RefreshAction = () => {
     setGlobalFilter("");
-    setDataRequirement(null);
     setDataBacklogsRequirement([]);
     setRefreshData(RefreshData + 1);
   };
 
   return (
-    <Flex w={"full"} as={Stack} spacing={6}>
-      {DataProject == null ? (
-        <Heading as="h4" size="md">
-          Data Invalid
-        </Heading>
-      ) : (
-        <Flex w={"full"} as={Stack} spacing={6}>
-          <Flex w={"full"} as={HStack} justifyContent={"space-between"}>
-            <Heading as="h5" size="md" w={"full"}>
-              Data Project Features
-            </Heading>
+    <Flex w={"full"} as={Stack}>
+      <Flex w={"full"} as={Stack} spacing={6}>
+        <Flex w={"full"} as={HStack} justifyContent={"space-between"}>
+          <Heading as="h5" size="md" w={"full"}>
+            Data Project Features
+          </Heading>
 
-            <Flex
-              w={"full"}
-              as={HStack}
-              justifyContent={"start"}
-              alignItems={"end"}
-            >
-              <Flex w={"full"} as={Stack}>
-                <HStack
-                  divider={<StackDivider borderColor="gray.200" />}
-                  w={"full"}
-                >
-                  <Text fontSize={"smaller"} fontWeight={600}>
-                    Overall Progression -{" "}
-                    {ProjectBacklogProgression.progressionBacklog.toString()} %
-                  </Text>
-
-                  <Text fontSize={"smaller"} fontWeight={500}>
-                    {ProjectBacklogProgression.totalBacklogsDone}
-                    <Text as={"span"} fontWeight={600} ml={1}>
-                      / {ProjectBacklogProgression.totalBacklogs} Feature Done
-                    </Text>
-                  </Text>
-                </HStack>
-
-                <Progress
-                  colorScheme={colorProgression(
-                    ProjectBacklogProgression.progressionBacklog
-                  )}
-                  hasStripe
-                  value={ProjectBacklogProgression.progressionBacklog}
-                  w={"full"}
-                  rounded={radiusStyle}
-                />
-              </Flex>
-            </Flex>
-          </Flex>
-          <Flex w={"full"} as={HStack} justifyContent={"space-between"}>
-            <Flex as={HStack}>
-              <Input
-                id="backlogSearch"
-                name="backlogSearch"
-                type="text"
-                value={globalFilter}
-                onChange={(e) => setGlobalFilter(e.target.value)}
-                placeholder={`Cari Fitur`}
-                minLength={3}
-                maxLength={150}
-              />
-            </Flex>
-            <Flex as={Wrap} justifyContent={"end"} px={0} w={"full"}>
-              <Button
-                leftIcon={<FiRefreshCcw />}
-                onClick={() => RefreshAction()}
+          <Flex
+            w={"full"}
+            as={HStack}
+            justifyContent={"start"}
+            alignItems={"end"}
+          >
+            <Flex w={"full"} as={Stack}>
+              <HStack
+                divider={<StackDivider borderColor="gray.200" />}
+                w={"full"}
               >
-                Refresh
-              </Button>
-            </Flex>
-          </Flex>
+                <Text fontSize={"smaller"} fontWeight={600}>
+                  Overall Progression -{" "}
+                  {ProjectBacklogProgression.progressionBacklog.toString()} %
+                </Text>
 
-          {/* TABLE DATA */}
-          <Flex as={Stack} w={"full"} spacing={5}>
-            {IsLoadingProcess ? (
-              <LoadingMiniSignature />
-            ) : (
-              <TableComponentWithFilterCTX
-                table={tableBacklogs}
-                handleFilterChange={handleFilterChange}
+                <Text fontSize={"smaller"} fontWeight={500}>
+                  {ProjectBacklogProgression.totalBacklogsDone}
+                  <Text as={"span"} fontWeight={600} ml={1}>
+                    / {ProjectBacklogProgression.totalBacklogs} Feature Done
+                  </Text>
+                </Text>
+              </HStack>
+
+              <Progress
+                colorScheme={colorProgression(
+                  ProjectBacklogProgression.progressionBacklog
+                )}
+                hasStripe
+                value={ProjectBacklogProgression.progressionBacklog}
+                w={"full"}
+                rounded={radiusStyle}
               />
-            )}
+            </Flex>
           </Flex>
         </Flex>
-      )}
+        <Flex w={"full"} as={HStack} justifyContent={"space-between"}>
+          <Flex as={HStack}>
+            <Input
+              id="backlogSearch"
+              name="backlogSearch"
+              type="text"
+              value={globalFilter}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+              placeholder={`Cari Fitur`}
+              minLength={3}
+              maxLength={150}
+            />
+          </Flex>
+          <Flex as={Wrap} justifyContent={"end"} px={0} w={"full"}>
+            <Button leftIcon={<FiRefreshCcw />} onClick={() => RefreshAction()}>
+              Refresh
+            </Button>
+          </Flex>
+        </Flex>
+
+        {/* TABLE DATA */}
+        <Flex as={Stack} w={"full"} spacing={5}>
+          {IsLoadingProcess ? (
+            <LoadingMiniSignature />
+          ) : (
+            <TableComponentWithFilterCTX
+              table={tableBacklogs}
+              handleFilterChange={handleFilterChange}
+            />
+          )}
+        </Flex>
+      </Flex>
       {/* ------------ DEBUG DATA ------------------ */}
 
       <Box
