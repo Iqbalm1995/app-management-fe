@@ -26,10 +26,7 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
   const { colorMode } = useColorMode();
 
   return (
-    <TabPanel
-      bg={colorMode === "light" ? "gray.50" : "gray.900"}
-      roundedBottom={radiusStyle}
-    >
+    <TabPanel roundedBottom={radiusStyle}>
       <VStack spacing={8} align="stretch">
         {/* Header Section */}
         <HStack justify="space-between" align="center">

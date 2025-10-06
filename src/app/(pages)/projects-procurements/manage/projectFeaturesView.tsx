@@ -62,8 +62,13 @@ import {
   Stack,
   StackDivider,
   Switch,
+  Table,
+  Tbody,
   Text,
   Textarea,
+  Th,
+  Thead,
+  Tr,
   useColorMode,
   useDisclosure,
   VStack,
@@ -748,7 +753,7 @@ const WorkFlowBacklogsView = ({
 }: WorkFlowBacklogsViewProps) => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
-  const { ListProjectWorkflow } = useProjects();
+  const { ListProjectWorkflowBacklog } = useProjects();
 
   // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -761,7 +766,8 @@ const WorkFlowBacklogsView = ({
     if (DataAuth == null) {
       if (storedData) {
         const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
-        const UserData: AuthDataResponse = StorageAuth.dataLogin as AuthDataResponse;
+        const UserData: AuthDataResponse =
+          StorageAuth.dataLogin as AuthDataResponse;
         setDataAuth(UserData);
       }
     }
@@ -771,7 +777,9 @@ const WorkFlowBacklogsView = ({
     }
   }, [DataAuth]);
 
-  const [DataWorkflow, setDataWorkflow] = useState<ProjectWorkflowResponse[] | null>(null);
+  const [DataWorkflow, setDataWorkflow] = useState<
+    ProjectWorkflowResponse[] | null
+  >(null);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
 
   // Overall Progression State
@@ -780,13 +788,16 @@ const WorkFlowBacklogsView = ({
   const [CompletedLeafNodes, setCompletedLeafNodes] = useState<number>(0);
 
   // Count all leaf nodes (nodes without children) recursively
-  const countLeafNodes = (workflows: ProjectWorkflowResponse[]): { total: number; completed: number } => {
+  const countLeafNodes = (
+    workflows: ProjectWorkflowResponse[]
+  ): { total: number; completed: number } => {
     let totalLeaf = 0;
     let completedLeaf = 0;
-    
+
     workflows.forEach((workflow) => {
-      const hasChildren = workflow.workflowChild && workflow.workflowChild.length > 0;
-      
+      const hasChildren =
+        workflow.workflowChild && workflow.workflowChild.length > 0;
+
       if (!hasChildren) {
         // This is a leaf node - count it
         totalLeaf++;
@@ -800,7 +811,7 @@ const WorkFlowBacklogsView = ({
         completedLeaf += childCounts.completed;
       }
     });
-    
+
     return { total: totalLeaf, completed: completedLeaf };
   };
 
@@ -808,7 +819,7 @@ const WorkFlowBacklogsView = ({
     if (DataAuth && DataProject) {
       setIsLoadingProcess(true);
       const GetWorkflowData = async () => {
-        const requestData = await ListProjectWorkflow(
+        const requestData = await ListProjectWorkflowBacklog(
           DataProject.id,
           tokenData
         );
@@ -951,7 +962,6 @@ const WorkFlowBacklogsView = ({
   );
 };
 
-
 // Dedicated WorkflowBacklogBox component for WorkFlowBacklogsView
 interface WorkflowBacklogBoxProps {
   workflow: ProjectWorkflowResponse;
@@ -959,12 +969,17 @@ interface WorkflowBacklogBoxProps {
   level: number;
 }
 
-const WorkflowBacklogBox = ({ workflow, onRefresh, level }: WorkflowBacklogBoxProps) => {
+const WorkflowBacklogBox = ({
+  workflow,
+  onRefresh,
+  level,
+}: WorkflowBacklogBoxProps) => {
   const { colorMode } = useColorMode();
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
 
-  const hasChildren = workflow.workflowChild && workflow.workflowChild.length > 0;
-  const hasValues = workflow.workflowValues && workflow.workflowValues.length > 0;
+  const hasChildren =
+    workflow.workflowChild && workflow.workflowChild.length > 0;
+  const hasValues = workflow.workflowBacklog;
   const shouldShowTable = !hasChildren;
 
   // Calculate progress for this workflow node
@@ -972,12 +987,17 @@ const WorkflowBacklogBox = ({ workflow, onRefresh, level }: WorkflowBacklogBoxPr
     if (!hasChildren) {
       return hasValues ? 100 : 0;
     }
-    
+
     if (wf.workflowChild && wf.workflowChild.length > 0) {
-      const childProgresses = wf.workflowChild.map(child => calculateProgress(child));
-      return Math.round(childProgresses.reduce((sum, progress) => sum + progress, 0) / childProgresses.length);
+      const childProgresses = wf.workflowChild.map((child) =>
+        calculateProgress(child)
+      );
+      return Math.round(
+        childProgresses.reduce((sum, progress) => sum + progress, 0) /
+          childProgresses.length
+      );
     }
-    
+
     return 0;
   };
 
@@ -987,27 +1007,30 @@ const WorkflowBacklogBox = ({ workflow, onRefresh, level }: WorkflowBacklogBoxPr
     <Box
       border="1px"
       borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-      rounded="lg"
+      rounded={radiusStyle}
       bg={colorMode === "light" ? "white" : "gray.800"}
       shadow="sm"
     >
       {/* Header */}
       <Flex
         p={4}
+        rounded={radiusStyle}
         align="center"
         justify="space-between"
         cursor={hasChildren ? "pointer" : "default"}
         onClick={hasChildren ? () => setIsExpanded(!isExpanded) : undefined}
-        _hover={hasChildren ? { bg: colorMode === "light" ? "gray.50" : "gray.700" } : {}}
+        _hover={
+          hasChildren
+            ? { bg: colorMode === "light" ? "gray.50" : "gray.700" }
+            : {}
+        }
       >
         <HStack spacing={3}>
           {hasChildren && (
-            <Box>
-              {isExpanded ? <FiChevronUp /> : <FiChevronDown />}
-            </Box>
+            <Box>{isExpanded ? <FiChevronUp /> : <FiChevronDown />}</Box>
           )}
           <VStack align="start" spacing={1}>
-            <Text fontWeight="bold" fontSize="md">
+            <Text fontWeight="bold" fontSize="md" color="secondary.600">
               {workflow.wfgName}
             </Text>
             {workflow.wfgDesc && (
@@ -1017,20 +1040,26 @@ const WorkflowBacklogBox = ({ workflow, onRefresh, level }: WorkflowBacklogBoxPr
             )}
           </VStack>
         </HStack>
-        
+
         <HStack spacing={4}>
-          <VStack align="end" spacing={1}>
-            <Text fontSize="sm" fontWeight="bold" color={colorProgression(progress) + ".500"}>
-              {progress}%
-            </Text>
-            <Progress
-              value={progress}
-              colorScheme={colorProgression(progress)}
-              size="sm"
-              w="100px"
-              rounded="full"
-            />
-          </VStack>
+          {!hasChildren && (
+            <VStack align="end" spacing={1}>
+              {/* <Text
+                fontSize="sm"
+                fontWeight="bold"
+                color={colorProgression(progress) + ".500"}
+              >
+                {progress}%
+              </Text>
+              <Progress
+                value={progress}
+                colorScheme={colorProgression(progress)}
+                size="sm"
+                w="100px"
+                rounded="full"
+              /> */}
+            </VStack>
+          )}
         </HStack>
       </Flex>
 
@@ -1043,7 +1072,7 @@ const WorkflowBacklogBox = ({ workflow, onRefresh, level }: WorkflowBacklogBoxPr
 
       {/* Children */}
       {hasChildren && isExpanded && (
-        <Box p={4} pt={0}>
+        <Box p={4} pt={2}>
           <VStack spacing={3} align="stretch">
             {workflow.workflowChild!.map((child) => (
               <WorkflowBacklogBox
@@ -1066,10 +1095,13 @@ interface WorkflowBacklogTableProps {
   onRefresh: () => void;
 }
 
-const WorkflowBacklogTable = ({ workflow, onRefresh }: WorkflowBacklogTableProps) => {
+const WorkflowBacklogTable = ({
+  workflow,
+  onRefresh,
+}: WorkflowBacklogTableProps) => {
   const { colorMode } = useColorMode();
 
-  if (!workflow.workflowValues || workflow.workflowValues.length === 0) {
+  if (!workflow.workflowBacklog) {
     return (
       <Box
         p={6}
@@ -1088,43 +1120,47 @@ const WorkflowBacklogTable = ({ workflow, onRefresh }: WorkflowBacklogTableProps
 
   return (
     <Box
+      rounded={radiusStyle}
       border="1px"
       borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
-      rounded="md"
-      overflow="hidden"
+      shadow="md"
     >
-      <Box bg={colorMode === "light" ? "gray.50" : "gray.700"} p={3}>
-        <Text fontWeight="bold" fontSize="sm">
-          Workflow Documents ({workflow.workflowValues.length})
-        </Text>
-      </Box>
-      <VStack spacing={0} align="stretch">
-        {workflow.workflowValues.map((value, index) => (
-          <Box
-            key={index}
-            p={3}
-            borderBottom={index < workflow.workflowValues!.length - 1 ? "1px" : "none"}
-            borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
-            _hover={{ bg: colorMode === "light" ? "gray.50" : "gray.700" }}
+      <Table size="sm" variant="unstyled" rounded={radiusStyle}>
+        <Thead>
+          <Tr
+            bg={colorMode == "light" ? "secondary.50" : "gray.900"}
+            color={colorMode == "light" ? "secondary.800" : "secondary.500"}
+            borderTopRadius={radiusStyle}
           >
-            <HStack justify="space-between">
-              <VStack align="start" spacing={1}>
-                <Text fontWeight="medium" fontSize="sm">
-                  Document {index + 1}
-                </Text>
-                <Text fontSize="xs" color="gray.500">
-                  {value.documentName || "Unnamed document"}
-                </Text>
-              </VStack>
-              <HStack spacing={2}>
-                <Text fontSize="xs" color="green.500" fontWeight="bold">
-                  Completed
-                </Text>
-              </HStack>
-            </HStack>
-          </Box>
-        ))}
-      </VStack>
+            <Th py={3} rowSpan={2}>
+              Deskripsi
+            </Th>
+            <Th py={3} rowSpan={2}>
+              Deadline
+            </Th>
+            <Th py={3} colSpan={2}>
+              Rencana
+            </Th>
+            <Th py={3}>Mulai</Th>
+            <Th py={3}>Selesai</Th>
+            <Th py={3} colSpan={2}>
+              Realisasi
+            </Th>
+            <Th py={3}>Mulai</Th>
+            <Th py={3}>Selesai</Th>
+            <Th py={3} rowSpan={2}>
+              Status
+            </Th>
+            <Th py={3} rowSpan={2}>
+              Progress
+            </Th>
+            <Th width="200px" rowSpan={2}>
+              Actions
+            </Th>
+          </Tr>
+        </Thead>
+        <Tbody></Tbody>
+      </Table>
     </Box>
   );
 };

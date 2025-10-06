@@ -733,10 +733,7 @@ function ProjectManagerDetailView() {
                 transition="all 0.3s ease"
               >
                 <CardBody>
-                  <TabPanels
-                    bg={colorMode === "light" ? "white" : "gray.800"}
-                    minH="600px"
-                  >
+                  <TabPanels minH="600px">
                     <OverviewTab DataProject={DataProject} />
                     <DetailsTab DataProject={DataProject} />
                     <FeaturesTab DataProject={DataProject} />

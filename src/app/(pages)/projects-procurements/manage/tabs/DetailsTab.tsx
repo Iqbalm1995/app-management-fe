@@ -16,10 +16,7 @@ const DetailsTab = ({ DataProject }: DetailsTabProps) => {
   const { colorMode } = useColorMode();
 
   return (
-    <TabPanel
-      bg={colorMode === "light" ? "gray.50" : "gray.900"}
-      roundedBottom={radiusStyle}
-    >
+    <TabPanel roundedBottom={radiusStyle}>
       <Suspense fallback={<LoadingMiniSquare />}>
         <ProjectInfoSection DataProject={DataProject} />
       </Suspense>

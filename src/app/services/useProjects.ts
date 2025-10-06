@@ -435,6 +435,10 @@ export interface ProjectBacklogProgressionResponse {
   progressionBacklog: number;
 }
 
+export interface ProjectWorkflowBacklogInitializePayload {
+  projectWorkflowId: string;
+}
+
 interface useProjectsServices {
   List: (
     payload: PaggingListPayload,
@@ -609,6 +613,16 @@ interface useProjectsServices {
   ) => Promise<ApiGenericResponse<ProjectBacklogProgressionResponse | null> | null>;
 
   // project workflow data
+
+  ProjectWorkflowBacklogInitialize: (
+    pauload: ProjectWorkflowBacklogInitializePayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+
+  ListProjectWorkflowBacklog: (
+    projectId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<ProjectWorkflowResponse[] | null> | null>;
 
   ListProjectWorkflow: (
     projectId: string,
@@ -2342,6 +2356,90 @@ const useProjects = (): useProjectsServices => {
     }
   };
 
+  const ProjectWorkflowBacklogInitialize = async (
+    payload: ProjectWorkflowBacklogInitializePayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string =
+      "/v1/Projects/projectWorkflowBacklog/initialize";
+
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const ListProjectWorkflowBacklog = async (
+    projectId: string,
+    token: string
+  ): Promise<ApiGenericResponse<ProjectWorkflowResponse[] | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Projects/ProjectWorkflowBacklogData/list/${projectId}`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<ProjectWorkflowResponse[]>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
   const ListProjectWorkflow = async (
     projectId: string,
     token: string
@@ -2574,6 +2672,9 @@ const useProjects = (): useProjectsServices => {
     InsertProjectFeature,
     UpdateProjectFeature,
     DeleteProjectFeature,
+
+    ProjectWorkflowBacklogInitialize,
+    ListProjectWorkflowBacklog,
 
     GetProjectBacklogProgression,
 
