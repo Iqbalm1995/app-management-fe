@@ -479,7 +479,7 @@ function ProjectManagerDetailView() {
         <VStack spacing={3} align="stretch">
           {/* Top Navigation */}
           <HStack justify="space-between" align="center">
-            <Link href={"/projects-manager"}>
+            <Link href={"/projects-procurements"}>
               <Button
                 leftIcon={<FiArrowLeft />}
                 variant="outline"

@@ -950,7 +950,15 @@ export function nomCompColor(num1: number): string {
 }
 
 export function getPriorityFromMatrix(impact: string, urgency: string): string {
-  if (impact === "HIGH" && urgency === "HIGH") return "CRITICAL";
+  // Handle CRITICAL input parameters
+  if (impact === "CRITICAL" || urgency === "CRITICAL") {
+    return "CRITICAL";
+  }
+
+  if (impact === "HIGH" && urgency === "HIGH") {
+    console.log("Priority calculation: HIGH + HIGH = CRITICAL");
+    return "CRITICAL";
+  }
 
   if (
     (impact === "HIGH" && urgency === "MEDIUM") ||
