@@ -23,8 +23,10 @@ import useProjects, {
   ProjectDataResponse,
   ProjectFeatureInsertPayload,
   ProjectFeatureResponse,
+  ProjectWorkflowBacklogInitializePayload,
   ProjectWorkflowResponse,
 } from "@/app/services/useProjects";
+import { ApiGenericResponse } from "@/app/types/masterTypes";
 import {
   ColumnMetaCustom,
   ListSearchByParamProps,
@@ -98,6 +100,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   FiChevronDown,
   FiChevronUp,
+  FiEdit,
   FiEye,
   FiMoreVertical,
   FiPlusSquare,
@@ -759,7 +762,8 @@ const WorkFlowBacklogsView = ({
 }: WorkFlowBacklogsViewProps) => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
-  const { ListProjectWorkflowBacklog } = useProjects();
+  const { ListProjectWorkflowBacklog, ProjectWorkflowBacklogInitialize } =
+    useProjects();
 
   // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -1119,6 +1123,7 @@ const WorkflowBacklogTable = ({
 
   const showToast = useToastHelper();
   const { UpdateBacklog } = useRequirements();
+  const { ProjectWorkflowBacklogInitialize } = useProjects();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [selectedBacklog, setSelectedBacklog] =
     useState<BacklogDataResponse | null>(null);
@@ -1180,6 +1185,36 @@ const WorkflowBacklogTable = ({
 
     setIsLoading(false);
   };
+  const handleInitializeWorkflow = async () => {
+    if (!tokenData || !workflow.id) return;
+
+    try {
+      const payload = { projectWorkflowId: workflow.id };
+      const response = await ProjectWorkflowBacklogInitialize(
+        payload,
+        tokenData
+      );
+
+      if (response?.statusCode === RES_CODE_OK) {
+        showToast({
+          description: "Workflow initialized successfully",
+          statusToast: "success",
+        });
+        onRefresh();
+      } else {
+        showToast({
+          description: response?.message || "Failed to initialize workflow",
+          statusToast: "error",
+        });
+      }
+    } catch (error) {
+      showToast({
+        description: "An error occurred while initializing workflow",
+        statusToast: "error",
+      });
+    }
+  };
+
   if (!workflow.workflowBacklog) {
     return (
       <Box
@@ -1193,6 +1228,14 @@ const WorkflowBacklogTable = ({
         <Text color="gray.500" fontSize="sm">
           No documents available for this workflow
         </Text>
+        <Button
+          colorScheme="blue"
+          size="sm"
+          onClick={handleInitializeWorkflow}
+          mt={4}
+        >
+          Initialize works
+        </Button>{" "}
       </Box>
     );
   }
@@ -1334,12 +1377,12 @@ const WorkflowBacklogTable = ({
                     <Button
                       size="xs"
                       colorScheme="blue"
-                      leftIcon={<FiEye />}
+                      leftIcon={<FiEdit />}
                       onClick={() =>
                         handlePreviewBacklog(workflow.workflowBacklog!)
                       }
                     >
-                      Preview
+                      Edit
                     </Button>
                     <Link
                       href={`/kanban?projectId=${DataProject?.id}&backlogId=${workflow.workflowBacklog.id}`}
