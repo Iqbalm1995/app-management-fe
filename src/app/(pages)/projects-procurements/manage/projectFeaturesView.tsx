@@ -21,6 +21,7 @@ import useProjects, {
   ProjectDataResponse,
   ProjectFeatureInsertPayload,
   ProjectFeatureResponse,
+  ProjectWorkflowResponse,
 } from "@/app/services/useProjects";
 import {
   ColumnMetaCustom,
@@ -65,6 +66,7 @@ import {
   Textarea,
   useColorMode,
   useDisclosure,
+  VStack,
   Wrap,
 } from "@chakra-ui/react";
 import {
@@ -746,8 +748,384 @@ const WorkFlowBacklogsView = ({
 }: WorkFlowBacklogsViewProps) => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
+  const { ListProjectWorkflow } = useProjects();
 
-  return <Text>Workflow Backlogs Here</Text>;
+  // SetUp auth data on current page
+  const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
+  const [tokenData, setTokenData] = useState<string>("");
+
+  useEffect(() => {
+    const storedData = localStorage.getItem("authData");
+    const token: string = localStorage.getItem("tokenData") as string;
+
+    if (DataAuth == null) {
+      if (storedData) {
+        const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
+        const UserData: AuthDataResponse = StorageAuth.dataLogin as AuthDataResponse;
+        setDataAuth(UserData);
+      }
+    }
+
+    if (token) {
+      setTokenData(token);
+    }
+  }, [DataAuth]);
+
+  const [DataWorkflow, setDataWorkflow] = useState<ProjectWorkflowResponse[] | null>(null);
+  const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
+
+  // Overall Progression State
+  const [OverallProgress, setOverallProgress] = useState<number>(0);
+  const [TotalLeafNodes, setTotalLeafNodes] = useState<number>(0);
+  const [CompletedLeafNodes, setCompletedLeafNodes] = useState<number>(0);
+
+  // Count all leaf nodes (nodes without children) recursively
+  const countLeafNodes = (workflows: ProjectWorkflowResponse[]): { total: number; completed: number } => {
+    let totalLeaf = 0;
+    let completedLeaf = 0;
+    
+    workflows.forEach((workflow) => {
+      const hasChildren = workflow.workflowChild && workflow.workflowChild.length > 0;
+      
+      if (!hasChildren) {
+        // This is a leaf node - count it
+        totalLeaf++;
+        if (workflow.workflowValues && workflow.workflowValues.length > 0) {
+          completedLeaf++;
+        }
+      } else {
+        // Recursively count children
+        const childCounts = countLeafNodes(workflow.workflowChild!);
+        totalLeaf += childCounts.total;
+        completedLeaf += childCounts.completed;
+      }
+    });
+    
+    return { total: totalLeaf, completed: completedLeaf };
+  };
+
+  useEffect(() => {
+    if (DataAuth && DataProject) {
+      setIsLoadingProcess(true);
+      const GetWorkflowData = async () => {
+        const requestData = await ListProjectWorkflow(
+          DataProject.id,
+          tokenData
+        );
+        const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+
+        if (isErrorResponse || !requestData) {
+          showToast({
+            description: requestData?.message || RES_GENERIC_ERROR_MSG,
+            statusToast: "error",
+          });
+          setIsLoadingProcess(false);
+          return;
+        } else {
+          if (requestData.data == null) {
+            showToast({
+              description: "Workflow data return error",
+              statusToast: "error",
+            });
+            setIsLoadingProcess(false);
+            return;
+          }
+
+          const workflowData: ProjectWorkflowResponse[] =
+            requestData.data as ProjectWorkflowResponse[];
+
+          // Calculate overall progression using dynamic leaf nodes
+          const leafCounts = countLeafNodes(workflowData);
+          const progressPercentage =
+            leafCounts.total > 0
+              ? Math.round((leafCounts.completed / leafCounts.total) * 100)
+              : 0;
+
+          setTotalLeafNodes(leafCounts.total);
+          setCompletedLeafNodes(leafCounts.completed);
+          setOverallProgress(progressPercentage);
+          setDataWorkflow(workflowData);
+          setIsLoadingProcess(false);
+        }
+      };
+      GetWorkflowData();
+    }
+  }, [DataAuth, refreshTrigger, DataProject, tokenData]);
+
+  return (
+    <VStack spacing={8} align="stretch">
+      {/* Header Section */}
+      <HStack justify="space-between" align="center">
+        <VStack align="start" spacing={1}>
+          <Heading
+            size="lg"
+            color={colorMode === "light" ? "gray.800" : "white"}
+          >
+            Workstage Procurement
+          </Heading>
+          <Text color="gray.600" fontSize="sm">
+            Manage project workstage progression
+          </Text>
+        </VStack>
+        <HStack spacing={3}>
+          <Button
+            size="sm"
+            variant="outline"
+            leftIcon={<FiRefreshCcw />}
+            colorScheme="gray"
+            rounded="full"
+            onClick={onRefresh}
+            isLoading={IsLoadingProcess}
+          >
+            Refresh
+          </Button>
+        </HStack>
+      </HStack>
+
+      {/* Overall Progression */}
+      {DataWorkflow && DataWorkflow.length > 0 && (
+        <VStack
+          w="full"
+          p={4}
+          bg={colorMode === "light" ? "blue.50" : "blue.900"}
+          rounded="lg"
+          border="1px"
+          borderColor={colorMode === "light" ? "blue.200" : "blue.700"}
+          spacing={3}
+        >
+          <HStack divider={<StackDivider borderColor="gray.200" />} w="full">
+            <Text fontSize="sm" fontWeight={600}>
+              Overall Progression - {OverallProgress}%
+            </Text>
+            <Text fontSize="sm" fontWeight={500}>
+              {CompletedLeafNodes}
+              <Text as="span" fontWeight={600} ml={1}>
+                / {TotalLeafNodes} Completed
+              </Text>
+            </Text>
+          </HStack>
+          <Progress
+            colorScheme={colorProgression(OverallProgress)}
+            hasStripe
+            value={OverallProgress}
+            w="full"
+            rounded={radiusStyle}
+          />
+        </VStack>
+      )}
+
+      {/* Workflow Content */}
+      {IsLoadingProcess ? (
+        <Box textAlign="center" py={12}>
+          <LoadingMiniSignature />
+          <Text mt={4} color="gray.500">
+            Loading workflow documentation...
+          </Text>
+        </Box>
+      ) : DataWorkflow && DataWorkflow.length > 0 ? (
+        <VStack spacing={4} align="stretch">
+          {DataWorkflow.map((workflow: ProjectWorkflowResponse) => (
+            <WorkflowBacklogBox
+              key={workflow.id}
+              workflow={workflow}
+              onRefresh={onRefresh}
+              level={1}
+            />
+          ))}
+        </VStack>
+      ) : (
+        <Box
+          p={8}
+          textAlign="center"
+          bg={colorMode === "light" ? "gray.50" : "gray.800"}
+          rounded="lg"
+          border="2px dashed"
+          borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
+        >
+          <Text color="gray.500" fontSize="sm">
+            No workflow documentation available
+          </Text>
+        </Box>
+      )}
+    </VStack>
+  );
 };
 
+
+// Dedicated WorkflowBacklogBox component for WorkFlowBacklogsView
+interface WorkflowBacklogBoxProps {
+  workflow: ProjectWorkflowResponse;
+  onRefresh: () => void;
+  level: number;
+}
+
+const WorkflowBacklogBox = ({ workflow, onRefresh, level }: WorkflowBacklogBoxProps) => {
+  const { colorMode } = useColorMode();
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const hasChildren = workflow.workflowChild && workflow.workflowChild.length > 0;
+  const hasValues = workflow.workflowValues && workflow.workflowValues.length > 0;
+  const shouldShowTable = !hasChildren;
+
+  // Calculate progress for this workflow node
+  const calculateProgress = (wf: ProjectWorkflowResponse): number => {
+    if (!hasChildren) {
+      return hasValues ? 100 : 0;
+    }
+    
+    if (wf.workflowChild && wf.workflowChild.length > 0) {
+      const childProgresses = wf.workflowChild.map(child => calculateProgress(child));
+      return Math.round(childProgresses.reduce((sum, progress) => sum + progress, 0) / childProgresses.length);
+    }
+    
+    return 0;
+  };
+
+  const progress = calculateProgress(workflow);
+
+  return (
+    <Box
+      border="1px"
+      borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+      rounded="lg"
+      bg={colorMode === "light" ? "white" : "gray.800"}
+      shadow="sm"
+    >
+      {/* Header */}
+      <Flex
+        p={4}
+        align="center"
+        justify="space-between"
+        cursor={hasChildren ? "pointer" : "default"}
+        onClick={hasChildren ? () => setIsExpanded(!isExpanded) : undefined}
+        _hover={hasChildren ? { bg: colorMode === "light" ? "gray.50" : "gray.700" } : {}}
+      >
+        <HStack spacing={3}>
+          {hasChildren && (
+            <Box>
+              {isExpanded ? <FiChevronUp /> : <FiChevronDown />}
+            </Box>
+          )}
+          <VStack align="start" spacing={1}>
+            <Text fontWeight="bold" fontSize="md">
+              {workflow.wfgName}
+            </Text>
+            {workflow.wfgDesc && (
+              <Text fontSize="sm" color="gray.500">
+                {workflow.wfgDesc}
+              </Text>
+            )}
+          </VStack>
+        </HStack>
+        
+        <HStack spacing={4}>
+          <VStack align="end" spacing={1}>
+            <Text fontSize="sm" fontWeight="bold" color={colorProgression(progress) + ".500"}>
+              {progress}%
+            </Text>
+            <Progress
+              value={progress}
+              colorScheme={colorProgression(progress)}
+              size="sm"
+              w="100px"
+              rounded="full"
+            />
+          </VStack>
+        </HStack>
+      </Flex>
+
+      {/* Content */}
+      {shouldShowTable && (
+        <Box p={4} pt={0}>
+          <WorkflowBacklogTable workflow={workflow} onRefresh={onRefresh} />
+        </Box>
+      )}
+
+      {/* Children */}
+      {hasChildren && isExpanded && (
+        <Box p={4} pt={0}>
+          <VStack spacing={3} align="stretch">
+            {workflow.workflowChild!.map((child) => (
+              <WorkflowBacklogBox
+                key={child.id}
+                workflow={child}
+                onRefresh={onRefresh}
+                level={level + 1}
+              />
+            ))}
+          </VStack>
+        </Box>
+      )}
+    </Box>
+  );
+};
+
+// Dedicated table component for workflow values
+interface WorkflowBacklogTableProps {
+  workflow: ProjectWorkflowResponse;
+  onRefresh: () => void;
+}
+
+const WorkflowBacklogTable = ({ workflow, onRefresh }: WorkflowBacklogTableProps) => {
+  const { colorMode } = useColorMode();
+
+  if (!workflow.workflowValues || workflow.workflowValues.length === 0) {
+    return (
+      <Box
+        p={6}
+        textAlign="center"
+        bg={colorMode === "light" ? "gray.50" : "gray.700"}
+        rounded="md"
+        border="2px dashed"
+        borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
+      >
+        <Text color="gray.500" fontSize="sm">
+          No documents available for this workflow
+        </Text>
+      </Box>
+    );
+  }
+
+  return (
+    <Box
+      border="1px"
+      borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+      rounded="md"
+      overflow="hidden"
+    >
+      <Box bg={colorMode === "light" ? "gray.50" : "gray.700"} p={3}>
+        <Text fontWeight="bold" fontSize="sm">
+          Workflow Documents ({workflow.workflowValues.length})
+        </Text>
+      </Box>
+      <VStack spacing={0} align="stretch">
+        {workflow.workflowValues.map((value, index) => (
+          <Box
+            key={index}
+            p={3}
+            borderBottom={index < workflow.workflowValues!.length - 1 ? "1px" : "none"}
+            borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+            _hover={{ bg: colorMode === "light" ? "gray.50" : "gray.700" }}
+          >
+            <HStack justify="space-between">
+              <VStack align="start" spacing={1}>
+                <Text fontWeight="medium" fontSize="sm">
+                  Document {index + 1}
+                </Text>
+                <Text fontSize="xs" color="gray.500">
+                  {value.documentName || "Unnamed document"}
+                </Text>
+              </VStack>
+              <HStack spacing={2}>
+                <Text fontSize="xs" color="green.500" fontWeight="bold">
+                  Completed
+                </Text>
+              </HStack>
+            </HStack>
+          </Box>
+        ))}
+      </VStack>
+    </Box>
+  );
+};
 export default ProjectFeatureView;
