@@ -3,6 +3,8 @@
 import {
   LocalPrioritiesOptions,
   MAX_SIZE_TABLE,
+  PROJECT_TYPE_INTERNAL_DEVELOPMENT,
+  PROJECT_TYPE_PROCUREMENT,
   radiusStyle,
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
@@ -169,6 +171,10 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
     useState<RequirementsResponse | null>(null);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
 
+  // Consolidated refresh action
+  const RefreshAction = () => {
+    setRefreshData((prev) => prev + 1);
+  };
   // Load Requirements
   useEffect(() => {
     if (DataAuth && DataProject && DataProject.reqParentId) {
@@ -213,8 +219,42 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
         <Heading as="h4" size="md">
           Data Invalid
         </Heading>
+      ) : IsLoadingProcess ? (
+        <LoadingMiniSignature />
       ) : (
-        <Text>OK</Text>
+        <>
+          {/* SECTION FOR TYPE INTERNAL DEVELOPMENT AND HAVE REQUIREMENT DATA */}
+          {DataProject.projectType == PROJECT_TYPE_INTERNAL_DEVELOPMENT &&
+            DataRequirement && (
+              <FeatureBacklogsView
+                DataProject={DataProject}
+                DataRequirement={DataRequirement}
+                onRefresh={RefreshAction}
+                refreshTrigger={RefreshData}
+              />
+            )}
+
+          {/* SECTION FOR TYPE PROCUREMENT AND HAVE REQUIREMENT DATA */}
+          {DataProject.projectType == PROJECT_TYPE_PROCUREMENT &&
+            DataRequirement && (
+              <FeatureBacklogsView
+                DataProject={DataProject}
+                DataRequirement={DataRequirement}
+                onRefresh={RefreshAction}
+                refreshTrigger={RefreshData}
+              />
+            )}
+
+          {/* SECTION FOR TYPE POCUREMENT AND DONT HAVE REQUIREMENT DATA */}
+          {DataProject.projectType == PROJECT_TYPE_PROCUREMENT &&
+            !DataRequirement && (
+              <WorkFlowBacklogsView
+                DataProject={DataProject}
+                onRefresh={RefreshAction}
+                refreshTrigger={RefreshData}
+              />
+            )}
+        </>
       )}
     </Flex>
   );
@@ -223,11 +263,15 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
 interface FeatureBacklogsViewProps {
   DataProject: ProjectDataResponse;
   DataRequirement: RequirementsResponse;
+  onRefresh: () => void;
+  refreshTrigger: number;
 }
 
 const FeatureBacklogsView = ({
   DataProject,
   DataRequirement,
+  onRefresh,
+  refreshTrigger,
 }: FeatureBacklogsViewProps) => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
@@ -277,8 +321,6 @@ const FeatureBacklogsView = ({
     }),
     [pageIndex, pageSize]
   );
-
-  const [RefreshData, setRefreshData] = useState<number>(0);
 
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
   // GetServiceListBacklog
@@ -559,7 +601,7 @@ const FeatureBacklogsView = ({
       GetDataBacklogsList();
       GetProgression();
     }
-  }, [DataAuth, RefreshData, DataProject, globalFilter]);
+  }, [DataAuth, refreshTrigger, DataProject, globalFilter]);
 
   // auto page
   const tableBacklogs = useReactTable({
@@ -580,7 +622,7 @@ const FeatureBacklogsView = ({
   const RefreshAction = () => {
     setGlobalFilter("");
     setDataBacklogsRequirement([]);
-    setRefreshData(RefreshData + 1);
+    onRefresh();
   };
 
   return (
@@ -689,6 +731,23 @@ const FeatureBacklogsView = ({
       </Box>
     </Flex>
   );
+};
+
+interface WorkFlowBacklogsViewProps {
+  DataProject: ProjectDataResponse;
+  onRefresh: () => void;
+  refreshTrigger: number;
+}
+
+const WorkFlowBacklogsView = ({
+  DataProject,
+  onRefresh,
+  refreshTrigger,
+}: WorkFlowBacklogsViewProps) => {
+  const showToast = useToastHelper();
+  const { colorMode } = useColorMode();
+
+  return <Text>Workflow Backlogs Here</Text>;
 };
 
 export default ProjectFeatureView;
