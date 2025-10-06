@@ -64,6 +64,7 @@ import {
   Switch,
   Table,
   Tbody,
+  Td,
   Text,
   Textarea,
   Th,
@@ -941,6 +942,7 @@ const WorkFlowBacklogsView = ({
               workflow={workflow}
               onRefresh={onRefresh}
               level={1}
+              DataProject={DataProject}
             />
           ))}
         </VStack>
@@ -967,12 +969,14 @@ interface WorkflowBacklogBoxProps {
   workflow: ProjectWorkflowResponse;
   onRefresh: () => void;
   level: number;
+  DataProject: ProjectDataResponse;
 }
 
 const WorkflowBacklogBox = ({
   workflow,
   onRefresh,
   level,
+  DataProject,
 }: WorkflowBacklogBoxProps) => {
   const { colorMode } = useColorMode();
   const [isExpanded, setIsExpanded] = useState(true);
@@ -1066,7 +1070,7 @@ const WorkflowBacklogBox = ({
       {/* Content */}
       {shouldShowTable && (
         <Box p={4} pt={0}>
-          <WorkflowBacklogTable workflow={workflow} onRefresh={onRefresh} />
+          <WorkflowBacklogTable workflow={workflow} onRefresh={onRefresh} DataProject={DataProject} />
         </Box>
       )}
 
@@ -1080,6 +1084,7 @@ const WorkflowBacklogBox = ({
                 workflow={child}
                 onRefresh={onRefresh}
                 level={level + 1}
+                DataProject={DataProject}
               />
             ))}
           </VStack>
@@ -1093,14 +1098,77 @@ const WorkflowBacklogBox = ({
 interface WorkflowBacklogTableProps {
   workflow: ProjectWorkflowResponse;
   onRefresh: () => void;
+  DataProject: ProjectDataResponse;
 }
 
 const WorkflowBacklogTable = ({
   workflow,
   onRefresh,
+  DataProject,
 }: WorkflowBacklogTableProps) => {
   const { colorMode } = useColorMode();
 
+  const showToast = useToastHelper();
+  const { UpdateBacklog } = useRequirements();
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [selectedBacklog, setSelectedBacklog] = useState<BacklogDataResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [tokenData, setTokenData] = useState<string>("");
+
+  useEffect(() => {
+    const token = localStorage.getItem("tokenData") as string;
+    if (token) setTokenData(token);
+  }, []);
+
+  const handlePreviewBacklog = (backlog: BacklogDataResponse) => {
+    setSelectedBacklog(backlog);
+    onOpen();
+  };
+
+  const handleUpdateBacklog = async (values: any) => {
+    if (!selectedBacklog) return;
+    
+    setIsLoading(true);
+    const payload = {
+      id: selectedBacklog.id,
+      backlogName: selectedBacklog.backlogName,
+      backlogDesc: values.backlogDesc,
+      envSide: selectedBacklog.envSide || null,
+      maintenanceCategory: selectedBacklog.maintenanceCategory || null,
+      maintenanceType: selectedBacklog.maintenanceType || null,
+      rppb: selectedBacklog.rppb || "",
+      licensing: selectedBacklog.licensing || "",
+      backogRegistered: values.backogRegistered,
+      backlogStartdate: values.backlogStartdate,
+      backlogEnddate: values.backlogEnddate,
+      urgency: values.urgency,
+      impact: values.impact,
+      priority: values.priority,
+      developmentStatus: selectedBacklog.developmentStatus || "",
+      backlogImplementStartdate: values.backlogImplementStartdate || null,
+      backlogImplementEnddate: values.backlogImplementEnddate || null,
+      reffId: selectedBacklog.reffId || null,
+      posOrder: selectedBacklog.posOrder || 0,
+    };
+    
+    const result = await UpdateBacklog(payload, tokenData);
+    
+    if (result?.statusCode === RES_CODE_OK) {
+      showToast({
+        description: "Backlog updated successfully",
+        statusToast: "success",
+      });
+      onRefresh();
+      onClose();
+    } else {
+      showToast({
+        description: result?.message || "Failed to update backlog",
+        statusToast: "error",
+      });
+    }
+    
+    setIsLoading(false);
+  };
   if (!workflow.workflowBacklog) {
     return (
       <Box
@@ -1119,12 +1187,13 @@ const WorkflowBacklogTable = ({
   }
 
   return (
-    <Flex
-      shadow="md"
-      rounded={radiusStyle}
-      border="1px"
-      borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
-    >
+    <>
+      <Box
+        shadow="md"
+        rounded={radiusStyle}
+        border="1px"
+        borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+      >
       <Table
         size="sm"
         // variant="unstyled"
@@ -1169,9 +1238,253 @@ const WorkflowBacklogTable = ({
             </Th>
           </Tr>
         </Thead>
-        <Tbody></Tbody>
+        <Tbody>
+          {workflow.workflowBacklog && (
+            <Tr>
+              <Td py={3}>
+                <VStack align="start" spacing={1}>
+                  <Text fontWeight="bold" fontSize="sm">
+                    {workflow.workflowBacklog.backlogName}
+                  </Text>
+                  <Text fontSize="xs" color="gray.500">
+                    {workflow.workflowBacklog.backlogDesc || "No description"}
+                  </Text>
+                </VStack>
+              </Td>
+              <Td py={3} textAlign="center">
+                {workflow.workflowBacklog.backlogEnddate ? (
+                  <DeadlineStatusTag
+                    deadline={workflow.workflowBacklog.backlogEnddate}
+                    remindBeforeDays={10}
+                  />
+                ) : (
+                  <Text fontSize="sm" color="gray.500">-</Text>
+                )}
+              </Td>
+              <Td py={3} textAlign="center">
+                <Text fontSize="sm">
+                  {workflow.workflowBacklog.backlogStartdate 
+                    ? new Date(workflow.workflowBacklog.backlogStartdate).toLocaleDateString()
+                    : "-"
+                  }
+                </Text>
+              </Td>
+              <Td py={3} textAlign="center">
+                <Text fontSize="sm">
+                  {workflow.workflowBacklog.backlogEnddate
+                    ? new Date(workflow.workflowBacklog.backlogEnddate).toLocaleDateString()
+                    : "-"
+                  }
+                </Text>
+              </Td>
+              <Td py={3} textAlign="center">
+                <Text fontSize="sm" color="gray.500">-</Text>
+              </Td>
+              <Td py={3} textAlign="center">
+                <Text fontSize="sm" color="gray.500">-</Text>
+              </Td>
+              <Td py={3} textAlign="center">
+                <Text 
+                  fontSize="sm" 
+                  fontWeight="bold"
+                  color={priorityColor(workflow.workflowBacklog.developmentStatus)}
+                >
+                  {workflow.workflowBacklog.developmentStatus}
+                </Text>
+              </Td>
+              <Td py={3}>
+                <VStack spacing={1}>
+                  <Text fontSize="xs" fontWeight="bold">
+                    {workflow.workflowBacklog.progressionPercentage}%
+                  </Text>
+                  <Progress
+                    value={workflow.workflowBacklog.progressionPercentage}
+                    colorScheme={colorProgression(workflow.workflowBacklog.progressionPercentage)}
+                    size="sm"
+                    w="full"
+                    rounded="full"
+                  />
+                </VStack>
+              </Td>
+              <Td py={3}>
+                <HStack spacing={2}>
+                  <Button 
+                    size="xs" 
+                    colorScheme="blue" 
+                    leftIcon={<FiEye />}
+                    onClick={() => handlePreviewBacklog(workflow.workflowBacklog!)}
+                  >
+                    Preview
+                  </Button>
+                  <Link href={`/kanban?projectId=${DataProject?.id}&backlogId=${workflow.workflowBacklog.id}`}>
+                    <Button size="xs" colorScheme="gray" leftIcon={<BsKanban />}>
+                      Kanban
+                    </Button>
+                  </Link>
+                </HStack>
+              </Td>
+            </Tr>
+          )}
+        </Tbody>
       </Table>
-    </Flex>
+    </Box>
+
+      {/* Backlog Preview Modal */}
+      <Modal isOpen={isOpen} onClose={onClose} size="xl">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Backlog Details</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            {selectedBacklog && (
+              <BacklogEditForm
+                backlog={selectedBacklog}
+                onSubmit={handleUpdateBacklog}
+                isLoading={isLoading}
+              />
+            )}
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+    </>
+  );
+};
+
+// Backlog Edit Form Component
+interface BacklogEditFormProps {
+  backlog: BacklogDataResponse;
+  onSubmit: (values: any) => void;
+  isLoading: boolean;
+}
+
+const BacklogEditForm = ({ backlog, onSubmit, isLoading }: BacklogEditFormProps) => {
+  const formik = useFormik({
+    initialValues: {
+      backlogDesc: backlog.backlogDesc || "",
+      backogRegistered: backlog.backogRegistered || "",
+      backlogStartdate: backlog.backlogStartdate ? backlog.backlogStartdate.split("T")[0] : "",
+      backlogEnddate: backlog.backlogEnddate ? backlog.backlogEnddate.split("T")[0] : "",
+      urgency: backlog.urgency || "",
+      impact: backlog.impact || "",
+      priority: backlog.priority || "",
+      backlogImplementStartdate: "",
+      backlogImplementEnddate: "",
+    },
+    onSubmit: (values) => {
+      onSubmit(values);
+    },
+  });
+
+  return (
+    <form onSubmit={formik.handleSubmit}>
+      <VStack spacing={4}>
+        <FormControl>
+          <FormLabel>Description</FormLabel>
+          <Textarea
+            name="backlogDesc"
+            value={formik.values.backlogDesc}
+            onChange={formik.handleChange}
+            placeholder="Enter backlog description"
+          />
+        </FormControl>
+
+        <FormControl>
+          <FormLabel>Registered</FormLabel>
+          <Input
+            name="backogRegistered"
+            value={formik.values.backogRegistered}
+            onChange={formik.handleChange}
+            placeholder="Enter registered info"
+          />
+        </FormControl>
+
+        <Grid templateColumns="1fr 1fr" gap={4} w="full">
+          <FormControl>
+            <FormLabel>Start Date</FormLabel>
+            <Input
+              type="date"
+              name="backlogStartdate"
+              value={formik.values.backlogStartdate}
+              onChange={formik.handleChange}
+            />
+          </FormControl>
+          <FormControl>
+            <FormLabel>End Date</FormLabel>
+            <Input
+              type="date"
+              name="backlogEnddate"
+              value={formik.values.backlogEnddate}
+              onChange={formik.handleChange}
+            />
+          </FormControl>
+        </Grid>
+
+        <Grid templateColumns="1fr 1fr 1fr" gap={4} w="full">
+          <FormControl>
+            <FormLabel>Urgency</FormLabel>
+            <Input
+              name="urgency"
+              value={formik.values.urgency}
+              onChange={formik.handleChange}
+              placeholder="Enter urgency"
+            />
+          </FormControl>
+          <FormControl>
+            <FormLabel>Impact</FormLabel>
+            <Input
+              name="impact"
+              value={formik.values.impact}
+              onChange={formik.handleChange}
+              placeholder="Enter impact"
+            />
+          </FormControl>
+          <FormControl>
+            <FormLabel>Priority</FormLabel>
+            <Input
+              name="priority"
+              value={formik.values.priority}
+              onChange={formik.handleChange}
+              placeholder="Enter priority"
+            />
+          </FormControl>
+        </Grid>
+
+        <Grid templateColumns="1fr 1fr" gap={4} w="full">
+          <FormControl>
+            <FormLabel>Implementation Start</FormLabel>
+            <Input
+              type="date"
+              name="backlogImplementStartdate"
+              value={formik.values.backlogImplementStartdate}
+              onChange={formik.handleChange}
+            />
+          </FormControl>
+          <FormControl>
+            <FormLabel>Implementation End</FormLabel>
+            <Input
+              type="date"
+              name="backlogImplementEnddate"
+              value={formik.values.backlogImplementEnddate}
+              onChange={formik.handleChange}
+            />
+          </FormControl>
+        </Grid>
+
+        <HStack spacing={3} w="full" justify="end">
+          <Button variant="outline" onClick={() => formik.resetForm()}>
+            Reset
+          </Button>
+          <Button
+            type="submit"
+            colorScheme="blue"
+            isLoading={isLoading}
+            loadingText="Updating..."
+          >
+            Update Backlog
+          </Button>
+        </HStack>
+      </VStack>
+    </form>
   );
 };
 

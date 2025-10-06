@@ -135,7 +135,6 @@ import { CustomPanelAlert } from "@/app/components/customPanels";
 import AppInfromationSection from "./apps/appViewSection";
 import AppChangeLogSection from "./apps/appLogsViewSection";
 import AppsEnvirontmentSection from "./apps/appsEnvViewSection";
-import ProjectFeatureView from "./projectFeaturesView";
 import { calculateDurationInDays } from "@/app/helper/MasterHelper";
 import { InputLayoutFullHalf } from "@/app/components/layoutContentBody";
 import { TabButtonCustomStyle } from "@/app/components/TabsCustom";
