@@ -1119,49 +1119,60 @@ const WorkflowBacklogTable = ({
   }
 
   return (
-    <Box
+    <Flex
+      shadow="md"
       rounded={radiusStyle}
       border="1px"
       borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
-      shadow="md"
     >
-      <Table size="sm" variant="unstyled" rounded={radiusStyle}>
+      <Table
+        size="sm"
+        // variant="unstyled"
+        colorScheme={"secondary"}
+      >
         <Thead>
-          <Tr
-            bg={colorMode == "light" ? "secondary.50" : "gray.900"}
-            color={colorMode == "light" ? "secondary.800" : "secondary.500"}
-            borderTopRadius={radiusStyle}
-          >
+          <Tr>
             <Th py={3} rowSpan={2}>
               Deskripsi
             </Th>
             <Th py={3} rowSpan={2}>
               Deadline
             </Th>
-            <Th py={3} colSpan={2}>
+            <Th py={3} colSpan={2} textAlign="center">
               Rencana
             </Th>
-            <Th py={3}>Mulai</Th>
-            <Th py={3}>Selesai</Th>
-            <Th py={3} colSpan={2}>
+            <Th py={3} colSpan={2} textAlign="center">
               Realisasi
             </Th>
-            <Th py={3}>Mulai</Th>
-            <Th py={3}>Selesai</Th>
             <Th py={3} rowSpan={2}>
               Status
             </Th>
             <Th py={3} rowSpan={2}>
               Progress
             </Th>
-            <Th width="200px" rowSpan={2}>
+            <Th py={3} rowSpan={2} width="200px">
               Actions
+            </Th>
+          </Tr>
+          <Tr>
+            <Th py={2} textAlign="center">
+              Mulai
+            </Th>
+            <Th py={2} textAlign="center">
+              Selesai
+            </Th>
+            <Th py={2} textAlign="center">
+              Mulai
+            </Th>
+            <Th py={2} textAlign="center">
+              Selesai
             </Th>
           </Tr>
         </Thead>
         <Tbody></Tbody>
       </Table>
-    </Box>
+    </Flex>
   );
 };
+
 export default ProjectFeatureView;
