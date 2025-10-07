@@ -86,7 +86,6 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { BsKanban } from "react-icons/bs";
 import {
-  FiActivity,
   FiAlertOctagon,
   FiAlertTriangle,
   FiArrowLeft,
@@ -99,13 +98,8 @@ import {
   FiServer,
   FiShare,
   FiXCircle,
-  FiZap,
   FiUsers,
-  FiCalendar,
   FiTarget,
-  FiTrendingUp,
-  FiClock,
-  FiBarChart,
   FiFileText,
   FiSettings,
   FiHeart,
@@ -151,6 +145,7 @@ import {
   TimelineTab,
 } from "./tabs";
 import LoadingMiniSquare from "@/app/components/loadingMiniSquare";
+import { FiClock, FiZap, FiTrendingUp, FiBarChart, FiPieChart, FiCalendar, FiActivity } from "react-icons/fi";
 
 // Calendar Event Interface
 interface EventInterface {
@@ -942,14 +937,14 @@ function ProjectManagerDetailView() {
                   <TabList gap={2} p={4} overflowX={"auto"}>
                     <TabButtonCustomStyle>
                       <HStack>
-                        <FiTarget size={16} />
-                        <Text>Overview</Text>
+                        <FiInfo size={16} />
+                        <Text>Details</Text>
                       </HStack>
                     </TabButtonCustomStyle>
                     <TabButtonCustomStyle>
                       <HStack>
-                        <FiInfo size={16} />
-                        <Text>Details</Text>
+                        <FiTarget size={16} />
+                        <Text>Overview</Text>
                       </HStack>
                     </TabButtonCustomStyle>
                     <TabButtonCustomStyle>
@@ -990,13 +985,214 @@ function ProjectManagerDetailView() {
                     roundedBottom={radiusStyle}
                     minH="600px"
                   >
-                    <OverviewTab DataProject={DataProject} />
                     <DetailsTab DataProject={DataProject} />
+                    {/* Overview Tab - Coming Soon */}
+                    <TabPanel px={0}>
+                      <Flex
+                        direction="column"
+                        align="center"
+                        justify="center"
+                        minH="400px"
+                        textAlign="center"
+                        py={12}
+                      >
+                        <Box position="relative" mb={6}>
+                          <FiClock size={80} color={colorMode === "light" ? "#3182CE" : "#63B3ED"} opacity={0.8} />
+                          <FiZap size={32} color={colorMode === "light" ? "#ED8936" : "#F6AD55"} style={{ position: "absolute", top: -8, right: -8 }} />
+                        </Box>
+
+                        <VStack spacing={4} maxW="md">
+                          <Text
+                            fontSize="3xl"
+                            fontWeight="bold"
+                            bgGradient="linear(to-r, blue.500, purple.600)"
+                            bgClip="text"
+                          >
+                            Coming Soon
+                          </Text>
+                          
+                          <Text
+                            fontSize="lg"
+                            color={colorMode === "light" ? "gray.600" : "gray.400"}
+                            lineHeight="tall"
+                          >
+                            We're working on an amazing overview dashboard with project insights, 
+                            analytics, and real-time metrics.
+                          </Text>
+
+                          <VStack spacing={2} mt={4}>
+                            <Text
+                              fontSize="sm"
+                              color={colorMode === "light" ? "gray.500" : "gray.500"}
+                              fontWeight="medium"
+                            >
+                              Features coming soon:
+                            </Text>
+                            <VStack spacing={1} fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"}>
+                              <Text>• Project Analytics Dashboard</Text>
+                              <Text>• Progress Tracking & Metrics</Text>
+                              <Text>• Team Performance Insights</Text>
+                              <Text>• Timeline & Milestone Overview</Text>
+                            </VStack>
+                          </VStack>
+
+                          <Button
+                            leftIcon={<FiTrendingUp />}
+                            colorScheme="blue"
+                            variant="outline"
+                            rounded="full"
+                            mt={6}
+                            size="lg"
+                            _hover={{
+                              transform: "translateY(-2px)",
+                              shadow: "lg",
+                            }}
+                            transition="all 0.2s"
+                          >
+                            Stay Tuned
+                          </Button>
+                        </VStack>
+                      </Flex>
+                    </TabPanel>
                     <FeaturesTab DataProject={DataProject} />
                     <DocumentationTab DataProject={DataProject} />
                     <TeamTab DataProject={DataProject} />
-                    <AnalyticsTab DataProject={DataProject} />
-                    <TimelineTab DataProject={DataProject} />
+                    {/* Analytics Tab - Coming Soon */}
+                    <TabPanel px={0}>
+                      <Flex
+                        direction="column"
+                        align="center"
+                        justify="center"
+                        minH="400px"
+                        textAlign="center"
+                        py={12}
+                      >
+                        <Box position="relative" mb={6}>
+                          <FiBarChart size={80} color={colorMode === "light" ? "#3182CE" : "#63B3ED"} opacity={0.8} />
+                          <FiTrendingUp size={32} color={colorMode === "light" ? "#38A169" : "#68D391"} style={{ position: "absolute", top: -8, right: -8 }} />
+                        </Box>
+
+                        <VStack spacing={4} maxW="md">
+                          <Text
+                            fontSize="3xl"
+                            fontWeight="bold"
+                            bgGradient="linear(to-r, blue.500, green.600)"
+                            bgClip="text"
+                          >
+                            Coming Soon
+                          </Text>
+                          
+                          <Text
+                            fontSize="lg"
+                            color={colorMode === "light" ? "gray.600" : "gray.400"}
+                            lineHeight="tall"
+                          >
+                            Advanced analytics dashboard with comprehensive project metrics 
+                            and performance insights is under development.
+                          </Text>
+
+                          <VStack spacing={2} mt={4}>
+                            <Text
+                              fontSize="sm"
+                              color={colorMode === "light" ? "gray.500" : "gray.500"}
+                              fontWeight="medium"
+                            >
+                              Analytics features coming soon:
+                            </Text>
+                            <VStack spacing={1} fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"}>
+                              <Text>• Performance Metrics & KPIs</Text>
+                              <Text>• Resource Utilization Charts</Text>
+                              <Text>• Progress Trend Analysis</Text>
+                              <Text>• Team Productivity Reports</Text>
+                            </VStack>
+                          </VStack>
+
+                          <Button
+                            leftIcon={<FiPieChart />}
+                            colorScheme="green"
+                            variant="outline"
+                            rounded="full"
+                            mt={6}
+                            size="lg"
+                            _hover={{
+                              transform: "translateY(-2px)",
+                              shadow: "lg",
+                            }}
+                            transition="all 0.2s"
+                          >
+                            View Analytics
+                          </Button>
+                        </VStack>
+                      </Flex>
+                    </TabPanel>
+                    {/* Timeline Tab - Coming Soon */}
+                    <TabPanel px={0}>
+                      <Flex
+                        direction="column"
+                        align="center"
+                        justify="center"
+                        minH="400px"
+                        textAlign="center"
+                        py={12}
+                      >
+                        <Box position="relative" mb={6}>
+                          <FiCalendar size={80} color={colorMode === "light" ? "#805AD5" : "#B794F6"} opacity={0.8} />
+                          <FiActivity size={32} color={colorMode === "light" ? "#ED8936" : "#F6AD55"} style={{ position: "absolute", top: -8, right: -8 }} />
+                        </Box>
+
+                        <VStack spacing={4} maxW="md">
+                          <Text
+                            fontSize="3xl"
+                            fontWeight="bold"
+                            bgGradient="linear(to-r, purple.500, orange.600)"
+                            bgClip="text"
+                          >
+                            Coming Soon
+                          </Text>
+                          
+                          <Text
+                            fontSize="lg"
+                            color={colorMode === "light" ? "gray.600" : "gray.400"}
+                            lineHeight="tall"
+                          >
+                            Interactive project timeline with milestones, deadlines, 
+                            and activity tracking is being developed.
+                          </Text>
+
+                          <VStack spacing={2} mt={4}>
+                            <Text
+                              fontSize="sm"
+                              color={colorMode === "light" ? "gray.500" : "gray.500"}
+                              fontWeight="medium"
+                            >
+                              Timeline features coming soon:
+                            </Text>
+                            <VStack spacing={1} fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"}>
+                              <Text>• Project Milestones & Deadlines</Text>
+                              <Text>• Activity Timeline Visualization</Text>
+                              <Text>• Critical Path Analysis</Text>
+                              <Text>• Schedule Management Tools</Text>
+                            </VStack>
+                          </VStack>
+
+                          <Button
+                            leftIcon={<FiClock />}
+                            colorScheme="purple"
+                            variant="outline"
+                            rounded="full"
+                            mt={6}
+                            size="lg"
+                            _hover={{
+                              transform: "translateY(-2px)",
+                              shadow: "lg",
+                            }}
+                            transition="all 0.2s"
+                          >
+                            View Timeline
+                          </Button>
+                        </VStack>
+                      </Flex>
+                    </TabPanel>
                   </TabPanels>
                 </Tabs>
               </CardBody>
