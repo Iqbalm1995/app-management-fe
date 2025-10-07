@@ -510,14 +510,14 @@ function ProjectManagerDetailView() {
                 >
                   <TabButtonCustomStyle>
                     <HStack>
-                      <FiTarget size={16} />
-                      <Text>Overview</Text>
+                      <FiInfo size={16} />
+                      <Text>Details</Text>
                     </HStack>
                   </TabButtonCustomStyle>
                   <TabButtonCustomStyle>
                     <HStack>
-                      <FiInfo size={16} />
-                      <Text>Details</Text>
+                      <FiTarget size={16} />
+                      <Text>Overview</Text>
                     </HStack>
                   </TabButtonCustomStyle>
                   <TabButtonCustomStyle>
@@ -579,8 +579,8 @@ function ProjectManagerDetailView() {
               >
                 <CardBody>
                   <TabPanels minH="600px">
-                    <OverviewTab DataProject={DataProject} />
                     <DetailsTab DataProject={DataProject} />
+                    <OverviewTab DataProject={DataProject} />
                     <FeaturesTab DataProject={DataProject} />
                     <DocumentationTab DataProject={DataProject} />
                     <TeamTab DataProject={DataProject} />

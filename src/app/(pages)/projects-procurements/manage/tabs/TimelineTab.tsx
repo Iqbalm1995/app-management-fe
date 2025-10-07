@@ -5,17 +5,13 @@ import {
   TabPanel,
   useColorMode,
   VStack,
-  HStack,
-  Heading,
+  Box,
   Text,
   Button,
-  Card,
-  CardBody,
-  CardHeader,
-  Box,
+  Icon,
+  Flex,
 } from "@chakra-ui/react";
-import { radiusStyle } from "@/app/constants/applicationConstants";
-import { FiCalendar, FiPlus, FiRefreshCcw, FiClock } from "react-icons/fi";
+import { FiClock, FiCalendar, FiActivity } from "react-icons/fi";
 
 interface TimelineTabProps {
   DataProject: ProjectDataResponse | null;
@@ -25,139 +21,84 @@ const TimelineTab = ({ DataProject }: TimelineTabProps) => {
   const { colorMode } = useColorMode();
 
   return (
-    <TabPanel roundedBottom={radiusStyle}>
-      <VStack spacing={8} align="stretch">
-        {/* Header Section */}
-        <HStack justify="space-between" align="center">
-          <VStack align="start" spacing={1}>
-            <Heading
-              size="lg"
-              color={colorMode === "light" ? "gray.800" : "white"}
+    <TabPanel px={0}>
+      <Flex
+        direction="column"
+        align="center"
+        justify="center"
+        minH="400px"
+        textAlign="center"
+        py={12}
+      >
+        <Box position="relative" mb={6}>
+          <Icon
+            as={FiCalendar}
+            boxSize={20}
+            color={colorMode === "light" ? "purple.500" : "purple.400"}
+            opacity={0.8}
+          />
+          <Icon
+            as={FiActivity}
+            boxSize={8}
+            color={colorMode === "light" ? "orange.500" : "orange.400"}
+            position="absolute"
+            top={-2}
+            right={-2}
+          />
+        </Box>
+
+        <VStack spacing={4} maxW="md">
+          <Text
+            fontSize="3xl"
+            fontWeight="bold"
+            bgGradient="linear(to-r, purple.500, orange.600)"
+            bgClip="text"
+          >
+            Coming Soon
+          </Text>
+          
+          <Text
+            fontSize="lg"
+            color={colorMode === "light" ? "gray.600" : "gray.400"}
+            lineHeight="tall"
+          >
+            Interactive project timeline with milestones, deadlines, 
+            and activity tracking is being developed.
+          </Text>
+
+          <VStack spacing={2} mt={4}>
+            <Text
+              fontSize="sm"
+              color={colorMode === "light" ? "gray.500" : "gray.500"}
+              fontWeight="medium"
             >
-              Project Timeline
-            </Heading>
-            <Text color="gray.600" fontSize="sm">
-              Track project milestones and important dates
+              Timeline features coming soon:
             </Text>
-          </VStack>
-          <HStack spacing={3}>
-            <Button
-              size="sm"
-              variant="outline"
-              leftIcon={<FiRefreshCcw />}
-              colorScheme="gray"
-              rounded="full"
-            >
-              Refresh
-            </Button>
-          </HStack>
-        </HStack>
-
-        {/* Calendar/Timeline Content */}
-        <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
-          <CardHeader bg="blue.50" roundedTop="xl">
-            <HStack spacing={3}>
-              <Box
-                w={10}
-                h={10}
-                bgGradient="linear(135deg, blue.400, blue.600)"
-                rounded="xl"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-              >
-                <FiCalendar size={20} color="white" />
-              </Box>
-              <Heading size="md" color="blue.700">
-                Project Calendar
-              </Heading>
-            </HStack>
-          </CardHeader>
-          <CardBody p={6}>
-            <Box
-              h="500px"
-              bg={colorMode === "light" ? "gray.50" : "gray.800"}
-              rounded="lg"
-              display="flex"
-              flexDirection="column"
-              alignItems="center"
-              justifyContent="center"
-              border="2px dashed"
-              borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
-            >
-              <FiCalendar size={48} color="gray" />
-              <Text color="gray.500" fontSize="lg" fontWeight="medium" mt={4}>
-                Calendar Component
-              </Text>
-              <Text color="gray.400" fontSize="sm" textAlign="center" mt={2}>
-                FullCalendar integration will be implemented here
-                <br />
-                to show project timeline and milestones
-              </Text>
-            </Box>
-          </CardBody>
-        </Card>
-
-        {/* Timeline Events */}
-        <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
-          <CardHeader bg="green.50" roundedTop="xl">
-            <HStack spacing={3}>
-              <Box
-                w={10}
-                h={10}
-                bgGradient="linear(135deg, green.400, green.600)"
-                rounded="xl"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-              >
-                <FiClock size={20} color="white" />
-              </Box>
-              <Heading size="md" color="green.700">
-                Recent Timeline Events
-              </Heading>
-            </HStack>
-          </CardHeader>
-          <CardBody p={6}>
-            <VStack spacing={4} align="stretch">
-              {/* Sample Timeline Events */}
-              <HStack spacing={4}>
-                <Box w={3} h={3} bg="blue.400" rounded="full" mt={1} />
-                <VStack align="start" spacing={1}>
-                  <Text fontWeight="medium">Project Started</Text>
-                  <Text fontSize="sm" color="gray.600">
-                    {DataProject?.projectRegisterDate
-                      ? new Date(
-                          DataProject.projectRegisterDate
-                        ).toLocaleDateString()
-                      : "Date not available"}
-                  </Text>
-                </VStack>
-              </HStack>
-
-              <HStack spacing={4}>
-                <Box w={3} h={3} bg="green.400" rounded="full" mt={1} />
-                <VStack align="start" spacing={1}>
-                  <Text fontWeight="medium">Team Assembled</Text>
-                  <Text fontSize="sm" color="gray.600">
-                    {DataProject?.userAssignment?.length || 0} members assigned
-                  </Text>
-                </VStack>
-              </HStack>
-
-              <HStack spacing={4}>
-                <Box w={3} h={3} bg="orange.400" rounded="full" mt={1} />
-                <VStack align="start" spacing={1}>
-                  <Text fontWeight="medium">Current Progress</Text>
-                  <Text fontSize="sm" color="gray.600">
-                    {DataProject?.projectStatusPercentage || 0}% completed
-                  </Text>
-                </VStack>
-              </HStack>
+            <VStack spacing={1} fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"}>
+              <Text>• Project Milestones & Deadlines</Text>
+              <Text>• Activity Timeline Visualization</Text>
+              <Text>• Critical Path Analysis</Text>
+              <Text>• Schedule Management Tools</Text>
             </VStack>
-          </CardBody>
-        </Card>
-      </VStack>
+          </VStack>
+
+          <Button
+            leftIcon={<FiClock />}
+            colorScheme="purple"
+            variant="outline"
+            rounded="full"
+            mt={6}
+            size="lg"
+            _hover={{
+              transform: "translateY(-2px)",
+              shadow: "lg",
+            }}
+            transition="all 0.2s"
+          >
+            View Timeline
+          </Button>
+        </VStack>
+      </Flex>
     </TabPanel>
   );
 };

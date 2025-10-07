@@ -370,6 +370,102 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                   </CardBody>
                 </Card>
               </SimpleGrid>
+
+              {/* Requirements Information Section */}
+              <Card
+                shadow="lg"
+                rounded="xl"
+                border="1px"
+                borderColor="gray.100"
+                mt={6}
+              >
+                <CardHeader bg="orange.50" roundedTop="xl">
+                  <HStack spacing={3}>
+                    <Box
+                      w={10}
+                      h={10}
+                      bgGradient="linear(135deg, orange.400, orange.600)"
+                      rounded="xl"
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                    >
+                      <FiActivity size={20} color="white" />
+                    </Box>
+                    <Heading size="md" color="orange.700">
+                      Requirements & Work Programs
+                    </Heading>
+                  </HStack>
+                </CardHeader>
+                <CardBody p={6}>
+                  {DataProject.workPrograms && DataProject.workPrograms.length > 0 ? (
+                    <VStack spacing={4} align="stretch">
+                      {DataProject.workPrograms.map((workProgram, index) => (
+                        <Box
+                          key={index}
+                          p={4}
+                          bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                          rounded="lg"
+                          border="1px"
+                          borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                        >
+                          <VStack spacing={3} align="stretch">
+                            <HStack justify="space-between">
+                              <Text fontSize="sm" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"}>
+                                {workProgram.workProgramName || "Work Program"}
+                              </Text>
+                              <Badge colorScheme="blue" fontSize="xs">
+                                {workProgram.workProgramCode || "N/A"}
+                              </Badge>
+                            </HStack>
+                            
+                            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
+                              <VStack spacing={1} align="start">
+                                <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                                  Budget:
+                                </Text>
+                                <Text fontSize="sm" fontWeight="bold" color="green.600">
+                                  {workProgram.workProgramBudget ? 
+                                    `Rp ${workProgram.workProgramBudget.toLocaleString()}` : 
+                                    "Not specified"
+                                  }
+                                </Text>
+                              </VStack>
+                              
+                              <VStack spacing={1} align="start">
+                                <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                                  Division:
+                                </Text>
+                                <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                                  {workProgram.divisionName || "Not assigned"}
+                                </Text>
+                              </VStack>
+                              
+                              <VStack spacing={1} align="start">
+                                <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                                  Source:
+                                </Text>
+                                <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                                  {workProgram.workProgramSource || "Not specified"}
+                                </Text>
+                              </VStack>
+                            </SimpleGrid>
+                          </VStack>
+                        </Box>
+                      ))}
+                    </VStack>
+                  ) : (
+                    <Box textAlign="center" py={8}>
+                      <Text color="gray.500" fontSize="md">
+                        No requirements data available for this project
+                      </Text>
+                      <Text color="gray.400" fontSize="sm" mt={2}>
+                        Work programs and requirements will appear here when available
+                      </Text>
+                    </Box>
+                  )}
+                </CardBody>
+              </Card>
             </>
           ) : (
             <Box textAlign="center" py={12}>
