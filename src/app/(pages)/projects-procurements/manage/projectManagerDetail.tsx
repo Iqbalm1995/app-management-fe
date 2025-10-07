@@ -11,6 +11,8 @@ import {
   DELAY_MEDIUM,
   PROJEC_CATEGORY_OPTIONS,
   PROJEC_TYPE_OPTIONS,
+  PROJECT_TYPE_INTERNAL_DEVELOPMENT,
+  PROJECT_TYPE_PROCUREMENT,
   radiusStyle,
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
@@ -150,6 +152,7 @@ import {
   TimelineTab,
 } from "./tabs";
 import LoadingMiniSquare from "@/app/components/loadingMiniSquare";
+import { TbLayoutGridAdd } from "react-icons/tb";
 
 // Calendar Event Interface
 interface EventInterface {
@@ -467,13 +470,13 @@ function ProjectManagerDetailView() {
         bg={colorMode === "light" ? "white" : "gray.800"}
         color={colorMode === "light" ? "gray.800" : "white"}
         px={{ base: 4, md: 6 }}
-        py={{ base: 3, md: 4 }}
+        py={{ base: 3, md: 5 }}
         mt={{ base: 2, md: 4 }}
         mb={2}
         // mx={{ base: 2, md: 4 }}
         rounded={radiusStyle}
-        shadow="md"
-        border="1px"
+        shadow={"md"}
+        border={"1px"}
         borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
       >
         <VStack spacing={3} align="stretch">
@@ -686,8 +689,18 @@ function ProjectManagerDetailView() {
                   </TabButtonCustomStyle>
                   <TabButtonCustomStyle>
                     <HStack>
-                      <FiCpu size={16} />
-                      <Text>Features</Text>
+                      {DataProject &&
+                      DataProject.projectType == PROJECT_TYPE_PROCUREMENT ? (
+                        <>
+                          <TbLayoutGridAdd size={18} />
+                          <Text>Progression</Text>
+                        </>
+                      ) : (
+                        <>
+                          <FiCpu size={16} />
+                          <Text>Features</Text>
+                        </>
+                      )}
                     </HStack>
                   </TabButtonCustomStyle>
                   <TabButtonCustomStyle>

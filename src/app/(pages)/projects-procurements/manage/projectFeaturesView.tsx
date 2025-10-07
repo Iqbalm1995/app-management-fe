@@ -811,7 +811,11 @@ const WorkFlowBacklogsView = ({
       if (!hasChildren) {
         // This is a leaf node - count it
         totalLeaf++;
-        if (workflow.workflowValues && workflow.workflowValues.length > 0) {
+        if (
+          workflow.workflowBacklog &&
+          workflow.workflowBacklog.developmentStatus == "DONE" &&
+          workflow.workflowBacklog.progressionPercentage == 100
+        ) {
           completedLeaf++;
         }
       } else {
@@ -1247,6 +1251,7 @@ const WorkflowBacklogTable = ({
         rounded={radiusStyle}
         border="1px"
         borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+        overflowX={"auto"}
       >
         <Table
           size="sm"
