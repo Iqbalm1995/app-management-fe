@@ -650,7 +650,7 @@ function ProjectManagerDetailView() {
         >
           <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 9 }} w={"full"}>
             {/* // {/* Main Content Area} */}
-            <Tabs variant="unstyled" colorScheme="secondary" size={"lg"}>
+            <Tabs variant={"unstyled"} colorScheme={"secondary"} size={"lg"}>
               {/* Floating Tabs Container */}
               <Box
                 // bg={colorMode === "light" ? "white" : "gray.800"}
@@ -659,7 +659,7 @@ function ProjectManagerDetailView() {
                 // border="1px"
                 // borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
                 mb={4}
-                position="relative"
+                position={"relative"}
                 // zIndex={10}
               >
                 <TabList
