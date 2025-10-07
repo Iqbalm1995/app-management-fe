@@ -159,7 +159,7 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
               </HStack>
 
               {/* Beautiful Information Cards */}
-              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+              <VStack spacing={8} align="stretch">
                 {/* Basic Information Card */}
                 <Card
                   shadow="lg"
@@ -416,7 +416,7 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                     </Text>
                   </CardBody>
                 </Card>
-              </SimpleGrid>
+              </VStack>
 
               {/* Requirements Information Section */}
               <Card
