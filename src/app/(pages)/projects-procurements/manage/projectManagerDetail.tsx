@@ -153,6 +153,7 @@ import {
 } from "./tabs";
 import LoadingMiniSquare from "@/app/components/loadingMiniSquare";
 import { TbLayoutGridAdd } from "react-icons/tb";
+import { EnhancedHeader } from "./enhancedHeader";
 
 // Calendar Event Interface
 interface EventInterface {
@@ -465,181 +466,13 @@ function ProjectManagerDetailView() {
 
   return (
     <LayoutAdmin>
-      {/* Simplified Header for Procurement Projects */}
-      <Box
-        bg={colorMode === "light" ? "white" : "gray.800"}
-        color={colorMode === "light" ? "gray.800" : "white"}
-        px={{ base: 4, md: 6 }}
-        py={{ base: 3, md: 5 }}
-        mt={{ base: 2, md: 4 }}
-        mb={2}
-        // mx={{ base: 2, md: 4 }}
-        rounded={radiusStyle}
-        shadow={"md"}
-        border={"1px"}
-        borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-      >
-        <VStack spacing={3} align="stretch">
-          {/* Top Navigation */}
-          <HStack justify="space-between" align="center">
-            <Link href={"/projects-procurements"}>
-              <Button
-                leftIcon={<FiArrowLeft />}
-                variant="outline"
-                size="sm"
-                colorScheme="gray"
-                rounded="full"
-              >
-                Back
-              </Button>
-            </Link>
+      <EnhancedHeader
+        DataProject={DataProject}
+        IsLoadingProcess={IsLoadingProcess}
+        onRefresh={() => setRefreshData((prev) => prev + 1)}
+      />
 
-            <HStack spacing={2}>
-              <Button
-                leftIcon={<FiHeart />}
-                variant="ghost"
-                size="sm"
-                colorScheme="pink"
-                rounded="full"
-              >
-                Favorite
-              </Button>
-              <Button
-                leftIcon={<FiShare />}
-                variant="ghost"
-                size="sm"
-                colorScheme="blue"
-                rounded="full"
-              >
-                Share
-              </Button>
-              <Button
-                leftIcon={<FiRefreshCcw />}
-                variant="outline"
-                size="sm"
-                colorScheme="gray"
-                onClick={() => setRefreshData((prev) => prev + 1)}
-                isLoading={IsLoadingProcess}
-                rounded="full"
-              >
-                Refresh
-              </Button>
-            </HStack>
-          </HStack>
-
-          {/* Project Information */}
-          {DataProject ? (
-            <HStack spacing={4} align="center">
-              {/* Project Details */}
-              <Box flex={1}>
-                <VStack spacing={2} align="start">
-                  <Heading
-                    size="lg"
-                    fontWeight="600"
-                    color={colorMode === "light" ? "gray.800" : "white"}
-                  >
-                    {DataProject.projectName}
-                  </Heading>
-
-                  <HStack spacing={3} wrap="wrap">
-                    <Badge
-                      colorScheme={
-                        DataProject.projectStatus === "ACTIVE"
-                          ? "green"
-                          : DataProject.projectStatus === "ONHOLD"
-                          ? "orange"
-                          : DataProject.projectStatus === "COMPLETED"
-                          ? "blue"
-                          : "gray"
-                      }
-                      px={2}
-                      py={1}
-                      rounded="full"
-                      fontSize="xs"
-                    >
-                      {DataProject.projectStatus}
-                    </Badge>
-                    <Badge
-                      colorScheme="purple"
-                      px={2}
-                      py={1}
-                      rounded="full"
-                      fontSize="xs"
-                    >
-                      {DataProject.projectType}
-                    </Badge>
-                    <Text fontSize="sm" color="gray.500">
-                      {DataProject.projectNo}
-                    </Text>
-                  </HStack>
-                </VStack>
-              </Box>
-
-              {/* Stats */}
-              <HStack spacing={6} fontSize="sm">
-                <VStack spacing={0} align="center">
-                  <Text fontSize="md" fontWeight="bold" color="green.500">
-                    {DataProject.projectStatusPercentage || 0}%
-                  </Text>
-                  <Text fontSize="xs" color="gray.500">
-                    Progress
-                  </Text>
-                </VStack>
-                <VStack spacing={0} align="center">
-                  <Text fontSize="md" fontWeight="bold" color="blue.500">
-                    {DataProject.userAssignment?.length || 0}
-                  </Text>
-                  <Text fontSize="xs" color="gray.500">
-                    Team
-                  </Text>
-                </VStack>
-                <VStack spacing={0} align="center">
-                  <Text fontSize="md" fontWeight="bold" color="orange.500">
-                    {DataProject.projectRegisterDate
-                      ? calculateDurationInDays(
-                          DataProject.projectRegisterDate,
-                          new Date().toISOString()
-                        )
-                      : 0}
-                  </Text>
-                  <Text fontSize="xs" color="gray.500">
-                    Days
-                  </Text>
-                </VStack>
-              </HStack>
-
-              {/* Team Avatars */}
-              {DataProject.userAssignment &&
-                DataProject.userAssignment.length > 0 && (
-                  <AvatarGroup size="sm" max={3} spacing="-0.5rem">
-                    {DataProject.userAssignment
-                      .slice(0, 4)
-                      .map((assignment, index) => (
-                        <Avatar
-                          key={index}
-                          name={assignment.userData?.nama || "User"}
-                          src={assignment.userData?.profilePict || undefined}
-                          border="2px solid"
-                          borderColor={
-                            colorMode === "light" ? "white" : "gray.800"
-                          }
-                        />
-                      ))}
-                  </AvatarGroup>
-                )}
-            </HStack>
-          ) : (
-            <HStack spacing={4} align="center">
-              <LoadingMiniSquare />
-              <Text fontSize="md" color="gray.500">
-                Loading project details...
-              </Text>
-            </HStack>
-          )}
-        </VStack>
-      </Box>
-
-      {/* // {/* Main Content Container - Fixed Responsive Layout} */}
+      {/* Main Content Container - Fixed Responsive Layout */}
       <Box w="full" overflow="hidden">
         <Grid
           templateColumns="repeat(12, 1fr)"

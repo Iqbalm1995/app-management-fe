@@ -1,4 +1,4 @@
-export { default as OverviewTab } from './OverviewTab';
+export { OverviewTab } from './OverviewTab';
 export { default as DetailsTab } from './DetailsTab';
 export { default as FeaturesTab } from './FeaturesTab';
 export { default as DocumentationTab } from './DocumentationTab';
