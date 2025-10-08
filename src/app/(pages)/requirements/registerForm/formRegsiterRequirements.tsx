@@ -217,6 +217,7 @@ import useOrganization, {
   OrganizationResponse,
 } from "@/app/services/useOrganization";
 import useApps, { ApplicationMasterResponse } from "@/app/services/useApps";
+import AppPickerModal from "./AppPickerModal";
 import { WeekdaySelector } from "@/app/components/inputProps/WeekDaySelector";
 import CoverLockedFeature from "@/app/components/coverLockedFeature";
 
@@ -346,6 +347,9 @@ function RegsiterRequirementViewPage({
   const { List: ListUsers } = useUsers();
   const { List: ListOrganization } = useOrganization();
   const [isClient, setIsClient] = useState(false);
+  const ModalAppPicker = useDisclosure();
+  const [selectedApp, setSelectedApp] =
+    useState<ApplicationMasterResponse | null>(null);
   const { List: ListApps } = useApps();
 
   const initialValues: RequirementsInsertPayload = {
@@ -3970,6 +3974,10 @@ function RegsiterRequirementViewPage({
                             formik={formik}
                             DataBackLogs={DataBackLogs}
                             setDataBackLogs={setDataBackLogs}
+                            ModalAppPicker={ModalAppPicker}
+                            selectedApp={selectedApp}
+                            setSelectedApp={setSelectedApp}
+                            tokenData={tokenData}
                           />
                         ) : (
                           <Section4RFCView
@@ -4225,8 +4233,14 @@ interface Section4BRDProps {
   type_req_param: "BRD";
   formik: any;
   ActionLoading: boolean;
-  DataBackLogs: ReqBacklogPayload[]; // <- add state value
-  setDataBackLogs: React.Dispatch<React.SetStateAction<ReqBacklogPayload[]>>; // <- add setter function
+  DataBackLogs: ReqBacklogPayload[];
+  setDataBackLogs: React.Dispatch<React.SetStateAction<ReqBacklogPayload[]>>;
+  ModalAppPicker: any;
+  selectedApp: ApplicationMasterResponse | null;
+  setSelectedApp: React.Dispatch<
+    React.SetStateAction<ApplicationMasterResponse | null>
+  >;
+  tokenData: string;
 }
 
 // STEP 4 SECTION BRD
@@ -4235,12 +4249,15 @@ const Section4BRDView = ({
   formik,
   ActionLoading,
   DataBackLogs,
+  ModalAppPicker,
+  selectedApp,
+  setSelectedApp,
   setDataBackLogs,
+  tokenData,
 }: Section4BRDProps) => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
-  const [tokenData, setTokenData] = useState<string>("");
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
   const { List: ListApps } = useApps();
@@ -4972,6 +4989,15 @@ const Section4BRDView = ({
                     maxLength={10}
                     isDisabled={ActionLoading}
                   />
+                  <Button
+                    colorScheme="blue"
+                    size="sm"
+                    onClick={() => ModalAppPicker.onOpen()}
+                    isDisabled={ActionLoading}
+                    ml={3}
+                  >
+                    Pilih Aplikasi
+                  </Button>
                   {formik.values.appInitialCode &&
                     formik.values.appInitialCode.length > 2 &&
                     ListDataAplicationExisting.length <= 0 && (
@@ -5734,6 +5760,22 @@ const Section4BRDView = ({
           </FormControl>
         </Flex>
       </InputGroupPanel>
+
+      {/* App Picker Modal */}
+      <AppPickerModal
+        isOpen={ModalAppPicker.isOpen}
+        onClose={ModalAppPicker.onClose}
+        selectedApp={selectedApp}
+        onAppSelect={(app) => {
+          setSelectedApp(app);
+          if (app) {
+            formik.setFieldValue("appInitialCode", app.appShortName);
+            SelectedApp(app);
+          }
+          ModalAppPicker.onClose();
+        }}
+        tokenData={tokenData}
+      />
     </Flex>
   );
 };

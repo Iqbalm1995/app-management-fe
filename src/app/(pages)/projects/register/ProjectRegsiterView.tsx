@@ -5512,7 +5512,7 @@ function ProjectRegisterView({
                 p={4}
                 bgColor={"gray.200"}
                 rounded={radiusStyle}
-                // display={"none"}
+                display={"none"}
               >
                 <Text fontWeight={600}>Data Requirement</Text>
                 <pre>{JSON.stringify(DataRequirement, null, 2)}</pre>
@@ -5548,7 +5548,7 @@ function ProjectRegisterView({
                 p={4}
                 bgColor={"gray.200"}
                 rounded={radiusStyle}
-                // display={"none"}
+                display={"none"}
               >
                 <Text fontWeight={600}>Data Register Form</Text>
                 <pre>{JSON.stringify(formik.values, null, 2)}</pre>
