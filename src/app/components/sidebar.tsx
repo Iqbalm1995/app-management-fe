@@ -299,6 +299,7 @@ const LinkItems: LinkItemProps[] = [
     link: "/file-archives",
     role: ["admin"],
     menuID: "1",
+    isPro: true,
     children: [],
   },
   {

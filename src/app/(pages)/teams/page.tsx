@@ -149,6 +149,7 @@ const MenusPage: MenuPagesInterface[] = [
 ];
 
 function TeamsPage() {
+  const { colorMode } = useColorMode();
   // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
@@ -183,7 +184,7 @@ function TeamsPage() {
           <Flex
             as={Stack}
             w={"full"}
-            bg={useColorModeValue("white", "gray.700")}
+            bg={colorMode === "light" ? "white" : "gray.800"}
             p={3}
             rounded={radiusStyle}
             shadow={"md"}
@@ -197,7 +198,10 @@ function TeamsPage() {
           </Flex>
         </GridItem>
         <GridItem colSpan={{ base: 12, sm: 12, md: 9, lg: 9 }}>
-          <Card rounded={radiusStyle}>
+          <Card
+            rounded={radiusStyle}
+            bg={colorMode === "light" ? "white" : "gray.800"}
+          >
             <CardBody>
               <Box minH={"80vh"}>
                 <Flex as={Stack} w={"full"} p={2} divider={<StackDivider />}>
@@ -1452,10 +1456,10 @@ const TeamMembersProps = () => {
                   <Search2Icon color={"secondary.500"} />
                 </InputLeftElement>
                 <Input
+                  bg={colorMode === "light" ? "white" : "gray.800"}
                   type="text"
                   placeContent={"center"}
                   placeholder="Cari data..."
-                  bg={"white"}
                   size={"md"}
                   onChange={(e) => setGlobalFilter(e.target.value)}
                   value={globalFilter}
