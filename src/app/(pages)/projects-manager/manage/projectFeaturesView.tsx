@@ -208,6 +208,10 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
     });
   const [OverallProgress, setOverallProgress] = useState<number>(0);
   const [ProgressColor, setProgressColor] = useState<string>("red");
+  
+  // Modal state for backlog details
+  const [isBacklogModalOpen, setIsBacklogModalOpen] = useState(false);
+  const [selectedBacklog, setSelectedBacklog] = useState<BacklogDataResponse | null>(null);
 
   const columnsData = useMemo<ColumnDef<BacklogDataResponse>[]>(
     () => [
@@ -367,11 +371,18 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
         id: "id",
         cell: (info) => (
           <Flex w={"full"} justifyContent={"center"} as={Wrap}>
-            <Link href={`/kanban-view`}>
-              <Button size={"xs"} colorScheme={"purple"} leftIcon={<FiEye />}>
+
+              <Button 
+                size={"xs"} 
+                colorScheme={"purple"} 
+                leftIcon={<FiEye />}
+                onClick={() => {
+                  setSelectedBacklog(info.row.original);
+                  setIsBacklogModalOpen(true);
+                }}
+              >
                 Preview
               </Button>
-            </Link>
             <Link
               href={`/kanban?projectId=${DataProject?.id}&backlogId=${info.row.original.id}`}
             >

@@ -520,7 +520,7 @@ const FeatureBacklogsView = ({
               </Button>
             </Link>
             <Link
-              href={`/kanban?projectId=${DataProject?.id}&backlogId=${info.row.original.id}`}
+              href={`/kanban?projectId=${DataProject?.id}&backlogId=${info.row.original.id}&from=projects-procurements`}
             >
               <Button size={"xs"} colorScheme={"gray"} leftIcon={<BsKanban />}>
                 Go To Kanban
@@ -1390,7 +1390,7 @@ const WorkflowBacklogTable = ({
                       Edit
                     </Button>
                     <Link
-                      href={`/kanban?projectId=${DataProject?.id}&backlogId=${workflow.workflowBacklog.id}`}
+                      href={`/kanban?projectId=${DataProject?.id}&backlogId=${workflow.workflowBacklog.id}&from=projects-procurements`}
                     >
                       <Button
                         size="xs"
