@@ -84,6 +84,7 @@ import {
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
   PROJECT_STATUS_LIST,
+  PROJECT_TYPE_DEPLOYMENT,
 } from "@/app/constants/applicationConstants";
 import {
   PaggingListPayloadCustom,
@@ -169,6 +170,12 @@ const ProjectDeploymentsPage = () => {
           });
         });
       }
+
+      filterWhere.push({
+        field: "projectType",
+        operator: "=",
+        value: PROJECT_TYPE_DEPLOYMENT,
+      });
 
       const PayloadList: PaggingListPayloadCustom = {
         search: globalFilter,
@@ -365,7 +372,7 @@ const ProjectDeploymentsPage = () => {
                   fontWeight="700"
                   letterSpacing="tight"
                 >
-                  Project Deployments
+                  Deployments Management Hub (Coming Soon)
                 </Heading>
                 <Text
                   fontSize="sm"
@@ -607,6 +614,7 @@ const ProjectDeploymentsPage = () => {
                               leftIcon={<FiPlusSquare />}
                               type={"submit"}
                               isLoading={ActionLoading}
+                              isDisabled
                             >
                               Register New Deployment
                             </Button>

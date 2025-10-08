@@ -30,6 +30,7 @@ import {
   ORG_CATEGORY_KEY_GROUP,
   PROJEC_CATEGORY_OPTIONS,
   PROJEC_TYPE_OPTIONS,
+  PROJECT_TYPE_DEPLOYMENT,
   PROJECT_TYPE_INTERNAL_DEVELOPMENT,
   PROJECT_TYPE_PROCUREMENT,
   radiusStyle,
@@ -39,6 +40,8 @@ import {
   WORK_PROGRAM_EXTERNAL,
   WORK_PROGRAM_INTERNAL,
   WorkflowProjectDevelopmentId,
+  WorkflowProjectProcurementId,
+  WorkStageProcurementId,
 } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import {
@@ -52,6 +55,7 @@ import useOrganization, {
   OrganizationResponse,
 } from "@/app/services/useOrganization";
 import useProjects, {
+  ProjectCountResponse,
   ProjectInsertPayload,
   ProjectUserInsertPayload,
 } from "@/app/services/useProjects";
@@ -237,6 +241,8 @@ export const initialProjectsInsertValues: ProjectInsertPayload = {
   reqParentId: "", // Optional
   userAssigns: [], // Required (at least an empty array)
   projectPlanWorkflowIds: [],
+  projectPlanWorkflowBacklogsIds: [],
+  workProgramsBacklogs: [],
   workPrograms: [],
 };
 
@@ -257,7 +263,7 @@ function ProjectRegisterView({
   } = useRequirements();
   const { GetDetailByInitial: GetAppByInitial } = useApps();
   const { ListConstantData } = useConstants();
-  const { InsertProjects } = useProjects();
+  const { InsertProjects, GetProjectCount } = useProjects();
   const {
     GetDetailByUserId: GetUserID,
     List: ListUsers,
@@ -321,6 +327,34 @@ function ProjectRegisterView({
       const itemsData: UsersResponse = requestData.data as UsersResponse;
 
       return itemsData;
+    }
+  };
+
+  const ProjectCount = async (): Promise<number> => {
+    const token: string = localStorage.getItem("tokenData") as string;
+    const requestData = await GetProjectCount(token);
+    const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+
+    if (isErrorResponse || !requestData) {
+      showToast({
+        description: requestData?.message || RES_GENERIC_ERROR_MSG,
+        statusToast: "error",
+      });
+      return 0;
+    } else {
+      console.log(requestData);
+      if (requestData.data == null) {
+        showToast({
+          description: "Data project count return error",
+          statusToast: "error",
+        });
+        return 0;
+      }
+
+      const itemsData: ProjectCountResponse =
+        requestData.data as ProjectCountResponse;
+
+      return itemsData.countAllProjects;
     }
   };
 
@@ -439,11 +473,13 @@ function ProjectRegisterView({
     } else {
       console.log(requestData);
 
-      const updatePayloadList: BacklogUpdatePayload[] =
-        mapBacklogArrayToUpdatePayload(DataBacklogsRequirement);
-      console.log(updatePayloadList);
+      if (projectTypeRegister == PROJECT_TYPE_INTERNAL_DEVELOPMENT) {
+        const updatePayloadList: BacklogUpdatePayload[] =
+          mapBacklogArrayToUpdatePayload(DataBacklogsRequirement);
+        console.log(updatePayloadList);
 
-      await UpdateBacklogProject(updatePayloadList);
+        await UpdateBacklogProject(updatePayloadList);
+      }
 
       showToast({
         description: "Register new project data successfully",
@@ -451,7 +487,15 @@ function ProjectRegisterView({
       });
 
       setActionLoading(false);
-      redirect(`/projects-manager/`);
+
+      if (projectTypeRegister == PROJECT_TYPE_INTERNAL_DEVELOPMENT) {
+        redirect(`/projects-manager/`);
+      }
+
+      if (projectTypeRegister == PROJECT_TYPE_PROCUREMENT) {
+      }
+
+      redirect(`/projects-procurements/`);
       return;
     }
   };
@@ -612,6 +656,14 @@ function ProjectRegisterView({
     OrganizationResponse[]
   >([]);
 
+  const GetDetailOrganizationData = (
+    orgId: string
+  ): OrganizationResponse | undefined => {
+    if (OrganizationData.length <= 0) return undefined;
+
+    return OrganizationData.find((x) => x.id == orgId);
+  };
+
   const LoadAllOrganizationData = async () => {
     const getData = await GetDataMasterOrg("", MAX_SIZE_TABLE, []);
     if (getData.length > 0) {
@@ -725,6 +777,30 @@ function ProjectRegisterView({
 
   // formik
 
+  // Project Number Builder Function
+  const buildProjectNumber = (
+    projectCount: number,
+    organizationDivisionCode: string,
+    workProgramExternalCount: number,
+    workProgramInternalCount: number,
+    projectAcquisitionCode?: string
+  ): string => {
+    const currentYear = new Date().getFullYear();
+    const projectNumber = (projectCount + 1).toString().padStart(4, "0");
+    const externalRBB = workProgramExternalCount > 0 ? "RBB" : "NRBB";
+    const internalRBB = workProgramInternalCount > 0 ? "RBB" : "NRBB";
+
+    if (projectTypeRegister === PROJECT_TYPE_INTERNAL_DEVELOPMENT) {
+      return `${projectNumber}/${organizationDivisionCode}/BJB/${externalRBB}/${internalRBB}/${currentYear}`;
+    } else if (projectTypeRegister === PROJECT_TYPE_PROCUREMENT) {
+      return `${projectNumber}/${organizationDivisionCode}/BJB/${externalRBB}/${internalRBB}/${currentYear}/${
+        projectAcquisitionCode || ""
+      }`;
+    }
+
+    return "";
+  };
+
   const formik = useFormik<ProjectInsertPayload>({
     initialValues: initialProjectsInsertValues,
     validationSchema: projectsInsertBindModelSchema,
@@ -734,6 +810,58 @@ function ProjectRegisterView({
       console.log(values);
     },
   });
+
+  // generate Project Number
+  useEffect(() => {
+    const getProjectCount = async () => {
+      if (tokenData) {
+        try {
+          const requestData = await GetProjectCount(tokenData);
+          if (requestData?.statusCode === RES_CODE_OK && requestData.data) {
+            const countData = requestData.data.countAllProjects || 0;
+
+            // Generate project number when we have the count
+            if (
+              formik.values.proOwnerDivisionId &&
+              OrganizationData.length > 0
+            ) {
+              const division = OrganizationData.find(
+                (org) => org.id === formik.values.proManageByDivisionId
+              );
+              if (division) {
+                const externalCount = formik.values.workPrograms.filter(
+                  (wp) => wp.workProgramSource === WORK_PROGRAM_EXTERNAL
+                ).length;
+                const internalCount = formik.values.workPrograms.filter(
+                  (wp) => wp.workProgramSource === WORK_PROGRAM_INTERNAL
+                ).length;
+
+                const projectNumber = buildProjectNumber(
+                  countData,
+                  division.orgCode || division.orgName,
+                  externalCount,
+                  internalCount,
+                  formik.values.projectAcquisitionCode || undefined
+                );
+
+                formik.setFieldValue("projectNo", projectNumber);
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Error getting project count:", error);
+        }
+      }
+    };
+
+    getProjectCount();
+  }, [
+    tokenData,
+    formik.values.proManageByDivisionId,
+    formik.values.workPrograms,
+    formik.values.projectAcquisitionCode,
+    OrganizationData,
+  ]);
 
   // end - formik
 
@@ -852,20 +980,6 @@ function ProjectRegisterView({
 
   const [globalFilter, setGlobalFilter] = useState<string>("");
 
-  // Workflow Groups State
-  const [DataWorkflowGroups, setDataWorkflowGroups] = useState<
-    WorkflowGroupResponse[]
-  >([]);
-  const [selectedWorkflowIds, setSelectedWorkflowIds] = useState<Set<string>>(
-    new Set()
-  );
-  const [IsLoadingWorkflow, setIsLoadingWorkflow] = useState(false);
-  const [DataWorkflowPresets, setDataWorkflowPresets] = useState<
-    WorkflowPresetResponse[]
-  >([]);
-  const [selectedPreset, setSelectedPreset] =
-    useState<WorkflowPresetResponse | null>(null);
-
   const updateBacklog = (
     backlogId: string,
     updatedData: BacklogDataResponse
@@ -889,40 +1003,138 @@ function ProjectRegisterView({
     // });
   };
 
-  // Load Workflow Groups
   const { ListWorkflowGroups } = useWorkflow();
   const { ListWorkflowPreset, GetWorkflowPresetById } = useWorkflowPreset();
+  // Load Workflow Groups for procurements at features register project
+  const [DataWorkflowGroupsProcurements, setDataWorkflowGroupsProcurements] =
+    useState<WorkflowGroupResponse[]>([]);
+  const [selectedWorkflowProcurementsIds, setSelectedWorkflowProcurementsIds] =
+    useState<Set<string>>(new Set());
+  const [IsLoadingWorkflowProcurements, setIsLoadingWorkflowProcurements] =
+    useState(false);
+  const [DataWorkflowPresetsProcurements, setDataWorkflowPresetsProcurements] =
+    useState<WorkflowPresetResponse[]>([]);
+  const [selectedPresetProcurement, setSelectedPresetProcurement] =
+    useState<WorkflowPresetResponse | null>(null);
 
-  const handleSelectPreset = async (presetId: string) => {
+  const LoadWorkflowGroupsProcurements = async () => {
+    const WorkflowProject = WorkStageProcurementId;
+
+    setIsLoadingWorkflowProcurements(true);
+    try {
+      const PayloadList: PaggingListPayload = {
+        limit: MAX_SIZE_TABLE,
+        page: 0,
+        search: "",
+        filterWhere: [
+          {
+            field: "parentId",
+            operator: "=",
+            value: "",
+          },
+          {
+            field: "wfgLevel",
+            operator: "=",
+            value: "1",
+          },
+          {
+            field: "wfgCategoryId",
+            operator: "=",
+            value: WorkflowProject,
+          },
+        ],
+        fieldOrder: ["wfgOrder"],
+        orderDir: "asc",
+      };
+
+      const requestData = await ListWorkflowGroups(PayloadList, tokenData);
+      if (requestData?.statusCode === RES_CODE_OK && requestData.data) {
+        setDataWorkflowGroupsProcurements(requestData.data);
+      }
+    } catch (error) {
+      console.error("Error loading workflow groups:", error);
+    } finally {
+      setIsLoadingWorkflowProcurements(false);
+    }
+  };
+
+  const renderWorkflowLevelProcurement = (
+    workflows: WorkflowGroupResponse[],
+    level: number = 0
+  ) => {
+    if (level >= 3) return [];
+    return workflows.map((workflow) => (
+      <Box key={workflow.id} w="full" ml={level * 4}>
+        <Checkbox
+          isChecked={selectedWorkflowProcurementsIds.has(workflow.id)}
+          colorScheme="blue"
+          size="lg"
+          onChange={() => {
+            const newSelected = new Set(selectedWorkflowProcurementsIds);
+            const toggleWorkflow = (
+              wf: WorkflowGroupResponse,
+              add: boolean
+            ) => {
+              if (add) newSelected.add(wf.id);
+              else newSelected.delete(wf.id);
+              if (wf.workflowChild?.length > 0) {
+                wf.workflowChild.forEach((child) => toggleWorkflow(child, add));
+              }
+            };
+            toggleWorkflow(workflow, !newSelected.has(workflow.id));
+            setSelectedWorkflowProcurementsIds(newSelected);
+            formik.setFieldValue(
+              "projectPlanWorkflowBacklogsIds",
+              Array.from(newSelected)
+            );
+          }}
+        >
+          <Text
+            fontWeight={level === 0 ? "bold" : "normal"}
+            color={level === 0 ? "blue.600" : "inherit"}
+          >
+            {workflow.wfgName}
+          </Text>
+        </Checkbox>
+        {workflow.workflowChild?.length > 0 && (
+          <VStack align="start" spacing={1} mt={level === 0 ? 2 : 1}>
+            {renderWorkflowLevelProcurement(workflow.workflowChild, level + 1)}
+          </VStack>
+        )}
+      </Box>
+    ));
+  };
+
+  const handleSelectPresetProcurement = async (presetId: string) => {
     try {
       // If clicking the currently selected preset, clear selection
-      if (selectedPreset?.id === presetId) {
-        setSelectedPreset(null);
-        setSelectedWorkflowIds(new Set());
-        formik.setFieldValue("projectPlanWorkflowIds", []);
+      if (selectedPresetProcurement?.id === presetId) {
+        setSelectedPresetProcurement(null);
+        setSelectedWorkflowProcurementsIds(new Set());
+        formik.setFieldValue("projectPlanWorkflowBacklogsIds", []);
         return;
       }
 
       const requestData = await GetWorkflowPresetById(presetId, tokenData);
       if (requestData?.statusCode === RES_CODE_OK && requestData.data) {
-        setSelectedPreset(requestData.data);
+        setSelectedPresetProcurement(requestData.data);
 
-        // Extract all workflow IDs including children
+        // Extract all workflow IDs including children recursively
         const allWorkflowIds = new Set<string>();
-        requestData.data.workflowData.forEach((group) => {
-          allWorkflowIds.add(group.id);
-          group.workflowChild.forEach((level2) => {
-            allWorkflowIds.add(level2.id);
-            level2.workflowChild.forEach((level3) => {
-              allWorkflowIds.add(level3.id);
-            });
+        const extractIds = (workflows: WorkflowGroupResponse[]) => {
+          workflows.forEach((workflow) => {
+            allWorkflowIds.add(workflow.id);
+            if (workflow.workflowChild?.length > 0) {
+              extractIds(workflow.workflowChild);
+            }
           });
-        });
+        };
+        extractIds(requestData.data.workflowData);
 
         // Update formik and selectedWorkflowIds
-        setSelectedWorkflowIds(allWorkflowIds);
+        setSelectedWorkflowProcurementsIds(allWorkflowIds);
         formik.setFieldValue(
-          "projectPlanWorkflowIds",
+          "projectPlanWorkflowBacklogsIds",
           Array.from(allWorkflowIds)
         );
       }
@@ -931,7 +1143,9 @@ function ProjectRegisterView({
     }
   };
 
-  const LoadWorkflowPresets = async () => {
+  const LoadWorkflowPresetsProcurement = async () => {
+    let WorkflowProject = WorkStageProcurementId;
+
     try {
       const PayloadList: PaggingListPayload = {
         limit: MAX_SIZE_TABLE,
@@ -941,7 +1155,7 @@ function ProjectRegisterView({
           {
             field: "wfCategoryId",
             operator: "=",
-            value: WorkflowProjectDevelopmentId,
+            value: WorkflowProject,
           },
         ],
         fieldOrder: ["wfPresetName"],
@@ -949,14 +1163,36 @@ function ProjectRegisterView({
       };
       const requestData = await ListWorkflowPreset(PayloadList, tokenData);
       if (requestData?.statusCode === RES_CODE_OK && requestData.data) {
-        setDataWorkflowPresets(requestData.data);
+        setDataWorkflowPresetsProcurements(requestData.data);
       }
     } catch (error) {
       console.error("Error loading workflow presets:", error);
     }
   };
 
+  // END Load Workflow Groups for procurements at features register project
+
+  // Load Workflow Groups
+  const [DataWorkflowGroups, setDataWorkflowGroups] = useState<
+    WorkflowGroupResponse[]
+  >([]);
+  const [selectedWorkflowIds, setSelectedWorkflowIds] = useState<Set<string>>(
+    new Set()
+  );
+  const [IsLoadingWorkflow, setIsLoadingWorkflow] = useState(false);
+  const [DataWorkflowPresets, setDataWorkflowPresets] = useState<
+    WorkflowPresetResponse[]
+  >([]);
+  const [selectedPreset, setSelectedPreset] =
+    useState<WorkflowPresetResponse | null>(null);
+
   const LoadWorkflowGroups = async () => {
+    let WorkflowProject = WorkflowProjectDevelopmentId;
+
+    if (projectTypeRegister == PROJECT_TYPE_PROCUREMENT) {
+      WorkflowProject = WorkflowProjectProcurementId;
+    }
+
     setIsLoadingWorkflow(true);
     try {
       const PayloadList: PaggingListPayload = {
@@ -977,7 +1213,7 @@ function ProjectRegisterView({
           {
             field: "wfgCategoryId",
             operator: "=",
-            value: WorkflowProjectDevelopmentId,
+            value: WorkflowProject,
           },
         ],
         fieldOrder: ["wfgOrder"],
@@ -995,14 +1231,140 @@ function ProjectRegisterView({
     }
   };
 
+  const renderWorkflowLevel = (
+    workflows: WorkflowGroupResponse[],
+    level: number = 0
+  ) => {
+    if (level >= 3) return [];
+    return workflows.map((workflow) => (
+      <Box key={workflow.id} w="full" ml={level * 4}>
+        <Checkbox
+          isChecked={selectedWorkflowIds.has(workflow.id)}
+          colorScheme="blue"
+          size="lg"
+          onChange={() => {
+            const newSelected = new Set(selectedWorkflowIds);
+            const toggleWorkflow = (
+              wf: WorkflowGroupResponse,
+              add: boolean
+            ) => {
+              if (add) newSelected.add(wf.id);
+              else newSelected.delete(wf.id);
+              if (wf.workflowChild?.length > 0) {
+                wf.workflowChild.forEach((child) => toggleWorkflow(child, add));
+              }
+            };
+            toggleWorkflow(workflow, !newSelected.has(workflow.id));
+            setSelectedWorkflowIds(newSelected);
+            formik.setFieldValue(
+              "projectPlanWorkflowIds",
+              Array.from(newSelected)
+            );
+          }}
+        >
+          <Text
+            fontWeight={level === 0 ? "bold" : "normal"}
+            color={level === 0 ? "blue.600" : "inherit"}
+          >
+            {workflow.wfgName}
+          </Text>
+        </Checkbox>
+        {workflow.workflowChild?.length > 0 && (
+          <VStack align="start" spacing={1} mt={level === 0 ? 2 : 1}>
+            {renderWorkflowLevel(workflow.workflowChild, level + 1)}
+          </VStack>
+        )}
+      </Box>
+    ));
+  };
+
+  const handleSelectPreset = async (presetId: string) => {
+    try {
+      // If clicking the currently selected preset, clear selection
+      if (selectedPreset?.id === presetId) {
+        setSelectedPreset(null);
+        setSelectedWorkflowIds(new Set());
+        formik.setFieldValue("projectPlanWorkflowIds", []);
+        return;
+      }
+
+      const requestData = await GetWorkflowPresetById(presetId, tokenData);
+      if (requestData?.statusCode === RES_CODE_OK && requestData.data) {
+        setSelectedPreset(requestData.data);
+
+        // Extract all workflow IDs including children recursively
+        const allWorkflowIds = new Set<string>();
+        const extractIds = (workflows: WorkflowGroupResponse[]) => {
+          workflows.forEach((workflow) => {
+            allWorkflowIds.add(workflow.id);
+            if (workflow.workflowChild?.length > 0) {
+              extractIds(workflow.workflowChild);
+            }
+          });
+        };
+        extractIds(requestData.data.workflowData);
+
+        // Update formik and selectedWorkflowIds
+        setSelectedWorkflowIds(allWorkflowIds);
+        formik.setFieldValue(
+          "projectPlanWorkflowIds",
+          Array.from(allWorkflowIds)
+        );
+      }
+    } catch (error) {
+      console.error("Error loading preset detail:", error);
+    }
+  };
+
+  const LoadWorkflowPresets = async () => {
+    let WorkflowProject = WorkflowProjectDevelopmentId;
+
+    if (projectTypeRegister == PROJECT_TYPE_PROCUREMENT) {
+      WorkflowProject = WorkflowProjectProcurementId;
+    }
+
+    try {
+      const PayloadList: PaggingListPayload = {
+        limit: MAX_SIZE_TABLE,
+        page: 0,
+        search: "",
+        filterWhere: [
+          {
+            field: "wfCategoryId",
+            operator: "=",
+            value: WorkflowProject,
+          },
+        ],
+        fieldOrder: ["wfPresetName"],
+        orderDir: "asc",
+      };
+      const requestData = await ListWorkflowPreset(PayloadList, tokenData);
+      if (requestData?.statusCode === RES_CODE_OK && requestData.data) {
+        setDataWorkflowPresets(requestData.data);
+      }
+    } catch (error) {
+      console.error("Error loading workflow presets:", error);
+    }
+  };
+
   // Load workflow groups when token is available
   useEffect(() => {
     setIsLoadingProcess(true);
     if (tokenData) {
       LoadAllOrganizationData();
       // LoadDataDirectorate();
+
+      if (
+        projectTypeRegister == PROJECT_TYPE_PROCUREMENT &&
+        DataRequirement == null
+      ) {
+        LoadWorkflowGroupsProcurements();
+        LoadWorkflowPresetsProcurement();
+      }
+
       LoadWorkflowGroups();
       LoadWorkflowPresets();
+
       LoadCharacteristicsProjectData();
       LoadAcquisitionProjectData();
       //   if (projectTypeRegister == PROJECT_TYPE_PROCUREMENT) {
@@ -1309,7 +1671,15 @@ function ProjectRegisterView({
       description: (
         <HStack>
           <FiSettings />
-          <Text>4. Feature Information</Text>
+          <Text>
+            4.{" "}
+            {projectTypeRegister == PROJECT_TYPE_PROCUREMENT &&
+              "Procurement Stages"}
+            {projectTypeRegister == PROJECT_TYPE_INTERNAL_DEVELOPMENT &&
+              "Feature Information"}
+            {projectTypeRegister == PROJECT_TYPE_DEPLOYMENT &&
+              "Deployment Stages"}
+          </Text>
         </HStack>
       ),
     },
@@ -1376,6 +1746,9 @@ function ProjectRegisterView({
     setActionLoading(true);
     await delay(DELAY_MEDIUM);
 
+    formik.setFieldValue(`projectCategory`, "PROJECT");
+    formik.setFieldValue(`proManageByTeamId`, null);
+
     console.log(" Project Payload Insert : ");
     console.log(formik.values);
     console.log(" Backlog Data Payload Update : ");
@@ -1402,13 +1775,13 @@ function ProjectRegisterView({
       errorSum++;
     }
 
-    if (!formik.values.projectCategory) {
-      showToast({
-        description: "Karakteristik Project masih kosong",
-        statusToast: "warning",
-      });
-      errorSum++;
-    }
+    // if (!formik.values.projectCategory) {
+    //   showToast({
+    //     description: "Karakteristik Project masih kosong",
+    //     statusToast: "warning",
+    //   });
+    //   errorSum++;
+    // }
 
     if (!formik.values.projectType) {
       showToast({
@@ -1456,19 +1829,22 @@ function ProjectRegisterView({
     }
 
     var DeadlineUnfilledDataBacklog = 0;
-    if (updatePayloadList.length > 0) {
-      updatePayloadList.map((bl) => {
-        if (bl.backlogEnddate == null) {
-          DeadlineUnfilledDataBacklog++;
-        }
-      });
 
-      if (DeadlineUnfilledDataBacklog > 0) {
-        showToast({
-          description: `(${DeadlineUnfilledDataBacklog}) Data Deadline fitur belum diisi.`,
-          statusToast: "warning",
+    if (projectTypeRegister == PROJECT_TYPE_INTERNAL_DEVELOPMENT) {
+      if (updatePayloadList.length > 0) {
+        updatePayloadList.map((bl) => {
+          if (bl.backlogEnddate == null) {
+            DeadlineUnfilledDataBacklog++;
+          }
         });
-        errorSum++;
+
+        if (DeadlineUnfilledDataBacklog > 0) {
+          showToast({
+            description: `(${DeadlineUnfilledDataBacklog}) Data Deadline fitur belum diisi.`,
+            statusToast: "warning",
+          });
+          errorSum++;
+        }
       }
     }
 
@@ -1585,106 +1961,118 @@ function ProjectRegisterView({
   useEffect(() => {
     // projectTypeRegister;
     formik.setFieldValue(`projectType`, projectTypeRegister);
-    if (DataAuth && DataRequirement && tokenData) {
-      if (IsHaveMemo == "Y") {
-        GetDataListBacklogs();
+    formik.setFieldValue(`projectCategory`, "PROJECT");
 
-        formik.setFieldValue(
-          "proOwnerDirectorateId",
-          DataRequirement.senderDirectorateId
-        );
-        // LoadDataDivision(
-        //   DataRequirement.senderDirectorateId || "",
-        //   "proOwnerDivisionId"
-        // );
-        formik.setFieldValue(
-          "proOwnerDivisionId",
-          DataRequirement.senderDivisionId
-        );
+    console.log(IsHaveMemo);
+    console.log(projectTypeRegister);
 
-        const mapDataWorkPrograms = mapWorkProgramData(
-          DataRequirement.workPrograms
-        );
-        formik.setFieldValue("workPrograms", mapDataWorkPrograms);
-
-        const CountInternalWorkPrograms = mapDataWorkPrograms.filter(
-          (f) => f.workProgramSource == WORK_PROGRAM_INTERNAL
-        ).length;
-        const CountExternalWorkPrograms = mapDataWorkPrograms.filter(
-          (f) => f.workProgramSource == WORK_PROGRAM_EXTERNAL
-        ).length;
-
-        if (CountInternalWorkPrograms > 0) {
-          setWorkProgramInt("1");
-        }
-        if (CountExternalWorkPrograms > 0) {
-          setWorkProgramExt("1");
-        }
-
-        const userAssignPoject: UsersResponse[] = [];
-        // get user org project manage
-        const GetUserManageProject = async () => {
-          if (DataRequirement.assignedFromId) {
-            const ProjectManageOrg: UserOrganizationResponse | null =
-              await GetUserOrganizationServices(DataRequirement.assignedFromId);
-            // if (ProjectManageOrg) {
-            //   formik.setFieldValue(
-            //     `proManageByDivisionId`,
-            //     ProjectManageOrg.division.id
-            //   );
-            //   if (ProjectManageOrg.group) {
-            //     formik.setFieldValue(
-            //       `proManageByGroupId`,
-            //       ProjectManageOrg.group.id
-            //     );
-            //   }
-            //   if (ProjectManageOrg.team) {
-            //     formik.setFieldValue(
-            //       `proManageByTeamId`,
-            //       ProjectManageOrg.team.id
-            //     );
-            //   }
-            // }
-          }
-
-          // Set UserDefault Assign Project Member
-          if (DataRequirement.assignedFromId != null) {
-            const UserOwner = await GetUserIDServices(
-              DataRequirement.assignedFromId
-            );
-            if (UserOwner) {
-              userAssignPoject.push(UserOwner);
-            }
-          }
-
-          // insert user reviewer in parallel and wait for all
-          if (DataRequirement.approvalDatas.length > 0) {
-            const reviewers = await Promise.all(
-              DataRequirement.approvalDatas.map(async (dt) => {
-                return await GetUserIDServices(dt.approverUserCode);
-              })
-            );
-
-            reviewers.forEach((user) => {
-              if (user) {
-                userAssignPoject.push(user);
-              }
-            });
-          }
-
-          // Set state only after all async ops done
-          if (userAssignPoject.length > 0) {
-            setChoosedMemberProjects(userAssignPoject);
-          }
-        };
-        GetUserManageProject();
-      } else {
-        handleResetReffFromRequirementData();
-      }
-    } else {
+    if (IsHaveMemo == "N" && projectTypeRegister == PROJECT_TYPE_PROCUREMENT) {
+      console.log(PROJECT_TYPE_PROCUREMENT);
       handleResetReffFromRequirementData();
+      formik.setFieldValue(`reqParentId`, null);
+      formik.setFieldValue("proOwnerDirectorateId", DIRECTORATE_ID_IT_BJB);
+      formik.setFieldValue("proOwnerDivisionId", DIVISION_ID_IT_BJB);
+      formik.setFieldValue("proManageByDirectorateId", DIRECTORATE_ID_IT_BJB);
+      formik.setFieldValue("proManageByDivisionId", DIVISION_ID_IT_BJB);
     }
-  }, [DataAuth, DataRequirement]);
+
+    if (DataAuth && DataRequirement && tokenData) {
+      console.log("DataRequirement Loaded");
+      GetDataListBacklogs();
+
+      formik.setFieldValue(`reqParentId`, DataRequirement.id);
+
+      formik.setFieldValue(
+        "proOwnerDirectorateId",
+        DataRequirement.senderDirectorateId
+      );
+      // LoadDataDivision(
+      //   DataRequirement.senderDirectorateId || "",
+      //   "proOwnerDivisionId"
+      // );
+      formik.setFieldValue(
+        "proOwnerDivisionId",
+        DataRequirement.senderDivisionId
+      );
+
+      const mapDataWorkPrograms = mapWorkProgramData(
+        DataRequirement.workPrograms
+      );
+      formik.setFieldValue("workPrograms", mapDataWorkPrograms);
+
+      const CountInternalWorkPrograms = mapDataWorkPrograms.filter(
+        (f) => f.workProgramSource == WORK_PROGRAM_INTERNAL
+      ).length;
+      const CountExternalWorkPrograms = mapDataWorkPrograms.filter(
+        (f) => f.workProgramSource == WORK_PROGRAM_EXTERNAL
+      ).length;
+
+      if (CountInternalWorkPrograms > 0) {
+        setWorkProgramInt("1");
+      }
+      if (CountExternalWorkPrograms > 0) {
+        setWorkProgramExt("1");
+      }
+
+      const userAssignPoject: UsersResponse[] = [];
+      // get user org project manage
+      const GetUserManageProject = async () => {
+        if (DataRequirement.assignedFromId) {
+          const ProjectManageOrg: UserOrganizationResponse | null =
+            await GetUserOrganizationServices(DataRequirement.assignedFromId);
+          // if (ProjectManageOrg) {
+          //   formik.setFieldValue(
+          //     `proManageByDivisionId`,
+          //     ProjectManageOrg.division.id
+          //   );
+          //   if (ProjectManageOrg.group) {
+          //     formik.setFieldValue(
+          //       `proManageByGroupId`,
+          //       ProjectManageOrg.group.id
+          //     );
+          //   }
+          //   if (ProjectManageOrg.team) {
+          //     formik.setFieldValue(
+          //       `proManageByTeamId`,
+          //       ProjectManageOrg.team.id
+          //     );
+          //   }
+          // }
+        }
+
+        // Set UserDefault Assign Project Member
+        if (DataRequirement.assignedFromId != null) {
+          const UserOwner = await GetUserIDServices(
+            DataRequirement.assignedFromId
+          );
+          if (UserOwner) {
+            userAssignPoject.push(UserOwner);
+          }
+        }
+
+        // insert user reviewer in parallel and wait for all
+        if (DataRequirement.approvalDatas.length > 0) {
+          const reviewers = await Promise.all(
+            DataRequirement.approvalDatas.map(async (dt) => {
+              return await GetUserIDServices(dt.approverUserCode);
+            })
+          );
+
+          reviewers.forEach((user) => {
+            if (user) {
+              userAssignPoject.push(user);
+            }
+          });
+        }
+
+        // Set state only after all async ops done
+        if (userAssignPoject.length > 0) {
+          setChoosedMemberProjects(userAssignPoject);
+        }
+      };
+      GetUserManageProject();
+    }
+  }, [DataAuth, DataRequirement, IsHaveMemo]);
 
   // end load reff from data requirements
 
@@ -1709,6 +2097,7 @@ function ProjectRegisterView({
 
   // reset filled data from req
   const handleResetReffFromRequirementData = () => {
+    setDataRequirement(null);
     formik.setFieldValue("proOwnerDirectorateId", null);
     formik.setFieldValue("proOwnerDivisionId", null);
     setDataBacklogsRequirement([]);
@@ -1717,6 +2106,8 @@ function ProjectRegisterView({
     setWorkProgramInt("0");
     formik.setFieldValue("userAssigns", []);
     setApplicationData(null);
+
+    formik.setFieldValue(`reqParentId`, null);
   };
   // end reset filled data from req
 
@@ -1817,7 +2208,16 @@ function ProjectRegisterView({
           </GridItem>
 
           {/* Requirement Information */}
-          <GridItem colSpan={{ base: 12, sm: 12, md: 8, lg: 8 }} w={"full"}>
+          <GridItem
+            colSpan={{ base: 12, sm: 12, md: 8, lg: 8 }}
+            w={"full"}
+            display={
+              projectTypeRegister == PROJECT_TYPE_PROCUREMENT &&
+              IsHaveMemo == "N"
+                ? "none"
+                : "box"
+            }
+          >
             <Card
               shadow="md"
               // bgColor={colorMode == "light" ? "white" : "gray.800"}
@@ -2052,7 +2452,10 @@ function ProjectRegisterView({
                                         PROJECT_TYPE_PROCUREMENT
                                       }
                                     >
-                                      Belum
+                                      {projectTypeRegister !=
+                                      PROJECT_TYPE_PROCUREMENT
+                                        ? "Belum"
+                                        : "Tidak (Dikhususkan untuk IT)"}
                                     </Radio>
                                   </Flex>
                                 </RadioGroup>
@@ -2067,9 +2470,13 @@ function ProjectRegisterView({
                         </Flex>
 
                         <FormControl
-                          id="projectNo"
-                          isInvalid={formik.errors.projectNo ? true : false}
                           isRequired={IsHaveMemo == "Y"}
+                          display={
+                            projectTypeRegister == PROJECT_TYPE_PROCUREMENT &&
+                            IsHaveMemo == "N"
+                              ? "none"
+                              : "flex"
+                          }
                         >
                           <InputLayout>
                             <FormLabel h={"full"} mt={2}>
@@ -2133,8 +2540,9 @@ function ProjectRegisterView({
                                 value={formik.values.projectNo ?? ""}
                                 placeholder={`0000/00/BJB/XXXX/0000-A/0`}
                                 minLength={25}
-                                maxLength={27}
+                                maxLength={100}
                                 isDisabled={ActionLoading}
+                                isReadOnly
                                 w={{
                                   base: "full",
                                   sm: "full",
@@ -2267,6 +2675,7 @@ function ProjectRegisterView({
                                       Direktorat
                                     </FormLabel>
                                     <Select
+                                      isDisabled={true}
                                       id={`proOwnerDirectorateId`}
                                       options={OrganizationData.filter(
                                         (f) =>
@@ -2328,6 +2737,7 @@ function ProjectRegisterView({
                                       Divisi
                                     </FormLabel>
                                     <Select
+                                      isDisabled={true}
                                       id={`proOwnerDivisionId`}
                                       options={OrganizationData.filter(
                                         (f) =>
@@ -4339,6 +4749,10 @@ function ProjectRegisterView({
                                             Direktorat
                                           </FormLabel>
                                           <Select
+                                            isDisabled={
+                                              projectTypeRegister ==
+                                              PROJECT_TYPE_PROCUREMENT
+                                            }
                                             id={`proManageByDirectorateId`}
                                             options={OrganizationData.filter(
                                               (f) =>
@@ -4411,6 +4825,10 @@ function ProjectRegisterView({
                                             Divisi
                                           </FormLabel>
                                           <Select
+                                            isDisabled={
+                                              projectTypeRegister ==
+                                              PROJECT_TYPE_PROCUREMENT
+                                            }
                                             id={`proManageByDivisionId`}
                                             options={OrganizationData.filter(
                                               (f) =>
@@ -4552,15 +4970,249 @@ function ProjectRegisterView({
                   {/* FEATURE INFORMATION */}
                   {activeStep === 3 && (
                     <Flex as={Stack} w={"full"} spacing={5}>
-                      {IsLoadingProcess ? (
-                        <LoadingMiniSignature />
-                      ) : (
-                        // <TableComponentFull table={table} />
-                        // TABLE NEW DESIGN
-                        <TableComponentWithFilterCTX
-                          table={table}
-                          handleFilterChange={handleFilterChange}
-                        />
+                      {/* FOR TYPE PROJECT REGISTER INTERNAL DEVELOPMENT */}
+                      {projectTypeRegister ==
+                        PROJECT_TYPE_INTERNAL_DEVELOPMENT && (
+                        <>
+                          {IsLoadingProcess ? (
+                            <LoadingMiniSignature />
+                          ) : (
+                            // <TableComponentFull table={table} />
+                            // TABLE NEW DESIGN
+                            <TableComponentWithFilterCTX
+                              table={table}
+                              handleFilterChange={handleFilterChange}
+                            />
+                          )}
+                        </>
+                      )}
+
+                      {/* FOR TYPE PROJECT REGISTER PROCUREMENT */}
+                      {projectTypeRegister == PROJECT_TYPE_PROCUREMENT && (
+                        <Flex as={Stack} w={"full"} spacing={5}>
+                          {DataRequirement != null ? (
+                            <>
+                              {IsLoadingProcess ? (
+                                <LoadingMiniSignature />
+                              ) : (
+                                // TABLE NEW DESIGN
+                                <TableComponentWithFilterCTX
+                                  table={table}
+                                  handleFilterChange={handleFilterChange}
+                                />
+                              )}
+                            </>
+                          ) : (
+                            <Grid
+                              templateColumns="repeat(12, 1fr)"
+                              gap={4}
+                              w={"full"}
+                            >
+                              <GridItem
+                                colSpan={{ base: 12, sm: 12, md: 8, lg: 8 }}
+                                w={"full"}
+                              >
+                                <Flex
+                                  as={Stack}
+                                  p={6}
+                                  w={"full"}
+                                  spacing={4}
+                                  rounded={radiusStyle}
+                                  borderWidth={1}
+                                  boxShadow={"md"}
+                                  borderColor={
+                                    colorMode == "light"
+                                      ? "gray.100"
+                                      : "gray.900"
+                                  }
+                                >
+                                  <Flex as={Stack} w={"full"}>
+                                    <Heading size="md">
+                                      Choose Work Stages for Procurement
+                                    </Heading>
+                                    <Text
+                                      fontSize="sm"
+                                      color={
+                                        colorMode == "light"
+                                          ? "gray.500"
+                                          : "gray.400"
+                                      }
+                                    >
+                                      Select procurement workflow stages for
+                                      this project
+                                    </Text>
+                                  </Flex>
+
+                                  {IsLoadingWorkflowProcurements ? (
+                                    <LoadingMiniSignature />
+                                  ) : (
+                                    renderWorkflowLevelProcurement(
+                                      DataWorkflowGroupsProcurements
+                                    )
+                                  )}
+                                </Flex>
+                              </GridItem>
+                              <GridItem
+                                colSpan={{ base: 12, sm: 12, md: 4, lg: 4 }}
+                                w={"full"}
+                              >
+                                <Card
+                                  rounded={radiusStyle}
+                                  bgColor={
+                                    colorMode == "light"
+                                      ? "gray.100"
+                                      : "gray.900"
+                                  }
+                                >
+                                  <CardBody>
+                                    <Flex
+                                      w={"full"}
+                                      as={Stack}
+                                      minH={"500px"}
+                                      spacing={6}
+                                    >
+                                      <HStack spacing={4} align={"center"}>
+                                        <Box
+                                          w={12}
+                                          h={12}
+                                          bgColor={
+                                            colorMode == "light"
+                                              ? "secondary.500"
+                                              : "gray.800"
+                                          }
+                                          rounded="lg"
+                                          display="flex"
+                                          alignItems="center"
+                                          justifyContent="center"
+                                        >
+                                          <Icon
+                                            as={BsLightningChargeFill}
+                                            color={
+                                              colorMode == "light"
+                                                ? "white"
+                                                : "secondary.500"
+                                            }
+                                          />
+                                        </Box>
+                                        <VStack
+                                          align="start"
+                                          spacing={0}
+                                          flex={1}
+                                        >
+                                          <Text
+                                            fontSize="lg"
+                                            fontWeight="bold"
+                                            color={"secondary.500"}
+                                          >
+                                            Procurement Stage Preset
+                                          </Text>
+                                          <Text
+                                            fontSize="sm"
+                                            color={
+                                              colorMode == "light"
+                                                ? "gray.500"
+                                                : "gray.400"
+                                            }
+                                            lineHeight={1.2}
+                                          >
+                                            Select procurement workflow stages
+                                            preset
+                                          </Text>
+                                        </VStack>
+                                      </HStack>
+                                      <Flex as={Stack} w={"full"}>
+                                        {DataWorkflowPresetsProcurements.length >
+                                        0 ? (
+                                          <VStack align="start" spacing={1}>
+                                            {DataWorkflowPresetsProcurements.map(
+                                              (preset) => (
+                                                <Flex
+                                                  key={preset.id}
+                                                  as={HStack}
+                                                  w={"full"}
+                                                  justifyContent={
+                                                    "space-between"
+                                                  }
+                                                  alignItems={"center"}
+                                                  bgColor={
+                                                    selectedPresetProcurement?.id ===
+                                                    preset.id
+                                                      ? "secondary.100"
+                                                      : "transparent"
+                                                  }
+                                                  rounded={radiusStyle}
+                                                  px={4}
+                                                  py={3}
+                                                >
+                                                  <Flex
+                                                    justifyContent={"start"}
+                                                    as={HStack}
+                                                    spacing={4}
+                                                    alignItems={"center"}
+                                                  >
+                                                    <Icon
+                                                      as={FaCircle}
+                                                      color={"secondary.500"}
+                                                      boxSize={2}
+                                                    />
+                                                    <Text
+                                                      fontWeight={
+                                                        selectedPresetProcurement?.id ===
+                                                        preset.id
+                                                          ? 600
+                                                          : 500
+                                                      }
+                                                      color={
+                                                        selectedPresetProcurement?.id ===
+                                                        preset.id
+                                                          ? "gray.900"
+                                                          : colorMode == "light"
+                                                          ? "gray.900"
+                                                          : "white"
+                                                      }
+                                                    >
+                                                      {preset.wfPresetName}
+                                                    </Text>
+                                                  </Flex>
+                                                  <Button
+                                                    variant={"solid"}
+                                                    colorScheme={
+                                                      selectedPresetProcurement?.id ===
+                                                      preset.id
+                                                        ? "red"
+                                                        : "secondary"
+                                                    }
+                                                    size={"xs"}
+                                                    onClick={() =>
+                                                      handleSelectPresetProcurement(
+                                                        preset.id
+                                                      )
+                                                    }
+                                                  >
+                                                    {selectedPresetProcurement?.id ===
+                                                    preset.id ? (
+                                                      <FiMinus />
+                                                    ) : (
+                                                      <FiPlus />
+                                                    )}
+                                                  </Button>
+                                                </Flex>
+                                              )
+                                            )}
+                                          </VStack>
+                                        ) : (
+                                          <Text fontSize="sm" color="gray.500">
+                                            No procurement presets available
+                                          </Text>
+                                        )}
+                                      </Flex>
+                                    </Flex>
+                                  </CardBody>
+                                </Card>
+                              </GridItem>
+                            </Grid>
+                          )}
+                        </Flex>
                       )}
                     </Flex>
                   )}
@@ -4609,208 +5261,7 @@ function ProjectRegisterView({
                                   </Text>
                                 </Flex>
 
-                                {DataWorkflowGroups.map((group) => (
-                                  <Box key={group.id} w="full">
-                                    <Checkbox
-                                      isChecked={selectedWorkflowIds.has(
-                                        group.id
-                                      )}
-                                      size={"lg"}
-                                      onChange={() => {
-                                        const newSelected = new Set(
-                                          selectedWorkflowIds
-                                        );
-                                        if (newSelected.has(group.id)) {
-                                          newSelected.delete(group.id);
-                                          group.workflowChild.forEach(
-                                            (level2) => {
-                                              newSelected.delete(level2.id);
-                                              level2.workflowChild.forEach(
-                                                (level3) => {
-                                                  newSelected.delete(level3.id);
-                                                }
-                                              );
-                                            }
-                                          );
-                                        } else {
-                                          newSelected.add(group.id);
-                                          group.workflowChild.forEach(
-                                            (level2) => {
-                                              newSelected.add(level2.id);
-                                              level2.workflowChild.forEach(
-                                                (level3) => {
-                                                  newSelected.add(level3.id);
-                                                }
-                                              );
-                                            }
-                                          );
-                                        }
-                                        setSelectedWorkflowIds(newSelected);
-                                        formik.setFieldValue(
-                                          "projectPlanWorkflowIds",
-                                          Array.from(newSelected)
-                                        );
-                                        formik.setFieldValue(
-                                          "projectPlanWorkflowIds",
-                                          Array.from(newSelected)
-                                        );
-                                      }}
-                                      colorScheme={"blue"}
-                                    >
-                                      <Text fontWeight="bold" color="blue.600">
-                                        {group.wfgName}
-                                      </Text>
-                                    </Checkbox>
-                                    <VStack
-                                      align="start"
-                                      spacing={2}
-                                      pl={6}
-                                      mt={2}
-                                    >
-                                      {group.workflowChild.map((level2) => (
-                                        <Box key={level2.id} w="full">
-                                          <Checkbox
-                                            isChecked={selectedWorkflowIds.has(
-                                              level2.id
-                                            )}
-                                            size={"lg"}
-                                            onChange={() => {
-                                              const newSelected = new Set(
-                                                selectedWorkflowIds
-                                              );
-                                              if (newSelected.has(level2.id)) {
-                                                newSelected.delete(level2.id);
-                                                level2.workflowChild.forEach(
-                                                  (level3) => {
-                                                    newSelected.delete(
-                                                      level3.id
-                                                    );
-                                                  }
-                                                );
-                                              } else {
-                                                newSelected.add(level2.id);
-                                                level2.workflowChild.forEach(
-                                                  (level3) => {
-                                                    newSelected.add(level3.id);
-                                                  }
-                                                );
-                                              }
-                                              const allLevel2Checked =
-                                                group.workflowChild.every(
-                                                  (l2) => newSelected.has(l2.id)
-                                                );
-                                              if (allLevel2Checked) {
-                                                newSelected.add(group.id);
-                                              } else {
-                                                newSelected.delete(group.id);
-                                              }
-                                              setSelectedWorkflowIds(
-                                                newSelected
-                                              );
-                                              formik.setFieldValue(
-                                                "projectPlanWorkflowIds",
-                                                Array.from(newSelected)
-                                              );
-                                              formik.setFieldValue(
-                                                "projectPlanWorkflowIds",
-                                                Array.from(newSelected)
-                                              );
-                                            }}
-                                            colorScheme="blue"
-                                          >
-                                            <Text
-                                              fontWeight="semibold"
-                                              color="blue.500"
-                                            >
-                                              {level2.wfgName}
-                                            </Text>
-                                          </Checkbox>
-                                          <VStack
-                                            align="start"
-                                            spacing={1}
-                                            pl={6}
-                                            mt={1}
-                                          >
-                                            {level2.workflowChild.map(
-                                              (level3) => (
-                                                <Checkbox
-                                                  key={level3.id}
-                                                  isChecked={selectedWorkflowIds.has(
-                                                    level3.id
-                                                  )}
-                                                  size={"lg"}
-                                                  onChange={() => {
-                                                    const newSelected = new Set(
-                                                      selectedWorkflowIds
-                                                    );
-                                                    if (
-                                                      newSelected.has(level3.id)
-                                                    ) {
-                                                      newSelected.delete(
-                                                        level3.id
-                                                      );
-                                                    } else {
-                                                      newSelected.add(
-                                                        level3.id
-                                                      );
-                                                    }
-                                                    const allLevel3Checked =
-                                                      level2.workflowChild.every(
-                                                        (l3) =>
-                                                          newSelected.has(l3.id)
-                                                      );
-                                                    if (allLevel3Checked) {
-                                                      newSelected.add(
-                                                        level2.id
-                                                      );
-                                                    } else {
-                                                      newSelected.delete(
-                                                        level2.id
-                                                      );
-                                                    }
-                                                    const allLevel2Checked =
-                                                      group.workflowChild.every(
-                                                        (l2) =>
-                                                          newSelected.has(l2.id)
-                                                      );
-                                                    if (allLevel2Checked) {
-                                                      newSelected.add(group.id);
-                                                    } else {
-                                                      newSelected.delete(
-                                                        group.id
-                                                      );
-                                                    }
-                                                    setSelectedWorkflowIds(
-                                                      newSelected
-                                                    );
-                                                  }}
-                                                  colorScheme="blue"
-                                                >
-                                                  <VStack
-                                                    align="start"
-                                                    spacing={0}
-                                                  >
-                                                    <Text fontWeight="medium">
-                                                      {level3.wfgName}
-                                                    </Text>
-                                                    {level3.wfgDesc && (
-                                                      <Text
-                                                        fontSize="sm"
-                                                        color="gray.600"
-                                                      >
-                                                        {level3.wfgDesc}
-                                                      </Text>
-                                                    )}
-                                                  </VStack>
-                                                </Checkbox>
-                                              )
-                                            )}
-                                          </VStack>
-                                        </Box>
-                                      ))}
-                                    </VStack>
-                                  </Box>
-                                ))}
+                                {renderWorkflowLevel(DataWorkflowGroups)}
                               </Flex>
                             </GridItem>
                             <GridItem

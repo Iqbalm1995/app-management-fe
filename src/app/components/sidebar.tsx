@@ -58,6 +58,7 @@ import {
   AlertTitle,
   AlertDescription,
   Spinner,
+  Badge,
 } from "@chakra-ui/react";
 import {
   FiHome,
@@ -76,6 +77,8 @@ import {
   FiCode,
   FiDatabase,
   FiKey,
+  FiDollarSign,
+  FiZap,
 } from "react-icons/fi";
 import { IconType } from "react-icons";
 import {
@@ -151,6 +154,8 @@ interface LinkItemProps {
   role: string[];
   menuID: string;
   children: LinkItemProps[];
+  isLocked?: boolean;
+  isPro?: boolean;
 }
 
 const LinkItems: LinkItemProps[] = [
@@ -163,11 +168,12 @@ const LinkItems: LinkItemProps[] = [
     children: [],
   },
   {
-    name: "My Workspace",
+    name: "Workspace",
     icon: BsRocketTakeoff,
     link: "/workspace",
     role: ["admin"],
     menuID: "1",
+    isPro: true,
     children: [
       {
         name: "My Project",
@@ -175,6 +181,7 @@ const LinkItems: LinkItemProps[] = [
         link: "/project-development",
         role: ["admin"],
         menuID: "1",
+        isPro: true,
         children: [],
       },
     ],
@@ -292,6 +299,7 @@ const LinkItems: LinkItemProps[] = [
     link: "/file-archives",
     role: ["admin"],
     menuID: "1",
+    isPro: true,
     children: [],
   },
   {
@@ -316,7 +324,7 @@ const LinkItems: LinkItemProps[] = [
         role: ["admin"],
         menuID: "1",
         children: [],
-      },    
+      },
       {
         name: "Master Application",
         icon: HiOutlineDesktopComputer,
@@ -324,9 +332,18 @@ const LinkItems: LinkItemProps[] = [
         role: ["admin"],
         menuID: "1",
         children: [],
-      },    
+      },
     ],
   },
+  // {
+  //   name: "Pricing",
+  //   icon: FiDollarSign,
+  //   link: "/pricing",
+  //   role: ["admin"],
+  //   menuID: "1",
+  //   children: [],
+  //   isLocked: true,
+  // },
   // {
   //   name: "Avtivities",
   //   icon: RxActivityLog,
@@ -334,6 +351,7 @@ const LinkItems: LinkItemProps[] = [
   //   role: ["admin"],
   //   menuID: "1",
   //   children: [],
+  //   isLocked: true,
   // },
   // {
   //   name: "User Config",
@@ -938,7 +956,7 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
             >
               {data.icon && (
                 <Icon
-                  mr={mode ? "0" : "6"}
+                  mr={mode ? "0" : data.isPro ? "2" : "4"}
                   fontSize={mode ? "25" : "20"}
                   _groupHover={{
                     color: "white",
@@ -958,7 +976,9 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
                 h={"full"}
                 alignItems={"center"}
                 display={mode ? "none" : "flex"}
+                as={HStack}
               >
+                {data.isPro && <Badge colorScheme="purple">Pro</Badge>}
                 <Text>{data.name}</Text>
                 {hasChildren && (
                   <Icon
@@ -1129,91 +1149,120 @@ function AdditionalProfileBar({
 
   return (
     <>
-      <Box
-        // bgGradient={
-        //   LiteModeTrigger
-        //     ? "linear(to-r, transparent, transparent)"
-        //     : colorMode == "light"
-        //     ? "linear(to-r, gray.100, gray.100)" // for light mode
-        //     : "linear(to-r, gray.700, gray.700)" // for dark mode
-        // }
-        bg={colorMode == "light" ? "gray.100" : "blackAlpha.500"}
-        // backdropFilter={"blur(20px)"}
-        color={colorMode == "light" ? "gray.900" : "white"}
-        m={2}
-        mr={LiteModeTrigger ? 2 : 3}
-        py={LiteModeTrigger ? 0 : 2}
-        rounded={radiusStyle}
-        transition="0.5s ease-in-out"
-        // boxShadow={LiteModeTrigger ? "none" : "md"}
-      >
-        <Flex
-          px={LiteModeTrigger ? 0 : 3}
-          pt={3}
-          pb={2}
-          w={"full"}
-          justifyContent={LiteModeTrigger ? "center" : "start"}
+      <Flex w={"full"} as={Stack} spacing={0}>
+        <Box
+          // bgGradient={
+          //   LiteModeTrigger
+          //     ? "linear(to-r, transparent, transparent)"
+          //     : colorMode == "light"
+          //     ? "linear(to-r, gray.100, gray.100)" // for light mode
+          //     : "linear(to-r, gray.700, gray.700)" // for dark mode
+          // }
+          bg={colorMode == "light" ? "gray.100" : "blackAlpha.500"}
+          // backdropFilter={"blur(20px)"}
+          color={colorMode == "light" ? "gray.900" : "white"}
+          mx={2}
+          mr={LiteModeTrigger ? 2 : 3}
+          py={LiteModeTrigger ? 0 : 2}
+          rounded={radiusStyle}
+          transition="0.5s ease-in-out"
+          // boxShadow={LiteModeTrigger ? "none" : "md"}
         >
           <Flex
+            px={LiteModeTrigger ? 0 : 3}
+            pt={3}
+            pb={2}
             w={"full"}
             justifyContent={LiteModeTrigger ? "center" : "start"}
           >
-            <Tooltip
-              borderRadius={"xl"}
-              hasArrow
-              label={DataAuth && DataAuth.team?.teamName}
-            >
-              <Avatar
-                size={"md"}
-                color={"white"}
-                name={
-                  (DataAuth &&
-                    DataAuth.team &&
-                    truncateToTwoWords(DataAuth.team.teamName)) ||
-                  ""
-                }
-                mr={LiteModeTrigger ? 0 : 2}
-                cursor={"pointer"}
-                src={
-                  (DataAuth &&
-                    DataAuth.team &&
-                    DataAuth.team.teamPict &&
-                    buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC) +
-                      DataAuth.team.teamPict) ||
-                  ""
-                }
-                boxShadow={"md"}
-              />
-            </Tooltip>
             <Flex
               w={"full"}
-              h={"full"}
-              alignItems={"center"}
-              alignContent={"start"}
-              display={LiteModeTrigger ? "none" : "flex"}
+              justifyContent={LiteModeTrigger ? "center" : "start"}
             >
-              <VStack w={"full"} h={"full"} spacing={0} align={"start"} p={1}>
-                <Text
-                  color={colorMode == "light" ? "gray.900" : "white"}
-                  // color={"white"}
-                  fontSize={"smaller"}
-                  fontWeight={700}
-                >
-                  {DataAuth && truncateToTwoWords(DataAuth.nama)}
-                </Text>
-                <Text
-                  fontSize="x-small"
-                  color={colorMode == "light" ? "primary.500" : "primary.100"}
-                  // color={"secondary.200"}
-                >
-                  {(DataAuth && DataAuth.teamRole?.specName) ||
-                    (DataAuth && DataAuth.jabatan)}
-                </Text>
-              </VStack>
+              <Tooltip
+                borderRadius={"xl"}
+                hasArrow
+                label={DataAuth && DataAuth.team?.teamName}
+              >
+                <Avatar
+                  size={"md"}
+                  color={"white"}
+                  name={
+                    (DataAuth &&
+                      DataAuth.team &&
+                      truncateToTwoWords(DataAuth.team.teamName)) ||
+                    ""
+                  }
+                  mr={LiteModeTrigger ? 0 : 2}
+                  cursor={"pointer"}
+                  src={
+                    (DataAuth &&
+                      DataAuth.team &&
+                      DataAuth.team.teamPict &&
+                      buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC) +
+                        DataAuth.team.teamPict) ||
+                    ""
+                  }
+                  boxShadow={"md"}
+                />
+              </Tooltip>
+              <Flex
+                w={"full"}
+                h={"full"}
+                alignItems={"center"}
+                alignContent={"start"}
+                display={LiteModeTrigger ? "none" : "flex"}
+              >
+                <VStack w={"full"} h={"full"} spacing={0} align={"start"} p={1}>
+                  <Text
+                    color={colorMode == "light" ? "gray.900" : "white"}
+                    // color={"white"}
+                    fontSize={"smaller"}
+                    fontWeight={700}
+                  >
+                    {DataAuth && truncateToTwoWords(DataAuth.nama)}
+                  </Text>
+                  <Text
+                    fontSize="x-small"
+                    color={colorMode == "light" ? "primary.500" : "primary.100"}
+                    // color={"secondary.200"}
+                  >
+                    {(DataAuth && DataAuth.teamRole?.specName) ||
+                      (DataAuth && DataAuth.jabatan)}
+                  </Text>
+                </VStack>
+              </Flex>
             </Flex>
           </Flex>
+        </Box>
+        {/* UPGRADE PLAN */}
+        <Flex m={2} mr={LiteModeTrigger ? 2 : 3}>
+          <Flex
+            as={Button}
+            w="full"
+            size={LiteModeTrigger ? "sm" : "md"}
+            bgGradient="linear(to-r, secondary.500, purple.500, pink.400)"
+            color="white"
+            rounded="xl"
+            fontWeight="bold"
+            fontSize={LiteModeTrigger ? "xs" : "sm"}
+            _hover={{
+              bgGradient: "linear(to-r, secondary.600, purple.600, pink.500)",
+              transform: "translateY(-2px)",
+              boxShadow: "xl",
+            }}
+            _active={{
+              transform: "translateY(0px)",
+            }}
+            transition="all 0.2s"
+            boxShadow="lg"
+            leftIcon={LiteModeTrigger ? undefined : <FiZap />}
+            onClick={() => (window.location.href = "/pricing")}
+          >
+            {LiteModeTrigger ? "⚡" : "Upgrade Plan"}
+          </Flex>
         </Flex>
-      </Box>
+      </Flex>
     </>
   );
 }

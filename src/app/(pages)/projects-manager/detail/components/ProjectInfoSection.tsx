@@ -36,10 +36,10 @@ import { CustomPanelAlert } from "@/app/components/customPanels";
 import LoadingMiniSignature from "@/app/components/loadingMini";
 
 interface ProjectInfoSectionProps {
-  projectId: string | null;
+  DataProject: ProjectDataResponse | null;
 }
 
-const ProjectInfoSection = ({ projectId }: ProjectInfoSectionProps) => {
+const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
   const { GetDetailById } = useProjects();
@@ -66,9 +66,6 @@ const ProjectInfoSection = ({ projectId }: ProjectInfoSectionProps) => {
     }
   }, [DataAuth]);
 
-  const [DataProject, setDataProject] = useState<ProjectDataResponse | null>(
-    null
-  );
   const [RefreshData, setRefreshData] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
 
@@ -76,44 +73,9 @@ const ProjectInfoSection = ({ projectId }: ProjectInfoSectionProps) => {
     setRefreshData((prev) => prev + 1);
   };
 
-  useEffect(() => {
-    if (DataAuth && DataAuth.team && projectId) {
-      setIsLoadingProcess(true);
-      const GetDataList = async () => {
-        const requestData = await GetDetailById(projectId, tokenData);
-        const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
-
-        if (isErrorResponse || !requestData) {
-          showToast({
-            description: requestData?.message || RES_GENERIC_ERROR_MSG,
-            statusToast: "error",
-          });
-          setIsLoadingProcess(false);
-          return;
-        } else {
-          if (requestData.data == null) {
-            showToast({
-              description: "Data return error",
-              statusToast: "error",
-            });
-            setIsLoadingProcess(false);
-            return;
-          }
-
-          const itemsData: ProjectDataResponse =
-            requestData.data as ProjectDataResponse;
-
-          setDataProject(itemsData);
-          setIsLoadingProcess(false);
-        }
-      };
-      GetDataList();
-    }
-  }, [DataAuth, RefreshData, projectId, tokenData]);
-
   return (
     <VStack spacing={6} align="stretch">
-      {!projectId && !DataProject ? (
+      {!DataProject ? (
         <CustomPanelAlert type={"error"}>
           <FiAlertTriangle color={"red"} size={70} />
           <Text>No project ID found in the URL</Text>
@@ -158,7 +120,10 @@ const ProjectInfoSection = ({ projectId }: ProjectInfoSectionProps) => {
                   border="1px"
                   borderColor="gray.100"
                 >
-                  <CardHeader bg="blue.50" roundedTop="xl">
+                  <CardHeader
+                    bg={colorMode == "light" ? "blue.50" : "blue.900"}
+                    roundedTop="xl"
+                  >
                     <HStack spacing={3}>
                       <Box
                         w={10}

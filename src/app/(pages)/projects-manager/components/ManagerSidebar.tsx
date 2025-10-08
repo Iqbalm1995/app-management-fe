@@ -21,6 +21,7 @@ import {
   SimpleGrid,
   CircularProgress,
   CircularProgressLabel,
+  Flex,
 } from "@chakra-ui/react";
 import { Search2Icon } from "@chakra-ui/icons";
 import {
@@ -327,7 +328,13 @@ const ManagerSidebar = ({
               </VStack>
             </HStack>
 
-            <VStack spacing={3} align="stretch">
+            <Flex
+              as={Stack}
+              spacing={3}
+              w={"full"}
+              h={"20vh"}
+              overflowY={"auto"}
+            >
               {PROJECT_STATUS_LIST.map((status) => {
                 const isSelected = statusFilter.includes(status);
                 const count = DataProjects.filter(
@@ -348,8 +355,10 @@ const ManagerSidebar = ({
                     rounded="xl"
                     _hover={{
                       transform: "translateY(-1px)",
-                      shadow: "md",
+                      bgColor: "secondary.100",
+                      // shadow: "md",
                     }}
+                    py={1}
                     transition="all 0.2s ease"
                   >
                     <HStack justify="space-between" w="full">
@@ -366,7 +375,7 @@ const ManagerSidebar = ({
                   </Button>
                 );
               })}
-            </VStack>
+            </Flex>
 
             {statusFilter.length > 0 && (
               <Button

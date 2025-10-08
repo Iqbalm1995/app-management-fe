@@ -312,20 +312,22 @@ export interface BacklogInsertPayload {
 export interface BacklogUpdatePayload {
   id: string;
   backlogName: string;
-  backlogDesc: string | null;
-  envSide: string | null;
-  maintenanceCategory: string | null;
-  maintenanceType: string | null;
+  backlogDesc?: string | null;
+  envSide?: string | null;
+  maintenanceCategory?: string | null;
+  maintenanceType?: string | null;
   rppb: string;
   licensing: string;
-  backogRegistered: string | null;
-  backlogStartdate: string | null;
-  backlogEnddate: string | null;
+  backogRegistered?: string | null;
+  backlogStartdate?: string | null;
+  backlogEnddate?: string | null;
   urgency: string;
   impact: string;
   priority: string;
   developmentStatus: string;
-  reffId: string | null;
+  backlogImplementStartdate?: string | null;
+  backlogImplementEnddate?: string | null;
+  reffId?: string | null;
   posOrder: number;
 }
 

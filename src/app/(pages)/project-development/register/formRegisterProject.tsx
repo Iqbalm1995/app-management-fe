@@ -181,6 +181,9 @@ export const initialProjectsInsertValues: ProjectInsertPayload = {
   reqParentId: "", // Optional
   projectPlanWorkflowIds: [],
   userAssigns: [], // Required (at least an empty array)
+  projectPlanWorkflowBacklogsIds: [],
+  workPrograms: [],
+  workProgramsBacklogs: [],
 };
 
 function FormRegisterProjectView() {
