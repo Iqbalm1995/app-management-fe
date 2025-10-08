@@ -3986,6 +3986,10 @@ function RegsiterRequirementViewPage({
                             formik={formik}
                             DataBackLogs={DataBackLogs}
                             setDataBackLogs={setDataBackLogs}
+                            ModalAppPicker={ModalAppPicker}
+                            selectedApp={selectedApp}
+                            setSelectedApp={setSelectedApp}
+                            tokenData={tokenData}
                           />
                         )}
                       </>
@@ -5784,8 +5788,14 @@ interface Section4RFCProps {
   type_req_param: "RFC";
   formik: any;
   ActionLoading: boolean;
-  DataBackLogs: ReqBacklogPayload[]; // <- add state value
-  setDataBackLogs: React.Dispatch<React.SetStateAction<ReqBacklogPayload[]>>; // <- add setter function
+  DataBackLogs: ReqBacklogPayload[];
+  setDataBackLogs: React.Dispatch<React.SetStateAction<ReqBacklogPayload[]>>;
+  ModalAppPicker: any;
+  selectedApp: ApplicationMasterResponse | null;
+  setSelectedApp: React.Dispatch<
+    React.SetStateAction<ApplicationMasterResponse | null>
+  >;
+  tokenData: string;
 }
 
 interface BacklogChangesData {
@@ -5833,12 +5843,15 @@ const Section4RFCView = ({
   formik,
   ActionLoading,
   DataBackLogs,
+  ModalAppPicker,
+  selectedApp,
+  setSelectedApp,
   setDataBackLogs,
+  tokenData,
 }: Section4RFCProps) => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
-  const [tokenData, setTokenData] = useState<string>("");
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
   const { List: ListApps } = useApps();
@@ -6372,17 +6385,28 @@ const Section4RFCView = ({
                 Cari Aplikasi Eksisting
               </FormLabel>
               <Stack spacing={0} h={"full"}>
-                <Input
-                  id="appInitialCodeSearch"
-                  name="appInitialCodeSearch"
-                  type="text"
-                  onChange={handleChangeAppCode}
-                  value={SearchAppsText}
-                  placeholder={`CMS / SISMON / dsb.`}
-                  minLength={3}
-                  // maxLength={10}
-                  isDisabled={ActionLoading}
-                />
+                <HStack spacing={2}>
+                  <Input
+                    id="appInitialCodeSearch"
+                    name="appInitialCodeSearch"
+                    type="text"
+                    onChange={handleChangeAppCode}
+                    value={SearchAppsText}
+                    placeholder={`CMS / SISMON / dsb.`}
+                    minLength={3}
+                    // maxLength={10}
+                    isDisabled={ActionLoading}
+                    isReadOnly
+                  />
+                  <Button
+                    colorScheme="blue"
+                    size="md"
+                    onClick={() => ModalAppPicker.onOpen()}
+                    isDisabled={ActionLoading}
+                  >
+                    Pilih Aplikasi
+                  </Button>
+                </HStack>
                 <Box
                   w={"full"}
                   py={2}
@@ -7462,6 +7486,22 @@ const Section4RFCView = ({
           )}
         </Flex>
       </InputGroupPanel>
+
+      {/* App Picker Modal */}
+      <AppPickerModal
+        isOpen={ModalAppPicker.isOpen}
+        onClose={ModalAppPicker.onClose}
+        selectedApp={selectedApp}
+        onAppSelect={(app) => {
+          setSelectedApp(app);
+          if (app) {
+            formik.setFieldValue("appInitialCode", app.appShortName);
+            SelectedApp(app);
+          }
+          ModalAppPicker.onClose();
+        }}
+        tokenData={tokenData}
+      />
     </Flex>
   );
 };
