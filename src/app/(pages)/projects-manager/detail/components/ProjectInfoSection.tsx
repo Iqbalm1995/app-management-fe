@@ -120,7 +120,10 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                   border="1px"
                   borderColor="gray.100"
                 >
-                  <CardHeader bg="blue.50" roundedTop="xl">
+                  <CardHeader
+                    bg={colorMode == "light" ? "blue.50" : "blue.900"}
+                    roundedTop="xl"
+                  >
                     <HStack spacing={3}>
                       <Box
                         w={10}

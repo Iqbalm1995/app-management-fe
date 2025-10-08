@@ -15,6 +15,8 @@ import {
   Badge,
   Divider,
   useColorMode,
+  Grid,
+  GridItem,
 } from "@chakra-ui/react";
 import {
   FiRefreshCcw,
@@ -28,7 +30,9 @@ import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useProjects, { ProjectDataResponse } from "@/app/services/useProjects";
-import useRequirements, { RequirementsResponse } from "@/app/services/useRequirements";
+import useRequirements, {
+  RequirementsResponse,
+} from "@/app/services/useRequirements";
 import useApps, { ApplicationMasterResponse } from "@/app/services/useApps";
 import {
   RES_CODE_OK,
@@ -50,8 +54,10 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
   // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
-  const [RequirementData, setRequirementData] = useState<RequirementsResponse | null>(null);
-  const [AppDetailData, setAppDetailData] = useState<ApplicationMasterResponse | null>(null);
+  const [RequirementData, setRequirementData] =
+    useState<RequirementsResponse | null>(null);
+  const [AppDetailData, setAppDetailData] =
+    useState<ApplicationMasterResponse | null>(null);
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
@@ -76,7 +82,10 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
     const fetchRequirementData = async () => {
       if (DataProject?.reqParentId && tokenData) {
         try {
-          const response = await GetRequirementDetailById(DataProject.reqParentId, tokenData);
+          const response = await GetRequirementDetailById(
+            DataProject.reqParentId,
+            tokenData
+          );
           if (response && response.statusCode === RES_CODE_OK) {
             setRequirementData(response.data);
           }
@@ -94,8 +103,14 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
     const fetchAppDetailData = async () => {
       if (RequirementData?.appInitialCode && tokenData) {
         try {
-          console.log("Fetching app details for:", RequirementData.appInitialCode);
-          const response = await GetDetailByInitial(RequirementData.appInitialCode, tokenData);
+          console.log(
+            "Fetching app details for:",
+            RequirementData.appInitialCode
+          );
+          const response = await GetDetailByInitial(
+            RequirementData.appInitialCode,
+            tokenData
+          );
           console.log("App detail response:", response);
           if (response && response.statusCode === RES_CODE_OK) {
             setAppDetailData(response.data);
@@ -159,264 +174,336 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
               </HStack>
 
               {/* Beautiful Information Cards */}
-              <VStack spacing={8} align="stretch">
-                {/* Basic Information Card */}
-                <Card
-                  shadow="lg"
-                  rounded="xl"
-                  border="1px"
-                  borderColor="gray.100"
-                >
-                  <CardHeader bg="blue.50" roundedTop="xl">
-                    <HStack spacing={3}>
-                      <Box
-                        w={10}
-                        h={10}
-                        bgGradient="linear(135deg, blue.400, blue.600)"
-                        rounded="xl"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                      >
-                        <FiInfo size={20} color="white" />
-                      </Box>
-                      <Heading size="md" color="blue.700">
-                        Basic Information
-                      </Heading>
-                    </HStack>
-                  </CardHeader>
-                  <CardBody p={6}>
-                    <VStack spacing={4} align="stretch">
-                      <HStack justify="space-between">
-                        <Text
-                          fontSize="sm"
-                          color="gray.600"
-                          fontWeight="medium"
-                        >
-                          Project Number:
-                        </Text>
-                        <Badge
-                          colorScheme="blue"
-                          px={3}
-                          py={1}
-                          rounded="full"
-                          fontSize="sm"
-                        >
-                          {DataProject.projectNo || "N/A"}
-                        </Badge>
-                      </HStack>
-                      <Divider />
-                      <HStack justify="space-between">
-                        <Text
-                          fontSize="sm"
-                          color="gray.600"
-                          fontWeight="medium"
-                        >
-                          Project Name:
-                        </Text>
-                        <Text
-                          fontSize="sm"
-                          fontWeight="bold"
-                          color="gray.800"
-                          textAlign="right"
-                          maxW="200px"
-                        >
-                          {DataProject.projectName || "N/A"}
-                        </Text>
-                      </HStack>
-                      <Divider />
-                      <HStack justify="space-between">
-                        <Text
-                          fontSize="sm"
-                          color="gray.600"
-                          fontWeight="medium"
-                        >
-                          Status:
-                        </Text>
-                        <Badge
-                          colorScheme={
-                            DataProject.projectStatus === "ACTIVE"
-                              ? "green"
-                              : "red"
-                          }
-                          px={3}
-                          py={1}
-                          rounded="full"
-                          fontSize="sm"
-                        >
-                          {DataProject.projectStatus || "N/A"}
-                        </Badge>
-                      </HStack>
-                      <Divider />
-                      <HStack justify="space-between">
-                        <Text
-                          fontSize="sm"
-                          color="gray.600"
-                          fontWeight="medium"
-                        >
-                          Progress:
-                        </Text>
-                        <Text fontSize="sm" fontWeight="bold" color="gray.800">
-                          {DataProject.projectStatusPercentage || 0}%
-                        </Text>
-                      </HStack>
-                    </VStack>
-                  </CardBody>
-                </Card>
-
-                {/* Project Categories Card */}
-                <Card
-                  shadow="lg"
-                  rounded="xl"
-                  border="1px"
-                  borderColor="gray.100"
-                >
-                  <CardHeader bg="purple.50" roundedTop="xl">
-                    <HStack spacing={3}>
-                      <Box
-                        w={10}
-                        h={10}
-                        bgGradient="linear(135deg, purple.400, purple.600)"
-                        rounded="xl"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                      >
-                        <FiTag size={20} color="white" />
-                      </Box>
-                      <Heading size="md" color="purple.700">
-                        Categories
-                      </Heading>
-                    </HStack>
-                  </CardHeader>
-                  <CardBody p={6}>
-                    <VStack spacing={4} align="stretch">
-                      <HStack justify="space-between">
-                        <Text
-                          fontSize="sm"
-                          color="gray.600"
-                          fontWeight="medium"
-                        >
-                          Category:
-                        </Text>
-                        <Badge
-                          colorScheme="purple"
-                          px={3}
-                          py={1}
-                          rounded="full"
-                          fontSize="sm"
-                        >
-                          {DataProject.projectCategory || "N/A"}
-                        </Badge>
-                      </HStack>
-                      <Divider />
-                      <HStack justify="space-between">
-                        <Text
-                          fontSize="sm"
-                          color="gray.600"
-                          fontWeight="medium"
-                        >
-                          Type:
-                        </Text>
-                        <Badge
-                          colorScheme="cyan"
-                          px={3}
-                          py={1}
-                          rounded="full"
-                          fontSize="sm"
-                        >
-                          {DataProject.projectType || "N/A"}
-                        </Badge>
-                      </HStack>
-                    </VStack>
-                  </CardBody>
-                </Card>
-
-                {/* Timeline Card */}
-                <Card
-                  shadow="lg"
-                  rounded="xl"
-                  border="1px"
-                  borderColor="gray.100"
-                >
-                  <CardHeader bg="orange.50" roundedTop="xl">
-                    <HStack spacing={3}>
-                      <Box
-                        w={10}
-                        h={10}
-                        bgGradient="linear(135deg, orange.400, orange.600)"
-                        rounded="xl"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                      >
-                        <FiCalendar size={20} color="white" />
-                      </Box>
-                      <Heading size="md" color="orange.700">
-                        Timeline
-                      </Heading>
-                    </HStack>
-                  </CardHeader>
-                  <CardBody p={6}>
-                    <VStack spacing={4} align="stretch">
-                      <HStack justify="space-between">
-                        <Text
-                          fontSize="sm"
-                          color="gray.600"
-                          fontWeight="medium"
-                        >
-                          Register Date:
-                        </Text>
-                        <Text fontSize="sm" fontWeight="bold" color="gray.800">
-                          {DataProject.projectRegisterDate
-                            ? new Date(
-                                DataProject.projectRegisterDate
-                              ).toLocaleDateString()
-                            : "N/A"}
-                        </Text>
-                      </HStack>
-                    </VStack>
-                  </CardBody>
-                </Card>
-
-                {/* Description Card */}
-                <Card
-                  shadow="lg"
-                  rounded="xl"
-                  border="1px"
-                  borderColor="gray.100"
-                >
-                  <CardHeader bg="green.50" roundedTop="xl">
-                    <HStack spacing={3}>
-                      <Box
-                        w={10}
-                        h={10}
-                        bgGradient="linear(135deg, green.400, green.600)"
-                        rounded="xl"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                      >
-                        <FiActivity size={20} color="white" />
-                      </Box>
-                      <Heading size="md" color="green.700">
-                        Description
-                      </Heading>
-                    </HStack>
-                  </CardHeader>
-                  <CardBody p={6}>
-                    <Text
-                      fontSize="sm"
-                      color="gray.600"
-                      lineHeight="tall"
-                      minH="60px"
+              <VStack spacing={4} align="stretch">
+                <Grid templateColumns="repeat(12, 1fr)" w="full" gap={4}>
+                  <GridItem
+                    colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}
+                    w={"full"}
+                  >
+                    {/* Basic Information Card */}
+                    <Card
+                      shadow="lg"
+                      rounded="xl"
+                      border="1px"
+                      borderColor={
+                        colorMode == "light" ? "gray.100" : "gray.700"
+                      }
+                      bg={colorMode == "light" ? "white" : "gray.800"}
+                      minH={"390px"}
                     >
-                      {DataProject.projectDesc ||
-                        "No description available for this project."}
-                    </Text>
-                  </CardBody>
-                </Card>
+                      <CardHeader
+                        bg={colorMode == "light" ? "blue.50" : "gray.900"}
+                        roundedTop="xl"
+                      >
+                        <HStack spacing={3}>
+                          <Box
+                            w={10}
+                            h={10}
+                            bgGradient="linear(135deg, blue.400, blue.600)"
+                            rounded="xl"
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
+                          >
+                            <FiInfo size={20} color="white" />
+                          </Box>
+                          <Heading size="md" color="blue.700">
+                            Basic Information
+                          </Heading>
+                        </HStack>
+                      </CardHeader>
+                      <CardBody p={6}>
+                        <VStack spacing={4} align="stretch">
+                          <HStack justify="space-between">
+                            <Text
+                              fontSize="sm"
+                              color={
+                                colorMode == "light" ? "gray.600" : "gray.400"
+                              }
+                              fontWeight="medium"
+                            >
+                              Project Number:
+                            </Text>
+                            <Badge
+                              colorScheme="blue"
+                              px={3}
+                              py={1}
+                              rounded="full"
+                              fontSize="sm"
+                            >
+                              {DataProject.projectNo || "N/A"}
+                            </Badge>
+                          </HStack>
+                          <Divider />
+                          <HStack justify="space-between">
+                            <Text
+                              fontSize="sm"
+                              color={
+                                colorMode == "light" ? "gray.600" : "gray.400"
+                              }
+                              fontWeight="medium"
+                            >
+                              Project Name:
+                            </Text>
+                            <Text
+                              fontSize="sm"
+                              fontWeight="bold"
+                              color={
+                                colorMode == "light" ? "gray.800" : "gray.200"
+                              }
+                              textAlign="right"
+                              maxW="200px"
+                            >
+                              {DataProject.projectName || "N/A"}
+                            </Text>
+                          </HStack>
+                          <Divider />
+                          <HStack justify="space-between">
+                            <Text
+                              fontSize="sm"
+                              color={
+                                colorMode == "light" ? "gray.600" : "gray.400"
+                              }
+                              fontWeight="medium"
+                            >
+                              Status:
+                            </Text>
+                            <Badge
+                              colorScheme={
+                                DataProject.projectStatus === "ACTIVE"
+                                  ? "green"
+                                  : "red"
+                              }
+                              px={3}
+                              py={1}
+                              rounded="full"
+                              fontSize="sm"
+                            >
+                              {DataProject.projectStatus || "N/A"}
+                            </Badge>
+                          </HStack>
+                          <Divider />
+                          <HStack justify="space-between">
+                            <Text
+                              fontSize="sm"
+                              color={
+                                colorMode == "light" ? "gray.600" : "gray.400"
+                              }
+                              fontWeight="medium"
+                            >
+                              Progress:
+                            </Text>
+                            <Text
+                              fontSize="sm"
+                              fontWeight="bold"
+                              color={
+                                colorMode == "light" ? "gray.800" : "gray.200"
+                              }
+                            >
+                              {DataProject.projectStatusPercentage || 0}%
+                            </Text>
+                          </HStack>
+                        </VStack>
+                      </CardBody>
+                    </Card>
+                  </GridItem>
+                  <GridItem
+                    colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}
+                    w={"full"}
+                  >
+                    <VStack spacing={4} align="stretch">
+                      {/* Project Categories Card */}
+                      <Card
+                        shadow="lg"
+                        rounded="xl"
+                        border="1px"
+                        borderColor={
+                          colorMode == "light" ? "gray.100" : "gray.700"
+                        }
+                        bg={colorMode == "light" ? "white" : "gray.800"}
+                      >
+                        <CardHeader
+                          bg={colorMode == "light" ? "purple.50" : "gray.900"}
+                          roundedTop="xl"
+                        >
+                          <HStack spacing={3}>
+                            <Box
+                              w={10}
+                              h={10}
+                              bgGradient="linear(135deg, purple.400, purple.600)"
+                              rounded="xl"
+                              display="flex"
+                              alignItems="center"
+                              justifyContent="center"
+                            >
+                              <FiTag size={20} color="white" />
+                            </Box>
+                            <Heading size="md" color="purple.700">
+                              Categories
+                            </Heading>
+                          </HStack>
+                        </CardHeader>
+                        <CardBody p={6}>
+                          <VStack spacing={4} align="stretch">
+                            <HStack justify="space-between">
+                              <Text
+                                fontSize="sm"
+                                color={
+                                  colorMode == "light" ? "gray.600" : "gray.400"
+                                }
+                                fontWeight="medium"
+                              >
+                                Category:
+                              </Text>
+                              <Badge
+                                colorScheme="purple"
+                                px={3}
+                                py={1}
+                                rounded="full"
+                                fontSize="sm"
+                              >
+                                {DataProject.projectCategory || "N/A"}
+                              </Badge>
+                            </HStack>
+                            <Divider />
+                            <HStack justify="space-between">
+                              <Text
+                                fontSize="sm"
+                                color={
+                                  colorMode == "light" ? "gray.600" : "gray.400"
+                                }
+                                fontWeight="medium"
+                              >
+                                Type:
+                              </Text>
+                              <Badge
+                                colorScheme="cyan"
+                                px={3}
+                                py={1}
+                                rounded="full"
+                                fontSize="sm"
+                              >
+                                {DataProject.projectType || "N/A"}
+                              </Badge>
+                            </HStack>
+                          </VStack>
+                        </CardBody>
+                      </Card>
+
+                      {/* Timeline Card */}
+                      <Card
+                        shadow="lg"
+                        rounded="xl"
+                        border="1px"
+                        borderColor={
+                          colorMode == "light" ? "gray.100" : "gray.700"
+                        }
+                        bg={colorMode == "light" ? "white" : "gray.800"}
+                      >
+                        <CardHeader
+                          bg={colorMode == "light" ? "orange.50" : "gray.900"}
+                          roundedTop="xl"
+                        >
+                          <HStack spacing={3}>
+                            <Box
+                              w={10}
+                              h={10}
+                              bgGradient="linear(135deg, orange.400, orange.600)"
+                              rounded="xl"
+                              display="flex"
+                              alignItems="center"
+                              justifyContent="center"
+                            >
+                              <FiCalendar size={20} color="white" />
+                            </Box>
+                            <Heading size="md" color="orange.700">
+                              Timeline
+                            </Heading>
+                          </HStack>
+                        </CardHeader>
+                        <CardBody p={6}>
+                          <VStack spacing={4} align="stretch">
+                            <HStack justify="space-between">
+                              <Text
+                                fontSize="sm"
+                                color={
+                                  colorMode == "light" ? "gray.600" : "gray.400"
+                                }
+                                fontWeight="medium"
+                              >
+                                Register Date:
+                              </Text>
+                              <Text
+                                fontSize="sm"
+                                fontWeight="bold"
+                                color={
+                                  colorMode == "light" ? "gray.800" : "gray.200"
+                                }
+                              >
+                                {DataProject.projectRegisterDate
+                                  ? new Date(
+                                      DataProject.projectRegisterDate
+                                    ).toLocaleDateString()
+                                  : "N/A"}
+                              </Text>
+                            </HStack>
+                          </VStack>
+                        </CardBody>
+                      </Card>
+                    </VStack>
+                  </GridItem>
+                  <GridItem
+                    colSpan={{ base: 12, sm: 12, md: 12, lg: 12 }}
+                    w={"full"}
+                  >
+                    {/* Description Card */}
+                    <Card
+                      shadow="lg"
+                      rounded="xl"
+                      border="1px"
+                      borderColor={
+                        colorMode == "light" ? "gray.100" : "gray.700"
+                      }
+                      bg={colorMode == "light" ? "white" : "gray.800"}
+                    >
+                      <CardHeader
+                        bg={colorMode == "light" ? "green.50" : "gray.900"}
+                        roundedTop="xl"
+                      >
+                        <HStack spacing={3}>
+                          <Box
+                            w={10}
+                            h={10}
+                            bgGradient="linear(135deg, green.400, green.600)"
+                            rounded="xl"
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
+                          >
+                            <FiActivity size={20} color="white" />
+                          </Box>
+                          <Heading size="md" color="green.700">
+                            Description
+                          </Heading>
+                        </HStack>
+                      </CardHeader>
+                      <CardBody p={6}>
+                        <Text
+                          fontSize="sm"
+                          color={colorMode == "light" ? "gray.600" : "gray.400"}
+                          lineHeight="tall"
+                          minH="60px"
+                        >
+                          {DataProject.projectDesc ||
+                            "No description available for this project."}
+                        </Text>
+                      </CardBody>
+                    </Card>
+                  </GridItem>
+                </Grid>
               </VStack>
+
+              <Divider />
 
               {/* Requirements Information Section */}
               <Card
@@ -426,10 +513,13 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                 overflow="hidden"
                 bg={colorMode === "light" ? "white" : "gray.800"}
                 mt={6}
-                _hover={{ transform: "translateY(-4px)", transition: "all 0.3s ease" }}
+                _hover={{
+                  transform: "translateY(-4px)",
+                  transition: "all 0.3s ease",
+                }}
               >
-                <CardHeader 
-                  bgGradient="linear(135deg, orange.400, orange.600)" 
+                <CardHeader
+                  bgGradient="linear(135deg, orange.400, orange.600)"
                   color="white"
                   py={6}
                 >
@@ -451,12 +541,16 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                         Requirements & Work Programs
                       </Heading>
                       <Text fontSize="sm" color="orange.100">
-                        Detailed requirement specifications and associated work programs
+                        Detailed requirement specifications and associated work
+                        programs
                       </Text>
                     </VStack>
                   </HStack>
                 </CardHeader>
-                <CardBody p={8} bg={colorMode === "light" ? "gray.50" : "gray.900"}>
+                <CardBody
+                  p={8}
+                  bg={colorMode === "light" ? "gray.50" : "gray.900"}
+                >
                   {RequirementData ? (
                     <VStack spacing={8} align="stretch">
                       {/* Base Requirement Information */}
@@ -465,7 +559,9 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                         bg={colorMode === "light" ? "white" : "gray.800"}
                         rounded="xl"
                         border="1px"
-                        borderColor={colorMode === "light" ? "blue.200" : "blue.700"}
+                        borderColor={
+                          colorMode === "light" ? "blue.200" : "blue.700"
+                        }
                         shadow="md"
                         position="relative"
                         _before={{
@@ -476,70 +572,123 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                           right: 0,
                           height: "4px",
                           bgGradient: "linear(to-r, blue.400, blue.600)",
-                          roundedTop: "xl"
+                          roundedTop: "xl",
                         }}
                       >
                         <VStack spacing={4} align="stretch">
                           <HStack justify="space-between" align="center">
-                            <Text fontSize="lg" fontWeight="bold" color={colorMode === "light" ? "blue.800" : "blue.200"}>
+                            <Text
+                              fontSize="lg"
+                              fontWeight="bold"
+                              color={
+                                colorMode === "light" ? "blue.800" : "blue.200"
+                              }
+                            >
                               {RequirementData.reqNumber || "Requirement"}
                             </Text>
                             <HStack spacing={3}>
-                              <Badge 
-                                colorScheme={RequirementData.reqStatus === "ACTIVE" ? "green" : "gray"} 
-                                fontSize="sm" 
-                                px={3} 
-                                py={1} 
+                              <Badge
+                                colorScheme={
+                                  RequirementData.reqStatus === "ACTIVE"
+                                    ? "green"
+                                    : "gray"
+                                }
+                                fontSize="sm"
+                                px={3}
+                                py={1}
                                 rounded="full"
                               >
                                 {RequirementData.reqStatus || "N/A"}
                               </Badge>
-                              <Badge 
-                                colorScheme="purple" 
-                                fontSize="sm" 
-                                px={3} 
-                                py={1} 
+                              <Badge
+                                colorScheme="purple"
+                                fontSize="sm"
+                                px={3}
+                                py={1}
                                 rounded="full"
                               >
                                 {RequirementData.requirementType || "N/A"}
                               </Badge>
                             </HStack>
                           </HStack>
-                          
+
                           {RequirementData.reqNarative && (
-                            <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                            <Text
+                              fontSize="sm"
+                              color={
+                                colorMode === "light" ? "gray.700" : "gray.300"
+                              }
+                            >
                               {RequirementData.reqNarative}
                             </Text>
                           )}
-                          
+
                           <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
                             <VStack spacing={1} align="start">
-                              <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                              <Text
+                                fontSize="xs"
+                                color="gray.500"
+                                fontWeight="medium"
+                              >
                                 Initiate Date:
                               </Text>
-                              <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                                {RequirementData.reqInititateDate ? 
-                                  new Date(RequirementData.reqInititateDate).toLocaleDateString() : 
-                                  "Not specified"
+                              <Text
+                                fontSize="sm"
+                                color={
+                                  colorMode === "light"
+                                    ? "gray.700"
+                                    : "gray.300"
                                 }
+                              >
+                                {RequirementData.reqInititateDate
+                                  ? new Date(
+                                      RequirementData.reqInititateDate
+                                    ).toLocaleDateString()
+                                  : "Not specified"}
                               </Text>
                             </VStack>
-                            
+
                             <VStack spacing={1} align="start">
-                              <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                              <Text
+                                fontSize="xs"
+                                color="gray.500"
+                                fontWeight="medium"
+                              >
                                 Duration:
                               </Text>
-                              <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                                {RequirementData.reqDurationDay ? `${RequirementData.reqDurationDay} days` : "Not specified"}
+                              <Text
+                                fontSize="sm"
+                                color={
+                                  colorMode === "light"
+                                    ? "gray.700"
+                                    : "gray.300"
+                                }
+                              >
+                                {RequirementData.reqDurationDay
+                                  ? `${RequirementData.reqDurationDay} days`
+                                  : "Not specified"}
                               </Text>
                             </VStack>
-                            
+
                             <VStack spacing={1} align="start">
-                              <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                              <Text
+                                fontSize="xs"
+                                color="gray.500"
+                                fontWeight="medium"
+                              >
                                 Carry Over:
                               </Text>
-                              <Badge colorScheme={RequirementData.isCarryOver === "Y" ? "orange" : "gray"} fontSize="xs">
-                                {RequirementData.isCarryOver === "Y" ? "Yes" : "No"}
+                              <Badge
+                                colorScheme={
+                                  RequirementData.isCarryOver === "Y"
+                                    ? "orange"
+                                    : "gray"
+                                }
+                                fontSize="xs"
+                              >
+                                {RequirementData.isCarryOver === "Y"
+                                  ? "Yes"
+                                  : "No"}
                               </Badge>
                             </VStack>
                           </SimpleGrid>
@@ -553,29 +702,65 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                           bg={colorMode === "light" ? "green.50" : "green.900"}
                           rounded="lg"
                           border="1px"
-                          borderColor={colorMode === "light" ? "green.200" : "green.700"}
+                          borderColor={
+                            colorMode === "light" ? "green.200" : "green.700"
+                          }
                         >
                           <VStack spacing={3} align="stretch">
-                            <Text fontSize="sm" fontWeight="bold" color={colorMode === "light" ? "green.800" : "green.200"}>
+                            <Text
+                              fontSize="sm"
+                              fontWeight="bold"
+                              color={
+                                colorMode === "light"
+                                  ? "green.800"
+                                  : "green.200"
+                              }
+                            >
                               Sender Information
                             </Text>
-                            
-                            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+
+                            <SimpleGrid
+                              columns={{ base: 1, md: 2 }}
+                              spacing={4}
+                            >
                               <VStack spacing={1} align="start">
-                                <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                                <Text
+                                  fontSize="xs"
+                                  color="gray.500"
+                                  fontWeight="medium"
+                                >
                                   Directorate:
                                 </Text>
-                                <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                                <Text
+                                  fontSize="sm"
+                                  color={
+                                    colorMode === "light"
+                                      ? "gray.700"
+                                      : "gray.300"
+                                  }
+                                >
                                   {RequirementData.senderDirectorateName}
                                 </Text>
                               </VStack>
-                              
+
                               <VStack spacing={1} align="start">
-                                <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                                <Text
+                                  fontSize="xs"
+                                  color="gray.500"
+                                  fontWeight="medium"
+                                >
                                   Division:
                                 </Text>
-                                <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                                  {RequirementData.senderDivisionName || "Not specified"}
+                                <Text
+                                  fontSize="sm"
+                                  color={
+                                    colorMode === "light"
+                                      ? "gray.700"
+                                      : "gray.300"
+                                  }
+                                >
+                                  {RequirementData.senderDivisionName ||
+                                    "Not specified"}
                                 </Text>
                               </VStack>
                             </SimpleGrid>
@@ -587,50 +772,112 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                       {RequirementData.userPicName && (
                         <Box
                           p={4}
-                          bg={colorMode === "light" ? "purple.50" : "purple.900"}
+                          bg={
+                            colorMode === "light" ? "purple.50" : "purple.900"
+                          }
                           rounded="lg"
                           border="1px"
-                          borderColor={colorMode === "light" ? "purple.200" : "purple.700"}
+                          borderColor={
+                            colorMode === "light" ? "purple.200" : "purple.700"
+                          }
                         >
                           <VStack spacing={3} align="stretch">
-                            <Text fontSize="sm" fontWeight="bold" color={colorMode === "light" ? "purple.800" : "purple.200"}>
+                            <Text
+                              fontSize="sm"
+                              fontWeight="bold"
+                              color={
+                                colorMode === "light"
+                                  ? "purple.800"
+                                  : "purple.200"
+                              }
+                            >
                               Person In Charge (PIC)
                             </Text>
-                            
-                            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+
+                            <SimpleGrid
+                              columns={{ base: 1, md: 2 }}
+                              spacing={4}
+                            >
                               <VStack spacing={1} align="start">
-                                <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                                <Text
+                                  fontSize="xs"
+                                  color="gray.500"
+                                  fontWeight="medium"
+                                >
                                   Name:
                                 </Text>
-                                <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                                <Text
+                                  fontSize="sm"
+                                  color={
+                                    colorMode === "light"
+                                      ? "gray.700"
+                                      : "gray.300"
+                                  }
+                                >
                                   {RequirementData.userPicName}
                                 </Text>
                               </VStack>
-                              
+
                               <VStack spacing={1} align="start">
-                                <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                                <Text
+                                  fontSize="xs"
+                                  color="gray.500"
+                                  fontWeight="medium"
+                                >
                                   Email:
                                 </Text>
-                                <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                                  {RequirementData.userPicEmail || "Not specified"}
+                                <Text
+                                  fontSize="sm"
+                                  color={
+                                    colorMode === "light"
+                                      ? "gray.700"
+                                      : "gray.300"
+                                  }
+                                >
+                                  {RequirementData.userPicEmail ||
+                                    "Not specified"}
                                 </Text>
                               </VStack>
-                              
+
                               <VStack spacing={1} align="start">
-                                <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                                <Text
+                                  fontSize="xs"
+                                  color="gray.500"
+                                  fontWeight="medium"
+                                >
                                   Division:
                                 </Text>
-                                <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                                  {RequirementData.userPicDivisionName || "Not specified"}
+                                <Text
+                                  fontSize="sm"
+                                  color={
+                                    colorMode === "light"
+                                      ? "gray.700"
+                                      : "gray.300"
+                                  }
+                                >
+                                  {RequirementData.userPicDivisionName ||
+                                    "Not specified"}
                                 </Text>
                               </VStack>
-                              
+
                               <VStack spacing={1} align="start">
-                                <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                                <Text
+                                  fontSize="xs"
+                                  color="gray.500"
+                                  fontWeight="medium"
+                                >
                                   Contact:
                                 </Text>
-                                <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                                  {RequirementData.userPicContanct || "Not specified"}
+                                <Text
+                                  fontSize="sm"
+                                  color={
+                                    colorMode === "light"
+                                      ? "gray.700"
+                                      : "gray.300"
+                                  }
+                                >
+                                  {RequirementData.userPicContanct ||
+                                    "Not specified"}
                                 </Text>
                               </VStack>
                             </SimpleGrid>
@@ -642,92 +889,195 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                       {RequirementData.appInitialName && (
                         <Box
                           p={4}
-                          bg={colorMode === "light" ? "orange.50" : "orange.900"}
+                          bg={
+                            colorMode === "light" ? "orange.50" : "orange.900"
+                          }
                           rounded="lg"
                           border="1px"
-                          borderColor={colorMode === "light" ? "orange.200" : "orange.700"}
+                          borderColor={
+                            colorMode === "light" ? "orange.200" : "orange.700"
+                          }
                         >
                           <VStack spacing={4} align="stretch">
-                            <Text fontSize="sm" fontWeight="bold" color={colorMode === "light" ? "orange.800" : "orange.200"}>
+                            <Text
+                              fontSize="sm"
+                              fontWeight="bold"
+                              color={
+                                colorMode === "light"
+                                  ? "orange.800"
+                                  : "orange.200"
+                              }
+                            >
                               Application Information
                             </Text>
-                            
-                            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+
+                            <SimpleGrid
+                              columns={{ base: 1, md: 2 }}
+                              spacing={4}
+                            >
                               <VStack spacing={1} align="start">
-                                <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                                <Text
+                                  fontSize="xs"
+                                  color="gray.500"
+                                  fontWeight="medium"
+                                >
                                   App Name:
                                 </Text>
-                                <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                                <Text
+                                  fontSize="sm"
+                                  color={
+                                    colorMode === "light"
+                                      ? "gray.700"
+                                      : "gray.300"
+                                  }
+                                >
                                   {RequirementData.appInitialName}
                                 </Text>
                               </VStack>
-                              
+
                               <VStack spacing={1} align="start">
-                                <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                                <Text
+                                  fontSize="xs"
+                                  color="gray.500"
+                                  fontWeight="medium"
+                                >
                                   App Code:
                                 </Text>
-                                <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                                  {RequirementData.appInitialCode || "Not specified"}
+                                <Text
+                                  fontSize="sm"
+                                  color={
+                                    colorMode === "light"
+                                      ? "gray.700"
+                                      : "gray.300"
+                                  }
+                                >
+                                  {RequirementData.appInitialCode ||
+                                    "Not specified"}
                                 </Text>
                               </VStack>
-                              
+
                               <VStack spacing={1} align="start">
-                                <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                                <Text
+                                  fontSize="xs"
+                                  color="gray.500"
+                                  fontWeight="medium"
+                                >
                                   Target Users:
                                 </Text>
-                                <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                                  {RequirementData.appTargetUsers || "Not specified"}
+                                <Text
+                                  fontSize="sm"
+                                  color={
+                                    colorMode === "light"
+                                      ? "gray.700"
+                                      : "gray.300"
+                                  }
+                                >
+                                  {RequirementData.appTargetUsers ||
+                                    "Not specified"}
                                 </Text>
                               </VStack>
-                              
+
                               <VStack spacing={1} align="start">
-                                <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                                <Text
+                                  fontSize="xs"
+                                  color="gray.500"
+                                  fontWeight="medium"
+                                >
                                   App Type:
                                 </Text>
-                                <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                                  {RequirementData.appTypes || RequirementData.appTypeCustom || "Not specified"}
+                                <Text
+                                  fontSize="sm"
+                                  color={
+                                    colorMode === "light"
+                                      ? "gray.700"
+                                      : "gray.300"
+                                  }
+                                >
+                                  {RequirementData.appTypes ||
+                                    RequirementData.appTypeCustom ||
+                                    "Not specified"}
                                 </Text>
                               </VStack>
-                              
+
                               <VStack spacing={1} align="start">
-                                <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                                <Text
+                                  fontSize="xs"
+                                  color="gray.500"
+                                  fontWeight="medium"
+                                >
                                   Live Target Date:
                                 </Text>
-                                <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                                  {RequirementData.appLiveTargetDate ? 
-                                    new Date(RequirementData.appLiveTargetDate).toLocaleDateString() : 
-                                    "Not specified"
+                                <Text
+                                  fontSize="sm"
+                                  color={
+                                    colorMode === "light"
+                                      ? "gray.700"
+                                      : "gray.300"
                                   }
+                                >
+                                  {RequirementData.appLiveTargetDate
+                                    ? new Date(
+                                        RequirementData.appLiveTargetDate
+                                      ).toLocaleDateString()
+                                    : "Not specified"}
                                 </Text>
                               </VStack>
-                              
+
                               <VStack spacing={1} align="start">
-                                <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                                <Text
+                                  fontSize="xs"
+                                  color="gray.500"
+                                  fontWeight="medium"
+                                >
                                   Access Media:
                                 </Text>
-                                <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                                  {RequirementData.appAccessMedia || "Not specified"}
+                                <Text
+                                  fontSize="sm"
+                                  color={
+                                    colorMode === "light"
+                                      ? "gray.700"
+                                      : "gray.300"
+                                  }
+                                >
+                                  {RequirementData.appAccessMedia ||
+                                    "Not specified"}
                                 </Text>
                               </VStack>
                             </SimpleGrid>
 
                             {/* Access Information */}
-                            {(RequirementData.appAccessFrontsiteDns || RequirementData.appAccessBacksiteDns) && (
+                            {(RequirementData.appAccessFrontsiteDns ||
+                              RequirementData.appAccessBacksiteDns) && (
                               <VStack spacing={3} align="stretch">
-                                <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                                <Text
+                                  fontSize="xs"
+                                  color="gray.500"
+                                  fontWeight="medium"
+                                >
                                   Access Information:
                                 </Text>
-                                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                                <SimpleGrid
+                                  columns={{ base: 1, md: 2 }}
+                                  spacing={4}
+                                >
                                   {RequirementData.appAccessFrontsiteDns && (
                                     <VStack spacing={1} align="start">
-                                      <Text fontSize="xs" color="gray.500">Frontend DNS:</Text>
-                                      <Text fontSize="sm" color="blue.600">{RequirementData.appAccessFrontsiteDns}</Text>
+                                      <Text fontSize="xs" color="gray.500">
+                                        Frontend DNS:
+                                      </Text>
+                                      <Text fontSize="sm" color="blue.600">
+                                        {RequirementData.appAccessFrontsiteDns}
+                                      </Text>
                                     </VStack>
                                   )}
                                   {RequirementData.appAccessBacksiteDns && (
                                     <VStack spacing={1} align="start">
-                                      <Text fontSize="xs" color="gray.500">Backend DNS:</Text>
-                                      <Text fontSize="sm" color="blue.600">{RequirementData.appAccessBacksiteDns}</Text>
+                                      <Text fontSize="xs" color="gray.500">
+                                        Backend DNS:
+                                      </Text>
+                                      <Text fontSize="sm" color="blue.600">
+                                        {RequirementData.appAccessBacksiteDns}
+                                      </Text>
                                     </VStack>
                                   )}
                                 </SimpleGrid>
@@ -735,62 +1085,149 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                             )}
 
                             {/* Operational Information */}
-                            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                            <SimpleGrid
+                              columns={{ base: 1, md: 2 }}
+                              spacing={4}
+                            >
                               <VStack spacing={1} align="start">
-                                <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                                <Text
+                                  fontSize="xs"
+                                  color="gray.500"
+                                  fontWeight="medium"
+                                >
                                   24/7 Operation:
                                 </Text>
-                                <Badge colorScheme={RequirementData.appOperational24hrs === "Y" ? "green" : "gray"} fontSize="xs">
-                                  {RequirementData.appOperational24hrs === "Y" ? "Yes" : "No"}
+                                <Badge
+                                  colorScheme={
+                                    RequirementData.appOperational24hrs === "Y"
+                                      ? "green"
+                                      : "gray"
+                                  }
+                                  fontSize="xs"
+                                >
+                                  {RequirementData.appOperational24hrs === "Y"
+                                    ? "Yes"
+                                    : "No"}
                                 </Badge>
                               </VStack>
-                              
+
                               <VStack spacing={1} align="start">
-                                <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                                <Text
+                                  fontSize="xs"
+                                  color="gray.500"
+                                  fontWeight="medium"
+                                >
                                   Transactional:
                                 </Text>
-                                <Badge colorScheme={RequirementData.appTransactionals === "Y" ? "blue" : "gray"} fontSize="xs">
-                                  {RequirementData.appTransactionals === "Y" ? "Yes" : "No"}
+                                <Badge
+                                  colorScheme={
+                                    RequirementData.appTransactionals === "Y"
+                                      ? "blue"
+                                      : "gray"
+                                  }
+                                  fontSize="xs"
+                                >
+                                  {RequirementData.appTransactionals === "Y"
+                                    ? "Yes"
+                                    : "No"}
                                 </Badge>
                               </VStack>
-                              
+
                               <VStack spacing={1} align="start">
-                                <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                                <Text
+                                  fontSize="xs"
+                                  color="gray.500"
+                                  fontWeight="medium"
+                                >
                                   High Availability:
                                 </Text>
-                                <Badge colorScheme={RequirementData.appHightAvailability === "Y" ? "purple" : "gray"} fontSize="xs">
-                                  {RequirementData.appHightAvailability === "Y" ? "Yes" : "No"}
+                                <Badge
+                                  colorScheme={
+                                    RequirementData.appHightAvailability === "Y"
+                                      ? "purple"
+                                      : "gray"
+                                  }
+                                  fontSize="xs"
+                                >
+                                  {RequirementData.appHightAvailability === "Y"
+                                    ? "Yes"
+                                    : "No"}
                                 </Badge>
                               </VStack>
-                              
+
                               <VStack spacing={1} align="start">
-                                <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                                <Text
+                                  fontSize="xs"
+                                  color="gray.500"
+                                  fontWeight="medium"
+                                >
                                   Integration with Others:
                                 </Text>
-                                <Badge colorScheme={RequirementData.appIntegrationOthersApps === "Y" ? "orange" : "gray"} fontSize="xs">
-                                  {RequirementData.appIntegrationOthersApps === "Y" ? "Yes" : "No"}
+                                <Badge
+                                  colorScheme={
+                                    RequirementData.appIntegrationOthersApps ===
+                                    "Y"
+                                      ? "orange"
+                                      : "gray"
+                                  }
+                                  fontSize="xs"
+                                >
+                                  {RequirementData.appIntegrationOthersApps ===
+                                  "Y"
+                                    ? "Yes"
+                                    : "No"}
                                 </Badge>
                               </VStack>
                             </SimpleGrid>
 
                             {/* Environment & Security */}
-                            {(RequirementData.appEnvLocations || RequirementData.appPrivateAuth) && (
-                              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                            {(RequirementData.appEnvLocations ||
+                              RequirementData.appPrivateAuth) && (
+                              <SimpleGrid
+                                columns={{ base: 1, md: 2 }}
+                                spacing={4}
+                              >
                                 <VStack spacing={1} align="start">
-                                  <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                                  <Text
+                                    fontSize="xs"
+                                    color="gray.500"
+                                    fontWeight="medium"
+                                  >
                                     Environment Location:
                                   </Text>
-                                  <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                                    {RequirementData.appEnvLocations || RequirementData.appEnvLocationsOthers || "Not specified"}
+                                  <Text
+                                    fontSize="sm"
+                                    color={
+                                      colorMode === "light"
+                                        ? "gray.700"
+                                        : "gray.300"
+                                    }
+                                  >
+                                    {RequirementData.appEnvLocations ||
+                                      RequirementData.appEnvLocationsOthers ||
+                                      "Not specified"}
                                   </Text>
                                 </VStack>
-                                
+
                                 <VStack spacing={1} align="start">
-                                  <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                                  <Text
+                                    fontSize="xs"
+                                    color="gray.500"
+                                    fontWeight="medium"
+                                  >
                                     Private Auth:
                                   </Text>
-                                  <Badge colorScheme={RequirementData.appPrivateAuth === "Y" ? "red" : "gray"} fontSize="xs">
-                                    {RequirementData.appPrivateAuth === "Y" ? "Required" : "Not Required"}
+                                  <Badge
+                                    colorScheme={
+                                      RequirementData.appPrivateAuth === "Y"
+                                        ? "red"
+                                        : "gray"
+                                    }
+                                    fontSize="xs"
+                                  >
+                                    {RequirementData.appPrivateAuth === "Y"
+                                      ? "Required"
+                                      : "Not Required"}
                                   </Badge>
                                 </VStack>
                               </SimpleGrid>
@@ -800,66 +1237,126 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                       )}
 
                       {/* Work Programs */}
-                      {RequirementData.workPrograms && RequirementData.workPrograms.length > 0 && (
-                        <VStack spacing={4} align="stretch">
-                          <Text fontSize="sm" fontWeight="bold" color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                            Work Programs:
-                          </Text>
-                          {RequirementData.workPrograms.map((workProgram, index) => (
-                            <Box
-                              key={index}
-                              p={4}
-                              bg={colorMode === "light" ? "gray.50" : "gray.700"}
-                              rounded="lg"
-                              border="1px"
-                              borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                      {RequirementData.workPrograms &&
+                        RequirementData.workPrograms.length > 0 && (
+                          <VStack spacing={4} align="stretch">
+                            <Text
+                              fontSize="sm"
+                              fontWeight="bold"
+                              color={
+                                colorMode === "light" ? "gray.700" : "gray.300"
+                              }
                             >
-                              <VStack spacing={3} align="stretch">
-                                <HStack justify="space-between">
-                                  <Text fontSize="sm" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"}>
-                                    {workProgram.workProgramName || "Work Program"}
-                                  </Text>
-                                  <Badge colorScheme="green" fontSize="xs">
-                                    {workProgram.workProgramCode || "N/A"}
-                                  </Badge>
-                                </HStack>
-                                
-                                <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
-                                  <VStack spacing={1} align="start">
-                                    <Text fontSize="xs" color="gray.500" fontWeight="medium">
-                                      Budget:
-                                    </Text>
-                                    <Text fontSize="sm" fontWeight="bold" color="green.600">
-                                      {workProgram.workProgramBudget ? 
-                                        `Rp ${workProgram.workProgramBudget.toLocaleString()}` : 
-                                        "Not specified"
-                                      }
-                                    </Text>
+                              Work Programs:
+                            </Text>
+                            {RequirementData.workPrograms.map(
+                              (workProgram, index) => (
+                                <Box
+                                  key={index}
+                                  p={4}
+                                  bg={
+                                    colorMode === "light"
+                                      ? "gray.50"
+                                      : "gray.700"
+                                  }
+                                  rounded="lg"
+                                  border="1px"
+                                  borderColor={
+                                    colorMode === "light"
+                                      ? "gray.200"
+                                      : "gray.600"
+                                  }
+                                >
+                                  <VStack spacing={3} align="stretch">
+                                    <HStack justify="space-between">
+                                      <Text
+                                        fontSize="sm"
+                                        fontWeight="bold"
+                                        color={
+                                          colorMode === "light"
+                                            ? "gray.800"
+                                            : "white"
+                                        }
+                                      >
+                                        {workProgram.workProgramName ||
+                                          "Work Program"}
+                                      </Text>
+                                      <Badge colorScheme="green" fontSize="xs">
+                                        {workProgram.workProgramCode || "N/A"}
+                                      </Badge>
+                                    </HStack>
+
+                                    <SimpleGrid
+                                      columns={{ base: 1, md: 3 }}
+                                      spacing={4}
+                                    >
+                                      <VStack spacing={1} align="start">
+                                        <Text
+                                          fontSize="xs"
+                                          color="gray.500"
+                                          fontWeight="medium"
+                                        >
+                                          Budget:
+                                        </Text>
+                                        <Text
+                                          fontSize="sm"
+                                          fontWeight="bold"
+                                          color="green.600"
+                                        >
+                                          {workProgram.workProgramBudget
+                                            ? `Rp ${workProgram.workProgramBudget.toLocaleString()}`
+                                            : "Not specified"}
+                                        </Text>
+                                      </VStack>
+
+                                      <VStack spacing={1} align="start">
+                                        <Text
+                                          fontSize="xs"
+                                          color="gray.500"
+                                          fontWeight="medium"
+                                        >
+                                          Division:
+                                        </Text>
+                                        <Text
+                                          fontSize="sm"
+                                          color={
+                                            colorMode === "light"
+                                              ? "gray.700"
+                                              : "gray.300"
+                                          }
+                                        >
+                                          {workProgram.divisionName ||
+                                            "Not assigned"}
+                                        </Text>
+                                      </VStack>
+
+                                      <VStack spacing={1} align="start">
+                                        <Text
+                                          fontSize="xs"
+                                          color="gray.500"
+                                          fontWeight="medium"
+                                        >
+                                          Source:
+                                        </Text>
+                                        <Text
+                                          fontSize="sm"
+                                          color={
+                                            colorMode === "light"
+                                              ? "gray.700"
+                                              : "gray.300"
+                                          }
+                                        >
+                                          {workProgram.workProgramSource ||
+                                            "Not specified"}
+                                        </Text>
+                                      </VStack>
+                                    </SimpleGrid>
                                   </VStack>
-                                  
-                                  <VStack spacing={1} align="start">
-                                    <Text fontSize="xs" color="gray.500" fontWeight="medium">
-                                      Division:
-                                    </Text>
-                                    <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                                      {workProgram.divisionName || "Not assigned"}
-                                    </Text>
-                                  </VStack>
-                                  
-                                  <VStack spacing={1} align="start">
-                                    <Text fontSize="xs" color="gray.500" fontWeight="medium">
-                                      Source:
-                                    </Text>
-                                    <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                                      {workProgram.workProgramSource || "Not specified"}
-                                    </Text>
-                                  </VStack>
-                                </SimpleGrid>
-                              </VStack>
-                            </Box>
-                          ))}
-                        </VStack>
-                      )}
+                                </Box>
+                              )
+                            )}
+                          </VStack>
+                        )}
                     </VStack>
                   ) : (
                     <Box textAlign="center" py={8}>
@@ -867,7 +1364,8 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                         No requirements data available for this project
                       </Text>
                       <Text color="gray.400" fontSize="sm" mt={2}>
-                        Requirements and work programs will appear here when available
+                        Requirements and work programs will appear here when
+                        available
                       </Text>
                     </Box>
                   )}
@@ -882,10 +1380,13 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                 overflow="hidden"
                 bg={colorMode === "light" ? "white" : "gray.800"}
                 mt={6}
-                _hover={{ transform: "translateY(-4px)", transition: "all 0.3s ease" }}
+                _hover={{
+                  transform: "translateY(-4px)",
+                  transition: "all 0.3s ease",
+                }}
               >
-                <CardHeader 
-                  bgGradient="linear(135deg, teal.400, teal.600)" 
+                <CardHeader
+                  bgGradient="linear(135deg, teal.400, teal.600)"
                   color="white"
                   py={6}
                 >
@@ -912,14 +1413,19 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                     </VStack>
                   </HStack>
                 </CardHeader>
-                <CardBody p={8} bg={colorMode === "light" ? "gray.50" : "gray.900"}>
+                <CardBody
+                  p={8}
+                  bg={colorMode === "light" ? "gray.50" : "gray.900"}
+                >
                   {AppDetailData ? (
                     <Box
                       p={6}
                       bg={colorMode === "light" ? "white" : "gray.800"}
                       rounded="xl"
                       border="1px"
-                      borderColor={colorMode === "light" ? "teal.200" : "teal.700"}
+                      borderColor={
+                        colorMode === "light" ? "teal.200" : "teal.700"
+                      }
                       shadow="md"
                       position="relative"
                       _before={{
@@ -930,105 +1436,195 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                         right: 0,
                         height: "4px",
                         bgGradient: "linear(to-r, teal.400, teal.600)",
-                        roundedTop: "xl"
+                        roundedTop: "xl",
                       }}
                     >
                       <VStack spacing={6} align="stretch">
-                      <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-                        <VStack spacing={1} align="start">
-                          <Text fontSize="xs" color="gray.500" fontWeight="medium">
-                            Application Name:
-                          </Text>
-                          <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                            {AppDetailData.appName || "Not specified"}
-                          </Text>
-                        </VStack>
-                        
-                        <VStack spacing={1} align="start">
-                          <Text fontSize="xs" color="gray.500" fontWeight="medium">
-                            App Short Name:
-                          </Text>
-                          <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                            {AppDetailData.appShortName || "Not specified"}
-                          </Text>
-                        </VStack>
-                        
-                        <VStack spacing={1} align="start">
-                          <Text fontSize="xs" color="gray.500" fontWeight="medium">
-                            Status:
-                          </Text>
-                          <Badge colorScheme={AppDetailData.appsStatus === "ACTIVE" ? "green" : "gray"} fontSize="xs">
-                            {AppDetailData.appsStatus || "N/A"}
-                          </Badge>
-                        </VStack>
-                        
-                        <VStack spacing={1} align="start">
-                          <Text fontSize="xs" color="gray.500" fontWeight="medium">
-                            Category:
-                          </Text>
-                          <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                            {"Not specified"}
-                          </Text>
-                        </VStack>
-                      </SimpleGrid>
+                        <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                          <VStack spacing={1} align="start">
+                            <Text
+                              fontSize="xs"
+                              color="gray.500"
+                              fontWeight="medium"
+                            >
+                              Application Name:
+                            </Text>
+                            <Text
+                              fontSize="sm"
+                              color={
+                                colorMode === "light" ? "gray.700" : "gray.300"
+                              }
+                            >
+                              {AppDetailData.appName || "Not specified"}
+                            </Text>
+                          </VStack>
 
-                      {AppDetailData.appsDesc && (
-                        <VStack spacing={1} align="start" mt={4}>
-                          <Text fontSize="xs" color="gray.500" fontWeight="medium">
-                            Description:
-                          </Text>
-                          <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                            {AppDetailData.appsDesc}
-                          </Text>
-                        </VStack>
-                      )}
+                          <VStack spacing={1} align="start">
+                            <Text
+                              fontSize="xs"
+                              color="gray.500"
+                              fontWeight="medium"
+                            >
+                              App Short Name:
+                            </Text>
+                            <Text
+                              fontSize="sm"
+                              color={
+                                colorMode === "light" ? "gray.700" : "gray.300"
+                              }
+                            >
+                              {AppDetailData.appShortName || "Not specified"}
+                            </Text>
+                          </VStack>
 
-                      <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mt={4}>
-                        <VStack spacing={1} align="start">
-                          <Text fontSize="xs" color="gray.500" fontWeight="medium">
-                            Owner Directorate:
-                          </Text>
-                          <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                            {"Not specified"}
-                          </Text>
-                        </VStack>
-                        
-                        <VStack spacing={1} align="start">
-                          <Text fontSize="xs" color="gray.500" fontWeight="medium">
-                            Owner Division:
-                          </Text>
-                          <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                            {AppDetailData.appOwnerDivisionName || "Not specified"}
-                          </Text>
-                        </VStack>
-                        
-                        <VStack spacing={1} align="start">
-                          <Text fontSize="xs" color="gray.500" fontWeight="medium">
-                            Created Date:
-                          </Text>
-                          <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                            {AppDetailData.createdAt ? 
-                              new Date(AppDetailData.createdAt).toLocaleDateString() : 
-                              "Not specified"
-                            }
-                          </Text>
-                        </VStack>
-                        
-                        <VStack spacing={1} align="start">
-                          <Text fontSize="xs" color="gray.500" fontWeight="medium">
-                            Created By:
-                          </Text>
-                          <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                            {AppDetailData.createdBy || "Not specified"}
-                          </Text>
-                        </VStack>
-                      </SimpleGrid>
+                          <VStack spacing={1} align="start">
+                            <Text
+                              fontSize="xs"
+                              color="gray.500"
+                              fontWeight="medium"
+                            >
+                              Status:
+                            </Text>
+                            <Badge
+                              colorScheme={
+                                AppDetailData.appsStatus === "ACTIVE"
+                                  ? "green"
+                                  : "gray"
+                              }
+                              fontSize="xs"
+                            >
+                              {AppDetailData.appsStatus || "N/A"}
+                            </Badge>
+                          </VStack>
+
+                          <VStack spacing={1} align="start">
+                            <Text
+                              fontSize="xs"
+                              color="gray.500"
+                              fontWeight="medium"
+                            >
+                              Category:
+                            </Text>
+                            <Text
+                              fontSize="sm"
+                              color={
+                                colorMode === "light" ? "gray.700" : "gray.300"
+                              }
+                            >
+                              {"Not specified"}
+                            </Text>
+                          </VStack>
+                        </SimpleGrid>
+
+                        {AppDetailData.appsDesc && (
+                          <VStack spacing={1} align="start" mt={4}>
+                            <Text
+                              fontSize="xs"
+                              color="gray.500"
+                              fontWeight="medium"
+                            >
+                              Description:
+                            </Text>
+                            <Text
+                              fontSize="sm"
+                              color={
+                                colorMode === "light" ? "gray.700" : "gray.300"
+                              }
+                            >
+                              {AppDetailData.appsDesc}
+                            </Text>
+                          </VStack>
+                        )}
+
+                        <SimpleGrid
+                          columns={{ base: 1, md: 2 }}
+                          spacing={4}
+                          mt={4}
+                        >
+                          <VStack spacing={1} align="start">
+                            <Text
+                              fontSize="xs"
+                              color="gray.500"
+                              fontWeight="medium"
+                            >
+                              Owner Directorate:
+                            </Text>
+                            <Text
+                              fontSize="sm"
+                              color={
+                                colorMode === "light" ? "gray.700" : "gray.300"
+                              }
+                            >
+                              {"Not specified"}
+                            </Text>
+                          </VStack>
+
+                          <VStack spacing={1} align="start">
+                            <Text
+                              fontSize="xs"
+                              color="gray.500"
+                              fontWeight="medium"
+                            >
+                              Owner Division:
+                            </Text>
+                            <Text
+                              fontSize="sm"
+                              color={
+                                colorMode === "light" ? "gray.700" : "gray.300"
+                              }
+                            >
+                              {AppDetailData.appOwnerDivisionName ||
+                                "Not specified"}
+                            </Text>
+                          </VStack>
+
+                          <VStack spacing={1} align="start">
+                            <Text
+                              fontSize="xs"
+                              color="gray.500"
+                              fontWeight="medium"
+                            >
+                              Created Date:
+                            </Text>
+                            <Text
+                              fontSize="sm"
+                              color={
+                                colorMode === "light" ? "gray.700" : "gray.300"
+                              }
+                            >
+                              {AppDetailData.createdAt
+                                ? new Date(
+                                    AppDetailData.createdAt
+                                  ).toLocaleDateString()
+                                : "Not specified"}
+                            </Text>
+                          </VStack>
+
+                          <VStack spacing={1} align="start">
+                            <Text
+                              fontSize="xs"
+                              color="gray.500"
+                              fontWeight="medium"
+                            >
+                              Created By:
+                            </Text>
+                            <Text
+                              fontSize="sm"
+                              color={
+                                colorMode === "light" ? "gray.700" : "gray.300"
+                              }
+                            >
+                              {AppDetailData.createdBy || "Not specified"}
+                            </Text>
+                          </VStack>
+                        </SimpleGrid>
                       </VStack>
                     </Box>
                   ) : RequirementData?.appInitialCode ? (
                     <Box textAlign="center" py={8}>
                       <Text color="orange.500" fontSize="md">
-                        Application with code "{RequirementData.appInitialCode}" not found in system
+                        Application with code "{RequirementData.appInitialCode}"
+                        not found in system
                       </Text>
                       <Text color="gray.400" fontSize="sm" mt={2}>
                         Application details will appear here when available

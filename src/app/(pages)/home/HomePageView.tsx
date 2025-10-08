@@ -494,7 +494,7 @@ const FeatureCard = ({
             <Heading size="sm" color="white">
               {title}
             </Heading>
-            <Text fontSize="sm" opacity={0.9} lineHeight="tall">
+            <Text fontSize="sm" opacity={0.9} lineHeight="tall" color={"white"}>
               {description}
             </Text>
           </VStack>
