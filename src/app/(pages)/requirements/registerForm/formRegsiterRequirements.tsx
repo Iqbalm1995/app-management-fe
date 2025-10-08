@@ -4975,7 +4975,7 @@ const Section4BRDView = ({
                   w="full"
                   justifyContent="start"
                   alignItems="center"
-                  gap={4}
+                  gap={2}
                 >
                   <Input
                     id="appInitialCode"
@@ -4988,17 +4988,16 @@ const Section4BRDView = ({
                     minLength={3}
                     maxLength={10}
                     isDisabled={ActionLoading}
+                    isReadOnly
                   />
                   <Button
-                    colorScheme="blue"
-                    size="sm"
+                    colorScheme={"secondary"}
                     onClick={() => ModalAppPicker.onOpen()}
                     isDisabled={ActionLoading}
-                    ml={3}
                   >
                     Pilih Aplikasi
                   </Button>
-                  {formik.values.appInitialCode &&
+                  {/* {formik.values.appInitialCode &&
                     formik.values.appInitialCode.length > 2 &&
                     ListDataAplicationExisting.length <= 0 && (
                       <HStack color={"secondary.500"}>
@@ -5007,7 +5006,7 @@ const Section4BRDView = ({
                         </Text>
                         <FiCheckCircle />
                       </HStack>
-                    )}
+                    )} */}
                 </Flex>
                 <Box
                   w={"full"}
@@ -5086,6 +5085,7 @@ const Section4BRDView = ({
                   isDisabled={
                     ActionLoading || ApplicationExistingChoosed != null
                   }
+                  isReadOnly
                 />
                 <FormErrorMessage>
                   {formik.errors.appInitialName}
