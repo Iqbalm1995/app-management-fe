@@ -200,7 +200,7 @@ function TeamsPage() {
           </Text>
         </VStack>
       </Box>
-      <Grid templateColumns="repeat(12, 1fr)" gap={8}>
+      <Grid templateColumns="repeat(12, 1fr)" gap={6}>
         <GridItem colSpan={{ base: 12, sm: 12, md: 3, lg: 3 }}>
           <Flex
             as={Stack}
@@ -495,7 +495,7 @@ const TeamProfileSettingProps = () => {
         <LoadingMiniSignature />
       ) : (
         <form onSubmit={formik.handleSubmit} onReset={formik.handleReset}>
-          <Grid templateColumns="repeat(12, 1fr)" gap={8}>
+          <Grid templateColumns="repeat(12, 1fr)" gap={6}>
             <GridItem colSpan={{ base: 12, sm: 12, md: 4, lg: 4 }} w={"full"}>
               <Flex w={"full"} justify={"center"} pt={8}>
                 <Box
