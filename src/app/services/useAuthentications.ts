@@ -195,13 +195,15 @@ const useAuthentications = (): useAuthenticationsService => {
     const PathEndpoint: string = "/v1/Authenticate/Logout";
 
     try {
-      const response = await axiosInstance.post<
-        ApiGenericResponse<string>
-      >(`${UrlEndpoint}${PathEndpoint}`, { userId }, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axiosInstance.post<ApiGenericResponse<string>>(
+        `${UrlEndpoint}${PathEndpoint}`,
+        { userId },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       setIsLoading(false);
       return response.data;
     } catch (err) {

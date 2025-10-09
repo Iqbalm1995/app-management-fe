@@ -353,6 +353,15 @@ const AuthForm = () => {
             </FormControl>
             <Box w={"full"}>
               <Flex>
+                <Link href="/change-password">
+                  <Button
+                    size={"sm"}
+                    variant={"link"}
+                    color={"secondary.600"}
+                  >
+                    Ganti Password
+                  </Button>
+                </Link>
                 <Spacer />
                 <Link href="#">
                   <Button

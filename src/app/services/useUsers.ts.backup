@@ -9,7 +9,7 @@ import {
 import { buildUrlPort } from "../helper/MasterHelper";
 import {
   ENDPOINT_API_BASEURL,
-  ENDPOINT_PORT_BASIC,
+  ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC,
   RES_CODE_SERVER_ERROR,
 } from "../constants/applicationConstants";
 import axiosInstance from "../utils/axiosInstance";
@@ -161,23 +161,20 @@ const useUsers = (): useUsersServices => {
     setError(null);
     const UrlEndpoint: string = buildUrlPort(
       ENDPOINT_API_BASEURL,
-      ENDPOINT_PORT_BASIC
+      ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC
     );
-
+    const PathEndpoint: string = "/v1/Users/integrated/list";
     try {
-      const response = await axiosInstance.post(
-        `${UrlEndpoint}/v1/User/list`,
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
+      const response = await axiosInstance.post<
+        ApiGenericResponse<UsersResponse[]>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       setIsLoading(false);
       return response.data;
-    } catch (err: any) {
+    } catch (err) {
       setIsLoading(false);
       if (axios.isAxiosError(err)) {
         const errorResponse = handleAxiosError(err);
@@ -187,187 +184,6 @@ const useUsers = (): useUsersServices => {
         return errorResponse;
       } else {
         setError("An unknown error occurred. Please try again.");
-        return {
-          statusCode: RES_CODE_SERVER_ERROR,
-          data: null,
-          message: "Error connect to api",
-          error: null,
-        };
-      }
-    }
-  };
-
-  const GetDetailById = async (
-    id: string,
-    token: string
-  ): Promise<ApiGenericResponse<UsersResponse | null> | null> => {
-    setIsLoading(true);
-    setError(null);
-    const UrlEndpoint: string = buildUrlPort(
-      ENDPOINT_API_BASEURL,
-      ENDPOINT_PORT_BASIC
-    );
-
-    try {
-      const response = await axiosInstance.get(
-        `${UrlEndpoint}/v1/User/detail/${id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      setIsLoading(false);
-      return response.data;
-    } catch (err: any) {
-      setIsLoading(false);
-      if (axios.isAxiosError(err)) {
-        const errorResponse = handleAxiosError(err);
-        setError(
-          err.response?.data?.message || "An error occurred during login."
-        );
-        return errorResponse;
-      } else {
-        setError("An unknown error occurred. Please try again.");
-        return {
-          statusCode: RES_CODE_SERVER_ERROR,
-          data: null,
-          message: "Error connect to api",
-          error: null,
-        };
-      }
-    }
-  };
-
-  const GetDetailByUserId = async (
-    UserId: string,
-    token: string
-  ): Promise<ApiGenericResponse<UsersResponse | null> | null> => {
-    setIsLoading(true);
-    setError(null);
-    const UrlEndpoint: string = buildUrlPort(
-      ENDPOINT_API_BASEURL,
-      ENDPOINT_PORT_BASIC
-    );
-
-    try {
-      const response = await axiosInstance.get(
-        `${UrlEndpoint}/v1/User/detail-by-userid/${UserId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      setIsLoading(false);
-      return response.data;
-    } catch (err: any) {
-      setIsLoading(false);
-      if (axios.isAxiosError(err)) {
-        const errorResponse = handleAxiosError(err);
-        setError(
-          err.response?.data?.message || "An error occurred during login."
-        );
-        return errorResponse;
-      } else {
-        setError("An unknown error occurred. Please try again.");
-        return {
-          statusCode: RES_CODE_SERVER_ERROR,
-          data: null,
-          message: "Error connect to api",
-          error: null,
-        };
-      }
-    }
-  };
-
-  const GetDetailOrgById = async (
-    id: string,
-    token: string
-  ): Promise<ApiGenericResponse<UserOrganizationResponse | null> | null> => {
-    setIsLoading(true);
-    setError(null);
-    const UrlEndpoint: string = buildUrlPort(
-      ENDPOINT_API_BASEURL,
-      ENDPOINT_PORT_BASIC
-    );
-
-    try {
-      const response = await axiosInstance.get(
-        `${UrlEndpoint}/v1/User/detail-organization/${id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      setIsLoading(false);
-      return response.data;
-    } catch (err: any) {
-      setIsLoading(false);
-      if (axios.isAxiosError(err)) {
-        const errorResponse = handleAxiosError(err);
-        setError(
-          err.response?.data?.message || "An error occurred during login."
-        );
-        return errorResponse;
-      } else {
-        setError("An unknown error occurred. Please try again.");
-        return {
-          statusCode: RES_CODE_SERVER_ERROR,
-          data: null,
-          message: "Error connect to api",
-          error: null,
-        };
-      }
-    }
-  };
-
-  const GetDetailOrgByUserId = async (
-    UserId: string,
-    token: string
-  ): Promise<ApiGenericResponse<UserOrganizationResponse | null> | null> => {
-    setIsLoading(true);
-    setError(null);
-    const UrlEndpoint: string = buildUrlPort(
-      ENDPOINT_API_BASEURL,
-      ENDPOINT_PORT_BASIC
-    );
-
-    try {
-      const response = await axiosInstance.get(
-        `${UrlEndpoint}/v1/User/detail-organization-by-userid/${UserId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      setIsLoading(false);
-      return response.data;
-    } catch (err: any) {
-      setIsLoading(false);
-      if (axios.isAxiosError(err)) {
-        const errorResponse = handleAxiosError(err);
-        setError(
-          err.response?.data?.message || "An error occurred during login."
-        );
-        return errorResponse;
-      } else {
-        setError("An unknown error occurred. Please try again.");
-        return {
-          statusCode: RES_CODE_SERVER_ERROR,
-          data: null,
-          message: "Error connect to api",
-          error: null,
-        };
-      }
-    }
-  };
 
   const EditUserPassword = async (
     userId: string,
@@ -376,14 +192,12 @@ const useUsers = (): useUsersServices => {
   ): Promise<ApiGenericResponse<string | null> | null> => {
     setIsLoading(true);
     setError(null);
-    const UrlEndpoint: string = buildUrlPort(
-      ENDPOINT_API_BASEURL,
-      ENDPOINT_PORT_BASIC
-    );
 
     try {
       const response = await axiosInstance.put(
-        `${UrlEndpoint}/v1/Authenticate/change-password`,
+        `${buildUrlPort(
+          ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC
+        )}/v1/User/edit-user-password`,
         {
           userId: userId,
           oldPassword: oldPassword,
@@ -412,7 +226,390 @@ const useUsers = (): useUsersServices => {
       }
     }
   };
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
 
+  const GetDetailById = async (
+    id: string,
+    token: string
+  ): Promise<ApiGenericResponse<UsersResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Users/integrated/${id}`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<UsersResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+
+  const EditUserPassword = async (
+    userId: string,
+    oldPassword: string,
+    newPassword: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await axiosInstance.put(
+        `${buildUrlPort(
+          ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC
+        )}/v1/User/edit-user-password`,
+        {
+          userId: userId,
+          oldPassword: oldPassword,
+          newPassword: newPassword,
+        }
+      );
+
+      setIsLoading(false);
+      return response.data;
+    } catch (err: any) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during password change."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const GetDetailByUserId = async (
+    UserId: string,
+    token: string
+  ): Promise<ApiGenericResponse<UsersResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Users/integrated/user-id/${UserId}`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<UsersResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+
+  const EditUserPassword = async (
+    userId: string,
+    oldPassword: string,
+    newPassword: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await axiosInstance.put(
+        `${buildUrlPort(
+          ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC
+        )}/v1/User/edit-user-password`,
+        {
+          userId: userId,
+          oldPassword: oldPassword,
+          newPassword: newPassword,
+        }
+      );
+
+      setIsLoading(false);
+      return response.data;
+    } catch (err: any) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during password change."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const GetDetailOrgById = async (
+    id: string,
+    token: string
+  ): Promise<ApiGenericResponse<UserOrganizationResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Users/integrated/organization/user/${id}`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<UserOrganizationResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+
+  const EditUserPassword = async (
+    userId: string,
+    oldPassword: string,
+    newPassword: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await axiosInstance.put(
+        `${buildUrlPort(
+          ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC
+        )}/v1/User/edit-user-password`,
+        {
+          userId: userId,
+          oldPassword: oldPassword,
+          newPassword: newPassword,
+        }
+      );
+
+      setIsLoading(false);
+      return response.data;
+    } catch (err: any) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during password change."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const GetDetailOrgByUserId = async (
+    id: string,
+    token: string
+  ): Promise<ApiGenericResponse<UserOrganizationResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Users/integrated/organization/user-id/${id}`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<UserOrganizationResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+
+  const EditUserPassword = async (
+    userId: string,
+    oldPassword: string,
+    newPassword: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await axiosInstance.put(
+        `${buildUrlPort(
+          ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC
+        )}/v1/User/edit-user-password`,
+        {
+          userId: userId,
+          oldPassword: oldPassword,
+          newPassword: newPassword,
+        }
+      );
+
+      setIsLoading(false);
+      return response.data;
+    } catch (err: any) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during password change."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+
+  const EditUserPassword = async (
+    userId: string,
+    oldPassword: string,
+    newPassword: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await axiosInstance.put(
+        `${buildUrlPort(
+          ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC
+        )}/v1/User/edit-user-password`,
+        {
+          userId: userId,
+          oldPassword: oldPassword,
+          newPassword: newPassword,
+        }
+      );
+
+      setIsLoading(false);
+      return response.data;
+    } catch (err: any) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during password change."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
   return {
     List,
     GetDetailById,
