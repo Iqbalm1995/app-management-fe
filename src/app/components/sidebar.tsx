@@ -131,6 +131,7 @@ import {
 } from "react-icons/md";
 import { usePathname, useRouter } from "next/navigation";
 import { AuthDataResponse } from "../services/useAuthentications";
+import useAuthentications from "../services/useAuthentications";
 import { BiSolidReport } from "react-icons/bi";
 import { CiMemoPad, CiServer } from "react-icons/ci";
 import { RxActivityLog } from "react-icons/rx";
@@ -459,6 +460,8 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
   const { isAuthenticated, authData, goLogout } = useAuth();
   const { colorMode, toggleColorMode } = useColorMode();
   const pathname = usePathname();
+  const { Logout } = useAuthentications();
+  const showToast = useToastHelper();
 
   // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -498,14 +501,28 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
   };
 
   const logoutAuthAction = async () => {
-    // const response = await logout(LoginCorpID, LoginUserID, Logintoken);
-    // await sendAudit({
-    //   userId: userID,
-    //   actionDetails: `Logout dari Backoffice Portal.`,
-    // });
-    setTimeout(() => {
-      goLogout();
-    }, DELAY_ZERO); // 2-second delay
+    try {
+      if (DataAuth && tokenData) {
+        const response = await Logout(DataAuth.userId, tokenData);
+
+        if (response?.statusCode === 200) {
+          showToast({
+            description: "Logout successful",
+            statusToast: "success",
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+      showToast({
+        description: "Logout failed, but you will be signed out",
+        statusToast: "warning",
+      });
+    } finally {
+      setTimeout(() => {
+        goLogout();
+      }, DELAY_ZERO);
+    }
   };
 
   const [scrollY, setScrollY] = useState(0);
@@ -832,6 +849,8 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
   const hasChildren = data.children && data.children.length > 0;
   const [isHovered, setIsHovered] = useState(false);
   const pathname = usePathname();
+  const { Logout } = useAuthentications();
+  const showToast = useToastHelper();
   const router = useRouter();
   const [isNavigating, setIsNavigating] = useState(false);
 

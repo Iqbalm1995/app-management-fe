@@ -80,9 +80,10 @@ function AuditTrailPage() {
   // Filters
   const [FilterModule, setFilterModule] = useState<string>("");
   const [FilterStatus, setFilterStatus] = useState<string>("");
+  const [ModuleOptions, setModuleOptions] = useState<string[]>([]);
 
   // Services
-  const { GetPagedList } = useLogActivityUsers();
+  const { GetPagedList, GetModules } = useLogActivityUsers();
 
   // Column Definitions
   const columnsData = useMemo<ColumnDef<LogActivityUserSummaryResponse>[]>(
@@ -218,6 +219,7 @@ function AuditTrailPage() {
   useEffect(() => {
     if (DataAuth && tokenData) {
       fetchData();
+      loadModules();
     }
   }, [
     DataAuth,
@@ -229,6 +231,19 @@ function AuditTrailPage() {
     FilterModule,
     FilterStatus,
   ]);
+
+  const loadModules = async () => {
+    if (!tokenData) return;
+    
+    try {
+      const response = await GetModules(tokenData);
+      if (response?.statusCode === RES_CODE_OK && response.data) {
+        setModuleOptions(response.data);
+      }
+    } catch (error) {
+      console.error("Error loading modules:", error);
+    }
+  };
 
   const fetchData = async () => {
     if (!DataAuth || !tokenData) return;
@@ -341,11 +356,11 @@ function AuditTrailPage() {
                   value={FilterModule}
                   onChange={(e) => setFilterModule(e.target.value)}
                 >
-                  <option value="Authentication">Authentication</option>
-                  <option value="ProjectManagement">Project Management</option>
-                  <option value="TaskManagement">Task Management</option>
-                  <option value="RequirementManagement">Requirements</option>
-                  <option value="UserManagement">User Management</option>
+                  {ModuleOptions.map((module) => (
+                    <option key={module} value={module}>
+                      {module}
+                    </option>
+                  ))}
                 </Select>
 
                 <Select

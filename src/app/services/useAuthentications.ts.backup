@@ -48,17 +48,9 @@ export interface AuthDataRoleResponse {
 
 export interface AuthDataResponse {
   id: string;
-  code: string;
-  firstName: string;
-  lastName: string;
-  username: string;
-  isActive: string;
-  profilePict?: string | null;
-  userEmail: string;
-  userPhoneNumber?: string | null;
-  nrp?: string | null;
+  nrp: string;
   nama: string;
-  nip?: string | null;
+  nip: string;
   userId: string;
   kodeCabang?: string | null;
   namaCabang?: string | null;
@@ -79,8 +71,8 @@ export interface AuthDataResponse {
   namaUnitKerja?: string | null;
   kodeJabatan?: string | null;
   phoneNumber?: string | null;
-  userStatus?: string | null;
-  role: AuthDataRoleResponse;
+  userStatus: string;
+  profilePict?: string | null;
 
   team?: AuthDataTeamResponse | null;
   teamRole?: AuthDataTeamRoleResponse;
@@ -91,14 +83,30 @@ interface useAuthenticationsService {
     payload: AuthenticationPayload
   ) => Promise<ApiGenericResponse<AuthenticationResponse | null> | null>;
   GetAuth: (
+  Logout: (
+    userId: string,
     token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+    token: string
+  Logout: (
+    userId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
   ) => Promise<ApiGenericResponse<AuthDataResponse | null> | null>;
   Logout: (
     userId: string,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
   isLoading: boolean;
+  Logout: (
+    userId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
   error: string | null;
+  Logout: (
+    userId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
 }
 
 const useAuthentications = (): useAuthenticationsService => {
@@ -131,56 +139,6 @@ const useAuthentications = (): useAuthenticationsService => {
         return errorResponse;
       } else {
         setError("An unknown error occurred. Please try again.");
-        return {
-          statusCode: RES_CODE_SERVER_ERROR,
-          data: null,
-          message: "Error connect to api",
-          error: null,
-        };
-      }
-    }
-  };
-
-  const GetAuth = async (
-    token: string
-  ): Promise<ApiGenericResponse<AuthDataResponse | null> | null> => {
-    setIsLoading(true);
-    setError(null);
-    const UrlEndpoint: string = buildUrlPort(
-      ENDPOINT_API_BASEURL,
-      ENDPOINT_PORT_BASIC
-    );
-    const PathEndpoint: string = "/v1/Authenticate/GetAuth";
-
-    try {
-      const response = await axiosInstance.get<
-        ApiGenericResponse<AuthDataResponse>
-      >(`${UrlEndpoint}${PathEndpoint}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setIsLoading(false);
-      return response.data;
-    } catch (err) {
-      setIsLoading(false);
-      if (axios.isAxiosError(err)) {
-        const errorResponse = handleAxiosError(err);
-        setError(
-          err.response?.data?.message || "An error occurred during login."
-        );
-        return errorResponse;
-      } else {
-        setError("An unknown error occurred. Please try again.");
-        return {
-          statusCode: RES_CODE_SERVER_ERROR,
-          data: null,
-          message: "Error connect to api",
-          error: null,
-        };
-      }
-    }
-  };
 
   const Logout = async (
     userId: string,
@@ -223,7 +181,141 @@ const useAuthentications = (): useAuthenticationsService => {
       }
     }
   };
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
 
+  const GetAuth = async (
+    token: string
+  ): Promise<ApiGenericResponse<AuthDataResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/Authenticate/GetAuth";
+
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<AuthDataResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+
+  const Logout = async (
+    userId: string,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/Authenticate/Logout";
+
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string>
+      >(`${UrlEndpoint}${PathEndpoint}`, { userId }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during logout."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+
+  const Logout = async (
+    userId: string,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/Authenticate/Logout";
+
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string>
+      >(`${UrlEndpoint}${PathEndpoint}`, { userId }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during logout."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
   return {
     Login,
     GetAuth,
