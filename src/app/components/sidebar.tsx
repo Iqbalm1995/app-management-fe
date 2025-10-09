@@ -335,6 +335,14 @@ const LinkItems: LinkItemProps[] = [
       },
     ],
   },
+  {
+    name: "Audit Trail",
+    icon: RxActivityLog,
+    link: "/audit-trail",
+    role: ["admin"],
+    menuID: "1",
+    children: [],
+  },
   // {
   //   name: "Pricing",
   //   icon: FiDollarSign,
