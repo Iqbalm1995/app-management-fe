@@ -10,6 +10,7 @@ import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useTeams, { TeamsResponse } from "@/app/services/useTeams";
+import useConstants, { ConstantDataResponse } from "@/app/services/useConstants";
 import {
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
@@ -35,6 +36,7 @@ import {
 import { FaUsersRays } from "react-icons/fa6";
 import { FiRefreshCcw, FiSearch, FiFilter } from "react-icons/fi";
 import { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
 import {
   ColumnDef,
   PaginationState,
@@ -56,6 +58,7 @@ function TeamsCenterPage() {
   const { colorMode } = useColorMode();
   const showToast = useToastHelper();
   const { List } = useTeams();
+  const { List: ListConstants } = useConstants();
 
   // Auth setup
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -64,12 +67,19 @@ function TeamsCenterPage() {
   // Teams data
   const [TeamsData, setTeamsData] = useState<TeamsResponse[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedDirectorate, setSelectedDirectorate] = useState<string>("all");
+  const [selectedDivision, setSelectedDivision] = useState<string>("all");
+  const [selectedGroup, setSelectedGroup] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [StatsData, setStatsData] = useState({
     totalTeams: 0,
     activeTeams: 0,
     totalMembers: 0,
   });
+  const [OrganizationData, setOrganizationData] = useState<ConstantDataResponse[]>([]);
+  const [DirectorateData, setDirectorateData] = useState<ConstantDataResponse[]>([]);
+  const [DivisionData, setDivisionData] = useState<ConstantDataResponse[]>([]);
+  const [GroupData, setGroupData] = useState<ConstantDataResponse[]>([]);
 
   // Pagination state
   const [totalPages, setTotalPageData] = useState<number>(0);
@@ -132,6 +142,67 @@ function TeamsCenterPage() {
     }
   };
 
+  // Load organization data
+  const GetOrganizationData = async () => {
+    if (!tokenData || !DataAuth) return;
+
+    try {
+      // Load Directorates
+      const PayloadDirectorate = {
+        search: "",
+        limit: 1000,
+        page: 0,
+        fieldOrder: ["orgName"],
+        orderDir: "asc",
+        filterWhere: [
+          { field: "orgCategory", operator: "=", value: "DIRECTORATE" }
+        ],
+      };
+
+      const directorateResponse = await ListConstants(PayloadDirectorate as any, tokenData);
+      if (directorateResponse?.statusCode === RES_CODE_OK && directorateResponse.data) {
+        setDirectorateData(directorateResponse.data as ConstantDataResponse[]);
+      }
+
+      // Load Divisions
+      const PayloadDivision = {
+        search: "",
+        limit: 1000,
+        page: 0,
+        fieldOrder: ["orgName"],
+        orderDir: "asc",
+        filterWhere: [
+          { field: "orgCategory", operator: "=", value: "DIVISION" }
+        ],
+      };
+
+      const divisionResponse = await ListConstants(PayloadDivision as any, tokenData);
+      if (divisionResponse?.statusCode === RES_CODE_OK && divisionResponse.data) {
+        setDivisionData(divisionResponse.data as ConstantDataResponse[]);
+      }
+
+      // Load Groups
+      const PayloadGroup = {
+        search: "",
+        limit: 1000,
+        page: 0,
+        fieldOrder: ["orgName"],
+        orderDir: "asc",
+        filterWhere: [
+          { field: "orgCategory", operator: "=", value: "GROUP" }
+        ],
+      };
+
+      const groupResponse = await ListConstants(PayloadGroup as any, tokenData);
+      if (groupResponse?.statusCode === RES_CODE_OK && groupResponse.data) {
+        setGroupData(groupResponse.data as ConstantDataResponse[]);
+      }
+
+    } catch (error) {
+      console.error("Error fetching organization data:", error);
+    }
+  };
+
   // Load teams data
   const GetTeamsData = async () => {
     if (!tokenData || !DataAuth) return;
@@ -139,14 +210,40 @@ function TeamsCenterPage() {
     try {
       setIsLoadingProcess(true);
       
-      // Build filter conditions
+      // Build filter conditions based on selected filters
       const filterConditions = [];
-      if (selectedCategory !== "all") {
-        filterConditions.push({
-          field: "orgGroupCode",
-          operator: "=",
-          value: selectedCategory
-        });
+      
+      if (selectedDirectorate !== "all") {
+        const selectedOrg = DirectorateData.find(org => org.id === selectedDirectorate);
+        if (selectedOrg) {
+          filterConditions.push({
+            field: "directorate.orgCode",
+            operator: "=",
+            value: selectedOrg.orgCode
+          });
+        }
+      }
+      
+      if (selectedDivision !== "all") {
+        const selectedOrg = DivisionData.find(org => org.id === selectedDivision);
+        if (selectedOrg) {
+          filterConditions.push({
+            field: "division.orgCode",
+            operator: "=",
+            value: selectedOrg.orgCode
+          });
+        }
+      }
+      
+      if (selectedGroup !== "all") {
+        const selectedOrg = GroupData.find(org => org.id === selectedGroup);
+        if (selectedOrg) {
+          filterConditions.push({
+            field: "group.orgCode",
+            operator: "=",
+            value: selectedOrg.orgCode
+          });
+        }
       }
       
       const PayloadList = {
@@ -185,10 +282,11 @@ function TeamsCenterPage() {
   // Load data effect
   useEffect(() => {
     if (DataAuth && tokenData) {
+      GetOrganizationData(); // Load organization data first
       GetTeamsData();
       GetStatsData(); // Load statistics separately
     }
-  }, [pageIndex, pageSize, RefreshData, DataAuth, tokenData, searchQuery, selectedCategory]);
+  }, [pageIndex, pageSize, RefreshData, DataAuth, tokenData, searchQuery, selectedDirectorate, selectedDivision, selectedGroup]);
 
   const RefreshAction = () => {
     setTotalPageData(0);
@@ -332,7 +430,7 @@ function TeamsCenterPage() {
                 wrap="wrap"
                 gap={4}
               >
-                {/* Left - Search & Filter */}
+                {/* Left - Search */}
                 <HStack spacing={4} flex="1">
                   <InputGroup maxW="400px" flex="1">
                     <InputLeftElement>
@@ -354,11 +452,59 @@ function TeamsCenterPage() {
                       }}
                     />
                   </InputGroup>
+                </HStack>
 
+                {/* Right - Organization Filters */}
+                <HStack spacing={3}>
+                  {/* Directorate Filter */}
                   <Select
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    maxW="180px"
+                    value={selectedDirectorate}
+                    onChange={(e) => setSelectedDirectorate(e.target.value)}
+                    maxW="160px"
+                    bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                    border="1px"
+                    borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
+                    rounded="xl"
+                    _focus={{
+                      borderColor: "secondary.500",
+                      bg: colorMode === "light" ? "white" : "gray.800",
+                    }}
+                  >
+                    <option value="all">All Directorates</option>
+                    {DirectorateData.map((org) => (
+                      <option key={org.id} value={org.id}>
+                        {org.orgName}
+                      </option>
+                    ))}
+                  </Select>
+
+                  {/* Division Filter */}
+                  <Select
+                    value={selectedDivision}
+                    onChange={(e) => setSelectedDivision(e.target.value)}
+                    maxW="160px"
+                    bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                    border="1px"
+                    borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
+                    rounded="xl"
+                    _focus={{
+                      borderColor: "secondary.500",
+                      bg: colorMode === "light" ? "white" : "gray.800",
+                    }}
+                  >
+                    <option value="all">All Divisions</option>
+                    {DivisionData.map((org) => (
+                      <option key={org.id} value={org.id}>
+                        {org.orgName}
+                      </option>
+                    ))}
+                  </Select>
+
+                  {/* Group Filter */}
+                  <Select
+                    value={selectedGroup}
+                    onChange={(e) => setSelectedGroup(e.target.value)}
+                    maxW="160px"
                     bg={colorMode === "light" ? "gray.50" : "gray.700"}
                     border="1px"
                     borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
@@ -369,9 +515,11 @@ function TeamsCenterPage() {
                     }}
                   >
                     <option value="all">All Groups</option>
-                    <option value="DIRECTORATE">Directorate</option>
-                    <option value="DIVISION">Division</option>
-                    <option value="GROUP">Group</option>
+                    {GroupData.map((org) => (
+                      <option key={org.id} value={org.id}>
+                        {org.orgName}
+                      </option>
+                    ))}
                   </Select>
                 </HStack>
 
@@ -425,6 +573,8 @@ function TeamsCenterPage() {
                 leftIcon={<Icon as={FaUsersRays} />}
                 rounded="xl"
                 size="md"
+                as={Link}
+                href="/teams-center/add"
               >
                 Create Team
               </Button>
@@ -594,23 +744,10 @@ function TeamsCenterPage() {
                             }}
                             transition="all 0.2s"
                             fontWeight="semibold"
+                            as={Link}
+                            href={`/teams-center/detail?id=${team.id}`}
                           >
-                            View Details
-                          </Button>
-                          <Button
-                            size="md"
-                            variant="outline"
-                            colorScheme="secondary"
-                            rounded="xl"
-                            w="full"
-                            _hover={{
-                              bg: colorMode === "light" ? "secondary.50" : "secondary.900",
-                              transform: "translateY(-1px)",
-                            }}
-                            transition="all 0.2s"
-                            fontWeight="medium"
-                          >
-                            Manage
+                            Details
                           </Button>
                         </VStack>
                       </VStack>
