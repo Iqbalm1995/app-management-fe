@@ -286,7 +286,7 @@ const LinkItems: LinkItemProps[] = [
     children: [],
   },
   {
-    name: "Teams Center",
+    name: "Team Center",
     icon: FaUsersRays,
     link: "/teams-center",
     role: ["admin"],
