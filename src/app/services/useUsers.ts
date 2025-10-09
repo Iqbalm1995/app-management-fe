@@ -166,7 +166,7 @@ const useUsers = (): useUsersServices => {
 
     try {
       const response = await axiosInstance.post(
-        `${UrlEndpoint}/v1/User/list`,
+        `${UrlEndpoint}/v1/Users/list`,
         payload,
         {
           headers: {
@@ -210,7 +210,7 @@ const useUsers = (): useUsersServices => {
 
     try {
       const response = await axiosInstance.get(
-        `${UrlEndpoint}/v1/User/detail/${id}`,
+        `${UrlEndpoint}/v1/Users/detail/${id}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -253,7 +253,7 @@ const useUsers = (): useUsersServices => {
 
     try {
       const response = await axiosInstance.get(
-        `${UrlEndpoint}/v1/User/detail-by-userid/${UserId}`,
+        `${UrlEndpoint}/v1/Users/integrated/user-id/${UserId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -296,7 +296,7 @@ const useUsers = (): useUsersServices => {
 
     try {
       const response = await axiosInstance.get(
-        `${UrlEndpoint}/v1/User/detail-organization/${id}`,
+        `${UrlEndpoint}/v1/Users/detail-organization/${id}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -339,7 +339,7 @@ const useUsers = (): useUsersServices => {
 
     try {
       const response = await axiosInstance.get(
-        `${UrlEndpoint}/v1/User/detail-organization-by-userid/${UserId}`,
+        `${UrlEndpoint}/v1/Users/detail-organization-by-userid/${UserId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -398,7 +398,8 @@ const useUsers = (): useUsersServices => {
       if (axios.isAxiosError(err)) {
         const errorResponse = handleAxiosError(err);
         setError(
-          err.response?.data?.message || "An error occurred during password change."
+          err.response?.data?.message ||
+            "An error occurred during password change."
         );
         return errorResponse;
       } else {

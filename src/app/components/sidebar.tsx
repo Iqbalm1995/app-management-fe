@@ -344,6 +344,14 @@ const LinkItems: LinkItemProps[] = [
     menuID: "1",
     children: [],
   },
+  {
+    name: "Profile",
+    icon: FiUser,
+    link: "/profile",
+    role: ["admin"],
+    menuID: "1",
+    children: [],
+  },
   // {
   //   name: "Pricing",
   //   icon: FiDollarSign,
