@@ -10,7 +10,7 @@ import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useTeams, { TeamsResponse } from "@/app/services/useTeams";
-import useConstants, { ConstantDataResponse } from "@/app/services/useConstants";
+import useOrganization, { OrganizationResponse } from "@/app/services/useOrganization";
 import {
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
@@ -58,7 +58,7 @@ function TeamsCenterPage() {
   const { colorMode } = useColorMode();
   const showToast = useToastHelper();
   const { List } = useTeams();
-  const { List: ListConstants } = useConstants();
+  const { List: ListOrganizations } = useOrganization();
 
   // Auth setup
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -76,10 +76,10 @@ function TeamsCenterPage() {
     activeTeams: 0,
     totalMembers: 0,
   });
-  const [OrganizationData, setOrganizationData] = useState<ConstantDataResponse[]>([]);
-  const [DirectorateData, setDirectorateData] = useState<ConstantDataResponse[]>([]);
-  const [DivisionData, setDivisionData] = useState<ConstantDataResponse[]>([]);
-  const [GroupData, setGroupData] = useState<ConstantDataResponse[]>([]);
+  const [OrganizationData, setOrganizationData] = useState<OrganizationResponse[]>([]);
+  const [DirectorateData, setDirectorateData] = useState<OrganizationResponse[]>([]);
+  const [DivisionData, setDivisionData] = useState<OrganizationResponse[]>([]);
+  const [GroupData, setGroupData] = useState<OrganizationResponse[]>([]);
 
   // Pagination state
   const [totalPages, setTotalPageData] = useState<number>(0);
@@ -155,13 +155,13 @@ function TeamsCenterPage() {
         fieldOrder: ["orgName"],
         orderDir: "asc",
         filterWhere: [
-          { field: "orgCategory", operator: "=", value: "DIRECTORATE" }
+          { field: "orgType", operator: "=", value: "DIREKTORAT" }
         ],
       };
 
-      const directorateResponse = await ListConstants(PayloadDirectorate as any, tokenData);
+      const directorateResponse = await ListOrganizations(PayloadDirectorate as any, tokenData);
       if (directorateResponse?.statusCode === RES_CODE_OK && directorateResponse.data) {
-        setDirectorateData(directorateResponse.data as ConstantDataResponse[]);
+        setDirectorateData(directorateResponse.data as OrganizationResponse[]);
       }
 
       // Load Divisions
@@ -172,13 +172,13 @@ function TeamsCenterPage() {
         fieldOrder: ["orgName"],
         orderDir: "asc",
         filterWhere: [
-          { field: "orgCategory", operator: "=", value: "DIVISION" }
+          { field: "orgType", operator: "=", value: "DIVISI" }
         ],
       };
 
-      const divisionResponse = await ListConstants(PayloadDivision as any, tokenData);
+      const divisionResponse = await ListOrganizations(PayloadDivision as any, tokenData);
       if (divisionResponse?.statusCode === RES_CODE_OK && divisionResponse.data) {
-        setDivisionData(divisionResponse.data as ConstantDataResponse[]);
+        setDivisionData(divisionResponse.data as OrganizationResponse[]);
       }
 
       // Load Groups
@@ -189,13 +189,13 @@ function TeamsCenterPage() {
         fieldOrder: ["orgName"],
         orderDir: "asc",
         filterWhere: [
-          { field: "orgCategory", operator: "=", value: "GROUP" }
+          { field: "orgType", operator: "=", value: "GRUP" }
         ],
       };
 
-      const groupResponse = await ListConstants(PayloadGroup as any, tokenData);
+      const groupResponse = await ListOrganizations(PayloadGroup as any, tokenData);
       if (groupResponse?.statusCode === RES_CODE_OK && groupResponse.data) {
-        setGroupData(groupResponse.data as ConstantDataResponse[]);
+        setGroupData(groupResponse.data as OrganizationResponse[]);
       }
 
     } catch (error) {
@@ -703,30 +703,30 @@ function TeamsCenterPage() {
                             fontWeight="semibold"
                             textTransform="uppercase"
                             letterSpacing="wide"
-                            mb={3}
+                            mb={2}
                           >
                             Organization
                           </Text>
-                          <VStack spacing={2} align="start" w="full">
-                            <HStack spacing={3} w="full">
-                              <Box w="3px" h="16px" bg="blue.400" rounded="full" />
-                              <Text fontSize="sm" color="blue.600" fontWeight="medium" noOfLines={1}>
+                          <HStack spacing={4} w="full" wrap="wrap">
+                            <HStack spacing={2}>
+                              <Box w="3px" h="16px" bg="orange.400" rounded="full" />
+                              <Text fontSize="sm" color="orange.600" fontWeight="medium" noOfLines={1}>
                                 {team.directorate?.orgName || "N/A"}
                               </Text>
                             </HStack>
-                            <HStack spacing={3} w="full">
-                              <Box w="3px" h="16px" bg="purple.400" rounded="full" />
-                              <Text fontSize="sm" color="purple.600" fontWeight="medium" noOfLines={1}>
+                            <HStack spacing={2}>
+                              <Box w="3px" h="16px" bg="teal.400" rounded="full" />
+                              <Text fontSize="sm" color="teal.600" fontWeight="medium" noOfLines={1}>
                                 {team.division?.orgName || "N/A"}
                               </Text>
                             </HStack>
-                            <HStack spacing={3} w="full">
-                              <Box w="3px" h="16px" bg="secondary.400" rounded="full" />
-                              <Text fontSize="sm" color="secondary.600" fontWeight="medium" noOfLines={1}>
+                            <HStack spacing={2}>
+                              <Box w="3px" h="16px" bg="pink.400" rounded="full" />
+                              <Text fontSize="sm" color="pink.600" fontWeight="medium" noOfLines={1}>
                                 {team.group?.orgName || "N/A"}
                               </Text>
                             </HStack>
-                          </VStack>
+                          </HStack>
                         </Box>
 
                         {/* Actions */}
