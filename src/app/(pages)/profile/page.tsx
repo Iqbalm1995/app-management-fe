@@ -26,7 +26,16 @@ import {
   Button,
   IconButton,
 } from "@chakra-ui/react";
-import { FiUser, FiMail, FiPhone, FiUsers, FiTag, FiEdit3, FiSettings, FiShield } from "react-icons/fi";
+import {
+  FiUser,
+  FiMail,
+  FiPhone,
+  FiUsers,
+  FiTag,
+  FiEdit3,
+  FiSettings,
+  FiShield,
+} from "react-icons/fi";
 import { FiActivity, FiClock, FiMonitor, FiRefreshCw } from "react-icons/fi";
 import { motion } from "framer-motion";
 import LayoutAdmin from "@/app/components/layoutAdmin";
@@ -35,8 +44,13 @@ import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useUsers, { UsersResponse } from "@/app/services/useUsers";
-import useLogActivityUsers, { LogActivityUserSummaryResponse } from "@/app/services/useLogActivityUsers";
-import { RES_CODE_OK, RES_GENERIC_ERROR_MSG } from "@/app/constants/applicationConstants";
+import useLogActivityUsers, {
+  LogActivityUserSummaryResponse,
+} from "@/app/services/useLogActivityUsers";
+import {
+  RES_CODE_OK,
+  RES_GENERIC_ERROR_MSG,
+} from "@/app/constants/applicationConstants";
 import { PaggingListPayload } from "@/app/types/masterTypes";
 
 const MotionBox = motion(Box);
@@ -46,12 +60,15 @@ export default function ProfilePage() {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
   const { GetDetailByUserId, isLoading } = useUsers();
-  const { GetPagedList: GetAuditTrail, isLoading: isLoadingAudit } = useLogActivityUsers();
+  const { GetPagedList: GetAuditTrail, isLoading: isLoadingAudit } =
+    useLogActivityUsers();
 
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
   const [UserDetail, setUserDetail] = useState<UsersResponse | null>(null);
-  const [AuditTrailData, setAuditTrailData] = useState<LogActivityUserSummaryResponse[]>([]);
+  const [AuditTrailData, setAuditTrailData] = useState<
+    LogActivityUserSummaryResponse[]
+  >([]);
   const [RefreshAudit, setRefreshAudit] = useState<number>(0);
 
   // Auth Effect
@@ -64,7 +81,8 @@ export default function ProfilePage() {
 
     if (storedData) {
       const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
-      const UserData: AuthDataResponse = StorageAuth.dataLogin as AuthDataResponse;
+      const UserData: AuthDataResponse =
+        StorageAuth.dataLogin as AuthDataResponse;
       console.log("Parsed UserData:", UserData);
       setDataAuth(UserData);
     }
@@ -75,21 +93,21 @@ export default function ProfilePage() {
   // Fetch User Detail
   useEffect(() => {
     const fetchUserDetail = async () => {
-      console.log("Fetch effect triggered", { 
+      console.log("Fetch effect triggered", {
         DataAuth,
         username: DataAuth?.username,
-        userId: DataAuth?.userId, 
-        hasToken: !!tokenData 
+        userId: DataAuth?.userId,
+        hasToken: !!tokenData,
       });
-      
+
       const userIdToUse = DataAuth?.userId || DataAuth?.username;
-      
+
       if (userIdToUse && tokenData) {
         console.log("Calling API with userId:", userIdToUse);
         try {
           const response = await GetDetailByUserId(userIdToUse, tokenData);
           console.log("API Response:", response);
-          
+
           if (response?.statusCode !== RES_CODE_OK || !response) {
             showToast({
               description: response?.message || RES_GENERIC_ERROR_MSG,
@@ -116,7 +134,7 @@ export default function ProfilePage() {
   useEffect(() => {
     const fetchAuditTrail = async () => {
       const userIdToUse = DataAuth?.userId || DataAuth?.username;
-      
+
       if (userIdToUse && tokenData) {
         try {
           const payload: PaggingListPayload = {
@@ -124,14 +142,14 @@ export default function ProfilePage() {
             page: 1,
             limit: 5,
             filterWhere: [
-              { field: "userIdUim", operator: "=", value: userIdToUse }
+              { field: "userIdUim", operator: "=", value: userIdToUse },
             ],
             fieldOrder: ["timestampAct"],
-            orderDir: "desc"
+            orderDir: "desc",
           };
 
           const response = await GetAuditTrail(payload, tokenData);
-          
+
           if (response?.statusCode === RES_CODE_OK && response.data) {
             setAuditTrailData(response.data);
           }
@@ -145,17 +163,17 @@ export default function ProfilePage() {
   }, [DataAuth, tokenData, RefreshAudit]);
 
   const handleRefreshAudit = () => {
-    setRefreshAudit(prev => prev + 1);
+    setRefreshAudit((prev) => prev + 1);
   };
 
-  const InfoCard = ({ 
-    icon, 
-    label, 
-    value, 
-    colorScheme = "blue" 
-  }: { 
-    icon: any; 
-    label: string; 
+  const InfoCard = ({
+    icon,
+    label,
+    value,
+    colorScheme = "blue",
+  }: {
+    icon: any;
+    label: string;
     value: string | null | undefined;
     colorScheme?: string;
   }) => (
@@ -182,8 +200,8 @@ export default function ProfilePage() {
             <Icon as={icon} boxSize={5} />
           </Flex>
           <VStack align="start" spacing={0} flex={1}>
-            <Text 
-              fontSize="xs" 
+            <Text
+              fontSize="xs"
               fontWeight="medium"
               color={colorMode === "light" ? "gray.500" : "gray.400"}
               textTransform="uppercase"
@@ -191,8 +209,8 @@ export default function ProfilePage() {
             >
               {label}
             </Text>
-            <Text 
-              fontSize="sm" 
+            <Text
+              fontSize="sm"
               fontWeight="semibold"
               color={colorMode === "light" ? "gray.800" : "white"}
               noOfLines={1}
@@ -218,9 +236,10 @@ export default function ProfilePage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          bgGradient={colorMode === "light" 
-            ? "linear(135deg, blue.500, purple.600, pink.500)"
-            : "linear(135deg, blue.600, purple.700, pink.600)"
+          bgGradient={
+            colorMode === "light"
+              ? "linear(135deg, secondary.500, secondary.700, secondary.800)"
+              : "linear(135deg, secondary.600, secondary.800, secondary.900)"
           }
           rounded="2xl"
           p={8}
@@ -235,12 +254,16 @@ export default function ProfilePage() {
             right={0}
             w="200px"
             h="200px"
-            bgGradient="radial(circle, whiteAlpha.200, transparent)"
+            bgGradient="radial(circle, whiteAlpha.400, transparent)"
             rounded="full"
             transform="translate(50%, -50%)"
           />
-          
-          <Flex direction={{ base: "column", md: "row" }} align="center" gap={6}>
+
+          <Flex
+            direction={{ base: "column", md: "row" }}
+            align="center"
+            gap={6}
+          >
             <MotionBox
               whileHover={{ scale: 1.05 }}
               transition={{ duration: 0.2 }}
@@ -250,38 +273,41 @@ export default function ProfilePage() {
                 name={DataAuth?.nama || UserDetail?.nama || "User"}
                 src={DataAuth?.profilePict || undefined}
                 border="4px solid"
-                borderColor="whiteAlpha.300"
+                borderColor="secondary.300"
                 shadow="xl"
               />
             </MotionBox>
-            
-            <VStack align={{ base: "center", md: "start" }} spacing={3} flex={1}>
-              <Text 
-                fontSize={{ base: "2xl", md: "3xl" }} 
+
+            <VStack
+              align={{ base: "center", md: "start" }}
+              spacing={3}
+              flex={1}
+            >
+              <Text
+                fontSize={{ base: "2xl", md: "3xl" }}
                 fontWeight="bold"
                 color="white"
                 textAlign={{ base: "center", md: "left" }}
               >
                 {UserDetail?.nama || DataAuth?.nama || "Loading..."}
               </Text>
-              
+
               <HStack spacing={3}>
-                <Text 
-                  fontSize="lg" 
-                  color="whiteAlpha.900"
-                  fontWeight="medium"
-                >
-                  @{DataAuth?.username || "username"}
+                <Text fontSize="lg" color="whiteAlpha.900" fontWeight="medium">
+                  USER ID :{" "}
+                  <Text as={"span"} fontWeight={600}>
+                    {DataAuth?.userId || "username"}
+                  </Text>
                 </Text>
-                
-                <Badge 
-                  colorScheme={DataAuth?.isActive === "Y" ? "green" : "red"}
+
+                <Badge
+                  colorScheme={"secondary"}
                   rounded="full"
                   px={3}
                   py={1}
                   fontSize="sm"
                 >
-                  {DataAuth?.isActive === "Y" ? "Active" : "Inactive"}
+                  {DataAuth?.userStatus}
                 </Badge>
               </HStack>
 
@@ -331,10 +357,14 @@ export default function ProfilePage() {
           >
             <CardBody>
               <Stat>
-                <StatLabel color={colorMode === "light" ? "gray.600" : "gray.400"}>
+                <StatLabel
+                  color={colorMode === "light" ? "gray.600" : "gray.400"}
+                >
                   Employee ID
                 </StatLabel>
-                <StatNumber color={colorMode === "light" ? "gray.800" : "white"}>
+                <StatNumber
+                  color={colorMode === "light" ? "gray.800" : "white"}
+                >
                   {UserDetail?.nrp || DataAuth?.nrp || "N/A"}
                 </StatNumber>
                 <StatHelpText>
@@ -356,10 +386,15 @@ export default function ProfilePage() {
           >
             <CardBody>
               <Stat>
-                <StatLabel color={colorMode === "light" ? "gray.600" : "gray.400"}>
+                <StatLabel
+                  color={colorMode === "light" ? "gray.600" : "gray.400"}
+                >
                   Position
                 </StatLabel>
-                <StatNumber color={colorMode === "light" ? "gray.800" : "white"} fontSize="lg">
+                <StatNumber
+                  color={colorMode === "light" ? "gray.800" : "white"}
+                  fontSize="lg"
+                >
                   {UserDetail?.jabatan || "Not specified"}
                 </StatNumber>
                 <StatHelpText>
@@ -381,10 +416,15 @@ export default function ProfilePage() {
           >
             <CardBody>
               <Stat>
-                <StatLabel color={colorMode === "light" ? "gray.600" : "gray.400"}>
+                <StatLabel
+                  color={colorMode === "light" ? "gray.600" : "gray.400"}
+                >
                   Team Role
                 </StatLabel>
-                <StatNumber color={colorMode === "light" ? "gray.800" : "white"} fontSize="lg">
+                <StatNumber
+                  color={colorMode === "light" ? "gray.800" : "white"}
+                  fontSize="lg"
+                >
                   {UserDetail?.teamRole?.specName || "Not assigned"}
                 </StatNumber>
                 <StatHelpText>
@@ -402,8 +442,8 @@ export default function ProfilePage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <Text 
-            fontSize="xl" 
+          <Text
+            fontSize="xl"
             fontWeight="bold"
             color={colorMode === "light" ? "gray.800" : "white"}
             mb={6}
@@ -472,8 +512,8 @@ export default function ProfilePage() {
           mt={8}
         >
           <HStack justify="space-between" align="center" mb={6}>
-            <Text 
-              fontSize="xl" 
+            <Text
+              fontSize="xl"
               fontWeight="bold"
               color={colorMode === "light" ? "gray.800" : "white"}
             >
@@ -505,7 +545,12 @@ export default function ProfilePage() {
               {isLoadingAudit ? (
                 <VStack spacing={0}>
                   {[1, 2, 3, 4, 5].map((i) => (
-                    <Box key={i} w="full" p={4} borderBottomWidth={i < 5 ? "1px" : "0"}>
+                    <Box
+                      key={i}
+                      w="full"
+                      p={4}
+                      borderBottomWidth={i < 5 ? "1px" : "0"}
+                    >
                       <Skeleton height="60px" rounded="md" />
                     </Box>
                   ))}
@@ -519,9 +564,15 @@ export default function ProfilePage() {
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ duration: 0.3, delay: index * 0.1 }}
                       p={4}
-                      borderBottomWidth={index < AuditTrailData.length - 1 ? "1px" : "0"}
-                      borderColor={colorMode === "light" ? "gray.100" : "gray.700"}
-                      _hover={{ bg: colorMode === "light" ? "gray.50" : "gray.700" }}
+                      borderBottomWidth={
+                        index < AuditTrailData.length - 1 ? "1px" : "0"
+                      }
+                      borderColor={
+                        colorMode === "light" ? "gray.100" : "gray.700"
+                      }
+                      _hover={{
+                        bg: colorMode === "light" ? "gray.50" : "gray.700",
+                      }}
                       cursor="pointer"
                     >
                       <HStack spacing={4} align="start">
@@ -529,45 +580,69 @@ export default function ProfilePage() {
                           w={10}
                           h={10}
                           rounded="lg"
-                          bg={activity.status === "SUCCESS" ? "green.100" : "red.100"}
-                          color={activity.status === "SUCCESS" ? "green.600" : "red.600"}
+                          bg={
+                            activity.status === "SUCCESS"
+                              ? "green.100"
+                              : "red.100"
+                          }
+                          color={
+                            activity.status === "SUCCESS"
+                              ? "green.600"
+                              : "red.600"
+                          }
                           align="center"
                           justify="center"
                           flexShrink={0}
                         >
                           <Icon as={FiActivity} boxSize={5} />
                         </Flex>
-                        
+
                         <VStack align="start" spacing={1} flex={1}>
                           <HStack spacing={2} w="full" justify="space-between">
-                            <Text 
+                            <Text
                               fontWeight="semibold"
-                              color={colorMode === "light" ? "gray.800" : "white"}
+                              color={
+                                colorMode === "light" ? "gray.800" : "white"
+                              }
                               fontSize="sm"
                             >
                               {activity.actoinType}
                             </Text>
                             <Badge
-                              colorScheme={activity.status === "SUCCESS" ? "green" : "red"}
+                              colorScheme={
+                                activity.status === "SUCCESS" ? "green" : "red"
+                              }
                               size="sm"
                               rounded="full"
                             >
                               {activity.status}
                             </Badge>
                           </HStack>
-                          
-                          <Text 
+
+                          <Text
                             fontSize="xs"
-                            color={colorMode === "light" ? "gray.600" : "gray.400"}
+                            color={
+                              colorMode === "light" ? "gray.600" : "gray.400"
+                            }
                             noOfLines={2}
                           >
                             {activity.descriptions}
                           </Text>
-                          
-                          <HStack spacing={4} fontSize="xs" color={colorMode === "light" ? "gray.500" : "gray.500"}>
+
+                          <HStack
+                            spacing={4}
+                            fontSize="xs"
+                            color={
+                              colorMode === "light" ? "gray.500" : "gray.500"
+                            }
+                          >
                             <HStack spacing={1}>
                               <Icon as={FiClock} />
-                              <Text>{new Date(activity.timestampAct).toLocaleString()}</Text>
+                              <Text>
+                                {new Date(
+                                  activity.timestampAct
+                                ).toLocaleString()}
+                              </Text>
                             </HStack>
                             <HStack spacing={1}>
                               <Icon as={FiMonitor} />
@@ -581,13 +656,13 @@ export default function ProfilePage() {
                 </VStack>
               ) : (
                 <Box p={8} textAlign="center">
-                  <Icon 
-                    as={FiActivity} 
-                    boxSize={12} 
-                    color={colorMode === "light" ? "gray.300" : "gray.600"} 
+                  <Icon
+                    as={FiActivity}
+                    boxSize={12}
+                    color={colorMode === "light" ? "gray.300" : "gray.600"}
                     mb={4}
                   />
-                  <Text 
+                  <Text
                     color={colorMode === "light" ? "gray.500" : "gray.400"}
                     fontSize="sm"
                   >
