@@ -8,7 +8,9 @@ import LayoutAdmin from "@/app/components/layoutAdmin";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useTeams, { TeamInsertPayload } from "@/app/services/useTeams";
-import useConstants, { ConstantDataResponse } from "@/app/services/useConstants";
+import useConstants, {
+  ConstantDataResponse,
+} from "@/app/services/useConstants";
 import {
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
@@ -53,7 +55,7 @@ function AddTeamViewPage({}: AddTeamFormProps) {
   const showToast = useToastHelper();
   const router = useRouter();
   const { InsertTeams } = useTeams();
-  const { List: ListConstants } = useConstants();
+  const { ListConstantData: ListConstants } = useConstants();
 
   // Auth setup
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -61,7 +63,9 @@ function AddTeamViewPage({}: AddTeamFormProps) {
 
   // Form state
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
-  const [OrganizationData, setOrganizationData] = useState<ConstantDataResponse[]>([]);
+  const [OrganizationData, setOrganizationData] = useState<
+    ConstantDataResponse[]
+  >([]);
 
   // Auth effect
   useEffect(() => {
@@ -70,7 +74,8 @@ function AddTeamViewPage({}: AddTeamFormProps) {
 
     if (DataAuth == null && storedData) {
       const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
-      const UserData: AuthDataResponse = StorageAuth.dataLogin as AuthDataResponse;
+      const UserData: AuthDataResponse =
+        StorageAuth.dataLogin as AuthDataResponse;
       setDataAuth(UserData);
     }
 
@@ -92,7 +97,11 @@ function AddTeamViewPage({}: AddTeamFormProps) {
           fieldOrder: ["orgName"],
           orderDir: "asc",
           filterWhere: [
-            { field: "orgCategory", operator: "IN", value: ["DIRECTORATE", "DIVISION", "GROUP"] }
+            {
+              field: "orgCategory",
+              operator: "IN",
+              value: ["DIRECTORATE", "DIVISION", "GROUP"],
+            },
           ],
         };
 
@@ -120,8 +129,10 @@ function AddTeamViewPage({}: AddTeamFormProps) {
       .required("Team code is required")
       .min(2, "Team code must be at least 2 characters")
       .max(20, "Team code must not exceed 20 characters"),
-    teamDesc: Yup.string()
-      .max(500, "Description must not exceed 500 characters"),
+    teamDesc: Yup.string().max(
+      500,
+      "Description must not exceed 500 characters"
+    ),
     orgGroupId: Yup.string().required("Organization group is required"),
   });
 
@@ -156,7 +167,9 @@ function AddTeamViewPage({}: AddTeamFormProps) {
       setIsLoadingProcess(true);
 
       // Find selected organization to get the code
-      const selectedOrg = OrganizationData.find(org => org.id === values.orgGroupId);
+      const selectedOrg = OrganizationData.find(
+        (org) => org.id === values.orgGroupId
+      );
       if (!selectedOrg) {
         showToast({
           description: "Selected organization not found",
@@ -167,7 +180,7 @@ function AddTeamViewPage({}: AddTeamFormProps) {
 
       const payload: TeamInsertPayload = {
         ...values,
-        orgGroupCode: selectedOrg.orgCode,
+        orgGroupCode: selectedOrg.groupCode,
         teamDesc: values.teamDesc || null,
       };
 
@@ -188,7 +201,6 @@ function AddTeamViewPage({}: AddTeamFormProps) {
 
       // Navigate back to teams list
       router.push("/teams-center");
-
     } catch (error) {
       console.error("Error creating team:", error);
       showToast({
@@ -202,7 +214,7 @@ function AddTeamViewPage({}: AddTeamFormProps) {
 
   // Filter organization data by category
   const getOrganizationByCategory = (category: string) => {
-    return OrganizationData.filter(org => org.orgCategory === category);
+    return OrganizationData.filter((org) => org.groupCode === category);
   };
 
   return (
@@ -228,16 +240,14 @@ function AddTeamViewPage({}: AddTeamFormProps) {
             py={6}
           >
             <HStack spacing={4}>
-              <Box
-                p={3}
-                bg="secondary.500"
-                rounded="xl"
-                color="white"
-              >
+              <Box p={3} bg="secondary.500" rounded="xl" color="white">
                 <Icon as={FaUsersRays} boxSize={6} />
               </Box>
               <VStack align="start" spacing={0}>
-                <Heading size="lg" color={colorMode === "light" ? "gray.800" : "white"}>
+                <Heading
+                  size="lg"
+                  color={colorMode === "light" ? "gray.800" : "white"}
+                >
                   Create New Team
                 </Heading>
                 <Text color={colorMode === "light" ? "gray.600" : "gray.400"}>
@@ -252,12 +262,23 @@ function AddTeamViewPage({}: AddTeamFormProps) {
               <VStack spacing={8} align="stretch">
                 {/* Basic Information */}
                 <Box>
-                  <Heading size="md" mb={4} color={colorMode === "light" ? "gray.800" : "white"}>
+                  <Heading
+                    size="md"
+                    mb={4}
+                    color={colorMode === "light" ? "gray.800" : "white"}
+                  >
                     Basic Information
                   </Heading>
-                  <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={6}>
+                  <Grid
+                    templateColumns={{ base: "1fr", md: "1fr 1fr" }}
+                    gap={6}
+                  >
                     <GridItem>
-                      <FormControl isInvalid={!!(formik.errors.teamName && formik.touched.teamName)}>
+                      <FormControl
+                        isInvalid={
+                          !!(formik.errors.teamName && formik.touched.teamName)
+                        }
+                      >
                         <FormLabel fontWeight="semibold">Team Name *</FormLabel>
                         <Input
                           name="teamName"
@@ -268,12 +289,18 @@ function AddTeamViewPage({}: AddTeamFormProps) {
                           size="lg"
                           rounded="xl"
                         />
-                        <FormErrorMessage>{formik.errors.teamName}</FormErrorMessage>
+                        <FormErrorMessage>
+                          {formik.errors.teamName}
+                        </FormErrorMessage>
                       </FormControl>
                     </GridItem>
 
                     <GridItem>
-                      <FormControl isInvalid={!!(formik.errors.teamCode && formik.touched.teamCode)}>
+                      <FormControl
+                        isInvalid={
+                          !!(formik.errors.teamCode && formik.touched.teamCode)
+                        }
+                      >
                         <FormLabel fontWeight="semibold">Team Code *</FormLabel>
                         <Input
                           name="teamCode"
@@ -284,16 +311,23 @@ function AddTeamViewPage({}: AddTeamFormProps) {
                           size="lg"
                           rounded="xl"
                         />
-                        <FormErrorMessage>{formik.errors.teamCode}</FormErrorMessage>
+                        <FormErrorMessage>
+                          {formik.errors.teamCode}
+                        </FormErrorMessage>
                       </FormControl>
                     </GridItem>
                   </Grid>
 
-                  <FormControl mt={6} isInvalid={!!(formik.errors.teamDesc && formik.touched.teamDesc)}>
+                  <FormControl
+                    mt={6}
+                    isInvalid={
+                      !!(formik.errors.teamDesc && formik.touched.teamDesc)
+                    }
+                  >
                     <FormLabel fontWeight="semibold">Description</FormLabel>
                     <Textarea
                       name="teamDesc"
-                      value={formik.values.teamDesc}
+                      value={formik.values.teamDesc || ""}
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
                       placeholder="Enter team description"
@@ -301,17 +335,29 @@ function AddTeamViewPage({}: AddTeamFormProps) {
                       rounded="xl"
                       resize="none"
                     />
-                    <FormErrorMessage>{formik.errors.teamDesc}</FormErrorMessage>
+                    <FormErrorMessage>
+                      {formik.errors.teamDesc}
+                    </FormErrorMessage>
                   </FormControl>
                 </Box>
 
                 {/* Organization Structure */}
                 <Box>
-                  <Heading size="md" mb={4} color={colorMode === "light" ? "gray.800" : "white"}>
+                  <Heading
+                    size="md"
+                    mb={4}
+                    color={colorMode === "light" ? "gray.800" : "white"}
+                  >
                     Organization Group
                   </Heading>
-                  <FormControl isInvalid={!!(formik.errors.orgGroupId && formik.touched.orgGroupId)}>
-                    <FormLabel fontWeight="semibold">Select Organization Group *</FormLabel>
+                  <FormControl
+                    isInvalid={
+                      !!(formik.errors.orgGroupId && formik.touched.orgGroupId)
+                    }
+                  >
+                    <FormLabel fontWeight="semibold">
+                      Select Organization Group *
+                    </FormLabel>
                     <Select
                       name="orgGroupId"
                       value={formik.values.orgGroupId}
@@ -323,11 +369,13 @@ function AddTeamViewPage({}: AddTeamFormProps) {
                     >
                       {OrganizationData.map((org) => (
                         <option key={org.id} value={org.id}>
-                          {org.orgName} ({org.orgCategory})
+                          {org.label} ({org.groupCode})
                         </option>
                       ))}
                     </Select>
-                    <FormErrorMessage>{formik.errors.orgGroupId}</FormErrorMessage>
+                    <FormErrorMessage>
+                      {formik.errors.orgGroupId}
+                    </FormErrorMessage>
                   </FormControl>
                 </Box>
 

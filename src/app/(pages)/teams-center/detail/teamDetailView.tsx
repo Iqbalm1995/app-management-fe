@@ -7,7 +7,10 @@ import {
 import LayoutAdmin from "@/app/components/layoutAdmin";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
-import useTeams, { TeamsResponse, TeamsUserMemberResponse } from "@/app/services/useTeams";
+import useTeams, {
+  TeamsResponse,
+  TeamsUserMemberResponse,
+} from "@/app/services/useTeams";
 import { UsersResponse } from "@/app/services/useUsers";
 import {
   RES_CODE_OK,
@@ -69,7 +72,8 @@ function TeamDetailView({}: TeamDetailViewProps) {
 
     if (DataAuth == null && storedData) {
       const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
-      const UserData: AuthDataResponse = StorageAuth.dataLogin as AuthDataResponse;
+      const UserData: AuthDataResponse =
+        StorageAuth.dataLogin as AuthDataResponse;
       setDataAuth(UserData);
     }
 
@@ -97,7 +101,6 @@ function TeamDetailView({}: TeamDetailViewProps) {
 
       const data = response.data as TeamsResponse;
       setTeamData(data);
-
     } catch (error) {
       console.error("Error fetching team data:", error);
       showToast({
@@ -120,9 +123,7 @@ function TeamDetailView({}: TeamDetailViewProps) {
         page: 0,
         fieldOrder: ["userFirstName"],
         orderDir: "asc",
-        filterWhere: [
-          { field: "teamId", operator: "=", value: teamId }
-        ],
+        filterWhere: [{ field: "teamId", operator: "=", value: teamId }],
       };
 
       const response = await ListMembers(PayloadMembers as any, tokenData);
@@ -216,7 +217,10 @@ function TeamDetailView({}: TeamDetailViewProps) {
                   fontWeight="bold"
                 />
                 <VStack align="start" spacing={1}>
-                  <Heading size="xl" color={colorMode === "light" ? "gray.800" : "white"}>
+                  <Heading
+                    size="xl"
+                    color={colorMode === "light" ? "gray.800" : "white"}
+                  >
                     {TeamData.teamName}
                   </Heading>
                   <HStack spacing={3}>
@@ -224,7 +228,9 @@ function TeamDetailView({}: TeamDetailViewProps) {
                       #{TeamData.teamCode}
                     </Text>
                     <Badge
-                      colorScheme={TeamData.isActive === "ACTIVE" ? "green" : "red"}
+                      colorScheme={
+                        TeamData.isActive === "ACTIVE" ? "green" : "red"
+                      }
                       px={3}
                       py={1}
                       rounded="full"
@@ -256,7 +262,11 @@ function TeamDetailView({}: TeamDetailViewProps) {
                 <VStack spacing={6} align="stretch" h="full">
                   {/* Description */}
                   <Box>
-                    <Heading size="md" mb={3} color={colorMode === "light" ? "gray.800" : "white"}>
+                    <Heading
+                      size="md"
+                      mb={3}
+                      color={colorMode === "light" ? "gray.800" : "white"}
+                    >
                       Description
                     </Heading>
                     <Text
@@ -272,7 +282,11 @@ function TeamDetailView({}: TeamDetailViewProps) {
 
                   {/* Organization Structure */}
                   <Box flex="1">
-                    <Heading size="md" mb={4} color={colorMode === "light" ? "gray.800" : "white"}>
+                    <Heading
+                      size="md"
+                      mb={4}
+                      color={colorMode === "light" ? "gray.800" : "white"}
+                    >
                       Organization Structure
                     </Heading>
                     <VStack spacing={4} align="stretch">
@@ -280,10 +294,18 @@ function TeamDetailView({}: TeamDetailViewProps) {
                       <HStack spacing={4}>
                         <Box w="4px" h="60px" bg="blue.400" rounded="full" />
                         <VStack align="start" spacing={1} flex="1">
-                          <Text fontSize="sm" color="gray.500" fontWeight="medium">
+                          <Text
+                            fontSize="sm"
+                            color="gray.500"
+                            fontWeight="medium"
+                          >
                             DIRECTORATE
                           </Text>
-                          <Text fontSize="lg" fontWeight="bold" color="blue.600">
+                          <Text
+                            fontSize="lg"
+                            fontWeight="bold"
+                            color="blue.600"
+                          >
                             {TeamData.directorate?.orgName || "N/A"}
                           </Text>
                           <Text fontSize="sm" color="gray.500">
@@ -296,10 +318,18 @@ function TeamDetailView({}: TeamDetailViewProps) {
                       <HStack spacing={4}>
                         <Box w="4px" h="60px" bg="purple.400" rounded="full" />
                         <VStack align="start" spacing={1} flex="1">
-                          <Text fontSize="sm" color="gray.500" fontWeight="medium">
+                          <Text
+                            fontSize="sm"
+                            color="gray.500"
+                            fontWeight="medium"
+                          >
                             DIVISION
                           </Text>
-                          <Text fontSize="lg" fontWeight="bold" color="purple.600">
+                          <Text
+                            fontSize="lg"
+                            fontWeight="bold"
+                            color="purple.600"
+                          >
                             {TeamData.division?.orgName || "N/A"}
                           </Text>
                           <Text fontSize="sm" color="gray.500">
@@ -310,12 +340,25 @@ function TeamDetailView({}: TeamDetailViewProps) {
 
                       {/* Group */}
                       <HStack spacing={4}>
-                        <Box w="4px" h="60px" bg="secondary.400" rounded="full" />
+                        <Box
+                          w="4px"
+                          h="60px"
+                          bg="secondary.400"
+                          rounded="full"
+                        />
                         <VStack align="start" spacing={1} flex="1">
-                          <Text fontSize="sm" color="gray.500" fontWeight="medium">
+                          <Text
+                            fontSize="sm"
+                            color="gray.500"
+                            fontWeight="medium"
+                          >
                             GROUP
                           </Text>
-                          <Text fontSize="lg" fontWeight="bold" color="secondary.600">
+                          <Text
+                            fontSize="lg"
+                            fontWeight="bold"
+                            color="secondary.600"
+                          >
                             {TeamData.group?.orgName || "N/A"}
                           </Text>
                           <Text fontSize="sm" color="gray.500">
@@ -349,51 +392,76 @@ function TeamDetailView({}: TeamDetailViewProps) {
                   <Card
                     bg={colorMode === "light" ? "gray.50" : "gray.700"}
                     border="1px"
-                    borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                    borderColor={
+                      colorMode === "light" ? "gray.200" : "gray.600"
+                    }
                     rounded="xl"
                   >
                     <CardBody p={6}>
                       <VStack spacing={4} align="stretch">
                         <HStack justify="space-between">
-                          <Heading size="sm" color={colorMode === "light" ? "gray.800" : "white"}>
+                          <Heading
+                            size="sm"
+                            color={colorMode === "light" ? "gray.800" : "white"}
+                          >
                             Team Members
                           </Heading>
                           <Badge colorScheme="secondary" rounded="full" px={2}>
                             {MembersData.length}
                           </Badge>
                         </HStack>
-                        
+
                         {MembersData.length === 0 ? (
-                          <Text fontSize="sm" color="gray.500" textAlign="center" py={4}>
+                          <Text
+                            fontSize="sm"
+                            color="gray.500"
+                            textAlign="center"
+                            py={4}
+                          >
                             No members assigned
                           </Text>
                         ) : (
-                          <VStack spacing={3} align="stretch" maxH="300px" overflowY="auto">
+                          <VStack
+                            spacing={3}
+                            align="stretch"
+                            maxH="300px"
+                            overflowY="auto"
+                          >
                             {MembersData.map((member) => (
-                              <HStack key={member.id} spacing={3} p={3} rounded="lg" 
-                                bg={colorMode === "light" ? "white" : "gray.600"}
+                              <HStack
+                                key={member.id}
+                                spacing={3}
+                                p={3}
+                                rounded="lg"
+                                bg={
+                                  colorMode === "light" ? "white" : "gray.600"
+                                }
                                 border="1px"
-                                borderColor={colorMode === "light" ? "gray.200" : "gray.500"}
+                                borderColor={
+                                  colorMode === "light"
+                                    ? "gray.200"
+                                    : "gray.500"
+                                }
                               >
                                 <Avatar
                                   size="sm"
-                                  name={`${member.userFirstName} ${member.userLastName}`}
+                                  name={`${member.nama} ${member.userId}`}
                                   src={member.profilePict || undefined}
                                 />
                                 <VStack align="start" spacing={0} flex="1">
                                   <Text fontSize="sm" fontWeight="medium">
-                                    {member.userFirstName} {member.userLastName}
+                                    {member.nama}
                                   </Text>
                                   <Text fontSize="xs" color="gray.500">
-                                    {member.userEmail || member.username}
+                                    {member.email || member.userId}
                                   </Text>
                                 </VStack>
                                 <Badge
-                                  colorScheme={member.isActive === "ACTIVE" ? "green" : "red"}
+                                  colorScheme={"secondary"}
                                   size="sm"
                                   rounded="full"
                                 >
-                                  {member.isActive}
+                                  {member.userStatus}
                                 </Badge>
                               </HStack>
                             ))}
@@ -407,34 +475,55 @@ function TeamDetailView({}: TeamDetailViewProps) {
                   <Card
                     bg={colorMode === "light" ? "gray.50" : "gray.700"}
                     border="1px"
-                    borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                    borderColor={
+                      colorMode === "light" ? "gray.200" : "gray.600"
+                    }
                     rounded="xl"
                   >
                     <CardBody p={6}>
                       <VStack spacing={4} align="stretch">
-                        <Heading size="sm" color={colorMode === "light" ? "gray.800" : "white"}>
+                        <Heading
+                          size="sm"
+                          color={colorMode === "light" ? "gray.800" : "white"}
+                        >
                           Team Information
                         </Heading>
-                        
+
                         <VStack spacing={3} align="stretch">
                           <HStack justify="space-between">
-                            <Text fontSize="sm" color="gray.500">Team ID</Text>
-                            <Text fontSize="sm" fontWeight="medium">{TeamData.id}</Text>
+                            <Text fontSize="sm" color="gray.500">
+                              Team ID
+                            </Text>
+                            <Text fontSize="sm" fontWeight="medium">
+                              {TeamData.id}
+                            </Text>
                           </HStack>
-                          
+
                           <HStack justify="space-between">
-                            <Text fontSize="sm" color="gray.500">Team Code</Text>
-                            <Text fontSize="sm" fontWeight="medium">{TeamData.teamCode}</Text>
+                            <Text fontSize="sm" color="gray.500">
+                              Team Code
+                            </Text>
+                            <Text fontSize="sm" fontWeight="medium">
+                              {TeamData.teamCode}
+                            </Text>
                           </HStack>
-                          
+
                           <HStack justify="space-between">
-                            <Text fontSize="sm" color="gray.500">Organization Group ID</Text>
-                            <Text fontSize="sm" fontWeight="medium">{TeamData.orgGroupId}</Text>
+                            <Text fontSize="sm" color="gray.500">
+                              Organization Group ID
+                            </Text>
+                            <Text fontSize="sm" fontWeight="medium">
+                              {TeamData.orgGroupId}
+                            </Text>
                           </HStack>
-                          
+
                           <HStack justify="space-between">
-                            <Text fontSize="sm" color="gray.500">Organization Group Code</Text>
-                            <Text fontSize="sm" fontWeight="medium">{TeamData.orgGroupCode}</Text>
+                            <Text fontSize="sm" color="gray.500">
+                              Organization Group Code
+                            </Text>
+                            <Text fontSize="sm" fontWeight="medium">
+                              {TeamData.orgGroupCode}
+                            </Text>
                           </HStack>
                         </VStack>
                       </VStack>
@@ -445,53 +534,70 @@ function TeamDetailView({}: TeamDetailViewProps) {
                   <Card
                     bg={colorMode === "light" ? "gray.50" : "gray.700"}
                     border="1px"
-                    borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                    borderColor={
+                      colorMode === "light" ? "gray.200" : "gray.600"
+                    }
                     rounded="xl"
                   >
                     <CardBody p={6}>
                       <VStack spacing={4} align="stretch">
-                        <Heading size="sm" color={colorMode === "light" ? "gray.800" : "white"}>
+                        <Heading
+                          size="sm"
+                          color={colorMode === "light" ? "gray.800" : "white"}
+                        >
                           Timestamps
                         </Heading>
-                        
+
                         <VStack spacing={3} align="stretch">
                           <VStack align="start" spacing={1}>
                             <HStack spacing={2}>
                               <Icon as={FiCalendar} color="gray.500" />
-                              <Text fontSize="sm" color="gray.500">Created At</Text>
+                              <Text fontSize="sm" color="gray.500">
+                                Created At
+                              </Text>
                             </HStack>
                             <Text fontSize="sm" fontWeight="medium">
                               {new Date(TeamData.createdAt).toLocaleString()}
                             </Text>
                           </VStack>
-                          
+
                           <VStack align="start" spacing={1}>
                             <HStack spacing={2}>
                               <Icon as={FiUser} color="gray.500" />
-                              <Text fontSize="sm" color="gray.500">Created By</Text>
+                              <Text fontSize="sm" color="gray.500">
+                                Created By
+                              </Text>
                             </HStack>
-                            <Text fontSize="sm" fontWeight="medium">{TeamData.createdBy}</Text>
+                            <Text fontSize="sm" fontWeight="medium">
+                              {TeamData.createdBy}
+                            </Text>
                           </VStack>
-                          
+
                           {TeamData.updatedAt && (
                             <VStack align="start" spacing={1}>
                               <HStack spacing={2}>
                                 <Icon as={FiCalendar} color="gray.500" />
-                                <Text fontSize="sm" color="gray.500">Updated At</Text>
+                                <Text fontSize="sm" color="gray.500">
+                                  Updated At
+                                </Text>
                               </HStack>
                               <Text fontSize="sm" fontWeight="medium">
                                 {new Date(TeamData.updatedAt).toLocaleString()}
                               </Text>
                             </VStack>
                           )}
-                          
+
                           {TeamData.updatedBy && (
                             <VStack align="start" spacing={1}>
                               <HStack spacing={2}>
                                 <Icon as={FiUser} color="gray.500" />
-                                <Text fontSize="sm" color="gray.500">Updated By</Text>
+                                <Text fontSize="sm" color="gray.500">
+                                  Updated By
+                                </Text>
                               </HStack>
-                              <Text fontSize="sm" fontWeight="medium">{TeamData.updatedBy}</Text>
+                              <Text fontSize="sm" fontWeight="medium">
+                                {TeamData.updatedBy}
+                              </Text>
                             </VStack>
                           )}
                         </VStack>
