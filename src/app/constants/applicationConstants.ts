@@ -361,4 +361,22 @@ export const APP_INTEGRATED_OTHER_APPS = [
   "DATA WAREHOUSE",
 ];
 // Workflow Constants
-export const WorkflowProjectDevelopmentId = "656435e1-a98e-4353-856c-5c5ffdf6d9bb";
+export const WorkflowProjectDevelopmentId =
+  "656435e1-a98e-4353-856c-5c5ffdf6d9bb";
+export const WorkflowProjectProcurementId =
+  "d77d335f-f4fd-4c60-9105-0f62ceec9a15";
+
+export const WorkStageProcurementId = "2e7b59e6-b64f-4a95-9c27-36d5e91d6xxx";
+
+// WORK PROGRAM
+export const WORK_PROGRAM_INTERNAL = "INTERNAL";
+export const WORK_PROGRAM_EXTERNAL = "EXTERNAL";
+
+// PROJECT TYPE
+export const PROJECT_TYPE_INTERNAL_DEVELOPMENT = "INTERNAL DEVELOPMENT";
+export const PROJECT_TYPE_PROCUREMENT = "PROCUREMENT";
+export const PROJECT_TYPE_DEPLOYMENT = "DEPLOYMENT";
+
+// KEY OPTIONS
+export const KEY_OPTION_PROJECT_CHARACTERISTICS = "PROJECT_CHARACTERISTICS";
+export const KEY_OPTION_PROJECT_ACQUISITIONS = "PROJECT_ACQUISITION";

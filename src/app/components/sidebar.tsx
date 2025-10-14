@@ -58,6 +58,7 @@ import {
   AlertTitle,
   AlertDescription,
   Spinner,
+  Badge,
 } from "@chakra-ui/react";
 import {
   FiHome,
@@ -75,6 +76,9 @@ import {
   FiPlayCircle,
   FiCode,
   FiDatabase,
+  FiKey,
+  FiDollarSign,
+  FiZap,
 } from "react-icons/fi";
 import { IconType } from "react-icons";
 import {
@@ -86,6 +90,8 @@ import {
 
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+
+const MotionBox = motion(Box);
 import {
   useToastHelper,
   useToastHelperShort,
@@ -104,6 +110,7 @@ import { LogoApplications, LogoApplicationsLite } from "./logoApps";
 import { buildUrlPort, truncateToTwoWords } from "../helper/MasterHelper";
 import {
   FaChess,
+  FaCode,
   FaDiagramProject,
   FaFire,
   FaFlipboard,
@@ -115,7 +122,7 @@ import {
 } from "react-icons/fa6";
 import { FooterAdminPanel } from "./layoutLanding";
 import SignatureLineColor from "./signatureStyle";
-import { BsKanban } from "react-icons/bs";
+import { BsCloudUpload, BsKanban, BsRocketTakeoff } from "react-icons/bs";
 import { IoCalendarNumberOutline } from "react-icons/io5";
 import {
   MdChangeHistory,
@@ -126,20 +133,20 @@ import {
 } from "react-icons/md";
 import { usePathname, useRouter } from "next/navigation";
 import { AuthDataResponse } from "../services/useAuthentications";
+import useAuthentications from "../services/useAuthentications";
 import { BiSolidReport } from "react-icons/bi";
 import { CiMemoPad, CiServer } from "react-icons/ci";
 import { RxActivityLog } from "react-icons/rx";
-import { TbLayoutDashboardFilled } from "react-icons/tb";
+import { TbContract, TbLayoutDashboardFilled } from "react-icons/tb";
 import { FaDraftingCompass } from "react-icons/fa";
 import { PiFlowArrow } from "react-icons/pi";
+import { HiOutlineDesktopComputer } from "react-icons/hi";
 // import { useAuth } from "@/context/AuthContext";
 
 // Page Split
 // const ProfileModal = React.lazy(
 //   () => import("../_pieces/profile/Profile-modal")
 // );
-
-const MotionBox = motion(Box);
 
 interface LinkItemProps {
   name: string;
@@ -148,6 +155,8 @@ interface LinkItemProps {
   role: string[];
   menuID: string;
   children: LinkItemProps[];
+  isLocked?: boolean;
+  isPro?: boolean;
 }
 
 const LinkItems: LinkItemProps[] = [
@@ -158,6 +167,25 @@ const LinkItems: LinkItemProps[] = [
     role: ["admin"],
     menuID: "1",
     children: [],
+  },
+  {
+    name: "Workspace",
+    icon: BsRocketTakeoff,
+    link: "/workspace",
+    role: ["admin"],
+    menuID: "1",
+    isPro: true,
+    children: [
+      {
+        name: "My Project",
+        icon: FaCode,
+        link: "/project-development",
+        role: ["admin"],
+        menuID: "1",
+        isPro: true,
+        children: [],
+      },
+    ],
   },
   {
     name: "Requirements",
@@ -192,22 +220,6 @@ const LinkItems: LinkItemProps[] = [
       // },
     ],
   },
-  // {
-  //   name: "Memo",
-  //   icon: CiMemoPad,
-  //   link: "/memos",
-  //   role: ["admin"],
-  //   menuID: "1",
-  //   children: [],
-  // },
-  // {
-  //   name: "Apps",
-  //   icon: FiPlayCircle,
-  //   link: "/apps",
-  //   role: ["admin"],
-  //   menuID: "1",
-  //   children: [],
-  // },
   {
     name: "Projects",
     icon: FaDiagramProject,
@@ -216,29 +228,29 @@ const LinkItems: LinkItemProps[] = [
     menuID: "1",
     children: [
       {
-        name: "Projects Manager",
-        icon: FaDiagramProject,
+        name: "Internal Development",
+        icon: FaCode,
         link: "/projects-manager",
         role: ["admin"],
         menuID: "1",
         children: [],
       },
       {
-        name: "My Project",
-        icon: FiCode,
-        link: "/project-development",
+        name: "Procurement",
+        icon: TbContract,
+        link: "/projects-procurements",
         role: ["admin"],
         menuID: "1",
         children: [],
       },
-      // {
-      //   name: "Project Tasks",
-      //   icon: BsKanban,
-      //   link: "/project-tasks",
-      //   role: ["admin"],
-      //   menuID: "1",
-      //   children: [],
-      // },
+      {
+        name: "Deployment",
+        icon: BsCloudUpload,
+        link: "/projects-deployments",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
     ],
   },
   // {
@@ -274,7 +286,14 @@ const LinkItems: LinkItemProps[] = [
     menuID: "1",
     children: [],
   },
-  // {
+  {
+    name: "Team Center",
+    icon: FaUsersRays,
+    link: "/teams-center",
+    role: ["admin"],
+    menuID: "1",
+    children: [],
+  },  // {
   //   name: "Server Manager",
   //   icon: CiServer,
   //   link: "/server-manager",
@@ -288,6 +307,7 @@ const LinkItems: LinkItemProps[] = [
     link: "/file-archives",
     role: ["admin"],
     menuID: "1",
+    isPro: true,
     children: [],
   },
   {
@@ -305,8 +325,49 @@ const LinkItems: LinkItemProps[] = [
         menuID: "1",
         children: [],
       },
+      {
+        name: "Master Constant",
+        icon: FiKey,
+        link: "/master-data/constants-data",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Master Application",
+        icon: HiOutlineDesktopComputer,
+        link: "/master-data/Application",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
     ],
   },
+  {
+    name: "Audit Trail",
+    icon: RxActivityLog,
+    link: "/audit-trail",
+    role: ["admin"],
+    menuID: "1",
+    children: [],
+  },
+  // {
+  //   name: "Profile",
+  //   icon: FiUser,
+  //   link: "/profile",
+  //   role: ["admin"],
+  //   menuID: "1",
+  //   children: [],
+  // },
+  // {
+  //   name: "Pricing",
+  //   icon: FiDollarSign,
+  //   link: "/pricing",
+  //   role: ["admin"],
+  //   menuID: "1",
+  //   children: [],
+  //   isLocked: true,
+  // },
   // {
   //   name: "Avtivities",
   //   icon: RxActivityLog,
@@ -314,6 +375,7 @@ const LinkItems: LinkItemProps[] = [
   //   role: ["admin"],
   //   menuID: "1",
   //   children: [],
+  //   isLocked: true,
   // },
   // {
   //   name: "User Config",
@@ -413,6 +475,8 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
   const { isAuthenticated, authData, goLogout } = useAuth();
   const { colorMode, toggleColorMode } = useColorMode();
   const pathname = usePathname();
+  const { Logout } = useAuthentications();
+  const showToast = useToastHelper();
 
   // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -452,14 +516,28 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
   };
 
   const logoutAuthAction = async () => {
-    // const response = await logout(LoginCorpID, LoginUserID, Logintoken);
-    // await sendAudit({
-    //   userId: userID,
-    //   actionDetails: `Logout dari Backoffice Portal.`,
-    // });
-    setTimeout(() => {
-      goLogout();
-    }, DELAY_ZERO); // 2-second delay
+    try {
+      if (DataAuth && tokenData) {
+        const response = await Logout(DataAuth.userId, tokenData);
+
+        if (response?.statusCode === 200) {
+          showToast({
+            description: "Logout successful",
+            statusToast: "success",
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+      showToast({
+        description: "Logout failed, but you will be signed out",
+        statusToast: "warning",
+      });
+    } finally {
+      setTimeout(() => {
+        goLogout();
+      }, DELAY_ZERO);
+    }
   };
 
   const [scrollY, setScrollY] = useState(0);
@@ -515,7 +593,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
             justifyContent={{ base: "space-between", md: "flex-end" }}
             backgroundPosition="left"
             backgroundRepeat="no-repeat"
-            backgroundSize="gray.900"
+            // backgroundSize="gray.900"
             color={"white"}
             boxShadow={scrollY > 0 ? "xl" : "none"}
             roundedTop={scrollY > 0 ? radiusStyle : 0}
@@ -602,49 +680,66 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                     zIndex={2}
                     rounded={radiusStyle}
                   >
-                    <MenuItem
-                      bg={useColorModeValue("white", "gray.900")}
-                      _hover={{
-                        bg: useColorModeValue("gray.100", "gray.700"),
-                        color: useColorModeValue("gray.900", "white"),
-                      }}
-                      rounded={radiusStyle}
-                    >
-                      <Tooltip
-                        borderRadius={"xl"}
-                        hasArrow
-                        placement="left"
-                        label={DataAuth ? DataAuth.nama : ""}
+                    <Link href={"/profile"}>
+                      <MenuItem
+                        bg={useColorModeValue("white", "gray.900")}
+                        _hover={{
+                          bg: useColorModeValue("gray.100", "gray.700"),
+                          color: useColorModeValue("gray.900", "white"),
+                        }}
+                        rounded={radiusStyle}
                       >
-                        <VStack
-                          w={"full"}
-                          h={"full"}
-                          spacing={1}
-                          align={"start"}
-                          p={1}
+                        <Tooltip
+                          borderRadius={"xl"}
+                          hasArrow
+                          placement="left"
+                          label={"Go to Profile"}
                         >
-                          <Text
-                            color={useColorModeValue(
-                              "secondary.900",
-                              "secondary.200"
-                            )}
-                            fontSize={"sm"}
-                            fontWeight={700}
+                          <VStack
+                            w={"full"}
+                            h={"full"}
+                            spacing={1}
+                            align={"start"}
+                            p={1}
                           >
-                            {truncateToTwoWords(DataAuth ? DataAuth.nama : "")}
-                          </Text>
-                          <Text
-                            fontSize="xs"
-                            color={useColorModeValue("gray.600", "gray.100")}
-                          >
-                            {(DataAuth && DataAuth.teamRole?.specName) ||
-                              (DataAuth && DataAuth.jabatan)}
-                          </Text>
-                        </VStack>
-                      </Tooltip>
-                    </MenuItem>
+                            <Text
+                              color={useColorModeValue(
+                                "secondary.900",
+                                "secondary.200"
+                              )}
+                              fontSize={"sm"}
+                              fontWeight={700}
+                            >
+                              {truncateToTwoWords(
+                                DataAuth ? DataAuth.nama : ""
+                              )}
+                            </Text>
+                            <Text
+                              fontSize="xs"
+                              color={useColorModeValue("gray.600", "gray.100")}
+                            >
+                              {(DataAuth && DataAuth.teamRole?.specName) ||
+                                (DataAuth && DataAuth.jabatan)}
+                            </Text>
+                          </VStack>
+                        </Tooltip>
+                      </MenuItem>
+                    </Link>
                     <MenuDivider />
                     {/* <Link href={"/"}> */}
+                    {/* <Link href={"/profile"}>
+                      <MenuItem
+                        color={useColorModeValue("gray.800", "white")}
+                        bg={useColorModeValue("white", "gray.900")}
+                        _hover={{
+                          bg: useColorModeValue("gray.100", "gray.700"),
+                          color: useColorModeValue("gray.900", "white"),
+                        }}
+                        icon={<FiUser />}
+                      >
+                        Profile
+                      </MenuItem>
+                    </Link> */}
                     <MenuItem
                       icon={<FaPowerOff />}
                       color={useColorModeValue("gray.800", "white")}
@@ -658,7 +753,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                       }}
                       rounded={radiusStyle}
                     >
-                      Keluar
+                      Logout
                     </MenuItem>
                   </MenuList>
                 </Menu>
@@ -786,6 +881,8 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
   const hasChildren = data.children && data.children.length > 0;
   const [isHovered, setIsHovered] = useState(false);
   const pathname = usePathname();
+  const { Logout } = useAuthentications();
+  const showToast = useToastHelper();
   const router = useRouter();
   const [isNavigating, setIsNavigating] = useState(false);
 
@@ -902,7 +999,9 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
             // onClick={() => {
             //   GoNavigationLink();
             // }}
-            onClick={handleNavigation}
+            onClick={hasChildren ? handleToggle : undefined}
+            as={hasChildren ? "div" : Link}
+            {...(!hasChildren && { href: data.link })}
           >
             <Flex
               w={"full"}
@@ -916,7 +1015,7 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
             >
               {data.icon && (
                 <Icon
-                  mr={mode ? "0" : "6"}
+                  mr={mode ? "0" : data.isPro ? "2" : "4"}
                   fontSize={mode ? "25" : "20"}
                   _groupHover={{
                     color: "white",
@@ -936,7 +1035,9 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
                 h={"full"}
                 alignItems={"center"}
                 display={mode ? "none" : "flex"}
+                as={HStack}
               >
+                {data.isPro && <Badge colorScheme="purple">Pro</Badge>}
                 <Text>{data.name}</Text>
                 {hasChildren && (
                   <Icon
@@ -1080,6 +1181,8 @@ function AdditionalProfileBar({
   LiteModeTrigger: boolean;
 }) {
   const { authData, goLogout } = useAuth();
+  const { colorMode } = useColorMode();
+  const [isHovered, setIsHovered] = useState(false);
 
   // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -1106,88 +1209,189 @@ function AdditionalProfileBar({
 
   return (
     <>
-      <Box
-        bgGradient={
-          LiteModeTrigger
-            ? "linear(to-r, transparent, transparent)"
-            : useColorModeValue(
-                "linear(to-br, gray.100, gray.200)", // for light mode
-                "linear(to-br, gray.700, gray.700)" // for dark mode
-              )
-        }
-        color={useColorModeValue("gray.900", "white")}
-        m={2}
-        mr={LiteModeTrigger ? 2 : 3}
-        py={LiteModeTrigger ? 0 : 2}
-        rounded={radiusStyle}
-        transition="0.5s ease-in-out"
-        // boxShadow={LiteModeTrigger ? "none" : "md"}
-      >
-        <Flex
-          px={LiteModeTrigger ? 0 : 3}
-          pt={3}
-          pb={2}
-          w={"full"}
-          justifyContent={LiteModeTrigger ? "center" : "start"}
+      <Flex w={"full"} as={Stack} spacing={0}>
+        <Box
+          position="relative"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          cursor="pointer"
         >
-          <Flex
-            w={"full"}
-            justifyContent={LiteModeTrigger ? "center" : "start"}
+          <Box
+            bg={colorMode == "light" ? "gray.100" : "blackAlpha.500"}
+            color={colorMode == "light" ? "gray.900" : "white"}
+            mx={2}
+            mr={LiteModeTrigger ? 2 : 3}
+            py={LiteModeTrigger ? 0 : 2}
+            rounded={radiusStyle}
+            transition="0.5s ease-in-out"
           >
-            <Tooltip
-              borderRadius={"xl"}
-              hasArrow
-              label={DataAuth && DataAuth.team?.teamName}
-            >
-              <Avatar
-                size={"md"}
-                color={"white"}
-                name={
-                  (DataAuth &&
-                    DataAuth.team &&
-                    truncateToTwoWords(DataAuth.team.teamName)) ||
-                  ""
-                }
-                mr={LiteModeTrigger ? 0 : 2}
-                cursor={"pointer"}
-                src={
-                  (DataAuth &&
-                    DataAuth.team &&
-                    DataAuth.team.teamPict &&
-                    buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC) +
-                      DataAuth.team.teamPict) ||
-                  ""
-                }
-                boxShadow={"md"}
-              />
-            </Tooltip>
             <Flex
+              px={LiteModeTrigger ? 0 : 3}
+              pt={3}
+              pb={2}
               w={"full"}
-              h={"full"}
-              alignItems={"center"}
-              alignContent={"start"}
-              display={LiteModeTrigger ? "none" : "flex"}
+              justifyContent={LiteModeTrigger ? "center" : "start"}
             >
-              <VStack w={"full"} h={"full"} spacing={0} align={"start"} p={1}>
-                <Text
-                  color={useColorModeValue("gray.900", "white")}
-                  fontSize={"smaller"}
-                  fontWeight={700}
+              <Flex
+                w={"full"}
+                justifyContent={LiteModeTrigger ? "center" : "start"}
+              >
+                <Tooltip
+                  borderRadius={"xl"}
+                  hasArrow
+                  label={DataAuth && DataAuth.team?.teamName}
                 >
-                  {DataAuth && truncateToTwoWords(DataAuth.nama)}
-                </Text>
-                <Text
-                  fontSize="x-small"
-                  color={useColorModeValue("primary.500", "primary.100")}
+                  <Avatar
+                    size={"md"}
+                    color={"white"}
+                    name={
+                      (DataAuth &&
+                        DataAuth.team &&
+                        truncateToTwoWords(DataAuth.team.teamName)) ||
+                      ""
+                    }
+                    mr={LiteModeTrigger ? 0 : 2}
+                    cursor={"pointer"}
+                    src={
+                      (DataAuth &&
+                        DataAuth.team &&
+                        DataAuth.team.teamPict &&
+                        buildUrlPort(
+                          ENDPOINT_API_BASEURL,
+                          ENDPOINT_PORT_BASIC
+                        ) + DataAuth.team.teamPict) ||
+                      ""
+                    }
+                    boxShadow={"md"}
+                  />
+                </Tooltip>
+                <Flex
+                  w={"full"}
+                  h={"full"}
+                  alignItems={"center"}
+                  alignContent={"start"}
+                  display={LiteModeTrigger ? "none" : "flex"}
                 >
-                  {(DataAuth && DataAuth.teamRole?.specName) ||
-                    (DataAuth && DataAuth.jabatan)}
-                </Text>
-              </VStack>
+                  <VStack
+                    w={"full"}
+                    h={"full"}
+                    spacing={0}
+                    align={"start"}
+                    p={1}
+                  >
+                    <Text
+                      color={colorMode == "light" ? "gray.900" : "white"}
+                      // color={"white"}
+                      fontSize={"smaller"}
+                      fontWeight={700}
+                    >
+                      {DataAuth && truncateToTwoWords(DataAuth.nama)}
+                    </Text>
+                    <Text
+                      fontSize="x-small"
+                      color={
+                        colorMode == "light" ? "primary.500" : "primary.100"
+                      }
+                      // color={"secondary.200"}
+                    >
+                      {(DataAuth && DataAuth.teamRole?.specName) ||
+                        (DataAuth && DataAuth.jabatan)}
+                    </Text>
+                  </VStack>
+                </Flex>
+              </Flex>
+
+              {/* Hover Indicator */}
+              <Flex
+                position="absolute"
+                bottom={1}
+                left="50%"
+                transform="translateX(-50%)"
+                opacity={isHovered ? 0 : 0.7}
+                transition="opacity 0.2s"
+                mt={2}
+              >
+                <Box
+                  w={6}
+                  h={1}
+                  bg={colorMode == "light" ? "gray.400" : "gray.500"}
+                  rounded="full"
+                />
+              </Flex>
             </Flex>
+          </Box>
+
+          {/* Hover Drawer */}
+          <MotionBox
+            initial={{ height: 0, opacity: 0 }}
+            animate={{
+              height: isHovered ? "auto" : 0,
+              opacity: isHovered ? 1 : 0,
+            }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            overflow="hidden"
+            bg="secondary.500"
+            color="white"
+            mx={2}
+            mr={LiteModeTrigger ? 2 : 3}
+            roundedTop="none"
+            roundedBottom={radiusStyle}
+            mt={-2}
+          >
+            <Flex
+              px={LiteModeTrigger ? 1 : 2}
+              py={1}
+              w={"full"}
+              justifyContent={LiteModeTrigger ? "center" : "start"}
+            >
+              <Button
+                as={Link}
+                href="/profile"
+                size="xs"
+                variant="ghost"
+                w="full"
+                leftIcon={LiteModeTrigger ? undefined : <FiUser />}
+                justifyContent={LiteModeTrigger ? "center" : "flex-start"}
+                color="white"
+                fontSize="xs"
+                h={5}
+                _hover={{
+                  bg: "secondary.600",
+                }}
+              >
+                {LiteModeTrigger ? "👤" : "Go to Profile"}
+              </Button>
+            </Flex>
+          </MotionBox>
+        </Box>
+        {/* UPGRADE PLAN */}
+        <Flex m={2} mr={LiteModeTrigger ? 2 : 3}>
+          <Flex
+            as={Button}
+            w="full"
+            size={LiteModeTrigger ? "sm" : "md"}
+            bgGradient="linear(to-r, secondary.500, purple.500, pink.400)"
+            color="white"
+            rounded="xl"
+            fontWeight="bold"
+            fontSize={LiteModeTrigger ? "xs" : "sm"}
+            _hover={{
+              bgGradient: "linear(to-r, secondary.600, purple.600, pink.500)",
+              transform: "translateY(-2px)",
+              boxShadow: "xl",
+            }}
+            _active={{
+              transform: "translateY(0px)",
+            }}
+            transition="all 0.2s"
+            boxShadow="lg"
+            leftIcon={LiteModeTrigger ? undefined : <FiZap />}
+            onClick={() => (window.location.href = "/pricing")}
+          >
+            {LiteModeTrigger ? "⚡" : "Upgrade Plan"}
           </Flex>
         </Flex>
-      </Box>
+      </Flex>
     </>
   );
 }

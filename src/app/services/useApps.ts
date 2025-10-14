@@ -62,6 +62,19 @@ export interface ApplicationMasterShortResponse {
   reqParentId?: string | null;
 }
 
+export interface ApplicationMasterInsertDataPayload {
+  appShortName: string;
+  appName: string;
+  appsDesc?: string | null;
+  note?: string | null;
+  appOwnerDivisionId?: string | null;
+  appOwnerGroupId?: string | null;
+  appManageByDivisionId?: string | null;
+  appManageByGroupId?: string | null;
+  appManageByTeamId?: string | null;
+  reqParentId?: string | null;
+}
+
 export interface ApplicationMasterUpdateDataPayload {
   id: string;
   appShortName: string;
@@ -91,7 +104,10 @@ interface useAppsServices {
     payload: PaggingListPayload,
     token: string
   ) => Promise<ApiGenericResponse<ApplicationMasterResponse[] | null> | null>;
-  GetDetailById: (
+  InsertData: (
+    payload: ApplicationMasterInsertDataPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<ApplicationMasterResponse | null> | null>;  GetDetailById: (
     appId: string,
     token: string
   ) => Promise<ApiGenericResponse<ApplicationMasterResponse | null> | null>;
@@ -377,9 +393,50 @@ const useApps = (): useAppsServices => {
     }
   };
 
-  return {
+  const InsertData = async (
+    payload: ApplicationMasterInsertDataPayload,
+    token: string
+  ): Promise<ApiGenericResponse<ApplicationMasterResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/Application/insert";
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<ApplicationMasterResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || err.message);
+        return {
+          statusCode: err.response?.status || 500,
+          message: err.response?.data?.message || err.message,
+          data: null,
+          error: err.response?.data?.error || null,
+        };
+      } else {
+        setError("An unexpected error occurred");
+        return {
+          statusCode: 500,
+          message: "Error connect to api",
+          data: null,
+          error: null,
+        };
+      }
+    }
+  };  return {
     List,
-    GetDetailById,
+    InsertData,    GetDetailById,
     GetDetailByInitial,
     UpdateData,
     UpdatePict,

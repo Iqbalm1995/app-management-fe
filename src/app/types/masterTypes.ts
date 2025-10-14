@@ -61,8 +61,19 @@ export interface PaggingListPayloadCustom {
 
 export interface ListSearchByParam {
   field: string;
-  operator: "%" | "=" | "!=" | ">" | "<" | ">=" | "<=" | "like" | "not like";
-  value: string;
+  operator:
+    | "%"
+    | "="
+    | "!="
+    | ">"
+    | "<"
+    | ">="
+    | "<="
+    | "like"
+    | "not like"
+    | "is null"
+    | "is not null";
+  value: string | null;
 }
 
 export const addParamFilter = (
@@ -161,7 +172,7 @@ export interface OptionListProps {
 export interface FilterParamProps {
   field: string;
   operator: "%" | "=" | "!=" | ">" | "<" | ">=" | "<=" | "like" | "not like";
-  value: string;
+  value: string | null;
   filterType: "text" | "select" | "date";
   filterLabel: string;
   sourceListData?: OptionListProps[]; // for source data select
@@ -170,7 +181,7 @@ export interface FilterParamProps {
 export interface ListSearchByParamProps {
   field: string;
   operator: "%" | "=" | "!=" | ">" | "<" | ">=" | "<=" | "like" | "not like";
-  value: string;
+  value: string | null;
   filterLabel: string;
 }
 

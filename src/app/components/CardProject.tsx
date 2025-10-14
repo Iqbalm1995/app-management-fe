@@ -43,6 +43,7 @@ import {
   FiPlay,
   FiTarget,
   FiSettings,
+  FiServer,
 } from "react-icons/fi";
 import { BsKanban } from "react-icons/bs";
 import Link from "next/link";
@@ -50,7 +51,7 @@ import { memo, useState } from "react";
 
 interface CardProjectProps {
   data: ProjectDataResponse;
-  variant?: "manager" | "development";
+  variant?: "manager" | "development" | "procurement" | "deployment";
   linkPath?: string;
   actionLabel?: string;
   actionIcon?: any;
@@ -92,10 +93,24 @@ const CardProject = memo(
     // Default configurations based on variant
     const getDefaultConfig = () => {
       switch (variant) {
+        case "deployment":
+          return {
+            linkPath: "/projects-deployments/detail",
+            actionLabel: "Manage Deployment",
+            actionIcon: FiServer,
+            colorScheme: "green",
+          };
+        case "procurement":
+          return {
+            linkPath: "/projects-procurements/detail",
+            actionLabel: "Manage Procurement",
+            actionIcon: FiTarget,
+            colorScheme: "yellow",
+          };
         case "manager":
           return {
             linkPath:
-              linkPath || `projects-manager/detail?projectId=${data.id}`,
+              linkPath || `projects-manager/manage?projectId=${data.id}`,
             actionLabel: actionLabel || "Manage Project",
             actionIcon: actionIcon || FiSettings,
             colorScheme: "blue",
@@ -181,7 +196,7 @@ const CardProject = memo(
                 opacity="0.9"
                 textAlign="center"
               >
-                {data.appsProject.appName}
+                {data.appsProject?.appName}
               </Text>
               <Text
                 fontSize="xs"
@@ -250,14 +265,14 @@ const CardProject = memo(
 
               {/* App Name - Show if different from project name */}
               {/* {data.appsProject?.appName &&
-                data.appsProject.appName !== data.projectName && (
+                data.appsProject?.appName !== data.projectName && (
                   <Text
                     fontSize="sm"
                     color="gray.600"
                     fontWeight="medium"
                     noOfLines={1}
                   >
-                    App: {data.appsProject.appName}
+                    App: {data.appsProject?.appName}
                   </Text>
                 )} */}
             </VStack>
@@ -358,7 +373,15 @@ const CardProject = memo(
             left="0"
             right="0"
             bottom="0"
-            bg={variant === "manager" ? "blue.500" : "secondary.500"}
+            bg={
+              variant === "manager"
+                ? "blue.500"
+                : variant === "procurement"
+                ? "yellow.500"
+                : variant === "deployment"
+                ? "green.500"
+                : "secondary.500"
+            }
             opacity="0.05"
             rounded="2xl"
             pointerEvents="none"

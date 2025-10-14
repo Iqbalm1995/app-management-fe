@@ -439,9 +439,7 @@ const ProjectManagerPage = memo(() => {
                 <Card
                   bg={colorMode === "light" ? "blue.50" : "blue.900"}
                   border="1px"
-                  borderColor={
-                    colorMode === "light" ? "blue.200" : "blue.700"
-                  }
+                  borderColor={colorMode === "light" ? "blue.200" : "blue.700"}
                   rounded="lg"
                 >
                   <CardBody p={4} textAlign="center">
@@ -459,20 +457,12 @@ const ProjectManagerPage = memo(() => {
                       >
                         <Icon as={FiFolder} boxSize={4} />
                       </Box>
-                      <Text
-                        fontSize="xl"
-                        fontWeight="bold"
-                        color="blue.600"
-                      >
+                      <Text fontSize="xl" fontWeight="bold" color="blue.600">
                         {DataProjects.length}
                       </Text>
                       <Text
                         fontSize="xs"
-                        color={
-                          colorMode === "light"
-                            ? "blue.600"
-                            : "blue.300"
-                        }
+                        color={colorMode === "light" ? "blue.600" : "blue.300"}
                       >
                         Total Projects
                       </Text>
@@ -1167,7 +1157,7 @@ const ProjectManagerPage = memo(() => {
                                     noOfLines={1}
                                   >
                                     {project.projectNo} |{" "}
-                                    {project.appsProject.appName}
+                                    {project.appsProject?.appName}
                                   </Text>
                                 </VStack>
 

@@ -87,12 +87,24 @@ const AuthPanelModal = () => {
   return (
     <>
       <Button
-        colorScheme={"primary"}
+        colorScheme={"secondary"}
+        px={8}
+        bgGradient={
+          colorMode === "light"
+            ? "linear(to-r, secondary.500, secondary.900)"
+            : "linear(to-r, secondary.800, secondary.500)"
+        }
+        color="white"
+        _hover={{
+          // bg: colorMode === "light" ? "blue.700" : "blue.600",
+          transform: "translateY(-3px)",
+          shadow: "xl",
+        }}
         onClick={onOpen}
         boxShadow={"md"}
-        rounded={radiusStyle}
+        // rounded={radiusStyle}
       >
-        Masuk
+        Login
       </Button>
       <Modal
         isOpen={isOpen}
@@ -177,6 +189,7 @@ const AuthForm = () => {
   const showToast = useToastHelper();
   const [show, setShow] = useState(false);
   const handleClick = () => setShow(!show);
+  const { colorMode } = useColorMode();
 
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
   const [IsError, setIsError] = useState(false);
@@ -340,6 +353,15 @@ const AuthForm = () => {
             </FormControl>
             <Box w={"full"}>
               <Flex>
+                <Link href="/change-password">
+                  <Button
+                    size={"sm"}
+                    variant={"link"}
+                    color={"secondary.600"}
+                  >
+                    Ganti Password
+                  </Button>
+                </Link>
                 <Spacer />
                 <Link href="#">
                   <Button
@@ -354,11 +376,22 @@ const AuthForm = () => {
             </Box>
             <Button
               rightIcon={<FiLogIn />}
-              variant={"solid"}
+              colorScheme={"secondary"}
+              px={8}
+              bgGradient={
+                colorMode === "light"
+                  ? "linear(to-r, secondary.500, secondary.900)"
+                  : "linear(to-r, secondary.800, secondary.500)"
+              }
+              color="white"
+              _hover={{
+                // bg: colorMode === "light" ? "blue.700" : "blue.600",
+                transform: "translateY(-3px)",
+                shadow: "xl",
+              }}
               type={"submit"}
               w={"full"}
               h={"50px"}
-              colorScheme={"primary"}
               isLoading={IsLoadingProcess}
             >
               Masuk

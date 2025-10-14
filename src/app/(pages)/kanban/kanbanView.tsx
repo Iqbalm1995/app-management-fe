@@ -34,6 +34,7 @@ import {
 } from "@/app/helper/MasterHelper";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
+import { getKanbanBackUrl, getKanbanBackLabel } from "@/app/config/kanbanRoutes";
 
 import useProjects, { ProjectDataResponse } from "@/app/services/useProjects";
 import useRequirements, {
@@ -5567,9 +5568,9 @@ function KanbanBacklogPage() {
             overflowX={"auto"}
             justifyContent={"start"}
           >
-            <Link href={`/projects-manager/detail?projectId=${projectId}`}>
+            <Link href={getKanbanBackUrl(searchParams.get("from"), projectId!)}>
               <Button size={"lg"} leftIcon={<FiArrowLeft />}>
-                Kembali
+                {getKanbanBackLabel(searchParams.get("from"))}
               </Button>
             </Link>
           </Flex>

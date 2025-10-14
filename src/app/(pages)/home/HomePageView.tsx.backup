@@ -1,0 +1,1300 @@
+"use client";
+
+import {
+  HeaderContent,
+  HeaderContentProps,
+} from "@/app/components/headerContent";
+import LayoutAdmin from "@/app/components/layoutAdmin";
+import { radiusStyle } from "@/app/constants/applicationConstants";
+import { AuthDataModelInterface } from "@/app/context/AuthContext";
+import {
+  convertToCustomDateFormat,
+  getCurrentQuarter,
+  getQuarterDateRange,
+  getRandomNumberInclusive,
+  monthSetMaster,
+} from "@/app/helper/MasterHelper";
+import { AuthDataResponse } from "@/app/services/useAuthentications";
+import {
+  Avatar,
+  AvatarGroup,
+  Badge,
+  Box,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  Flex,
+  Grid,
+  GridItem,
+  Heading,
+  HStack,
+  Icon,
+  Progress,
+  Select,
+  Spacer,
+  Stack,
+  Tab,
+  Table,
+  TabList,
+  TabPanel,
+  TabPanels,
+  Tabs,
+  Tbody,
+  Td,
+  Text,
+  Th,
+  Thead,
+  Tooltip,
+  Tr,
+  useColorMode,
+  VStack,
+  Wrap,
+  WrapItem,
+  SimpleGrid,
+  Divider,
+  CircularProgress,
+  CircularProgressLabel,
+} from "@chakra-ui/react";
+import { ApexOptions } from "apexcharts";
+import dynamic from "next/dynamic";
+import Link from "next/link";
+import { ReactNode, useEffect, useMemo, useState } from "react";
+import { IconType } from "react-icons";
+import {
+  FiTrendingUp,
+  FiTrendingDown,
+  FiUsers,
+  FiFolder,
+  FiCheckCircle,
+  FiClock,
+  FiAlertCircle,
+  FiRefreshCcw,
+  FiFilter,
+  FiCalendar,
+  FiTarget,
+  FiActivity,
+  FiBarChart,
+  FiPieChart,
+  FiArrowRight,
+  FiMoreHorizontal,
+  FiStar,
+  FiGitBranch,
+} from "react-icons/fi";
+import {
+  MdOutlineAssignment,
+  MdOutlineBugReport,
+  MdOutlineSpeed,
+  MdOutlineTimeline,
+} from "react-icons/md";
+
+// Dynamically load the Chart component
+const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
+
+const HeaderDataContent: HeaderContentProps = {
+  titleName: "Project Management Dashboard",
+  breadCrumb: ["Home", "Dashboard"],
+};
+
+// Mock Data Interfaces
+interface ProjectStats {
+  totalProjects: number;
+  activeProjects: number;
+  completedProjects: number;
+  onHoldProjects: number;
+  totalTasks: number;
+  completedTasks: number;
+  overdueTasks: number;
+  teamMembers: number;
+}
+
+interface RecentProject {
+  id: string;
+  name: string;
+  status: "ACTIVE" | "COMPLETED" | "ONHOLD" | "PLANNING";
+  progress: number;
+  dueDate: string;
+  team: { name: string; avatar?: string }[];
+  priority: "HIGH" | "MEDIUM" | "LOW";
+}
+
+interface RecentTask {
+  id: string;
+  title: string;
+  project: string;
+  assignee: { name: string; avatar?: string };
+  status: "TODO" | "IN_PROGRESS" | "REVIEW" | "DONE";
+  priority: "HIGH" | "MEDIUM" | "LOW";
+  dueDate: string;
+}
+
+interface Activity {
+  id: string;
+  user: { name: string; avatar?: string };
+  action: string;
+  target: string;
+  timestamp: string;
+  type: "project" | "task" | "comment" | "file";
+}
+
+function HomePageView() {
+  const { colorMode } = useColorMode();
+
+  // Filter states
+  const currentYear = new Date().getFullYear();
+  const currentQuarter = getCurrentQuarter();
+  const [selectedYear, setSelectedYear] = useState<number>(currentYear);
+  const [selectedQuarter, setSelectedQuarter] = useState<number | "all">(
+    currentQuarter
+  );
+  const [RefreshData, setRefreshData] = useState<number>(0);
+
+  const years = Array.from({ length: 8 }, (_, i) => currentYear - 5 + i);
+
+  // Auth setup
+  const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
+  const [tokenData, setTokenData] = useState<string>("");
+
+  useEffect(() => {
+    const storedData = localStorage.getItem("authData");
+    const token: string = localStorage.getItem("tokenData") as string;
+
+    if (DataAuth == null) {
+      if (storedData) {
+        const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
+        const UserData: AuthDataResponse =
+          StorageAuth.dataLogin as AuthDataResponse;
+        setDataAuth(UserData);
+      }
+    }
+
+    if (token) {
+      setTokenData(token);
+    }
+  }, [DataAuth]);
+
+  // Mock data generation
+  const [projectStats, setProjectStats] = useState<ProjectStats>({
+    totalProjects: 0,
+    activeProjects: 0,
+    completedProjects: 0,
+    onHoldProjects: 0,
+    totalTasks: 0,
+    completedTasks: 0,
+    overdueTasks: 0,
+    teamMembers: 0,
+  });
+
+  const [recentProjects, setRecentProjects] = useState<RecentProject[]>([]);
+  const [recentTasks, setRecentTasks] = useState<RecentTask[]>([]);
+  const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
+  const [chartData, setChartData] = useState<any>({});
+
+  const RefreshAction = () => {
+    setRefreshData((prev) => prev + 1);
+  };
+
+  // Generate mock data
+  useEffect(() => {
+    // Project Statistics
+    const totalProjects = getRandomNumberInclusive(15, 25);
+    const activeProjects = getRandomNumberInclusive(8, 12);
+    const completedProjects = getRandomNumberInclusive(5, 8);
+    const onHoldProjects = totalProjects - activeProjects - completedProjects;
+
+    setProjectStats({
+      totalProjects,
+      activeProjects,
+      completedProjects,
+      onHoldProjects,
+      totalTasks: getRandomNumberInclusive(150, 250),
+      completedTasks: getRandomNumberInclusive(80, 120),
+      overdueTasks: getRandomNumberInclusive(5, 15),
+      teamMembers: getRandomNumberInclusive(25, 40),
+    });
+
+    // Recent Projects
+    setRecentProjects([
+      {
+        id: "1",
+        name: "E-Commerce Platform Redesign",
+        status: "ACTIVE",
+        progress: 75,
+        dueDate: "2024-12-15",
+        team: [
+          { name: "John Doe" },
+          { name: "Jane Smith" },
+          { name: "Mike Johnson" },
+        ],
+        priority: "HIGH",
+      },
+      {
+        id: "2",
+        name: "Mobile App Development",
+        status: "ACTIVE",
+        progress: 45,
+        dueDate: "2024-11-30",
+        team: [{ name: "Sarah Wilson" }, { name: "Tom Brown" }],
+        priority: "MEDIUM",
+      },
+      {
+        id: "3",
+        name: "Data Migration Project",
+        status: "COMPLETED",
+        progress: 100,
+        dueDate: "2024-10-20",
+        team: [{ name: "Alex Chen" }, { name: "Lisa Wang" }],
+        priority: "HIGH",
+      },
+      {
+        id: "4",
+        name: "Security Audit Implementation",
+        status: "PLANNING",
+        progress: 15,
+        dueDate: "2024-12-30",
+        team: [{ name: "David Lee" }],
+        priority: "HIGH",
+      },
+    ]);
+
+    // Recent Tasks
+    setRecentTasks([
+      {
+        id: "1",
+        title: "Implement user authentication",
+        project: "E-Commerce Platform",
+        assignee: { name: "John Doe" },
+        status: "IN_PROGRESS",
+        priority: "HIGH",
+        dueDate: "2024-10-25",
+      },
+      {
+        id: "2",
+        title: "Design product catalog UI",
+        project: "E-Commerce Platform",
+        assignee: { name: "Jane Smith" },
+        status: "REVIEW",
+        priority: "MEDIUM",
+        dueDate: "2024-10-23",
+      },
+      {
+        id: "3",
+        title: "Setup CI/CD pipeline",
+        project: "Mobile App Development",
+        assignee: { name: "Mike Johnson" },
+        status: "TODO",
+        priority: "HIGH",
+        dueDate: "2024-10-28",
+      },
+      {
+        id: "4",
+        title: "Write API documentation",
+        project: "Mobile App Development",
+        assignee: { name: "Sarah Wilson" },
+        status: "DONE",
+        priority: "LOW",
+        dueDate: "2024-10-20",
+      },
+    ]);
+
+    // Recent Activities
+    setRecentActivities([
+      {
+        id: "1",
+        user: { name: "John Doe" },
+        action: "completed task",
+        target: "User Authentication Module",
+        timestamp: "2 hours ago",
+        type: "task",
+      },
+      {
+        id: "2",
+        user: { name: "Jane Smith" },
+        action: "commented on",
+        target: "Product Catalog Design",
+        timestamp: "4 hours ago",
+        type: "comment",
+      },
+      {
+        id: "3",
+        user: { name: "Mike Johnson" },
+        action: "created project",
+        target: "Security Audit Implementation",
+        timestamp: "1 day ago",
+        type: "project",
+      },
+      {
+        id: "4",
+        user: { name: "Sarah Wilson" },
+        action: "uploaded file to",
+        target: "Mobile App Development",
+        timestamp: "2 days ago",
+        type: "file",
+      },
+    ]);
+
+    // Chart Data
+    setChartData({
+      projectProgress: {
+        series: [activeProjects, completedProjects, onHoldProjects],
+        labels: ["Active", "Completed", "On Hold"],
+      },
+      taskTrends: {
+        series: [
+          {
+            name: "Tasks Completed",
+            data: Array.from({ length: 7 }, () =>
+              getRandomNumberInclusive(5, 15)
+            ),
+          },
+          {
+            name: "Tasks Created",
+            data: Array.from({ length: 7 }, () =>
+              getRandomNumberInclusive(8, 18)
+            ),
+          },
+        ],
+        categories: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+      },
+      projectPerformance: {
+        series: [
+          {
+            name: "Started",
+            data: Array.from({ length: 6 }, () =>
+              getRandomNumberInclusive(2, 8)
+            ),
+          },
+          {
+            name: "Completed",
+            data: Array.from({ length: 6 }, () =>
+              getRandomNumberInclusive(1, 6)
+            ),
+          },
+          {
+            name: "On Hold",
+            data: Array.from({ length: 6 }, () =>
+              getRandomNumberInclusive(0, 3)
+            ),
+          },
+          {
+            name: "Cancelled",
+            data: Array.from({ length: 6 }, () =>
+              getRandomNumberInclusive(0, 2)
+            ),
+          },
+        ],
+        categories: ["Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+      },
+    });
+  }, [selectedYear, selectedQuarter, RefreshData]);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "ACTIVE":
+      case "IN_PROGRESS":
+        return "blue";
+      case "COMPLETED":
+      case "DONE":
+        return "green";
+      case "ONHOLD":
+      case "REVIEW":
+        return "orange";
+      case "PLANNING":
+      case "TODO":
+        return "purple";
+      default:
+        return "gray";
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case "HIGH":
+        return "red";
+      case "MEDIUM":
+        return "orange";
+      case "LOW":
+        return "green";
+      default:
+        return "gray";
+    }
+  };
+
+  return (
+    <LayoutAdmin>
+      {/* <HeaderContent
+        titleName={HeaderDataContent.titleName}
+        breadCrumb={HeaderDataContent.breadCrumb}
+      /> */}
+
+      <VStack spacing={6} alignItems="start" w="full" pt={6} px={4}>
+        {/* Welcome Section */}
+        <Box w="full">
+          <Heading
+            as="h2"
+            size="lg"
+            color={colorMode === "light" ? "gray.800" : "white"}
+            mb={2}
+          >
+            Welcome back, {DataAuth?.nama || "User"}! 👋
+          </Heading>
+          <Text color="gray.500" fontSize="md">
+            Here's what's happening with your projects today.
+          </Text>
+        </Box>
+
+        {/* Filter Controls */}
+        <Flex
+          w="full"
+          justify="space-between"
+          align="center"
+          flexWrap="wrap"
+          gap={4}
+        >
+          <HStack spacing={4}>
+            <Text
+              fontWeight="600"
+              color={colorMode === "light" ? "gray.700" : "gray.300"}
+            >
+              Filter by:
+            </Text>
+            <Select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              size="sm"
+              borderRadius={"md"}
+              w="120px"
+              bg={colorMode === "light" ? "white" : "gray.800"}
+            >
+              {years.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </Select>
+            <Select
+              value={selectedQuarter}
+              onChange={(e) =>
+                setSelectedQuarter(
+                  e.target.value === "all" ? "all" : Number(e.target.value)
+                )
+              }
+              size="sm"
+              borderRadius={"md"}
+              w="100px"
+              bg={colorMode === "light" ? "white" : "gray.800"}
+            >
+              <option value="all">All</option>
+              <option value="1">Q1</option>
+              <option value="2">Q2</option>
+              <option value="3">Q3</option>
+              <option value="4">Q4</option>
+            </Select>
+          </HStack>
+          <Button
+            leftIcon={<FiRefreshCcw />}
+            onClick={RefreshAction}
+            size="sm"
+            variant="outline"
+            colorScheme="blue"
+          >
+            Refresh
+          </Button>
+        </Flex>
+
+        {/* Statistics Cards */}
+        <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6} w="full">
+          <StatCard
+            title="Total Projects"
+            value={projectStats.totalProjects}
+            icon={FiFolder}
+            trend={+12}
+            color="blue"
+          />
+          <StatCard
+            title="Active Projects"
+            value={projectStats.activeProjects}
+            icon={FiActivity}
+            trend={+8}
+            color="green"
+          />
+          <StatCard
+            title="Completed Tasks"
+            value={projectStats.completedTasks}
+            icon={FiCheckCircle}
+            trend={+15}
+            color="purple"
+          />
+          <StatCard
+            title="Team Members"
+            value={projectStats.teamMembers}
+            icon={FiUsers}
+            trend={+3}
+            color="orange"
+          />
+        </SimpleGrid>
+
+        {/* Main Dashboard Grid */}
+        <Grid templateColumns="repeat(12, 1fr)" gap={6} w="full">
+          {/* Project Progress Chart */}
+          <GridItem colSpan={{ base: 12, lg: 8 }}>
+            <Card
+              bg={colorMode === "light" ? "white" : "gray.800"}
+              shadow="lg"
+              rounded="xl"
+              border="1px"
+              borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+            >
+              <CardHeader pb={2}>
+                <HStack justify="space-between">
+                  <VStack align="start" spacing={1}>
+                    <Heading size="md">Project Overview</Heading>
+                    <Text fontSize="sm" color="gray.500">
+                      Current project status distribution
+                    </Text>
+                  </VStack>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    rightIcon={<FiMoreHorizontal />}
+                  >
+                    View All
+                  </Button>
+                </HStack>
+              </CardHeader>
+              <CardBody pt={0}>
+                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+                  <Box>
+                    {chartData.projectProgress && (
+                      <Chart
+                        options={{
+                          chart: { type: "donut" },
+                          labels: chartData.projectProgress.labels,
+                          colors: ["#3182CE", "#38A169", "#DD6B20"],
+                          legend: { position: "bottom" },
+                          responsive: [
+                            {
+                              breakpoint: 480,
+                              options: {
+                                chart: { width: 200 },
+                                legend: { position: "bottom" },
+                              },
+                            },
+                          ],
+                        }}
+                        series={chartData.projectProgress.series}
+                        type="donut"
+                        height={250}
+                      />
+                    )}
+                  </Box>
+                  <VStack spacing={4} align="stretch">
+                    <ProjectMetric
+                      label="Active Projects"
+                      value={projectStats.activeProjects}
+                      total={projectStats.totalProjects}
+                      color="blue"
+                    />
+                    <ProjectMetric
+                      label="Completed Projects"
+                      value={projectStats.completedProjects}
+                      total={projectStats.totalProjects}
+                      color="green"
+                    />
+                    <ProjectMetric
+                      label="On Hold Projects"
+                      value={projectStats.onHoldProjects}
+                      total={projectStats.totalProjects}
+                      color="orange"
+                    />
+                  </VStack>
+                </SimpleGrid>
+              </CardBody>
+            </Card>
+          </GridItem>
+
+          {/* Quick Stats */}
+          <GridItem colSpan={{ base: 12, lg: 4 }}>
+            <VStack spacing={4}>
+              <Card
+                w="full"
+                bg={colorMode === "light" ? "white" : "gray.800"}
+                shadow="lg"
+                rounded="xl"
+                border="1px"
+                borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+              >
+                <CardBody>
+                  <VStack spacing={4}>
+                    <CircularProgress
+                      value={
+                        (projectStats.completedTasks /
+                          projectStats.totalTasks) *
+                        100
+                      }
+                      size="120px"
+                      color="green.400"
+                      thickness="8px"
+                    >
+                      <CircularProgressLabel fontSize="lg" fontWeight="bold">
+                        {Math.round(
+                          (projectStats.completedTasks /
+                            projectStats.totalTasks) *
+                            100
+                        )}
+                        %
+                      </CircularProgressLabel>
+                    </CircularProgress>
+                    <VStack spacing={1}>
+                      <Text fontWeight="bold" fontSize="lg">
+                        Task Completion
+                      </Text>
+                      <Text fontSize="sm" color="gray.500">
+                        {projectStats.completedTasks} of{" "}
+                        {projectStats.totalTasks} tasks completed
+                      </Text>
+                    </VStack>
+                  </VStack>
+                </CardBody>
+              </Card>
+
+              <Card
+                w="full"
+                bg="red.50"
+                border="1px"
+                borderColor="red.200"
+                rounded="xl"
+              >
+                <CardBody>
+                  <HStack>
+                    <Icon as={FiAlertCircle} color="red.500" boxSize={6} />
+                    <VStack align="start" spacing={0}>
+                      <Text fontWeight="bold" color="red.700">
+                        {projectStats.overdueTasks} Overdue Tasks
+                      </Text>
+                      <Text fontSize="sm" color="red.600">
+                        Require immediate attention
+                      </Text>
+                    </VStack>
+                  </HStack>
+                </CardBody>
+              </Card>
+            </VStack>
+          </GridItem>
+
+          {/* Recent Projects */}
+          <GridItem colSpan={{ base: 12, lg: 6 }}>
+            <Card
+              bg={colorMode === "light" ? "white" : "gray.800"}
+              shadow="lg"
+              rounded="xl"
+              border="1px"
+              borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+              h="full"
+            >
+              <CardHeader pb={2}>
+                <HStack justify="space-between">
+                  <Heading size="md">Recent Projects</Heading>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    rightIcon={<FiArrowRight />}
+                  >
+                    View All
+                  </Button>
+                </HStack>
+              </CardHeader>
+              <CardBody pt={0}>
+                <VStack spacing={4} align="stretch">
+                  {recentProjects.slice(0, 4).map((project) => (
+                    <Box
+                      key={project.id}
+                      p={4}
+                      bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                      rounded="lg"
+                      _hover={{
+                        bg: colorMode === "light" ? "gray.100" : "gray.600",
+                      }}
+                      cursor="pointer"
+                      transition="all 0.2s"
+                    >
+                      <HStack justify="space-between" mb={2}>
+                        <VStack align="start" spacing={1}>
+                          <Text fontWeight="bold" fontSize="sm">
+                            {project.name}
+                          </Text>
+                          <HStack spacing={2}>
+                            <Badge
+                              colorScheme={getStatusColor(project.status)}
+                              size="sm"
+                            >
+                              {project.status}
+                            </Badge>
+                            <Badge
+                              colorScheme={getPriorityColor(project.priority)}
+                              size="sm"
+                            >
+                              {project.priority}
+                            </Badge>
+                          </HStack>
+                        </VStack>
+                        <Text fontSize="xs" color="gray.500">
+                          Due: {new Date(project.dueDate).toLocaleDateString()}
+                        </Text>
+                      </HStack>
+                      <Progress
+                        value={project.progress}
+                        colorScheme={getStatusColor(project.status)}
+                        size="sm"
+                        rounded="full"
+                        mb={2}
+                      />
+                      <HStack justify="space-between">
+                        <AvatarGroup size="xs" max={3}>
+                          {project.team.map((member, idx) => (
+                            <Avatar
+                              key={idx}
+                              name={member.name}
+                              src={member.avatar}
+                            />
+                          ))}
+                        </AvatarGroup>
+                        <Text fontSize="xs" color="gray.500">
+                          {project.progress}% complete
+                        </Text>
+                      </HStack>
+                    </Box>
+                  ))}
+                </VStack>
+              </CardBody>
+            </Card>
+          </GridItem>
+
+          {/* Recent Tasks */}
+          <GridItem colSpan={{ base: 12, lg: 6 }}>
+            <Card
+              bg={colorMode === "light" ? "white" : "gray.800"}
+              shadow="lg"
+              rounded="xl"
+              border="1px"
+              borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+              h="full"
+            >
+              <CardHeader pb={2}>
+                <HStack justify="space-between">
+                  <Heading size="md">Recent Tasks</Heading>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    rightIcon={<FiArrowRight />}
+                  >
+                    View All
+                  </Button>
+                </HStack>
+              </CardHeader>
+              <CardBody pt={0}>
+                <VStack spacing={3} align="stretch">
+                  {recentTasks.map((task) => (
+                    <HStack
+                      key={task.id}
+                      p={3}
+                      bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                      rounded="lg"
+                      _hover={{
+                        bg: colorMode === "light" ? "gray.100" : "gray.600",
+                      }}
+                      cursor="pointer"
+                      transition="all 0.2s"
+                    >
+                      <Avatar
+                        size="sm"
+                        name={task.assignee.name}
+                        src={task.assignee.avatar}
+                      />
+                      <VStack align="start" spacing={0} flex={1}>
+                        <Text fontWeight="bold" fontSize="sm" noOfLines={1}>
+                          {task.title}
+                        </Text>
+                        <Text fontSize="xs" color="gray.500">
+                          {task.project}
+                        </Text>
+                      </VStack>
+                      <VStack align="end" spacing={1}>
+                        <Badge
+                          colorScheme={getStatusColor(task.status)}
+                          size="sm"
+                        >
+                          {task.status.replace("_", " ")}
+                        </Badge>
+                        <Text fontSize="xs" color="gray.500">
+                          {new Date(task.dueDate).toLocaleDateString()}
+                        </Text>
+                      </VStack>
+                    </HStack>
+                  ))}
+                </VStack>
+              </CardBody>
+            </Card>
+          </GridItem>
+
+          {/* Recent Activity */}
+          <GridItem colSpan={{ base: 12 }}>
+            <Card
+              bg={colorMode === "light" ? "white" : "gray.800"}
+              shadow="lg"
+              rounded="xl"
+              border="1px"
+              borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+            >
+              <CardHeader pb={2}>
+                <HStack justify="space-between">
+                  <Heading size="md">Recent Activity</Heading>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    rightIcon={<FiArrowRight />}
+                  >
+                    View All
+                  </Button>
+                </HStack>
+              </CardHeader>
+              <CardBody pt={0}>
+                <VStack spacing={4} align="stretch">
+                  {recentActivities.map((activity) => (
+                    <HStack key={activity.id} spacing={4}>
+                      <Avatar
+                        size="sm"
+                        name={activity.user.name}
+                        src={activity.user.avatar}
+                      />
+                      <VStack align="start" spacing={0} flex={1}>
+                        <Text fontSize="sm">
+                          <Text as="span" fontWeight="bold">
+                            {activity.user.name}
+                          </Text>{" "}
+                          {activity.action}{" "}
+                          <Text as="span" fontWeight="bold">
+                            {activity.target}
+                          </Text>
+                        </Text>
+                        <Text fontSize="xs" color="gray.500">
+                          {activity.timestamp}
+                        </Text>
+                      </VStack>
+                      <Icon
+                        as={
+                          activity.type === "project"
+                            ? FiFolder
+                            : activity.type === "task"
+                            ? FiCheckCircle
+                            : activity.type === "comment"
+                            ? FiActivity
+                            : FiGitBranch
+                        }
+                        color="gray.400"
+                        boxSize={4}
+                      />
+                    </HStack>
+                  ))}
+                </VStack>
+              </CardBody>
+            </Card>
+          </GridItem>
+
+          {/* Project Performance Bar Chart */}
+          <GridItem colSpan={{ base: 12, lg: 8 }}>
+            <Card
+              bg={colorMode === "light" ? "white" : "gray.800"}
+              shadow="lg"
+              rounded="xl"
+              border="1px"
+              borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+            >
+              <CardHeader pb={2}>
+                <HStack justify="space-between">
+                  <VStack align="start" spacing={1}>
+                    <Heading size="md">Project Performance</Heading>
+                    <Text fontSize="sm" color="gray.500">
+                      Monthly project completion trends
+                    </Text>
+                  </VStack>
+                  <HStack spacing={2}>
+                    <Badge colorScheme="blue" variant="subtle">
+                      This Year
+                    </Badge>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      rightIcon={<FiBarChart />}
+                    >
+                      Export
+                    </Button>
+                  </HStack>
+                </HStack>
+              </CardHeader>
+              <CardBody pt={0}>
+                {chartData.projectPerformance && (
+                  <Chart
+                    options={{
+                      chart: {
+                        type: "bar",
+                        toolbar: { show: false },
+                      },
+                      plotOptions: {
+                        bar: {
+                          horizontal: false,
+                          columnWidth: "55%",
+                          borderRadius: 4,
+                        },
+                      },
+                      dataLabels: { enabled: false },
+                      stroke: {
+                        show: true,
+                        width: 2,
+                        colors: ["transparent"],
+                      },
+                      xaxis: {
+                        categories: chartData.projectPerformance.categories,
+                      },
+                      yaxis: {
+                        title: { text: "Number of Projects" },
+                      },
+                      fill: { opacity: 1 },
+                      colors: ["#3182CE", "#38A169", "#DD6B20", "#E53E3E"],
+                      legend: { position: "top" },
+                      grid: {
+                        borderColor:
+                          colorMode === "light" ? "#e2e8f0" : "#4a5568",
+                      },
+                    }}
+                    series={chartData.projectPerformance.series}
+                    type="bar"
+                    height={300}
+                  />
+                )}
+              </CardBody>
+            </Card>
+          </GridItem>
+
+          {/* Team Performance */}
+          <GridItem colSpan={{ base: 12, lg: 4 }}>
+            <Card
+              bg={colorMode === "light" ? "white" : "gray.800"}
+              shadow="lg"
+              rounded="xl"
+              border="1px"
+              borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+              h="full"
+            >
+              <CardHeader pb={2}>
+                <Heading size="md">Top Performers</Heading>
+              </CardHeader>
+              <CardBody pt={0}>
+                <VStack spacing={4} align="stretch">
+                  {[
+                    {
+                      name: "Sarah Wilson",
+                      role: "Project Manager",
+                      score: 95,
+                      avatar: "",
+                    },
+                    {
+                      name: "John Doe",
+                      role: "Lead Developer",
+                      score: 88,
+                      avatar: "",
+                    },
+                    {
+                      name: "Mike Johnson",
+                      role: "DevOps Engineer",
+                      score: 82,
+                      avatar: "",
+                    },
+                    {
+                      name: "Jane Smith",
+                      role: "UI/UX Designer",
+                      score: 79,
+                      avatar: "",
+                    },
+                  ].map((performer, idx) => (
+                    <HStack key={idx} spacing={3}>
+                      <Avatar size="sm" name={performer.name} />
+                      <VStack align="start" spacing={0} flex={1}>
+                        <Text fontWeight="bold" fontSize="sm">
+                          {performer.name}
+                        </Text>
+                        <Text fontSize="xs" color="gray.500">
+                          {performer.role}
+                        </Text>
+                      </VStack>
+                      <VStack align="end" spacing={0}>
+                        <Text fontWeight="bold" fontSize="sm" color="green.500">
+                          {performer.score}%
+                        </Text>
+                        <Progress
+                          value={performer.score}
+                          colorScheme="green"
+                          size="sm"
+                          w="60px"
+                          rounded="full"
+                        />
+                      </VStack>
+                    </HStack>
+                  ))}
+                </VStack>
+              </CardBody>
+            </Card>
+          </GridItem>
+
+          {/* Project Categories */}
+          <GridItem colSpan={{ base: 12, lg: 6 }}>
+            <Card
+              bg={colorMode === "light" ? "white" : "gray.800"}
+              shadow="lg"
+              rounded="xl"
+              border="1px"
+              borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+            >
+              <CardHeader pb={2}>
+                <Heading size="md">Project Categories</Heading>
+              </CardHeader>
+              <CardBody pt={0}>
+                <VStack spacing={4} align="stretch">
+                  {[
+                    {
+                      name: "Web Development",
+                      count: 8,
+                      color: "blue",
+                      icon: FiGitBranch,
+                    },
+                    {
+                      name: "Mobile Apps",
+                      count: 5,
+                      color: "purple",
+                      icon: MdOutlineAssignment,
+                    },
+                    {
+                      name: "Data Analytics",
+                      count: 4,
+                      color: "green",
+                      icon: FiBarChart,
+                    },
+                    {
+                      name: "Infrastructure",
+                      count: 3,
+                      color: "orange",
+                      icon: MdOutlineSpeed,
+                    },
+                    {
+                      name: "Security",
+                      count: 2,
+                      color: "red",
+                      icon: MdOutlineBugReport,
+                    },
+                  ].map((category, idx) => (
+                    <HStack
+                      key={idx}
+                      justify="space-between"
+                      p={3}
+                      bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                      rounded="lg"
+                    >
+                      <HStack spacing={3}>
+                        <Box p={2} bg={`${category.color}.100`} rounded="lg">
+                          <Icon
+                            as={category.icon}
+                            color={`${category.color}.500`}
+                            boxSize={4}
+                          />
+                        </Box>
+                        <Text fontWeight="medium">{category.name}</Text>
+                      </HStack>
+                      <Badge colorScheme={category.color} rounded="full">
+                        {category.count} projects
+                      </Badge>
+                    </HStack>
+                  ))}
+                </VStack>
+              </CardBody>
+            </Card>
+          </GridItem>
+
+          {/* Upcoming Deadlines */}
+          <GridItem colSpan={{ base: 12, lg: 6 }}>
+            <Card
+              bg={colorMode === "light" ? "white" : "gray.800"}
+              shadow="lg"
+              rounded="xl"
+              border="1px"
+              borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+            >
+              <CardHeader pb={2}>
+                <HStack justify="space-between">
+                  <Heading size="md">Upcoming Deadlines</Heading>
+                  <Icon as={FiCalendar} color="gray.400" />
+                </HStack>
+              </CardHeader>
+              <CardBody pt={0}>
+                <VStack spacing={3} align="stretch">
+                  {[
+                    {
+                      project: "E-Commerce Platform",
+                      task: "User Authentication",
+                      dueDate: "2024-10-25",
+                      priority: "HIGH",
+                    },
+                    {
+                      project: "Mobile App",
+                      task: "API Integration",
+                      dueDate: "2024-10-28",
+                      priority: "MEDIUM",
+                    },
+                    {
+                      project: "Data Migration",
+                      task: "Testing Phase",
+                      dueDate: "2024-11-02",
+                      priority: "HIGH",
+                    },
+                    {
+                      project: "Security Audit",
+                      task: "Vulnerability Assessment",
+                      dueDate: "2024-11-05",
+                      priority: "LOW",
+                    },
+                  ].map((deadline, idx) => (
+                    <HStack
+                      key={idx}
+                      spacing={3}
+                      p={3}
+                      bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                      rounded="lg"
+                    >
+                      <VStack align="start" spacing={0} flex={1}>
+                        <Text fontWeight="bold" fontSize="sm">
+                          {deadline.task}
+                        </Text>
+                        <Text fontSize="xs" color="gray.500">
+                          {deadline.project}
+                        </Text>
+                      </VStack>
+                      <VStack align="end" spacing={1}>
+                        <Badge
+                          colorScheme={getPriorityColor(deadline.priority)}
+                          size="sm"
+                        >
+                          {deadline.priority}
+                        </Badge>
+                        <Text fontSize="xs" color="gray.500">
+                          {new Date(deadline.dueDate).toLocaleDateString()}
+                        </Text>
+                      </VStack>
+                    </HStack>
+                  ))}
+                </VStack>
+              </CardBody>
+            </Card>
+          </GridItem>
+        </Grid>
+      </VStack>
+    </LayoutAdmin>
+  );
+}
+
+// Stat Card Component
+const StatCard = ({
+  title,
+  value,
+  icon,
+  trend,
+  color,
+}: {
+  title: string;
+  value: number;
+  icon: IconType;
+  trend: number;
+  color: string;
+}) => {
+  const { colorMode } = useColorMode();
+
+  return (
+    <Card
+      bg={colorMode === "light" ? "white" : "gray.800"}
+      shadow="lg"
+      rounded="xl"
+      border="1px"
+      borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+      _hover={{ transform: "translateY(-2px)", shadow: "xl" }}
+      transition="all 0.2s"
+    >
+      <CardBody>
+        <HStack justify="space-between">
+          <VStack align="start" spacing={1}>
+            <Text fontSize="sm" color="gray.500" fontWeight="medium">
+              {title}
+            </Text>
+            <Text fontSize="2xl" fontWeight="bold">
+              {value}
+            </Text>
+            <HStack spacing={1}>
+              <Icon
+                as={trend > 0 ? FiTrendingUp : FiTrendingDown}
+                color={trend > 0 ? "green.500" : "red.500"}
+                boxSize={3}
+              />
+              <Text
+                fontSize="xs"
+                color={trend > 0 ? "green.500" : "red.500"}
+                fontWeight="medium"
+              >
+                {trend > 0 ? "+" : ""}
+                {trend}%
+              </Text>
+            </HStack>
+          </VStack>
+          <Box p={3} bg={`${color}.100`} rounded="lg">
+            <Icon as={icon} boxSize={6} color={`${color}.500`} />
+          </Box>
+        </HStack>
+      </CardBody>
+    </Card>
+  );
+};
+
+// Project Metric Component
+const ProjectMetric = ({
+  label,
+  value,
+  total,
+  color,
+}: {
+  label: string;
+  value: number;
+  total: number;
+  color: string;
+}) => {
+  const percentage = Math.round((value / total) * 100);
+
+  return (
+    <Box>
+      <HStack justify="space-between" mb={2}>
+        <Text fontSize="sm" fontWeight="medium">
+          {label}
+        </Text>
+        <Text fontSize="sm" color="gray.500">
+          {value}/{total}
+        </Text>
+      </HStack>
+      <Progress
+        value={percentage}
+        colorScheme={color}
+        size="sm"
+        rounded="full"
+      />
+      <Text fontSize="xs" color="gray.500" mt={1}>
+        {percentage}% of total projects
+      </Text>
+    </Box>
+  );
+};
+
+export default HomePageView;

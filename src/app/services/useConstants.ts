@@ -18,6 +18,7 @@ import handleAxiosError from "../utils/handleAxiosError";
 
 export interface ConstantDataResponse {
   id: string;
+  parentGroupCode?: string | null;
   groupCode: string;
   label: string;
   value: string;
@@ -25,7 +26,13 @@ export interface ConstantDataResponse {
   desc: string;
 }
 
+export interface ConstantGroupCodeDataResponse {
+  id: string;
+  groupCode: string;
+}
+
 export interface ConstantInsertDataPayload {
+  parentGroupCode?: string | null;
   groupCode: string;
   label: string;
   value: string;
@@ -40,11 +47,15 @@ export interface ConstantUpdateDataPayload {
 }
 
 interface useConstantDataService {
-  // logs
   ListConstantData: (
     payload: PaggingListPayload,
     token: string
   ) => Promise<ApiGenericResponse<ConstantDataResponse[] | null> | null>;
+  ListConstantGroupCodeData: (
+    token: string
+  ) => Promise<ApiGenericResponse<
+    ConstantGroupCodeDataResponse[] | null
+  > | null>;
   GetDetailConstantDataById: (
     id: string,
     token: string
@@ -85,6 +96,48 @@ const useConstants = (): useConstantDataService => {
       const response = await axiosInstance.post<
         ApiGenericResponse<ConstantDataResponse[]>
       >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const ListConstantGroupCodeData = async (
+    token: string
+  ): Promise<ApiGenericResponse<
+    ConstantGroupCodeDataResponse[] | null
+  > | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/Constants/list-group-code";
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<ConstantGroupCodeDataResponse[]>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -279,6 +332,7 @@ const useConstants = (): useConstantDataService => {
 
   return {
     ListConstantData,
+    ListConstantGroupCodeData,
     GetDetailConstantDataById,
     InsertConstantData,
     UpdateConstantData,

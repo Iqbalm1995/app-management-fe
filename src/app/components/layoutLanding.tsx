@@ -27,7 +27,7 @@ const LayoutLanding = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // Show loading on route change
     setLoading(true);
-    
+
     // Simulate loading time for landing pages
     const timer = setTimeout(() => setLoading(false), DELAY_MEDIUM);
     return () => clearTimeout(timer);
@@ -35,13 +35,13 @@ const LayoutLanding = ({ children }: { children: ReactNode }) => {
 
   return (
     <>
-      <Box position="relative" minHeight="90vh">
+      <Box position="relative" minHeight="100vh">
         <Head>
           <title>KOBRA - Applications Management</title>
         </Head>
-        
+
         <LoadingOverlay isLoading={loading} />
-        
+
         <Box
           opacity={loading ? 0.5 : 1}
           pointerEvents={loading ? "none" : "auto"}
@@ -61,7 +61,12 @@ export const FooterAdminPanel = () => {
   const { colorMode } = useColorMode();
   return (
     <Box
-      bg={colorMode == "light" ? "primary.800" : "gray.900"}
+      // bg={colorMode == "light" ? "primary.800" : "gray.900"}
+      bgGradient={
+        colorMode === "light"
+          ? "linear(to-r, secondary.800, secondary.500)"
+          : "linear(to-r, gray.800, gray.900)"
+      }
       color={"white"}
       px={3}
       py={3}

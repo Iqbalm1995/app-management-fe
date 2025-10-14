@@ -149,6 +149,7 @@ const MenusPage: MenuPagesInterface[] = [
 ];
 
 function TeamsPage() {
+  const { colorMode } = useColorMode();
   // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
@@ -178,12 +179,33 @@ function TeamsPage() {
         titleName={HeaderDataContent.titleName}
         breadCrumb={HeaderDataContent.breadCrumb}
       />
-      <Grid templateColumns="repeat(12, 1fr)" gap={5}>
+
+      {/* Enhanced Header Section */}
+      <Box 
+        mb={6}
+        p={6}
+        bgGradient="linear(135deg, blue.500, purple.600)"
+        rounded="xl"
+        color="white"
+      >
+        <VStack spacing={3} align="start">
+          <HStack>
+            <FiUserCheck size={24} />
+            <Text fontSize="2xl" fontWeight="bold">
+              Team Management Center
+            </Text>
+          </HStack>
+          <Text fontSize="md" opacity={0.9}>
+            Manage your team profile, members, and collaboration settings
+          </Text>
+        </VStack>
+      </Box>
+      <Grid templateColumns="repeat(12, 1fr)" gap={8}>
         <GridItem colSpan={{ base: 12, sm: 12, md: 3, lg: 3 }}>
           <Flex
             as={Stack}
             w={"full"}
-            bg={useColorModeValue("white", "gray.700")}
+            bg={colorMode === "light" ? "white" : "gray.800"}
             p={3}
             rounded={radiusStyle}
             shadow={"md"}
@@ -197,7 +219,10 @@ function TeamsPage() {
           </Flex>
         </GridItem>
         <GridItem colSpan={{ base: 12, sm: 12, md: 9, lg: 9 }}>
-          <Card rounded={radiusStyle}>
+          <Card
+            rounded={radiusStyle}
+            bg={colorMode === "light" ? "white" : "gray.800"}
+          >
             <CardBody>
               <Box minH={"80vh"}>
                 <Flex as={Stack} w={"full"} p={2} divider={<StackDivider />}>
@@ -470,7 +495,7 @@ const TeamProfileSettingProps = () => {
         <LoadingMiniSignature />
       ) : (
         <form onSubmit={formik.handleSubmit} onReset={formik.handleReset}>
-          <Grid templateColumns="repeat(12, 1fr)" gap={5}>
+          <Grid templateColumns="repeat(12, 1fr)" gap={8}>
             <GridItem colSpan={{ base: 12, sm: 12, md: 4, lg: 4 }} w={"full"}>
               <Flex w={"full"} justify={"center"} pt={8}>
                 <Box
@@ -1452,10 +1477,10 @@ const TeamMembersProps = () => {
                   <Search2Icon color={"secondary.500"} />
                 </InputLeftElement>
                 <Input
+                  bg={colorMode === "light" ? "white" : "gray.800"}
                   type="text"
                   placeContent={"center"}
                   placeholder="Cari data..."
-                  bg={"white"}
                   size={"md"}
                   onChange={(e) => setGlobalFilter(e.target.value)}
                   value={globalFilter}

@@ -1582,7 +1582,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
                       h="100%"
                       w={`${task.percentageStatus}%`}
                       bg={
-                        task.percentageStatus === 100 ? "green.400" : "secondary.400"
+                        task.percentageStatus === 100
+                          ? "green.400"
+                          : "secondary.400"
                       }
                       borderRadius="full"
                       transition="width 0.3s ease"
@@ -2936,7 +2938,6 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
                   </Badge>
                 </HStack>
               </VStack>
-
             </HStack>
 
             {/* Quick Stats */}
@@ -3066,6 +3067,7 @@ function ProjectKanbanView() {
   const [RefreshData, setRefreshData] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
   const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   // Track recently moved task for visual feedback
   const [recentlyMovedTaskId, setRecentlyMovedTaskId] = useState<string | null>(
@@ -3270,6 +3272,7 @@ function ProjectKanbanView() {
           if (response?.statusCode === RES_CODE_OK) {
             const tasks = response.data as TaskViewModel[];
             setDataTasks(tasks);
+            setLastUpdated(new Date());
           } else {
             showToast({
               description: response?.message || "Failed to load project tasks",
@@ -3290,6 +3293,50 @@ function ProjectKanbanView() {
       fetchProjectTasks();
     }
   }, [DataAuth, projectId, tokenData, RefreshData]);
+
+  // Smart Polling for Real-time Updates (Multi-device sync)
+  useEffect(() => {
+    if (!DataAuth || !projectId || !tokenData) return;
+
+    let pollInterval: NodeJS.Timeout;
+    
+    const startPolling = () => {
+      pollInterval = setInterval(() => {
+        // Only poll when tab is visible and not currently loading
+        if (!document.hidden && !IsLoadingProcess) {
+          setRefreshData(prev => prev + 1);
+        }
+      }, 5000); // 5 seconds interval
+    };
+
+    // Start polling
+    startPolling();
+
+    // Handle tab visibility changes
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        clearInterval(pollInterval);
+      } else {
+        startPolling();
+      }
+    };
+
+    // Handle window focus (immediate refresh when user returns)
+    const handleFocus = () => {
+      if (!IsLoadingProcess) {
+        setRefreshData(prev => prev + 1);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      clearInterval(pollInterval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [DataAuth, projectId, tokenData, IsLoadingProcess]);
 
   // Handle Task Drop with dynamic board loading from task's backlog
   const handleTaskDrop = async (taskId: string, targetBoardName: string) => {
@@ -3702,7 +3749,7 @@ function ProjectKanbanView() {
           >
             {/* Enhanced Gradient Header */}
             <Box
-              bgGradient="linear(135deg, secondary.500, secondary.600, blue.500, blue.600)"
+              bgGradient="linear(135deg, secondary.800, secondary.500)"
               p={8}
               color="white"
               position="relative"
@@ -3713,10 +3760,16 @@ function ProjectKanbanView() {
                 left: "0",
                 right: "0",
                 bottom: "0",
-                bgImage: "radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%)",
+                bgImage:
+                  "radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%)",
               }}
             >
-              <HStack justify="space-between" align="center" position="relative" zIndex="1">
+              <HStack
+                justify="space-between"
+                align="center"
+                position="relative"
+                zIndex="1"
+              >
                 <HStack spacing={6}>
                   <Link
                     href={`/project-development/development?projectId=${projectId}`}
@@ -3728,11 +3781,14 @@ function ProjectKanbanView() {
                       color="white"
                       size="lg"
                       rounded="full"
-                      _hover={{ bg: "whiteAlpha.200", transform: "scale(1.05)" }}
+                      _hover={{
+                        bg: "whiteAlpha.200",
+                        transform: "scale(1.05)",
+                      }}
                       transition="all 0.2s"
                     />
                   </Link>
-                  
+
                   <HStack spacing={4}>
                     <Box
                       p={3}
@@ -3747,7 +3803,11 @@ function ProjectKanbanView() {
                         Project Kanban Board
                       </Heading>
                       {DataProject && (
-                        <Text color="whiteAlpha.900" fontSize="lg" fontWeight="500">
+                        <Text
+                          color="whiteAlpha.900"
+                          fontSize="lg"
+                          fontWeight="500"
+                        >
                           {DataProject.projectName}
                         </Text>
                       )}
@@ -3766,13 +3826,20 @@ function ProjectKanbanView() {
                         backdropFilter="blur(10px)"
                         minW="60px"
                       >
-                        <Text fontWeight="bold" fontSize="2xl" color="white" textAlign="center">
+                        <Text
+                          fontWeight="bold"
+                          fontSize="2xl"
+                          color="white"
+                          textAlign="center"
+                        >
                           {projectStats.totalTasks}
                         </Text>
                       </Box>
-                      <Text fontSize="sm" fontWeight="medium">Total Tasks</Text>
+                      <Text fontSize="sm" fontWeight="medium">
+                        Total Tasks
+                      </Text>
                     </VStack>
-                    
+
                     <VStack spacing={1} align="center">
                       <Box
                         p={3}
@@ -3781,13 +3848,20 @@ function ProjectKanbanView() {
                         backdropFilter="blur(10px)"
                         minW="60px"
                       >
-                        <Text fontWeight="bold" fontSize="2xl" color="white" textAlign="center">
+                        <Text
+                          fontWeight="bold"
+                          fontSize="2xl"
+                          color="white"
+                          textAlign="center"
+                        >
                           {projectStats.completedTasks}
                         </Text>
                       </Box>
-                      <Text fontSize="sm" fontWeight="medium">Completed</Text>
+                      <Text fontSize="sm" fontWeight="medium">
+                        Completed
+                      </Text>
                     </VStack>
-                    
+
                     <VStack spacing={1} align="center">
                       <Box
                         p={3}
@@ -3796,11 +3870,18 @@ function ProjectKanbanView() {
                         backdropFilter="blur(10px)"
                         minW="60px"
                       >
-                        <Text fontWeight="bold" fontSize="2xl" color="white" textAlign="center">
+                        <Text
+                          fontWeight="bold"
+                          fontSize="2xl"
+                          color="white"
+                          textAlign="center"
+                        >
                           {projectStats.completionPercentage}%
                         </Text>
                       </Box>
-                      <Text fontSize="sm" fontWeight="medium">Progress</Text>
+                      <Text fontSize="sm" fontWeight="medium">
+                        Progress
+                      </Text>
                     </VStack>
                   </HStack>
 
@@ -3814,17 +3895,27 @@ function ProjectKanbanView() {
                     borderColor="whiteAlpha.300"
                     rounded="full"
                     px={6}
-                    _hover={{ 
-                      bg: "whiteAlpha.200", 
+                    _hover={{
+                      bg: "whiteAlpha.200",
                       borderColor: "whiteAlpha.500",
-                      transform: "translateY(-2px)"
+                      transform: "translateY(-2px)",
                     }}
                     transition="all 0.2s"
                     backdropFilter="blur(10px)"
                   >
                     Refresh
                   </Button>
-                </HStack>
+                  {/* Last Updated Timestamp */}
+                  {lastUpdated && (
+                    <VStack spacing={0} align="center">
+                      <Text fontSize="xs" color="whiteAlpha.700" fontWeight="medium">
+                        Last Updated
+                      </Text>
+                      <Text fontSize="xs" color="whiteAlpha.600">
+                        {lastUpdated.toLocaleTimeString()}
+                      </Text>
+                    </VStack>
+                  )}                </HStack>
               </HStack>
             </Box>
 
@@ -3835,7 +3926,9 @@ function ProjectKanbanView() {
                 <HStack spacing={4} wrap="wrap" w="full" justify="center">
                   <InputGroup maxW="350px">
                     <InputLeftElement>
-                      <FiSearch color={colorMode === "light" ? "gray.400" : "gray.500"} />
+                      <FiSearch
+                        color={colorMode === "light" ? "gray.400" : "gray.500"}
+                      />
                     </InputLeftElement>
                     <Input
                       placeholder="Search tasks..."
@@ -3843,11 +3936,14 @@ function ProjectKanbanView() {
                       onChange={(e) => setSearchTerm(e.target.value)}
                       bg={colorMode === "light" ? "white" : "gray.800"}
                       border="2px"
-                      borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                      borderColor={
+                        colorMode === "light" ? "gray.200" : "gray.600"
+                      }
                       rounded="full"
                       _focus={{
                         borderColor: "secondary.400",
-                        boxShadow: "0 0 0 1px var(--chakra-colors-secondary-400)"
+                        boxShadow:
+                          "0 0 0 1px var(--chakra-colors-secondary-400)",
                       }}
                       size="lg"
                     />
@@ -3860,17 +3956,19 @@ function ProjectKanbanView() {
                     maxW="180px"
                     bg={colorMode === "light" ? "white" : "gray.800"}
                     border="2px"
-                    borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                    borderColor={
+                      colorMode === "light" ? "gray.200" : "gray.600"
+                    }
                     rounded="full"
                     size="lg"
                     _focus={{
                       borderColor: "secondary.400",
-                      boxShadow: "0 0 0 1px var(--chakra-colors-secondary-400)"
+                      boxShadow: "0 0 0 1px var(--chakra-colors-secondary-400)",
                     }}
                   >
-                    <option value="HIGH">🔴 High Priority</option>
-                    <option value="MEDIUM">🟡 Medium Priority</option>
-                    <option value="LOW">🟢 Low Priority</option>
+                    <option value="HIGH">High Priority</option>
+                    <option value="MEDIUM">Medium Priority</option>
+                    <option value="LOW">Low Priority</option>
                   </Select>
 
                   <Select
@@ -3880,17 +3978,19 @@ function ProjectKanbanView() {
                     maxW="220px"
                     bg={colorMode === "light" ? "white" : "gray.800"}
                     border="2px"
-                    borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                    borderColor={
+                      colorMode === "light" ? "gray.200" : "gray.600"
+                    }
                     rounded="full"
                     size="lg"
                     _focus={{
                       borderColor: "secondary.400",
-                      boxShadow: "0 0 0 1px var(--chakra-colors-secondary-400)"
+                      boxShadow: "0 0 0 1px var(--chakra-colors-secondary-400)",
                     }}
                   >
                     {DataBacklogs.map((backlog) => (
                       <option key={backlog.id} value={backlog.id}>
-                        📋 {backlog.backlogName}
+                        {backlog.backlogName}
                       </option>
                     ))}
                   </Select>
@@ -3904,9 +4004,9 @@ function ProjectKanbanView() {
                     rounded="full"
                     px={8}
                     shadow="lg"
-                    _hover={{ 
+                    _hover={{
                       transform: "translateY(-2px)",
-                      shadow: "xl"
+                      shadow: "xl",
                     }}
                     transition="all 0.2s"
                   >
@@ -3923,7 +4023,10 @@ function ProjectKanbanView() {
                     size="lg"
                     iconColor="white"
                   >
-                    <Text fontWeight="medium" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                    <Text
+                      fontWeight="medium"
+                      color={colorMode === "light" ? "gray.700" : "gray.300"}
+                    >
                       Show completed tasks
                     </Text>
                   </Checkbox>
@@ -3977,24 +4080,24 @@ function ProjectKanbanView() {
                 minH="700px"
                 w="full"
               >
-              {DataBoard.map((board) => (
-                <GridItem key={board.id}>
-                  <KanbanColumn
-                    board={board}
-                    tasks={getTasksForBoard(board.boardName)}
-                    onTaskDrop={handleTaskDrop}
-                    onAddTask={handleAddTask}
-                    onEditTask={handleEditTask}
-                    onDeleteTask={handleDeleteTask}
-                    onUpdateTask={handleUpdateTask}
-                    onRefreshTasks={() => setRefreshData((prev) => prev + 1)}
-                    recentlyMovedTaskId={recentlyMovedTaskId}
-                    DataProject={DataProject}
-                    DataBacklogs={DataBacklogs}
-                  />
-                </GridItem>
-              ))}
-            </Grid>
+                {DataBoard.map((board) => (
+                  <GridItem key={board.id}>
+                    <KanbanColumn
+                      board={board}
+                      tasks={getTasksForBoard(board.boardName)}
+                      onTaskDrop={handleTaskDrop}
+                      onAddTask={handleAddTask}
+                      onEditTask={handleEditTask}
+                      onDeleteTask={handleDeleteTask}
+                      onUpdateTask={handleUpdateTask}
+                      onRefreshTasks={() => setRefreshData((prev) => prev + 1)}
+                      recentlyMovedTaskId={recentlyMovedTaskId}
+                      DataProject={DataProject}
+                      DataBacklogs={DataBacklogs}
+                    />
+                  </GridItem>
+                ))}
+              </Grid>
             </Box>
           ) : (
             <Alert status="info" rounded={radiusStyle}>

@@ -23,6 +23,7 @@ import {
   MAX_SIZE_TABLE,
   PROJEC_CATEGORY_OPTIONS,
   PROJEC_TYPE_OPTIONS,
+  PROJECT_TYPE_INTERNAL_DEVELOPMENT,
   radiusStyle,
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
@@ -134,6 +135,7 @@ import {
   FiArrowRight,
   FiBriefcase,
   FiCheckCircle,
+  FiExternalLink,
   FiInfo,
   FiMinus,
   FiMinusCircle,
@@ -158,6 +160,8 @@ const HeaderDataContent: HeaderContentProps = {
 const projectsAssignBindModelSchema = yup.object({
   userId: yup.string().required("User ID is required"),
 });
+
+const PRJ_TYPE_REGISTER: string = PROJECT_TYPE_INTERNAL_DEVELOPMENT;
 
 const projectsInsertBindModelSchema = yup.object({
   projectNo: yup.string().nullable(),
@@ -199,6 +203,10 @@ export const initialProjectsInsertValues: ProjectInsertPayload = {
   reqParentId: "", // Optional
   userAssigns: [], // Required (at least an empty array)
   projectPlanWorkflowIds: [],
+  workPrograms: [],
+  projectPlanWorkflowBacklogsIds: [],
+  workProgramsBacklogs: [],
+  
 };
 
 function FormRegisterProjectView() {
@@ -431,6 +439,7 @@ function FormRegisterProjectView() {
 
     formik.setFieldValue("userAssigns", mappedPayload);
   }, [ChoosedMemberProjects]);
+
   const handleSearchUserAssign = async (textSearch: string) => {
     setDataUsers([]);
     setSearchUserInput(textSearch);
@@ -441,6 +450,7 @@ function FormRegisterProjectView() {
       setDataUsers([]);
     }
   };
+
   const handleAddUserAssign = (data: UsersResponse) => {
     console.log("handleAddUserAssign insert Data :");
     console.log(data);
@@ -448,6 +458,7 @@ function FormRegisterProjectView() {
     setDataUsers([]);
     setSearchUserInput("");
   };
+
   const handleRemoveUserAssign = (id: string) => {
     const updatedProjects = ChoosedMemberProjects.filter(
       (project) => project.id !== id
@@ -456,6 +467,7 @@ function FormRegisterProjectView() {
     setDataUsers([]);
     setSearchUserInput("");
   };
+
   const handleResetUsersAssign = () => {
     setDataUsers([]);
     setSearchUserInput("");
@@ -692,6 +704,9 @@ function FormRegisterProjectView() {
             requestData.data as RequirementsResponse;
 
           setDataRequirement(itemsData);
+
+          // PRJ_TYPE_REGISTER;
+          formik.setFieldValue(`projectType`, PRJ_TYPE_REGISTER);
 
           // get user org project manage
           if (itemsData.assignedFromId) {
@@ -1471,7 +1486,7 @@ function FormRegisterProjectView() {
             </Flex>
           </GridItem>
 
-          <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 12 }} w={"full"}>
+          <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }} w={"full"}>
             {/* Requirement Information */}
             {DataRequirement && (
               <Card
@@ -1481,52 +1496,69 @@ function FormRegisterProjectView() {
                 rounded={radiusStyle}
               >
                 <CardBody>
-                  <HStack spacing={4} align="center">
-                    <Box
-                      w={14}
-                      h={14}
-                      bg={"white"}
-                      rounded="lg"
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
-                    >
-                      <Text
-                        color="secondary.800"
-                        fontWeight="bold"
-                        fontSize={"x-large"}
+                  <Flex as={Stack} spacing={2}>
+                    <Text fontSize="md" fontWeight="bold" color={"white"}>
+                      REQUIREMENT REFFERENCE (MEMO) :
+                    </Text>
+                    <Divider borderColor={"whiteAlpha.400"} />
+                    <HStack spacing={4} align="center">
+                      <Box
+                        w={14}
+                        h={14}
+                        bg={"white"}
+                        rounded="lg"
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
                       >
-                        {DataRequirement.reqNarative.charAt(0).toUpperCase()}
-                      </Text>
-                    </Box>
-                    <VStack align="start" spacing={0} flex={1}>
-                      <HStack spacing={3}>
-                        <Text fontSize="lg" fontWeight="bold" color={"white"}>
-                          {DataRequirement.reqNarative.toUpperCase()}
-                        </Text>
-                        <Badge
-                          colorScheme="blue"
-                          fontSize="xs"
-                          px={4}
-                          rounded={radiusStyle}
+                        <Text
+                          color="secondary.800"
+                          fontWeight="bold"
+                          fontSize={"x-large"}
                         >
-                          {DataRequirement.reqNumber}
-                        </Badge>
-                      </HStack>
-                      <Text fontSize="sm" color="secondary.200">
-                        {DataRequirement.reqNarative ||
-                          "No description available"}
-                      </Text>
-                      <HStack spacing={4}>
-                        <Text fontSize="xs" color="gray.300">
-                          Requirement ID: {DataRequirement.id}
+                          {/* {DataRequirement.reqNarative.charAt(0).toUpperCase()} */}
+                          {DataRequirement.requirementType.toUpperCase()}
                         </Text>
-                        <Text fontSize="xs" color="gray.300">
-                          Status: {DataRequirement.reqStatus}
+                      </Box>
+                      <VStack align="start" spacing={0} flex={1}>
+                        <HStack spacing={3}>
+                          <Link
+                            href={`/requirements/detail?reqId=${DataRequirement.id}&type=BRD`}
+                          >
+                            <Button
+                              variant={"link"}
+                              fontSize="lg"
+                              fontWeight="bold"
+                              color={"white"}
+                              rightIcon={<FiExternalLink />}
+                            >
+                              {DataRequirement.reqNarative.toUpperCase()}
+                            </Button>
+                          </Link>
+                          <Badge
+                            colorScheme="blue"
+                            fontSize="xs"
+                            px={4}
+                            rounded={radiusStyle}
+                          >
+                            {DataRequirement.reqNumber}
+                          </Badge>
+                        </HStack>
+                        <Text fontSize="sm" color="secondary.200">
+                          {DataRequirement.reqNarative ||
+                            "No description available"}
                         </Text>
-                      </HStack>
-                    </VStack>
-                  </HStack>
+                        <HStack spacing={4}>
+                          <Text fontSize="xs" color="gray.300">
+                            Requirement ID: {DataRequirement.id}
+                          </Text>
+                          <Text fontSize="xs" color="gray.300">
+                            Status: {DataRequirement.reqStatus}
+                          </Text>
+                        </HStack>
+                      </VStack>
+                    </HStack>
+                  </Flex>
                 </CardBody>
               </Card>
             )}
@@ -1596,26 +1628,7 @@ function FormRegisterProjectView() {
                           </Stack>
                         </InputLayoutFull>
                       </FormControl>
-                      <FormControl id="reqTypeProject">
-                        <InputLayout>
-                          <FormLabel h={"full"} mt={2}>
-                            Kategori Requirement
-                          </FormLabel>
-                          <Stack spacing={0} h={"full"}>
-                            <Input
-                              id="reqTypeProject"
-                              name="reqTypeProject"
-                              type="text"
-                              value={DataRequirement?.requirementType || ""}
-                              minLength={3}
-                              maxLength={200}
-                              // isDisabled={true}
-                              isReadOnly
-                              variant={"filled"}
-                            />
-                          </Stack>
-                        </InputLayout>
-                      </FormControl>
+
                       {/* --------------------------- */}
 
                       <FormControl
@@ -1735,36 +1748,6 @@ function FormRegisterProjectView() {
                               placeholder="Select Karakteristik Project"
                             >
                               {PROJEC_CATEGORY_OPTIONS.map((option) => (
-                                <option key={option} value={option}>
-                                  {option}
-                                </option>
-                              ))}
-                            </SelectC>
-                          </Stack>
-                        </InputLayout>
-                      </FormControl>
-
-                      <FormControl
-                        id="projectType"
-                        isInvalid={formik.errors.projectType ? true : false}
-                        isRequired
-                      >
-                        <InputLayout>
-                          <FormLabel>Tipe Project</FormLabel>
-                          <Stack spacing={0} h={"full"}>
-                            <SelectC
-                              value={formik.values.projectType}
-                              id="projectType"
-                              name="projectType"
-                              onChange={(e) => {
-                                formik.setFieldValue(
-                                  `projectType`,
-                                  e.target.value
-                                );
-                              }}
-                              placeholder="Select Tipe Project"
-                            >
-                              {PROJEC_TYPE_OPTIONS.map((option) => (
                                 <option key={option} value={option}>
                                   {option}
                                 </option>

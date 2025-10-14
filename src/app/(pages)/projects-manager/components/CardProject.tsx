@@ -1,15 +1,15 @@
 "use client";
 
 import { ProjectDataResponse } from "@/app/services/useProjects";
-import { 
-  radiusStyle, 
-  ENDPOINT_API_BASEURL, 
-  ENDPOINT_PORT_BASIC 
+import {
+  radiusStyle,
+  ENDPOINT_API_BASEURL,
+  ENDPOINT_PORT_BASIC,
 } from "@/app/constants/applicationConstants";
-import { 
-  getProjectHealthRating, 
-  truncateText, 
-  buildUrlPort 
+import {
+  getProjectHealthRating,
+  truncateText,
+  buildUrlPort,
 } from "@/app/helper/MasterHelper";
 import {
   Avatar,
@@ -67,13 +67,13 @@ const CardProject = memo(({ data }: CardProjectProps) => {
           alignItems="center"
           justifyContent="center"
           textAlign="center"
-          fontSize={data.appsProject.appShortName.length > 4 ? "2xl" : "4xl"}
+          // fontSize={data.appsProject?.appShortName.length > 4 ? "2xl" : "4xl"}
           fontWeight="bold"
           textOverflow="ellipsis"
           whiteSpace="nowrap"
           flexShrink={0}
         >
-          {data.appsProject.appShortName}
+          {data.appsProject?.appShortName}
 
           {/* Floating component at bottom center */}
           <Flex

@@ -217,6 +217,7 @@ import useOrganization, {
   OrganizationResponse,
 } from "@/app/services/useOrganization";
 import useApps, { ApplicationMasterResponse } from "@/app/services/useApps";
+import AppPickerModal from "./AppPickerModal";
 import { WeekdaySelector } from "@/app/components/inputProps/WeekDaySelector";
 import CoverLockedFeature from "@/app/components/coverLockedFeature";
 
@@ -346,6 +347,9 @@ function RegsiterRequirementViewPage({
   const { List: ListUsers } = useUsers();
   const { List: ListOrganization } = useOrganization();
   const [isClient, setIsClient] = useState(false);
+  const ModalAppPicker = useDisclosure();
+  const [selectedApp, setSelectedApp] =
+    useState<ApplicationMasterResponse | null>(null);
   const { List: ListApps } = useApps();
 
   const initialValues: RequirementsInsertPayload = {
@@ -3970,6 +3974,10 @@ function RegsiterRequirementViewPage({
                             formik={formik}
                             DataBackLogs={DataBackLogs}
                             setDataBackLogs={setDataBackLogs}
+                            ModalAppPicker={ModalAppPicker}
+                            selectedApp={selectedApp}
+                            setSelectedApp={setSelectedApp}
+                            tokenData={tokenData}
                           />
                         ) : (
                           <Section4RFCView
@@ -3978,6 +3986,10 @@ function RegsiterRequirementViewPage({
                             formik={formik}
                             DataBackLogs={DataBackLogs}
                             setDataBackLogs={setDataBackLogs}
+                            ModalAppPicker={ModalAppPicker}
+                            selectedApp={selectedApp}
+                            setSelectedApp={setSelectedApp}
+                            tokenData={tokenData}
                           />
                         )}
                       </>
@@ -4225,8 +4237,14 @@ interface Section4BRDProps {
   type_req_param: "BRD";
   formik: any;
   ActionLoading: boolean;
-  DataBackLogs: ReqBacklogPayload[]; // <- add state value
-  setDataBackLogs: React.Dispatch<React.SetStateAction<ReqBacklogPayload[]>>; // <- add setter function
+  DataBackLogs: ReqBacklogPayload[];
+  setDataBackLogs: React.Dispatch<React.SetStateAction<ReqBacklogPayload[]>>;
+  ModalAppPicker: any;
+  selectedApp: ApplicationMasterResponse | null;
+  setSelectedApp: React.Dispatch<
+    React.SetStateAction<ApplicationMasterResponse | null>
+  >;
+  tokenData: string;
 }
 
 // STEP 4 SECTION BRD
@@ -4235,12 +4253,15 @@ const Section4BRDView = ({
   formik,
   ActionLoading,
   DataBackLogs,
+  ModalAppPicker,
+  selectedApp,
+  setSelectedApp,
   setDataBackLogs,
+  tokenData,
 }: Section4BRDProps) => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
-  const [tokenData, setTokenData] = useState<string>("");
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
   const { List: ListApps } = useApps();
@@ -4727,9 +4748,9 @@ const Section4BRDView = ({
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   const handleChangeAppCode = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const onlyAlphabets = e.target.value
-      .replace(/[^a-zA-Z ]/g, "")
-      .toUpperCase();
+    const onlyAlphabets = e.target.value;
+    // .replace(/[^a-zA-Z ]/g, "")
+    // .toUpperCase();
     formik.setFieldValue("appInitialCode", onlyAlphabets);
 
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
@@ -4958,7 +4979,7 @@ const Section4BRDView = ({
                   w="full"
                   justifyContent="start"
                   alignItems="center"
-                  gap={4}
+                  gap={2}
                 >
                   <Input
                     id="appInitialCode"
@@ -4971,8 +4992,16 @@ const Section4BRDView = ({
                     minLength={3}
                     maxLength={10}
                     isDisabled={ActionLoading}
+                    isReadOnly
                   />
-                  {formik.values.appInitialCode &&
+                  <Button
+                    colorScheme={"secondary"}
+                    onClick={() => ModalAppPicker.onOpen()}
+                    isDisabled={ActionLoading}
+                  >
+                    Pilih Aplikasi
+                  </Button>
+                  {/* {formik.values.appInitialCode &&
                     formik.values.appInitialCode.length > 2 &&
                     ListDataAplicationExisting.length <= 0 && (
                       <HStack color={"secondary.500"}>
@@ -4981,7 +5010,7 @@ const Section4BRDView = ({
                         </Text>
                         <FiCheckCircle />
                       </HStack>
-                    )}
+                    )} */}
                 </Flex>
                 <Box
                   w={"full"}
@@ -5060,6 +5089,7 @@ const Section4BRDView = ({
                   isDisabled={
                     ActionLoading || ApplicationExistingChoosed != null
                   }
+                  isReadOnly
                 />
                 <FormErrorMessage>
                   {formik.errors.appInitialName}
@@ -5734,6 +5764,22 @@ const Section4BRDView = ({
           </FormControl>
         </Flex>
       </InputGroupPanel>
+
+      {/* App Picker Modal */}
+      <AppPickerModal
+        isOpen={ModalAppPicker.isOpen}
+        onClose={ModalAppPicker.onClose}
+        selectedApp={selectedApp}
+        onAppSelect={(app) => {
+          setSelectedApp(app);
+          if (app) {
+            formik.setFieldValue("appInitialCode", app.appShortName);
+            SelectedApp(app);
+          }
+          ModalAppPicker.onClose();
+        }}
+        tokenData={tokenData}
+      />
     </Flex>
   );
 };
@@ -5742,8 +5788,14 @@ interface Section4RFCProps {
   type_req_param: "RFC";
   formik: any;
   ActionLoading: boolean;
-  DataBackLogs: ReqBacklogPayload[]; // <- add state value
-  setDataBackLogs: React.Dispatch<React.SetStateAction<ReqBacklogPayload[]>>; // <- add setter function
+  DataBackLogs: ReqBacklogPayload[];
+  setDataBackLogs: React.Dispatch<React.SetStateAction<ReqBacklogPayload[]>>;
+  ModalAppPicker: any;
+  selectedApp: ApplicationMasterResponse | null;
+  setSelectedApp: React.Dispatch<
+    React.SetStateAction<ApplicationMasterResponse | null>
+  >;
+  tokenData: string;
 }
 
 interface BacklogChangesData {
@@ -5791,12 +5843,15 @@ const Section4RFCView = ({
   formik,
   ActionLoading,
   DataBackLogs,
+  ModalAppPicker,
+  selectedApp,
+  setSelectedApp,
   setDataBackLogs,
+  tokenData,
 }: Section4RFCProps) => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
-  const [tokenData, setTokenData] = useState<string>("");
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
   const { List: ListApps } = useApps();
@@ -5804,11 +5859,14 @@ const Section4RFCView = ({
     useRequirements();
 
   const movePriority = (backlogId: string, direction: "up" | "down") => {
-    const currentIndex = DataBackLogs.findIndex((item) => item.backlogId === backlogId);
+    const currentIndex = DataBackLogs.findIndex(
+      (item) => item.backlogId === backlogId
+    );
     if (currentIndex === -1) return;
 
     const newData = [...DataBackLogs];
-    const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+    const targetIndex =
+      direction === "up" ? currentIndex - 1 : currentIndex + 1;
 
     if (targetIndex < 0 || targetIndex >= newData.length) return;
 
@@ -5818,7 +5876,10 @@ const Section4RFCView = ({
     newData[targetIndex].posOrder = temp;
 
     // Swap positions in array
-    [newData[currentIndex], newData[targetIndex]] = [newData[targetIndex], newData[currentIndex]];
+    [newData[currentIndex], newData[targetIndex]] = [
+      newData[targetIndex],
+      newData[currentIndex],
+    ];
 
     setDataBackLogs(newData);
   };
@@ -5847,7 +5908,9 @@ const Section4RFCView = ({
     );
 
     // Sort by posOrder
-    const sortedBacklogData = updatedBacklogData.sort((a, b) => a.posOrder - b.posOrder);
+    const sortedBacklogData = updatedBacklogData.sort(
+      (a, b) => a.posOrder - b.posOrder
+    );
     formik.setFieldValue("backlogFeatures", sortedBacklogData);
 
     // setBacklogData(updatedBacklogData);
@@ -6302,8 +6365,9 @@ const Section4RFCView = ({
   const [MediaAksesPublic, setMediaAksesPublic] = useState(false);
   const [MediaAksesIntranet, setMediaAksesIntranet] = useState(false);
   // Sort DataBackLogs by posOrder
-  const sortedDataBackLogs = [...DataBackLogs].sort((a, b) => a.posOrder - b.posOrder);
-
+  const sortedDataBackLogs = [...DataBackLogs].sort(
+    (a, b) => a.posOrder - b.posOrder
+  );
 
   return (
     <Flex as={Stack} w={"full"} spacing={5}>
@@ -6321,17 +6385,28 @@ const Section4RFCView = ({
                 Cari Aplikasi Eksisting
               </FormLabel>
               <Stack spacing={0} h={"full"}>
-                <Input
-                  id="appInitialCodeSearch"
-                  name="appInitialCodeSearch"
-                  type="text"
-                  onChange={handleChangeAppCode}
-                  value={SearchAppsText}
-                  placeholder={`CMS / SISMON / dsb.`}
-                  minLength={3}
-                  // maxLength={10}
-                  isDisabled={ActionLoading}
-                />
+                <HStack spacing={2}>
+                  <Input
+                    id="appInitialCodeSearch"
+                    name="appInitialCodeSearch"
+                    type="text"
+                    onChange={handleChangeAppCode}
+                    value={SearchAppsText}
+                    placeholder={`CMS / SISMON / dsb.`}
+                    minLength={3}
+                    // maxLength={10}
+                    isDisabled={ActionLoading}
+                    isReadOnly
+                  />
+                  <Button
+                    colorScheme="blue"
+                    size="md"
+                    onClick={() => ModalAppPicker.onOpen()}
+                    isDisabled={ActionLoading}
+                  >
+                    Pilih Aplikasi
+                  </Button>
+                </HStack>
                 <Box
                   w={"full"}
                   py={2}
@@ -7359,7 +7434,9 @@ const Section4RFCView = ({
                       key={backlog.backlogId || index}
                       p={3}
                       border="1px"
-                      borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                      borderColor={
+                        colorMode === "light" ? "gray.200" : "gray.600"
+                      }
                       rounded="md"
                       alignItems="center"
                       gap={3}
@@ -7368,7 +7445,10 @@ const Section4RFCView = ({
                         <Button
                           size="xs"
                           variant="ghost"
-                          onClick={() => backlog.backlogId && movePriority(backlog.backlogId, "up")}
+                          onClick={() =>
+                            backlog.backlogId &&
+                            movePriority(backlog.backlogId, "up")
+                          }
                           isDisabled={backlog.posOrder === 1}
                         >
                           <ChevronUpIcon />
@@ -7376,8 +7456,13 @@ const Section4RFCView = ({
                         <Button
                           size="xs"
                           variant="ghost"
-                          onClick={() => backlog.backlogId && movePriority(backlog.backlogId, "down")}
-                          isDisabled={backlog.posOrder === sortedDataBackLogs.length}
+                          onClick={() =>
+                            backlog.backlogId &&
+                            movePriority(backlog.backlogId, "down")
+                          }
+                          isDisabled={
+                            backlog.posOrder === sortedDataBackLogs.length
+                          }
                         >
                           <ChevronDownIcon />
                         </Button>
@@ -7401,6 +7486,22 @@ const Section4RFCView = ({
           )}
         </Flex>
       </InputGroupPanel>
+
+      {/* App Picker Modal */}
+      <AppPickerModal
+        isOpen={ModalAppPicker.isOpen}
+        onClose={ModalAppPicker.onClose}
+        selectedApp={selectedApp}
+        onAppSelect={(app) => {
+          setSelectedApp(app);
+          if (app) {
+            formik.setFieldValue("appInitialCode", app.appShortName);
+            SelectedApp(app);
+          }
+          ModalAppPicker.onClose();
+        }}
+        tokenData={tokenData}
+      />
     </Flex>
   );
 };

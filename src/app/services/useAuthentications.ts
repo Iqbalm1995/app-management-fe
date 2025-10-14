@@ -48,9 +48,17 @@ export interface AuthDataRoleResponse {
 
 export interface AuthDataResponse {
   id: string;
-  nrp: string;
+  code: string;
+  firstName: string;
+  lastName: string;
+  username: string;
+  isActive: string;
+  profilePict?: string | null;
+  userEmail: string;
+  userPhoneNumber?: string | null;
+  nrp?: string | null;
   nama: string;
-  nip: string;
+  nip?: string | null;
   userId: string;
   kodeCabang?: string | null;
   namaCabang?: string | null;
@@ -71,8 +79,8 @@ export interface AuthDataResponse {
   namaUnitKerja?: string | null;
   kodeJabatan?: string | null;
   phoneNumber?: string | null;
-  userStatus: string;
-  profilePict?: string | null;
+  userStatus?: string | null;
+  role: AuthDataRoleResponse;
 
   team?: AuthDataTeamResponse | null;
   teamRole?: AuthDataTeamRoleResponse;
@@ -85,6 +93,10 @@ interface useAuthenticationsService {
   GetAuth: (
     token: string
   ) => Promise<ApiGenericResponse<AuthDataResponse | null> | null>;
+  Logout: (
+    userId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
   isLoading: boolean;
   error: string | null;
 }
@@ -170,9 +182,54 @@ const useAuthentications = (): useAuthenticationsService => {
     }
   };
 
+  const Logout = async (
+    userId: string,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/Authenticate/Logout";
+
+    try {
+      const response = await axiosInstance.post<ApiGenericResponse<string>>(
+        `${UrlEndpoint}${PathEndpoint}`,
+        { userId },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during logout."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
   return {
     Login,
     GetAuth,
+    Logout,
     isLoading,
     error,
   };

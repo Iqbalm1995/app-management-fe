@@ -161,6 +161,113 @@ npm run type-check   # Run TypeScript compiler check
 
 > **⚠️ IMPORTANT**: This section contains essential information that must be referenced in every development session.
 
+### 🚨 **CRITICAL IMPLEMENTATION GUIDE (MANDATORY)**
+
+> **⚠️ ABSOLUTE REQUIREMENT**: This process MUST be followed for ALL code implementations. NO EXCEPTIONS.
+
+#### **📋 MANDATORY IMPLEMENTATION PROCESS:**
+
+##### **STEP 1: COMPLETE CODE ANALYSIS (REQUIRED)**
+```bash
+# ALWAYS do this BEFORE any changes:
+1. Read ENTIRE file structure with fs_read
+2. Check ALL opening/closing tags: <>, {}, (), []
+3. Verify ALL function boundaries and scopes
+4. Confirm ALL interface definitions and imports
+5. Map ALL variable scopes and dependencies
+6. Trace ALL import/export statements
+```
+
+##### **STEP 2: CURRENT STATE VERIFICATION (MANDATORY)**
+```bash
+# MUST verify current situation:
+1. fs_read - Check exact line numbers around changes
+2. fs_read - Verify existing code structure completely
+3. fs_read - Confirm all related interfaces match
+4. fs_read - Check import statements are correct
+5. fs_read - Validate component boundaries are intact
+```
+
+##### **STEP 3: IMPLEMENTATION WITH PRECISION (CRITICAL)**
+```bash
+# Implementation rules (NO VIOLATIONS):
+1. Make MINIMAL changes only - no extra code
+2. Preserve ALL existing functionality intact
+3. Match EXACT existing code patterns
+4. Use EXISTING variable names and conventions
+5. Follow CURRENT code style consistently
+```
+
+##### **STEP 4: MANDATORY BUILD VERIFICATION (REQUIRED)**
+```bash
+# AFTER every single change:
+cd /path/to/project
+./node_modules/.bin/tsc --noEmit --project . 2>&1
+
+# If ANY errors found:
+1. Read error messages completely and carefully
+2. Check EXACT line numbers mentioned in errors
+3. Fix ALL errors before making any other changes
+4. Build again until absolutely NO errors remain
+5. Repeat process until 100% SUCCESS
+```
+
+##### **STEP 5: ITERATIVE ERROR RESOLUTION (PROCESS)**
+```bash
+# Mandatory process flow:
+1. Build → Find and analyze all errors
+2. Analyze → Understand complete root cause
+3. Fix → Make minimal targeted changes only
+4. Build → Verify fix works completely
+5. Repeat → Until completely clean build
+```
+
+#### **⚠️ CRITICAL VIOLATION RULES:**
+
+##### **❌ NEVER DO (FORBIDDEN):**
+- Make changes without reading complete file structure
+- Assume code structure without fs_read verification
+- Skip build verification after any changes
+- Make multiple changes before testing each one
+- Ignore or skip TypeScript error details
+- Add code without understanding existing patterns
+- Remove functionality without explicit instruction
+
+##### **✅ ALWAYS DO (MANDATORY):**
+- Read complete file with fs_read before ANY changes
+- Verify ALL brackets/tags/parentheses match perfectly
+- Check ALL function/component boundaries are correct
+- Build after EVERY single change made
+- Fix ALL errors before proceeding to next change
+- Follow existing code patterns exactly
+- Preserve all existing functionality
+
+#### **🔧 MANDATORY IMPLEMENTATION WORKFLOW:**
+
+```bash
+SESSION START/RESUME CHECKLIST:
+□ 1. fs_read → Complete file analysis first
+□ 2. fs_read → Check specific implementation areas
+□ 3. fs_read → Verify all interfaces/types exist
+□ 4. fs_write → Make single minimal change
+□ 5. BUILD → ./node_modules/.bin/tsc --noEmit
+□ 6. IF ERRORS → Return to step 1, analyze completely
+□ 7. IF SUCCESS → Continue to next minimal change
+□ 8. REPEAT → Until all requirements complete
+```
+
+#### **📝 SESSION DOCUMENTATION REQUIREMENT:**
+```typescript
+// EVERY session must start with:
+// 1. Read this CRITICAL IMPLEMENTATION GUIDE
+// 2. Acknowledge understanding of mandatory process
+// 3. Follow workflow exactly as documented
+// 4. Build and verify after every change
+// 5. Document any deviations with justification
+```
+
+---
+
 ### 🎯 Core Business Logic
 
 #### **Project Management Workflow**

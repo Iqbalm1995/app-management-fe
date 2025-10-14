@@ -140,6 +140,11 @@ interface useUsersServices {
     UserId: string,
     token: string
   ) => Promise<ApiGenericResponse<UserOrganizationResponse | null> | null>;
+  EditUserPassword: (
+    userId: string,
+    oldPassword: string,
+    newPassword: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
   isLoading: boolean;
   error: string | null;
 }
@@ -158,18 +163,21 @@ const useUsers = (): useUsersServices => {
       ENDPOINT_API_BASEURL,
       ENDPOINT_PORT_BASIC
     );
-    const PathEndpoint: string = "/v1/Users/integrated/list";
+
     try {
-      const response = await axiosInstance.post<
-        ApiGenericResponse<UsersResponse[]>
-      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axiosInstance.post(
+        `${UrlEndpoint}/v1/Users/list`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
       setIsLoading(false);
       return response.data;
-    } catch (err) {
+    } catch (err: any) {
       setIsLoading(false);
       if (axios.isAxiosError(err)) {
         const errorResponse = handleAxiosError(err);
@@ -199,18 +207,20 @@ const useUsers = (): useUsersServices => {
       ENDPOINT_API_BASEURL,
       ENDPOINT_PORT_BASIC
     );
-    const PathEndpoint: string = `/v1/Users/integrated/${id}`;
+
     try {
-      const response = await axiosInstance.get<
-        ApiGenericResponse<UsersResponse>
-      >(`${UrlEndpoint}${PathEndpoint}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axiosInstance.get(
+        `${UrlEndpoint}/v1/Users/detail/${id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
       setIsLoading(false);
       return response.data;
-    } catch (err) {
+    } catch (err: any) {
       setIsLoading(false);
       if (axios.isAxiosError(err)) {
         const errorResponse = handleAxiosError(err);
@@ -240,18 +250,20 @@ const useUsers = (): useUsersServices => {
       ENDPOINT_API_BASEURL,
       ENDPOINT_PORT_BASIC
     );
-    const PathEndpoint: string = `/v1/Users/integrated/user-id/${UserId}`;
+
     try {
-      const response = await axiosInstance.get<
-        ApiGenericResponse<UsersResponse>
-      >(`${UrlEndpoint}${PathEndpoint}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axiosInstance.get(
+        `${UrlEndpoint}/v1/Users/integrated/user-id/${UserId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
       setIsLoading(false);
       return response.data;
-    } catch (err) {
+    } catch (err: any) {
       setIsLoading(false);
       if (axios.isAxiosError(err)) {
         const errorResponse = handleAxiosError(err);
@@ -281,18 +293,20 @@ const useUsers = (): useUsersServices => {
       ENDPOINT_API_BASEURL,
       ENDPOINT_PORT_BASIC
     );
-    const PathEndpoint: string = `/v1/Users/integrated/organization/user/${id}`;
+
     try {
-      const response = await axiosInstance.get<
-        ApiGenericResponse<UserOrganizationResponse>
-      >(`${UrlEndpoint}${PathEndpoint}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axiosInstance.get(
+        `${UrlEndpoint}/v1/Users/detail-organization/${id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
       setIsLoading(false);
       return response.data;
-    } catch (err) {
+    } catch (err: any) {
       setIsLoading(false);
       if (axios.isAxiosError(err)) {
         const errorResponse = handleAxiosError(err);
@@ -313,7 +327,7 @@ const useUsers = (): useUsersServices => {
   };
 
   const GetDetailOrgByUserId = async (
-    id: string,
+    UserId: string,
     token: string
   ): Promise<ApiGenericResponse<UserOrganizationResponse | null> | null> => {
     setIsLoading(true);
@@ -322,23 +336,70 @@ const useUsers = (): useUsersServices => {
       ENDPOINT_API_BASEURL,
       ENDPOINT_PORT_BASIC
     );
-    const PathEndpoint: string = `/v1/Users/integrated/organization/user-id/${id}`;
+
     try {
-      const response = await axiosInstance.get<
-        ApiGenericResponse<UserOrganizationResponse>
-      >(`${UrlEndpoint}${PathEndpoint}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axiosInstance.get(
+        `${UrlEndpoint}/v1/Users/detail-organization-by-userid/${UserId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
       setIsLoading(false);
       return response.data;
-    } catch (err) {
+    } catch (err: any) {
       setIsLoading(false);
       if (axios.isAxiosError(err)) {
         const errorResponse = handleAxiosError(err);
         setError(
           err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const EditUserPassword = async (
+    userId: string,
+    oldPassword: string,
+    newPassword: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+
+    try {
+      const response = await axiosInstance.put(
+        `${UrlEndpoint}/v1/Authenticate/change-password`,
+        {
+          userId: userId,
+          oldPassword: oldPassword,
+          newPassword: newPassword,
+        }
+      );
+
+      setIsLoading(false);
+      return response.data;
+    } catch (err: any) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message ||
+            "An error occurred during password change."
         );
         return errorResponse;
       } else {
@@ -359,6 +420,7 @@ const useUsers = (): useUsersServices => {
     GetDetailByUserId,
     GetDetailOrgById,
     GetDetailOrgByUserId,
+    EditUserPassword,
     isLoading,
     error,
   };

@@ -18,6 +18,12 @@ import handleAxiosError from "../utils/handleAxiosError";
 import { UsersFullResponse, UsersResponse } from "./useUsers";
 import { ApplicationMasterShortResponse } from "./useApps";
 import { MediaObjectResponse } from "./useMediaObject";
+import {
+  BacklogDataResponse,
+  BacklogInsertPayload,
+  RequirementWorkProgramDataResponse,
+  WorkProgramsPayload,
+} from "./useRequirements";
 
 export interface ProjectDataResponse {
   id: string;
@@ -33,6 +39,19 @@ export interface ProjectDataResponse {
   projectClosedDate: string | null;
   projectDurationDays: number;
   projectStatusPercentage: number;
+  projectAcquisitionCode: string | null;
+  projectAcquisitionName: string | null;
+  projectCharasteristicCode: string | null;
+  projectCharasteristicName: string | null;
+  projectSubCharasteristicCode: string | null;
+  projectSubCharasteristicName: string | null;
+  projectSubCharasteristicDesc: string | null;
+  proOwnerDirectorateId: string;
+  proOwnerDirectorateCode: string;
+  proOwnerDirectorateName: string;
+  proManageByDirectorateId: string;
+  proManageByDirectorateCode: string;
+  proManageByDirectorateName: string;
   proOwnerDivisionId: string;
   proOwnerDivisionCode: string;
   proOwnerDivisionName: string;
@@ -54,7 +73,10 @@ export interface ProjectDataResponse {
   updatedAt: string | null;
   updatedBy: string | null;
   userAssignment: ProjectUserAssignmentResponse[];
-  appsProject: ApplicationMasterShortResponse;
+  appsProject: ApplicationMasterShortResponse | null;
+  workPrograms: RequirementWorkProgramDataResponse[];
+  projectWorkflowProjectData: ProjectWorkflowResponse[];
+  projectWorkflowData: ProjectWorkflowResponse[];
 }
 
 export interface ProjectUserAssignmentResponse {
@@ -89,6 +111,7 @@ export interface ProjectWorkflowResponse {
   parentId?: string | null;
   workflowChild: ProjectWorkflowResponse[];
   workflowValues: ProjectWorkflowValueResponse[];
+  workflowBacklog?: BacklogDataResponse | null;
 }
 
 export interface ProjectWorkflowValueResponse {
@@ -120,14 +143,22 @@ export interface ProjectInsertPayload {
   projectType: string;
   projectRegisterDate: string;
   projectClosedDate?: string | null;
+  projectAcquisitionCode?: string | null;
+  projectCharasteristicCode?: string | null;
+  projectSubCharasteristicCode?: string | null;
+  proOwnerDirectorateId?: string | null;
   proOwnerDivisionId?: string | null;
   proOwnerGroupId?: string | null;
+  proManageByDirectorateId?: string | null;
   proManageByDivisionId?: string | null;
   proManageByGroupId?: string | null;
   proManageByTeamId?: string | null;
   reqParentId?: string | null;
   userAssigns: ProjectUserInsertPayload[];
   projectPlanWorkflowIds: string[];
+  projectPlanWorkflowBacklogsIds: string[];
+  workProgramsBacklogs: BacklogInsertPayload[];
+  workPrograms: WorkProgramsPayload[];
 }
 
 export interface ProjectWorkflowValueInsertPayload {
@@ -167,6 +198,10 @@ export interface ProjectUpdatePayload {
 export interface ProjectUpdatePICPayload {
   projectId: string;
   dataUserId: string[];
+}
+
+export interface ProjectCountResponse {
+  countAllProjects: number;
 }
 
 export interface AppsResponse {
@@ -400,6 +435,10 @@ export interface ProjectBacklogProgressionResponse {
   progressionBacklog: number;
 }
 
+export interface ProjectWorkflowBacklogInitializePayload {
+  projectWorkflowId: string;
+}
+
 interface useProjectsServices {
   List: (
     payload: PaggingListPayload,
@@ -409,6 +448,9 @@ interface useProjectsServices {
     teamId: string,
     token: string
   ) => Promise<ApiGenericResponse<ProjectDataResponse | null> | null>;
+  GetProjectCount: (
+    token: string
+  ) => Promise<ApiGenericResponse<ProjectCountResponse | null> | null>;
   InsertProjects: (
     payload: ProjectInsertPayload,
     token: string
@@ -572,6 +614,16 @@ interface useProjectsServices {
 
   // project workflow data
 
+  ProjectWorkflowBacklogInitialize: (
+    pauload: ProjectWorkflowBacklogInitializePayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+
+  ListProjectWorkflowBacklog: (
+    projectId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<ProjectWorkflowResponse[] | null> | null>;
+
   ListProjectWorkflow: (
     projectId: string,
     token: string
@@ -657,6 +709,46 @@ const useProjects = (): useProjectsServices => {
     try {
       const response = await axiosInstance.get<
         ApiGenericResponse<ProjectDataResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const GetProjectCount = async (
+    token: string
+  ): Promise<ApiGenericResponse<ProjectCountResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Projects/count`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<ProjectCountResponse>
       >(`${UrlEndpoint}${PathEndpoint}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -2264,6 +2356,90 @@ const useProjects = (): useProjectsServices => {
     }
   };
 
+  const ProjectWorkflowBacklogInitialize = async (
+    payload: ProjectWorkflowBacklogInitializePayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string =
+      "/v1/Projects/projectWorkflowBacklog/initialize";
+
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const ListProjectWorkflowBacklog = async (
+    projectId: string,
+    token: string
+  ): Promise<ApiGenericResponse<ProjectWorkflowResponse[] | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Projects/ProjectWorkflowBacklogData/list/${projectId}`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<ProjectWorkflowResponse[]>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
   const ListProjectWorkflow = async (
     projectId: string,
     token: string
@@ -2457,6 +2633,7 @@ const useProjects = (): useProjectsServices => {
   return {
     List,
     GetDetailById,
+    GetProjectCount,
     InsertProjects,
     UpdateProjects,
     DeleteProjects,
@@ -2495,6 +2672,9 @@ const useProjects = (): useProjectsServices => {
     InsertProjectFeature,
     UpdateProjectFeature,
     DeleteProjectFeature,
+
+    ProjectWorkflowBacklogInitialize,
+    ListProjectWorkflowBacklog,
 
     GetProjectBacklogProgression,
 
