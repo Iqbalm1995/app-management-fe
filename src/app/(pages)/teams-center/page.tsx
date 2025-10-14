@@ -155,7 +155,7 @@ function TeamsCenterPage() {
         fieldOrder: ["orgName"],
         orderDir: "asc",
         filterWhere: [
-          { field: "orgType", operator: "=", value: "DIREKTORAT" }
+          { field: "orgType", operator: "=", value: "DIRECTORATE" }
         ],
       };
 
@@ -172,7 +172,7 @@ function TeamsCenterPage() {
         fieldOrder: ["orgName"],
         orderDir: "asc",
         filterWhere: [
-          { field: "orgType", operator: "=", value: "DIVISI" }
+          { field: "orgType", operator: "=", value: "DIVISION" }
         ],
       };
 
@@ -189,7 +189,7 @@ function TeamsCenterPage() {
         fieldOrder: ["orgName"],
         orderDir: "asc",
         filterWhere: [
-          { field: "orgType", operator: "=", value: "GRUP" }
+          { field: "orgType", operator: "=", value: "GROUP" }
         ],
       };
 
