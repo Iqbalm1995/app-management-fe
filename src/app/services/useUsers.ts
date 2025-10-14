@@ -166,7 +166,7 @@ const useUsers = (): useUsersServices => {
 
     try {
       const response = await axiosInstance.post(
-        `${UrlEndpoint}/v1/Users/list`,
+        `${UrlEndpoint}/v1/Users/integrated/list`,
         payload,
         {
           headers: {
@@ -210,7 +210,7 @@ const useUsers = (): useUsersServices => {
 
     try {
       const response = await axiosInstance.get(
-        `${UrlEndpoint}/v1/Users/detail/${id}`,
+        `${UrlEndpoint}/v1/Users/integrated/${id}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

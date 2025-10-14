@@ -147,8 +147,8 @@ function HomePageView() {
         overflow="hidden"
         bgGradient={
           colorMode === "light"
-            ? "linear(135deg, secondary.400, secondary.700, yellow.400)"
-            : "linear(135deg, secondary.600, secondary.800, yellow.600)"
+            ? "linear(135deg, secondary.400, secondary.700, secondary.900)"
+            : "linear(135deg, secondary.600, secondary.800, secondary.900)"
         }
         color="white"
         py={16}
