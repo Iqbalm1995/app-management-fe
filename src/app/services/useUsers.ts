@@ -119,6 +119,11 @@ export interface UserOrganizationResponse {
   team?: TeamsShortResponse | null;
 }
 
+export interface UserUpdateOrgGroupPayload {
+  userSysId: string;
+  orgCode: string;
+}
+
 interface useUsersServices {
   List: (
     payload: PaggingListPayload,
@@ -144,6 +149,10 @@ interface useUsersServices {
     userId: string,
     oldPassword: string,
     newPassword: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  UpdateOrgUser: (
+    payload: UserUpdateOrgGroupPayload,
+    token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
   isLoading: boolean;
   error: string | null;
@@ -414,6 +423,47 @@ const useUsers = (): useUsersServices => {
     }
   };
 
+  const UpdateOrgUser = async (
+    payload: UserUpdateOrgGroupPayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Users/integrated/edit-user-group-code`;
+    try {
+      const response = await axiosInstance.put<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
   return {
     List,
     GetDetailById,
@@ -421,6 +471,7 @@ const useUsers = (): useUsersServices => {
     GetDetailOrgById,
     GetDetailOrgByUserId,
     EditUserPassword,
+    UpdateOrgUser,
     isLoading,
     error,
   };
