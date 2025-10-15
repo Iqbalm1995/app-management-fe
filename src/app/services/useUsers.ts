@@ -45,6 +45,8 @@ export interface UsersResponse {
   phoneNumber?: string | null;
   userStatus: string;
   profilePict?: string | null;
+  kodeGroupKerja?: string | null;
+  namaGroupKerja?: string | null;
   lastSync?: string | null;
   createdAt: string;
   createdBy: string;
@@ -66,6 +68,8 @@ export interface UserShortResponse {
   kodeJabatan?: string | null;
   jabatan?: string | null;
   profilePict?: string | null;
+  kodeGroupKerja?: string | null;
+  namaGroupKerja?: string | null;
 }
 
 export interface UsersFullResponse {
