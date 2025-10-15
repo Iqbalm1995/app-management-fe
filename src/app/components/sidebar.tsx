@@ -342,7 +342,14 @@ const LinkItems: LinkItemProps[] = [
         menuID: "1",
         children: [],
       },
-    ],
+      {
+        name: "Master Users",
+        icon: FiUsers,
+        link: "/master-data/users",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },    ],
   },
   {
     name: "Audit Trail",
