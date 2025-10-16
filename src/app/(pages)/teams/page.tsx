@@ -181,7 +181,7 @@ function TeamsPage() {
       />
 
       {/* Enhanced Header Section */}
-      <Box 
+      <Box
         mb={6}
         p={6}
         bgGradient="linear(135deg, blue.500, purple.600)"

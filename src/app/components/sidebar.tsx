@@ -286,14 +286,15 @@ const LinkItems: LinkItemProps[] = [
     menuID: "1",
     children: [],
   },
-  {
-    name: "Team Center",
-    icon: FaUsersRays,
-    link: "/teams-center",
-    role: ["admin"],
-    menuID: "1",
-    children: [],
-  },  // {
+  // {
+  //   name: "Team Center",
+  //   icon: FaUsersRays,
+  //   link: "/teams-center",
+  //   role: ["admin"],
+  //   menuID: "1",
+  //   children: [],
+  // },
+  // {
   //   name: "Server Manager",
   //   icon: CiServer,
   //   link: "/server-manager",
@@ -341,7 +342,14 @@ const LinkItems: LinkItemProps[] = [
         menuID: "1",
         children: [],
       },
-    ],
+      {
+        name: "Master Users",
+        icon: FiUsers,
+        link: "/master-data/users",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },    ],
   },
   {
     name: "Audit Trail",
