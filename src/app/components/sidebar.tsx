@@ -168,25 +168,25 @@ const LinkItems: LinkItemProps[] = [
     menuID: "1",
     children: [],
   },
-  {
-    name: "Workspace",
-    icon: BsRocketTakeoff,
-    link: "/workspace",
-    role: ["admin"],
-    menuID: "1",
-    isPro: true,
-    children: [
-      {
-        name: "My Project",
-        icon: FaCode,
-        link: "/project-development",
-        role: ["admin"],
-        menuID: "1",
-        isPro: true,
-        children: [],
-      },
-    ],
-  },
+  // {
+  //   name: "Workspace",
+  //   icon: BsRocketTakeoff,
+  //   link: "/workspace",
+  //   role: ["admin"],
+  //   menuID: "1",
+  //   isPro: true,
+  //   children: [
+  //     {
+  //       name: "My Project",
+  //       icon: FaCode,
+  //       link: "/project-development",
+  //       role: ["admin"],
+  //       menuID: "1",
+  //       isPro: true,
+  //       children: [],
+  //     },
+  //   ],
+  // },
   {
     name: "Requirements",
     icon: FaDraftingCompass,
@@ -253,31 +253,23 @@ const LinkItems: LinkItemProps[] = [
       },
     ],
   },
-  // {
-  //   name: "Reports",
-  //   icon: BiSolidReport,
-  //   link: "/reports",
-  //   role: ["admin"],
-  //   menuID: "1",
-  //   children: [
-  //     {
-  //       name: "Project Reports",
-  //       icon: BiSolidReport,
-  //       link: "/reports/project",
-  //       role: ["admin"],
-  //       menuID: "1",
-  //       children: [],
-  //     },
-  //     {
-  //       name: "Event Reports",
-  //       icon: BiSolidReport,
-  //       link: "/reports/project",
-  //       role: ["admin"],
-  //       menuID: "1",
-  //       children: [],
-  //     },
-  //   ],
-  // },
+  {
+    name: "Reports",
+    icon: BiSolidReport,
+    link: "/reports",
+    role: ["admin"],
+    menuID: "1",
+    children: [
+      {
+        name: "Project Portfolio",
+        icon: BiSolidReport,
+        link: "/reports/project-portfolio",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
   {
     name: "Team Manager",
     icon: FaChess,
@@ -302,15 +294,15 @@ const LinkItems: LinkItemProps[] = [
   //   menuID: "1",
   //   children: [],
   // },
-  {
-    name: "File Archive",
-    icon: MdOutlinePermMedia,
-    link: "/file-archives",
-    role: ["admin"],
-    menuID: "1",
-    isPro: true,
-    children: [],
-  },
+  // {
+  //   name: "File Archive",
+  //   icon: MdOutlinePermMedia,
+  //   link: "/file-archives",
+  //   role: ["admin"],
+  //   menuID: "1",
+  //   isPro: true,
+  //   children: [],
+  // },
   {
     name: "Master Data",
     icon: FiDatabase,
@@ -349,7 +341,8 @@ const LinkItems: LinkItemProps[] = [
         role: ["admin"],
         menuID: "1",
         children: [],
-      },    ],
+      },
+    ],
   },
   {
     name: "Audit Trail",
@@ -668,9 +661,10 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                         size={"sm"}
                         // src={"/img/default-user-img.jpg"}
                         color={"white"}
-                        bgGradient={
-                          "linear(to-br, primary.500, secondary.500 40%, yellow.500)"
-                        }
+                        // bgGradient={
+                        //   "linear(to-br, primary.500, secondary.500 40%, yellow.500)"
+                        // }
+                        bgGradient="linear(to-br, secondary.600, secondary.800, secondary.900)"
                         name={DataAuth ? truncateToTwoWords(DataAuth.nama) : ""}
                         mr="2"
                       />
@@ -1247,29 +1241,15 @@ function AdditionalProfileBar({
                 <Tooltip
                   borderRadius={"xl"}
                   hasArrow
-                  label={DataAuth && DataAuth.team?.teamName}
+                  label={(DataAuth && DataAuth.nama) || ""}
                 >
                   <Avatar
                     size={"md"}
+                    bgGradient="linear(to-br, secondary.600, secondary.800, secondary.900)"
                     color={"white"}
-                    name={
-                      (DataAuth &&
-                        DataAuth.team &&
-                        truncateToTwoWords(DataAuth.team.teamName)) ||
-                      ""
-                    }
+                    name={(DataAuth && DataAuth.nama) || "U"}
                     mr={LiteModeTrigger ? 0 : 2}
                     cursor={"pointer"}
-                    src={
-                      (DataAuth &&
-                        DataAuth.team &&
-                        DataAuth.team.teamPict &&
-                        buildUrlPort(
-                          ENDPOINT_API_BASEURL,
-                          ENDPOINT_PORT_BASIC
-                        ) + DataAuth.team.teamPict) ||
-                      ""
-                    }
                     boxShadow={"md"}
                   />
                 </Tooltip>
@@ -1373,18 +1353,18 @@ function AdditionalProfileBar({
           </MotionBox>
         </Box>
         {/* UPGRADE PLAN */}
-        <Flex m={2} mr={LiteModeTrigger ? 2 : 3}>
+        <Flex m={2} pt={2} mr={LiteModeTrigger ? 2 : 3}>
           <Flex
             as={Button}
             w="full"
             size={LiteModeTrigger ? "sm" : "md"}
-            bgGradient="linear(to-r, secondary.500, purple.500, pink.400)"
+            bgGradient="linear(to-r, blue.600, secondary.500, yellow.500)"
             color="white"
             rounded="xl"
             fontWeight="bold"
             fontSize={LiteModeTrigger ? "xs" : "sm"}
             _hover={{
-              bgGradient: "linear(to-r, secondary.600, purple.600, pink.500)",
+              bgGradient: "linear(to-r, blue.500, secondary.400, yellow.400)",
               transform: "translateY(-2px)",
               boxShadow: "xl",
             }}
@@ -1396,7 +1376,7 @@ function AdditionalProfileBar({
             leftIcon={LiteModeTrigger ? undefined : <FiZap />}
             onClick={() => (window.location.href = "/pricing")}
           >
-            {LiteModeTrigger ? "⚡" : "Upgrade Plan"}
+            {LiteModeTrigger ? "+" : "Upgrade IT bjb +"}
           </Flex>
         </Flex>
       </Flex>
