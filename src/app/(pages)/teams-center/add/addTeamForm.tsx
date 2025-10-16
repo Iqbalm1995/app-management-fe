@@ -74,6 +74,12 @@ function AddTeamViewPage() {
   const [DivisionData, setDivisionData] = useState<OrganizationResponse[]>([]);
   const [selectedDirectorate, setSelectedDirectorate] = useState<string>("");
   const [selectedDivision, setSelectedDivision] = useState<string>("");
+  const [directorateSearch, setDirectorateSearch] = useState<string>("");
+  const [divisionSearch, setDivisionSearch] = useState<string>("");
+  const [groupSearch, setGroupSearch] = useState<string>("");
+  const [showDirectorateOptions, setShowDirectorateOptions] = useState<boolean>(false);
+  const [showDivisionOptions, setShowDivisionOptions] = useState<boolean>(false);
+  const [showGroupOptions, setShowGroupOptions] = useState<boolean>(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
   const [showManualCode, setShowManualCode] = useState(false);
@@ -197,13 +203,15 @@ function AddTeamViewPage() {
   useEffect(() => {
     if (selectedDirectorate !== "") {
       setSelectedDivision("");
+      setDivisionSearch("");
+      setGroupSearch("");
     }
   }, [selectedDirectorate]);
 
-  // Reset group when division changes (existing pattern)
+  // Reset group when division changes
   useEffect(() => {
     if (selectedDivision !== "") {
-      // Group filtering will be handled in UI
+      setGroupSearch("");
     }
   }, [selectedDivision]);
 
@@ -629,15 +637,15 @@ function AddTeamViewPage() {
                               <FormLabel fontWeight="semibold">
                                 Directorate
                               </FormLabel>
-                              <Select
-                                value={selectedDirectorate}
+                              <Input
+                                value={directorateSearch}
                                 onChange={(e) => {
-                                  setSelectedDirectorate(e.target.value);
-                                  // Reset division and group when directorate changes
-                                  setSelectedDivision("");
-                                  formik.setFieldValue("orgGroupId", "");
+                                  setDirectorateSearch(e.target.value);
+                                  setShowDirectorateOptions(true);
                                 }}
-                                placeholder="Select directorate"
+                                onFocus={() => setShowDirectorateOptions(true)}
+                                onBlur={() => setTimeout(() => setShowDirectorateOptions(false), 200)}
+                                placeholder="Type to search or click to browse directorate..."
                                 size="lg"
                                 bg={colorMode === "light" ? "gray.50" : "gray.700"}
                                 border="2px"
@@ -650,13 +658,44 @@ function AddTeamViewPage() {
                                   bg: colorMode === "light" ? "white" : "gray.800",
                                   shadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
                                 }}
-                              >
-                                {DirectorateData.map((org) => (
-                                  <option key={org.id} value={org.id}>
-                                    {org.orgName} ({org.orgCode})
-                                  </option>
-                                ))}
-                              </Select>
+                              />
+                              {showDirectorateOptions && (
+                                <Box
+                                  mt={1}
+                                  maxH="200px"
+                                  overflowY="auto"
+                                  border="1px"
+                                  borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                                  rounded="md"
+                                  bg={colorMode === "light" ? "white" : "gray.800"}
+                                >
+                                  {DirectorateData.filter(dir => 
+                                    !directorateSearch || 
+                                    dir.orgName.toLowerCase().includes(directorateSearch.toLowerCase()) ||
+                                    dir.orgCode.toLowerCase().includes(directorateSearch.toLowerCase())
+                                  ).map((org) => (
+                                    <Box
+                                      key={org.id}
+                                      p={2}
+                                      cursor="pointer"
+                                      _hover={{ bg: colorMode === "light" ? "gray.100" : "gray.700" }}
+                                      onClick={() => {
+                                        setSelectedDirectorate(org.id);
+                                        setDirectorateSearch(`${org.orgName} (${org.orgCode})`);
+                                        setSelectedDivision("");
+                                        setDivisionSearch("");
+                                        setGroupSearch("");
+                                        setShowDirectorateOptions(false);
+                                        setShowDivisionOptions(false);
+                                        setShowGroupOptions(false);
+                                        formik.setFieldValue("orgGroupId", "");
+                                      }}
+                                    >
+                                      {org.orgName} ({org.orgCode})
+                                    </Box>
+                                  ))}
+                                </Box>
+                              )}
                             </FormControl>
 
                             {/* Division Selection */}
@@ -664,14 +703,15 @@ function AddTeamViewPage() {
                               <FormLabel fontWeight="semibold">
                                 Division
                               </FormLabel>
-                              <Select
-                                value={selectedDivision}
+                              <Input
+                                value={divisionSearch}
                                 onChange={(e) => {
-                                  setSelectedDivision(e.target.value);
-                                  // Reset group selection when division changes
-                                  formik.setFieldValue("orgGroupId", "");
+                                  setDivisionSearch(e.target.value);
+                                  setShowDivisionOptions(true);
                                 }}
-                                placeholder="Select division"
+                                onFocus={() => setShowDivisionOptions(true)}
+                                onBlur={() => setTimeout(() => setShowDivisionOptions(false), 200)}
+                                placeholder="Type to search or click to browse division..."
                                 size="lg"
                                 rounded="xl"
                                 bg={colorMode === "light" ? "white" : "gray.800"}
@@ -682,29 +722,61 @@ function AddTeamViewPage() {
                                   bg: colorMode === "light" ? "white" : "gray.800",
                                   shadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
                                 }}
-                              >
-                                {DivisionData.filter(division => 
-                                  selectedDirectorate ? division.parentId === selectedDirectorate : true
-                                ).map((division) => (
-                                  <option key={division.id} value={division.id}>
-                                    {division.orgName} ({division.orgCode})
-                                  </option>
-                                ))}
-                              </Select>
+                              />
+                              {showDivisionOptions && (
+                                <Box
+                                  mt={1}
+                                  maxH="200px"
+                                  overflowY="auto"
+                                  border="1px"
+                                  borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                                  rounded="md"
+                                  bg={colorMode === "light" ? "white" : "gray.800"}
+                                >
+                                  {DivisionData.filter(division => {
+                                    const matchesDirectorate = selectedDirectorate ? division.parentId === selectedDirectorate : true;
+                                    const matchesSearch = !divisionSearch || 
+                                                        division.orgName.toLowerCase().includes(divisionSearch.toLowerCase()) ||
+                                                        division.orgCode.toLowerCase().includes(divisionSearch.toLowerCase());
+                                    return matchesSearch && matchesDirectorate;
+                                  }).map((division) => (
+                                    <Box
+                                      key={division.id}
+                                      p={2}
+                                      cursor="pointer"
+                                      _hover={{ bg: colorMode === "light" ? "gray.100" : "gray.700" }}
+                                      onClick={() => {
+                                        setSelectedDivision(division.id);
+                                        setDivisionSearch(`${division.orgName} (${division.orgCode})`);
+                                        setGroupSearch("");
+                                        setShowDivisionOptions(false);
+                                        setShowGroupOptions(false);
+                                        formik.setFieldValue("orgGroupId", "");
+                                      }}
+                                    >
+                                      {division.orgName} ({division.orgCode})
+                                    </Box>
+                                  ))}
+                                </Box>
+                              )}
                             </FormControl>
-                            
+
+                            {/* Group Selection */}
                             <FormControl
                               isInvalid={!!(formik.errors.orgGroupId && formik.touched.orgGroupId)}
                             >
                               <FormLabel fontWeight="semibold">
                                 Organization Group <Text as="span" color="red.500">*</Text>
                               </FormLabel>
-                              <Select
-                                name="orgGroupId"
-                                value={formik.values.orgGroupId}
-                                onChange={formik.handleChange}
-                                onBlur={formik.handleBlur}
-                                placeholder="Select organization group"
+                              <Input
+                                value={groupSearch}
+                                onChange={(e) => {
+                                  setGroupSearch(e.target.value);
+                                  setShowGroupOptions(true);
+                                }}
+                                onFocus={() => setShowGroupOptions(true)}
+                                onBlur={() => setTimeout(() => setShowGroupOptions(false), 200)}
+                                placeholder="Type to search or click to browse group..."
                                 size="lg"
                                 rounded="xl"
                                 bg={colorMode === "light" ? "white" : "gray.800"}
@@ -715,16 +787,43 @@ function AddTeamViewPage() {
                                   bg: colorMode === "light" ? "white" : "gray.800",
                                   shadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
                                 }}
-                              >
-                                {GroupData.filter(group => 
-                                  selectedDivision ? group.parentId === selectedDivision : false
-                                ).map((org) => (
-                                  <option key={org.id} value={org.id}>
-                                    {org.orgName} ({org.orgCode})
-                                  </option>
-                                ))}
-                              </Select>
-                              <FormErrorMessage>{formik.errors.orgGroupId}</FormErrorMessage>
+                              />
+                              {showGroupOptions && (
+                                <Box
+                                  mt={1}
+                                  maxH="200px"
+                                  overflowY="auto"
+                                  border="1px"
+                                  borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                                  rounded="md"
+                                  bg={colorMode === "light" ? "white" : "gray.800"}
+                                >
+                                  {GroupData.filter(group => {
+                                    const matchesDivision = selectedDivision ? group.parentId === selectedDivision : false;
+                                    const matchesSearch = !groupSearch || 
+                                                        group.orgName.toLowerCase().includes(groupSearch.toLowerCase()) ||
+                                                        group.orgCode.toLowerCase().includes(groupSearch.toLowerCase());
+                                    return matchesSearch && matchesDivision;
+                                  }).map((org) => (
+                                    <Box
+                                      key={org.id}
+                                      p={2}
+                                      cursor="pointer"
+                                      _hover={{ bg: colorMode === "light" ? "gray.100" : "gray.700" }}
+                                      onClick={() => {
+                                        setGroupSearch(`${org.orgName} (${org.orgCode})`);
+                                        setShowGroupOptions(false);
+                                        formik.setFieldValue("orgGroupId", org.id);
+                                      }}
+                                    >
+                                      {org.orgName} ({org.orgCode})
+                                    </Box>
+                                  ))}
+                                </Box>
+                              )}
+                              <FormErrorMessage>
+                                {formik.errors.orgGroupId}
+                              </FormErrorMessage>
                             </FormControl>
                           </VStack>
                         </CardBody>
