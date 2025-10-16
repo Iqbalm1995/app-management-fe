@@ -108,6 +108,21 @@ function TeamsCenterPage() {
     }
   }, [DataAuth]);
 
+  // Reset division and group when directorate changes
+  useEffect(() => {
+    if (selectedDirectorate !== "all") {
+      setSelectedDivision("all");
+      setSelectedGroup("all");
+    }
+  }, [selectedDirectorate]);
+
+  // Reset group selection when division changes (same pattern as add team form)
+  useEffect(() => {
+    if (selectedDivision !== "all") {
+      setSelectedGroup("all");
+    }
+  }, [selectedDivision]);
+
   // Get statistics data
   const GetStatsData = async () => {
     if (!tokenData || !DataAuth) return;
@@ -115,7 +130,7 @@ function TeamsCenterPage() {
     try {
       const PayloadStats = {
         search: "",
-        limit: 1000,
+        limit: 999999,
         page: 0,
         fieldOrder: ["createdAt"],
         orderDir: "desc",
@@ -150,7 +165,7 @@ function TeamsCenterPage() {
       // Load Directorates
       const PayloadDirectorate = {
         search: "",
-        limit: 1000,
+        limit: 999999,
         page: 0,
         fieldOrder: ["orgName"],
         orderDir: "asc",
@@ -167,7 +182,7 @@ function TeamsCenterPage() {
       // Load Divisions
       const PayloadDivision = {
         search: "",
-        limit: 1000,
+        limit: 999999,
         page: 0,
         fieldOrder: ["orgName"],
         orderDir: "asc",
@@ -184,7 +199,7 @@ function TeamsCenterPage() {
       // Load Groups
       const PayloadGroup = {
         search: "",
-        limit: 1000,
+        limit: 999999,
         page: 0,
         fieldOrder: ["orgName"],
         orderDir: "asc",
@@ -218,7 +233,7 @@ function TeamsCenterPage() {
         const selectedOrg = GroupData.find(org => org.id === selectedGroup);
         if (selectedOrg) {
           filterConditions.push({
-            field: "group.orgCode",
+            field: "orgGroupCode",
             operator: "=",
             value: selectedOrg.orgCode
           });
@@ -251,7 +266,7 @@ function TeamsCenterPage() {
         const selectedOrg = GroupData.find(org => org.id === selectedGroup);
         if (selectedOrg) {
           filterConditions.push({
-            field: "group.orgCode",
+            field: "orgGroupCode",
             operator: "=",
             value: selectedOrg.orgCode
           });
@@ -471,7 +486,7 @@ function TeamsCenterPage() {
                   {/* Directorate Filter */}
                   <Select
                     value={selectedDirectorate}
-                    isDisabled={true}
+                    isDisabled={false}
                     onChange={(e) => setSelectedDirectorate(e.target.value)}
                     maxW="160px"
                     bg={colorMode === "light" ? "gray.50" : "gray.700"}
@@ -486,7 +501,7 @@ function TeamsCenterPage() {
                     <option value="all">All Directorates</option>
                     {DirectorateData.map((org) => (
                       <option key={org.id} value={org.id}>
-                        {org.orgName}
+                        {org.orgName} ({org.orgCode})
                       </option>
                     ))}
                   </Select>
@@ -494,7 +509,7 @@ function TeamsCenterPage() {
                   {/* Division Filter */}
                   <Select
                     value={selectedDivision}
-                    isDisabled={true}
+                    isDisabled={false}
                     onChange={(e) => setSelectedDivision(e.target.value)}
                     maxW="160px"
                     bg={colorMode === "light" ? "gray.50" : "gray.700"}
@@ -507,9 +522,16 @@ function TeamsCenterPage() {
                     }}
                   >
                     <option value="all">All Divisions</option>
-                    {DivisionData.map((org) => (
+                    {DivisionData.filter(division => {
+                      // If directorate is selected, filter divisions under that directorate
+                      if (selectedDirectorate !== "all") {
+                        return division.parentId === selectedDirectorate;
+                      }
+                      // Otherwise show all divisions
+                      return true;
+                    }).map((org) => (
                       <option key={org.id} value={org.id}>
-                        {org.orgName}
+                        {org.orgName} ({org.orgCode})
                       </option>
                     ))}
                   </Select>
@@ -529,11 +551,24 @@ function TeamsCenterPage() {
                     }}
                   >
                     <option value="all">All Groups</option>
-                    {GroupData.filter(group => 
-                      DataAuth?.team?.division?.id ? group.parentId === DataAuth.team.division.id : true
-                    ).map((org) => (
+                    {GroupData.filter(group => {
+                      // Priority 1: If division is selected, filter groups under that division
+                      if (selectedDivision !== "all") {
+                        return group.parentId === selectedDivision;
+                      }
+                      // Priority 2: If directorate is selected but no division, show groups under user's division within that directorate
+                      if (selectedDirectorate !== "all" && DataAuth?.team?.division?.id) {
+                        const userDivision = DivisionData.find(div => div.id === DataAuth.team.division.id);
+                        if (userDivision && userDivision.parentId === selectedDirectorate) {
+                          return group.parentId === DataAuth.team.division.id;
+                        }
+                        return false;
+                      }
+                      // Priority 3: Default to user's division
+                      return DataAuth?.team?.division?.id ? group.parentId === DataAuth.team.division.id : true;
+                    }).map((org) => (
                       <option key={org.id} value={org.id}>
-                        {org.orgName}
+                        {org.orgName} ({org.orgCode})
                       </option>
                     ))}
                   </Select>

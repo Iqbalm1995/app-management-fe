@@ -69,8 +69,10 @@ function AddTeamViewPage() {
 
   // Form state
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
+  const [DirectorateData, setDirectorateData] = useState<OrganizationResponse[]>([]);
   const [GroupData, setGroupData] = useState<OrganizationResponse[]>([]);
   const [DivisionData, setDivisionData] = useState<OrganizationResponse[]>([]);
+  const [selectedDirectorate, setSelectedDirectorate] = useState<string>("");
   const [selectedDivision, setSelectedDivision] = useState<string>("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
@@ -116,6 +118,24 @@ function AddTeamViewPage() {
       if (!tokenData || !DataAuth) return;
 
       try {
+        // Load Directorates first
+        const PayloadDirectorate = {
+          search: "",
+          limit: 999999,
+          page: 0,
+          fieldOrder: ["orgName"],
+          orderDir: "asc",
+          filterWhere: [
+            { field: "orgType", operator: "=", value: "DIRECTORATE" }
+          ],
+        };
+
+        const directorateResponse = await ListOrganizations(PayloadDirectorate as any, tokenData);
+        if (directorateResponse?.statusCode === RES_CODE_OK && directorateResponse.data) {
+          const directorates = directorateResponse.data as OrganizationResponse[];
+          setDirectorateData(directorates);
+        }
+
         // Load Divisions first (same pattern as BRD)
         const PayloadDivision = {
           search: "",
@@ -172,6 +192,20 @@ function AddTeamViewPage() {
       loadOrganizationData();
     }
   }, [DataAuth, tokenData]);
+
+  // Reset division and group when directorate changes
+  useEffect(() => {
+    if (selectedDirectorate !== "") {
+      setSelectedDivision("");
+    }
+  }, [selectedDirectorate]);
+
+  // Reset group when division changes (existing pattern)
+  useEffect(() => {
+    if (selectedDivision !== "") {
+      // Group filtering will be handled in UI
+    }
+  }, [selectedDivision]);
 
   // Form validation following service hook structure
   const ValidationSchema = Yup.object().shape({
@@ -251,6 +285,24 @@ function AddTeamViewPage() {
     }
 
     try {
+        // Load Directorates first
+        const PayloadDirectorate = {
+          search: "",
+          limit: 999999,
+          page: 0,
+          fieldOrder: ["orgName"],
+          orderDir: "asc",
+          filterWhere: [
+            { field: "orgType", operator: "=", value: "DIRECTORATE" }
+          ],
+        };
+
+        const directorateResponse = await ListOrganizations(PayloadDirectorate as any, tokenData);
+        if (directorateResponse?.statusCode === RES_CODE_OK && directorateResponse.data) {
+          const directorates = directorateResponse.data as OrganizationResponse[];
+          setDirectorateData(directorates);
+        }
+
       setIsLoadingProcess(true);
 
       // Find selected organization to get the code
@@ -572,6 +624,41 @@ function AddTeamViewPage() {
                               Organization
                             </Heading>
                             
+                            {/* Directorate Selection */}
+                            <FormControl>
+                              <FormLabel fontWeight="semibold">
+                                Directorate
+                              </FormLabel>
+                              <Select
+                                value={selectedDirectorate}
+                                onChange={(e) => {
+                                  setSelectedDirectorate(e.target.value);
+                                  // Reset division and group when directorate changes
+                                  setSelectedDivision("");
+                                  formik.setFieldValue("orgGroupId", "");
+                                }}
+                                placeholder="Select directorate"
+                                size="lg"
+                                bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                                border="2px"
+                                borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                                rounded="xl"
+                                _hover={{
+                                  borderColor: "secondary.400",
+                                }}
+                                _focus={{
+                                  bg: colorMode === "light" ? "white" : "gray.800",
+                                  shadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
+                                }}
+                              >
+                                {DirectorateData.map((org) => (
+                                  <option key={org.id} value={org.id}>
+                                    {org.orgName} ({org.orgCode})
+                                  </option>
+                                ))}
+                              </Select>
+                            </FormControl>
+
                             {/* Division Selection */}
                             <FormControl>
                               <FormLabel fontWeight="semibold">
@@ -596,7 +683,9 @@ function AddTeamViewPage() {
                                   shadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
                                 }}
                               >
-                                {DivisionData.map((division) => (
+                                {DivisionData.filter(division => 
+                                  selectedDirectorate ? division.parentId === selectedDirectorate : true
+                                ).map((division) => (
                                   <option key={division.id} value={division.id}>
                                     {division.orgName} ({division.orgCode})
                                   </option>
