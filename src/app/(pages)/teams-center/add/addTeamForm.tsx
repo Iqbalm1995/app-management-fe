@@ -70,6 +70,8 @@ function AddTeamViewPage() {
   // Form state
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
   const [GroupData, setGroupData] = useState<OrganizationResponse[]>([]);
+  const [DivisionData, setDivisionData] = useState<OrganizationResponse[]>([]);
+  const [selectedDivision, setSelectedDivision] = useState<string>("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
   const [showManualCode, setShowManualCode] = useState(false);
@@ -114,21 +116,47 @@ function AddTeamViewPage() {
       if (!tokenData || !DataAuth) return;
 
       try {
-        // Load Groups (main organization level for teams)
-        const PayloadGroup = {
+        // Load Divisions first (same pattern as BRD)
+        const PayloadDivision = {
           search: "",
-          limit: 1000,
+          limit: 999999,
           page: 0,
           fieldOrder: ["orgName"],
           orderDir: "asc",
           filterWhere: [
-            { field: "orgType", operator: "=", value: "GRUP" }
+            { field: "orgType", operator: "=", value: "DIVISION" }
+          ],
+        };
+
+        const divisionResponse = await ListOrganizations(PayloadDivision as any, tokenData);
+        if (divisionResponse?.statusCode === RES_CODE_OK && divisionResponse.data) {
+          const divisions = divisionResponse.data as OrganizationResponse[];
+          setDivisionData(divisions);
+          
+          // Remove D440 filtering - load all divisions like BRD
+          console.log("Division data:", divisions);
+          console.log("User auth data:", DataAuth);
+          console.log("User team data:", DataAuth?.team);
+        }
+
+        // Load all Groups (same pattern as BRD)
+        const PayloadGroup = {
+          search: "",
+          limit: 999999,
+          page: 0,
+          fieldOrder: ["orgName"],
+          orderDir: "asc",
+          filterWhere: [
+            { field: "orgType", operator: "=", value: "GROUP" }
           ],
         };
 
         const groupResponse = await ListOrganizations(PayloadGroup as any, tokenData);
         if (groupResponse?.statusCode === RES_CODE_OK && groupResponse.data) {
-          setGroupData(groupResponse.data as OrganizationResponse[]);
+          const groups = groupResponse.data as OrganizationResponse[];
+          setGroupData(groups);
+          
+          console.log("All groups loaded:", groups);
         }
 
       } catch (error) {
@@ -544,6 +572,38 @@ function AddTeamViewPage() {
                               Organization
                             </Heading>
                             
+                            {/* Division Selection */}
+                            <FormControl>
+                              <FormLabel fontWeight="semibold">
+                                Division
+                              </FormLabel>
+                              <Select
+                                value={selectedDivision}
+                                onChange={(e) => {
+                                  setSelectedDivision(e.target.value);
+                                  // Reset group selection when division changes
+                                  formik.setFieldValue("orgGroupId", "");
+                                }}
+                                placeholder="Select division"
+                                size="lg"
+                                rounded="xl"
+                                bg={colorMode === "light" ? "white" : "gray.800"}
+                                border="1px"
+                                borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
+                                _focus={{
+                                  borderColor: "secondary.500",
+                                  bg: colorMode === "light" ? "white" : "gray.800",
+                                  shadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
+                                }}
+                              >
+                                {DivisionData.map((division) => (
+                                  <option key={division.id} value={division.id}>
+                                    {division.orgName} ({division.orgCode})
+                                  </option>
+                                ))}
+                              </Select>
+                            </FormControl>
+                            
                             <FormControl
                               isInvalid={!!(formik.errors.orgGroupId && formik.touched.orgGroupId)}
                             >
@@ -567,7 +627,9 @@ function AddTeamViewPage() {
                                   shadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
                                 }}
                               >
-                                {GroupData.map((org) => (
+                                {GroupData.filter(group => 
+                                  selectedDivision ? group.parentId === selectedDivision : false
+                                ).map((org) => (
                                   <option key={org.id} value={org.id}>
                                     {org.orgName} ({org.orgCode})
                                   </option>

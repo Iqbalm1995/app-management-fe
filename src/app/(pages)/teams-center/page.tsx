@@ -211,7 +211,19 @@ function TeamsCenterPage() {
       setIsLoadingProcess(true);
       
       // Build filter conditions based on selected filters
-      const filterConditions = [];
+      const filterConditions = []; // Group filtering only - following standard pattern
+      
+      // Filter by group only (under division) - standard organization filtering pattern
+      if (selectedGroup !== "all") {
+        const selectedOrg = GroupData.find(org => org.id === selectedGroup);
+        if (selectedOrg) {
+          filterConditions.push({
+            field: "group.orgCode",
+            operator: "=",
+            value: selectedOrg.orgCode
+          });
+        }
+      }
       
       if (selectedDirectorate !== "all") {
         const selectedOrg = DirectorateData.find(org => org.id === selectedDirectorate);
@@ -459,6 +471,7 @@ function TeamsCenterPage() {
                   {/* Directorate Filter */}
                   <Select
                     value={selectedDirectorate}
+                    isDisabled={true}
                     onChange={(e) => setSelectedDirectorate(e.target.value)}
                     maxW="160px"
                     bg={colorMode === "light" ? "gray.50" : "gray.700"}
@@ -481,6 +494,7 @@ function TeamsCenterPage() {
                   {/* Division Filter */}
                   <Select
                     value={selectedDivision}
+                    isDisabled={true}
                     onChange={(e) => setSelectedDivision(e.target.value)}
                     maxW="160px"
                     bg={colorMode === "light" ? "gray.50" : "gray.700"}
@@ -515,7 +529,9 @@ function TeamsCenterPage() {
                     }}
                   >
                     <option value="all">All Groups</option>
-                    {GroupData.map((org) => (
+                    {GroupData.filter(group => 
+                      DataAuth?.team?.division?.id ? group.parentId === DataAuth.team.division.id : true
+                    ).map((org) => (
                       <option key={org.id} value={org.id}>
                         {org.orgName}
                       </option>
