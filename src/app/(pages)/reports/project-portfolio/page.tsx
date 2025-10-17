@@ -60,7 +60,8 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import React, { useEffect, useMemo, useState } from "react";
-import { FiRefreshCcw } from "react-icons/fi";
+import { FiRefreshCcw, FiDownload } from "react-icons/fi";
+import { FaFileExcel, FaFilePdf } from "react-icons/fa";
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Project Portfolio Report",
@@ -73,7 +74,7 @@ function ProjectPortfolioReportPage() {
   const { colorMode } = useColorMode();
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
-  const { ListReportProjectPortofolio, ExportProjectPortofolioExcel, ExportProjectPortofolioPDF } = useReports();
+  const { ListReportProjectPortofolio, ExportProjectPortofolioExcel, ExportProjectPortofolioPDF, isLoading: exportLoading } = useReports();
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
@@ -748,7 +749,9 @@ function ProjectPortfolioReportPage() {
                     size={"sm"}
                     colorScheme="green"
                     onClick={ExportToExcel}
-                    isDisabled={DataReport.length === 0}
+                    isDisabled={DataReport.length === 0 || exportLoading}
+                    isLoading={exportLoading}
+                    leftIcon={<FaFileExcel />}
                   >
                     Export Excel
                   </Button>
@@ -756,7 +759,9 @@ function ProjectPortfolioReportPage() {
                     size={"sm"}
                     colorScheme="red"
                     onClick={ExportToPDF}
-                    isDisabled={DataReport.length === 0}
+                    isDisabled={DataReport.length === 0 || exportLoading}
+                    isLoading={exportLoading}
+                    leftIcon={<FaFilePdf />}
                   >
                     Export PDF
                   </Button>
