@@ -834,6 +834,7 @@ function ReuirementsRFCPage() {
             overflowX={"auto"}
             justifyContent={"start"}
             pt={4}
+            display={"none"}
           >
             {visibleItems.map((dt, idx) => (
               <BoxStatisticNumber
