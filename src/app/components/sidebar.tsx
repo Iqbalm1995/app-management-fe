@@ -1352,6 +1352,7 @@ function AdditionalProfileBar({
             </Flex>
           </MotionBox>
         </Box>
+
         {/* UPGRADE PLAN */}
         <Flex m={2} pt={2} mr={LiteModeTrigger ? 2 : 3}>
           <Flex
@@ -1375,6 +1376,7 @@ function AdditionalProfileBar({
             boxShadow="lg"
             leftIcon={LiteModeTrigger ? undefined : <FiZap />}
             onClick={() => (window.location.href = "/pricing")}
+            display={"none"}
           >
             {LiteModeTrigger ? "+" : "Upgrade IT bjb +"}
           </Flex>

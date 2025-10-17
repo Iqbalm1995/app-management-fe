@@ -41,6 +41,7 @@ import {
   GridItem,
   Heading,
   HStack,
+  Input,
   Select,
   Stack,
   Text,
@@ -157,7 +158,7 @@ function ProjectPortfolioReportPage() {
         accessorKey: "numbData",
         cell: (info) => (
           <Flex justifyContent={"center"} alignItems="flex-start" h={"full"}>
-            <Text>{pageIndex * pageSize + info.row.index + 1}.</Text>
+            <Text fontSize="sm">{pageIndex * pageSize + info.row.index + 1}.</Text>
           </Flex>
         ),
         header: () => <Flex justifyContent={"center"}>No.</Flex>,
@@ -168,7 +169,7 @@ function ProjectPortfolioReportPage() {
       },
       {
         accessorFn: (row) => row.projectName,
-        id: "projectName",
+        id: "projectInfo",
         cell: (info) => (
           <Flex
             w={"full"}
@@ -177,14 +178,18 @@ function ProjectPortfolioReportPage() {
             alignItems={"start"}
             as={Stack}
             spacing={1}
+            minW="250px"
           >
-            <Flex as={Stack} spacing={0}>
-              <Text fontWeight={600}>{info.row.original.projectNo}</Text>
-              <Text>{info.row.original.projectName}</Text>
-              <Text fontSize="sm" color="gray.500">
+            <Text fontWeight={600} fontSize="sm">{info.row.original.projectNo}</Text>
+            <Text fontSize="sm">{info.row.original.projectName}</Text>
+            <Text fontSize="xs" color="gray.500">
+              {info.row.original.projectCategory} | {info.row.original.projectType}
+            </Text>
+            {info.row.original.projectDesc && (
+              <Text fontSize="xs" color="gray.400" noOfLines={2}>
                 {info.row.original.projectDesc}
               </Text>
-            </Flex>
+            )}
           </Flex>
         ),
         header: () => <span>Project Information</span>,
@@ -199,19 +204,12 @@ function ProjectPortfolioReportPage() {
               filterType: "text",
               filterLabel: "Project Name",
             },
-            {
-              field: "projectNo",
-              operator: "like",
-              value: "",
-              filterType: "text",
-              filterLabel: "Project Number",
-            },
           ],
         } as ColumnMetaCustom,
       },
       {
-        accessorFn: (row) => row.projectCategory,
-        id: "projectCategory",
+        accessorFn: (row) => row.projectCharasteristicName,
+        id: "projectCharacteristics",
         cell: (info) => (
           <Flex
             w={"full"}
@@ -219,86 +217,42 @@ function ProjectPortfolioReportPage() {
             justifyContent={"start"}
             alignItems={"start"}
             as={Stack}
-            spacing={1}
+            spacing={0}
+            minW="200px"
           >
-            <Text fontWeight={600}>{info.row.original.projectCategory}</Text>
-            <Text fontSize="sm">{info.row.original.projectType}</Text>
+            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
+              <Text fontWeight={600}>Characteristic:</Text>
+              <Text>{info.row.original.projectCharasteristicName || "-"}</Text>
+            </Flex>
+            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
+              <Text fontWeight={600}>Sub Characteristic:</Text>
+              <Text>{info.row.original.projectSubCharasteristicName || "-"}</Text>
+            </Flex>
+            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
+              <Text fontWeight={600}>Type:</Text>
+              <Text>{info.row.original.projectType || "-"}</Text>
+            </Flex>
+            {info.row.original.requirement?.appLiveTargetDate && (
+              <Flex fontSize={"2xs"} as={Stack} spacing={0}>
+                <Text fontWeight={600}>Target Live Date:</Text>
+                <Text color="blue.500">
+                  {stringToDateFormatedReverse(info.row.original.requirement.appLiveTargetDate)}
+                </Text>
+              </Flex>
+            )}
           </Flex>
         ),
-        header: () => <span>Category & Type</span>,
+        header: () => <span>Project Details</span>,
         footer: (props) => props.column.id,
         meta: {
           isFilterable: true,
           filterData: [
             {
-              field: "projectCategory",
+              field: "projectCharasteristicName",
               operator: "like",
               value: "",
               filterType: "text",
-              filterLabel: "Project Category",
-            },
-            {
-              field: "projectType",
-              operator: "like",
-              value: "",
-              filterType: "text",
-              filterLabel: "Project Type",
-            },
-          ],
-        } as ColumnMetaCustom,
-      },
-      {
-        accessorFn: (row) => row.projectRegisterDate,
-        id: "projectDates",
-        cell: (info) => (
-          <Flex
-            w={"full"}
-            h={"full"}
-            justifyContent={"start"}
-            alignItems={"start"}
-            as={Stack}
-            spacing={1}
-          >
-            <Flex fontSize={"small"} as={Stack} spacing={0}>
-              <Text>Register Date:</Text>
-              <Text fontWeight={600}>
-                {info.row.original.projectRegisterDate
-                  ? stringToDateFormatedReverse(
-                      info.row.original.projectRegisterDate
-                    )
-                  : "-"}
-              </Text>
-            </Flex>
-            <Flex fontSize={"small"} as={Stack} spacing={0}>
-              <Text>Closed Date:</Text>
-              <Text fontWeight={600}>
-                {info.row.original.projectClosedDate
-                  ? stringToDateFormatedReverse(
-                      info.row.original.projectClosedDate
-                    )
-                  : "-"}
-              </Text>
-            </Flex>
-          </Flex>
-        ),
-        header: () => <span>Project Dates</span>,
-        footer: (props) => props.column.id,
-        meta: {
-          isFilterable: true,
-          filterData: [
-            {
-              field: "projectRegisterDate",
-              operator: ">=",
-              value: "",
-              filterType: "date",
-              filterLabel: "Start Register Date",
-            },
-            {
-              field: "projectRegisterDate",
-              operator: "<=",
-              value: "",
-              filterType: "date",
-              filterLabel: "End Register Date",
+              filterLabel: "Characteristic",
             },
           ],
         } as ColumnMetaCustom,
@@ -313,23 +267,28 @@ function ProjectPortfolioReportPage() {
             justifyContent={"start"}
             alignItems={"start"}
             as={Stack}
-            spacing={1}
+            spacing={0}
+            minW="200px"
           >
-            <Flex fontSize={"small"} as={Stack} spacing={0}>
-              <Text>Owner Division:</Text>
-              <Text fontWeight={600} fontSize={"smaller"}>
-                {info.row.original.proOwnerDivisionName || "-"}
-              </Text>
+            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
+              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">Owner Division:</Text>
+              <Text fontSize="2xs" lineHeight="1.2">{info.row.original.proOwnerDivisionName || "-"}</Text>
             </Flex>
-            <Flex fontSize={"small"} as={Stack} spacing={0}>
-              <Text>Manage By:</Text>
-              <Text fontWeight={600} fontSize={"smaller"}>
-                {info.row.original.proManageByDivisionName || "-"}
-              </Text>
+            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
+              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">Owner Group:</Text>
+              <Text fontSize="2xs" lineHeight="1.2">{info.row.original.proOwnerGroupName || "-"}</Text>
+            </Flex>
+            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
+              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">Manage Division:</Text>
+              <Text fontSize="2xs" lineHeight="1.2">{info.row.original.proManageByDivisionName || "-"}</Text>
+            </Flex>
+            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
+              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">Manage Group:</Text>
+              <Text fontSize="2xs" lineHeight="1.2">{info.row.original.proManageByGroupName || "-"}</Text>
             </Flex>
           </Flex>
         ),
-        header: () => <span>Organization</span>,
+        header: () => <span>Organization Structure</span>,
         footer: (props) => props.column.id,
         meta: {
           isFilterable: true,
@@ -341,14 +300,110 @@ function ProjectPortfolioReportPage() {
               filterType: "text",
               filterLabel: "Owner Division",
             },
-            {
-              field: "proManageByDivisionName",
-              operator: "like",
-              value: "",
-              filterType: "text",
-              filterLabel: "Manage By Division",
-            },
           ],
+        } as ColumnMetaCustom,
+      },
+      {
+        accessorFn: (row) => row.requirement?.userPicName,
+        id: "picInfo",
+        cell: (info) => (
+          <Flex
+            w={"full"}
+            h={"full"}
+            justifyContent={"start"}
+            alignItems={"start"}
+            as={Stack}
+            spacing={1}
+            minW="180px"
+          >
+            <Flex fontSize={"xs"} as={Stack} spacing={0}>
+              <Text fontWeight={600}>PIC Name:</Text>
+              <Text>{info.row.original.requirement?.userPicName || "-"}</Text>
+            </Flex>
+            <Flex fontSize={"xs"} as={Stack} spacing={0}>
+              <Text fontWeight={600}>Phone:</Text>
+              <Text>{info.row.original.requirement?.userPicContanct || "-"}</Text>
+            </Flex>
+            <Flex fontSize={"xs"} as={Stack} spacing={0}>
+              <Text fontWeight={600}>Email:</Text>
+              <Text>{info.row.original.requirement?.userPicEmail || "-"}</Text>
+            </Flex>
+          </Flex>
+        ),
+        header: () => <span>PIC Contact</span>,
+        footer: (props) => props.column.id,
+        meta: {
+          isFilterable: false,
+        } as ColumnMetaCustom,
+      },
+      {
+        accessorFn: (row) => row.workPrograms,
+        id: "externalPrograms",
+        cell: (info) => (
+          <Flex
+            w={"full"}
+            h={"full"}
+            justifyContent={"start"}
+            alignItems={"start"}
+            as={Stack}
+            spacing={1}
+            minW="220px"
+          >
+            <Text fontWeight={600} color="blue.500" fontSize="xs">External RBB Programs:</Text>
+            {info.row.original.workPrograms?.filter(wp => wp.workProgramSource === "EXTERNAL").length > 0 ? (
+              info.row.original.workPrograms
+                .filter(wp => wp.workProgramSource === "EXTERNAL")
+                .map((wp, idx) => (
+                  <Flex key={idx} as={Stack} spacing={0} fontSize="xs">
+                    <Text fontWeight={600}>{wp.workProgramCode}</Text>
+                    <Text>{wp.workProgramName}</Text>
+                    <Text color="green.500">Budget: Rp {wp.workProgramBudget?.toLocaleString() || "0"}</Text>
+                  </Flex>
+                ))
+            ) : (
+              <Text fontSize={"xs"} color="gray.500">No external programs</Text>
+            )}
+          </Flex>
+        ),
+        header: () => <span>External RBB</span>,
+        footer: (props) => props.column.id,
+        meta: {
+          isFilterable: false,
+        } as ColumnMetaCustom,
+      },
+      {
+        accessorFn: (row) => row.workPrograms,
+        id: "internalPrograms",
+        cell: (info) => (
+          <Flex
+            w={"full"}
+            h={"full"}
+            justifyContent={"start"}
+            alignItems={"start"}
+            as={Stack}
+            spacing={1}
+            minW="220px"
+          >
+            <Text fontWeight={600} color="green.500" fontSize="xs">Internal RBB Programs:</Text>
+            {info.row.original.workPrograms?.filter(wp => wp.workProgramSource === "INTERNAL").length > 0 ? (
+              info.row.original.workPrograms
+                .filter(wp => wp.workProgramSource === "INTERNAL")
+                .map((wp, idx) => (
+                  <Flex key={idx} as={Stack} spacing={0} fontSize="xs">
+                    <Text fontWeight={600}>{wp.workProgramCode}</Text>
+                    <Text>{wp.workProgramName}</Text>
+                    <Text color="green.500">Budget: Rp {wp.workProgramBudget?.toLocaleString() || "0"}</Text>
+                  </Flex>
+                ))
+            ) : (
+              <Text fontSize={"xs"} color="gray.500">No internal programs</Text>
+            )}
+          </Flex>
+        ),
+        header: () => <span>Internal RBB (Div.IT)</span>,
+        footer: (props) => props.column.id,
+        meta: {
+          isFilterable: false,
         } as ColumnMetaCustom,
       },
       {
@@ -362,6 +417,7 @@ function ProjectPortfolioReportPage() {
             alignItems={"start"}
             as={Stack}
             spacing={1}
+            minW="160px"
           >
             <Badge
               colorScheme={getStatusColor(info.row.original.projectStatus)}
@@ -372,15 +428,25 @@ function ProjectPortfolioReportPage() {
             >
               {info.row.original.projectStatus}
             </Badge>
-            <Text fontSize="sm">
+            <Text fontSize="xs">
               Progress: {info.row.original.projectStatusPercentage}%
             </Text>
-            <Text fontSize="sm">
+            <Text fontSize="xs">
               Duration: {info.row.original.projectDurationDays} days
             </Text>
+            {info.row.original.projectRegisterDate && (
+              <Text fontSize="xs" color="gray.500">
+                Registered: {stringToDateFormatedReverse(info.row.original.projectRegisterDate)}
+              </Text>
+            )}
+            {info.row.original.projectClosedDate && (
+              <Text fontSize="xs" color="gray.500">
+                Closed: {stringToDateFormatedReverse(info.row.original.projectClosedDate)}
+              </Text>
+            )}
           </Flex>
         ),
-        header: () => <span>Status & Progress</span>,
+        header: () => <span>Status & Timeline</span>,
         footer: (props) => props.column.id,
         meta: {
           isFilterable: true,
@@ -403,7 +469,7 @@ function ProjectPortfolioReportPage() {
       },
       {
         accessorFn: (row) => row.userAssignment,
-        id: "userAssignment",
+        id: "teamInfo",
         cell: (info) => (
           <Flex
             w={"full"}
@@ -411,20 +477,19 @@ function ProjectPortfolioReportPage() {
             justifyContent={"start"}
             alignItems={"start"}
             as={Stack}
-            spacing={1}
+            spacing={0}
+            minW="180px"
           >
-            <Text fontSize="sm" fontWeight={600}>
-              Team Members: {info.row.original.userAssignment?.length || 0}
+            <Text fontSize="2xs" fontWeight={600} color="purple.500" lineHeight="1.2">
+              Team Members ({info.row.original.userAssignment?.length || 0}):
             </Text>
-            {info.row.original.userAssignment?.slice(0, 2).map((user, idx) => (
-              <Text key={idx} fontSize="xs">
+            {info.row.original.userAssignment?.map((user, idx) => (
+              <Text key={idx} fontSize="2xs" lineHeight="1.2">
                 {idx + 1}. {user.userData?.nama || user.userId}
               </Text>
             ))}
-            {(info.row.original.userAssignment?.length || 0) > 2 && (
-              <Text fontSize="xs" color="gray.500">
-                +{(info.row.original.userAssignment?.length || 0) - 2} more...
-              </Text>
+            {(info.row.original.userAssignment?.length || 0) === 0 && (
+              <Text fontSize="2xs" color="gray.500" lineHeight="1.2">No team members assigned</Text>
             )}
           </Flex>
         ),
@@ -564,67 +629,80 @@ function ProjectPortfolioReportPage() {
         breadCrumb={HeaderDataContent.breadCrumb}
       />
       
-      {/* Quarterly Filter */}
+      {/* Quarterly Filter Card */}
       <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"} mb={4}>
-        <GridItem colSpan={{ base: 12, md: 8 }} w={"full"}>
-          <Flex
-            as={Wrap}
-            w={"full"}
-            justifyContent={"start"}
-            alignItems={"center"}
-            spacing={4}
+        <GridItem colSpan={12} w={"full"}>
+          <Card
+            w={"fill"}
+            rounded={radiusStyle}
+            bgColor={colorMode == "light" ? "white" : "gray.800"}
           >
-            <WrapItem alignItems={"center"}>
-              <Text fontWeight={600} pr={2}>
-                Filter by Register Date:
-              </Text>
-            </WrapItem>
-            <WrapItem>
-              <Select
-                rounded={radiusStyle}
-                value={selectedYear}
-                size={"md"}
-                onChange={(e) => setSelectedYear(Number(e.target.value))}
-                minW={"120px"}
-                bgColor={colorMode == "light" ? "white" : "gray.800"}
-              >
-                {years.map((year) => (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
-                ))}
-              </Select>
-            </WrapItem>
-            <WrapItem>
-              <Select
-                rounded={radiusStyle}
-                value={selectedQuarter}
-                size={"md"}
-                onChange={(e) =>
-                  setSelectedQuarter(
-                    e.target.value === "all" ? "all" : Number(e.target.value)
-                  )
-                }
-                minW={"100px"}
-                bgColor={colorMode == "light" ? "white" : "gray.800"}
-              >
-                <option value="all">All</option>
-                <option value="1">Q1</option>
-                <option value="2">Q2</option>
-                <option value="3">Q3</option>
-                <option value="4">Q4</option>
-              </Select>
-            </WrapItem>
-            <WrapItem>
-              <Text fontSize={"sm"} color="gray.500">
-                {selectedQuarter !== "all" && (
-                  <>
-                    {formatDateToDDMMYYYY(StartDateFilter)} - {formatDateToDDMMYYYY(EndDateFilter)}
-                  </>
-                )}
-              </Text>
-            </WrapItem>
-          </Flex>
+            <CardHeader>
+              <Heading as="h6" size="sm">
+                Filter Options
+              </Heading>
+            </CardHeader>
+            <CardBody>
+              <Grid templateColumns="repeat(12, 1fr)" gap={4} w={"full"}>
+                <GridItem colSpan={{ base: 12, lg: 8 }}>
+                  <Flex alignItems={"center"} gap={4} wrap="wrap">
+                    <Text fontWeight={600} minW="fit-content">
+                      Register Date:
+                    </Text>
+                    <Select
+                      value={selectedYear}
+                      size={"md"}
+                      onChange={(e) => setSelectedYear(Number(e.target.value))}
+                      w="100px"
+                      bgColor={colorMode == "light" ? "white" : "gray.800"}
+                    >
+                      {years.map((year) => (
+                        <option key={year} value={year}>
+                          {year}
+                        </option>
+                      ))}
+                    </Select>
+                    <Select
+                      value={selectedQuarter}
+                      size={"md"}
+                      onChange={(e) =>
+                        setSelectedQuarter(
+                          e.target.value === "all" ? "all" : Number(e.target.value)
+                        )
+                      }
+                      w="80px"
+                      bgColor={colorMode == "light" ? "white" : "gray.800"}
+                    >
+                      <option value="all">All</option>
+                      <option value="1">Q1</option>
+                      <option value="2">Q2</option>
+                      <option value="3">Q3</option>
+                      <option value="4">Q4</option>
+                    </Select>
+                    {selectedQuarter !== "all" && (
+                      <Text fontSize={"xs"} color="gray.500" minW="fit-content">
+                        {formatDateToDDMMYYYY(StartDateFilter)} - {formatDateToDDMMYYYY(EndDateFilter)}
+                      </Text>
+                    )}
+                  </Flex>
+                </GridItem>
+                <GridItem colSpan={{ base: 12, lg: 4 }}>
+                  <Flex alignItems={"center"} gap={3}>
+                    <Text fontWeight={600} minW="fit-content">
+                      Search:
+                    </Text>
+                    <Input
+                      placeholder="Search projects..."
+                      value={globalFilter ?? ""}
+                      onChange={(e) => setGlobalFilter(e.target.value)}
+                      size="md"
+                      bgColor={colorMode == "light" ? "white" : "gray.800"}
+                    />
+                  </Flex>
+                </GridItem>
+              </Grid>
+            </CardBody>
+          </Card>
         </GridItem>
       </Grid>
 

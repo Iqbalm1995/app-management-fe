@@ -460,6 +460,107 @@ export function TableComponentWithFilterCTX({
   );
 }
 
+
+
+export function TableComponentXsWithFilterCTX({
+  table,
+  handleFilterChange,
+}: any) {
+  const { colorMode } = useColorMode();
+  return (
+    <Box w={"full"}>
+      <Flex
+        overflowX={"auto"}
+        w={"full"}
+        border={"1px solid"}
+        borderRadius={radiusStyle}
+        borderColor={colorMode == "light" ? "gray.100" : "gray.600"}
+        boxShadow={"md"}
+      >
+        <Table variant={"striped"} size={"sm"}>
+          <Thead>
+            {table.getHeaderGroups().map((headerGroup: any) => (
+              <Tr
+                key={headerGroup.id}
+                bg={colorMode == "light" ? "secondary.50" : "gray.900"}
+              >
+                {headerGroup.headers.map((header: any, hidx: number) => {
+                  return (
+                    <Th
+                      py={3}
+                      key={header.id}
+                      colSpan={header.colSpan}
+                      color={
+                        colorMode == "light" ? "secondary.800" : "secondary.500"
+                      }
+                    >
+                      <Flex
+                        w={"full"}
+                        as={HStack}
+                        alignItems={"center"}
+                        // justifyContent={"space-between"}
+                      >
+                        <Text fontSize={"x-small"}>
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )}
+                        </Text>
+                        <FilterColumnTable
+                          key={header.column.id}
+                          filedDataKey={header.column.id}
+                          metaCustom={header.column.columnDef.meta}
+                          onFilterSubmit={handleFilterChange}
+                        />
+                      </Flex>
+                    </Th>
+                  );
+                })}
+              </Tr>
+            ))}
+          </Thead>
+          <Tbody>
+            {table.getRowModel().rows.length > 0 ? (
+              table.getRowModel().rows.map((row: any, index: any) => {
+                const startingNumber = index + 1;
+                return (
+                  <Tr key={row.id}>
+                    {row.getVisibleCells().map((cell: any) => {
+                      return (
+                        <Td key={cell.id}>
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </Td>
+                      );
+                    })}
+                  </Tr>
+                );
+              })
+            ) : (
+              <Tr>
+                <Td colSpan={table.options.columns.length + 1}>
+                  <Flex
+                    justifyContent={"center"}
+                    alignItems={"center"}
+                    minH={"30vh"}
+                  >
+                    Belum ada data
+                  </Flex>
+                </Td>
+              </Tr>
+            )}
+          </Tbody>
+        </Table>
+      </Flex>
+      <ControlTableCTX table={table} />
+    </Box>
+  );
+}
+
 export function TableComponentHeadlessCTX({ table }: any) {
   const { colorMode } = useColorMode();
   return (
