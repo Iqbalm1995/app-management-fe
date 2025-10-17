@@ -118,6 +118,12 @@ import {
   AlertTitle,
   AlertDescription,
   CardFooter,
+  Drawer,
+  DrawerBody,
+  DrawerCloseButton,
+  DrawerContent,
+  DrawerHeader,
+  DrawerOverlay,
 } from "@chakra-ui/react";
 import {
   ChevronDownIcon,
@@ -466,6 +472,7 @@ interface DraggableTaskCardProps {
   DataProject?: ProjectDataResponse | null;
   onMoveUp?: (taskId: string) => void;
   onMoveDown?: (taskId: string) => void;
+  isDragDisabled?: boolean;
 }
 
 interface DroppableTaskItem {
@@ -4027,6 +4034,11 @@ function KanbanBacklogPage() {
     afterTaskId: string | null;
   } | null>(null);
 
+  // Archived tasks drawer state
+  const [archivedTasks, setArchivedTasks] = useState<TaskViewModel[]>([]);
+  const [isArchivedDrawerOpen, setIsArchivedDrawerOpen] = useState(false);
+  const [isLoadingArchived, setIsLoadingArchived] = useState(false);
+
   // Handle task creation - refresh data after task is created
   const handleTaskCreated = () => {
     // Trigger a refresh of the tasks
@@ -5461,6 +5473,46 @@ function KanbanBacklogPage() {
     setisLoading(false);
   }, [RefreshData]);
 
+  const loadArchivedTasks = async () => {
+    if (!DataAuth || !tokenData || !backlogId) return;
+
+    setIsLoadingArchived(true);
+    try {
+      const PayloadGetArchivedTasks: PaggingListPayload = {
+        search: "",
+        limit: MAX_SIZE_TABLE,
+        page: 0,
+        filterWhere: [
+          {
+            field: "backlogId",
+            operator: "=",
+            value: backlogId,
+          },
+          {
+            field: "isArchived",
+            operator: "=",
+            value: "Y",
+          },
+        ],
+        fieldOrder: ["updatedAt"],
+        orderDir: "desc",
+      };
+
+      const response = await ListTasksPaged(PayloadGetArchivedTasks, tokenData);
+      
+      if (response?.statusCode === RES_CODE_OK && response.data) {
+        setArchivedTasks(response.data);
+      } else {
+        setArchivedTasks([]);
+      }
+    } catch (error) {
+      console.error("Error loading archived tasks:", error);
+      setArchivedTasks([]);
+    } finally {
+      setIsLoadingArchived(false);
+    }
+  };
+
   const RefreshAction = () => {
     setSerachTasks("");
     setRefreshData(RefreshData + 1);
@@ -5744,6 +5796,10 @@ function KanbanBacklogPage() {
                 }}
                 isActive={false}
                 leftIcon={<FiInbox />}
+                onClick={() => {
+                  setIsArchivedDrawerOpen(true);
+                  loadArchivedTasks();
+                }}
               >
                 Archived
               </Flex>
@@ -5969,6 +6025,60 @@ function KanbanBacklogPage() {
           </DndProvider>
         </GridItem>
       </Grid>
+
+      {/* Archived Tasks Drawer */}
+      <Drawer
+        isOpen={isArchivedDrawerOpen}
+        placement="right"
+        onClose={() => setIsArchivedDrawerOpen(false)}
+        size="md"
+      >
+        <DrawerOverlay />
+        <DrawerContent>
+          <DrawerCloseButton />
+          <DrawerHeader>
+            <HStack>
+              <Icon as={FaArchive} />
+              <Text>Archived Tasks</Text>
+            </HStack>
+          </DrawerHeader>
+          <DrawerBody>
+            {isLoadingArchived ? (
+              <Flex justify="center" align="center" h="200px">
+                <Spinner size="lg" />
+              </Flex>
+            ) : archivedTasks.length > 0 ? (
+              <VStack spacing={3} align="stretch">
+                {archivedTasks.map((task) => (
+                  <DraggableTaskCard
+                    key={task.id}
+                    task={task}
+                    onMoveTask={() => {}}
+                    isRecentlyMoved={false}
+                    DataProject={DataProject}
+                    getEffectiveIndex={() => 0}
+                    localTaskIndices={new Map()}
+                    onMoveUp={() => {}}
+                    onMoveDown={() => {}}
+                    isDragDisabled={true}
+                  />
+                ))}
+              </VStack>
+            ) : (
+              <Flex
+                justify="center"
+                align="center"
+                h="200px"
+                direction="column"
+                color="gray.500"
+              >
+                <Icon as={FaArchive} boxSize={8} mb={2} />
+                <Text>No archived tasks</Text>
+              </Flex>
+            )}
+          </DrawerBody>
+        </DrawerContent>
+      </Drawer>
     </LayoutAdmin>
   );
 }
