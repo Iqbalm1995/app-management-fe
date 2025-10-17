@@ -73,7 +73,7 @@ function ProjectPortfolioReportPage() {
   const { colorMode } = useColorMode();
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
-  const { ListReportProjectPortofolio } = useReports();
+  const { ListReportProjectPortofolio, ExportProjectPortofolioExcel, ExportProjectPortofolioPDF } = useReports();
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
@@ -135,6 +135,107 @@ function ProjectPortfolioReportPage() {
     setTotalPageData(0);
     setDataReport([]);
     setRefreshData(RefreshData + 1);
+  };
+
+  const ExportToExcel = async () => {
+    console.log("Export button clicked");
+    if (!DataAuth || !tokenData) {
+      console.log("No auth data or token");
+      return;
+    }
+
+    const exportPayload: PaggingListPayloadCustom = {
+      search: globalFilter,
+      limit: -1, // Get all records
+      page: 0,
+      filterWhere: ParamFilter,
+      fieldOrder: ["createdAt"],
+      orderDir: "desc",
+    };
+
+    console.log("Export payload:", exportPayload);
+
+    try {
+      console.log("Calling export service...");
+      const blob = await ExportProjectPortofolioExcel(exportPayload, tokenData);
+      console.log("Export response:", blob);
+      
+      if (blob) {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Project_Portfolio_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        showToast({
+          description: "Excel file exported successfully",
+          statusToast: "success",
+        });
+      } else {
+        console.log("No blob returned");
+        showToast({
+          description: "No data to export",
+          statusToast: "warning",
+        });
+      }
+    } catch (error) {
+      console.error("Export error:", error);
+      showToast({
+        description: "Failed to export Excel file",
+        statusToast: "error",
+      });
+    }
+  };
+
+  const ExportToPDF = async () => {
+    console.log("Export PDF button clicked");
+    if (!DataAuth || !tokenData) {
+      console.log("No auth data or token");
+      return;
+    }
+
+    const exportPayload: PaggingListPayloadCustom = {
+      search: globalFilter,
+      limit: -1, // Get all records
+      page: 0,
+      filterWhere: ParamFilter,
+      fieldOrder: ["createdAt"],
+      orderDir: "desc",
+    };
+
+    try {
+      const blob = await ExportProjectPortofolioPDF(exportPayload, tokenData);
+      
+      if (blob) {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Project_Portfolio_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        showToast({
+          description: "PDF file exported successfully",
+          statusToast: "success",
+        });
+      } else {
+        showToast({
+          description: "No data to export",
+          statusToast: "warning",
+        });
+      }
+    } catch (error) {
+      console.error("PDF Export error:", error);
+      showToast({
+        description: "Failed to export PDF file",
+        statusToast: "error",
+      });
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -638,9 +739,29 @@ function ProjectPortfolioReportPage() {
             bgColor={colorMode == "light" ? "white" : "gray.800"}
           >
             <CardHeader>
-              <Heading as="h6" size="sm">
-                Filter Options
-              </Heading>
+              <Flex justifyContent="space-between" alignItems="center" w="full">
+                <Heading as="h6" size="sm">
+                  Filter Options
+                </Heading>
+                <Flex gap={2}>
+                  <Button
+                    size={"sm"}
+                    colorScheme="green"
+                    onClick={ExportToExcel}
+                    isDisabled={DataReport.length === 0}
+                  >
+                    Export Excel
+                  </Button>
+                  <Button
+                    size={"sm"}
+                    colorScheme="red"
+                    onClick={ExportToPDF}
+                    isDisabled={DataReport.length === 0}
+                  >
+                    Export PDF
+                  </Button>
+                </Flex>
+              </Flex>
             </CardHeader>
             <CardBody>
               <Grid templateColumns="repeat(12, 1fr)" gap={4} w={"full"}>
