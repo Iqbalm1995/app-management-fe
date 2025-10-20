@@ -70,7 +70,8 @@ function TeamsCenterPage() {
   const [selectedDirectorate, setSelectedDirectorate] = useState<string>("all");
   const [selectedDivision, setSelectedDivision] = useState<string>("all");
   const [selectedGroup, setSelectedGroup] = useState<string>("all");
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [groupSearch, setGroupSearch] = useState<string>("All Groups");
+  const [showGroupOptions, setShowGroupOptions] = useState<boolean>(false);  const [searchQuery, setSearchQuery] = useState<string>("");
   const [StatsData, setStatsData] = useState({
     totalTeams: 0,
     activeTeams: 0,
@@ -244,7 +245,7 @@ function TeamsCenterPage() {
         const selectedOrg = DirectorateData.find(org => org.id === selectedDirectorate);
         if (selectedOrg) {
           filterConditions.push({
-            field: "directorate.orgCode",
+            // field: "directorateCode", // API doesn't support this field
             operator: "=",
             value: selectedOrg.orgCode
           });
@@ -255,7 +256,7 @@ function TeamsCenterPage() {
         const selectedOrg = DivisionData.find(org => org.id === selectedDivision);
         if (selectedOrg) {
           filterConditions.push({
-            field: "division.orgCode",
+            // field: "divisionCode", // API doesn't support this field
             operator: "=",
             value: selectedOrg.orgCode
           });
@@ -273,7 +274,29 @@ function TeamsCenterPage() {
         }
       }
       
-      const PayloadList = {
+      
+      // Check if any selected filter doesn't exist - return no data if so
+      let shouldReturnNoData = false;
+      
+      if (selectedDirectorate !== "all" && !DirectorateData.find(org => org.id === selectedDirectorate)) {
+        shouldReturnNoData = true;
+      }
+      
+      if (selectedDivision !== "all" && !DivisionData.find(org => org.id === selectedDivision)) {
+        shouldReturnNoData = true;
+      }
+      
+      if (selectedGroup !== "all" && !GroupData.find(org => org.id === selectedGroup)) {
+        shouldReturnNoData = true;
+      }
+      
+      // If any selected filter doesn't exist, return empty data
+      if (shouldReturnNoData) {
+        setTeamsData([]);
+        setTotalPageData(0);
+        setIsLoadingProcess(false);
+        return;
+      }      const PayloadList = {
         search: searchQuery,
         limit: pageSize,
         page: pageIndex,
@@ -483,11 +506,11 @@ function TeamsCenterPage() {
 
                 {/* Right - Organization Filters */}
                 <HStack spacing={3}>
-                  {/* Directorate Filter */}
+                  {/* Directorate Filter - HIDDEN FROM USER */}
                   <Select
                     value={selectedDirectorate}
                     isDisabled={false}
-                    onChange={(e) => setSelectedDirectorate(e.target.value)}
+                    display="none"                    onChange={(e) => setSelectedDirectorate(e.target.value)}
                     maxW="160px"
                     bg={colorMode === "light" ? "gray.50" : "gray.700"}
                     border="1px"
@@ -506,11 +529,11 @@ function TeamsCenterPage() {
                     ))}
                   </Select>
 
-                  {/* Division Filter */}
+                  {/* Division Filter - HIDDEN FROM USER */}
                   <Select
                     value={selectedDivision}
                     isDisabled={false}
-                    onChange={(e) => setSelectedDivision(e.target.value)}
+                    display="none"                    onChange={(e) => setSelectedDivision(e.target.value)}
                     maxW="160px"
                     bg={colorMode === "light" ? "gray.50" : "gray.700"}
                     border="1px"
@@ -536,11 +559,12 @@ function TeamsCenterPage() {
                     ))}
                   </Select>
 
-                  {/* Group Filter */}
+                  {/* Group Filter - Searchable */}
                   <Select
                     value={selectedGroup}
                     onChange={(e) => setSelectedGroup(e.target.value)}
-                    maxW="160px"
+                    minW="240px"
+                    maxW="380px"
                     bg={colorMode === "light" ? "gray.50" : "gray.700"}
                     border="1px"
                     borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
@@ -551,6 +575,76 @@ function TeamsCenterPage() {
                     }}
                   >
                     <option value="all">All Groups</option>
+                    <Box position="relative" maxW="160px">
+                    <Input
+                      value={groupSearch}
+                      onChange={(e) => {
+                        setGroupSearch(e.target.value);
+                        setShowGroupOptions(true);
+                      }}
+                      onFocus={() => setShowGroupOptions(true)}
+                      onBlur={() => setTimeout(() => setShowGroupOptions(false), 200)}
+                      placeholder="Search groups..."
+                      bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                      border="1px"
+                      borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
+                      rounded="xl"
+                      _focus={{
+                        borderColor: "secondary.500",
+                        bg: colorMode === "light" ? "white" : "gray.800",
+                      }}
+                    />
+                    
+                    {showGroupOptions && (
+                      <Box
+                        position="absolute"
+                        top="100%"
+                        left={0}
+                        right={0}
+                        zIndex={10}
+                        maxH="200px"
+                        overflowY="auto"
+                        border="1px"
+                        borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                        rounded="md"
+                        bg={colorMode === "light" ? "white" : "gray.800"}
+                        shadow="lg"
+                      >
+                        <Box
+                          p={2}
+                          cursor="pointer"
+                          _hover={{ bg: colorMode === "light" ? "gray.100" : "gray.700" }}
+                          onClick={() => {
+                            setSelectedGroup("all");
+                            setGroupSearch("");
+                            setShowGroupOptions(false);
+                          }}
+                        >
+                          All Groups
+                        </Box>
+                        {GroupData.filter(group => {
+                          const matchesSearch = !groupSearch || 
+                                              group.orgName.toLowerCase().includes(groupSearch.toLowerCase()) ||
+                                              group.orgCode.toLowerCase().includes(groupSearch.toLowerCase());
+                          return matchesSearch;
+                        }).map((org) => (
+                          <Box
+                            key={org.id}
+                            p={2}
+                            cursor="pointer"
+                            _hover={{ bg: colorMode === "light" ? "gray.100" : "gray.700" }}
+                            onClick={() => {
+                              setSelectedGroup(org.id);
+                              setGroupSearch(`${org.orgName} (${org.orgCode})`);
+                              setShowGroupOptions(false);
+                            }}
+                          >
+                            {org.orgName} ({org.orgCode})
+                          </Box>
+                        ))}
+                      </Box>
+                    )}
+                  </Box>
                     {GroupData.filter(group => {
                       // Priority 1: If division is selected, filter groups under that division
                       if (selectedDivision !== "all") {

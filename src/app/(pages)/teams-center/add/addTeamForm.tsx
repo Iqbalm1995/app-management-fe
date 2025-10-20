@@ -8,7 +8,9 @@ import LayoutAdmin from "@/app/components/layoutAdmin";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useTeams, { TeamInsertPayload } from "@/app/services/useTeams";
-import useOrganization, { OrganizationResponse } from "@/app/services/useOrganization";
+import useOrganization, {
+  OrganizationResponse,
+} from "@/app/services/useOrganization";
 import {
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
@@ -28,13 +30,11 @@ import {
   Heading,
   HStack,
   Input,
-  Select,
   Textarea,
   Text,
   VStack,
   useColorMode,
   Icon,
-  Flex,
   Badge,
   InputGroup,
   InputLeftElement,
@@ -46,8 +46,8 @@ import {
 import { useFormik } from "formik";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
-import { FaUsersRays, FaArrowLeft, FaBuilding, FaImage } from "react-icons/fa6";
-import { FiCode, FiFileText, FiUsers, FiSettings, FiUpload } from "react-icons/fi";
+import { FaUsersRays, FaArrowLeft, FaImage } from "react-icons/fa6";
+import { FiCode, FiUsers } from "react-icons/fi";
 import * as Yup from "yup";
 
 const HeaderDataContent: HeaderContentProps = {
@@ -82,25 +82,6 @@ function AddTeamViewPage() {
   const [showGroupOptions, setShowGroupOptions] = useState<boolean>(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
-  const [showManualCode, setShowManualCode] = useState(false);
-
-  // Auto-generate team code from team name
-  const generateTeamCode = (teamName: string): string => {
-    if (!teamName) return "";
-    
-    // Clean team name: remove special chars, convert to uppercase, replace spaces with underscores
-    const cleanName = teamName
-      .replace(/[^a-zA-Z0-9\s]/g, "")
-      .trim()
-      .toUpperCase()
-      .replace(/\s+/g, "_");
-    
-    // Take first 8 characters + timestamp suffix
-    const namePrefix = cleanName.substring(0, 8);
-    const timestamp = Date.now().toString().slice(-4);
-    
-    return `${namePrefix}_${timestamp}`;
-  };
 
   // Auth effect (COPY EXACTLY)
   useEffect(() => {
@@ -124,16 +105,14 @@ function AddTeamViewPage() {
       if (!tokenData || !DataAuth) return;
 
       try {
-        // Load Directorates first
+        // Load Directorates
         const PayloadDirectorate = {
           search: "",
           limit: 999999,
           page: 0,
           fieldOrder: ["orgName"],
           orderDir: "asc",
-          filterWhere: [
-            { field: "orgType", operator: "=", value: "DIRECTORATE" }
-          ],
+          filterWhere: [{ field: "orgType", operator: "=", value: "DIRECTORATE" }],
         };
 
         const directorateResponse = await ListOrganizations(PayloadDirectorate as any, tokenData);
@@ -142,49 +121,37 @@ function AddTeamViewPage() {
           setDirectorateData(directorates);
         }
 
-        // Load Divisions first (same pattern as BRD)
+        // Load Divisions
         const PayloadDivision = {
           search: "",
           limit: 999999,
           page: 0,
           fieldOrder: ["orgName"],
           orderDir: "asc",
-          filterWhere: [
-            { field: "orgType", operator: "=", value: "DIVISION" }
-          ],
+          filterWhere: [{ field: "orgType", operator: "=", value: "DIVISION" }],
         };
 
         const divisionResponse = await ListOrganizations(PayloadDivision as any, tokenData);
         if (divisionResponse?.statusCode === RES_CODE_OK && divisionResponse.data) {
           const divisions = divisionResponse.data as OrganizationResponse[];
           setDivisionData(divisions);
-          
-          // Remove D440 filtering - load all divisions like BRD
-          console.log("Division data:", divisions);
-          console.log("User auth data:", DataAuth);
-          console.log("User team data:", DataAuth?.team);
         }
 
-        // Load all Groups (same pattern as BRD)
+        // Load Groups
         const PayloadGroup = {
           search: "",
           limit: 999999,
           page: 0,
           fieldOrder: ["orgName"],
           orderDir: "asc",
-          filterWhere: [
-            { field: "orgType", operator: "=", value: "GROUP" }
-          ],
+          filterWhere: [{ field: "orgType", operator: "=", value: "GROUP" }],
         };
 
         const groupResponse = await ListOrganizations(PayloadGroup as any, tokenData);
         if (groupResponse?.statusCode === RES_CODE_OK && groupResponse.data) {
           const groups = groupResponse.data as OrganizationResponse[];
           setGroupData(groups);
-          
-          console.log("All groups loaded:", groups);
         }
-
       } catch (error) {
         console.error("Error loading organization data:", error);
         showToast({
@@ -225,7 +192,10 @@ function AddTeamViewPage() {
       .required("Team code is required")
       .min(2, "Team code must be at least 2 characters")
       .max(20, "Team code must not exceed 20 characters")
-      .matches(/^[A-Z0-9_-]+$/, "Team code must contain only uppercase letters, numbers, hyphens, and underscores"),
+      .matches(
+        /^[A-Z0-9_-]+$/,
+        "Team code must contain only uppercase letters, numbers, hyphens, and underscores"
+      ),
     teamDesc: Yup.string()
       .nullable()
       .max(500, "Description must not exceed 500 characters"),
@@ -247,24 +217,9 @@ function AddTeamViewPage() {
     validateOnChange: true,
     validateOnBlur: true,
     onSubmit: async (values) => {
-      // Auto-generate team code if not manually set
-      if (!showManualCode || !values.teamCode) {
-        values.teamCode = generateTeamCode(values.teamName);
-      }
       await handleSubmit(values);
     },
   });
-
-  // Auto-generate team code when team name changes (if not in manual mode)
-  const handleTeamNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const teamName = e.target.value;
-    formik.handleChange(e);
-    
-    if (!showManualCode && teamName) {
-      const autoCode = generateTeamCode(teamName);
-      formik.setFieldValue("teamCode", autoCode);
-    }
-  };
 
   const handleSubmit = async (values: TeamInsertPayload) => {
     if (!tokenData || !DataAuth) {
@@ -293,28 +248,16 @@ function AddTeamViewPage() {
     }
 
     try {
-        // Load Directorates first
-        const PayloadDirectorate = {
-          search: "",
-          limit: 999999,
-          page: 0,
-          fieldOrder: ["orgName"],
-          orderDir: "asc",
-          filterWhere: [
-            { field: "orgType", operator: "=", value: "DIRECTORATE" }
-          ],
-        };
-
-        const directorateResponse = await ListOrganizations(PayloadDirectorate as any, tokenData);
-        if (directorateResponse?.statusCode === RES_CODE_OK && directorateResponse.data) {
-          const directorates = directorateResponse.data as OrganizationResponse[];
-          setDirectorateData(directorates);
-        }
-
       setIsLoadingProcess(true);
 
+      console.log("Form values:", values);
+      console.log("GroupData available:", GroupData);
+      console.log("Looking for orgGroupId:", values.orgGroupId);
+
       // Find selected organization to get the code
-      const selectedOrg = GroupData.find(org => org.id === values.orgGroupId);
+      const selectedOrg = GroupData.find((org) => org.id === values.orgGroupId);
+      console.log("Found selectedOrg:", selectedOrg);
+      
       if (!selectedOrg) {
         showToast({
           description: "Selected organization group not found",
@@ -323,15 +266,44 @@ function AddTeamViewPage() {
         return;
       }
 
-      const payload: TeamInsertPayload = {
+      console.log("Debug payload data:", {
         teamCode: values.teamCode,
         teamName: values.teamName,
         teamDesc: values.teamDesc,
         isActive: values.isActive,
-        uploadPict: selectedImage,
         orgGroupId: values.orgGroupId,
-        orgGroupCode: selectedOrg.orgCode,
+        selectedOrg: selectedOrg,
+        orgGroupCode: selectedOrg?.orgCode,
+      });
+
+      // Ensure no null/undefined values
+      if (!values.teamCode?.trim()) {
+        showToast({
+          description: "Team code is required",
+          statusToast: "error",
+        });
+        return;
+      }
+
+      if (!selectedOrg?.orgCode?.trim()) {
+        showToast({
+          description: "Organization code is missing",
+          statusToast: "error",
+        });
+        return;
+      }
+
+      const payload: TeamInsertPayload = {
+        teamCode: values.teamCode.trim(),
+        teamName: values.teamName.trim(),
+        teamDesc: values.teamDesc?.trim() || null,
+        isActive: values.isActive,
+        uploadPict: null, // Always null for now to test
+        orgGroupId: values.orgGroupId,
+        orgGroupCode: selectedOrg.orgCode.trim(),
       };
+
+      console.log("Final payload:", payload);
 
       const response = await InsertTeams(payload, tokenData);
 
@@ -375,7 +347,7 @@ function AddTeamViewPage() {
       }
 
       // Validate file type
-      if (!file.type.startsWith('image/')) {
+      if (!file.type.startsWith("image/")) {
         showToast({
           description: "Please select a valid image file",
           statusToast: "error",
@@ -433,12 +405,7 @@ function AddTeamViewPage() {
                 <VStack spacing={4} align="stretch">
                   {/* Header */}
                   <HStack spacing={3} mb={2}>
-                    <Box
-                      p={2}
-                      bg="secondary.500"
-                      rounded="full"
-                      color="white"
-                    >
+                    <Box p={2} bg="secondary.500" rounded="full" color="white">
                       <Icon as={FiUsers} boxSize={5} />
                     </Box>
                     <VStack align="start" spacing={0}>
@@ -448,7 +415,10 @@ function AddTeamViewPage() {
                       >
                         Create New Team
                       </Heading>
-                      <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"}>
+                      <Text
+                        fontSize="sm"
+                        color={colorMode === "light" ? "gray.600" : "gray.400"}
+                      >
                         Fill in the details to create a new team
                       </Text>
                     </VStack>
@@ -474,7 +444,7 @@ function AddTeamViewPage() {
                             >
                               Basic Information
                             </Heading>
-                            
+
                             <FormControl
                               isInvalid={!!(formik.errors.teamName && formik.touched.teamName)}
                             >
@@ -488,7 +458,7 @@ function AddTeamViewPage() {
                                 <Input
                                   name="teamName"
                                   value={formik.values.teamName}
-                                  onChange={handleTeamNameChange}
+                                  onChange={formik.handleChange}
                                   onBlur={formik.handleBlur}
                                   placeholder="Enter team name"
                                   size="lg"
@@ -506,86 +476,37 @@ function AddTeamViewPage() {
                               <FormErrorMessage>{formik.errors.teamName}</FormErrorMessage>
                             </FormControl>
 
-                            {/* Auto-generated code display */}
-                            {!showManualCode && formik.values.teamCode && (
-                              <Box
-                                p={3}
-                                bg={colorMode === "light" ? "blue.50" : "blue.900"}
-                                border="1px"
-                                borderColor={colorMode === "light" ? "blue.200" : "blue.700"}
-                                rounded="xl"
-                                w="full"
-                              >
-                                <HStack justify="space-between">
-                                  <VStack align="start" spacing={1}>
-                                    <Text fontSize="sm" fontWeight="semibold" color={colorMode === "light" ? "blue.800" : "blue.200"}>
-                                      Auto-generated Team Code:
-                                    </Text>
-                                    <Text fontSize="lg" fontWeight="bold" color={colorMode === "light" ? "blue.900" : "blue.100"}>
-                                      {formik.values.teamCode}
-                                    </Text>
-                                  </VStack>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    colorScheme="blue"
-                                    onClick={() => setShowManualCode(true)}
-                                  >
-                                    Edit Code
-                                  </Button>
-                                </HStack>
-                              </Box>
-                            )}
-
-                            {/* Manual team code input (backup) */}
-                            {showManualCode && (
-                              <FormControl
-                                isInvalid={!!(formik.errors.teamCode && formik.touched.teamCode)}
-                              >
-                                <HStack justify="space-between" align="center">
-                                  <FormLabel fontWeight="semibold" mb={0}>
-                                    Team Code <Text as="span" color="red.500">*</Text>
-                                  </FormLabel>
-                                  <Button
-                                    size="xs"
-                                    variant="ghost"
-                                    colorScheme="gray"
-                                    onClick={() => {
-                                      setShowManualCode(false);
-                                      if (formik.values.teamName) {
-                                        formik.setFieldValue("teamCode", generateTeamCode(formik.values.teamName));
-                                      }
-                                    }}
-                                  >
-                                    Use Auto-generated
-                                  </Button>
-                                </HStack>
-                                <InputGroup>
-                                  <InputLeftElement>
-                                    <Icon as={FiCode} color="gray.400" />
-                                  </InputLeftElement>
-                                  <Input
-                                    name="teamCode"
-                                    value={formik.values.teamCode}
-                                    onChange={formik.handleChange}
-                                    onBlur={formik.handleBlur}
-                                    placeholder="TEAM_CODE"
-                                    size="lg"
-                                    rounded="xl"
-                                    bg={colorMode === "light" ? "white" : "gray.800"}
-                                    border="1px"
-                                    borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
-                                    _focus={{
-                                      borderColor: "secondary.500",
-                                      bg: colorMode === "light" ? "white" : "gray.800",
-                                      shadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
-                                    }}
-                                    textTransform="uppercase"
-                                  />
-                                </InputGroup>
-                                <FormErrorMessage>{formik.errors.teamCode}</FormErrorMessage>
-                              </FormControl>
-                            )}
+                            <FormControl
+                              isInvalid={!!(formik.errors.teamCode && formik.touched.teamCode)}
+                            >
+                              <FormLabel fontWeight="semibold">
+                                Team Code <Text as="span" color="red.500">*</Text>
+                              </FormLabel>
+                              <InputGroup>
+                                <InputLeftElement>
+                                  <Icon as={FiCode} color="gray.400" />
+                                </InputLeftElement>
+                                <Input
+                                  name="teamCode"
+                                  value={formik.values.teamCode}
+                                  onChange={formik.handleChange}
+                                  onBlur={formik.handleBlur}
+                                  placeholder="Team Code"
+                                  size="lg"
+                                  rounded="xl"
+                                  bg={colorMode === "light" ? "white" : "gray.800"}
+                                  border="1px"
+                                  borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
+                                  _focus={{
+                                    borderColor: "secondary.500",
+                                    bg: colorMode === "light" ? "white" : "gray.800",
+                                    shadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
+                                  }}
+                                  textTransform="uppercase"
+                                />
+                              </InputGroup>
+                              <FormErrorMessage>{formik.errors.teamCode}</FormErrorMessage>
+                            </FormControl>
 
                             <FormControl
                               isInvalid={!!(formik.errors.teamDesc && formik.touched.teamDesc)}
@@ -631,12 +552,10 @@ function AddTeamViewPage() {
                             >
                               Organization
                             </Heading>
-                            
+
                             {/* Directorate Selection */}
                             <FormControl>
-                              <FormLabel fontWeight="semibold">
-                                Directorate
-                              </FormLabel>
+                              <FormLabel fontWeight="semibold">Directorate</FormLabel>
                               <Input
                                 value={directorateSearch}
                                 onChange={(e) => {
@@ -651,9 +570,7 @@ function AddTeamViewPage() {
                                 border="2px"
                                 borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
                                 rounded="xl"
-                                _hover={{
-                                  borderColor: "secondary.400",
-                                }}
+                                _hover={{ borderColor: "secondary.400" }}
                                 _focus={{
                                   bg: colorMode === "light" ? "white" : "gray.800",
                                   shadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
@@ -669,16 +586,19 @@ function AddTeamViewPage() {
                                   rounded="md"
                                   bg={colorMode === "light" ? "white" : "gray.800"}
                                 >
-                                  {DirectorateData.filter(dir => 
-                                    !directorateSearch || 
-                                    dir.orgName.toLowerCase().includes(directorateSearch.toLowerCase()) ||
-                                    dir.orgCode.toLowerCase().includes(directorateSearch.toLowerCase())
+                                  {DirectorateData.filter(
+                                    (dir) =>
+                                      !directorateSearch ||
+                                      dir.orgName.toLowerCase().includes(directorateSearch.toLowerCase()) ||
+                                      dir.orgCode.toLowerCase().includes(directorateSearch.toLowerCase())
                                   ).map((org) => (
                                     <Box
                                       key={org.id}
                                       p={2}
                                       cursor="pointer"
-                                      _hover={{ bg: colorMode === "light" ? "gray.100" : "gray.700" }}
+                                      _hover={{
+                                        bg: colorMode === "light" ? "gray.100" : "gray.700",
+                                      }}
                                       onClick={() => {
                                         setSelectedDirectorate(org.id);
                                         setDirectorateSearch(`${org.orgName} (${org.orgCode})`);
@@ -700,9 +620,7 @@ function AddTeamViewPage() {
 
                             {/* Division Selection */}
                             <FormControl>
-                              <FormLabel fontWeight="semibold">
-                                Division
-                              </FormLabel>
+                              <FormLabel fontWeight="semibold">Division</FormLabel>
                               <Input
                                 value={divisionSearch}
                                 onChange={(e) => {
@@ -733,18 +651,23 @@ function AddTeamViewPage() {
                                   rounded="md"
                                   bg={colorMode === "light" ? "white" : "gray.800"}
                                 >
-                                  {DivisionData.filter(division => {
-                                    const matchesDirectorate = selectedDirectorate ? division.parentId === selectedDirectorate : true;
-                                    const matchesSearch = !divisionSearch || 
-                                                        division.orgName.toLowerCase().includes(divisionSearch.toLowerCase()) ||
-                                                        division.orgCode.toLowerCase().includes(divisionSearch.toLowerCase());
+                                  {DivisionData.filter((division) => {
+                                    const matchesDirectorate = selectedDirectorate
+                                      ? division.parentId === selectedDirectorate
+                                      : true;
+                                    const matchesSearch =
+                                      !divisionSearch ||
+                                      division.orgName.toLowerCase().includes(divisionSearch.toLowerCase()) ||
+                                      division.orgCode.toLowerCase().includes(divisionSearch.toLowerCase());
                                     return matchesSearch && matchesDirectorate;
                                   }).map((division) => (
                                     <Box
                                       key={division.id}
                                       p={2}
                                       cursor="pointer"
-                                      _hover={{ bg: colorMode === "light" ? "gray.100" : "gray.700" }}
+                                      _hover={{
+                                        bg: colorMode === "light" ? "gray.100" : "gray.700",
+                                      }}
                                       onClick={() => {
                                         setSelectedDivision(division.id);
                                         setDivisionSearch(`${division.orgName} (${division.orgCode})`);
@@ -798,18 +721,23 @@ function AddTeamViewPage() {
                                   rounded="md"
                                   bg={colorMode === "light" ? "white" : "gray.800"}
                                 >
-                                  {GroupData.filter(group => {
-                                    const matchesDivision = selectedDivision ? group.parentId === selectedDivision : false;
-                                    const matchesSearch = !groupSearch || 
-                                                        group.orgName.toLowerCase().includes(groupSearch.toLowerCase()) ||
-                                                        group.orgCode.toLowerCase().includes(groupSearch.toLowerCase());
+                                  {GroupData.filter((group) => {
+                                    const matchesDivision = selectedDivision
+                                      ? group.parentId === selectedDivision
+                                      : false;
+                                    const matchesSearch =
+                                      !groupSearch ||
+                                      group.orgName.toLowerCase().includes(groupSearch.toLowerCase()) ||
+                                      group.orgCode.toLowerCase().includes(groupSearch.toLowerCase());
                                     return matchesSearch && matchesDivision;
                                   }).map((org) => (
                                     <Box
                                       key={org.id}
                                       p={2}
                                       cursor="pointer"
-                                      _hover={{ bg: colorMode === "light" ? "gray.100" : "gray.700" }}
+                                      _hover={{
+                                        bg: colorMode === "light" ? "gray.100" : "gray.700",
+                                      }}
                                       onClick={() => {
                                         setGroupSearch(`${org.orgName} (${org.orgCode})`);
                                         setShowGroupOptions(false);
@@ -821,9 +749,7 @@ function AddTeamViewPage() {
                                   ))}
                                 </Box>
                               )}
-                              <FormErrorMessage>
-                                {formik.errors.orgGroupId}
-                              </FormErrorMessage>
+                              <FormErrorMessage>{formik.errors.orgGroupId}</FormErrorMessage>
                             </FormControl>
                           </VStack>
                         </CardBody>
@@ -845,15 +771,18 @@ function AddTeamViewPage() {
                             >
                               Status
                             </Heading>
-                            
+
                             <FormControl>
                               <FormLabel fontWeight="semibold">Team Status</FormLabel>
                               <HStack spacing={4}>
                                 <Switch
                                   name="isActive"
                                   isChecked={formik.values.isActive === "ACTIVE"}
-                                  onChange={(e) => 
-                                    formik.setFieldValue("isActive", e.target.checked ? "ACTIVE" : "INACTIVE")
+                                  onChange={(e) =>
+                                    formik.setFieldValue(
+                                      "isActive",
+                                      e.target.checked ? "ACTIVE" : "INACTIVE"
+                                    )
                                   }
                                   colorScheme="green"
                                   size="lg"
@@ -886,12 +815,11 @@ function AddTeamViewPage() {
                         >
                           Cancel
                         </Button>
-                        
+
                         <Button
                           type="submit"
                           isLoading={IsLoadingProcess}
                           loadingText="Creating..."
-                          // leftIcon={<Icon as={FaUsersRays} />}
                           size="lg"
                           rounded="xl"
                           px={8}
@@ -911,7 +839,7 @@ function AddTeamViewPage() {
                             IsLoadingProcess
                           }
                         >
-                          Create
+                          Create Team
                         </Button>
                       </HStack>
                     </VStack>
@@ -942,7 +870,7 @@ function AddTeamViewPage() {
                     >
                       Team Picture
                     </Heading>
-                    
+
                     <Center>
                       {imagePreview ? (
                         <Avatar
@@ -972,7 +900,7 @@ function AddTeamViewPage() {
                       >
                         {selectedImage ? "Change Picture" : "Upload Picture"}
                       </Button>
-                      
+
                       <input
                         ref={fileInputRef}
                         type="file"
@@ -980,7 +908,7 @@ function AddTeamViewPage() {
                         onChange={handleImageChange}
                         style={{ display: "none" }}
                       />
-                      
+
                       {selectedImage && (
                         <Button
                           size="sm"
@@ -1018,7 +946,7 @@ function AddTeamViewPage() {
                     >
                       Tips for Creating Teams
                     </Heading>
-                    
+
                     <VStack spacing={2} align="start" fontSize="sm">
                       <Text color={colorMode === "light" ? "blue.700" : "blue.300"}>
                         • Use descriptive team names

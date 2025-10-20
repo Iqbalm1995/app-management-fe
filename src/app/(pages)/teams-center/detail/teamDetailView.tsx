@@ -12,6 +12,9 @@ import useTeams, {
   TeamsUserMemberResponse,
 } from "@/app/services/useTeams";
 import { UsersResponse } from "@/app/services/useUsers";
+import useOrganization, { OrganizationResponse } from "@/app/services/useOrganization";
+import { useFormik } from "formik";
+import * as Yup from "yup";
 import {
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
@@ -34,11 +37,17 @@ import {
   Avatar,
   Button,
   Divider,
+  Input,
+  Textarea,
+  FormControl,
+  FormLabel,
+  FormErrorMessage,
+  Select,
 } from "@chakra-ui/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FaUsersRays, FaArrowLeft } from "react-icons/fa6";
-import { FiCalendar, FiUser, FiEdit, FiUsers, FiHome } from "react-icons/fi";
+import { FiCalendar, FiUser, FiEdit, FiUsers, FiHome, FiSave, FiX } from "react-icons/fi";
 
 interface TeamDetailViewProps {}
 
@@ -49,7 +58,8 @@ function TeamDetailView({}: TeamDetailViewProps) {
   const searchParams = useSearchParams();
   const teamId = searchParams.get("id");
 
-  const { GetDetailById, ListMembers } = useTeams();
+  const { GetDetailById, ListMembers, UpdateTeams } = useTeams();
+  const { List: ListOrganizations } = useOrganization();
 
   // Auth setup
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -60,12 +70,47 @@ function TeamDetailView({}: TeamDetailViewProps) {
   const [MembersData, setMembersData] = useState<UsersResponse[]>([]);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
 
+  // Edit mode state
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [GroupData, setGroupData] = useState<OrganizationResponse[]>([]);
+
   // Header content
   const [HeaderDataContent, setHeaderDataContent] =
     useState<HeaderContentProps>({
       titleName: "Team Details",
       breadCrumb: ["Home", "Teams Center", "Team Details"],
     });
+
+  // Form validation schema
+  const ValidationSchema = Yup.object().shape({
+    teamName: Yup.string()
+      .required("Team name is required")
+      .min(3, "Minimum 3 characters")
+      .max(100, "Maximum 100 characters"),
+    teamDesc: Yup.string()
+      .max(500, "Maximum 500 characters"),
+    orgGroupId: Yup.string()
+      .required("Organization group is required"),
+    isActive: Yup.string()
+      .required("Status is required"),
+  });
+
+  // Formik setup
+  const formik = useFormik({
+    initialValues: {
+      teamName: "",
+      teamDesc: "",
+      orgGroupId: "",
+      isActive: "ACTIVE",
+    },
+    validationSchema: ValidationSchema,
+    validateOnChange: false,
+    validateOnBlur: false,
+    onSubmit: async (values) => {
+      await handleUpdateTeam(values);
+    },
+  });
 
   // Auth effect
   useEffect(() => {
@@ -87,8 +132,21 @@ function TeamDetailView({}: TeamDetailViewProps) {
     if (teamId && tokenData && DataAuth) {
       GetTeamData();
       GetTeamMembers();
+      LoadGroupData();
     }
   }, [teamId, tokenData, DataAuth]);
+
+  // Update form values when TeamData changes
+  useEffect(() => {
+    if (TeamData) {
+      formik.setValues({
+        teamName: TeamData.teamName,
+        teamDesc: TeamData.teamDesc || "",
+        orgGroupId: TeamData.orgGroupId,
+        isActive: TeamData.isActive,
+      });
+    }
+  }, [TeamData]);
 
   const GetTeamData = async () => {
     if (!teamId || !tokenData) return;
@@ -149,6 +207,121 @@ function TeamDetailView({}: TeamDetailViewProps) {
       setMembersData(data);
     } catch (error) {
       console.error("Error fetching team members:", error);
+    }
+  };
+
+  const LoadGroupData = async () => {
+    if (!tokenData) return;
+
+    try {
+      const PayloadGroup = {
+        search: "",
+        limit: 999999,
+        page: 0,
+        fieldOrder: ["orgName"],
+        orderDir: "asc",
+        filterWhere: [
+          { field: "orgType", operator: "=", value: "GROUP" }
+        ],
+      };
+
+      const groupResponse = await ListOrganizations(PayloadGroup as any, tokenData);
+      if (groupResponse?.statusCode === RES_CODE_OK && groupResponse.data) {
+        setGroupData(groupResponse.data as OrganizationResponse[]);
+      }
+    } catch (error) {
+      console.error("Error loading group data:", error);
+    }
+  };
+
+  const handleUpdateTeam = async (values: any) => {
+    if (!teamId || !tokenData) return;
+
+    try {
+      setIsUpdating(true);
+      
+      // Find selected group to get orgGroupCode
+      const selectedGroup = GroupData.find(group => group.id === values.orgGroupId);
+      
+      if (!selectedGroup) {
+        showToast({
+          description: "Please select a valid organization group",
+          statusToast: "error",
+        });
+        return;
+      }
+      
+      // Build FormData directly to match API expectations
+      const formData = new FormData();
+      formData.append("Id", teamId);
+      formData.append("TeamName", values.teamName || "");
+      formData.append("TeamDesc", values.teamDesc || "");
+      formData.append("IsActive", values.isActive || "ACTIVE");
+      formData.append("deletePict", "false");
+      formData.append("orgGroupId", values.orgGroupId);
+      formData.append("orgGroupCode", selectedGroup.orgCode);
+
+      console.log("Update FormData fields:");
+      for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+      }
+
+      // Call API directly with FormData
+      const UrlEndpoint = `${process.env.NEXT_PUBLIC_API_BASE_URL}:${process.env.NEXT_PUBLIC_API_PORT_BASIC}`;
+      const PathEndpoint = "/v1/Teams/update";
+
+      const response = await fetch(`${UrlEndpoint}${PathEndpoint}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${tokenData}`,
+        },
+        body: formData,
+      });
+
+      const requestData = await response.json();
+
+      if (!requestData || requestData.statusCode !== RES_CODE_OK) {
+        showToast({
+          description: requestData?.message || RES_GENERIC_ERROR_MSG,
+          statusToast: "error",
+        });
+        return;
+      }
+
+      showToast({
+        description: "Team updated successfully",
+        statusToast: "success",
+      });
+
+      // Refresh team data and exit edit mode
+      await GetTeamData();
+      setIsEditMode(false);
+
+    } catch (error) {
+      console.error("Error updating team:", error);
+      showToast({
+        description: "An unexpected error occurred",
+        statusToast: "error",
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleEditMode = () => {
+    setIsEditMode(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
+    // Reset form to original values
+    if (TeamData) {
+      formik.setValues({
+        teamName: TeamData.teamName,
+        teamDesc: TeamData.teamDesc || "",
+        orgGroupId: TeamData.orgGroupId,
+        isActive: TeamData.isActive,
+      });
     }
   };
 
@@ -306,27 +479,76 @@ function TeamDetailView({}: TeamDetailViewProps) {
                 {/* </HStack> */}
               </VStack>
 
-              {/* Action Button */}
-              <Button
-                bg="whiteAlpha.200"
-                backdropFilter="blur(10px)"
-                border="1px solid"
-                borderColor="whiteAlpha.300"
-                color="white"
-                leftIcon={<Icon as={FiEdit} />}
-                rounded="xl"
-                size="sm"
-                fontWeight="medium"
-                shadow="lg"
-                _hover={{
-                  bg: "whiteAlpha.300",
-                  transform: "translateY(-1px)",
-                  shadow: "xl",
-                }}
-                transition="all 0.2s"
-              >
-                Edit
-              </Button>
+              {/* Action Buttons */}
+              {isEditMode ? (
+                <HStack spacing={2}>
+                  <Button
+                    bg="whiteAlpha.200"
+                    backdropFilter="blur(10px)"
+                    border="1px solid"
+                    borderColor="whiteAlpha.300"
+                    color="white"
+                    leftIcon={<Icon as={FiSave} />}
+                    rounded="xl"
+                    size="sm"
+                    fontWeight="medium"
+                    shadow="lg"
+                    onClick={() => formik.handleSubmit()}
+                    isLoading={isUpdating}
+                    _hover={{
+                      bg: "whiteAlpha.300",
+                      transform: "translateY(-1px)",
+                      shadow: "xl",
+                    }}
+                    transition="all 0.2s"
+                  >
+                    Save
+                  </Button>
+                  <Button
+                    bg="whiteAlpha.200"
+                    backdropFilter="blur(10px)"
+                    border="1px solid"
+                    borderColor="whiteAlpha.300"
+                    color="white"
+                    leftIcon={<Icon as={FiX} />}
+                    rounded="xl"
+                    size="sm"
+                    fontWeight="medium"
+                    shadow="lg"
+                    onClick={handleCancelEdit}
+                    _hover={{
+                      bg: "whiteAlpha.300",
+                      transform: "translateY(-1px)",
+                      shadow: "xl",
+                    }}
+                    transition="all 0.2s"
+                  >
+                    Cancel
+                  </Button>
+                </HStack>
+              ) : (
+                <Button
+                  bg="whiteAlpha.200"
+                  backdropFilter="blur(10px)"
+                  border="1px solid"
+                  borderColor="whiteAlpha.300"
+                  color="white"
+                  leftIcon={<Icon as={FiEdit} />}
+                  rounded="xl"
+                  size="sm"
+                  fontWeight="medium"
+                  shadow="lg"
+                  onClick={handleEditMode}
+                  _hover={{
+                    bg: "whiteAlpha.300",
+                    transform: "translateY(-1px)",
+                    shadow: "xl",
+                  }}
+                  transition="all 0.2s"
+                >
+                  Edit
+                </Button>
+              )}
             </HStack>
           </Box>
         </Box>
@@ -372,15 +594,112 @@ function TeamDetailView({}: TeamDetailViewProps) {
                   </HStack>
                 </CardHeader>
                 <CardBody p={8}>
-                  <Text
-                    fontSize="lg"
-                    color={colorMode === "light" ? "gray.600" : "gray.300"}
-                    lineHeight="1.8"
-                    fontWeight="medium"
-                  >
-                    {TeamData.teamDesc ||
-                      "No description available for this team."}
-                  </Text>
+                  {isEditMode ? (
+                    <VStack spacing={6} align="stretch">
+                      <FormControl isInvalid={!!formik.errors.teamName}>
+                        <FormLabel fontWeight="bold" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                          Team Name
+                        </FormLabel>
+                        <Input
+                          name="teamName"
+                          value={formik.values.teamName}
+                          onChange={formik.handleChange}
+                          placeholder="Enter team name"
+                          bg={colorMode === "light" ? "white" : "gray.700"}
+                          border="2px"
+                          borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                          rounded="xl"
+                          _focus={{
+                            borderColor: "secondary.500",
+                            shadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
+                          }}
+                        />
+                        <FormErrorMessage>{formik.errors.teamName}</FormErrorMessage>
+                      </FormControl>
+
+                      <FormControl isInvalid={!!formik.errors.teamDesc}>
+                        <FormLabel fontWeight="bold" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                          Team Description
+                        </FormLabel>
+                        <Textarea
+                          name="teamDesc"
+                          value={formik.values.teamDesc}
+                          onChange={formik.handleChange}
+                          placeholder="Enter team description"
+                          rows={4}
+                          bg={colorMode === "light" ? "white" : "gray.700"}
+                          border="2px"
+                          borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                          rounded="xl"
+                          _focus={{
+                            borderColor: "secondary.500",
+                            shadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
+                          }}
+                        />
+                        <FormErrorMessage>{formik.errors.teamDesc}</FormErrorMessage>
+                      </FormControl>
+
+                      <FormControl isInvalid={!!formik.errors.orgGroupId}>
+                        <FormLabel fontWeight="bold" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                          Organization Group
+                        </FormLabel>
+                        <Select
+                          name="orgGroupId"
+                          value={formik.values.orgGroupId}
+                          onChange={formik.handleChange}
+                          placeholder="Select organization group"
+                          bg={colorMode === "light" ? "white" : "gray.700"}
+                          border="2px"
+                          borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                          rounded="xl"
+                          _focus={{
+                            borderColor: "secondary.500",
+                            shadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
+                          }}
+                        >
+                          {GroupData.map((group) => (
+                            <option key={group.id} value={group.id}>
+                              {group.orgName} ({group.orgCode})
+                            </option>
+                          ))}
+                        </Select>
+                        <FormErrorMessage>{formik.errors.orgGroupId}</FormErrorMessage>
+                      </FormControl>
+
+                      <FormControl isInvalid={!!formik.errors.isActive}>
+                        <FormLabel fontWeight="bold" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                          Status
+                        </FormLabel>
+                        <Select
+                          name="isActive"
+                          value={formik.values.isActive}
+                          onChange={formik.handleChange}
+                          bg={colorMode === "light" ? "white" : "gray.700"}
+                          border="2px"
+                          borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                          rounded="xl"
+                          _focus={{
+                            borderColor: "secondary.500",
+                            shadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
+                          }}
+                        >
+                          <option value="ACTIVE">Active</option>
+                          <option value="INACTIVE">Inactive</option>
+                        </Select>
+                        <FormErrorMessage>{formik.errors.isActive}</FormErrorMessage>
+                      </FormControl>
+                    </VStack>
+                  ) : (
+                    <Text
+                      fontSize="lg"
+                      color={colorMode === "light" ? "gray.600" : "gray.300"}
+                      lineHeight="1.8"
+                      fontWeight="medium"
+                    >
+                      {TeamData.teamDesc ||
+                        "No description available for this team."}
+                    </Text>
+                  )}
                 </CardBody>
               </Card>
 
