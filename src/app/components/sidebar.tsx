@@ -79,6 +79,7 @@ import {
   FiKey,
   FiDollarSign,
   FiZap,
+  FiUpload,
 } from "react-icons/fi";
 import { IconType } from "react-icons";
 import {
@@ -227,6 +228,14 @@ const LinkItems: LinkItemProps[] = [
     role: ["admin"],
     menuID: "1",
     children: [
+      {
+        name: "Import Data Project",
+        icon: FiUpload,
+        link: "/projects/import",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
       {
         name: "Internal Development",
         icon: FaCode,
