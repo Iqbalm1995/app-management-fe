@@ -361,197 +361,255 @@ function TeamDetailView({}: TeamDetailViewProps) {
       />
 
       <Box mx={{ base: 4, md: 6 }} mt={4} mb={8}>
-        {/* Modern Hero Header */}
-        <Box
-          position="relative"
-          rounded="3xl"
+        {/* Elegant Modern Header */}
+        <Card
+          rounded="2xl"
           overflow="hidden"
           mb={8}
-          bgGradient="linear(135deg, secondary.500, secondary.600, purple.500)"
-          shadow="2xl"
+          shadow="xl"
+          border="1px"
+          borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+          bg={colorMode === "light" ? "white" : "gray.800"}
         >
-          {/* Background Pattern */}
-          <Box
-            position="absolute"
-            top={0}
-            right={0}
-            w="400px"
-            h="200px"
-            opacity={0.1}
-            bgGradient="radial(circle, white 1px, transparent 1px)"
-            bgSize="20px 20px"
-          />
-
-          <Box mx={{ base: 4, md: 6 }} mt={4} mb={8}>
+          <CardBody p={8} bg="secondary.500">
             {/* Back Button */}
             <Button
               variant="ghost"
               leftIcon={<Icon as={FaArrowLeft} />}
               onClick={() => router.push("/teams-center")}
               mb={6}
-              color={colorMode === "light" ? "white.600" : "white.400"}
+              color="whiteAlpha.800"
+              size="sm"
+              _hover={{
+                bg: "whiteAlpha.200",
+              }}
             >
               Back to Teams Center
             </Button>
 
-            <HStack spacing={6} align="start">
-              {/* Team Avatar with Status Indicator */}
-              <Box position="relative">
-                <Avatar
-                  size="2xl"
-                  name={TeamData.teamCode}
-                  bg="white"
-                  color="secondary.600"
-                  fontSize="3xl"
-                  fontWeight="black"
-                  shadow="2xl"
-                  border="4px solid"
-                  borderColor="whiteAlpha.300"
-                />
-                <Box
-                  position="absolute"
-                  top="-2px"
-                  right="-2px"
-                  w="20px"
-                  h="20px"
-                  rounded="full"
-                  bg={TeamData.isActive === "ACTIVE" ? "green.400" : "red.400"}
-                  border="3px solid white"
-                  shadow="lg"
-                />
-              </Box>
-
-              {/* Team Info */}
-              <VStack align="start" spacing={3} flex="1">
-                <VStack align="start" spacing={1}>
-                  <Heading
+            <HStack spacing={6} align="start" justify="space-between">
+              {/* Left Section - Avatar & Info */}
+              <HStack spacing={6} align="center" flex="1">
+                {/* Team Avatar with Elegant Status */}
+                <Box position="relative">
+                  <Avatar
                     size="2xl"
+                    name={TeamData.teamCode}
+                    bg="secondary.500"
                     color="white"
-                    fontWeight="black"
-                    letterSpacing="tight"
+                    fontSize="3xl"
+                    fontWeight="bold"
+                    shadow="lg"
+                    border="3px solid"
+                    borderColor="white"
+                  />
+                  {/* Status Indicator */}
+                  <Box
+                    position="absolute"
+                    bottom="0"
+                    right="0"
+                    w="24px"
+                    h="24px"
+                    rounded="full"
+                    bg={TeamData.isActive === "ACTIVE" ? "green.400" : "red.400"}
+                    border="3px solid"
+                    borderColor={colorMode === "light" ? "white" : "gray.800"}
+                    shadow="md"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
                   >
-                    {TeamData.teamName}
-                  </Heading>
-                  <HStack spacing={4}>
+                    <Box
+                      w="8px"
+                      h="8px"
+                      rounded="full"
+                      bg="white"
+                    />
+                  </Box>
+                </Box>
+
+                {/* Team Information */}
+                <VStack align="start" spacing={3} flex="1">
+                  <VStack align="start" spacing={1}>
+                    <Heading
+                      size="xl"
+                      color="white"
+                      fontWeight="bold"
+                      letterSpacing="tight"
+                    >
+                      {TeamData.teamName}
+                    </Heading>
+                    <HStack spacing={3}>
+                      <Text
+                        fontSize="md"
+                        color="whiteAlpha.800"
+                        fontWeight="medium"
+                        fontFamily="mono"
+                      >
+                        #{TeamData.teamCode}
+                      </Text>
+                      <Badge
+                        colorScheme={TeamData.isActive === "ACTIVE" ? "green" : "red"}
+                        variant="subtle"
+                        px={3}
+                        py={1}
+                        rounded="full"
+                        fontSize="xs"
+                        fontWeight="semibold"
+                        textTransform="capitalize"
+                      >
+                        {TeamData.isActive.toLowerCase()}
+                      </Badge>
+                    </HStack>
+                  </VStack>
+
+                  {/* Organization Info */}
+                  {/* <VStack align="start" spacing={1}>
                     <Text
-                      fontSize="xl"
-                      color="whiteAlpha.800"
+                      fontSize="sm"
+                      color="whiteAlpha.700"
                       fontWeight="medium"
                     >
-                      #{TeamData.teamCode}
+                      Organization
                     </Text>
-                    <Badge
-                      colorScheme={
-                        TeamData.isActive === "ACTIVE" ? "green" : "red"
-                      }
-                      px={4}
-                      py={2}
-                      rounded="full"
+                    <Text
                       fontSize="sm"
-                      fontWeight="bold"
-                      textTransform="uppercase"
-                      letterSpacing="wide"
+                      color="whiteAlpha.900"
+                      fontWeight="medium"
                     >
-                      {TeamData.isActive}
-                    </Badge>
-                  </HStack>
-                </VStack>
-
-                {/* Quick Stats */}
-                {/* <HStack spacing={6} mt={4}>
-                  <VStack spacing={1}>
-                    <Text fontSize="2xl" fontWeight="black" color="white">
-                      {MembersData.length}
-                    </Text>
-                    <Text fontSize="sm" color="whiteAlpha.700" fontWeight="medium">
-                      Members
-                    </Text>
-                  </VStack>
-                  {/* <Box w="1px" h="40px" bg="whiteAlpha.300" /> */}
-                {/* <VStack spacing={1}>
-                    <Text fontSize="2xl" fontWeight="black" color="white">
-                      {TeamData.directorate?.orgName ? "3" : "0"}
-                    </Text>
-                    <Text fontSize="sm" color="whiteAlpha.700" fontWeight="medium">
-                      Org Levels
+                      {TeamData.group?.orgName} ({TeamData.group?.orgCode})
                     </Text>
                   </VStack> */}
-                {/* </HStack> */}
-              </VStack>
 
-              {/* Action Buttons */}
-              {isEditMode ? (
-                <HStack spacing={2}>
+                  {/* Team Stats */}
+                  <HStack spacing={6} mt={2}>
+                    <VStack spacing={0} align="start">
+                      <Text
+                        fontSize="lg"
+                        fontWeight="bold"
+                        color="white"
+                      >
+                        {MembersData.length}
+                      </Text>
+                      <Text
+                        fontSize="xs"
+                        color="whiteAlpha.700"
+                        fontWeight="medium"
+                        textTransform="uppercase"
+                        letterSpacing="wide"
+                      >
+                        Members
+                      </Text>
+                    </VStack>
+                    <Box w="1px" h="30px" bg="whiteAlpha.300" />
+                    <VStack spacing={0} align="start">
+                      <Text
+                        fontSize="lg"
+                        fontWeight="bold"
+                        color="white"
+                      >
+                        {TeamData.createdAt ? new Date(TeamData.createdAt).getFullYear() : "N/A"}
+                      </Text>
+                      <Text
+                        fontSize="xs"
+                        color="whiteAlpha.700"
+                        fontWeight="medium"
+                        textTransform="uppercase"
+                        letterSpacing="wide"
+                      >
+                        Since
+                      </Text>
+                    </VStack>
+                  </HStack>
+                </VStack>
+              </HStack>
+
+              {/* Right Section - Action Buttons */}
+              <VStack spacing={3} align="center" justify="center">
+                {isEditMode ? (
+                  <HStack spacing={3}>
+                    <Button
+                      colorScheme="green"
+                      leftIcon={<Icon as={FiSave} />}
+                      rounded="xl"
+                      size="md"
+                      fontWeight="semibold"
+                      shadow="lg"
+                      px={6}
+                      py={6}
+                      onClick={() => formik.handleSubmit()}
+                      isLoading={isUpdating}
+                      _hover={{
+                        transform: "translateY(-2px)",
+                        shadow: "xl",
+                      }}
+                      transition="all 0.2s"
+                    >
+                      Save Changes
+                    </Button>
+                    <Button
+                      bg="white"
+                      color="gray.700"
+                      border="2px"
+                      borderColor="white"
+                      leftIcon={<Icon as={FiX} />}
+                      rounded="xl"
+                      size="md"
+                      fontWeight="semibold"
+                      px={6}
+                      py={6}
+                      onClick={handleCancelEdit}
+                      _hover={{
+                        bg: "gray.100",
+                        transform: "translateY(-2px)",
+                        shadow: "lg",
+                      }}
+                      transition="all 0.2s"
+                    >
+                      Cancel
+                    </Button>
+                  </HStack>
+                ) : (
                   <Button
-                    bg="whiteAlpha.200"
-                    backdropFilter="blur(10px)"
-                    border="1px solid"
-                    borderColor="whiteAlpha.300"
-                    color="white"
-                    leftIcon={<Icon as={FiSave} />}
+                    bg="white"
+                    color="secondary.600"
+                    border="2px"
+                    borderColor="white"
+                    leftIcon={<Icon as={FiEdit} />}
                     rounded="xl"
-                    size="sm"
-                    fontWeight="medium"
-                    shadow="lg"
-                    onClick={() => formik.handleSubmit()}
-                    isLoading={isUpdating}
+                    size="lg"
+                    fontWeight="bold"
+                    px={8}
+                    py={6}
+                    fontSize="md"
+                    onClick={handleEditMode}
                     _hover={{
-                      bg: "whiteAlpha.300",
-                      transform: "translateY(-1px)",
+                      bg: "whiteAlpha.900",
+                      transform: "translateY(-2px)",
                       shadow: "xl",
                     }}
                     transition="all 0.2s"
                   >
-                    Save
+                    Edit Team
                   </Button>
-                  <Button
-                    bg="whiteAlpha.200"
-                    backdropFilter="blur(10px)"
-                    border="1px solid"
-                    borderColor="whiteAlpha.300"
-                    color="white"
-                    leftIcon={<Icon as={FiX} />}
-                    rounded="xl"
-                    size="sm"
-                    fontWeight="medium"
-                    shadow="lg"
-                    onClick={handleCancelEdit}
-                    _hover={{
-                      bg: "whiteAlpha.300",
-                      transform: "translateY(-1px)",
-                      shadow: "xl",
-                    }}
-                    transition="all 0.2s"
-                  >
-                    Cancel
-                  </Button>
-                </HStack>
-              ) : (
-                <Button
-                  bg="whiteAlpha.200"
-                  backdropFilter="blur(10px)"
-                  border="1px solid"
-                  borderColor="whiteAlpha.300"
-                  color="white"
-                  leftIcon={<Icon as={FiEdit} />}
-                  rounded="xl"
-                  size="sm"
-                  fontWeight="medium"
-                  shadow="lg"
-                  onClick={handleEditMode}
-                  _hover={{
-                    bg: "whiteAlpha.300",
-                    transform: "translateY(-1px)",
-                    shadow: "xl",
-                  }}
-                  transition="all 0.2s"
+                )}
+                
+                {/* Last Updated Info */}
+                <Text
+                  fontSize="xs"
+                  color="whiteAlpha.600"
+                  textAlign="right"
                 >
-                  Edit
-                </Button>
-              )}
+                  Last updated{" "}
+                  {TeamData.updatedAt 
+                    ? new Date(TeamData.updatedAt).toLocaleDateString()
+                    : new Date(TeamData.createdAt).toLocaleDateString()
+                  }
+                </Text>
+              </VStack>
             </HStack>
-          </Box>
-        </Box>
+          </CardBody>
+        </Card>
 
         <Grid templateColumns={{ base: "1fr", lg: "2fr 1fr" }} gap={8}>
           {/* Left Column - Main Content */}
@@ -705,240 +763,60 @@ function TeamDetailView({}: TeamDetailViewProps) {
 
               {/* Organization Structure Card */}
               <Card
-                rounded="3xl"
-                shadow="xl"
-                border="0"
+                rounded="xl"
+                shadow="md"
+                border="1px"
+                borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
                 bg={colorMode === "light" ? "white" : "gray.800"}
-                overflow="hidden"
-                position="relative"
-                _before={{
-                  content: '""',
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  h: "4px",
-                  bgGradient:
-                    "linear(to-r, blue.400, purple.400, secondary.400)",
-                }}
               >
-                <CardHeader
-                  bgGradient={
-                    colorMode === "light"
-                      ? "linear(135deg, gray.50, purple.50)"
-                      : "linear(135deg, gray.700, gray.600)"
-                  }
-                  py={8}
-                >
-                  <HStack spacing={3}>
-                    <Box w="8px" h="8px" rounded="full" bg="blue.400" />
-                    <Heading
-                      size="sm"
-                      color={colorMode === "light" ? "gray.800" : "white"}
-                    >
-                      Structures
-                    </Heading>
-                  </HStack>
+                <CardHeader py={4} px={6}>
+                  <Heading
+                    size="md"
+                    color={colorMode === "light" ? "gray.800" : "white"}
+                  >
+                    Organization Structure
+                  </Heading>
                 </CardHeader>
-                <CardBody p={8}>
-                  <VStack spacing={6} align="stretch">
+                <CardBody px={6} pb={6}>
+                  <VStack spacing={4} align="stretch">
                     {/* Directorate */}
-                    <Box
-                      p={6}
-                      rounded="2xl"
-                      bgGradient={
-                        colorMode === "light"
-                          ? "linear(135deg, blue.50, blue.100)"
-                          : "linear(135deg, blue.900, blue.800)"
-                      }
-                      border="2px"
-                      borderColor="blue.200"
-                      position="relative"
-                      overflow="hidden"
-                      shadow="md"
-                      _hover={{
-                        shadow: "lg",
-                        transform: "translateY(-2px)",
-                      }}
-                      transition="all 0.2s"
-                    >
-                      <Box
-                        position="absolute"
-                        top={0}
-                        left={0}
-                        w="full"
-                        h="4px"
-                        bgGradient="linear(to-r, blue.400, blue.500)"
-                      />
-                      <HStack spacing={4}>
-                        <Box
-                          w="60px"
-                          h="60px"
-                          rounded="2xl"
-                          bgGradient="linear(135deg, blue.400, blue.500)"
-                          display="flex"
-                          alignItems="center"
-                          justifyContent="center"
-                          shadow="lg"
-                        >
-                          <Text fontSize="2xl" fontWeight="black" color="white">
-                            D
-                          </Text>
-                        </Box>
-                        <VStack align="start" spacing={2} flex="1">
-                          <Text
-                            fontSize="sm"
-                            color="blue.600"
-                            fontWeight="bold"
-                            textTransform="uppercase"
-                          >
-                            Directorate
-                          </Text>
-                          <Text
-                            fontSize="xl"
-                            fontWeight="bold"
-                            color="blue.700"
-                          >
-                            {TeamData.directorate?.orgName || "Not Assigned"}
-                          </Text>
-                          <Text fontSize="sm" color="gray.500">
-                            Code: {TeamData.directorate?.orgCode || "N/A"}
-                          </Text>
-                        </VStack>
+                    <HStack justify="space-between" p={4} bg={colorMode === "light" ? "blue.50" : "blue.900"} rounded="lg">
+                      <HStack spacing={3}>
+                        <Box w="3px" h="16px" bg="blue.400" rounded="full" />
+                        <Text fontSize="sm" color="blue.600" fontWeight="medium">
+                          Directorate
+                        </Text>
                       </HStack>
-                    </Box>
+                      <Text fontSize="sm" color={colorMode === "light" ? "purple.900" : "white"}>
+                        {TeamData.directorate?.orgName || "Not Assigned"}
+                      </Text>
+                    </HStack>
 
                     {/* Division */}
-                    <Box
-                      p={6}
-                      rounded="2xl"
-                      bgGradient={
-                        colorMode === "light"
-                          ? "linear(135deg, purple.50, purple.100)"
-                          : "linear(135deg, purple.900, purple.800)"
-                      }
-                      border="2px"
-                      borderColor="purple.200"
-                      position="relative"
-                      overflow="hidden"
-                      shadow="md"
-                      _hover={{
-                        shadow: "lg",
-                        transform: "translateY(-2px)",
-                      }}
-                      transition="all 0.2s"
-                    >
-                      <Box
-                        position="absolute"
-                        top={0}
-                        left={0}
-                        w="full"
-                        h="4px"
-                        bgGradient="linear(to-r, purple.400, purple.500)"
-                      />
-                      <HStack spacing={4}>
-                        <Box
-                          w="60px"
-                          h="60px"
-                          rounded="2xl"
-                          bgGradient="linear(135deg, purple.400, purple.500)"
-                          display="flex"
-                          alignItems="center"
-                          justifyContent="center"
-                          shadow="lg"
-                        >
-                          <Text fontSize="2xl" fontWeight="black" color="white">
-                            D
-                          </Text>
-                        </Box>
-                        <VStack align="start" spacing={2} flex="1">
-                          <Text
-                            fontSize="sm"
-                            color="purple.600"
-                            fontWeight="bold"
-                            textTransform="uppercase"
-                          >
-                            Division
-                          </Text>
-                          <Text
-                            fontSize="xl"
-                            fontWeight="bold"
-                            color="purple.700"
-                          >
-                            {TeamData.division?.orgName || "Not Assigned"}
-                          </Text>
-                          <Text fontSize="sm" color="gray.500">
-                            Code: {TeamData.division?.orgCode || "N/A"}
-                          </Text>
-                        </VStack>
+                    <HStack justify="space-between" p={4} bg={colorMode === "light" ? "purple.50" : "purple.900"} rounded="lg">
+                      <HStack spacing={3}>
+                        <Box w="3px" h="16px" bg="purple.400" rounded="full" />
+                        <Text fontSize="sm" color="purple.600" fontWeight="medium">
+                          Division
+                        </Text>
                       </HStack>
-                    </Box>
+                      <Text fontSize="sm"  color={colorMode === "light" ? "purple.900" : "white"}>
+                        {TeamData.division?.orgName || "Not Assigned"}
+                      </Text>
+                    </HStack>
 
                     {/* Group */}
-                    <Box
-                      p={6}
-                      rounded="2xl"
-                      bgGradient={
-                        colorMode === "light"
-                          ? "linear(135deg, secondary.50, secondary.100)"
-                          : "linear(135deg, secondary.900, secondary.800)"
-                      }
-                      border="2px"
-                      borderColor="secondary.200"
-                      position="relative"
-                      overflow="hidden"
-                      shadow="md"
-                      _hover={{
-                        shadow: "lg",
-                        transform: "translateY(-2px)",
-                      }}
-                      transition="all 0.2s"
-                    >
-                      <Box
-                        position="absolute"
-                        top={0}
-                        left={0}
-                        w="full"
-                        h="4px"
-                        bgGradient="linear(to-r, secondary.400, secondary.500)"
-                      />
-                      <HStack spacing={4}>
-                        <Box
-                          w="60px"
-                          h="60px"
-                          rounded="2xl"
-                          bgGradient="linear(135deg, secondary.400, secondary.500)"
-                          display="flex"
-                          alignItems="center"
-                          justifyContent="center"
-                          shadow="lg"
-                        >
-                          <Text fontSize="2xl" fontWeight="black" color="white">
-                            G
-                          </Text>
-                        </Box>
-                        <VStack align="start" spacing={2} flex="1">
-                          <Text
-                            fontSize="sm"
-                            color="secondary.600"
-                            fontWeight="bold"
-                            textTransform="uppercase"
-                          >
-                            Group
-                          </Text>
-                          <Text
-                            fontSize="xl"
-                            fontWeight="bold"
-                            color="secondary.700"
-                          >
-                            {TeamData.group?.orgName || "Not Assigned"}
-                          </Text>
-                          <Text fontSize="sm" color="gray.500">
-                            Code: {TeamData.group?.orgCode || "N/A"}
-                          </Text>
-                        </VStack>
+                    <HStack justify="space-between" p={4} bg={colorMode === "light" ? "secondary.50" : "secondary.900"} rounded="lg">
+                      <HStack spacing={3}>
+                        <Box w="3px" h="16px" bg="secondary.400" rounded="full" />
+                        <Text fontSize="sm" color="secondary.600" fontWeight="medium">
+                          Group
+                        </Text>
                       </HStack>
-                    </Box>
+                      <Text fontSize="sm"  color={colorMode === "light" ? "purple.900" : "white"}>
+                        {TeamData.group?.orgName || "Not Assigned"}
+                      </Text>
+                    </HStack>
                   </VStack>
                 </CardBody>
               </Card>
@@ -1083,7 +961,7 @@ function TeamDetailView({}: TeamDetailViewProps) {
                     <Divider />
                     <HStack justify="space-between">
                       <Text fontSize="sm" color="gray.500" fontWeight="medium">
-                        Team Code
+                        Initial Team
                       </Text>
                       <Text fontSize="sm" fontWeight="bold">
                         {TeamData.teamCode}
@@ -1091,6 +969,16 @@ function TeamDetailView({}: TeamDetailViewProps) {
                     </HStack>
                     <Divider />
                     <HStack justify="space-between">
+                      <Text fontSize="sm" color="gray.500" fontWeight="medium">
+                        Created
+                      </Text>
+                      <Text fontSize="sm" fontWeight="bold">
+                        {TeamData.createdAt ? new Date(TeamData.createdAt).getFullYear() : "N/A"}
+                      </Text>
+                    </HStack>
+                    
+                    
+                    {/* <HStack justify="space-between">
                       <Text fontSize="sm" color="gray.500" fontWeight="medium">
                         Org Group ID
                       </Text>
@@ -1106,7 +994,7 @@ function TeamDetailView({}: TeamDetailViewProps) {
                       <Text fontSize="sm" fontWeight="bold">
                         {TeamData.orgGroupCode}
                       </Text>
-                    </HStack>
+                    </HStack> */}
                   </VStack>
                 </CardBody>
               </Card>
