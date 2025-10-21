@@ -100,6 +100,7 @@ function TeamDetailView({}: TeamDetailViewProps) {
   const [DivisionData, setDivisionData] = useState<OrganizationResponse[]>([]);
   const [selectedDirectorate, setSelectedDirectorate] = useState<string>("");
   const [selectedDivision, setSelectedDivision] = useState<string>("");
+  const [selectedGroup, setSelectedGroup] = useState<string>("");
   
   // Confirmation dialog state
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -234,6 +235,17 @@ function TeamDetailView({}: TeamDetailViewProps) {
       const data = requestData.data as TeamsResponse;
       setTeamData(data);
 
+      // Set current organization selections
+      if (data.directorate?.id) {
+        setSelectedDirectorate(data.directorate.id);
+      }
+      if (data.division?.id) {
+        setSelectedDivision(data.division.id);
+      }
+      if (data.group?.id) {
+        setSelectedGroup(data.group.id);
+      }
+
       // Update header with team name
       setHeaderDataContent({
         titleName: data.teamName,
@@ -286,7 +298,7 @@ function TeamDetailView({}: TeamDetailViewProps) {
     if (!tokenData) return;
 
     try {
-      // Load Directorates
+      // Load Directorates (always load all)
       const PayloadDirectorate = {
         search: "",
         limit: 999999,
@@ -301,14 +313,22 @@ function TeamDetailView({}: TeamDetailViewProps) {
         setDirectorateData(directorateResponse.data as OrganizationResponse[]);
       }
 
-      // Load Divisions
+      // Load Divisions - if no directorate selected, load current team's division's parent divisions
+      let divisionFilter = [{ field: "orgType", operator: "=", value: "DIVISION" }];
+      if (selectedDirectorate) {
+        divisionFilter.push({ field: "orgParentId", operator: "=", value: selectedDirectorate });
+      } else if (TeamData?.directorate?.id) {
+        // Load divisions under current team's directorate
+        divisionFilter.push({ field: "orgParentId", operator: "=", value: TeamData.directorate.id });
+      }
+
       const PayloadDivision = {
         search: "",
         limit: 999999,
         page: 0,
         fieldOrder: ["orgName"],
         orderDir: "asc",
-        filterWhere: [{ field: "orgType", operator: "=", value: "DIVISION" }],
+        filterWhere: divisionFilter,
       };
 
       const divisionResponse = await ListOrganizations(PayloadDivision as any, tokenData);
@@ -316,14 +336,22 @@ function TeamDetailView({}: TeamDetailViewProps) {
         setDivisionData(divisionResponse.data as OrganizationResponse[]);
       }
 
-      // Load Groups
+      // Load Groups - if no division selected, load current team's group's parent groups
+      let groupFilter = [{ field: "orgType", operator: "=", value: "GROUP" }];
+      if (selectedDivision) {
+        groupFilter.push({ field: "orgParentId", operator: "=", value: selectedDivision });
+      } else if (TeamData?.division?.id) {
+        // Load groups under current team's division
+        groupFilter.push({ field: "orgParentId", operator: "=", value: TeamData.division.id });
+      }
+
       const PayloadGroup = {
         search: "",
         limit: 999999,
         page: 0,
         fieldOrder: ["orgName"],
         orderDir: "asc",
-        filterWhere: [{ field: "orgType", operator: "=", value: "GROUP" }],
+        filterWhere: groupFilter,
       };
 
       const groupResponse = await ListOrganizations(PayloadGroup as any, tokenData);
@@ -568,6 +596,23 @@ function TeamDetailView({}: TeamDetailViewProps) {
       setMemberToRemove(null);
     }
   };
+
+  // Reload divisions when directorate changes
+  useEffect(() => {
+    if (selectedDirectorate) {
+      setSelectedDivision("");
+      setSelectedGroup("");
+      LoadGroupData();
+    }
+  }, [selectedDirectorate]);
+
+  // Reload groups when division changes
+  useEffect(() => {
+    if (selectedDivision) {
+      setSelectedGroup("");
+      LoadGroupData();
+    }
+  }, [selectedDivision]);
 
   const handleEditMode = () => {
     setIsEditMode(true);
@@ -1020,7 +1065,7 @@ function TeamDetailView({}: TeamDetailViewProps) {
 
                       <FormControl isInvalid={!!formik.errors.orgGroupId}>
                         <FormLabel fontWeight="bold" color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                          Organization Group
+                          Group
                         </FormLabel>
                         <Select
                           name="orgGroupId"
