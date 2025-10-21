@@ -10,8 +10,10 @@ import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useTeams, {
   TeamsResponse,
   TeamsUserMemberResponse,
+  TeamRoleFullResponse,
 } from "@/app/services/useTeams";
 import { UsersResponse } from "@/app/services/useUsers";
+import useUsers from "@/app/services/useUsers";
 import useOrganization, { OrganizationResponse } from "@/app/services/useOrganization";
 import { useFormik } from "formik";
 import * as Yup from "yup";
@@ -43,11 +45,25 @@ import {
   FormLabel,
   FormErrorMessage,
   Select,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
+  useDisclosure,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
 } from "@chakra-ui/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { FaUsersRays, FaArrowLeft } from "react-icons/fa6";
-import { FiCalendar, FiUser, FiEdit, FiUsers, FiHome, FiSave, FiX } from "react-icons/fi";
+import { FiCalendar, FiUser, FiEdit, FiUsers, FiHome, FiSave, FiX, FiPlus } from "react-icons/fi";
 
 interface TeamDetailViewProps {}
 
@@ -58,7 +74,8 @@ function TeamDetailView({}: TeamDetailViewProps) {
   const searchParams = useSearchParams();
   const teamId = searchParams.get("id");
 
-  const { GetDetailById, ListMembers, UpdateTeams } = useTeams();
+  const { GetDetailById, ListMembers, UpdateTeams, RemoveTeamMember, InsertTeamMember, ListTeamRoles } = useTeams();
+  const { List: ListUsers } = useUsers();
   const { List: ListOrganizations } = useOrganization();
 
   // Auth setup
@@ -70,10 +87,34 @@ function TeamDetailView({}: TeamDetailViewProps) {
   const [MembersData, setMembersData] = useState<UsersResponse[]>([]);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
 
+  // Members pagination
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalMembers, setTotalMembers] = useState(0);
+  const membersPerPage = 5;
+
   // Edit mode state
   const [isEditMode, setIsEditMode] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [GroupData, setGroupData] = useState<OrganizationResponse[]>([]);
+  const [DirectorateData, setDirectorateData] = useState<OrganizationResponse[]>([]);
+  const [DivisionData, setDivisionData] = useState<OrganizationResponse[]>([]);
+  const [selectedDirectorate, setSelectedDirectorate] = useState<string>("");
+  const [selectedDivision, setSelectedDivision] = useState<string>("");
+  
+  // Confirmation dialog state
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [memberToRemove, setMemberToRemove] = useState<{id: string, name: string} | null>(null);
+  const cancelRef = useRef<HTMLButtonElement>(null);
+
+  // Add member modal state
+  const { isOpen: isAddModalOpen, onOpen: onAddModalOpen, onClose: onAddModalClose } = useDisclosure();
+  const [availableUsers, setAvailableUsers] = useState<UsersResponse[]>([]);
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [isAddingMember, setIsAddingMember] = useState(false);
+  const [searchUser, setSearchUser] = useState<string>("");
+  const [filteredUsers, setFilteredUsers] = useState<UsersResponse[]>([]);
+  const [teamRoles, setTeamRoles] = useState<TeamRoleFullResponse[]>([]);
+  const [selectedRoleId, setSelectedRoleId] = useState<string>("");
 
   // Header content
   const [HeaderDataContent, setHeaderDataContent] =
@@ -148,6 +189,33 @@ function TeamDetailView({}: TeamDetailViewProps) {
     }
   }, [TeamData]);
 
+  // Initialize selections when entering edit mode and data is available
+  useEffect(() => {
+    if (isEditMode && TeamData && DirectorateData.length > 0 && DivisionData.length > 0 && GroupData.length > 0) {
+      if (TeamData.directorate?.id) {
+        setSelectedDirectorate(TeamData.directorate.id);
+      }
+      if (TeamData.division?.id) {
+        setSelectedDivision(TeamData.division.id);
+      }
+    }
+  }, [isEditMode, TeamData, DirectorateData, DivisionData, GroupData]);
+
+  // Reset division and group when directorate changes
+  useEffect(() => {
+    if (selectedDirectorate !== "") {
+      setSelectedDivision("");
+      formik.setFieldValue("orgGroupId", "");
+    }
+  }, [selectedDirectorate]);
+
+  // Reset group when division changes
+  useEffect(() => {
+    if (selectedDivision !== "") {
+      formik.setFieldValue("orgGroupId", "");
+    }
+  }, [selectedDivision]);
+
   const GetTeamData = async () => {
     if (!teamId || !tokenData) return;
 
@@ -189,14 +257,16 @@ function TeamDetailView({}: TeamDetailViewProps) {
       const payload = {
         search: "",
         teamId: teamId,
-        limit: 100,
+        limit: 999,
         page: 0,
         filterWhere: [],
-        fieldOrder: ["userFirstName"],
+        fieldOrder: ["nama"],
         orderDir: "asc" as const,
       };
 
+      console.log("Loading team members with payload:", payload);
       const requestData = await ListMembers(payload, tokenData);
+      console.log("Team members response:", requestData);
 
       if (!requestData || requestData.statusCode !== RES_CODE_OK) {
         console.error("Error fetching team members:", requestData?.message);
@@ -204,7 +274,9 @@ function TeamDetailView({}: TeamDetailViewProps) {
       }
 
       const data = requestData.data as UsersResponse[];
+      console.log("Team members data:", data);
       setMembersData(data);
+      setTotalMembers(data.length);
     } catch (error) {
       console.error("Error fetching team members:", error);
     }
@@ -214,15 +286,44 @@ function TeamDetailView({}: TeamDetailViewProps) {
     if (!tokenData) return;
 
     try {
+      // Load Directorates
+      const PayloadDirectorate = {
+        search: "",
+        limit: 999999,
+        page: 0,
+        fieldOrder: ["orgName"],
+        orderDir: "asc",
+        filterWhere: [{ field: "orgType", operator: "=", value: "DIRECTORATE" }],
+      };
+
+      const directorateResponse = await ListOrganizations(PayloadDirectorate as any, tokenData);
+      if (directorateResponse?.statusCode === RES_CODE_OK && directorateResponse.data) {
+        setDirectorateData(directorateResponse.data as OrganizationResponse[]);
+      }
+
+      // Load Divisions
+      const PayloadDivision = {
+        search: "",
+        limit: 999999,
+        page: 0,
+        fieldOrder: ["orgName"],
+        orderDir: "asc",
+        filterWhere: [{ field: "orgType", operator: "=", value: "DIVISION" }],
+      };
+
+      const divisionResponse = await ListOrganizations(PayloadDivision as any, tokenData);
+      if (divisionResponse?.statusCode === RES_CODE_OK && divisionResponse.data) {
+        setDivisionData(divisionResponse.data as OrganizationResponse[]);
+      }
+
+      // Load Groups
       const PayloadGroup = {
         search: "",
         limit: 999999,
         page: 0,
         fieldOrder: ["orgName"],
         orderDir: "asc",
-        filterWhere: [
-          { field: "orgType", operator: "=", value: "GROUP" }
-        ],
+        filterWhere: [{ field: "orgType", operator: "=", value: "GROUP" }],
       };
 
       const groupResponse = await ListOrganizations(PayloadGroup as any, tokenData);
@@ -230,7 +331,7 @@ function TeamDetailView({}: TeamDetailViewProps) {
         setGroupData(groupResponse.data as OrganizationResponse[]);
       }
     } catch (error) {
-      console.error("Error loading group data:", error);
+      console.error("Error loading organization data:", error);
     }
   };
 
@@ -308,12 +409,175 @@ function TeamDetailView({}: TeamDetailViewProps) {
     }
   };
 
+  const loadTeamRoles = async () => {
+    if (!tokenData) return;
+
+    try {
+      const payload = {
+        search: "",
+        limit: 999,
+        page: 0,
+        fieldOrder: ["teamRoleName"],
+        orderDir: "asc" as const,
+        filterWhere: [],
+      };
+
+      const response = await ListTeamRoles(payload, tokenData);
+      if (response?.statusCode === RES_CODE_OK && response.data) {
+        setTeamRoles(response.data);
+      }
+    } catch (error) {
+      console.error("Error loading team roles:", error);
+    }
+  };
+
+  const loadAvailableUsers = async () => {
+    if (!tokenData) return;
+
+    try {
+      const payload = {
+        search: "",
+        limit: 999,
+        page: 0,
+        fieldOrder: ["nama"],
+        orderDir: "asc" as const,
+        filterWhere: [],
+      };
+
+      const response = await ListUsers(payload, tokenData);
+      if (response?.statusCode === RES_CODE_OK && response.data) {
+        // Filter out users who are already team members
+        const currentMemberIds = MembersData.map(member => member.id);
+        const available = response.data.filter(user => !currentMemberIds.includes(user.id));
+        setAvailableUsers(available);
+        setFilteredUsers(available);
+      }
+    } catch (error) {
+      console.error("Error loading users:", error);
+    }
+  };
+
+  // Filter users based on search
+  useEffect(() => {
+    if (searchUser.trim() === "") {
+      setFilteredUsers(availableUsers);
+    } else {
+      const filtered = availableUsers.filter(user =>
+        user.nama.toLowerCase().includes(searchUser.toLowerCase()) ||
+        (user.email && user.email.toLowerCase().includes(searchUser.toLowerCase())) ||
+        user.userId.toLowerCase().includes(searchUser.toLowerCase())
+      );
+      setFilteredUsers(filtered);
+    }
+  }, [searchUser, availableUsers]);
+
+  const handleAddMember = () => {
+    loadAvailableUsers();
+    loadTeamRoles();
+    setSearchUser("");
+    setSelectedUserIds([]);
+    setSelectedRoleId("");
+    onAddModalOpen();
+  };
+
+  const confirmAddMember = async () => {
+    if (selectedUserIds.length === 0 || !selectedRoleId || !teamId || !tokenData) return;
+
+    setIsAddingMember(true);
+    try {
+      // Add members one by one
+      for (const userId of selectedUserIds) {
+        const payload = {
+          userId: userId,
+          teamId: teamId,
+          teamRoleId: selectedRoleId,
+        };
+
+        const response = await InsertTeamMember(payload, tokenData);
+
+        if (!response || response.statusCode !== RES_CODE_OK) {
+          const userName = availableUsers.find(u => u.id === userId)?.nama || "User";
+          showToast({
+            description: `Failed to add ${userName}: ${response?.message || RES_GENERIC_ERROR_MSG}`,
+            statusToast: "error",
+          });
+          continue;
+        }
+      }
+
+      showToast({
+        description: `${selectedUserIds.length} member(s) added successfully`,
+        statusToast: "success",
+      });
+
+      // Refresh team members
+      await GetTeamMembers();
+      onAddModalClose();
+      setSelectedUserIds([]);
+      setSelectedRoleId("");
+    } catch (error) {
+      console.error("Error adding members:", error);
+      showToast({
+        description: "An unexpected error occurred",
+        statusToast: "error",
+      });
+    } finally {
+      setIsAddingMember(false);
+    }
+  };
+
+  const handleRemoveMember = async (userId: string, memberName: string) => {
+    setMemberToRemove({ id: userId, name: memberName });
+    onOpen();
+  };
+
+  const confirmRemoveMember = async () => {
+    if (!memberToRemove || !teamId || !tokenData) return;
+
+    try {
+      const payload = {
+        userId: memberToRemove.id,
+        teamId: teamId,
+      };
+
+      const response = await RemoveTeamMember(payload, tokenData);
+
+      if (!response || response.statusCode !== RES_CODE_OK) {
+        showToast({
+          description: response?.message || RES_GENERIC_ERROR_MSG,
+          statusToast: "error",
+        });
+        return;
+      }
+
+      showToast({
+        description: `${memberToRemove.name} removed successfully`,
+        statusToast: "success",
+      });
+
+      // Refresh team members
+      await GetTeamMembers();
+    } catch (error) {
+      console.error("Error removing member:", error);
+      showToast({
+        description: "An unexpected error occurred",
+        statusToast: "error",
+      });
+    } finally {
+      onClose();
+      setMemberToRemove(null);
+    }
+  };
+
   const handleEditMode = () => {
     setIsEditMode(true);
   };
 
   const handleCancelEdit = () => {
     setIsEditMode(false);
+    // Reset selections
+    setSelectedDirectorate("");
+    setSelectedDivision("");
     // Reset form to original values
     if (TeamData) {
       formik.setValues({
@@ -697,6 +961,63 @@ function TeamDetailView({}: TeamDetailViewProps) {
                         <FormErrorMessage>{formik.errors.teamDesc}</FormErrorMessage>
                       </FormControl>
 
+                      {/* Directorate Selection */}
+                      <FormControl>
+                        <FormLabel fontWeight="bold" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                          Directorate
+                        </FormLabel>
+                        <Select
+                          value={selectedDirectorate}
+                          onChange={(e) => setSelectedDirectorate(e.target.value)}
+                          placeholder="Select directorate"
+                          bg={colorMode === "light" ? "white" : "gray.700"}
+                          border="2px"
+                          borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                          rounded="xl"
+                          _focus={{
+                            borderColor: "secondary.500",
+                            shadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
+                          }}
+                        >
+                          {DirectorateData.map((org) => (
+                            <option key={org.id} value={org.id}>
+                              {org.orgName} ({org.orgCode})
+                            </option>
+                          ))}
+                        </Select>
+                      </FormControl>
+
+                      {/* Division Selection */}
+                      <FormControl>
+                        <FormLabel fontWeight="bold" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                          Division
+                        </FormLabel>
+                        <Select
+                          value={selectedDivision}
+                          onChange={(e) => setSelectedDivision(e.target.value)}
+                          placeholder="Select division"
+                          bg={colorMode === "light" ? "white" : "gray.700"}
+                          border="2px"
+                          borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                          rounded="xl"
+                          _focus={{
+                            borderColor: "secondary.500",
+                            shadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
+                          }}
+                        >
+                          {DivisionData.filter((division) => {
+                            // Always include current team's division
+                            if (TeamData?.division?.id === division.id) return true;
+                            // Filter by selected directorate
+                            return selectedDirectorate ? division.parentId === selectedDirectorate : true;
+                          }).map((division) => (
+                            <option key={division.id} value={division.id}>
+                              {division.orgName} ({division.orgCode})
+                            </option>
+                          ))}
+                        </Select>
+                      </FormControl>
+
                       <FormControl isInvalid={!!formik.errors.orgGroupId}>
                         <FormLabel fontWeight="bold" color={colorMode === "light" ? "gray.700" : "gray.300"}>
                           Organization Group
@@ -715,7 +1036,12 @@ function TeamDetailView({}: TeamDetailViewProps) {
                             shadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
                           }}
                         >
-                          {GroupData.map((group) => (
+                          {GroupData.filter((group) => {
+                            // Always include current team's group
+                            if (TeamData?.group?.id === group.id) return true;
+                            // Filter by selected division
+                            return selectedDivision ? group.parentId === selectedDivision : false;
+                          }).map((group) => (
                             <option key={group.id} value={group.id}>
                               {group.orgName} ({group.orgCode})
                             </option>
@@ -761,72 +1087,175 @@ function TeamDetailView({}: TeamDetailViewProps) {
                 </CardBody>
               </Card>
 
-              {/* Organization Structure Card */}
+              {/* Team Members Management Card */}
               <Card
-                rounded="xl"
-                shadow="md"
-                border="1px"
-                borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                rounded="3xl"
+                shadow="xl"
+                border="0"
                 bg={colorMode === "light" ? "white" : "gray.800"}
+                overflow="hidden"
+                position="relative"
               >
-                <CardHeader py={4} px={6}>
-                  <Heading
-                    size="md"
-                    color={colorMode === "light" ? "gray.800" : "white"}
-                  >
-                    Organization Structure
-                  </Heading>
+                <CardHeader
+                  bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                  py={8}
+                >
+                  <HStack justify="space-between">
+                    <HStack spacing={3}>
+                      <Box w="8px" h="8px" rounded="full" bg="secondary.400" />
+                      <Heading
+                        size="sm"
+                        color={colorMode === "light" ? "gray.800" : "white"}
+                      >
+                        Team Members ({MembersData.length})
+                      </Heading>
+                    </HStack>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      colorScheme="secondary"
+                      leftIcon={<Icon as={FiPlus} />}
+                      rounded="xl"
+                      fontWeight="medium"
+                      onClick={handleAddMember}
+                      _hover={{
+                        transform: "translateY(-1px)",
+                        bg: "secondary.50",
+                      }}
+                      transition="all 0.2s"
+                    >
+                      Add Member
+                    </Button>
+                  </HStack>
                 </CardHeader>
-                <CardBody px={6} pb={6}>
-                  <VStack spacing={4} align="stretch">
-                    {/* Directorate */}
-                    <HStack justify="space-between" p={4} bg={colorMode === "light" ? "blue.50" : "blue.900"} rounded="lg">
-                      <HStack spacing={3}>
-                        <Box w="3px" h="16px" bg="blue.400" rounded="full" />
-                        <Text fontSize="sm" color="blue.600" fontWeight="medium">
-                          Directorate
-                        </Text>
-                      </HStack>
-                      <Text fontSize="sm" color={colorMode === "light" ? "purple.900" : "white"}>
-                        {TeamData.directorate?.orgName || "Not Assigned"}
+                <CardBody p={8}>
+                  {MembersData.length === 0 ? (
+                    <VStack spacing={4} py={8}>
+                      <Icon as={FiUsers} fontSize="4xl" color="gray.400" />
+                      <Text fontSize="sm" color="gray.500" textAlign="center">
+                        No members assigned to this team
                       </Text>
-                    </HStack>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        colorScheme="secondary"
+                        leftIcon={<Icon as={FiPlus} />}
+                        rounded="xl"
+                        onClick={handleAddMember}
+                      >
+                        Add First Member
+                      </Button>
+                    </VStack>
+                  ) : (
+                    <VStack spacing={6} align="stretch">
+                      {/* Members List - Scrollable */}
+                      <VStack 
+                        spacing={4} 
+                        align="stretch"
+                        maxH="400px"
+                        overflowY="auto"
+                        pr={2}
+                        css={{
+                          '&::-webkit-scrollbar': {
+                            width: '6px',
+                          },
+                          '&::-webkit-scrollbar-track': {
+                            background: colorMode === "light" ? '#f1f1f1' : '#2d3748',
+                            borderRadius: '10px',
+                          },
+                          '&::-webkit-scrollbar-thumb': {
+                            background: colorMode === "light" ? '#c1c1c1' : '#4a5568',
+                            borderRadius: '10px',
+                          },
+                          '&::-webkit-scrollbar-thumb:hover': {
+                            background: colorMode === "light" ? '#a8a8a8' : '#2d3748',
+                          },
+                        }}
+                      >
+                        {MembersData.map((member) => (
+                          <HStack
+                            key={member.id}
+                            p={6}
+                            rounded="2xl"
+                            bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                            border="2px"
+                            borderColor={colorMode === "light" ? "gray.100" : "gray.600"}
+                            justify="space-between"
+                            shadow="sm"
+                            _hover={{
+                              shadow: "md",
+                              transform: "translateY(-2px)",
+                              borderColor: "secondary.300",
+                            }}
+                            transition="all 0.2s"
+                          >
+                            <HStack spacing={4} flex="1">
+                              <Avatar
+                                size="md"
+                                name={member.nama}
+                                src={member.profilePict || undefined}
+                                bg="secondary.400"
+                                color="white"
+                                shadow="md"
+                              />
+                              <VStack align="start" spacing={1} flex="1">
+                                <Text fontSize="lg" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"}>
+                                  {member.nama}
+                                </Text>
+                                <Text fontSize="sm" color="gray.500">
+                                  {member.email || member.userId}
+                                </Text>
+                              </VStack>
+                            </HStack>
+                            <HStack spacing={3}>
+                              <Badge
+                                colorScheme={member.userStatus === "ACTIVE" ? "green" : "red"}
+                                px={3}
+                                py={1}
+                                rounded="full"
+                                fontSize="xs"
+                                fontWeight="bold"
+                                textTransform="uppercase"
+                              >
+                                {member.userStatus}
+                              </Badge>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                colorScheme="red"
+                                rounded="xl"
+                                onClick={() => handleRemoveMember(member.id, member.nama)}
+                                _hover={{
+                                  bg: "red.50",
+                                  transform: "translateY(-1px)",
+                                }}
+                                transition="all 0.2s"
+                              >
+                                Remove
+                              </Button>
+                            </HStack>
+                          </HStack>
+                        ))}
+                      </VStack>
 
-                    {/* Division */}
-                    <HStack justify="space-between" p={4} bg={colorMode === "light" ? "purple.50" : "purple.900"} rounded="lg">
-                      <HStack spacing={3}>
-                        <Box w="3px" h="16px" bg="purple.400" rounded="full" />
-                        <Text fontSize="sm" color="purple.600" fontWeight="medium">
-                          Division
+                      {/* Member Count Info */}
+                      {MembersData.length > 5 && (
+                        <Text fontSize="sm" color="gray.500" textAlign="center" pt={2}>
+                          Showing all {MembersData.length} members - scroll to see more
                         </Text>
-                      </HStack>
-                      <Text fontSize="sm"  color={colorMode === "light" ? "purple.900" : "white"}>
-                        {TeamData.division?.orgName || "Not Assigned"}
-                      </Text>
-                    </HStack>
-
-                    {/* Group */}
-                    <HStack justify="space-between" p={4} bg={colorMode === "light" ? "secondary.50" : "secondary.900"} rounded="lg">
-                      <HStack spacing={3}>
-                        <Box w="3px" h="16px" bg="secondary.400" rounded="full" />
-                        <Text fontSize="sm" color="secondary.600" fontWeight="medium">
-                          Group
-                        </Text>
-                      </HStack>
-                      <Text fontSize="sm"  color={colorMode === "light" ? "purple.900" : "white"}>
-                        {TeamData.group?.orgName || "Not Assigned"}
-                      </Text>
-                    </HStack>
-                  </VStack>
+                      )}
+                    </VStack>
+                  )}
                 </CardBody>
               </Card>
+
             </VStack>
           </GridItem>
 
           {/* Right Column - Sidebar */}
           <GridItem>
             <VStack spacing={6} align="stretch">
-              {/* Team Members Card */}
+              {/* Organization Structure Card */}
               <Card
                 rounded="2xl"
                 shadow="lg"
@@ -841,88 +1270,54 @@ function TeamDetailView({}: TeamDetailViewProps) {
                   borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
                   py={6}
                 >
-                  <HStack justify="space-between">
-                    <HStack spacing={3}>
-                      <Icon as={FiUsers} color="secondary.500" fontSize="xl" />
-                      <Heading
-                        size="sm"
-                        color={colorMode === "light" ? "gray.800" : "white"}
-                      >
-                        Team Members
-                      </Heading>
-                    </HStack>
-                    <Badge
-                      colorScheme="secondary"
-                      rounded="full"
-                      px={3}
-                      py={1}
-                      fontSize="sm"
-                    >
-                      {MembersData.length}
-                    </Badge>
-                  </HStack>
+                  <Heading
+                    size="sm"
+                    color={colorMode === "light" ? "gray.800" : "white"}
+                  >
+                    Organization Structure
+                  </Heading>
                 </CardHeader>
                 <CardBody p={6}>
-                  {MembersData.length === 0 ? (
-                    <VStack spacing={4} py={8}>
-                      <Icon as={FiUsers} fontSize="4xl" color="gray.400" />
-                      <Text fontSize="sm" color="gray.500" textAlign="center">
-                        No members assigned to this team
+                  <VStack spacing={3} align="stretch">
+                    {/* Directorate */}
+                    <HStack justify="space-between" p={3} bg={colorMode === "light" ? "blue.50" : "blue.900"} rounded="lg">
+                      <HStack spacing={2}>
+                        <Box w="3px" h="12px" bg="blue.400" rounded="full" />
+                        <Text fontSize="xs" color="blue.600" fontWeight="medium">
+                          Directorate
+                        </Text>
+                      </HStack>
+                      <Text fontSize="xs" fontWeight="semibold" color={colorMode === "light" ? "gray.800" : "white"} noOfLines={1}>
+                        {TeamData.directorate?.orgName || "Not Assigned"}
                       </Text>
-                    </VStack>
-                  ) : (
-                    <VStack
-                      spacing={4}
-                      align="stretch"
-                      maxH="400px"
-                      overflowY="auto"
-                    >
-                      {MembersData.map((member) => (
-                        <Box
-                          key={member.id}
-                          p={4}
-                          rounded="xl"
-                          bg={colorMode === "light" ? "gray.50" : "gray.700"}
-                          border="1px"
-                          borderColor={
-                            colorMode === "light" ? "gray.200" : "gray.600"
-                          }
-                          _hover={{
-                            shadow: "md",
-                            transform: "translateY(-1px)",
-                          }}
-                          transition="all 0.2s"
-                        >
-                          <HStack spacing={3}>
-                            <Avatar
-                              size="md"
-                              name={member.nama}
-                              src={member.profilePict || undefined}
-                              bg="secondary.400"
-                              color="white"
-                            />
-                            <VStack align="start" spacing={1} flex="1">
-                              <Text fontSize="md" fontWeight="bold">
-                                {member.nama}
-                              </Text>
-                              <Text fontSize="sm" color="gray.500">
-                                {member.email || member.userId}
-                              </Text>
-                            </VStack>
-                            <Badge
-                              colorScheme="secondary"
-                              rounded="full"
-                              px={2}
-                              py={1}
-                              fontSize="xs"
-                            >
-                              {member.userStatus}
-                            </Badge>
-                          </HStack>
-                        </Box>
-                      ))}
-                    </VStack>
-                  )}
+                    </HStack>
+
+                    {/* Division */}
+                    <HStack justify="space-between" p={3} bg={colorMode === "light" ? "purple.50" : "purple.900"} rounded="lg">
+                      <HStack spacing={2}>
+                        <Box w="3px" h="12px" bg="purple.400" rounded="full" />
+                        <Text fontSize="xs" color="purple.600" fontWeight="medium">
+                          Division
+                        </Text>
+                      </HStack>
+                      <Text fontSize="xs" fontWeight="semibold" color={colorMode === "light" ? "gray.800" : "white"} noOfLines={1}>
+                        {TeamData.division?.orgName || "Not Assigned"}
+                      </Text>
+                    </HStack>
+
+                    {/* Group */}
+                    <HStack justify="space-between" p={3} bg={colorMode === "light" ? "secondary.50" : "secondary.900"} rounded="lg">
+                      <HStack spacing={2}>
+                        <Box w="3px" h="12px" bg="secondary.400" rounded="full" />
+                        <Text fontSize="xs" color="secondary.600" fontWeight="medium">
+                          Group
+                        </Text>
+                      </HStack>
+                      <Text fontSize="xs" fontWeight="semibold" color={colorMode === "light" ? "gray.800" : "white"} noOfLines={1}>
+                        {TeamData.group?.orgName || "Not Assigned"}
+                      </Text>
+                    </HStack>
+                  </VStack>
                 </CardBody>
               </Card>
 
@@ -1108,6 +1503,265 @@ function TeamDetailView({}: TeamDetailViewProps) {
           </GridItem>
         </Grid>
       </Box>
+
+      {/* Modern Confirmation Dialog */}
+      <AlertDialog
+        isOpen={isOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={onClose}
+        isCentered
+      >
+        <AlertDialogOverlay bg="blackAlpha.600" backdropFilter="blur(4px)">
+          <AlertDialogContent
+            mx={4}
+            rounded="2xl"
+            shadow="2xl"
+            border="1px"
+            borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+            bg={colorMode === "light" ? "white" : "gray.800"}
+          >
+            <AlertDialogHeader 
+              fontSize="xl" 
+              fontWeight="bold"
+              color={colorMode === "light" ? "gray.800" : "white"}
+              pb={4}
+            >
+              <HStack spacing={3}>
+                <Box
+                  w="12px"
+                  h="12px"
+                  rounded="full"
+                  bg="red.400"
+                />
+                <Text>Remove Team Member</Text>
+              </HStack>
+            </AlertDialogHeader>
+
+            <AlertDialogBody pb={6}>
+              <VStack spacing={4} align="start">
+                <Text color={colorMode === "light" ? "gray.600" : "gray.300"} lineHeight="1.6">
+                  Are you sure you want to remove{" "}
+                  <Text as="span" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"}>
+                    {memberToRemove?.name}
+                  </Text>{" "}
+                  from this team?
+                </Text>
+                <Text fontSize="sm" color="red.500" fontWeight="medium">
+                  This action cannot be undone.
+                </Text>
+              </VStack>
+            </AlertDialogBody>
+
+            <AlertDialogFooter pt={4} borderTop="1px" borderColor={colorMode === "light" ? "gray.100" : "gray.700"}>
+              <HStack spacing={3} w="full" justify="end">
+                <Button 
+                  ref={cancelRef} 
+                  onClick={onClose}
+                  variant="outline"
+                  colorScheme="gray"
+                  rounded="xl"
+                  px={6}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  colorScheme="red" 
+                  onClick={confirmRemoveMember}
+                  rounded="xl"
+                  px={6}
+                  _hover={{
+                    transform: "translateY(-1px)",
+                    shadow: "lg",
+                  }}
+                  transition="all 0.2s"
+                >
+                  Remove Member
+                </Button>
+              </HStack>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
+
+      {/* Add Member Modal */}
+      <Modal
+        isOpen={isAddModalOpen}
+        onClose={onAddModalClose}
+        isCentered
+        size="md"
+      >
+        <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(4px)" />
+        <ModalContent
+          mx={4}
+          rounded="2xl"
+          shadow="2xl"
+          border="1px"
+          borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+          bg={colorMode === "light" ? "white" : "gray.800"}
+        >
+          <ModalHeader
+            fontSize="xl"
+            fontWeight="bold"
+            color={colorMode === "light" ? "gray.800" : "white"}
+            pb={4}
+          >
+            <HStack spacing={3}>
+              <Box w="12px" h="12px" rounded="full" bg="secondary.400" />
+              <Text>Add Team Member</Text>
+            </HStack>
+          </ModalHeader>
+          <ModalCloseButton />
+
+          <ModalBody pb={6}>
+            <VStack spacing={4} align="stretch">
+              <Text color={colorMode === "light" ? "gray.600" : "gray.300"}>
+                Select users and assign a role to add to this team:
+              </Text>
+
+              {/* Role Selection */}
+              <FormControl>
+                <FormLabel fontWeight="medium" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                  Team Role
+                </FormLabel>
+                <Select
+                  value={selectedRoleId}
+                  onChange={(e) => setSelectedRoleId(e.target.value)}
+                  placeholder="Select a role"
+                  bg={colorMode === "light" ? "white" : "gray.700"}
+                  border="2px"
+                  borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                  rounded="xl"
+                  _focus={{
+                    borderColor: "secondary.500",
+                    shadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
+                  }}
+                >
+                  {teamRoles.map((role) => (
+                    <option key={role.id} value={role.id}>
+                      {role.teamRoleName}
+                    </option>
+                  ))}
+                </Select>
+              </FormControl>
+              
+              <FormControl>
+                <FormLabel fontWeight="medium" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                  Search Users
+                </FormLabel>
+                <Input
+                  value={searchUser}
+                  onChange={(e) => setSearchUser(e.target.value)}
+                  placeholder="Search by name, email, or user ID..."
+                  bg={colorMode === "light" ? "white" : "gray.700"}
+                  border="2px"
+                  borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                  rounded="xl"
+                  _focus={{
+                    borderColor: "secondary.500",
+                    shadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
+                  }}
+                />
+              </FormControl>
+
+              {/* User List */}
+              <Box
+                maxH="300px"
+                overflowY="auto"
+                border="1px"
+                borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                rounded="xl"
+                bg={colorMode === "light" ? "gray.50" : "gray.700"}
+              >
+                {filteredUsers.length === 0 ? (
+                  <Text fontSize="sm" color="gray.500" textAlign="center" py={8}>
+                    {searchUser ? "No users found matching your search" : "No available users to add"}
+                  </Text>
+                ) : (
+                  <VStack spacing={0} align="stretch">
+                    {filteredUsers.map((user) => {
+                      const isSelected = selectedUserIds.includes(user.id);
+                      return (
+                        <HStack
+                          key={user.id}
+                          p={4}
+                          cursor="pointer"
+                          bg={isSelected ? "secondary.100" : "transparent"}
+                          _hover={{
+                            bg: isSelected ? "secondary.200" : colorMode === "light" ? "gray.100" : "gray.600",
+                          }}
+                          onClick={() => {
+                            if (isSelected) {
+                              setSelectedUserIds(prev => prev.filter(id => id !== user.id));
+                            } else {
+                              setSelectedUserIds(prev => [...prev, user.id]);
+                            }
+                          }}
+                          borderBottom="1px"
+                          borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                          _last={{ borderBottom: "none" }}
+                        >
+                          <Avatar
+                            size="sm"
+                            name={user.nama}
+                            src={user.profilePict || undefined}
+                            bg="secondary.400"
+                            color="white"
+                          />
+                          <VStack align="start" spacing={0} flex="1">
+                            <Text fontSize="sm" fontWeight="semibold" color={colorMode === "light" ? "gray.800" : "white"}>
+                              {user.nama}
+                            </Text>
+                            <Text fontSize="xs" color="gray.500">
+                              {user.email || user.userId}
+                            </Text>
+                          </VStack>
+                          {isSelected && (
+                            <Icon as={FiX} color="red.500" />
+                          )}
+                        </HStack>
+                      );
+                    })}
+                  </VStack>
+                )}
+              </Box>
+            </VStack>
+          </ModalBody>
+
+          <ModalFooter pt={4} borderTop="1px" borderColor={colorMode === "light" ? "gray.100" : "gray.700"}>
+            <HStack spacing={3} w="full" justify="space-between">
+              <Text fontSize="sm" color="gray.500">
+                {selectedUserIds.length} user(s) selected
+              </Text>
+              <HStack spacing={3}>
+                <Button
+                  variant="outline"
+                  colorScheme="gray"
+                  rounded="xl"
+                  px={6}
+                  onClick={onAddModalClose}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  colorScheme="secondary"
+                  rounded="xl"
+                  px={6}
+                  onClick={confirmAddMember}
+                  isLoading={isAddingMember}
+                  isDisabled={selectedUserIds.length === 0 || !selectedRoleId}
+                  _hover={{
+                    transform: "translateY(-1px)",
+                    shadow: "lg",
+                  }}
+                  transition="all 0.2s"
+                >
+                  Add {selectedUserIds.length > 0 ? `${selectedUserIds.length} ` : ""}Member{selectedUserIds.length !== 1 ? "s" : ""}
+                </Button>
+              </HStack>
+            </HStack>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </LayoutAdmin>
   );
 }
