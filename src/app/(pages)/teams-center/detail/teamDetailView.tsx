@@ -199,6 +199,9 @@ function TeamDetailView({}: TeamDetailViewProps) {
       if (TeamData.division?.id) {
         setSelectedDivision(TeamData.division.id);
       }
+      if (TeamData.group?.id) {
+        setSelectedGroup(TeamData.group.id);
+      }
     }
   }, [isEditMode, TeamData, DirectorateData, DivisionData, GroupData]);
 
@@ -206,6 +209,7 @@ function TeamDetailView({}: TeamDetailViewProps) {
   useEffect(() => {
     if (selectedDirectorate !== "") {
       setSelectedDivision("");
+    setSelectedGroup("");
       formik.setFieldValue("orgGroupId", "");
     }
   }, [selectedDirectorate]);
@@ -316,10 +320,10 @@ function TeamDetailView({}: TeamDetailViewProps) {
       // Load Divisions - if no directorate selected, load current team's division's parent divisions
       let divisionFilter = [{ field: "orgType", operator: "=", value: "DIVISION" }];
       if (selectedDirectorate) {
-        divisionFilter.push({ field: "orgParentId", operator: "=", value: selectedDirectorate });
+        divisionFilter.push({ field: "parentId", operator: "=", value: selectedDirectorate });
       } else if (TeamData?.directorate?.id) {
         // Load divisions under current team's directorate
-        divisionFilter.push({ field: "orgParentId", operator: "=", value: TeamData.directorate.id });
+        divisionFilter.push({ field: "parentId", operator: "=", value: TeamData.directorate.id });
       }
 
       const PayloadDivision = {
@@ -339,10 +343,10 @@ function TeamDetailView({}: TeamDetailViewProps) {
       // Load Groups - if no division selected, load current team's group's parent groups
       let groupFilter = [{ field: "orgType", operator: "=", value: "GROUP" }];
       if (selectedDivision) {
-        groupFilter.push({ field: "orgParentId", operator: "=", value: selectedDivision });
+        groupFilter.push({ field: "parentId", operator: "=", value: selectedDivision });
       } else if (TeamData?.division?.id) {
         // Load groups under current team's division
-        groupFilter.push({ field: "orgParentId", operator: "=", value: TeamData.division.id });
+        groupFilter.push({ field: "parentId", operator: "=", value: TeamData.division.id });
       }
 
       const PayloadGroup = {
@@ -601,6 +605,7 @@ function TeamDetailView({}: TeamDetailViewProps) {
   useEffect(() => {
     if (selectedDirectorate) {
       setSelectedDivision("");
+    setSelectedGroup("");
       setSelectedGroup("");
       LoadGroupData();
     }
@@ -623,6 +628,7 @@ function TeamDetailView({}: TeamDetailViewProps) {
     // Reset selections
     setSelectedDirectorate("");
     setSelectedDivision("");
+    setSelectedGroup("");
     // Reset form to original values
     if (TeamData) {
       formik.setValues({
@@ -892,6 +898,7 @@ function TeamDetailView({}: TeamDetailViewProps) {
                     py={6}
                     fontSize="md"
                     onClick={handleEditMode}
+                    isDisabled={true}
                     _hover={{
                       bg: "whiteAlpha.900",
                       transform: "translateY(-2px)",

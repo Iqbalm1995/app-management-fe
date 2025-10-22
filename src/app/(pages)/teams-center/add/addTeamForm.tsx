@@ -191,7 +191,7 @@ function AddTeamViewPage() {
     teamCode: Yup.string()
       .required("Team code is required")
       .min(2, "Team code must be at least 2 characters")
-      .max(20, "Team code must not exceed 20 characters")
+      .max(10, "Team code must not exceed 10 characters")
       .matches(
         /^[A-Z0-9_-]+$/,
         "Team code must contain only uppercase letters, numbers, hyphens, and underscores"
@@ -257,7 +257,7 @@ function AddTeamViewPage() {
       // Find selected organization to get the code
       const selectedOrg = GroupData.find((org) => org.id === values.orgGroupId);
       console.log("Found selectedOrg:", selectedOrg);
-      
+
       if (!selectedOrg) {
         showToast({
           description: "Selected organization group not found",
@@ -279,7 +279,7 @@ function AddTeamViewPage() {
       // Ensure no null/undefined values
       if (!values.teamCode?.trim()) {
         showToast({
-          description: "Team code is required",
+          description: "Initial Team is required",
           statusToast: "error",
         });
         return;
@@ -480,7 +480,7 @@ function AddTeamViewPage() {
                               isInvalid={!!(formik.errors.teamCode && formik.touched.teamCode)}
                             >
                               <FormLabel fontWeight="semibold">
-                                Team Code <Text as="span" color="red.500">*</Text>
+                                Initial Team <Text as="span" color="red.500">*</Text>
                               </FormLabel>
                               <InputGroup>
                                 <InputLeftElement>
@@ -491,7 +491,7 @@ function AddTeamViewPage() {
                                   value={formik.values.teamCode}
                                   onChange={formik.handleChange}
                                   onBlur={formik.handleBlur}
-                                  placeholder="Team Code"
+                                  placeholder="Place your initial team"
                                   size="lg"
                                   rounded="xl"
                                   bg={colorMode === "light" ? "white" : "gray.800"}
@@ -503,6 +503,7 @@ function AddTeamViewPage() {
                                     shadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
                                   }}
                                   textTransform="uppercase"
+                                  maxLength={10}
                                 />
                               </InputGroup>
                               <FormErrorMessage>{formik.errors.teamCode}</FormErrorMessage>
@@ -952,7 +953,7 @@ function AddTeamViewPage() {
                         • Use descriptive team names
                       </Text>
                       <Text color={colorMode === "light" ? "blue.700" : "blue.300"}>
-                        • Team codes should be unique
+                        • Make sure to create initial that easy to remember
                       </Text>
                       <Text color={colorMode === "light" ? "blue.700" : "blue.300"}>
                         • Select the correct organization
