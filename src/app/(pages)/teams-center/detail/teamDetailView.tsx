@@ -14,7 +14,9 @@ import useTeams, {
 } from "@/app/services/useTeams";
 import { UsersResponse } from "@/app/services/useUsers";
 import useUsers from "@/app/services/useUsers";
-import useOrganization, { OrganizationResponse } from "@/app/services/useOrganization";
+import useOrganization, {
+  OrganizationResponse,
+} from "@/app/services/useOrganization";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import {
@@ -63,7 +65,16 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { FaUsersRays, FaArrowLeft } from "react-icons/fa6";
-import { FiCalendar, FiUser, FiEdit, FiUsers, FiHome, FiSave, FiX, FiPlus } from "react-icons/fi";
+import {
+  FiCalendar,
+  FiUser,
+  FiEdit,
+  FiUsers,
+  FiHome,
+  FiSave,
+  FiX,
+  FiPlus,
+} from "react-icons/fi";
 
 interface TeamDetailViewProps {}
 
@@ -74,7 +85,13 @@ function TeamDetailView({}: TeamDetailViewProps) {
   const searchParams = useSearchParams();
   const teamId = searchParams.get("id");
 
-  const { GetDetailById, ListMembers, UpdateTeams, RemoveTeamMember, InsertTeamMember, ListTeamRoles } = useTeams();
+  const {
+    GetDetailById,
+    ListMembers,
+    UpdateTeams,
+    RemoveTeamMember,
+    InsertTeamMember,
+  } = useTeams();
   const { List: ListUsers } = useUsers();
   const { List: ListOrganizations } = useOrganization();
 
@@ -96,19 +113,28 @@ function TeamDetailView({}: TeamDetailViewProps) {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [GroupData, setGroupData] = useState<OrganizationResponse[]>([]);
-  const [DirectorateData, setDirectorateData] = useState<OrganizationResponse[]>([]);
+  const [DirectorateData, setDirectorateData] = useState<
+    OrganizationResponse[]
+  >([]);
   const [DivisionData, setDivisionData] = useState<OrganizationResponse[]>([]);
   const [selectedDirectorate, setSelectedDirectorate] = useState<string>("");
   const [selectedDivision, setSelectedDivision] = useState<string>("");
   const [selectedGroup, setSelectedGroup] = useState<string>("");
-  
+
   // Confirmation dialog state
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [memberToRemove, setMemberToRemove] = useState<{id: string, name: string} | null>(null);
-  const cancelRef = useRef<HTMLButtonElement>(null);
+  const [memberToRemove, setMemberToRemove] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const cancelRef = useRef<any>(null);
 
   // Add member modal state
-  const { isOpen: isAddModalOpen, onOpen: onAddModalOpen, onClose: onAddModalClose } = useDisclosure();
+  const {
+    isOpen: isAddModalOpen,
+    onOpen: onAddModalOpen,
+    onClose: onAddModalClose,
+  } = useDisclosure();
   const [availableUsers, setAvailableUsers] = useState<UsersResponse[]>([]);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [isAddingMember, setIsAddingMember] = useState(false);
@@ -130,12 +156,9 @@ function TeamDetailView({}: TeamDetailViewProps) {
       .required("Team name is required")
       .min(3, "Minimum 3 characters")
       .max(100, "Maximum 100 characters"),
-    teamDesc: Yup.string()
-      .max(500, "Maximum 500 characters"),
-    orgGroupId: Yup.string()
-      .required("Organization group is required"),
-    isActive: Yup.string()
-      .required("Status is required"),
+    teamDesc: Yup.string().max(500, "Maximum 500 characters"),
+    orgGroupId: Yup.string().required("Organization group is required"),
+    isActive: Yup.string().required("Status is required"),
   });
 
   // Formik setup
@@ -192,7 +215,13 @@ function TeamDetailView({}: TeamDetailViewProps) {
 
   // Initialize selections when entering edit mode and data is available
   useEffect(() => {
-    if (isEditMode && TeamData && DirectorateData.length > 0 && DivisionData.length > 0 && GroupData.length > 0) {
+    if (
+      isEditMode &&
+      TeamData &&
+      DirectorateData.length > 0 &&
+      DivisionData.length > 0 &&
+      GroupData.length > 0
+    ) {
       if (TeamData.directorate?.id) {
         setSelectedDirectorate(TeamData.directorate.id);
       }
@@ -209,7 +238,7 @@ function TeamDetailView({}: TeamDetailViewProps) {
   useEffect(() => {
     if (selectedDirectorate !== "") {
       setSelectedDivision("");
-    setSelectedGroup("");
+      setSelectedGroup("");
       formik.setFieldValue("orgGroupId", "");
     }
   }, [selectedDirectorate]);
@@ -309,21 +338,39 @@ function TeamDetailView({}: TeamDetailViewProps) {
         page: 0,
         fieldOrder: ["orgName"],
         orderDir: "asc",
-        filterWhere: [{ field: "orgType", operator: "=", value: "DIRECTORATE" }],
+        filterWhere: [
+          { field: "orgType", operator: "=", value: "DIRECTORATE" },
+        ],
       };
 
-      const directorateResponse = await ListOrganizations(PayloadDirectorate as any, tokenData);
-      if (directorateResponse?.statusCode === RES_CODE_OK && directorateResponse.data) {
+      const directorateResponse = await ListOrganizations(
+        PayloadDirectorate as any,
+        tokenData
+      );
+      if (
+        directorateResponse?.statusCode === RES_CODE_OK &&
+        directorateResponse.data
+      ) {
         setDirectorateData(directorateResponse.data as OrganizationResponse[]);
       }
 
       // Load Divisions - if no directorate selected, load current team's division's parent divisions
-      let divisionFilter = [{ field: "orgType", operator: "=", value: "DIVISION" }];
+      let divisionFilter = [
+        { field: "orgType", operator: "=", value: "DIVISION" },
+      ];
       if (selectedDirectorate) {
-        divisionFilter.push({ field: "parentId", operator: "=", value: selectedDirectorate });
+        divisionFilter.push({
+          field: "parentId",
+          operator: "=",
+          value: selectedDirectorate,
+        });
       } else if (TeamData?.directorate?.id) {
         // Load divisions under current team's directorate
-        divisionFilter.push({ field: "parentId", operator: "=", value: TeamData.directorate.id });
+        divisionFilter.push({
+          field: "parentId",
+          operator: "=",
+          value: TeamData.directorate.id,
+        });
       }
 
       const PayloadDivision = {
@@ -335,18 +382,32 @@ function TeamDetailView({}: TeamDetailViewProps) {
         filterWhere: divisionFilter,
       };
 
-      const divisionResponse = await ListOrganizations(PayloadDivision as any, tokenData);
-      if (divisionResponse?.statusCode === RES_CODE_OK && divisionResponse.data) {
+      const divisionResponse = await ListOrganizations(
+        PayloadDivision as any,
+        tokenData
+      );
+      if (
+        divisionResponse?.statusCode === RES_CODE_OK &&
+        divisionResponse.data
+      ) {
         setDivisionData(divisionResponse.data as OrganizationResponse[]);
       }
 
       // Load Groups - if no division selected, load current team's group's parent groups
       let groupFilter = [{ field: "orgType", operator: "=", value: "GROUP" }];
       if (selectedDivision) {
-        groupFilter.push({ field: "parentId", operator: "=", value: selectedDivision });
+        groupFilter.push({
+          field: "parentId",
+          operator: "=",
+          value: selectedDivision,
+        });
       } else if (TeamData?.division?.id) {
         // Load groups under current team's division
-        groupFilter.push({ field: "parentId", operator: "=", value: TeamData.division.id });
+        groupFilter.push({
+          field: "parentId",
+          operator: "=",
+          value: TeamData.division.id,
+        });
       }
 
       const PayloadGroup = {
@@ -358,7 +419,10 @@ function TeamDetailView({}: TeamDetailViewProps) {
         filterWhere: groupFilter,
       };
 
-      const groupResponse = await ListOrganizations(PayloadGroup as any, tokenData);
+      const groupResponse = await ListOrganizations(
+        PayloadGroup as any,
+        tokenData
+      );
       if (groupResponse?.statusCode === RES_CODE_OK && groupResponse.data) {
         setGroupData(groupResponse.data as OrganizationResponse[]);
       }
@@ -372,10 +436,12 @@ function TeamDetailView({}: TeamDetailViewProps) {
 
     try {
       setIsUpdating(true);
-      
+
       // Find selected group to get orgGroupCode
-      const selectedGroup = GroupData.find(group => group.id === values.orgGroupId);
-      
+      const selectedGroup = GroupData.find(
+        (group) => group.id === values.orgGroupId
+      );
+
       if (!selectedGroup) {
         showToast({
           description: "Please select a valid organization group",
@@ -383,7 +449,7 @@ function TeamDetailView({}: TeamDetailViewProps) {
         });
         return;
       }
-      
+
       // Build FormData directly to match API expectations
       const formData = new FormData();
       formData.append("Id", teamId);
@@ -404,9 +470,9 @@ function TeamDetailView({}: TeamDetailViewProps) {
       const PathEndpoint = "/v1/Teams/update";
 
       const response = await fetch(`${UrlEndpoint}${PathEndpoint}`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Authorization': `Bearer ${tokenData}`,
+          Authorization: `Bearer ${tokenData}`,
         },
         body: formData,
       });
@@ -429,7 +495,6 @@ function TeamDetailView({}: TeamDetailViewProps) {
       // Refresh team data and exit edit mode
       await GetTeamData();
       setIsEditMode(false);
-
     } catch (error) {
       console.error("Error updating team:", error);
       showToast({
@@ -454,10 +519,10 @@ function TeamDetailView({}: TeamDetailViewProps) {
         filterWhere: [],
       };
 
-      const response = await ListTeamRoles(payload, tokenData);
-      if (response?.statusCode === RES_CODE_OK && response.data) {
-        setTeamRoles(response.data);
-      }
+//       // const response = await ListTeamRoles(payload, tokenData);
+//       if (response?.statusCode === RES_CODE_OK && response.data) {
+//         setTeamRoles(response.data);
+//       }
     } catch (error) {
       console.error("Error loading team roles:", error);
     }
@@ -479,8 +544,10 @@ function TeamDetailView({}: TeamDetailViewProps) {
       const response = await ListUsers(payload, tokenData);
       if (response?.statusCode === RES_CODE_OK && response.data) {
         // Filter out users who are already team members
-        const currentMemberIds = MembersData.map(member => member.id);
-        const available = response.data.filter(user => !currentMemberIds.includes(user.id));
+        const currentMemberIds = MembersData.map((member) => member.id);
+        const available = response.data.filter(
+          (user) => !currentMemberIds.includes(user.id)
+        );
         setAvailableUsers(available);
         setFilteredUsers(available);
       }
@@ -494,10 +561,12 @@ function TeamDetailView({}: TeamDetailViewProps) {
     if (searchUser.trim() === "") {
       setFilteredUsers(availableUsers);
     } else {
-      const filtered = availableUsers.filter(user =>
-        user.nama.toLowerCase().includes(searchUser.toLowerCase()) ||
-        (user.email && user.email.toLowerCase().includes(searchUser.toLowerCase())) ||
-        user.userId.toLowerCase().includes(searchUser.toLowerCase())
+      const filtered = availableUsers.filter(
+        (user) =>
+          user.nama.toLowerCase().includes(searchUser.toLowerCase()) ||
+          (user.email &&
+            user.email.toLowerCase().includes(searchUser.toLowerCase())) ||
+          user.userId.toLowerCase().includes(searchUser.toLowerCase())
       );
       setFilteredUsers(filtered);
     }
@@ -513,7 +582,13 @@ function TeamDetailView({}: TeamDetailViewProps) {
   };
 
   const confirmAddMember = async () => {
-    if (selectedUserIds.length === 0 || !selectedRoleId || !teamId || !tokenData) return;
+    if (
+      selectedUserIds.length === 0 ||
+      !selectedRoleId ||
+      !teamId ||
+      !tokenData
+    )
+      return;
 
     setIsAddingMember(true);
     try {
@@ -528,9 +603,12 @@ function TeamDetailView({}: TeamDetailViewProps) {
         const response = await InsertTeamMember(payload, tokenData);
 
         if (!response || response.statusCode !== RES_CODE_OK) {
-          const userName = availableUsers.find(u => u.id === userId)?.nama || "User";
+          const userName =
+            availableUsers.find((u) => u.id === userId)?.nama || "User";
           showToast({
-            description: `Failed to add ${userName}: ${response?.message || RES_GENERIC_ERROR_MSG}`,
+            description: `Failed to add ${userName}: ${
+              response?.message || RES_GENERIC_ERROR_MSG
+            }`,
             statusToast: "error",
           });
           continue;
@@ -570,6 +648,7 @@ function TeamDetailView({}: TeamDetailViewProps) {
       const payload = {
         userId: memberToRemove.id,
         teamId: teamId,
+        teamRoleId: "",
       };
 
       const response = await RemoveTeamMember(payload, tokenData);
@@ -605,7 +684,7 @@ function TeamDetailView({}: TeamDetailViewProps) {
   useEffect(() => {
     if (selectedDirectorate) {
       setSelectedDivision("");
-    setSelectedGroup("");
+      setSelectedGroup("");
       setSelectedGroup("");
       LoadGroupData();
     }
@@ -726,7 +805,9 @@ function TeamDetailView({}: TeamDetailViewProps) {
                     w="24px"
                     h="24px"
                     rounded="full"
-                    bg={TeamData.isActive === "ACTIVE" ? "green.400" : "red.400"}
+                    bg={
+                      TeamData.isActive === "ACTIVE" ? "green.400" : "red.400"
+                    }
                     border="3px solid"
                     borderColor={colorMode === "light" ? "white" : "gray.800"}
                     shadow="md"
@@ -734,12 +815,7 @@ function TeamDetailView({}: TeamDetailViewProps) {
                     alignItems="center"
                     justifyContent="center"
                   >
-                    <Box
-                      w="8px"
-                      h="8px"
-                      rounded="full"
-                      bg="white"
-                    />
+                    <Box w="8px" h="8px" rounded="full" bg="white" />
                   </Box>
                 </Box>
 
@@ -764,7 +840,9 @@ function TeamDetailView({}: TeamDetailViewProps) {
                         #{TeamData.teamCode}
                       </Text>
                       <Badge
-                        colorScheme={TeamData.isActive === "ACTIVE" ? "green" : "red"}
+                        colorScheme={
+                          TeamData.isActive === "ACTIVE" ? "green" : "red"
+                        }
                         variant="subtle"
                         px={3}
                         py={1}
@@ -799,11 +877,7 @@ function TeamDetailView({}: TeamDetailViewProps) {
                   {/* Team Stats */}
                   <HStack spacing={6} mt={2}>
                     <VStack spacing={0} align="start">
-                      <Text
-                        fontSize="lg"
-                        fontWeight="bold"
-                        color="white"
-                      >
+                      <Text fontSize="lg" fontWeight="bold" color="white">
                         {MembersData.length}
                       </Text>
                       <Text
@@ -818,12 +892,10 @@ function TeamDetailView({}: TeamDetailViewProps) {
                     </VStack>
                     <Box w="1px" h="30px" bg="whiteAlpha.300" />
                     <VStack spacing={0} align="start">
-                      <Text
-                        fontSize="lg"
-                        fontWeight="bold"
-                        color="white"
-                      >
-                        {TeamData.createdAt ? new Date(TeamData.createdAt).getFullYear() : "N/A"}
+                      <Text fontSize="lg" fontWeight="bold" color="white">
+                        {TeamData.createdAt
+                          ? new Date(TeamData.createdAt).getFullYear()
+                          : "N/A"}
                       </Text>
                       <Text
                         fontSize="xs"
@@ -909,18 +981,13 @@ function TeamDetailView({}: TeamDetailViewProps) {
                     Edit Team
                   </Button>
                 )}
-                
+
                 {/* Last Updated Info */}
-                <Text
-                  fontSize="xs"
-                  color="whiteAlpha.600"
-                  textAlign="right"
-                >
+                <Text fontSize="xs" color="whiteAlpha.600" textAlign="right">
                   Last updated{" "}
-                  {TeamData.updatedAt 
+                  {TeamData.updatedAt
                     ? new Date(TeamData.updatedAt).toLocaleDateString()
-                    : new Date(TeamData.createdAt).toLocaleDateString()
-                  }
+                    : new Date(TeamData.createdAt).toLocaleDateString()}
                 </Text>
               </VStack>
             </HStack>
@@ -971,7 +1038,12 @@ function TeamDetailView({}: TeamDetailViewProps) {
                   {isEditMode ? (
                     <VStack spacing={6} align="stretch">
                       <FormControl isInvalid={!!formik.errors.teamName}>
-                        <FormLabel fontWeight="bold" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                        <FormLabel
+                          fontWeight="bold"
+                          color={
+                            colorMode === "light" ? "gray.700" : "gray.300"
+                          }
+                        >
                           Team Name
                         </FormLabel>
                         <Input
@@ -981,18 +1053,28 @@ function TeamDetailView({}: TeamDetailViewProps) {
                           placeholder="Enter team name"
                           bg={colorMode === "light" ? "white" : "gray.700"}
                           border="2px"
-                          borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                          borderColor={
+                            colorMode === "light" ? "gray.200" : "gray.600"
+                          }
                           rounded="xl"
                           _focus={{
                             borderColor: "secondary.500",
-                            shadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
+                            shadow:
+                              "0 0 0 1px var(--chakra-colors-secondary-500)",
                           }}
                         />
-                        <FormErrorMessage>{formik.errors.teamName}</FormErrorMessage>
+                        <FormErrorMessage>
+                          {formik.errors.teamName}
+                        </FormErrorMessage>
                       </FormControl>
 
                       <FormControl isInvalid={!!formik.errors.teamDesc}>
-                        <FormLabel fontWeight="bold" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                        <FormLabel
+                          fontWeight="bold"
+                          color={
+                            colorMode === "light" ? "gray.700" : "gray.300"
+                          }
+                        >
                           Team Description
                         </FormLabel>
                         <Textarea
@@ -1003,32 +1085,47 @@ function TeamDetailView({}: TeamDetailViewProps) {
                           rows={4}
                           bg={colorMode === "light" ? "white" : "gray.700"}
                           border="2px"
-                          borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                          borderColor={
+                            colorMode === "light" ? "gray.200" : "gray.600"
+                          }
                           rounded="xl"
                           _focus={{
                             borderColor: "secondary.500",
-                            shadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
+                            shadow:
+                              "0 0 0 1px var(--chakra-colors-secondary-500)",
                           }}
                         />
-                        <FormErrorMessage>{formik.errors.teamDesc}</FormErrorMessage>
+                        <FormErrorMessage>
+                          {formik.errors.teamDesc}
+                        </FormErrorMessage>
                       </FormControl>
 
                       {/* Directorate Selection */}
                       <FormControl>
-                        <FormLabel fontWeight="bold" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                        <FormLabel
+                          fontWeight="bold"
+                          color={
+                            colorMode === "light" ? "gray.700" : "gray.300"
+                          }
+                        >
                           Directorate
                         </FormLabel>
                         <Select
                           value={selectedDirectorate}
-                          onChange={(e) => setSelectedDirectorate(e.target.value)}
+                          onChange={(e) =>
+                            setSelectedDirectorate(e.target.value)
+                          }
                           placeholder="Select directorate"
                           bg={colorMode === "light" ? "white" : "gray.700"}
                           border="2px"
-                          borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                          borderColor={
+                            colorMode === "light" ? "gray.200" : "gray.600"
+                          }
                           rounded="xl"
                           _focus={{
                             borderColor: "secondary.500",
-                            shadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
+                            shadow:
+                              "0 0 0 1px var(--chakra-colors-secondary-500)",
                           }}
                         >
                           {DirectorateData.map((org) => (
@@ -1041,7 +1138,12 @@ function TeamDetailView({}: TeamDetailViewProps) {
 
                       {/* Division Selection */}
                       <FormControl>
-                        <FormLabel fontWeight="bold" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                        <FormLabel
+                          fontWeight="bold"
+                          color={
+                            colorMode === "light" ? "gray.700" : "gray.300"
+                          }
+                        >
                           Division
                         </FormLabel>
                         <Select
@@ -1050,18 +1152,24 @@ function TeamDetailView({}: TeamDetailViewProps) {
                           placeholder="Select division"
                           bg={colorMode === "light" ? "white" : "gray.700"}
                           border="2px"
-                          borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                          borderColor={
+                            colorMode === "light" ? "gray.200" : "gray.600"
+                          }
                           rounded="xl"
                           _focus={{
                             borderColor: "secondary.500",
-                            shadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
+                            shadow:
+                              "0 0 0 1px var(--chakra-colors-secondary-500)",
                           }}
                         >
                           {DivisionData.filter((division) => {
                             // Always include current team's division
-                            if (TeamData?.division?.id === division.id) return true;
+                            if (TeamData?.division?.id === division.id)
+                              return true;
                             // Filter by selected directorate
-                            return selectedDirectorate ? division.parentId === selectedDirectorate : true;
+                            return selectedDirectorate
+                              ? division.parentId === selectedDirectorate
+                              : true;
                           }).map((division) => (
                             <option key={division.id} value={division.id}>
                               {division.orgName} ({division.orgCode})
@@ -1071,7 +1179,12 @@ function TeamDetailView({}: TeamDetailViewProps) {
                       </FormControl>
 
                       <FormControl isInvalid={!!formik.errors.orgGroupId}>
-                        <FormLabel fontWeight="bold" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                        <FormLabel
+                          fontWeight="bold"
+                          color={
+                            colorMode === "light" ? "gray.700" : "gray.300"
+                          }
+                        >
                           Group
                         </FormLabel>
                         <Select
@@ -1081,29 +1194,41 @@ function TeamDetailView({}: TeamDetailViewProps) {
                           placeholder="Select organization group"
                           bg={colorMode === "light" ? "white" : "gray.700"}
                           border="2px"
-                          borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                          borderColor={
+                            colorMode === "light" ? "gray.200" : "gray.600"
+                          }
                           rounded="xl"
                           _focus={{
                             borderColor: "secondary.500",
-                            shadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
+                            shadow:
+                              "0 0 0 1px var(--chakra-colors-secondary-500)",
                           }}
                         >
                           {GroupData.filter((group) => {
                             // Always include current team's group
                             if (TeamData?.group?.id === group.id) return true;
                             // Filter by selected division
-                            return selectedDivision ? group.parentId === selectedDivision : false;
+                            return selectedDivision
+                              ? group.parentId === selectedDivision
+                              : false;
                           }).map((group) => (
                             <option key={group.id} value={group.id}>
                               {group.orgName} ({group.orgCode})
                             </option>
                           ))}
                         </Select>
-                        <FormErrorMessage>{formik.errors.orgGroupId}</FormErrorMessage>
+                        <FormErrorMessage>
+                          {formik.errors.orgGroupId}
+                        </FormErrorMessage>
                       </FormControl>
 
                       <FormControl isInvalid={!!formik.errors.isActive}>
-                        <FormLabel fontWeight="bold" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                        <FormLabel
+                          fontWeight="bold"
+                          color={
+                            colorMode === "light" ? "gray.700" : "gray.300"
+                          }
+                        >
                           Status
                         </FormLabel>
                         <Select
@@ -1112,17 +1237,22 @@ function TeamDetailView({}: TeamDetailViewProps) {
                           onChange={formik.handleChange}
                           bg={colorMode === "light" ? "white" : "gray.700"}
                           border="2px"
-                          borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                          borderColor={
+                            colorMode === "light" ? "gray.200" : "gray.600"
+                          }
                           rounded="xl"
                           _focus={{
                             borderColor: "secondary.500",
-                            shadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
+                            shadow:
+                              "0 0 0 1px var(--chakra-colors-secondary-500)",
                           }}
                         >
                           <option value="ACTIVE">Active</option>
                           <option value="INACTIVE">Inactive</option>
                         </Select>
-                        <FormErrorMessage>{formik.errors.isActive}</FormErrorMessage>
+                        <FormErrorMessage>
+                          {formik.errors.isActive}
+                        </FormErrorMessage>
                       </FormControl>
                     </VStack>
                   ) : (
@@ -1201,26 +1331,29 @@ function TeamDetailView({}: TeamDetailViewProps) {
                   ) : (
                     <VStack spacing={6} align="stretch">
                       {/* Members List - Scrollable */}
-                      <VStack 
-                        spacing={4} 
+                      <VStack
+                        spacing={4}
                         align="stretch"
                         maxH="400px"
                         overflowY="auto"
                         pr={2}
                         css={{
-                          '&::-webkit-scrollbar': {
-                            width: '6px',
+                          "&::-webkit-scrollbar": {
+                            width: "6px",
                           },
-                          '&::-webkit-scrollbar-track': {
-                            background: colorMode === "light" ? '#f1f1f1' : '#2d3748',
-                            borderRadius: '10px',
+                          "&::-webkit-scrollbar-track": {
+                            background:
+                              colorMode === "light" ? "#f1f1f1" : "#2d3748",
+                            borderRadius: "10px",
                           },
-                          '&::-webkit-scrollbar-thumb': {
-                            background: colorMode === "light" ? '#c1c1c1' : '#4a5568',
-                            borderRadius: '10px',
+                          "&::-webkit-scrollbar-thumb": {
+                            background:
+                              colorMode === "light" ? "#c1c1c1" : "#4a5568",
+                            borderRadius: "10px",
                           },
-                          '&::-webkit-scrollbar-thumb:hover': {
-                            background: colorMode === "light" ? '#a8a8a8' : '#2d3748',
+                          "&::-webkit-scrollbar-thumb:hover": {
+                            background:
+                              colorMode === "light" ? "#a8a8a8" : "#2d3748",
                           },
                         }}
                       >
@@ -1231,7 +1364,9 @@ function TeamDetailView({}: TeamDetailViewProps) {
                             rounded="2xl"
                             bg={colorMode === "light" ? "gray.50" : "gray.700"}
                             border="2px"
-                            borderColor={colorMode === "light" ? "gray.100" : "gray.600"}
+                            borderColor={
+                              colorMode === "light" ? "gray.100" : "gray.600"
+                            }
                             justify="space-between"
                             shadow="sm"
                             _hover={{
@@ -1251,7 +1386,13 @@ function TeamDetailView({}: TeamDetailViewProps) {
                                 shadow="md"
                               />
                               <VStack align="start" spacing={1} flex="1">
-                                <Text fontSize="lg" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"}>
+                                <Text
+                                  fontSize="lg"
+                                  fontWeight="bold"
+                                  color={
+                                    colorMode === "light" ? "gray.800" : "white"
+                                  }
+                                >
                                   {member.nama}
                                 </Text>
                                 <Text fontSize="sm" color="gray.500">
@@ -1261,7 +1402,11 @@ function TeamDetailView({}: TeamDetailViewProps) {
                             </HStack>
                             <HStack spacing={3}>
                               <Badge
-                                colorScheme={member.userStatus === "ACTIVE" ? "green" : "red"}
+                                colorScheme={
+                                  member.userStatus === "ACTIVE"
+                                    ? "green"
+                                    : "red"
+                                }
                                 px={3}
                                 py={1}
                                 rounded="full"
@@ -1276,7 +1421,9 @@ function TeamDetailView({}: TeamDetailViewProps) {
                                 variant="ghost"
                                 colorScheme="red"
                                 rounded="xl"
-                                onClick={() => handleRemoveMember(member.id, member.nama)}
+                                onClick={() =>
+                                  handleRemoveMember(member.id, member.nama)
+                                }
                                 _hover={{
                                   bg: "red.50",
                                   transform: "translateY(-1px)",
@@ -1292,15 +1439,20 @@ function TeamDetailView({}: TeamDetailViewProps) {
 
                       {/* Member Count Info */}
                       {MembersData.length > 5 && (
-                        <Text fontSize="sm" color="gray.500" textAlign="center" pt={2}>
-                          Showing all {MembersData.length} members - scroll to see more
+                        <Text
+                          fontSize="sm"
+                          color="gray.500"
+                          textAlign="center"
+                          pt={2}
+                        >
+                          Showing all {MembersData.length} members - scroll to
+                          see more
                         </Text>
                       )}
                     </VStack>
                   )}
                 </CardBody>
               </Card>
-
             </VStack>
           </GridItem>
 
@@ -1332,40 +1484,89 @@ function TeamDetailView({}: TeamDetailViewProps) {
                 <CardBody p={6}>
                   <VStack spacing={3} align="stretch">
                     {/* Directorate */}
-                    <HStack justify="space-between" p={3} bg={colorMode === "light" ? "blue.50" : "blue.900"} rounded="lg">
+                    <HStack
+                      justify="space-between"
+                      p={3}
+                      bg={colorMode === "light" ? "blue.50" : "blue.900"}
+                      rounded="lg"
+                    >
                       <HStack spacing={2}>
                         <Box w="3px" h="12px" bg="blue.400" rounded="full" />
-                        <Text fontSize="xs" color="blue.600" fontWeight="medium">
+                        <Text
+                          fontSize="xs"
+                          color="blue.600"
+                          fontWeight="medium"
+                        >
                           Directorate
                         </Text>
                       </HStack>
-                      <Text fontSize="xs" fontWeight="semibold" color={colorMode === "light" ? "gray.800" : "white"} noOfLines={1}>
+                      <Text
+                        fontSize="xs"
+                        fontWeight="semibold"
+                        color={colorMode === "light" ? "gray.800" : "white"}
+                        noOfLines={1}
+                      >
                         {TeamData.directorate?.orgName || "Not Assigned"}
                       </Text>
                     </HStack>
 
                     {/* Division */}
-                    <HStack justify="space-between" p={3} bg={colorMode === "light" ? "purple.50" : "purple.900"} rounded="lg">
+                    <HStack
+                      justify="space-between"
+                      p={3}
+                      bg={colorMode === "light" ? "purple.50" : "purple.900"}
+                      rounded="lg"
+                    >
                       <HStack spacing={2}>
                         <Box w="3px" h="12px" bg="purple.400" rounded="full" />
-                        <Text fontSize="xs" color="purple.600" fontWeight="medium">
+                        <Text
+                          fontSize="xs"
+                          color="purple.600"
+                          fontWeight="medium"
+                        >
                           Division
                         </Text>
                       </HStack>
-                      <Text fontSize="xs" fontWeight="semibold" color={colorMode === "light" ? "gray.800" : "white"} noOfLines={1}>
+                      <Text
+                        fontSize="xs"
+                        fontWeight="semibold"
+                        color={colorMode === "light" ? "gray.800" : "white"}
+                        noOfLines={1}
+                      >
                         {TeamData.division?.orgName || "Not Assigned"}
                       </Text>
                     </HStack>
 
                     {/* Group */}
-                    <HStack justify="space-between" p={3} bg={colorMode === "light" ? "secondary.50" : "secondary.900"} rounded="lg">
+                    <HStack
+                      justify="space-between"
+                      p={3}
+                      bg={
+                        colorMode === "light" ? "secondary.50" : "secondary.900"
+                      }
+                      rounded="lg"
+                    >
                       <HStack spacing={2}>
-                        <Box w="3px" h="12px" bg="secondary.400" rounded="full" />
-                        <Text fontSize="xs" color="secondary.600" fontWeight="medium">
+                        <Box
+                          w="3px"
+                          h="12px"
+                          bg="secondary.400"
+                          rounded="full"
+                        />
+                        <Text
+                          fontSize="xs"
+                          color="secondary.600"
+                          fontWeight="medium"
+                        >
                           Group
                         </Text>
                       </HStack>
-                      <Text fontSize="xs" fontWeight="semibold" color={colorMode === "light" ? "gray.800" : "white"} noOfLines={1}>
+                      <Text
+                        fontSize="xs"
+                        fontWeight="semibold"
+                        color={colorMode === "light" ? "gray.800" : "white"}
+                        noOfLines={1}
+                      >
                         {TeamData.group?.orgName || "Not Assigned"}
                       </Text>
                     </HStack>
@@ -1420,11 +1621,12 @@ function TeamDetailView({}: TeamDetailViewProps) {
                         Created
                       </Text>
                       <Text fontSize="sm" fontWeight="bold">
-                        {TeamData.createdAt ? new Date(TeamData.createdAt).getFullYear() : "N/A"}
+                        {TeamData.createdAt
+                          ? new Date(TeamData.createdAt).getFullYear()
+                          : "N/A"}
                       </Text>
                     </HStack>
-                    
-                    
+
                     {/* <HStack justify="space-between">
                       <Text fontSize="sm" color="gray.500" fontWeight="medium">
                         Org Group ID
@@ -1572,28 +1774,30 @@ function TeamDetailView({}: TeamDetailViewProps) {
             borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
             bg={colorMode === "light" ? "white" : "gray.800"}
           >
-            <AlertDialogHeader 
-              fontSize="xl" 
+            <AlertDialogHeader
+              fontSize="xl"
               fontWeight="bold"
               color={colorMode === "light" ? "gray.800" : "white"}
               pb={4}
             >
               <HStack spacing={3}>
-                <Box
-                  w="12px"
-                  h="12px"
-                  rounded="full"
-                  bg="red.400"
-                />
+                <Box w="12px" h="12px" rounded="full" bg="red.400" />
                 <Text>Remove Team Member</Text>
               </HStack>
             </AlertDialogHeader>
 
             <AlertDialogBody pb={6}>
               <VStack spacing={4} align="start">
-                <Text color={colorMode === "light" ? "gray.600" : "gray.300"} lineHeight="1.6">
+                <Text
+                  color={colorMode === "light" ? "gray.600" : "gray.300"}
+                  lineHeight="1.6"
+                >
                   Are you sure you want to remove{" "}
-                  <Text as="span" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"}>
+                  <Text
+                    as="span"
+                    fontWeight="bold"
+                    color={colorMode === "light" ? "gray.800" : "white"}
+                  >
                     {memberToRemove?.name}
                   </Text>{" "}
                   from this team?
@@ -1604,10 +1808,14 @@ function TeamDetailView({}: TeamDetailViewProps) {
               </VStack>
             </AlertDialogBody>
 
-            <AlertDialogFooter pt={4} borderTop="1px" borderColor={colorMode === "light" ? "gray.100" : "gray.700"}>
+            <AlertDialogFooter
+              pt={4}
+              borderTop="1px"
+              borderColor={colorMode === "light" ? "gray.100" : "gray.700"}
+            >
               <HStack spacing={3} w="full" justify="end">
-                <Button 
-                  ref={cancelRef} 
+                <Button
+                  ref={cancelRef}
                   onClick={onClose}
                   variant="outline"
                   colorScheme="gray"
@@ -1616,8 +1824,8 @@ function TeamDetailView({}: TeamDetailViewProps) {
                 >
                   Cancel
                 </Button>
-                <Button 
-                  colorScheme="red" 
+                <Button
+                  colorScheme="red"
                   onClick={confirmRemoveMember}
                   rounded="xl"
                   px={6}
@@ -1672,7 +1880,10 @@ function TeamDetailView({}: TeamDetailViewProps) {
 
               {/* Role Selection */}
               <FormControl>
-                <FormLabel fontWeight="medium" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                <FormLabel
+                  fontWeight="medium"
+                  color={colorMode === "light" ? "gray.700" : "gray.300"}
+                >
                   Team Role
                 </FormLabel>
                 <Select
@@ -1695,9 +1906,12 @@ function TeamDetailView({}: TeamDetailViewProps) {
                   ))}
                 </Select>
               </FormControl>
-              
+
               <FormControl>
-                <FormLabel fontWeight="medium" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                <FormLabel
+                  fontWeight="medium"
+                  color={colorMode === "light" ? "gray.700" : "gray.300"}
+                >
                   Search Users
                 </FormLabel>
                 <Input
@@ -1725,8 +1939,15 @@ function TeamDetailView({}: TeamDetailViewProps) {
                 bg={colorMode === "light" ? "gray.50" : "gray.700"}
               >
                 {filteredUsers.length === 0 ? (
-                  <Text fontSize="sm" color="gray.500" textAlign="center" py={8}>
-                    {searchUser ? "No users found matching your search" : "No available users to add"}
+                  <Text
+                    fontSize="sm"
+                    color="gray.500"
+                    textAlign="center"
+                    py={8}
+                  >
+                    {searchUser
+                      ? "No users found matching your search"
+                      : "No available users to add"}
                   </Text>
                 ) : (
                   <VStack spacing={0} align="stretch">
@@ -1739,17 +1960,25 @@ function TeamDetailView({}: TeamDetailViewProps) {
                           cursor="pointer"
                           bg={isSelected ? "secondary.100" : "transparent"}
                           _hover={{
-                            bg: isSelected ? "secondary.200" : colorMode === "light" ? "gray.100" : "gray.600",
+                            bg: isSelected
+                              ? "secondary.200"
+                              : colorMode === "light"
+                              ? "gray.100"
+                              : "gray.600",
                           }}
                           onClick={() => {
                             if (isSelected) {
-                              setSelectedUserIds(prev => prev.filter(id => id !== user.id));
+                              setSelectedUserIds((prev) =>
+                                prev.filter((id) => id !== user.id)
+                              );
                             } else {
-                              setSelectedUserIds(prev => [...prev, user.id]);
+                              setSelectedUserIds((prev) => [...prev, user.id]);
                             }
                           }}
                           borderBottom="1px"
-                          borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                          borderColor={
+                            colorMode === "light" ? "gray.200" : "gray.600"
+                          }
                           _last={{ borderBottom: "none" }}
                         >
                           <Avatar
@@ -1760,16 +1989,20 @@ function TeamDetailView({}: TeamDetailViewProps) {
                             color="white"
                           />
                           <VStack align="start" spacing={0} flex="1">
-                            <Text fontSize="sm" fontWeight="semibold" color={colorMode === "light" ? "gray.800" : "white"}>
+                            <Text
+                              fontSize="sm"
+                              fontWeight="semibold"
+                              color={
+                                colorMode === "light" ? "gray.800" : "white"
+                              }
+                            >
                               {user.nama}
                             </Text>
                             <Text fontSize="xs" color="gray.500">
                               {user.email || user.userId}
                             </Text>
                           </VStack>
-                          {isSelected && (
-                            <Icon as={FiX} color="red.500" />
-                          )}
+                          {isSelected && <Icon as={FiX} color="red.500" />}
                         </HStack>
                       );
                     })}
@@ -1779,7 +2012,11 @@ function TeamDetailView({}: TeamDetailViewProps) {
             </VStack>
           </ModalBody>
 
-          <ModalFooter pt={4} borderTop="1px" borderColor={colorMode === "light" ? "gray.100" : "gray.700"}>
+          <ModalFooter
+            pt={4}
+            borderTop="1px"
+            borderColor={colorMode === "light" ? "gray.100" : "gray.700"}
+          >
             <HStack spacing={3} w="full" justify="space-between">
               <Text fontSize="sm" color="gray.500">
                 {selectedUserIds.length} user(s) selected
@@ -1807,7 +2044,11 @@ function TeamDetailView({}: TeamDetailViewProps) {
                   }}
                   transition="all 0.2s"
                 >
-                  Add {selectedUserIds.length > 0 ? `${selectedUserIds.length} ` : ""}Member{selectedUserIds.length !== 1 ? "s" : ""}
+                  Add{" "}
+                  {selectedUserIds.length > 0
+                    ? `${selectedUserIds.length} `
+                    : ""}
+                  Member{selectedUserIds.length !== 1 ? "s" : ""}
                 </Button>
               </HStack>
             </HStack>
