@@ -25,6 +25,112 @@ import {
   WorkProgramsPayload,
 } from "./useRequirements";
 
+// Project Import Interfaces
+export interface ProjectImportDataBindModel {
+  MemoNumber?: string;
+  MemoNarrative?: string;
+  PicUserId?: string;
+  PicUserNip?: string;
+  PicFullName?: string;
+  PicPhone?: string;
+  PicEmail?: string;
+  PicDivisionCode?: string;
+  PicGroupCode?: string;
+  RbbCodeExternal?: string;
+  WorkprogramNameExternal?: string;
+  AccountNameExternal?: string;
+  AccountNumberExternal?: string;
+  CcExternal?: string;
+  WorkprogramAmountExternal?: number;
+  WorkprogramRealizationExtenal?: number;
+  WorkprogramDivisionCodeExternal?: string;
+  WorkprogramGroupCodeExternal?: string;
+  RbbCodeInternal?: string;
+  WorkprogramNameInternal?: string;
+  AccountNameInternal?: string;
+  AccountNumberInternal?: string;
+  CcInternal?: string;
+  WorkprogramAmountInternal?: number;
+  WorkprogramRealizationInternal?: number;
+  ProjectNumber?: string;
+  ProjectName?: string;
+  DivisionCodeInitiation?: string;
+  GroupCodeInvolved?: string;
+  ProjectCharacteristic?: string;
+  ProjetType?: string;
+  ProjectCurrentStatus?: string;
+  ProjectStartDate?: string;
+  ProjectGoLivePlanDate?: string;
+  ProjectGoLiveRealizationDate?: string;
+  ProjectClosingDate?: string;
+  Note?: string;
+  ProjectAssigmentUserIds?: string;
+  ProjectAppInitial?: string;
+  ProjectAppName?: string;
+  ProjectFeatures?: string;
+}
+
+export interface ProjectImportDataBatchBindModel {
+  batchData: ProjectImportDataBindModel[];
+}
+
+export interface ProjectImportValidationResponse {
+  MemoNumber?: string;
+  MemoNarrative?: string;
+  PicUserId?: string;
+  PicUserNip?: string;
+  PicFullName?: string;
+  PicPhone?: string;
+  PicEmail?: string;
+  PicDivisionCode?: string;
+  PicGroupCode?: string;
+  RbbCodeExternal?: string;
+  WorkprogramNameExternal?: string;
+  AccountNameExternal?: string;
+  AccountNumberExternal?: string;
+  CcExternal?: string;
+  WorkprogramAmountExternal?: string;
+  WorkprogramRealizationExtenal?: string;
+  WorkprogramDivisionCodeExternal?: string;
+  WorkprogramGroupCodeExternal?: string;
+  RbbCodeInternal?: string;
+  WorkprogramNameInternal?: string;
+  AccountNameInternal?: string;
+  AccountNumberInternal?: string;
+  CcInternal?: string;
+  WorkprogramAmountInternal?: string;
+  WorkprogramRealizationInternal?: string;
+  ProjectNumber?: string;
+  ProjectName?: string;
+  DivisionCodeInitiation?: string;
+  GroupCodeInvolved?: string;
+  ProjectCharacteristic?: string;
+  ProjetType?: string;
+  ProjectCurrentStatus?: string;
+  ProjectStartDate?: string;
+  ProjectGoLivePlanDate?: string;
+  ProjectGoLiveRealizationDate?: string;
+  ProjectClosingDate?: string;
+  Note?: string;
+  ProjectAssigmentUserIds?: string;
+  ProjectAppInitial?: string;
+  ProjectAppName?: string;
+  ProjectFeatures?: string;
+}
+
+export interface ProjectImportResponse {
+  dataImport?: ProjectImportDataBindModel;
+  validationResponse?: ProjectImportValidationResponse;
+  isValid: boolean;
+}
+
+export interface ProjectImportBatchResponse {
+  batchResponse: ProjectImportResponse[];
+  isStatus: boolean;
+  countValid: number;
+  countInvalid: number;
+}
+
 export interface ProjectDataResponse {
   id: string;
   projectNo: string;
@@ -645,6 +751,11 @@ interface useProjectsServices {
     payload: ProjectWorkflowValueInsertPayload,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
+
+  ProjectImportValidationBatch: (
+    payload: ProjectImportDataBatchBindModel,
+    token: string
+  ) => Promise<ApiGenericResponse<ProjectImportBatchResponse>>;
 
   isLoading: boolean;
   error: string | null;
@@ -2630,6 +2741,30 @@ const useProjects = (): useProjectsServices => {
     }
   };
 
+  const ProjectImportValidationBatch = async (
+    payload: ProjectImportDataBatchBindModel,
+    token: string
+  ): Promise<ApiGenericResponse<ProjectImportBatchResponse>> => {
+    try {
+      setIsLoading(true);
+      const response = await axiosInstance.post(
+        `${buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC)}/v1/projects/import/internal-dev/validation`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      return handleAxiosError(error as any) as unknown as ApiGenericResponse<ProjectImportBatchResponse>;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     List,
     GetDetailById,
@@ -2677,6 +2812,8 @@ const useProjects = (): useProjectsServices => {
     ListProjectWorkflowBacklog,
 
     GetProjectBacklogProgression,
+
+    ProjectImportValidationBatch,
 
     ListProjectWorkflow,
     ListProjectWorkflowValue,
