@@ -24,8 +24,15 @@ import {
   StatLabel,
   StatNumber,
   StatGroup,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  Tooltip,
 } from "@chakra-ui/react";
-import { FiUpload, FiDatabase } from "react-icons/fi";
+import { FiUpload, FiDatabase, FiCheck, FiX } from "react-icons/fi";
 import { radiusStyle, RES_CODE_OK } from "@/app/constants/applicationConstants";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import useProjects, { 
@@ -70,6 +77,7 @@ export default function ImportPreviewModal({
   const [isValidating, setIsValidating] = useState(false);
   const [isApiValidated, setIsApiValidated] = useState(false);
   const [validationResult, setValidationResult] = useState<{valid: number, invalid: number} | null>(null);
+  const [apiResponse, setApiResponse] = useState<any>(null);
 
   // Service
   const { ProjectImportValidationBatch } = useProjects();
@@ -129,7 +137,15 @@ export default function ImportPreviewModal({
         valid: response.data.countValid,
         invalid: response.data.countInvalid
       });
+      setApiResponse(response.data);
       setIsApiValidated(true);
+
+      // Debug logging
+      console.log('API Response:', response.data);
+      console.log('Batch Response:', response.data.batchResponse);
+      if (response.data.batchResponse?.[0]) {
+        console.log('First row validation:', response.data.batchResponse[0].validationResponse);
+      }
 
       showToast({
         description: `Validation completed: ${response.data.countValid} valid, ${response.data.countInvalid} invalid`,
@@ -212,17 +228,96 @@ export default function ImportPreviewModal({
               </Text>
             </Alert>
 
-            {/* Simple Data Preview */}
+            {/* Data Table */}
             <Card rounded={radiusStyle}>
               <CardBody>
                 <Text fontWeight="semibold" mb={3}>Data Preview</Text>
-                <Text fontSize="sm" color="gray.600">
-                  {data.dataRows.length} records with {fieldKeysArray.length} fields ready for validation
-                </Text>
-                <Text fontSize="xs" color="gray.500" mt={2}>
-                  Fields: {fieldKeysArray.slice(0, 5).join(", ")}
-                  {fieldKeysArray.length > 5 && ` ... +${fieldKeysArray.length - 5} more`}
-                </Text>
+                <Box overflowX="auto" maxH="300px" overflowY="auto">
+                  <Table size="sm" variant="simple">
+                    <Thead position="sticky" top={0} bg={colorMode === "light" ? "gray.50" : "gray.700"}>
+                      <Tr>
+                        <Th>Row</Th>
+                        <Th>Status</Th>
+                        {fieldKeysArray.map((field, index) => (
+                          <Th key={index} minW="120px">{field}</Th>
+                        ))}
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      {data.dataRows.slice(0, 10).map((row, rowIndex) => {
+                        // Check if this row is valid based on API response
+                        const rowValidation = apiResponse?.batchResponse?.[rowIndex];
+                        const isRowValid = isApiValidated ? (rowValidation?.isValid ?? true) : null;
+                        
+                        return (
+                          <Tr key={rowIndex} bg={isApiValidated ? (isRowValid ? "green.50" : "red.50") : "transparent"}>
+                            <Td fontWeight="medium">{rowIndex + 1}</Td>
+                            <Td textAlign="center">
+                              {isApiValidated ? (
+                                isRowValid ? (
+                                  <Icon as={FiCheck} color="green.500" boxSize={4} />
+                                ) : (
+                                  <Icon as={FiX} color="red.500" boxSize={4} />
+                                )
+                              ) : (
+                                <Text fontSize="xs" color="gray.400">—</Text>
+                              )}
+                            </Td>
+                          {fieldKeysArray.map((field, colIndex) => {
+                            const colKey = Object.keys(data.fieldKeys).find(key => data.fieldKeys[key] === field);
+                            const colIndexNum = colKey?.length === 1 
+                              ? colKey.charCodeAt(0) - 65 
+                              : colKey ? (colKey.charCodeAt(0) - 65 + 1) * 26 + (colKey.charCodeAt(1) - 65) : 0;
+                            const value = row[colIndexNum]?.toString() || "-";
+                            
+                            // Convert field name to camelCase to match backend response
+                            const toCamelCase = (str: string) => {
+                              return str.toLowerCase().replace(/_([a-z])/g, (match, letter) => letter.toUpperCase());
+                            };
+                            
+                            const fieldNameCamel = toCamelCase(field);
+                            const validationResponse = apiResponse?.batchResponse?.[rowIndex]?.validationResponse;
+                            
+                            let validationError = null;
+                            if (validationResponse) {
+                              validationError = validationResponse[fieldNameCamel];
+                            }
+                            
+                            const hasError = isApiValidated && validationError && validationError.trim() !== "";
+                            const tooltipText = hasError ? validationError : value;
+                            
+                            // Debug logging for first row
+                            if (rowIndex === 0 && colIndex < 5) {
+                              console.log(`Field: ${field}, CamelCase: ${fieldNameCamel}, Error: ${validationError}, HasError: ${hasError}`);
+                            }
+                            
+                            return (
+                              <Td key={colIndex} bg={isApiValidated ? (hasError ? "red.100" : "green.50") : "transparent"}>
+                                <Tooltip label={tooltipText} placement="top" hasArrow>
+                                  <Text 
+                                    fontSize="sm" 
+                                    noOfLines={1}
+                                    color={isApiValidated ? (hasError ? "red.700" : "green.700") : "inherit"}
+                                  >
+                                    {value}
+                                  </Text>
+                                </Tooltip>
+                              </Td>
+                            );
+                          })}
+                          </Tr>
+                        );
+                      })}
+                    </Tbody>
+                  </Table>
+                  {data.dataRows.length > 10 && (
+                    <Box p={2} textAlign="center" bg={colorMode === "light" ? "gray.50" : "gray.700"}>
+                      <Text fontSize="sm" color="gray.500">
+                        ... and {data.dataRows.length - 10} more rows
+                      </Text>
+                    </Box>
+                  )}
+                </Box>
               </CardBody>
             </Card>
           </VStack>
