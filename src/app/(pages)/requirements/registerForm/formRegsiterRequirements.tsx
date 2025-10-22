@@ -2328,9 +2328,10 @@ function RegsiterRequirementViewPage({
                                   id="userPicEmail"
                                   name="userPicEmail"
                                   type="email"
-                                  onChange={(val) =>
-                                    formik.setFieldValue("userPicEmail", val)
-                                  }
+                                  // onChange={(val) =>
+                                  //   formik.setFieldValue("userPicEmail", val)
+                                  // }
+                                  onChange={formik.handleChange}
                                   value={formik.values.userPicEmail ?? ""}
                                   placeholder={`Alamat PIC Email (xxxx@bankbjb.co.id)`}
                                   minLength={9}

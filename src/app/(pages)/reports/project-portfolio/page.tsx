@@ -1,0 +1,875 @@
+"use client";
+
+import {
+  HeaderContent,
+  HeaderContentProps,
+} from "@/app/components/headerContent";
+import LayoutAdmin from "@/app/components/layoutAdmin";
+import LoadingMiniSignature from "@/app/components/loadingMini";
+import { TableComponentWithFilterCTX } from "@/app/components/tableComponentV2";
+import {
+  radiusStyle,
+  RES_CODE_OK,
+  RES_GENERIC_ERROR_MSG,
+} from "@/app/constants/applicationConstants";
+import { AuthDataModelInterface } from "@/app/context/AuthContext";
+import {
+  formatDateToDDMMYYYY,
+  getCurrentQuarter,
+  getQuarterDateRange,
+  stringToDateFormatedReverse,
+} from "@/app/helper/MasterHelper";
+import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
+import { AuthDataResponse } from "@/app/services/useAuthentications";
+import useReports, {
+  ReportProjectPortofolioDataResponse,
+} from "@/app/services/useReports";
+import {
+  addParamFilterUpdate,
+  ColumnMetaCustom,
+  ListSearchByParamProps,
+  PaggingListPayloadCustom,
+} from "@/app/types/masterTypes";
+import {
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  Flex,
+  Grid,
+  GridItem,
+  Heading,
+  HStack,
+  Input,
+  Select,
+  Stack,
+  Text,
+  useColorMode,
+  Wrap,
+  WrapItem,
+} from "@chakra-ui/react";
+import {
+  ColumnDef,
+  getCoreRowModel,
+  getFacetedMinMaxValues,
+  getFacetedUniqueValues,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  PaginationState,
+  useReactTable,
+} from "@tanstack/react-table";
+import React, { useEffect, useMemo, useState } from "react";
+import { FiRefreshCcw, FiDownload } from "react-icons/fi";
+import { FaFileExcel, FaFilePdf } from "react-icons/fa";
+
+const HeaderDataContent: HeaderContentProps = {
+  titleName: "Project Portfolio Report",
+  breadCrumb: ["Home", "Reports", "Project Portfolio"],
+};
+
+function ProjectPortfolioReportPage() {
+  // SetUp auth data on current page
+  const showToast = useToastHelper();
+  const { colorMode } = useColorMode();
+  const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
+  const [tokenData, setTokenData] = useState<string>("");
+  const { ListReportProjectPortofolio, ExportProjectPortofolioExcel, ExportProjectPortofolioPDF, isLoading: exportLoading } = useReports();
+
+  useEffect(() => {
+    const storedData = localStorage.getItem("authData");
+    const token: string = localStorage.getItem("tokenData") as string;
+
+    if (DataAuth == null) {
+      if (storedData) {
+        const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
+        const UserData: AuthDataResponse =
+          StorageAuth.dataLogin as AuthDataResponse;
+        setDataAuth(UserData);
+      }
+    }
+
+    if (token) {
+      setTokenData(token);
+    }
+  }, [DataAuth]);
+  // End SetUp auth data on current page
+
+  const [DataReport, setDataReport] = useState<ReportProjectPortofolioDataResponse[]>([]);
+  const [RefreshData, setRefreshData] = useState<number>(0);
+  const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
+
+  const [totalPages, setTotalPageData] = useState<number>(0);
+  const [globalFilter, setGlobalFilter] = useState<string>("");
+  const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+
+  const pagination = useMemo(
+    () => ({
+      pageIndex,
+      pageSize,
+    }),
+    [pageIndex, pageSize]
+  );
+
+  const [ParamFilter, setParamFilter] = useState<ListSearchByParamProps[]>([]);
+
+  // Quarterly filter
+  const currentYear = new Date().getFullYear();
+  const currentQuarter = getCurrentQuarter();
+  const [selectedYear, setSelectedYear] = useState<number>(currentYear);
+  const [selectedQuarter, setSelectedQuarter] = useState<number | "all">(
+    currentQuarter
+  );
+  const [StartDateFilter, setStartDateFilter] = useState<Date>(new Date());
+  const [EndDateFilter, setEndDateFilter] = useState<Date>(new Date());
+
+  const years = Array.from({ length: 8 }, (_, i) => currentYear - 5 + i);
+
+  const handleFilterChange = (newFilters: ListSearchByParamProps[]) => {
+    setParamFilter(newFilters);
+  };
+
+  const RefreshAction = () => {
+    setTotalPageData(0);
+    setDataReport([]);
+    setRefreshData(RefreshData + 1);
+  };
+
+  const ExportToExcel = async () => {
+    console.log("Export button clicked");
+    if (!DataAuth || !tokenData) {
+      console.log("No auth data or token");
+      return;
+    }
+
+    const exportPayload: PaggingListPayloadCustom = {
+      search: globalFilter,
+      limit: -1, // Get all records
+      page: 0,
+      filterWhere: ParamFilter,
+      fieldOrder: ["createdAt"],
+      orderDir: "desc",
+    };
+
+    console.log("Export payload:", exportPayload);
+
+    try {
+      console.log("Calling export service...");
+      const blob = await ExportProjectPortofolioExcel(exportPayload, tokenData);
+      console.log("Export response:", blob);
+      
+      if (blob) {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Project_Portfolio_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        showToast({
+          description: "Excel file exported successfully",
+          statusToast: "success",
+        });
+      } else {
+        console.log("No blob returned");
+        showToast({
+          description: "No data to export",
+          statusToast: "warning",
+        });
+      }
+    } catch (error) {
+      console.error("Export error:", error);
+      showToast({
+        description: "Failed to export Excel file",
+        statusToast: "error",
+      });
+    }
+  };
+
+  const ExportToPDF = async () => {
+    console.log("Export PDF button clicked");
+    if (!DataAuth || !tokenData) {
+      console.log("No auth data or token");
+      return;
+    }
+
+    const exportPayload: PaggingListPayloadCustom = {
+      search: globalFilter,
+      limit: -1, // Get all records
+      page: 0,
+      filterWhere: ParamFilter,
+      fieldOrder: ["createdAt"],
+      orderDir: "desc",
+    };
+
+    try {
+      const blob = await ExportProjectPortofolioPDF(exportPayload, tokenData);
+      
+      if (blob) {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Project_Portfolio_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        showToast({
+          description: "PDF file exported successfully",
+          statusToast: "success",
+        });
+      } else {
+        showToast({
+          description: "No data to export",
+          statusToast: "warning",
+        });
+      }
+    } catch (error) {
+      console.error("PDF Export error:", error);
+      showToast({
+        description: "Failed to export PDF file",
+        statusToast: "error",
+      });
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "ACTIVE":
+        return "green";
+      case "COMPLETED":
+        return "blue";
+      case "ONHOLD":
+        return "orange";
+      case "INACTIVE":
+        return "red";
+      default:
+        return "gray";
+    }
+  };
+
+  const columnsData = useMemo<ColumnDef<ReportProjectPortofolioDataResponse>[]>(
+    () => [
+      {
+        accessorKey: "numbData",
+        cell: (info) => (
+          <Flex justifyContent={"center"} alignItems="flex-start" h={"full"}>
+            <Text fontSize="sm">{pageIndex * pageSize + info.row.index + 1}.</Text>
+          </Flex>
+        ),
+        header: () => <Flex justifyContent={"center"}>No.</Flex>,
+        footer: (props) => props.column.id,
+        meta: {
+          isFilterable: false,
+        } as ColumnMetaCustom,
+      },
+      {
+        accessorFn: (row) => row.projectName,
+        id: "projectInfo",
+        cell: (info) => (
+          <Flex
+            w={"full"}
+            h={"full"}
+            justifyContent={"start"}
+            alignItems={"start"}
+            as={Stack}
+            spacing={1}
+            minW="250px"
+          >
+            <Text fontWeight={600} fontSize="sm">{info.row.original.projectNo}</Text>
+            <Text fontSize="sm">{info.row.original.projectName}</Text>
+            <Text fontSize="xs" color="gray.500">
+              {info.row.original.projectCategory} | {info.row.original.projectType}
+            </Text>
+            {info.row.original.projectDesc && (
+              <Text fontSize="xs" color="gray.400" noOfLines={2}>
+                {info.row.original.projectDesc}
+              </Text>
+            )}
+          </Flex>
+        ),
+        header: () => <span>Project Information</span>,
+        footer: (props) => props.column.id,
+        meta: {
+          isFilterable: true,
+          filterData: [
+            {
+              field: "projectName",
+              operator: "like",
+              value: "",
+              filterType: "text",
+              filterLabel: "Project Name",
+            },
+          ],
+        } as ColumnMetaCustom,
+      },
+      {
+        accessorFn: (row) => row.projectCharasteristicName,
+        id: "projectCharacteristics",
+        cell: (info) => (
+          <Flex
+            w={"full"}
+            h={"full"}
+            justifyContent={"start"}
+            alignItems={"start"}
+            as={Stack}
+            spacing={0}
+            minW="200px"
+          >
+            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
+              <Text fontWeight={600}>Characteristic:</Text>
+              <Text>{info.row.original.projectCharasteristicName || "-"}</Text>
+            </Flex>
+            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
+              <Text fontWeight={600}>Sub Characteristic:</Text>
+              <Text>{info.row.original.projectSubCharasteristicName || "-"}</Text>
+            </Flex>
+            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
+              <Text fontWeight={600}>Type:</Text>
+              <Text>{info.row.original.projectType || "-"}</Text>
+            </Flex>
+            {info.row.original.requirement?.appLiveTargetDate && (
+              <Flex fontSize={"2xs"} as={Stack} spacing={0}>
+                <Text fontWeight={600}>Target Live Date:</Text>
+                <Text color="blue.500">
+                  {stringToDateFormatedReverse(info.row.original.requirement.appLiveTargetDate)}
+                </Text>
+              </Flex>
+            )}
+          </Flex>
+        ),
+        header: () => <span>Project Details</span>,
+        footer: (props) => props.column.id,
+        meta: {
+          isFilterable: true,
+          filterData: [
+            {
+              field: "projectCharasteristicName",
+              operator: "like",
+              value: "",
+              filterType: "text",
+              filterLabel: "Characteristic",
+            },
+          ],
+        } as ColumnMetaCustom,
+      },
+      {
+        accessorFn: (row) => row.proOwnerDivisionName,
+        id: "organization",
+        cell: (info) => (
+          <Flex
+            w={"full"}
+            h={"full"}
+            justifyContent={"start"}
+            alignItems={"start"}
+            as={Stack}
+            spacing={0}
+            minW="200px"
+          >
+            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
+              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">Owner Division:</Text>
+              <Text fontSize="2xs" lineHeight="1.2">{info.row.original.proOwnerDivisionName || "-"}</Text>
+            </Flex>
+            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
+              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">Owner Group:</Text>
+              <Text fontSize="2xs" lineHeight="1.2">{info.row.original.proOwnerGroupName || "-"}</Text>
+            </Flex>
+            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
+              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">Manage Division:</Text>
+              <Text fontSize="2xs" lineHeight="1.2">{info.row.original.proManageByDivisionName || "-"}</Text>
+            </Flex>
+            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
+              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">Manage Group:</Text>
+              <Text fontSize="2xs" lineHeight="1.2">{info.row.original.proManageByGroupName || "-"}</Text>
+            </Flex>
+          </Flex>
+        ),
+        header: () => <span>Organization Structure</span>,
+        footer: (props) => props.column.id,
+        meta: {
+          isFilterable: true,
+          filterData: [
+            {
+              field: "proOwnerDivisionName",
+              operator: "like",
+              value: "",
+              filterType: "text",
+              filterLabel: "Owner Division",
+            },
+          ],
+        } as ColumnMetaCustom,
+      },
+      {
+        accessorFn: (row) => row.requirement?.userPicName,
+        id: "picInfo",
+        cell: (info) => (
+          <Flex
+            w={"full"}
+            h={"full"}
+            justifyContent={"start"}
+            alignItems={"start"}
+            as={Stack}
+            spacing={1}
+            minW="180px"
+          >
+            <Flex fontSize={"xs"} as={Stack} spacing={0}>
+              <Text fontWeight={600}>PIC Name:</Text>
+              <Text>{info.row.original.requirement?.userPicName || "-"}</Text>
+            </Flex>
+            <Flex fontSize={"xs"} as={Stack} spacing={0}>
+              <Text fontWeight={600}>Phone:</Text>
+              <Text>{info.row.original.requirement?.userPicContanct || "-"}</Text>
+            </Flex>
+            <Flex fontSize={"xs"} as={Stack} spacing={0}>
+              <Text fontWeight={600}>Email:</Text>
+              <Text>{info.row.original.requirement?.userPicEmail || "-"}</Text>
+            </Flex>
+          </Flex>
+        ),
+        header: () => <span>PIC Contact</span>,
+        footer: (props) => props.column.id,
+        meta: {
+          isFilterable: false,
+        } as ColumnMetaCustom,
+      },
+      {
+        accessorFn: (row) => row.workPrograms,
+        id: "externalPrograms",
+        cell: (info) => (
+          <Flex
+            w={"full"}
+            h={"full"}
+            justifyContent={"start"}
+            alignItems={"start"}
+            as={Stack}
+            spacing={1}
+            minW="220px"
+          >
+            <Text fontWeight={600} color="blue.500" fontSize="xs">External RBB Programs:</Text>
+            {info.row.original.workPrograms?.filter(wp => wp.workProgramSource === "EXTERNAL").length > 0 ? (
+              info.row.original.workPrograms
+                .filter(wp => wp.workProgramSource === "EXTERNAL")
+                .map((wp, idx) => (
+                  <Flex key={idx} as={Stack} spacing={0} fontSize="xs">
+                    <Text fontWeight={600}>{wp.workProgramCode}</Text>
+                    <Text>{wp.workProgramName}</Text>
+                    <Text color="green.500">Budget: Rp {wp.workProgramBudget?.toLocaleString() || "0"}</Text>
+                  </Flex>
+                ))
+            ) : (
+              <Text fontSize={"xs"} color="gray.500">No external programs</Text>
+            )}
+          </Flex>
+        ),
+        header: () => <span>External RBB</span>,
+        footer: (props) => props.column.id,
+        meta: {
+          isFilterable: false,
+        } as ColumnMetaCustom,
+      },
+      {
+        accessorFn: (row) => row.workPrograms,
+        id: "internalPrograms",
+        cell: (info) => (
+          <Flex
+            w={"full"}
+            h={"full"}
+            justifyContent={"start"}
+            alignItems={"start"}
+            as={Stack}
+            spacing={1}
+            minW="220px"
+          >
+            <Text fontWeight={600} color="green.500" fontSize="xs">Internal RBB Programs:</Text>
+            {info.row.original.workPrograms?.filter(wp => wp.workProgramSource === "INTERNAL").length > 0 ? (
+              info.row.original.workPrograms
+                .filter(wp => wp.workProgramSource === "INTERNAL")
+                .map((wp, idx) => (
+                  <Flex key={idx} as={Stack} spacing={0} fontSize="xs">
+                    <Text fontWeight={600}>{wp.workProgramCode}</Text>
+                    <Text>{wp.workProgramName}</Text>
+                    <Text color="green.500">Budget: Rp {wp.workProgramBudget?.toLocaleString() || "0"}</Text>
+                  </Flex>
+                ))
+            ) : (
+              <Text fontSize={"xs"} color="gray.500">No internal programs</Text>
+            )}
+          </Flex>
+        ),
+        header: () => <span>Internal RBB (Div.IT)</span>,
+        footer: (props) => props.column.id,
+        meta: {
+          isFilterable: false,
+        } as ColumnMetaCustom,
+      },
+      {
+        accessorFn: (row) => row.projectStatus,
+        id: "projectStatus",
+        cell: (info) => (
+          <Flex
+            w={"full"}
+            h={"full"}
+            justifyContent={"start"}
+            alignItems={"start"}
+            as={Stack}
+            spacing={1}
+            minW="160px"
+          >
+            <Badge
+              colorScheme={getStatusColor(info.row.original.projectStatus)}
+              variant="solid"
+              rounded={radiusStyle}
+              px={3}
+              py={1}
+            >
+              {info.row.original.projectStatus}
+            </Badge>
+            <Text fontSize="xs">
+              Progress: {info.row.original.projectStatusPercentage}%
+            </Text>
+            <Text fontSize="xs">
+              Duration: {info.row.original.projectDurationDays} days
+            </Text>
+            {info.row.original.projectRegisterDate && (
+              <Text fontSize="xs" color="gray.500">
+                Registered: {stringToDateFormatedReverse(info.row.original.projectRegisterDate)}
+              </Text>
+            )}
+            {info.row.original.projectClosedDate && (
+              <Text fontSize="xs" color="gray.500">
+                Closed: {stringToDateFormatedReverse(info.row.original.projectClosedDate)}
+              </Text>
+            )}
+          </Flex>
+        ),
+        header: () => <span>Status & Timeline</span>,
+        footer: (props) => props.column.id,
+        meta: {
+          isFilterable: true,
+          filterData: [
+            {
+              field: "projectStatus",
+              operator: "=",
+              value: "",
+              filterType: "select",
+              filterLabel: "Project Status",
+              sourceListData: [
+                { label: "ACTIVE", value: "ACTIVE" },
+                { label: "COMPLETED", value: "COMPLETED" },
+                { label: "ONHOLD", value: "ONHOLD" },
+                { label: "INACTIVE", value: "INACTIVE" },
+              ],
+            },
+          ],
+        } as ColumnMetaCustom,
+      },
+      {
+        accessorFn: (row) => row.userAssignment,
+        id: "teamInfo",
+        cell: (info) => (
+          <Flex
+            w={"full"}
+            h={"full"}
+            justifyContent={"start"}
+            alignItems={"start"}
+            as={Stack}
+            spacing={0}
+            minW="180px"
+          >
+            <Text fontSize="2xs" fontWeight={600} color="purple.500" lineHeight="1.2">
+              Team Members ({info.row.original.userAssignment?.length || 0}):
+            </Text>
+            {info.row.original.userAssignment?.map((user, idx) => (
+              <Text key={idx} fontSize="2xs" lineHeight="1.2">
+                {idx + 1}. {user.userData?.nama || user.userId}
+              </Text>
+            ))}
+            {(info.row.original.userAssignment?.length || 0) === 0 && (
+              <Text fontSize="2xs" color="gray.500" lineHeight="1.2">No team members assigned</Text>
+            )}
+          </Flex>
+        ),
+        header: () => <span>Team Assignment</span>,
+        footer: (props) => props.column.id,
+        meta: {
+          isFilterable: false,
+        } as ColumnMetaCustom,
+      },
+    ],
+    [pageIndex, pageSize, colorMode]
+  );
+
+  // Quarterly filter effect
+  useEffect(() => {
+    const { startDate, endDate } = getQuarterDateRange(
+      selectedYear,
+      selectedQuarter
+    );
+
+    setStartDateFilter(startDate);
+    setEndDateFilter(endDate);
+
+    // Add date range filters to ParamFilter
+    if (selectedQuarter !== "all") {
+      const startDateFilter: ListSearchByParamProps = {
+        field: "projectRegisterDate",
+        operator: ">=",
+        value: startDate.toISOString().split('T')[0],
+        filterLabel: "Start Date Filter",
+      };
+
+      const endDateFilter: ListSearchByParamProps = {
+        field: "projectRegisterDate",
+        operator: "<=",
+        value: endDate.toISOString().split('T')[0],
+        filterLabel: "End Date Filter",
+      };
+
+      // Remove existing date filters and add new ones
+      let updatedFilters = ParamFilter.filter(
+        f => f.field !== "projectRegisterDate"
+      );
+      
+      updatedFilters = addParamFilterUpdate(updatedFilters, startDateFilter);
+      updatedFilters = addParamFilterUpdate(updatedFilters, endDateFilter);
+      
+      setParamFilter(updatedFilters);
+    } else {
+      // Remove date filters when "all" is selected
+      const updatedFilters = ParamFilter.filter(
+        f => f.field !== "projectRegisterDate"
+      );
+      setParamFilter(updatedFilters);
+    }
+  }, [selectedYear, selectedQuarter]);
+
+  useEffect(() => {
+    if (DataAuth && tokenData) {
+      const PayloadList: PaggingListPayloadCustom = {
+        search: globalFilter,
+        limit: pageSize,
+        page: pageIndex * pageSize, // Convert to offset
+        filterWhere: ParamFilter,
+        fieldOrder: ["createdAt"],
+        orderDir: "desc",
+      };
+
+      setIsLoadingProcess(true);
+      const GetDataList = async () => {
+        const requestData = await ListReportProjectPortofolio(PayloadList, tokenData);
+        const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+
+        if (isErrorResponse || !requestData) {
+          showToast({
+            description: requestData?.message || RES_GENERIC_ERROR_MSG,
+            statusToast: "error",
+          });
+          setIsLoadingProcess(false);
+          return;
+        } else {
+          if (requestData.data == null) {
+            showToast({
+              description: "Data return error",
+              statusToast: "error",
+            });
+            setIsLoadingProcess(false);
+            return;
+          }
+
+          const itemsData: ReportProjectPortofolioDataResponse[] =
+            requestData.data as ReportProjectPortofolioDataResponse[];
+          const totalData: number = requestData.countTotal as number;
+          const totalPages: number =
+            totalData > 0 ? Math.ceil(totalData / pageSize) : -1;
+          setDataReport(itemsData);
+          setTotalPageData(totalPages);
+          setIsLoadingProcess(false);
+        }
+      };
+      GetDataList();
+    }
+  }, [
+    DataAuth,
+    RefreshData,
+    pageIndex,
+    pageSize,
+    globalFilter,
+    ParamFilter,
+    tokenData,
+  ]);
+
+  const table = useReactTable({
+    data: DataReport,
+    columns: columnsData,
+    pageCount: totalPages ?? 1,
+    state: {
+      globalFilter,
+      pagination,
+    },
+    onPaginationChange: setPagination,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    onGlobalFilterChange: setGlobalFilter,
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    getFacetedMinMaxValues: getFacetedMinMaxValues(),
+    debugTable: false,
+    manualFiltering: true,
+    manualPagination: true,
+  });
+
+  return (
+    <LayoutAdmin>
+      <HeaderContent
+        titleName={HeaderDataContent.titleName}
+        breadCrumb={HeaderDataContent.breadCrumb}
+      />
+      
+      {/* Quarterly Filter Card */}
+      <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"} mb={4}>
+        <GridItem colSpan={12} w={"full"}>
+          <Card
+            w={"fill"}
+            rounded={radiusStyle}
+            bgColor={colorMode == "light" ? "white" : "gray.800"}
+          >
+            <CardHeader>
+              <Flex justifyContent="space-between" alignItems="center" w="full">
+                <Heading as="h6" size="sm">
+                  Filter Options
+                </Heading>
+                <Flex gap={2}>
+                  <Button
+                    size={"sm"}
+                    colorScheme="green"
+                    onClick={ExportToExcel}
+                    isDisabled={DataReport.length === 0 || exportLoading}
+                    isLoading={exportLoading}
+                    leftIcon={<FaFileExcel />}
+                  >
+                    Export Excel
+                  </Button>
+                  <Button
+                    size={"sm"}
+                    colorScheme="red"
+                    onClick={ExportToPDF}
+                    isDisabled={DataReport.length === 0 || exportLoading}
+                    isLoading={exportLoading}
+                    leftIcon={<FaFilePdf />}
+                  >
+                    Export PDF
+                  </Button>
+                </Flex>
+              </Flex>
+            </CardHeader>
+            <CardBody>
+              <Grid templateColumns="repeat(12, 1fr)" gap={4} w={"full"}>
+                <GridItem colSpan={{ base: 12, lg: 8 }}>
+                  <Flex alignItems={"center"} gap={4} wrap="wrap">
+                    <Text fontWeight={600} minW="fit-content">
+                      Register Date:
+                    </Text>
+                    <Select
+                      value={selectedYear}
+                      size={"md"}
+                      onChange={(e) => setSelectedYear(Number(e.target.value))}
+                      w="100px"
+                      bgColor={colorMode == "light" ? "white" : "gray.800"}
+                    >
+                      {years.map((year) => (
+                        <option key={year} value={year}>
+                          {year}
+                        </option>
+                      ))}
+                    </Select>
+                    <Select
+                      value={selectedQuarter}
+                      size={"md"}
+                      onChange={(e) =>
+                        setSelectedQuarter(
+                          e.target.value === "all" ? "all" : Number(e.target.value)
+                        )
+                      }
+                      w="80px"
+                      bgColor={colorMode == "light" ? "white" : "gray.800"}
+                    >
+                      <option value="all">All</option>
+                      <option value="1">Q1</option>
+                      <option value="2">Q2</option>
+                      <option value="3">Q3</option>
+                      <option value="4">Q4</option>
+                    </Select>
+                    {selectedQuarter !== "all" && (
+                      <Text fontSize={"xs"} color="gray.500" minW="fit-content">
+                        {formatDateToDDMMYYYY(StartDateFilter)} - {formatDateToDDMMYYYY(EndDateFilter)}
+                      </Text>
+                    )}
+                  </Flex>
+                </GridItem>
+                <GridItem colSpan={{ base: 12, lg: 4 }}>
+                  <Flex alignItems={"center"} gap={3}>
+                    <Text fontWeight={600} minW="fit-content">
+                      Search:
+                    </Text>
+                    <Input
+                      placeholder="Search projects..."
+                      value={globalFilter ?? ""}
+                      onChange={(e) => setGlobalFilter(e.target.value)}
+                      size="md"
+                      bgColor={colorMode == "light" ? "white" : "gray.800"}
+                    />
+                  </Flex>
+                </GridItem>
+              </Grid>
+            </CardBody>
+          </Card>
+        </GridItem>
+      </Grid>
+
+      <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"}>
+        <GridItem colSpan={12} w={"full"}>
+          <Card
+            w={"fill"}
+            rounded={radiusStyle}
+            bgColor={colorMode == "light" ? "white" : "gray.800"}
+          >
+            <CardHeader>
+              <Flex justifyContent="space-between" alignItems="center" w="full">
+                <Heading as="h5" size="md">
+                  Project Portfolio Report Data
+                </Heading>
+                <Button
+                  size={"md"}
+                  leftIcon={<FiRefreshCcw />}
+                  onClick={() => RefreshAction()}
+                >
+                  Refresh
+                </Button>
+              </Flex>
+            </CardHeader>
+            <CardBody>
+              <Flex w={"full"} as={Stack} spacing={4}>
+                {IsLoadingProcess ? (
+                  <LoadingMiniSignature />
+                ) : (
+                  <TableComponentWithFilterCTX
+                    table={table}
+                    handleFilterChange={handleFilterChange}
+                  />
+                )}
+              </Flex>
+            </CardBody>
+          </Card>
+        </GridItem>
+      </Grid>
+    </LayoutAdmin>
+  );
+}
+
+export default ProjectPortfolioReportPage;

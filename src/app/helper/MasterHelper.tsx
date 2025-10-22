@@ -169,13 +169,18 @@ export function formatToRupiah(number: number): string {
 }
 
 export function formatToRupiahRp(number: number): string {
-  const formatter = new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "Rp. ",
-    minimumFractionDigits: 0,
-  });
-
-  return formatter.format(number);
+  try {
+    // Modern browsers and Node.js ≥ 14 support this properly
+    const formatter = new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    });
+    return formatter.format(number);
+  } catch {
+    // fallback if Intl not available or currency not supported
+    return `Rp ${number.toLocaleString("id-ID")}`;
+  }
 }
 
 // date to time string converter (dd-mm-yyyy)

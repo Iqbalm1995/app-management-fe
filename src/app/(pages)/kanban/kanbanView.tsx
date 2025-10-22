@@ -118,6 +118,12 @@ import {
   AlertTitle,
   AlertDescription,
   CardFooter,
+  Drawer,
+  DrawerBody,
+  DrawerCloseButton,
+  DrawerContent,
+  DrawerHeader,
+  DrawerOverlay,
 } from "@chakra-ui/react";
 import {
   ChevronDownIcon,
@@ -356,6 +362,7 @@ const TaskItemRow: React.FC<TaskItemRowProps> = ({
   onEdit,
   onDelete,
 }) => {
+  const { colorMode } = useColorMode();
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(item.taskItemName);
   const [isHovered, setIsHovered] = useState(false);
@@ -396,7 +403,7 @@ const TaskItemRow: React.FC<TaskItemRowProps> = ({
       py={1}
       px={1}
       borderRadius="md"
-      _hover={{ bg: "gray.50" }}
+      _hover={{ bg: colorMode === "light" ? "gray.50" : "gray.700" }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       position="relative"
@@ -422,7 +429,7 @@ const TaskItemRow: React.FC<TaskItemRowProps> = ({
       ) : (
         <Text
           as={item.isDone === "Y" ? "s" : "span"}
-          color={item.isDone === "Y" ? "gray.500" : "inherit"}
+          color={item.isDone === "Y" ? (colorMode === "light" ? "gray.500" : "gray.400") : "inherit"}
           flex="1"
           onClick={handleEditStart}
           cursor="pointer"
@@ -465,6 +472,7 @@ interface DraggableTaskCardProps {
   DataProject?: ProjectDataResponse | null;
   onMoveUp?: (taskId: string) => void;
   onMoveDown?: (taskId: string) => void;
+  isDragDisabled?: boolean;
 }
 
 interface DroppableTaskItem {
@@ -508,6 +516,7 @@ interface AttachmentProps {
 // Image Preview Component
 const ImagePreview = ({ name, alt, src }: AttachmentProps) => {
   const ImageModalDisc = useDisclosure();
+  const { colorMode } = useColorMode();
 
   return (
     <Box
@@ -518,7 +527,7 @@ const ImagePreview = ({ name, alt, src }: AttachmentProps) => {
       cursor="pointer"
       p={1}
       border="1px solid"
-      borderColor="gray.300"
+      borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
       onClick={() => ImageModalDisc.onOpen()}
       _hover={{
         "& > .previewOverlay": { opacity: 1 },
@@ -565,11 +574,11 @@ const ImagePreview = ({ name, alt, src }: AttachmentProps) => {
           rounded={radiusStyle}
           maxW="90vw"
           maxH="90vh"
-          bg="rgba(255, 255, 255, 0.1)"
+          bg={colorMode === "light" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.3)"}
           backdropFilter="blur(10px)"
           boxShadow="lg"
         >
-          <ModalCloseButton color="white" />
+          <ModalCloseButton color={colorMode === "light" ? "white" : "gray.300"} />
           <ModalBody p={0}>
             <Box
               w="full"
@@ -590,6 +599,8 @@ const ImagePreview = ({ name, alt, src }: AttachmentProps) => {
 // Image Add More Component
 const ImageAddMore = () => {
   const AddImageModalDisc = useDisclosure();
+  const { colorMode } = useColorMode();
+  
   return (
     <Box
       rounded={radiusStyle}
@@ -598,7 +609,7 @@ const ImageAddMore = () => {
       cursor="pointer"
       p={1}
       border="1px solid"
-      borderColor="gray.300"
+      borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
       _hover={{
         "& > .previewOverlay": { opacity: 1 },
       }}
@@ -610,7 +621,7 @@ const ImageAddMore = () => {
         display="flex"
         justifyContent="center"
         alignItems="center"
-        bg="gray.100"
+        bg={colorMode === "light" ? "gray.100" : "gray.700"}
         border="2px dashed"
         color="primary.300"
       >
@@ -647,13 +658,13 @@ const ImageAddMore = () => {
         size="2xl"
       >
         <ModalOverlay />
-        <ModalContent rounded={radiusStyle} boxShadow="lg">
+        <ModalContent rounded={radiusStyle} boxShadow="lg" bg={colorMode === "light" ? "white" : "gray.800"}>
           <ModalCloseButton />
           <ModalHeader>Upload Files</ModalHeader>
           <ModalBody p={4}>
             <Box
               border="2px dashed"
-              borderColor="gray.300"
+              borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
               borderRadius={radiusStyle}
               p={10}
               textAlign="center"
@@ -699,6 +710,7 @@ const TaskComment = ({
   onDeleteComment: (commentId: string) => void;
   onEditTextChange: (text: string) => void;
 }) => {
+  const { colorMode } = useColorMode();
   const limitText: number = 100;
   const [limitTextState, setlimitTextState] = useState<number>(limitText);
 
@@ -735,7 +747,7 @@ const TaskComment = ({
             <Text fontWeight={600} fontSize={15}>
               {dataComments.userCreated.nama}
             </Text>
-            <Text fontSize={12} color="gray.500" alignSelf="center">
+            <Text fontSize={12} color={colorMode === "light" ? "gray.500" : "gray.400"} alignSelf="center">
               {convertToCustomDateFormat(dataComments.createdAt)}
             </Text>
           </Flex>
@@ -880,6 +892,7 @@ const AddTaskForm: React.FC<AddTaskProps> = ({
   backlogId,
   onTaskAdded,
 }) => {
+  const { colorMode } = useColorMode();
   const [isAdding, setIsAdding] = useState(false);
   const [taskName, setTaskName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -959,7 +972,7 @@ const AddTaskForm: React.FC<AddTaskProps> = ({
         justifyContent="flex-start"
         onClick={handleAddClick}
         width="full"
-        bg={"white"}
+        bg={colorMode === "light" ? "white" : "gray.800"}
         rounded={radiusStyle}
         boxShadow={"sm"}
         px={5}
@@ -984,7 +997,7 @@ const AddTaskForm: React.FC<AddTaskProps> = ({
       variant="outline"
       boxShadow="sm"
       mb={2}
-      bg={"white"}
+      bg={colorMode === "light" ? "white" : "gray.800"}
       rounded={radiusStyle}
     >
       <CardBody p={3}>
@@ -1029,6 +1042,7 @@ function DraggableTaskCard({
   onMoveUp,
   onMoveDown,
 }: DraggableTaskCardProps) {
+  const { colorMode } = useColorMode();
   const dragRef = useRef<HTMLDivElement>(null);
   const [{ isDragging }, drag] = useDrag<
     DroppableTaskItem,
@@ -2706,7 +2720,7 @@ function DraggableTaskCard({
         size="5xl"
       >
         <ModalOverlay />
-        <ModalContent rounded={radiusStyle}>
+        <ModalContent rounded={radiusStyle} bg={colorMode === "light" ? "white" : "gray.800"}>
           <Flex
             w={"full"}
             minH={"50px"}
@@ -2934,7 +2948,7 @@ function DraggableTaskCard({
                       alignItems="center"
                       justifyContent="start"
                       spacing={2}
-                      color={"gray.700"}
+                      color={colorMode === "light" ? "gray.700" : "gray.200"}
                     >
                       <FiCircle size={16} />
                       {/* Editable Task Name */}
@@ -3066,7 +3080,7 @@ function DraggableTaskCard({
                             top="2"
                           />
                         )}
-                        <Text fontSize="xs" color="gray.500" mt={1}>
+                        <Text fontSize="xs" color={colorMode === "light" ? "gray.500" : "gray.400"} mt={1}>
                           Press Ctrl+Enter to save, Esc to cancel
                         </Text>
                       </Box>
@@ -3084,7 +3098,7 @@ function DraggableTaskCard({
                         {detailedTask.taskDesc ? (
                           <Text>{detailedTask.taskDesc}</Text>
                         ) : (
-                          <Text color="gray.400">
+                          <Text color={colorMode === "light" ? "gray.400" : "gray.500"}>
                             Add a more detailed description...
                           </Text>
                         )}
@@ -3097,7 +3111,7 @@ function DraggableTaskCard({
                         justifyContent="space-between"
                         as={HStack}
                         spacing={2}
-                        color={"gray.700"}
+                        color={colorMode === "light" ? "gray.700" : "gray.200"}
                         mb={2}
                       >
                         <HStack>
@@ -3125,7 +3139,7 @@ function DraggableTaskCard({
                           alignItems="start"
                           as={VStack}
                           spacing={2}
-                          color="gray.700"
+                          color={colorMode === "light" ? "gray.700" : "gray.200"}
                           px={4}
                         >
                           {taskItems.map((item) => (
@@ -3140,7 +3154,7 @@ function DraggableTaskCard({
                         </Flex>
                       ) : (
                         <Box px={4} py={2}>
-                          <Text color="gray.500">
+                          <Text color={colorMode === "light" ? "gray.500" : "gray.400"}>
                             No subtasks yet. Add one below.
                           </Text>
                         </Box>
@@ -3181,7 +3195,7 @@ function DraggableTaskCard({
                         justifyContent="space-between"
                         as={HStack}
                         spacing={2}
-                        color={"gray.700"}
+                        color={colorMode === "light" ? "gray.700" : "gray.200"}
                         mb={3}
                       >
                         <HStack>
@@ -3218,7 +3232,7 @@ function DraggableTaskCard({
                       alignItems="center"
                       as={HStack}
                       spacing={2}
-                      color={"gray.700"}
+                      color={colorMode === "light" ? "gray.700" : "gray.200"}
                     >
                       <Flex as={HStack} spacing={2} alignItems="center">
                         <FaCommentDots size={16} />
@@ -3558,7 +3572,7 @@ function DraggableTaskCard({
         closeOnOverlayClick={false}
       >
         <ModalOverlay backdropFilter="blur(10px)" />
-        <ModalContent rounded={radiusStyle}>
+        <ModalContent rounded={radiusStyle} bg={colorMode === "light" ? "white" : "gray.800"}>
           <ModalHeader>
             <HStack spacing={2} justify="space-between" w="full">
               <HStack spacing={2}>
@@ -4019,6 +4033,11 @@ function KanbanBacklogPage() {
     beforeTaskId: string | null;
     afterTaskId: string | null;
   } | null>(null);
+
+  // Archived tasks drawer state
+  const [archivedTasks, setArchivedTasks] = useState<TaskViewModel[]>([]);
+  const [isArchivedDrawerOpen, setIsArchivedDrawerOpen] = useState(false);
+  const [isLoadingArchived, setIsLoadingArchived] = useState(false);
 
   // Handle task creation - refresh data after task is created
   const handleTaskCreated = () => {
@@ -5454,6 +5473,46 @@ function KanbanBacklogPage() {
     setisLoading(false);
   }, [RefreshData]);
 
+  const loadArchivedTasks = async () => {
+    if (!DataAuth || !tokenData || !backlogId) return;
+
+    setIsLoadingArchived(true);
+    try {
+      const PayloadGetArchivedTasks: PaggingListPayload = {
+        search: "",
+        limit: MAX_SIZE_TABLE,
+        page: 0,
+        filterWhere: [
+          {
+            field: "backlogId",
+            operator: "=",
+            value: backlogId,
+          },
+          {
+            field: "isArchived",
+            operator: "=",
+            value: "Y",
+          },
+        ],
+        fieldOrder: ["updatedAt"],
+        orderDir: "desc",
+      };
+
+      const response = await ListTasksPaged(PayloadGetArchivedTasks, tokenData);
+      
+      if (response?.statusCode === RES_CODE_OK && response.data) {
+        setArchivedTasks(response.data);
+      } else {
+        setArchivedTasks([]);
+      }
+    } catch (error) {
+      console.error("Error loading archived tasks:", error);
+      setArchivedTasks([]);
+    } finally {
+      setIsLoadingArchived(false);
+    }
+  };
+
   const RefreshAction = () => {
     setSerachTasks("");
     setRefreshData(RefreshData + 1);
@@ -5491,7 +5550,7 @@ function KanbanBacklogPage() {
           style={{
             fontSize: "12px",
             lineHeight: "1.4",
-            backgroundColor: "white",
+            backgroundColor: colorMode === "light" ? "white" : "#2D3748",
             padding: "12px",
             borderRadius: "6px",
             border: "1px solid #e2e8f0",
@@ -5620,7 +5679,7 @@ function KanbanBacklogPage() {
             px={4}
             py={3}
             rounded={radiusStyle}
-            bgColor={"white"}
+            bgColor={colorMode === "light" ? "white" : "gray.800"}
             boxShadow={"sm"}
             justifyContent={"space-between"}
           >
@@ -5737,6 +5796,10 @@ function KanbanBacklogPage() {
                 }}
                 isActive={false}
                 leftIcon={<FiInbox />}
+                onClick={() => {
+                  setIsArchivedDrawerOpen(true);
+                  loadArchivedTasks();
+                }}
               >
                 Archived
               </Flex>
@@ -5783,7 +5846,7 @@ function KanbanBacklogPage() {
                     <Flex
                       as={HStack}
                       spacing={2}
-                      bg={"white"}
+                      bg={colorMode === "light" ? "white" : "gray.800"}
                       rounded={radiusStyle}
                       boxShadow={"sm"}
                       px={5}
@@ -5829,7 +5892,7 @@ function KanbanBacklogPage() {
                       maxH="calc(75vh - 100px)"
                       overflowY="auto"
                       w="full"
-                      bg={"white"}
+                      bg={colorMode === "light" ? "white" : "gray.800"}
                       rounded={radiusStyle}
                       boxShadow={"sm"}
                       p={5}
@@ -5923,7 +5986,7 @@ function KanbanBacklogPage() {
                 ))
               ) : (
                 <Flex
-                  bg="white"
+                  bg={colorMode === "light" ? "white" : "gray.800"}
                   w="full"
                   rounded={radiusStyle}
                   boxShadow="sm"
@@ -5962,6 +6025,60 @@ function KanbanBacklogPage() {
           </DndProvider>
         </GridItem>
       </Grid>
+
+      {/* Archived Tasks Drawer */}
+      <Drawer
+        isOpen={isArchivedDrawerOpen}
+        placement="right"
+        onClose={() => setIsArchivedDrawerOpen(false)}
+        size="md"
+      >
+        <DrawerOverlay />
+        <DrawerContent>
+          <DrawerCloseButton />
+          <DrawerHeader>
+            <HStack>
+              <Icon as={FaArchive} />
+              <Text>Archived Tasks</Text>
+            </HStack>
+          </DrawerHeader>
+          <DrawerBody>
+            {isLoadingArchived ? (
+              <Flex justify="center" align="center" h="200px">
+                <Spinner size="lg" />
+              </Flex>
+            ) : archivedTasks.length > 0 ? (
+              <VStack spacing={3} align="stretch">
+                {archivedTasks.map((task) => (
+                  <DraggableTaskCard
+                    key={task.id}
+                    task={task}
+                    onMoveTask={() => {}}
+                    isRecentlyMoved={false}
+                    DataProject={DataProject}
+                    getEffectiveIndex={() => 0}
+                    localTaskIndices={new Map()}
+                    onMoveUp={() => {}}
+                    onMoveDown={() => {}}
+                    isDragDisabled={true}
+                  />
+                ))}
+              </VStack>
+            ) : (
+              <Flex
+                justify="center"
+                align="center"
+                h="200px"
+                direction="column"
+                color="gray.500"
+              >
+                <Icon as={FaArchive} boxSize={8} mb={2} />
+                <Text>No archived tasks</Text>
+              </Flex>
+            )}
+          </DrawerBody>
+        </DrawerContent>
+      </Drawer>
     </LayoutAdmin>
   );
 }
