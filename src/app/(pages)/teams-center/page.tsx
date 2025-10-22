@@ -70,7 +70,8 @@ function TeamsCenterPage() {
   const [selectedDirectorate, setSelectedDirectorate] = useState<string>("all");
   const [selectedDivision, setSelectedDivision] = useState<string>("all");
   const [selectedGroup, setSelectedGroup] = useState<string>("all");
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [groupSearch, setGroupSearch] = useState<string>("All Groups");
+  const [showGroupOptions, setShowGroupOptions] = useState<boolean>(false);  const [searchQuery, setSearchQuery] = useState<string>("");
   const [StatsData, setStatsData] = useState({
     totalTeams: 0,
     activeTeams: 0,
@@ -108,6 +109,21 @@ function TeamsCenterPage() {
     }
   }, [DataAuth]);
 
+  // Reset division and group when directorate changes
+  useEffect(() => {
+    if (selectedDirectorate !== "all") {
+      setSelectedDivision("all");
+      setSelectedGroup("all");
+    }
+  }, [selectedDirectorate]);
+
+  // Reset group selection when division changes (same pattern as add team form)
+  useEffect(() => {
+    if (selectedDivision !== "all") {
+      setSelectedGroup("all");
+    }
+  }, [selectedDivision]);
+
   // Get statistics data
   const GetStatsData = async () => {
     if (!tokenData || !DataAuth) return;
@@ -115,7 +131,7 @@ function TeamsCenterPage() {
     try {
       const PayloadStats = {
         search: "",
-        limit: 1000,
+        limit: 999999,
         page: 0,
         fieldOrder: ["createdAt"],
         orderDir: "desc",
@@ -150,12 +166,12 @@ function TeamsCenterPage() {
       // Load Directorates
       const PayloadDirectorate = {
         search: "",
-        limit: 1000,
+        limit: 999999,
         page: 0,
         fieldOrder: ["orgName"],
         orderDir: "asc",
         filterWhere: [
-          { field: "orgType", operator: "=", value: "DIREKTORAT" }
+          { field: "orgType", operator: "=", value: "DIRECTORATE" }
         ],
       };
 
@@ -167,12 +183,12 @@ function TeamsCenterPage() {
       // Load Divisions
       const PayloadDivision = {
         search: "",
-        limit: 1000,
+        limit: 999999,
         page: 0,
         fieldOrder: ["orgName"],
         orderDir: "asc",
         filterWhere: [
-          { field: "orgType", operator: "=", value: "DIVISI" }
+          { field: "orgType", operator: "=", value: "DIVISION" }
         ],
       };
 
@@ -184,12 +200,12 @@ function TeamsCenterPage() {
       // Load Groups
       const PayloadGroup = {
         search: "",
-        limit: 1000,
+        limit: 999999,
         page: 0,
         fieldOrder: ["orgName"],
         orderDir: "asc",
         filterWhere: [
-          { field: "orgType", operator: "=", value: "GRUP" }
+          { field: "orgType", operator: "=", value: "GROUP" }
         ],
       };
 
@@ -211,13 +227,25 @@ function TeamsCenterPage() {
       setIsLoadingProcess(true);
       
       // Build filter conditions based on selected filters
-      const filterConditions = [];
+      const filterConditions = []; // Group filtering only - following standard pattern
+      
+      // Filter by group only (under division) - standard organization filtering pattern
+      if (selectedGroup !== "all") {
+        const selectedOrg = GroupData.find(org => org.id === selectedGroup);
+        if (selectedOrg) {
+          filterConditions.push({
+            field: "orgGroupCode",
+            operator: "=",
+            value: selectedOrg.orgCode
+          });
+        }
+      }
       
       if (selectedDirectorate !== "all") {
         const selectedOrg = DirectorateData.find(org => org.id === selectedDirectorate);
         if (selectedOrg) {
           filterConditions.push({
-            field: "directorate.orgCode",
+            // field: "directorateCode", // API doesn't support this field
             operator: "=",
             value: selectedOrg.orgCode
           });
@@ -228,7 +256,7 @@ function TeamsCenterPage() {
         const selectedOrg = DivisionData.find(org => org.id === selectedDivision);
         if (selectedOrg) {
           filterConditions.push({
-            field: "division.orgCode",
+            // field: "divisionCode", // API doesn't support this field
             operator: "=",
             value: selectedOrg.orgCode
           });
@@ -239,14 +267,36 @@ function TeamsCenterPage() {
         const selectedOrg = GroupData.find(org => org.id === selectedGroup);
         if (selectedOrg) {
           filterConditions.push({
-            field: "group.orgCode",
+            field: "orgGroupCode",
             operator: "=",
             value: selectedOrg.orgCode
           });
         }
       }
       
-      const PayloadList = {
+      
+      // Check if any selected filter doesn't exist - return no data if so
+      let shouldReturnNoData = false;
+      
+      if (selectedDirectorate !== "all" && !DirectorateData.find(org => org.id === selectedDirectorate)) {
+        shouldReturnNoData = true;
+      }
+      
+      if (selectedDivision !== "all" && !DivisionData.find(org => org.id === selectedDivision)) {
+        shouldReturnNoData = true;
+      }
+      
+      if (selectedGroup !== "all" && !GroupData.find(org => org.id === selectedGroup)) {
+        shouldReturnNoData = true;
+      }
+      
+      // If any selected filter doesn't exist, return empty data
+      if (shouldReturnNoData) {
+        setTeamsData([]);
+        setTotalPageData(0);
+        setIsLoadingProcess(false);
+        return;
+      }      const PayloadList = {
         search: searchQuery,
         limit: pageSize,
         page: pageIndex,
@@ -456,10 +506,11 @@ function TeamsCenterPage() {
 
                 {/* Right - Organization Filters */}
                 <HStack spacing={3}>
-                  {/* Directorate Filter */}
+                  {/* Directorate Filter - HIDDEN FROM USER */}
                   <Select
                     value={selectedDirectorate}
-                    onChange={(e) => setSelectedDirectorate(e.target.value)}
+                    isDisabled={false}
+                    display="none"                    onChange={(e) => setSelectedDirectorate(e.target.value)}
                     maxW="160px"
                     bg={colorMode === "light" ? "gray.50" : "gray.700"}
                     border="1px"
@@ -473,15 +524,16 @@ function TeamsCenterPage() {
                     <option value="all">All Directorates</option>
                     {DirectorateData.map((org) => (
                       <option key={org.id} value={org.id}>
-                        {org.orgName}
+                        {org.orgName} ({org.orgCode})
                       </option>
                     ))}
                   </Select>
 
-                  {/* Division Filter */}
+                  {/* Division Filter - HIDDEN FROM USER */}
                   <Select
                     value={selectedDivision}
-                    onChange={(e) => setSelectedDivision(e.target.value)}
+                    isDisabled={false}
+                    display="none"                    onChange={(e) => setSelectedDivision(e.target.value)}
                     maxW="160px"
                     bg={colorMode === "light" ? "gray.50" : "gray.700"}
                     border="1px"
@@ -493,18 +545,26 @@ function TeamsCenterPage() {
                     }}
                   >
                     <option value="all">All Divisions</option>
-                    {DivisionData.map((org) => (
+                    {DivisionData.filter(division => {
+                      // If directorate is selected, filter divisions under that directorate
+                      if (selectedDirectorate !== "all") {
+                        return division.parentId === selectedDirectorate;
+                      }
+                      // Otherwise show all divisions
+                      return true;
+                    }).map((org) => (
                       <option key={org.id} value={org.id}>
-                        {org.orgName}
+                        {org.orgName} ({org.orgCode})
                       </option>
                     ))}
                   </Select>
 
-                  {/* Group Filter */}
+                  {/* Group Filter - Searchable */}
                   <Select
                     value={selectedGroup}
                     onChange={(e) => setSelectedGroup(e.target.value)}
-                    maxW="160px"
+                    minW="240px"
+                    maxW="380px"
                     bg={colorMode === "light" ? "gray.50" : "gray.700"}
                     border="1px"
                     borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
@@ -515,9 +575,94 @@ function TeamsCenterPage() {
                     }}
                   >
                     <option value="all">All Groups</option>
-                    {GroupData.map((org) => (
+                    <Box position="relative" maxW="160px">
+                    <Input
+                      value={groupSearch}
+                      onChange={(e) => {
+                        setGroupSearch(e.target.value);
+                        setShowGroupOptions(true);
+                      }}
+                      onFocus={() => setShowGroupOptions(true)}
+                      onBlur={() => setTimeout(() => setShowGroupOptions(false), 200)}
+                      placeholder="Search groups..."
+                      bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                      border="1px"
+                      borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
+                      rounded="xl"
+                      _focus={{
+                        borderColor: "secondary.500",
+                        bg: colorMode === "light" ? "white" : "gray.800",
+                      }}
+                    />
+                    
+                    {showGroupOptions && (
+                      <Box
+                        position="absolute"
+                        top="100%"
+                        left={0}
+                        right={0}
+                        zIndex={10}
+                        maxH="200px"
+                        overflowY="auto"
+                        border="1px"
+                        borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                        rounded="md"
+                        bg={colorMode === "light" ? "white" : "gray.800"}
+                        shadow="lg"
+                      >
+                        <Box
+                          p={2}
+                          cursor="pointer"
+                          _hover={{ bg: colorMode === "light" ? "gray.100" : "gray.700" }}
+                          onClick={() => {
+                            setSelectedGroup("all");
+                            setGroupSearch("");
+                            setShowGroupOptions(false);
+                          }}
+                        >
+                          All Groups
+                        </Box>
+                        {GroupData.filter(group => {
+                          const matchesSearch = !groupSearch || 
+                                              group.orgName.toLowerCase().includes(groupSearch.toLowerCase()) ||
+                                              group.orgCode.toLowerCase().includes(groupSearch.toLowerCase());
+                          return matchesSearch;
+                        }).map((org) => (
+                          <Box
+                            key={org.id}
+                            p={2}
+                            cursor="pointer"
+                            _hover={{ bg: colorMode === "light" ? "gray.100" : "gray.700" }}
+                            onClick={() => {
+                              setSelectedGroup(org.id);
+                              setGroupSearch(`${org.orgName} (${org.orgCode})`);
+                              setShowGroupOptions(false);
+                            }}
+                          >
+                            {org.orgName} ({org.orgCode})
+                          </Box>
+                        ))}
+                      </Box>
+                    )}
+                  </Box>
+                    {GroupData.filter(group => {
+                      // Priority 1: If division is selected, filter groups under that division
+                      if (selectedDivision !== "all") {
+                        return group.parentId === selectedDivision;
+                      }
+                      // Priority 2: If directorate is selected but no division, show groups under user's division within that directorate
+                      if (selectedDirectorate !== "all" && DataAuth?.team?.division?.id) {
+                        const userDivision = DivisionData.find(div => div.id === DataAuth.team.division.id);
+                        if (userDivision && userDivision.parentId === selectedDirectorate) {
+                          return group.parentId === DataAuth.team.division.id;
+                        }
+                        return false;
+                      }
+                      // Priority 3: Default to user's division
+                      return DataAuth?.team?.division?.id ? group.parentId === DataAuth.team.division.id : true;
+                    }).map((org) => (
                       <option key={org.id} value={org.id}>
-                        {org.orgName}
+                        {org.orgName} ({org.orgCode})
                       </option>
                     ))}
                   </Select>
