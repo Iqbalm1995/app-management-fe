@@ -311,7 +311,7 @@ function TeamDetailView({ }: TeamDetailViewProps) {
 
       // console.log("Loading team members with payload:", payload);
       const requestData = await ListMembers(payload, tokenData);
-      console.log("Team members response:", requestData);
+      // console.log("Team members response:", requestData);
 
       if (!requestData || requestData.statusCode !== RES_CODE_OK) {
         console.error("Error fetching team members:", requestData?.message);
@@ -319,7 +319,7 @@ function TeamDetailView({ }: TeamDetailViewProps) {
       }
 
       const data = requestData.data as UsersResponse[];
-      console.log("Team members data:", data);
+      // console.log("Team members data:", data);
       setMembersData(data);
       setTotalMembers(data.length);
     } catch (error) {
@@ -460,10 +460,10 @@ function TeamDetailView({ }: TeamDetailViewProps) {
       formData.append("orgGroupId", values.orgGroupId);
       formData.append("orgGroupCode", selectedGroup.orgCode);
 
-      console.log("Update FormData fields:");
-      for (let [key, value] of formData.entries()) {
-        console.log(key, value);
-      }
+      // console.log("Update FormData fields:");
+      // for (let [key, value] of formData.entries()) {
+      //   console.log(key, value);
+      // }
 
       // Call API directly with FormData
       const UrlEndpoint = `${process.env.NEXT_PUBLIC_API_BASE_URL}:${process.env.NEXT_PUBLIC_API_PORT_BASIC}`;

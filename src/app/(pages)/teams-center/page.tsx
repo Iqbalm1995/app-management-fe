@@ -71,7 +71,7 @@ function TeamsCenterPage() {
   const [selectedDivision, setSelectedDivision] = useState<string>("all");
   const [selectedGroup, setSelectedGroup] = useState<string>("all");
   const [groupSearch, setGroupSearch] = useState<string>("All Groups");
-  const [showGroupOptions, setShowGroupOptions] = useState<boolean>(false);  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [showGroupOptions, setShowGroupOptions] = useState<boolean>(false); const [searchQuery, setSearchQuery] = useState<string>("");
   const [StatsData, setStatsData] = useState({
     totalTeams: 0,
     activeTeams: 0,
@@ -139,14 +139,14 @@ function TeamsCenterPage() {
       };
 
       const requestData = await List(PayloadStats as any, tokenData);
-      
+
       if (requestData?.statusCode === RES_CODE_OK && requestData.data) {
         const allTeams = requestData.data as TeamsResponse[];
         const activeTeams = allTeams.filter(team => team.isActive === "ACTIVE");
-        
+
         // Calculate active rate
         const activeRate = allTeams.length > 0 ? Math.round((activeTeams.length / allTeams.length) * 100) : 0;
-        
+
         setStatsData({
           totalTeams: allTeams.length,
           activeTeams: activeTeams.length,
@@ -225,10 +225,10 @@ function TeamsCenterPage() {
 
     try {
       setIsLoadingProcess(true);
-      
+
       // Build filter conditions based on selected filters
       const filterConditions = []; // Group filtering only - following standard pattern
-      
+
       // Filter by group only (under division) - standard organization filtering pattern
       if (selectedGroup !== "all") {
         const selectedOrg = GroupData.find(org => org.id === selectedGroup);
@@ -240,7 +240,7 @@ function TeamsCenterPage() {
           });
         }
       }
-      
+
       if (selectedDirectorate !== "all") {
         const selectedOrg = DirectorateData.find(org => org.id === selectedDirectorate);
         if (selectedOrg) {
@@ -251,7 +251,7 @@ function TeamsCenterPage() {
           });
         }
       }
-      
+
       if (selectedDivision !== "all") {
         const selectedOrg = DivisionData.find(org => org.id === selectedDivision);
         if (selectedOrg) {
@@ -262,7 +262,7 @@ function TeamsCenterPage() {
           });
         }
       }
-      
+
       if (selectedGroup !== "all") {
         const selectedOrg = GroupData.find(org => org.id === selectedGroup);
         if (selectedOrg) {
@@ -273,30 +273,30 @@ function TeamsCenterPage() {
           });
         }
       }
-      
-      
+
+
       // Check if any selected filter doesn't exist - return no data if so
       let shouldReturnNoData = false;
-      
+
       if (selectedDirectorate !== "all" && !DirectorateData.find(org => org.id === selectedDirectorate)) {
         shouldReturnNoData = true;
       }
-      
+
       if (selectedDivision !== "all" && !DivisionData.find(org => org.id === selectedDivision)) {
         shouldReturnNoData = true;
       }
-      
+
       if (selectedGroup !== "all" && !GroupData.find(org => org.id === selectedGroup)) {
         shouldReturnNoData = true;
       }
-      
+
       // If any selected filter doesn't exist, return empty data
       if (shouldReturnNoData) {
         setTeamsData([]);
         setTotalPageData(0);
         setIsLoadingProcess(false);
         return;
-      }      const PayloadList = {
+      } const PayloadList = {
         search: searchQuery,
         limit: pageSize,
         page: pageIndex,
@@ -306,7 +306,7 @@ function TeamsCenterPage() {
       };
 
       const requestData = await List(PayloadList as any, tokenData);
-      
+
       if (!requestData || requestData.statusCode !== RES_CODE_OK) {
         showToast({
           description: requestData?.message || RES_GENERIC_ERROR_MSG,
@@ -317,7 +317,7 @@ function TeamsCenterPage() {
 
       const data = requestData.data as TeamsResponse[];
       setTeamsData(data);
-      
+
     } catch (error) {
       console.error("Error fetching teams:", error);
       showToast({
@@ -510,7 +510,7 @@ function TeamsCenterPage() {
                   <Select
                     value={selectedDirectorate}
                     isDisabled={false}
-                    display="none"                    onChange={(e) => setSelectedDirectorate(e.target.value)}
+                    display="none" onChange={(e) => setSelectedDirectorate(e.target.value)}
                     maxW="160px"
                     bg={colorMode === "light" ? "gray.50" : "gray.700"}
                     border="1px"
@@ -533,7 +533,7 @@ function TeamsCenterPage() {
                   <Select
                     value={selectedDivision}
                     isDisabled={false}
-                    display="none"                    onChange={(e) => setSelectedDivision(e.target.value)}
+                    display="none" onChange={(e) => setSelectedDivision(e.target.value)}
                     maxW="160px"
                     bg={colorMode === "light" ? "gray.50" : "gray.700"}
                     border="1px"
@@ -576,75 +576,75 @@ function TeamsCenterPage() {
                   >
                     <option value="all">All Groups</option>
                     <Box position="relative" maxW="160px">
-                    <Input
-                      value={groupSearch}
-                      onChange={(e) => {
-                        setGroupSearch(e.target.value);
-                        setShowGroupOptions(true);
-                      }}
-                      onFocus={() => setShowGroupOptions(true)}
-                      onBlur={() => setTimeout(() => setShowGroupOptions(false), 200)}
-                      placeholder="Search groups..."
-                      bg={colorMode === "light" ? "gray.50" : "gray.700"}
-                      border="1px"
-                      borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
-                      rounded="xl"
-                      _focus={{
-                        borderColor: "secondary.500",
-                        bg: colorMode === "light" ? "white" : "gray.800",
-                      }}
-                    />
-                    
-                    {showGroupOptions && (
-                      <Box
-                        position="absolute"
-                        top="100%"
-                        left={0}
-                        right={0}
-                        zIndex={10}
-                        maxH="200px"
-                        overflowY="auto"
+                      <Input
+                        value={groupSearch}
+                        onChange={(e) => {
+                          setGroupSearch(e.target.value);
+                          setShowGroupOptions(true);
+                        }}
+                        onFocus={() => setShowGroupOptions(true)}
+                        onBlur={() => setTimeout(() => setShowGroupOptions(false), 200)}
+                        placeholder="Search groups..."
+                        bg={colorMode === "light" ? "gray.50" : "gray.700"}
                         border="1px"
-                        borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
-                        rounded="md"
-                        bg={colorMode === "light" ? "white" : "gray.800"}
-                        shadow="lg"
-                      >
+                        borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
+                        rounded="xl"
+                        _focus={{
+                          borderColor: "secondary.500",
+                          bg: colorMode === "light" ? "white" : "gray.800",
+                        }}
+                      />
+
+                      {showGroupOptions && (
                         <Box
-                          p={2}
-                          cursor="pointer"
-                          _hover={{ bg: colorMode === "light" ? "gray.100" : "gray.700" }}
-                          onClick={() => {
-                            setSelectedGroup("all");
-                            setGroupSearch("");
-                            setShowGroupOptions(false);
-                          }}
+                          position="absolute"
+                          top="100%"
+                          left={0}
+                          right={0}
+                          zIndex={10}
+                          maxH="200px"
+                          overflowY="auto"
+                          border="1px"
+                          borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                          rounded="md"
+                          bg={colorMode === "light" ? "white" : "gray.800"}
+                          shadow="lg"
                         >
-                          All Groups
-                        </Box>
-                        {GroupData.filter(group => {
-                          const matchesSearch = !groupSearch || 
-                                              group.orgName.toLowerCase().includes(groupSearch.toLowerCase()) ||
-                                              group.orgCode.toLowerCase().includes(groupSearch.toLowerCase());
-                          return matchesSearch;
-                        }).map((org) => (
                           <Box
-                            key={org.id}
                             p={2}
                             cursor="pointer"
                             _hover={{ bg: colorMode === "light" ? "gray.100" : "gray.700" }}
                             onClick={() => {
-                              setSelectedGroup(org.id);
-                              setGroupSearch(`${org.orgName} (${org.orgCode})`);
+                              setSelectedGroup("all");
+                              setGroupSearch("");
                               setShowGroupOptions(false);
                             }}
                           >
-                            {org.orgName} ({org.orgCode})
+                            All Groups
                           </Box>
-                        ))}
-                      </Box>
-                    )}
-                  </Box>
+                          {GroupData.filter(group => {
+                            const matchesSearch = !groupSearch ||
+                              group.orgName.toLowerCase().includes(groupSearch.toLowerCase()) ||
+                              group.orgCode.toLowerCase().includes(groupSearch.toLowerCase());
+                            return matchesSearch;
+                          }).map((org) => (
+                            <Box
+                              key={org.id}
+                              p={2}
+                              cursor="pointer"
+                              _hover={{ bg: colorMode === "light" ? "gray.100" : "gray.700" }}
+                              onClick={() => {
+                                setSelectedGroup(org.id);
+                                setGroupSearch(`${org.orgName} (${org.orgCode})`);
+                                setShowGroupOptions(false);
+                              }}
+                            >
+                              {org.orgName} ({org.orgCode})
+                            </Box>
+                          ))}
+                        </Box>
+                      )}
+                    </Box>
                     {GroupData.map((org) => (
                       <option key={org.id} value={org.id}>
                         {org.orgName} ({org.orgCode})
@@ -827,9 +827,9 @@ function TeamsCenterPage() {
 
                         {/* Organization Info */}
                         <Box w="full">
-                          <Text 
-                            fontSize="xs" 
-                            color="gray.500" 
+                          <Text
+                            fontSize="xs"
+                            color="gray.500"
                             fontWeight="semibold"
                             textTransform="uppercase"
                             letterSpacing="wide"

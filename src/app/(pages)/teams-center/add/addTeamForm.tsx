@@ -250,13 +250,9 @@ function AddTeamViewPage() {
     try {
       setIsLoadingProcess(true);
 
-      console.log("Form values:", values);
-      console.log("GroupData available:", GroupData);
-      console.log("Looking for orgGroupId:", values.orgGroupId);
 
       // Find selected organization to get the code
       const selectedOrg = GroupData.find((org) => org.id === values.orgGroupId);
-      console.log("Found selectedOrg:", selectedOrg);
 
       if (!selectedOrg) {
         showToast({
@@ -265,16 +261,6 @@ function AddTeamViewPage() {
         });
         return;
       }
-
-      console.log("Debug payload data:", {
-        teamCode: values.teamCode,
-        teamName: values.teamName,
-        teamDesc: values.teamDesc,
-        isActive: values.isActive,
-        orgGroupId: values.orgGroupId,
-        selectedOrg: selectedOrg,
-        orgGroupCode: selectedOrg?.orgCode,
-      });
 
       // Ensure no null/undefined values
       if (!values.teamCode?.trim()) {
@@ -303,7 +289,6 @@ function AddTeamViewPage() {
         orgGroupCode: selectedOrg.orgCode.trim(),
       };
 
-      console.log("Final payload:", payload);
 
       const response = await InsertTeams(payload, tokenData);
 
