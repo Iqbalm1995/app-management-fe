@@ -2223,7 +2223,7 @@ function ProjectRegisterView({
               // bgColor={colorMode == "light" ? "white" : "gray.800"}
               bgGradient={"linear(to-br, secondary.800, secondary.500)"}
               rounded={radiusStyle}
-              h={"180px"}
+              minH={"180px"}
             >
               <CardBody>
                 <Flex as={Stack} spacing={2}>
@@ -2262,23 +2262,16 @@ function ProjectRegisterView({
                                 : "#"
                             }
                           >
-                            <Button
-                              variant={"link"}
+                            <Text
                               fontSize="lg"
                               fontWeight="bold"
                               color={"white"}
-                              rightIcon={
-                                DataRequirement ? (
-                                  <FiExternalLink />
-                                ) : (
-                                  <FiAlertTriangle color={"yellow.400"} />
-                                )
-                              }
                             >
                               {DataRequirement
-                                ? DataRequirement.reqNarative.toUpperCase()
-                                : "NO REQUIREMENT REFERENCE"}
-                            </Button>
+                                ? DataRequirement.reqNarative.toUpperCase() +
+                                  " "
+                                : "NO REQUIREMENT REFERENCE "}
+                            </Text>
                           </Link>
                         </WrapItem>
                         <WrapItem>
@@ -2362,7 +2355,12 @@ function ProjectRegisterView({
                       <Text
                         color={"white"}
                         fontWeight="bold"
-                        fontSize={"x-large"}
+                        fontSize={
+                          ApplicationData &&
+                          ApplicationData.appShortName.length > 3
+                            ? "small"
+                            : "x-large"
+                        }
                       >
                         {ApplicationData
                           ? ApplicationData.appShortName.toUpperCase()
@@ -2371,8 +2369,7 @@ function ProjectRegisterView({
                     </Box>
                   </Link>
                   <Link href={`#`}>
-                    <Button
-                      variant={"link"}
+                    <Text
                       fontSize="sm"
                       fontWeight="bold"
                       textAlign={"center"}
@@ -2380,18 +2377,11 @@ function ProjectRegisterView({
                       color={
                         colorMode == "light" ? "secondary.800" : "secondary.500"
                       }
-                      rightIcon={
-                        DataRequirement ? (
-                          <FiExternalLink />
-                        ) : (
-                          <FiAlertTriangle color={"yellow.400"} />
-                        )
-                      }
                     >
                       {DataRequirement
                         ? DataRequirement.reqNarative.toUpperCase()
                         : "NO APP REFERENCE"}
-                    </Button>
+                    </Text>
                   </Link>
                   <Badge
                     colorScheme="blue"
@@ -2955,12 +2945,13 @@ function ProjectRegisterView({
                               <Alert
                                 status="info"
                                 rounded={"md"}
-                                display={
-                                  formik.values.projectSubCharasteristicCode !=
-                                  null
-                                    ? "flex"
-                                    : "none"
-                                }
+                                // display={
+                                //   formik.values.projectSubCharasteristicCode !=
+                                //   null
+                                //     ? "flex"
+                                //     : "none"
+                                // }
+                                display={"none"}
                               >
                                 <AlertIcon />
                                 Chakra is going live on August 30th. Get ready!
@@ -4563,8 +4554,9 @@ function ProjectRegisterView({
                                                 : "secondary.200"
                                             }
                                           >
-                                            {dt.team?.teamName} |{" "}
-                                            {dt.teamRole?.specName}
+                                            {dt.team?.teamName || dt.jabatan} |{" "}
+                                            {dt.teamRole?.specName ||
+                                              dt.namaUnitKerja}
                                           </Text>
                                         </Stack>
                                       </Box>
@@ -4687,8 +4679,9 @@ function ProjectRegisterView({
                                             fontSize={"small"}
                                             color={"gray.700"}
                                           >
-                                            {dt.team?.teamName} |{" "}
-                                            {dt.teamRole?.specName}
+                                            {dt.team?.teamName || dt.jabatan} |{" "}
+                                            {dt.teamRole?.specName ||
+                                              dt.namaUnitKerja}
                                           </Text>
                                         </Stack>
                                       </Box>
@@ -4702,9 +4695,8 @@ function ProjectRegisterView({
                                           onClick={() =>
                                             handleAddUserAssign(dt)
                                           }
-                                          leftIcon={<FiPlusCircle />}
                                         >
-                                          Tambah
+                                          <FiPlusCircle />
                                         </Button>
                                       </>
                                     </Flex>
@@ -4836,7 +4828,7 @@ function ProjectRegisterView({
                                                   ORG_CATEGORY_KEY_DIVISION &&
                                                 f.parentId ==
                                                   formik.values
-                                                    .proOwnerDirectorateId
+                                                    .proManageByDirectorateId
                                             ).map((d) => ({
                                               label: `${d.orgName} | ${d.orgType}`,
                                               value: d.id,
@@ -4913,7 +4905,7 @@ function ProjectRegisterView({
                                                   ORG_CATEGORY_KEY_GROUP &&
                                                 f.parentId ==
                                                   formik.values
-                                                    .proOwnerDivisionId
+                                                    .proManageByDivisionId
                                             ).map((d) => ({
                                               label: `${d.orgName} | ${d.orgType}`,
                                               value: d.id,

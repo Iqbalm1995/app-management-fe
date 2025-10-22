@@ -2025,8 +2025,10 @@ function RegsiterRequirementViewPage({
                                               fontSize={"small"}
                                               color={"gray.700"}
                                             >
-                                              {dt.team?.teamName} |{" "}
-                                              {dt.teamRole?.specName}
+                                              {dt.team?.teamName || dt.jabatan}{" "}
+                                              |{" "}
+                                              {dt.teamRole?.specName ||
+                                                dt.namaUnitKerja}
                                             </Text>
                                           </Stack>
                                         </Box>

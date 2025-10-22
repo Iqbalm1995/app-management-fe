@@ -352,7 +352,7 @@ const useUsers = (): useUsersServices => {
 
     try {
       const response = await axiosInstance.get(
-        `${UrlEndpoint}/v1/Users/detail-organization-by-userid/${UserId}`,
+        `${UrlEndpoint}/v1/Users/integrated/organization/user-id/${UserId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
