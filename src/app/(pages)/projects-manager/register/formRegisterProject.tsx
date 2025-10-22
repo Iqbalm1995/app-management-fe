@@ -206,7 +206,6 @@ export const initialProjectsInsertValues: ProjectInsertPayload = {
   workPrograms: [],
   projectPlanWorkflowBacklogsIds: [],
   workProgramsBacklogs: [],
-  
 };
 
 function FormRegisterProjectView() {
@@ -1525,15 +1524,16 @@ function FormRegisterProjectView() {
                           <Link
                             href={`/requirements/detail?reqId=${DataRequirement.id}&type=BRD`}
                           >
-                            <Button
-                              variant={"link"}
-                              fontSize="lg"
-                              fontWeight="bold"
-                              color={"white"}
-                              rightIcon={<FiExternalLink />}
-                            >
-                              {DataRequirement.reqNarative.toUpperCase()}
-                            </Button>
+                            <Box>
+                              <Text
+                                fontSize="lg"
+                                fontWeight="bold"
+                                color={"white"}
+                              >
+                                {DataRequirement.reqNarative.toUpperCase()}{" "}
+                                <FiExternalLink />
+                              </Text>
+                            </Box>
                           </Link>
                           <Badge
                             colorScheme="blue"
