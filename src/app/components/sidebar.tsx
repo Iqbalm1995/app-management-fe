@@ -262,31 +262,12 @@ const LinkItems: LinkItemProps[] = [
       },
     ],
   },
-<<<<<<< HEAD
-  {
-    name: "Reports",
-    icon: BiSolidReport,
-    link: "/reports",
-    role: ["admin"],
-    menuID: "1",
-    children: [
-      {
-        name: "Project Portfolio",
-        icon: BiSolidReport,
-        link: "/reports/project-portfolio",
-        role: ["admin"],
-        menuID: "1",
-        children: [],
-      },
-    ],
-  },
-=======
   // {
   //   name: "Reports",
   //   icon: BiSolidReport,
   //   link: "/reports",
-      // role: ["admin"],
-      // menuID: "1",
+  // role: ["admin"],
+  // menuID: "1",
   //   children: [
   //     {
   //       name: "Project Reports",
@@ -306,7 +287,6 @@ const LinkItems: LinkItemProps[] = [
   //     },
   //   ],
   // },
->>>>>>> dev-refan
   {
     name: "Team Manager",
     icon: FaChess,
@@ -316,20 +296,20 @@ const LinkItems: LinkItemProps[] = [
     children: [],
   },
   {
-      name: "Team Center",
-      icon: FaUsersRays,
-      link: "/teams-center",
-      role: ["admin"],
-      menuID: "1",
-      children: [],
+    name: "Team Center",
+    icon: FaUsersRays,
+    link: "/teams-center",
+    role: ["admin"],
+    menuID: "1",
+    children: [],
   },
   // {
   //   name: "Server Manager",
   //   icon: CiServer,
   //   link: "/server-manager",
-      // role: ["admin"],
-      // menuID: "1",
-      // children: [],
+  // role: ["admin"],
+  // menuID: "1",
+  // children: [],
   // },
   // {
   //   name: "File Archive",
@@ -393,34 +373,34 @@ const LinkItems: LinkItemProps[] = [
   //   name: "Profile",
   //   icon: FiUser,
   //   link: "/profile",
-      // role: ["admin"],
-      // menuID: "1",
-      // children: [],
+  // role: ["admin"],
+  // menuID: "1",
+  // children: [],
   // },
   // {
   //   name: "Pricing",
   //   icon: FiDollarSign,
   //   link: "/pricing",
-      // role: ["admin"],
-      // menuID: "1",
-      // children: [],
+  // role: ["admin"],
+  // menuID: "1",
+  // children: [],
   //   isLocked: true,
   // },
   // {
   //   name: "Avtivities",
   //   icon: RxActivityLog,
   //   link: "/activities",
-      // role: ["admin"],
-      // menuID: "1",
-      // children: [],
+  // role: ["admin"],
+  // menuID: "1",
+  // children: [],
   //   isLocked: true,
   // },
   // {
   //   name: "User Config",
   //   icon: FaUsersGear,
   //   link: "/users",
-      // role: ["admin"],
-      // menuID: "1",
+  // role: ["admin"],
+  // menuID: "1",
   //   children: [
   //     {
   //       name: "User Manager",
@@ -452,8 +432,8 @@ const LinkItems: LinkItemProps[] = [
   //   name: "Example Page",
   //   icon: FaRegFolderOpen,
   //   link: "#",
-      // role: ["admin"],
-      // menuID: "1",
+  // role: ["admin"],
+  // menuID: "1",
   //   children: [
   //     {
   //       name: "Kanban",
@@ -653,7 +633,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                 aria-label="lite mode"
                 icon={<RiMenu2Line />}
                 size={"lg"}
-                // rounded={"xl"}
+              // rounded={"xl"}
               />
             </Box>
 
@@ -814,7 +794,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                 pb={12}
                 pt={5}
                 minH={"100vh"}
-                // bg={"blue.100"}
+              // bg={"blue.100"}
               >
                 <AnimatePresence mode="wait">
                   <MotionBox
@@ -1024,15 +1004,15 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
               IsActiveNav
                 ? "linear(to-r, secondary.500, secondary.600)"
                 : hasActiveChild
-                ? "linear(to-r, secondary.100, secondary.200)"
-                : "linear(to-r, transparent, transparent)"
+                  ? "linear(to-r, secondary.100, secondary.200)"
+                  : "linear(to-r, transparent, transparent)"
             }
             color={
               IsActiveNav
                 ? "white" // When the navigation item is active, set color to white
                 : hasActiveChild
-                ? useColorModeValue("secondary.700", "secondary.300") // When has active child
-                : useColorModeValue("gray.900", "gray.100") // Otherwise, set color based on the color mode
+                  ? useColorModeValue("secondary.700", "secondary.300") // When has active child
+                  : useColorModeValue("gray.900", "gray.100") // Otherwise, set color based on the color mode
             }
             justifyContent={"center"}
             // onClick={() => {
@@ -1063,8 +1043,8 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
                     IsActiveNav
                       ? "white"
                       : hasActiveChild
-                      ? useColorModeValue("secondary.700", "secondary.300")
-                      : useColorModeValue("gray.900", "gray.100")
+                        ? useColorModeValue("secondary.700", "secondary.300")
+                        : useColorModeValue("gray.900", "gray.100")
                   }
                   as={data.icon}
                 />
@@ -1317,7 +1297,7 @@ function AdditionalProfileBar({
                       color={
                         colorMode == "light" ? "primary.500" : "primary.100"
                       }
-                      // color={"secondary.200"}
+                    // color={"secondary.200"}
                     >
                       {(DataAuth && DataAuth.teamRole?.specName) ||
                         (DataAuth && DataAuth.jabatan)}
