@@ -10,13 +10,15 @@ import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useTeams, {
   TeamsResponse,
   TeamsUserMemberResponse,
-  TeamRoleFullResponse,
 } from "@/app/services/useTeams";
 import { UsersResponse } from "@/app/services/useUsers";
 import useUsers from "@/app/services/useUsers";
 import useOrganization, {
   OrganizationResponse,
 } from "@/app/services/useOrganization";
+import useSpecialization, {
+  SpecializationResponse,
+} from "@/app/services/useSpecialization";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import {
@@ -94,6 +96,7 @@ function TeamDetailView({ }: TeamDetailViewProps) {
   } = useTeams();
   const { List: ListUsers } = useUsers();
   const { List: ListOrganizations } = useOrganization();
+  const { List: ListSpecializations } = useSpecialization();
 
   // Auth setup
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -140,7 +143,7 @@ function TeamDetailView({ }: TeamDetailViewProps) {
   const [isAddingMember, setIsAddingMember] = useState(false);
   const [searchUser, setSearchUser] = useState<string>("");
   const [filteredUsers, setFilteredUsers] = useState<UsersResponse[]>([]);
-  const [teamRoles, setTeamRoles] = useState<TeamRoleFullResponse[]>([]);
+  const [specializations, setSpecializations] = useState<SpecializationResponse[]>([]);
   const [selectedRoleId, setSelectedRoleId] = useState<string>("");
 
   // Header content
@@ -254,6 +257,8 @@ function TeamDetailView({ }: TeamDetailViewProps) {
     if (!teamId || !tokenData) return;
 
     try {
+      // Get a default specialization ID if available, otherwise use placeholder
+      const defaultRoleId = specializations.length > 0 ? specializations[0].id : "default-role";
       setIsLoadingProcess(true);
       const requestData = await GetDetailById(teamId, tokenData);
 
@@ -299,6 +304,8 @@ function TeamDetailView({ }: TeamDetailViewProps) {
     if (!teamId || !tokenData) return;
 
     try {
+      // Get a default specialization ID if available, otherwise use placeholder
+      const defaultRoleId = specializations.length > 0 ? specializations[0].id : "default-role";
       const payload = {
         search: "",
         teamId: teamId,
@@ -331,6 +338,8 @@ function TeamDetailView({ }: TeamDetailViewProps) {
     if (!tokenData) return;
 
     try {
+      // Get a default specialization ID if available, otherwise use placeholder
+      const defaultRoleId = specializations.length > 0 ? specializations[0].id : "default-role";
       // Load Directorates (always load all)
       const PayloadDirectorate = {
         search: "",
@@ -435,6 +444,8 @@ function TeamDetailView({ }: TeamDetailViewProps) {
     if (!teamId || !tokenData) return;
 
     try {
+      // Get a default specialization ID if available, otherwise use placeholder
+      const defaultRoleId = specializations.length > 0 ? specializations[0].id : "default-role";
       setIsUpdating(true);
 
       // Find selected group to get orgGroupCode
@@ -506,25 +517,27 @@ function TeamDetailView({ }: TeamDetailViewProps) {
     }
   };
 
-  const loadTeamRoles = async () => {
+  const loadSpecializations = async () => {
     if (!tokenData) return;
 
     try {
+      // Get a default specialization ID if available, otherwise use placeholder
+      const defaultRoleId = specializations.length > 0 ? specializations[0].id : "default-role";
       const payload = {
         search: "",
         limit: 999,
         page: 0,
-        fieldOrder: ["teamRoleName"],
+        fieldOrder: ["specName"],
         orderDir: "asc" as const,
         filterWhere: [],
       };
 
-      //       // const response = await ListTeamRoles(payload, tokenData);
-      //       if (response?.statusCode === RES_CODE_OK && response.data) {
-      //         setTeamRoles(response.data);
-      //       }
+      const response = await ListSpecializations(payload, tokenData);
+      if (response?.statusCode === RES_CODE_OK && response.data) {
+        setSpecializations(response.data);
+      }
     } catch (error) {
-      console.error("Error loading team roles:", error);
+      console.error("Error loading specializations:", error);
     }
   };
 
@@ -532,6 +545,8 @@ function TeamDetailView({ }: TeamDetailViewProps) {
     if (!tokenData) return;
 
     try {
+      // Get a default specialization ID if available, otherwise use placeholder
+      const defaultRoleId = specializations.length > 0 ? specializations[0].id : "default-role";
       const payload = {
         search: "",
         limit: 999,
@@ -574,7 +589,7 @@ function TeamDetailView({ }: TeamDetailViewProps) {
 
   const handleAddMember = () => {
     loadAvailableUsers();
-    loadTeamRoles();
+    loadSpecializations();
     setSearchUser("");
     setSelectedUserIds([]);
     setSelectedRoleId("");
@@ -592,6 +607,8 @@ function TeamDetailView({ }: TeamDetailViewProps) {
 
     setIsAddingMember(true);
     try {
+      // Get a default specialization ID if available, otherwise use placeholder
+      const defaultRoleId = specializations.length > 0 ? specializations[0].id : "default-role";
       // Add members one by one
       for (const userId of selectedUserIds) {
         const payload = {
@@ -644,10 +661,12 @@ function TeamDetailView({ }: TeamDetailViewProps) {
     if (!memberToRemove || !teamId || !tokenData) return;
 
     try {
+      // Get a default specialization ID if available, otherwise use placeholder
+      const defaultRoleId = specializations.length > 0 ? specializations[0].id : "default-role";
       const payload = {
         userId: memberToRemove.id,
         teamId: teamId,
-        teamRoleId: "",
+        teamRoleId: defaultRoleId,
       };
 
       const response = await RemoveTeamMember(payload, tokenData);
@@ -1294,7 +1313,7 @@ function TeamDetailView({ }: TeamDetailViewProps) {
                     <Button
                       size="sm"
                       variant="outline"
-                      isDisabled={true}
+                      isDisabled={false}
                       colorScheme="secondary"
                       leftIcon={<Icon as={FiPlus} />}
                       rounded="xl"
@@ -1320,7 +1339,7 @@ function TeamDetailView({ }: TeamDetailViewProps) {
                       <Button
                         size="sm"
                         variant="outline"
-                        isDisabled={true}
+                        isDisabled={false}
                         colorScheme="secondary"
                         leftIcon={<Icon as={FiPlus} />}
                         rounded="xl"
@@ -1900,9 +1919,9 @@ function TeamDetailView({ }: TeamDetailViewProps) {
                     shadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
                   }}
                 >
-                  {teamRoles.map((role) => (
+                  {specializations.map((role) => (
                     <option key={role.id} value={role.id}>
-                      {role.teamRoleName}
+                      {role.specName}
                     </option>
                   ))}
                 </Select>
