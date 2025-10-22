@@ -10,6 +10,7 @@ import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useTeams, {
   TeamsResponse,
   TeamsUserMemberResponse,
+  TeamUpdatePayload,
 } from "@/app/services/useTeams";
 import { UsersResponse } from "@/app/services/useUsers";
 import useUsers from "@/app/services/useUsers";
@@ -210,7 +211,7 @@ function TeamDetailView({ }: TeamDetailViewProps) {
       formik.setValues({
         teamName: TeamData.teamName,
         teamDesc: TeamData.teamDesc || "",
-        orgGroupId: TeamData.orgGroupId,
+        orgGroupId: TeamData.group?.id || TeamData.orgGroupId, // Use group.id if available
         isActive: TeamData.isActive,
       });
     }
@@ -253,12 +254,17 @@ function TeamDetailView({ }: TeamDetailViewProps) {
     }
   }, [selectedDivision]);
 
+  // Update form value when selectedGroup changes
+  useEffect(() => {
+    if (selectedGroup !== "") {
+      formik.setFieldValue("orgGroupId", selectedGroup);
+    }
+  }, [selectedGroup]);
+
   const GetTeamData = async () => {
     if (!teamId || !tokenData) return;
 
     try {
-      // Get a default specialization ID if available, otherwise use placeholder
-      const defaultRoleId = specializations.length > 0 ? specializations[0].id : "default-role";
       setIsLoadingProcess(true);
       const requestData = await GetDetailById(teamId, tokenData);
 
@@ -304,8 +310,6 @@ function TeamDetailView({ }: TeamDetailViewProps) {
     if (!teamId || !tokenData) return;
 
     try {
-      // Get a default specialization ID if available, otherwise use placeholder
-      const defaultRoleId = specializations.length > 0 ? specializations[0].id : "default-role";
       const payload = {
         search: "",
         teamId: teamId,
@@ -338,8 +342,6 @@ function TeamDetailView({ }: TeamDetailViewProps) {
     if (!tokenData) return;
 
     try {
-      // Get a default specialization ID if available, otherwise use placeholder
-      const defaultRoleId = specializations.length > 0 ? specializations[0].id : "default-role";
       // Load Directorates (always load all)
       const PayloadDirectorate = {
         search: "",
@@ -444,8 +446,6 @@ function TeamDetailView({ }: TeamDetailViewProps) {
     if (!teamId || !tokenData) return;
 
     try {
-      // Get a default specialization ID if available, otherwise use placeholder
-      const defaultRoleId = specializations.length > 0 ? specializations[0].id : "default-role";
       setIsUpdating(true);
 
       // Find selected group to get orgGroupCode
@@ -461,34 +461,20 @@ function TeamDetailView({ }: TeamDetailViewProps) {
         return;
       }
 
-      // Build FormData directly to match API expectations
-      const formData = new FormData();
-      formData.append("Id", teamId);
-      formData.append("TeamName", values.teamName || "");
-      formData.append("TeamDesc", values.teamDesc || "");
-      formData.append("IsActive", values.isActive || "ACTIVE");
-      formData.append("deletePict", "false");
-      formData.append("orgGroupId", values.orgGroupId);
-      formData.append("orgGroupCode", selectedGroup.orgCode);
+      // Build payload using TeamUpdatePayload interface
+      const payload = {
+        id: teamId,
+        teamName: values.teamName || "",
+        teamDesc: values.teamDesc || null,
+        isActive: values.isActive || "ACTIVE",
+        uploadPict: null,
+        deletePict: false,
+        orgGroupId: values.orgGroupId,
+        orgGroupCode: selectedGroup.orgCode,
+      };
 
-      // console.log("Update FormData fields:");
-      // for (let [key, value] of formData.entries()) {
-      //   console.log(key, value);
-      // }
-
-      // Call API directly with FormData
-      const UrlEndpoint = `${process.env.NEXT_PUBLIC_API_BASE_URL}:${process.env.NEXT_PUBLIC_API_PORT_BASIC}`;
-      const PathEndpoint = "/v1/Teams/update";
-
-      const response = await fetch(`${UrlEndpoint}${PathEndpoint}`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${tokenData}`,
-        },
-        body: formData,
-      });
-
-      const requestData = await response.json();
+      // Use UpdateTeams service function
+      const requestData = await UpdateTeams(payload, tokenData);
 
       if (!requestData || requestData.statusCode !== RES_CODE_OK) {
         showToast({
@@ -521,8 +507,6 @@ function TeamDetailView({ }: TeamDetailViewProps) {
     if (!tokenData) return;
 
     try {
-      // Get a default specialization ID if available, otherwise use placeholder
-      const defaultRoleId = specializations.length > 0 ? specializations[0].id : "default-role";
       const payload = {
         search: "",
         limit: 999,
@@ -545,8 +529,6 @@ function TeamDetailView({ }: TeamDetailViewProps) {
     if (!tokenData) return;
 
     try {
-      // Get a default specialization ID if available, otherwise use placeholder
-      const defaultRoleId = specializations.length > 0 ? specializations[0].id : "default-role";
       const payload = {
         search: "",
         limit: 999,
@@ -607,8 +589,6 @@ function TeamDetailView({ }: TeamDetailViewProps) {
 
     setIsAddingMember(true);
     try {
-      // Get a default specialization ID if available, otherwise use placeholder
-      const defaultRoleId = specializations.length > 0 ? specializations[0].id : "default-role";
       // Add members one by one
       for (const userId of selectedUserIds) {
         const payload = {
@@ -716,6 +696,13 @@ function TeamDetailView({ }: TeamDetailViewProps) {
     }
   }, [selectedDivision]);
 
+  // Update form value when selectedGroup changes
+  useEffect(() => {
+    if (selectedGroup !== "") {
+      formik.setFieldValue("orgGroupId", selectedGroup);
+    }
+  }, [selectedGroup]);
+
   const handleEditMode = () => {
     setIsEditMode(true);
   };
@@ -731,7 +718,7 @@ function TeamDetailView({ }: TeamDetailViewProps) {
       formik.setValues({
         teamName: TeamData.teamName,
         teamDesc: TeamData.teamDesc || "",
-        orgGroupId: TeamData.orgGroupId,
+        orgGroupId: TeamData.group?.id || TeamData.orgGroupId, // Use group.id if available
         isActive: TeamData.isActive,
       });
     }
