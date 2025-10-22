@@ -25,8 +25,11 @@ import * as Yup from "yup";
 import {
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
+  ENDPOINT_API_BASEURL,
+  ENDPOINT_PORT_BASIC,
 } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
+import { buildUrlPort } from "@/app/helper/MasterHelper";
 import {
   Box,
   Card,
@@ -794,6 +797,7 @@ function TeamDetailView({ }: TeamDetailViewProps) {
                   <Avatar
                     size="2xl"
                     name={TeamData.teamCode}
+                    src={TeamData.teamPict ? buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC) + TeamData.teamPict : undefined}
                     bg="secondary.500"
                     color="white"
                     fontSize="3xl"
