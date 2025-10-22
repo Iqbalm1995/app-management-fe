@@ -503,7 +503,7 @@ const LinkItems: LinkItemProps[] = [
       },
     ],
   },
-<<<<<<< HEAD
+
   {
     name: "Reports",
     icon: BiSolidReport,
@@ -706,33 +706,6 @@ const LinkItems: LinkItemProps[] = [
       },
     ],
   },
-=======
-  // {
-  //   name: "Reports",
-  //   icon: BiSolidReport,
-  //   link: "/reports",
-      // role: ["admin"],
-      // menuID: "1",
-  //   children: [
-  //     {
-  //       name: "Project Reports",
-  //       icon: BiSolidReport,
-  //       link: "/reports/project",
-  //       role: ["admin"],
-  //       menuID: "1",
-  //       children: [],
-  //     },
-  //     {
-  //       name: "Event Reports",
-  //       icon: BiSolidReport,
-  //       link: "/reports/project",
-  //       role: ["admin"],
-  //       menuID: "1",
-  //       children: [],
-  //     },
-  //   ],
-  // },
->>>>>>> dev-refan
   {
     name: "Team Manager",
     icon: FaChess,
