@@ -76,9 +76,9 @@ import {
   FiPlus,
 } from "react-icons/fi";
 
-interface TeamDetailViewProps {}
+interface TeamDetailViewProps { }
 
-function TeamDetailView({}: TeamDetailViewProps) {
+function TeamDetailView({ }: TeamDetailViewProps) {
   const { colorMode } = useColorMode();
   const showToast = useToastHelper();
   const router = useRouter();
@@ -309,7 +309,7 @@ function TeamDetailView({}: TeamDetailViewProps) {
         orderDir: "asc" as const,
       };
 
-      console.log("Loading team members with payload:", payload);
+      // console.log("Loading team members with payload:", payload);
       const requestData = await ListMembers(payload, tokenData);
       console.log("Team members response:", requestData);
 
@@ -519,10 +519,10 @@ function TeamDetailView({}: TeamDetailViewProps) {
         filterWhere: [],
       };
 
-//       // const response = await ListTeamRoles(payload, tokenData);
-//       if (response?.statusCode === RES_CODE_OK && response.data) {
-//         setTeamRoles(response.data);
-//       }
+      //       // const response = await ListTeamRoles(payload, tokenData);
+      //       if (response?.statusCode === RES_CODE_OK && response.data) {
+      //         setTeamRoles(response.data);
+      //       }
     } catch (error) {
       console.error("Error loading team roles:", error);
     }
@@ -606,9 +606,8 @@ function TeamDetailView({}: TeamDetailViewProps) {
           const userName =
             availableUsers.find((u) => u.id === userId)?.nama || "User";
           showToast({
-            description: `Failed to add ${userName}: ${
-              response?.message || RES_GENERIC_ERROR_MSG
-            }`,
+            description: `Failed to add ${userName}: ${response?.message || RES_GENERIC_ERROR_MSG
+              }`,
             statusToast: "error",
           });
           continue;
@@ -970,7 +969,7 @@ function TeamDetailView({}: TeamDetailViewProps) {
                     py={6}
                     fontSize="md"
                     onClick={handleEditMode}
-                    isDisabled={true}
+                    isDisabled={false}
                     _hover={{
                       bg: "whiteAlpha.900",
                       transform: "translateY(-2px)",
@@ -1295,6 +1294,7 @@ function TeamDetailView({}: TeamDetailViewProps) {
                     <Button
                       size="sm"
                       variant="outline"
+                      isDisabled={true}
                       colorScheme="secondary"
                       leftIcon={<Icon as={FiPlus} />}
                       rounded="xl"
@@ -1320,6 +1320,7 @@ function TeamDetailView({}: TeamDetailViewProps) {
                       <Button
                         size="sm"
                         variant="outline"
+                        isDisabled={true}
                         colorScheme="secondary"
                         leftIcon={<Icon as={FiPlus} />}
                         rounded="xl"
@@ -1963,8 +1964,8 @@ function TeamDetailView({}: TeamDetailViewProps) {
                             bg: isSelected
                               ? "secondary.200"
                               : colorMode === "light"
-                              ? "gray.100"
-                              : "gray.600",
+                                ? "gray.100"
+                                : "gray.600",
                           }}
                           onClick={() => {
                             if (isSelected) {

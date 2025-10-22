@@ -645,22 +645,7 @@ function TeamsCenterPage() {
                       </Box>
                     )}
                   </Box>
-                    {GroupData.filter(group => {
-                      // Priority 1: If division is selected, filter groups under that division
-                      if (selectedDivision !== "all") {
-                        return group.parentId === selectedDivision;
-                      }
-                      // Priority 2: If directorate is selected but no division, show groups under user's division within that directorate
-                      if (selectedDirectorate !== "all" && DataAuth?.team?.orgGroupId) {
-                        const userDivision = DivisionData.find(div => div.id === DataAuth.team?.orgGroupId);
-                        if (userDivision && userDivision.parentId === selectedDirectorate) {
-                          return group.parentId === DataAuth.team?.orgGroupId;
-                        }
-                        return false;
-                      }
-                      // Priority 3: Default to user's division
-                      return DataAuth?.team?.orgGroupId ? group.parentId === DataAuth.team?.orgGroupId : true;
-                    }).map((org) => (
+                    {GroupData.map((org) => (
                       <option key={org.id} value={org.id}>
                         {org.orgName} ({org.orgCode})
                       </option>
