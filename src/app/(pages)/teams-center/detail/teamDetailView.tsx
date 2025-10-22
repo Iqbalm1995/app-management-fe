@@ -797,7 +797,7 @@ function TeamDetailView({ }: TeamDetailViewProps) {
                   <Avatar
                     size="2xl"
                     name={TeamData.teamCode}
-                    src={TeamData.teamPict ? buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC) + TeamData.teamPict : undefined}
+                    src={TeamData.teamPict ? buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC) + "/upload/team_pict/" + TeamData.teamPict : undefined}
                     bg="secondary.500"
                     color="white"
                     fontSize="3xl"
