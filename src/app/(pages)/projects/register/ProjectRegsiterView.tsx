@@ -2319,7 +2319,7 @@ function ProjectRegisterView({
               bgColor={colorMode == "light" ? "white" : "gray.800"}
               //   bgGradient={"linear(to-br, secondary.800, secondary.500)"}
               rounded={radiusStyle}
-              h={"180px"}
+              minH={"180px"}
             >
               <CardBody>
                 <Flex
