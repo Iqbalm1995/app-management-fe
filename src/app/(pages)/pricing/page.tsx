@@ -17,9 +17,11 @@ import {
   useColorMode,
 } from "@chakra-ui/react";
 import { FiCheck, FiStar, FiZap, FiAward } from "react-icons/fi";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 import LayoutAdmin from "../../components/layoutAdmin";
 
 const PricingPage = () => {
+  useDocumentTitle("Pricing");
   const { colorMode } = useColorMode();
 
   const plans = [

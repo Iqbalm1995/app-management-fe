@@ -29,6 +29,7 @@ import { useState } from "react";
 import { FiSave, FiArrowLeft } from "react-icons/fi";
 import Link from "next/link";
 import * as Yup from "yup";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { encryptAES } from "@/app/helper/HashHelper";
 import { RES_CODE_OK, RES_GENERIC_ERROR_MSG } from "@/app/constants/applicationConstants";
@@ -60,6 +61,7 @@ const ValidationSchema = Yup.object().shape({
 });
 
 export default function ChangePasswordPage() {
+  useDocumentTitle("Change Password");
   const { colorMode } = useColorMode();
   const showToast = useToastHelper();
   const { EditUserPassword } = useUsers();

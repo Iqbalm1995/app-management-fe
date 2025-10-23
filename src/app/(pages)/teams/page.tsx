@@ -6,6 +6,7 @@ import {
   HeaderContentProps,
 } from "@/app/components/headerContent";
 import LayoutAdmin from "@/app/components/layoutAdmin";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 import {
   InputLayout,
   InputLayoutFull,
@@ -149,6 +150,7 @@ const MenusPage: MenuPagesInterface[] = [
 ];
 
 function TeamsPage() {
+  useDocumentTitle("Teams Management");
   const { colorMode } = useColorMode();
   // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);

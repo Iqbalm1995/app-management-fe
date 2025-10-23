@@ -13,6 +13,7 @@ import {
   RES_GENERIC_ERROR_MSG,
 } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useMasterUsers, {
@@ -56,6 +57,7 @@ const HeaderDataContent: HeaderContentProps = {
 };
 
 function MasterUsersPage() {
+  useDocumentTitle("Users Management");
   const showToast = useToastHelper();
   const { isLoading, error, List, GetDetailById } = useMasterUsers();
   const delay = (ms: number) =>

@@ -43,6 +43,7 @@ import {
   Tr,
   Td,
   Tbody,
+  Switch,
   Modal,
   ModalOverlay,
   ModalContent,
@@ -84,6 +85,7 @@ import {
   FiPackage,
   FiUmbrella,
   FiLayers,
+  FiSearch,
 } from "react-icons/fi";
 import { IconType } from "react-icons";
 import {
@@ -1239,6 +1241,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
   // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
+  const [hideProMenus, setHideProMenus] = useState<boolean>(false);
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
@@ -1572,6 +1575,8 @@ const SidebarContent = ({
   ...rest
 }: SidebarProps) => {
   const [scrollY, setScrollY] = useState(0);
+  const [hideProMenus, setHideProMenus] = useState<boolean>(false);
+  
   const handleScroll = () => {
     setScrollY(window.scrollY);
   };
@@ -1614,14 +1619,25 @@ const SidebarContent = ({
         </Flex>
 
         <AdditionalProfileBar LiteModeTrigger={LiteModeTrigger} />
+        
+        <SearchMenuButton LiteModeTrigger={LiteModeTrigger} />
 
         <Flex pt={5} pb={2} mx={3}>
           <VStack w={"full"} h={"65vh"} align={"start"} overflowX="auto">
-            <Heading pl={2} as="h6" size="xs">
-              Menu
-            </Heading>
+            <HStack w="full" justify="space-between" align="center" pl={2}>
+              <Heading as="h6" size="xs">
+                Menu
+              </Heading>
+              <Tooltip label="Hide menu pro" placement="top" hasArrow>
+                <Switch 
+                  size="sm" 
+                  isChecked={hideProMenus}
+                  onChange={(e) => setHideProMenus(e.target.checked)}
+                />
+              </Tooltip>
+            </HStack>
             <Box w={"full"} overflowY={"auto"}>
-              {LinkItems.map((link) => (
+              {LinkItems.filter(link => !hideProMenus || !link.isPro).map((link) => (
                 <NavItem key={link.name} data={link} mode={LiteModeTrigger} />
               ))}
             </Box>
@@ -1732,10 +1748,11 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
             role="group"
             cursor="pointer"
             boxShadow={IsActiveNav ? "md" : hasActiveChild ? "sm" : "none"}
+            fontWeight={IsActiveNav ? "bold" : "normal"}
             _hover={{
-              color: "white",
+              color: "secondary.800",
               // bg: "secondary.500",
-              bgGradient: "linear(to-r, secondary.500, secondary.600)", // Default gradient
+              bgGradient: "linear(to-r, secondary.200, secondary.200)", // Default gradient
               pl: mode ? "4" : "5",
               boxShadow: "md",
             }}
@@ -1744,14 +1761,14 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
               IsActiveNav
                 ? "linear(to-r, secondary.500, secondary.600)"
                 : hasActiveChild
-                ? "linear(to-r, secondary.100, secondary.200)"
+                ? "linear(to-r, secondary.500, secondary.600)"
                 : "linear(to-r, transparent, transparent)"
             }
             color={
               IsActiveNav
                 ? "white" // When the navigation item is active, set color to white
                 : hasActiveChild
-                ? useColorModeValue("secondary.700", "secondary.300") // When has active child
+                ? "gray.100" // When has active child
                 : useColorModeValue("gray.900", "gray.100") // Otherwise, set color based on the color mode
             }
             justifyContent={"center"}
@@ -1777,13 +1794,13 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
                   mr={mode ? "0" : data.isPro ? "2" : "4"}
                   fontSize={mode ? "25" : "20"}
                   _groupHover={{
-                    color: "white",
+                    color: "secondary.800",
                   }}
                   color={
                     IsActiveNav
                       ? "white"
                       : hasActiveChild
-                      ? useColorModeValue("secondary.700", "secondary.300")
+                      ? "gray.100"
                       : useColorModeValue("gray.900", "gray.100")
                   }
                   as={data.icon}
@@ -1796,7 +1813,7 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
                 display={mode ? "none" : "flex"}
                 as={HStack}
               >
-                {data.isPro && <Badge colorScheme="purple">Pro</Badge>}
+                {data.isPro && <Badge colorScheme="pink">Pro</Badge>}
                 <Text>{data.name}</Text>
                 {hasChildren && (
                   <Icon
@@ -2139,6 +2156,120 @@ function AdditionalProfileBar({
           </Flex>
         </Flex>
       </Flex>
+    </>
+  );
+}
+
+function SearchMenuButton({ LiteModeTrigger }: { LiteModeTrigger: boolean }) {
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { colorMode } = useColorMode();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredMenus, setFilteredMenus] = useState<LinkItemProps[]>([]);
+
+  const getAllMenuItems = (items: LinkItemProps[]): LinkItemProps[] => {
+    let allItems: LinkItemProps[] = [];
+    items.forEach(item => {
+      allItems.push(item);
+      if (item.children && item.children.length > 0) {
+        allItems = allItems.concat(getAllMenuItems(item.children));
+      }
+    });
+    return allItems;
+  };
+
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      const allMenus = getAllMenuItems(LinkItems);
+      const filtered = allMenus
+        .filter(item => 
+          item.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+          item.link !== "#"
+        )
+        .slice(0, 5);
+      setFilteredMenus(filtered);
+    } else {
+      setFilteredMenus([]);
+    }
+  }, [searchQuery]);
+
+  return (
+    <>
+      <Flex mx={2} my={1} mr={LiteModeTrigger ? 2 : 3}>
+        <Button
+          w="full"
+          size={LiteModeTrigger ? "sm" : "md"}
+          variant="ghost"
+          bg={colorMode === "light" ? "blackAlpha.200" : "whiteAlpha.200"}
+          color={colorMode === "light" ? "gray.700" : "gray.200"}
+          rounded="xl"
+          fontSize={LiteModeTrigger ? "xs" : "sm"}
+          _hover={{
+            bg: colorMode === "light" ? "blackAlpha.300" : "whiteAlpha.300",
+          }}
+          leftIcon={LiteModeTrigger ? undefined : <Icon as={FiSearch} />}
+          onClick={onOpen}
+        >
+          {LiteModeTrigger ? <Icon as={FiSearch} /> : "Search Menu"}
+        </Button>
+      </Flex>
+
+      <Modal isOpen={isOpen} onClose={onClose} size="md">
+        <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
+        <ModalContent rounded="xl" mx={4}>
+          <ModalHeader pb={2}>Search Menu</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={6}>
+            <InputGroup>
+              <Input
+                placeholder="Type to search menus..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                rounded="lg"
+                autoFocus
+              />
+              <InputRightElement>
+                <Icon as={FiSearch} color="gray.400" />
+              </InputRightElement>
+            </InputGroup>
+
+            {filteredMenus.length > 0 && (
+              <VStack mt={4} spacing={2} align="stretch">
+                {filteredMenus.map((menu, index) => (
+                  <Box
+                    key={index}
+                    as={Link}
+                    href={menu.link}
+                    p={3}
+                    rounded="lg"
+                    bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                    _hover={{
+                      bg: colorMode === "light" ? "gray.100" : "gray.600",
+                    }}
+                    onClick={onClose}
+                    cursor="pointer"
+                  >
+                    <HStack>
+                      <Icon as={menu.icon} color="secondary.500" />
+                      <Text fontWeight="medium">{menu.name}</Text>
+                      {menu.isPro && (
+                        <Badge colorScheme="purple" size="sm">
+                          Pro
+                        </Badge>
+                      )}
+                    </HStack>
+                  </Box>
+                ))}
+              </VStack>
+            )}
+
+            {searchQuery.trim() && filteredMenus.length === 0 && (
+              <Text mt={4} color="gray.500" textAlign="center">
+                No menus found for "{searchQuery}"
+              </Text>
+            )}
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </>
   );
 }

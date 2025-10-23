@@ -7,6 +7,7 @@ import {
 import LayoutAdmin from "@/app/components/layoutAdmin";
 import SidebarWithHeader from "@/app/components/sidebar";
 import { Box, Card, CardBody, CardHeader } from "@chakra-ui/react";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Setting",
@@ -14,6 +15,7 @@ const HeaderDataContent: HeaderContentProps = {
 };
 
 function SettingsPage() {
+  useDocumentTitle("Settings");
   return (
     <LayoutAdmin>
       <HeaderContent {...HeaderDataContent} />
