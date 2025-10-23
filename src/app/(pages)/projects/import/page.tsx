@@ -36,6 +36,8 @@ import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import ImportPreviewModal from "./components/ImportPreviewModal";
 
+import { useDocumentTitle } from "../../../hooks/useDocumentTitle";
+
 interface ImportedData {
   requiredFlags: Record<string, string>;
   fieldKeys: Record<string, string>;
@@ -43,6 +45,7 @@ interface ImportedData {
 }
 
 export default function ProjectImportPage() {
+  useDocumentTitle("Project Import");
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
   const { isOpen, onOpen, onClose } = useDisclosure();

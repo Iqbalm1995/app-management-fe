@@ -27,6 +27,7 @@ import dynamic from "next/dynamic";
 import { FaCircle } from "react-icons/fa6";
 import { EventContentArg } from "@fullcalendar/core/index.js";
 import { EventImpl } from "@fullcalendar/core/internal";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 import LayoutAdmin from "@/app/components/layoutAdmin";
 
 // Dynamically load FullCalendar with no SSR
@@ -49,6 +50,7 @@ interface EventInterface {
 }
 
 function CalendarPage() {
+  useDocumentTitle("Calendar");
   const [events, setEvents] = useState<EventInterface[]>([]);
 
   useEffect(() => {
