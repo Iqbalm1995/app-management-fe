@@ -80,6 +80,8 @@ function AddTeamViewPage() {
   const [showDirectorateOptions, setShowDirectorateOptions] = useState<boolean>(false);
   const [showDivisionOptions, setShowDivisionOptions] = useState<boolean>(false);
   const [showGroupOptions, setShowGroupOptions] = useState<boolean>(false);
+
+  // File upload state
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
 
@@ -182,6 +184,58 @@ function AddTeamViewPage() {
     }
   }, [selectedDivision]);
 
+  // Cleanup preview URL on unmount
+  useEffect(() => {
+    return () => {
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
+
+  // File handling functions
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        showToast({
+          description: "Please select an image file",
+          statusToast: "error",
+        });
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        showToast({
+          description: "File size must be less than 5MB",
+          statusToast: "error",
+        });
+        return;
+      }
+
+      setSelectedImage(file);
+
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeFile = () => {
+    setSelectedImage(null);
+    setImagePreview("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const removeImage = removeFile; // Alias for existing sidebar
+
   // Form validation following service hook structure
   const ValidationSchema = Yup.object().shape({
     teamName: Yup.string()
@@ -250,13 +304,9 @@ function AddTeamViewPage() {
     try {
       setIsLoadingProcess(true);
 
-      console.log("Form values:", values);
-      console.log("GroupData available:", GroupData);
-      console.log("Looking for orgGroupId:", values.orgGroupId);
 
       // Find selected organization to get the code
       const selectedOrg = GroupData.find((org) => org.id === values.orgGroupId);
-      console.log("Found selectedOrg:", selectedOrg);
 
       if (!selectedOrg) {
         showToast({
@@ -265,16 +315,6 @@ function AddTeamViewPage() {
         });
         return;
       }
-
-      console.log("Debug payload data:", {
-        teamCode: values.teamCode,
-        teamName: values.teamName,
-        teamDesc: values.teamDesc,
-        isActive: values.isActive,
-        orgGroupId: values.orgGroupId,
-        selectedOrg: selectedOrg,
-        orgGroupCode: selectedOrg?.orgCode,
-      });
 
       // Ensure no null/undefined values
       if (!values.teamCode?.trim()) {
@@ -298,12 +338,11 @@ function AddTeamViewPage() {
         teamName: values.teamName.trim(),
         teamDesc: values.teamDesc?.trim() || null,
         isActive: values.isActive,
-        uploadPict: null, // Always null for now to test
+        uploadPict: selectedImage,
         orgGroupId: values.orgGroupId,
         orgGroupCode: selectedOrg.orgCode.trim(),
       };
 
-      console.log("Final payload:", payload);
 
       const response = await InsertTeams(payload, tokenData);
 
@@ -361,14 +400,6 @@ function AddTeamViewPage() {
         setImagePreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
-    }
-  };
-
-  const removeImage = () => {
-    setSelectedImage(null);
-    setImagePreview("");
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
     }
   };
 
@@ -922,6 +953,15 @@ function AddTeamViewPage() {
                         </Button>
                       )}
                     </VStack>
+
+                    {/* Hidden file input */}
+                    <Input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileSelect}
+                      display="none"
+                    />
 
                     <Text fontSize="sm" color="gray.500" textAlign="center">
                       Upload a team picture (max 5MB)
