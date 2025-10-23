@@ -10,20 +10,26 @@ import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useTeams, {
   TeamsResponse,
   TeamsUserMemberResponse,
-  TeamRoleFullResponse,
+  TeamUpdatePayload,
 } from "@/app/services/useTeams";
 import { UsersResponse } from "@/app/services/useUsers";
 import useUsers from "@/app/services/useUsers";
 import useOrganization, {
   OrganizationResponse,
 } from "@/app/services/useOrganization";
+import useSpecialization, {
+  SpecializationResponse,
+} from "@/app/services/useSpecialization";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import {
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
+  ENDPOINT_API_BASEURL,
+  ENDPOINT_PORT_BASIC,
 } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
+import { buildUrlPort } from "@/app/helper/MasterHelper";
 import {
   Box,
   Card,
@@ -76,9 +82,9 @@ import {
   FiPlus,
 } from "react-icons/fi";
 
-interface TeamDetailViewProps {}
+interface TeamDetailViewProps { }
 
-function TeamDetailView({}: TeamDetailViewProps) {
+function TeamDetailView({ }: TeamDetailViewProps) {
   const { colorMode } = useColorMode();
   const showToast = useToastHelper();
   const router = useRouter();
@@ -94,6 +100,7 @@ function TeamDetailView({}: TeamDetailViewProps) {
   } = useTeams();
   const { List: ListUsers } = useUsers();
   const { List: ListOrganizations } = useOrganization();
+  const { List: ListSpecializations } = useSpecialization();
 
   // Auth setup
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -140,7 +147,7 @@ function TeamDetailView({}: TeamDetailViewProps) {
   const [isAddingMember, setIsAddingMember] = useState(false);
   const [searchUser, setSearchUser] = useState<string>("");
   const [filteredUsers, setFilteredUsers] = useState<UsersResponse[]>([]);
-  const [teamRoles, setTeamRoles] = useState<TeamRoleFullResponse[]>([]);
+  const [specializations, setSpecializations] = useState<SpecializationResponse[]>([]);
   const [selectedRoleId, setSelectedRoleId] = useState<string>("");
 
   // Header content
@@ -207,7 +214,7 @@ function TeamDetailView({}: TeamDetailViewProps) {
       formik.setValues({
         teamName: TeamData.teamName,
         teamDesc: TeamData.teamDesc || "",
-        orgGroupId: TeamData.orgGroupId,
+        orgGroupId: TeamData.group?.id || TeamData.orgGroupId, // Use group.id if available
         isActive: TeamData.isActive,
       });
     }
@@ -249,6 +256,13 @@ function TeamDetailView({}: TeamDetailViewProps) {
       formik.setFieldValue("orgGroupId", "");
     }
   }, [selectedDivision]);
+
+  // Update form value when selectedGroup changes
+  useEffect(() => {
+    if (selectedGroup !== "") {
+      formik.setFieldValue("orgGroupId", selectedGroup);
+    }
+  }, [selectedGroup]);
 
   const GetTeamData = async () => {
     if (!teamId || !tokenData) return;
@@ -309,9 +323,9 @@ function TeamDetailView({}: TeamDetailViewProps) {
         orderDir: "asc" as const,
       };
 
-      console.log("Loading team members with payload:", payload);
+      // console.log("Loading team members with payload:", payload);
       const requestData = await ListMembers(payload, tokenData);
-      console.log("Team members response:", requestData);
+      // console.log("Team members response:", requestData);
 
       if (!requestData || requestData.statusCode !== RES_CODE_OK) {
         console.error("Error fetching team members:", requestData?.message);
@@ -319,7 +333,7 @@ function TeamDetailView({}: TeamDetailViewProps) {
       }
 
       const data = requestData.data as UsersResponse[];
-      console.log("Team members data:", data);
+      // console.log("Team members data:", data);
       setMembersData(data);
       setTotalMembers(data.length);
     } catch (error) {
@@ -450,34 +464,20 @@ function TeamDetailView({}: TeamDetailViewProps) {
         return;
       }
 
-      // Build FormData directly to match API expectations
-      const formData = new FormData();
-      formData.append("Id", teamId);
-      formData.append("TeamName", values.teamName || "");
-      formData.append("TeamDesc", values.teamDesc || "");
-      formData.append("IsActive", values.isActive || "ACTIVE");
-      formData.append("deletePict", "false");
-      formData.append("orgGroupId", values.orgGroupId);
-      formData.append("orgGroupCode", selectedGroup.orgCode);
+      // Build payload using TeamUpdatePayload interface
+      const payload = {
+        id: teamId,
+        teamName: values.teamName || "",
+        teamDesc: values.teamDesc || null,
+        isActive: values.isActive || "ACTIVE",
+        uploadPict: null,
+        deletePict: false,
+        orgGroupId: values.orgGroupId,
+        orgGroupCode: selectedGroup.orgCode,
+      };
 
-      console.log("Update FormData fields:");
-      for (let [key, value] of formData.entries()) {
-        console.log(key, value);
-      }
-
-      // Call API directly with FormData
-      const UrlEndpoint = `${process.env.NEXT_PUBLIC_API_BASE_URL}:${process.env.NEXT_PUBLIC_API_PORT_BASIC}`;
-      const PathEndpoint = "/v1/Teams/update";
-
-      const response = await fetch(`${UrlEndpoint}${PathEndpoint}`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${tokenData}`,
-        },
-        body: formData,
-      });
-
-      const requestData = await response.json();
+      // Use UpdateTeams service function
+      const requestData = await UpdateTeams(payload, tokenData);
 
       if (!requestData || requestData.statusCode !== RES_CODE_OK) {
         showToast({
@@ -506,7 +506,7 @@ function TeamDetailView({}: TeamDetailViewProps) {
     }
   };
 
-  const loadTeamRoles = async () => {
+  const loadSpecializations = async () => {
     if (!tokenData) return;
 
     try {
@@ -514,17 +514,17 @@ function TeamDetailView({}: TeamDetailViewProps) {
         search: "",
         limit: 999,
         page: 0,
-        fieldOrder: ["teamRoleName"],
+        fieldOrder: ["specName"],
         orderDir: "asc" as const,
         filterWhere: [],
       };
 
-//       // const response = await ListTeamRoles(payload, tokenData);
-//       if (response?.statusCode === RES_CODE_OK && response.data) {
-//         setTeamRoles(response.data);
-//       }
+      const response = await ListSpecializations(payload, tokenData);
+      if (response?.statusCode === RES_CODE_OK && response.data) {
+        setSpecializations(response.data);
+      }
     } catch (error) {
-      console.error("Error loading team roles:", error);
+      console.error("Error loading specializations:", error);
     }
   };
 
@@ -574,7 +574,7 @@ function TeamDetailView({}: TeamDetailViewProps) {
 
   const handleAddMember = () => {
     loadAvailableUsers();
-    loadTeamRoles();
+    loadSpecializations();
     setSearchUser("");
     setSelectedUserIds([]);
     setSelectedRoleId("");
@@ -606,9 +606,8 @@ function TeamDetailView({}: TeamDetailViewProps) {
           const userName =
             availableUsers.find((u) => u.id === userId)?.nama || "User";
           showToast({
-            description: `Failed to add ${userName}: ${
-              response?.message || RES_GENERIC_ERROR_MSG
-            }`,
+            description: `Failed to add ${userName}: ${response?.message || RES_GENERIC_ERROR_MSG
+              }`,
             statusToast: "error",
           });
           continue;
@@ -645,10 +644,12 @@ function TeamDetailView({}: TeamDetailViewProps) {
     if (!memberToRemove || !teamId || !tokenData) return;
 
     try {
+      // Get a default specialization ID if available, otherwise use placeholder
+      const defaultRoleId = specializations.length > 0 ? specializations[0].id : "default-role";
       const payload = {
         userId: memberToRemove.id,
         teamId: teamId,
-        teamRoleId: "",
+        teamRoleId: defaultRoleId,
       };
 
       const response = await RemoveTeamMember(payload, tokenData);
@@ -698,6 +699,13 @@ function TeamDetailView({}: TeamDetailViewProps) {
     }
   }, [selectedDivision]);
 
+  // Update form value when selectedGroup changes
+  useEffect(() => {
+    if (selectedGroup !== "") {
+      formik.setFieldValue("orgGroupId", selectedGroup);
+    }
+  }, [selectedGroup]);
+
   const handleEditMode = () => {
     setIsEditMode(true);
   };
@@ -713,7 +721,7 @@ function TeamDetailView({}: TeamDetailViewProps) {
       formik.setValues({
         teamName: TeamData.teamName,
         teamDesc: TeamData.teamDesc || "",
-        orgGroupId: TeamData.orgGroupId,
+        orgGroupId: TeamData.group?.id || TeamData.orgGroupId, // Use group.id if available
         isActive: TeamData.isActive,
       });
     }
@@ -789,6 +797,7 @@ function TeamDetailView({}: TeamDetailViewProps) {
                   <Avatar
                     size="2xl"
                     name={TeamData.teamCode}
+                    src={TeamData.teamPict ? buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC) + "/upload/team_pict/" + TeamData.teamPict : undefined}
                     bg="secondary.500"
                     color="white"
                     fontSize="3xl"
@@ -970,7 +979,7 @@ function TeamDetailView({}: TeamDetailViewProps) {
                     py={6}
                     fontSize="md"
                     onClick={handleEditMode}
-                    isDisabled={true}
+                    isDisabled={false}
                     _hover={{
                       bg: "whiteAlpha.900",
                       transform: "translateY(-2px)",
@@ -1295,6 +1304,7 @@ function TeamDetailView({}: TeamDetailViewProps) {
                     <Button
                       size="sm"
                       variant="outline"
+                      isDisabled={false}
                       colorScheme="secondary"
                       leftIcon={<Icon as={FiPlus} />}
                       rounded="xl"
@@ -1320,6 +1330,7 @@ function TeamDetailView({}: TeamDetailViewProps) {
                       <Button
                         size="sm"
                         variant="outline"
+                        isDisabled={false}
                         colorScheme="secondary"
                         leftIcon={<Icon as={FiPlus} />}
                         rounded="xl"
@@ -1899,9 +1910,9 @@ function TeamDetailView({}: TeamDetailViewProps) {
                     shadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
                   }}
                 >
-                  {teamRoles.map((role) => (
+                  {specializations.map((role) => (
                     <option key={role.id} value={role.id}>
-                      {role.teamRoleName}
+                      {role.specName}
                     </option>
                   ))}
                 </Select>
@@ -1963,8 +1974,8 @@ function TeamDetailView({}: TeamDetailViewProps) {
                             bg: isSelected
                               ? "secondary.200"
                               : colorMode === "light"
-                              ? "gray.100"
-                              : "gray.600",
+                                ? "gray.100"
+                                : "gray.600",
                           }}
                           onClick={() => {
                             if (isSelected) {
