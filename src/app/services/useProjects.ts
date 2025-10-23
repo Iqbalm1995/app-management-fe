@@ -757,6 +757,11 @@ interface useProjectsServices {
     token: string
   ) => Promise<ApiGenericResponse<ProjectImportBatchResponse>>;
 
+  ProjectImportBatch: (
+    payload: ProjectImportDataBatchBindModel,
+    token: string
+  ) => Promise<ApiGenericResponse<ProjectImportBatchResponse>>;
+
   isLoading: boolean;
   error: string | null;
 }
@@ -2765,6 +2770,30 @@ const useProjects = (): useProjectsServices => {
     }
   };
 
+  const ProjectImportBatch = async (
+    payload: ProjectImportDataBatchBindModel,
+    token: string
+  ): Promise<ApiGenericResponse<ProjectImportBatchResponse>> => {
+    try {
+      setIsLoading(true);
+      const response = await axiosInstance.post(
+        `${buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC)}/v1/projects/import/internal-dev/`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      return handleAxiosError(error as any) as unknown as ApiGenericResponse<ProjectImportBatchResponse>;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     List,
     GetDetailById,
@@ -2814,6 +2843,7 @@ const useProjects = (): useProjectsServices => {
     GetProjectBacklogProgression,
 
     ProjectImportValidationBatch,
+    ProjectImportBatch,
 
     ListProjectWorkflow,
     ListProjectWorkflowValue,

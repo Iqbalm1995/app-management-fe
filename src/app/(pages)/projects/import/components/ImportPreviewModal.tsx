@@ -80,7 +80,7 @@ export default function ImportPreviewModal({
   const [apiResponse, setApiResponse] = useState<any>(null);
 
   // Service
-  const { ProjectImportValidationBatch } = useProjects();
+  const { ProjectImportValidationBatch, ProjectImportBatch } = useProjects();
 
   // API validation function
   const handleApiValidation = async () => {
@@ -164,10 +164,59 @@ export default function ImportPreviewModal({
   };
 
   const handleImport = async () => {
-    setIsImporting(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsImporting(false);
-    onImport();
+    if (!tokenData || !isApiValidated) return;
+
+    try {
+      setIsImporting(true);
+
+      const batchData: ProjectImportDataBindModel[] = data.dataRows.map(row => {
+        const convertedRow: ProjectImportDataBindModel = {};
+        
+        Object.entries(data.fieldKeys).forEach(([colKey, fieldName]) => {
+          const colIndex = colKey.length === 1 
+            ? colKey.charCodeAt(0) - 65 
+            : (colKey.charCodeAt(0) - 65 + 1) * 26 + (colKey.charCodeAt(1) - 65);
+          
+          let value = row[colIndex]?.toString() || "";
+          
+          if (fieldName === 'WORKPROGRAM_AMOUNT_EXTERNAL' || 
+              fieldName === 'WORKPROGRAM_AMOUNT_INTERNAL' ||
+              fieldName === 'WORKPROGRAM_REALIZATION_EXTENAL' ||
+              fieldName === 'WORKPROGRAM_REALIZATION_INTERNAL') {
+            const numValue = parseFloat(value) || 0;
+            (convertedRow as any)[fieldName.replace(/[^a-zA-Z0-9]/g, '')] = numValue;
+          } else {
+            (convertedRow as any)[fieldName.replace(/[^a-zA-Z0-9]/g, '')] = value;
+          }
+        });
+        
+        return convertedRow;
+      });
+
+      const payload: ProjectImportDataBatchBindModel = { batchData };
+      const response = await ProjectImportBatch(payload, tokenData);
+
+      if (response?.statusCode === RES_CODE_OK) {
+        showToast({
+          description: "Projects imported successfully",
+          statusToast: "success",
+        });
+        onImport();
+        onClose();
+      } else {
+        showToast({
+          description: response?.message || "Import failed",
+          statusToast: "error",
+        });
+      }
+    } catch (error) {
+      showToast({
+        description: "Import failed",
+        statusToast: "error",
+      });
+    } finally {
+      setIsImporting(false);
+    }
   };
 
   const fieldKeysArray = Object.values(data.fieldKeys).filter(key => key);
