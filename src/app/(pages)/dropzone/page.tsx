@@ -6,6 +6,7 @@ import {
   HeaderContentProps,
 } from "@/app/components/headerContent";
 import LayoutAdmin from "@/app/components/layoutAdmin";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Beranda",
@@ -13,6 +14,7 @@ const HeaderDataContent: HeaderContentProps = {
 };
 
 function DropZonePage() {
+  useDocumentTitle("File Upload");
   return (
     <LayoutAdmin>
       <HeaderContent

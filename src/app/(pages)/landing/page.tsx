@@ -7,6 +7,7 @@ import { useAuth } from "@/app/context/AuthContext";
 import { truncateText, truncateToTwoWords } from "@/app/helper/MasterHelper";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AppsDataInterface, DATA_APPS } from "@/app/types/appsInterface";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 import { Search2Icon } from "@chakra-ui/icons";
 import {
   Badge,
@@ -85,6 +86,7 @@ const AbstractUIDesign: AbstractUIDesignProps[] = [
 ];
 
 function LandingPage() {
+  useDocumentTitle("Login");
   const { colorMode } = useColorMode();
   const [mounted, setMounted] = useState(false);
 

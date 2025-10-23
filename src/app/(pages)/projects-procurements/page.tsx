@@ -84,6 +84,7 @@ import {
 
 // Services and Hooks
 import { AuthDataModelInterface, useAuth } from "@/app/context/AuthContext";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useProjects, { ProjectDataResponse } from "@/app/services/useProjects";
@@ -112,6 +113,7 @@ const HeaderDataContent: HeaderContentProps = {
 };
 
 const ProjectManagerPage = () => {
+  useDocumentTitle("Projects Procurement");
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
   const { isAuthenticated, authData, goLogout } = useAuth();

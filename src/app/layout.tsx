@@ -1,5 +1,15 @@
 // app/layout.tsx
 import { Providers } from "./providers";
+import { defaultMetadata } from "./metadata";
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  ...defaultMetadata,
+  title: {
+    default: 'KOBRA - Project Management Apps',
+    template: 'KOBRA - Project Management Apps | %s'
+  }
+}
 
 export default function RootLayout({
   children,
@@ -7,7 +17,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html>
+    <html lang="en">
       <body>
         <Providers>{children}</Providers>
       </body>

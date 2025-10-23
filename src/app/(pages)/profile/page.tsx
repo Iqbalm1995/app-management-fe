@@ -40,6 +40,7 @@ import { FiActivity, FiClock, FiMonitor, FiRefreshCw } from "react-icons/fi";
 import { motion } from "framer-motion";
 import LayoutAdmin from "@/app/components/layoutAdmin";
 import { HeaderContent } from "@/app/components/headerContent";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
@@ -57,6 +58,7 @@ const MotionBox = motion(Box);
 const MotionCard = motion(Card);
 
 export default function ProfilePage() {
+  useDocumentTitle("Profile");
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
   const { GetDetailByUserId, isLoading } = useUsers();

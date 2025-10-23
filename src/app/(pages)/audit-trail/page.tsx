@@ -46,9 +46,11 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { useEffect, useMemo, useState } from "react";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 import { FiRefreshCw, FiSearch, FiX } from "react-icons/fi";
 
 function AuditTrailPage() {
+  useDocumentTitle("Audit Trail");
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
 
