@@ -43,6 +43,7 @@ import {
   Tr,
   Td,
   Tbody,
+  Switch,
   Modal,
   ModalOverlay,
   ModalContent,
@@ -1240,6 +1241,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
   // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
+  const [hideProMenus, setHideProMenus] = useState<boolean>(false);
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
@@ -1573,6 +1575,8 @@ const SidebarContent = ({
   ...rest
 }: SidebarProps) => {
   const [scrollY, setScrollY] = useState(0);
+  const [hideProMenus, setHideProMenus] = useState<boolean>(false);
+  
   const handleScroll = () => {
     setScrollY(window.scrollY);
   };
@@ -1620,11 +1624,20 @@ const SidebarContent = ({
 
         <Flex pt={5} pb={2} mx={3}>
           <VStack w={"full"} h={"65vh"} align={"start"} overflowX="auto">
-            <Heading pl={2} as="h6" size="xs">
-              Menu
-            </Heading>
+            <HStack w="full" justify="space-between" align="center" pl={2}>
+              <Heading as="h6" size="xs">
+                Menu
+              </Heading>
+              <Tooltip label="Hide menu pro" placement="top" hasArrow>
+                <Switch 
+                  size="sm" 
+                  isChecked={hideProMenus}
+                  onChange={(e) => setHideProMenus(e.target.checked)}
+                />
+              </Tooltip>
+            </HStack>
             <Box w={"full"} overflowY={"auto"}>
-              {LinkItems.map((link) => (
+              {LinkItems.filter(link => !hideProMenus || !link.isPro).map((link) => (
                 <NavItem key={link.name} data={link} mode={LiteModeTrigger} />
               ))}
             </Box>
