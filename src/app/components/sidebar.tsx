@@ -1047,6 +1047,25 @@ const LinkItems: LinkItemProps[] = [
     ],
   },
   {
+    name: "Advanced",
+    icon: TbBolt,
+    link: "/advanced",
+    isPro: true,
+    role: ["admin"],
+    menuID: "1",
+    children: [
+      {
+        name: "Pro Dashboard",
+        icon: TbLayoutDashboardFilled,
+        link: "/advanced/pro-dashboard",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  {
     name: "Audit Trail",
     icon: RxActivityLog,
     link: "/audit-trail",
