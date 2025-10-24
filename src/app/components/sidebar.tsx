@@ -818,6 +818,14 @@ const LinkItems: LinkItemProps[] = [
         children: [],
       },
       {
+        name: "Master Organizations",
+        icon: RiOrganizationChart,
+        link: "/master-data/organizations",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
         name: "Master Organization Structure",
         icon: RiOrganizationChart,
         link: "/coming-soon",
