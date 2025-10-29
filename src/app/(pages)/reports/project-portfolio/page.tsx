@@ -12,6 +12,8 @@ import {
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
 } from "@/app/constants/applicationConstants";
+import { getStatusColor } from "@/app/utils/statusUtils";
+import { StatusBadge } from "@/app/components/StatusBadge";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import {
   formatDateToDDMMYYYY,
@@ -236,21 +238,6 @@ function ProjectPortfolioReportPage() {
         description: "Failed to export PDF file",
         statusToast: "error",
       });
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "ACTIVE":
-        return "green";
-      case "COMPLETED":
-        return "blue";
-      case "ONHOLD":
-        return "orange";
-      case "INACTIVE":
-        return "red";
-      default:
-        return "gray";
     }
   };
 
@@ -521,15 +508,13 @@ function ProjectPortfolioReportPage() {
             spacing={1}
             minW="160px"
           >
-            <Badge
-              colorScheme={getStatusColor(info.row.original.projectStatus)}
+            <StatusBadge
+              status={info.row.original.projectStatus}
               variant="solid"
               rounded={radiusStyle}
               px={3}
               py={1}
-            >
-              {info.row.original.projectStatus}
-            </Badge>
+            />
             <Text fontSize="xs">
               Progress: {info.row.original.projectStatusPercentage}%
             </Text>
