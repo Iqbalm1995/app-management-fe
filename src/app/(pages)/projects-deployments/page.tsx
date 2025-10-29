@@ -83,9 +83,9 @@ import {
   radiusStyle,
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
-  PROJECT_STATUS_LIST,
   PROJECT_TYPE_DEPLOYMENT,
 } from "@/app/constants/applicationConstants";
+import { PROJECT_STATUSES } from "@/app/constants/masterStatusConstants";
 import {
   PaggingListPayloadCustom,
   ListSearchByParam,

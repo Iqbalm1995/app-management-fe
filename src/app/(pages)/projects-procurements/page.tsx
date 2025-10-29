@@ -94,9 +94,14 @@ import {
   radiusStyle,
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
-  PROJECT_STATUS_LIST,
   PROJECT_TYPE_PROCUREMENT,
 } from "@/app/constants/applicationConstants";
+import { 
+  PROJECT_STATUSES,
+  PRO_STATUS_RUNNING,
+  PRO_STATUS_COMPLETED
+} from "@/app/constants/masterStatusConstants";
+import { StatusBadge } from "@/app/components/StatusBadge";
 import {
   PaggingListPayloadCustom,
   ListSearchByParam,
@@ -468,7 +473,7 @@ const ProjectManagerPage = () => {
                   color={colorMode == "light" ? "gray.900" : "white"}
                 >
                   {
-                    DataProjects.filter((p) => p.projectStatus === "ACTIVE")
+                    DataProjects.filter((p) => p.projectStatus === PRO_STATUS_RUNNING)
                       .length
                   }
                 </Text>
@@ -557,7 +562,7 @@ const ProjectManagerPage = () => {
               <VStack spacing={0}>
                 <Text fontSize="lg" fontWeight="bold" color="white">
                   {
-                    DataProjects.filter((p) => p.projectStatus === "ACTIVE")
+                    DataProjects.filter((p) => p.projectStatus === PRO_STATUS_RUNNING)
                       .length
                   }
                 </Text>
@@ -894,7 +899,7 @@ const ProjectManagerPage = () => {
                             >
                               {
                                 DataProjects.filter(
-                                  (p) => p.projectStatus === "ACTIVE"
+                                  (p) => p.projectStatus === PRO_STATUS_RUNNING
                                 ).length
                               }{" "}
                               Active
@@ -1122,23 +1127,13 @@ const ProjectManagerPage = () => {
                                           }}
                                         >
                                           <VStack spacing={1}>
-                                            <Badge
-                                              colorScheme={
-                                                project.projectStatus ===
-                                                "ACTIVE"
-                                                  ? "green"
-                                                  : project.projectStatus ===
-                                                    "ONHOLD"
-                                                  ? "orange"
-                                                  : "red"
-                                              }
+                                            <StatusBadge
+                                              status={project.projectStatus}
                                               px={3}
                                               py={1}
                                               rounded="full"
                                               fontSize="xs"
-                                            >
-                                              {project.projectStatus}
-                                            </Badge>
+                                            />
                                           </VStack>
                                         </GridItem>
 
@@ -1220,23 +1215,13 @@ const ProjectManagerPage = () => {
                                       >
                                         <HStack justify="space-between">
                                           <HStack spacing={2}>
-                                            <Badge
-                                              colorScheme={
-                                                project.projectStatus ===
-                                                "ACTIVE"
-                                                  ? "green"
-                                                  : project.projectStatus ===
-                                                    "ONHOLD"
-                                                  ? "orange"
-                                                  : "red"
-                                              }
+                                            <StatusBadge
+                                              status={project.projectStatus}
                                               px={2}
                                               py={1}
                                               rounded="full"
                                               fontSize="xs"
-                                            >
-                                              {project.projectStatus}
-                                            </Badge>
+                                            />
                                           </HStack>
                                           <HStack spacing={2}>
                                             <Text
