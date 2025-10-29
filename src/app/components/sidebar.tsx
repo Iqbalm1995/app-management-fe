@@ -1602,7 +1602,17 @@ const SidebarContent = ({
   ...rest
 }: SidebarProps) => {
   const [scrollY, setScrollY] = useState(0);
-  const [hideProMenus, setHideProMenus] = useState<boolean>(false);
+  const [hideProMenus, setHideProMenus] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('hideProMenus');
+      return saved ? JSON.parse(saved) : false;
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('hideProMenus', JSON.stringify(hideProMenus));
+  }, [hideProMenus]);
   
   const handleScroll = () => {
     setScrollY(window.scrollY);
