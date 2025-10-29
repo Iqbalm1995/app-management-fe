@@ -30,20 +30,21 @@ import {
   NEXT_STEP_ACTION_REVIEW,
   radiusStyle,
   REQ_STATUS_ALL,
-  REQ_STATUS_APPROVED,
-  REQ_STATUS_CANCELED,
-  REQ_STATUS_DRAFT,
-  REQ_STATUS_IN_PROGRESS_REVIEW,
-  REQ_STATUS_LIST_OPTION,
-  REQ_STATUS_NEED_REVIEW,
-  REQ_STATUS_ON_HOLD,
-  REQ_STATUS_REVIEW,
   REQUIREMENT_STATUS_NEW,
   REQUIREMENT_TYPE_BRD,
   REQUIREMENT_TYPE_RFC,
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
 } from "@/app/constants/applicationConstants";
+import {
+  REQ_STATUS_APPROVED,
+  REQ_STATUS_CANCELED,
+  REQ_STATUS_DRAFT,
+  REQ_STATUS_IN_PROGRESS_REVIEW,
+  REQ_STATUS_NEED_REVIEW,
+  REQ_STATUS_ON_HOLD,
+  REQUIREMENT_STATUS_OPTIONS,
+} from "@/app/constants/masterStatusConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import {
   formatDateToDDMMYYYY,
@@ -653,7 +654,7 @@ function ReuirementsRFCPage() {
               value: "",
               filterType: "select",
               filterLabel: "Status",
-              sourceListData: REQ_STATUS_LIST_OPTION,
+              sourceListData: REQUIREMENT_STATUS_OPTIONS,
             },
           ],
         } as ColumnMetaCustom,
