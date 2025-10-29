@@ -48,9 +48,9 @@ import {
 } from "react-icons/fi";
 import { ProjectDataResponse } from "@/app/services/useProjects";
 import {
-  PROJECT_STATUS_LIST,
   radiusStyle,
 } from "@/app/constants/applicationConstants";
+import { PROJECT_STATUSES } from "@/app/constants/masterStatusConstants";
 
 interface ManagerSidebarProcurementProps {
   globalFilter: string;
@@ -215,7 +215,7 @@ const ManagerSidebarProcurement = ({
               >
                 Project Status
               </Text>
-              {PROJECT_STATUS_LIST.map((status) => (
+              {PROJECT_STATUSES.map((status) => (
                 <Button
                   key={status}
                   size="sm"

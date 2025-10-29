@@ -511,7 +511,7 @@ const LinkItems: LinkItemProps[] = [
     icon: BiSolidReport,
     link: "/reports",
     role: ["admin"],
-    isPro: true,
+    isPro: false,
     menuID: "1",
     children: [
       {
@@ -519,7 +519,7 @@ const LinkItems: LinkItemProps[] = [
         icon: BiSolidReport,
         link: "/reports/project-portfolio",
         role: ["admin"],
-        isPro: true,
+        isPro: false,
         menuID: "1",
         children: [],
       },
@@ -717,20 +717,20 @@ const LinkItems: LinkItemProps[] = [
     children: [],
   },
   {
-      name: "Team Center",
-      icon: FaUsersRays,
-      link: "/teams-center",
-      role: ["admin"],
-      menuID: "1",
-      children: [],
+    name: "Team Center",
+    icon: FaUsersRays,
+    link: "/teams-center",
+    role: ["admin"],
+    menuID: "1",
+    children: [],
   },
   // {
   //   name: "Server Manager",
   //   icon: CiServer,
   //   link: "/server-manager",
-      // role: ["admin"],
-      // menuID: "1",
-      // children: [],
+  // role: ["admin"],
+  // menuID: "1",
+  // children: [],
   // },
   // {
   //   name: "File Archive",
@@ -813,6 +813,14 @@ const LinkItems: LinkItemProps[] = [
         name: "Master Users",
         icon: FiUsers,
         link: "/master-data/users",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Master Organizations",
+        icon: RiOrganizationChart,
+        link: "/master-data/organizations",
         role: ["admin"],
         menuID: "1",
         children: [],
@@ -1039,6 +1047,25 @@ const LinkItems: LinkItemProps[] = [
     ],
   },
   {
+    name: "Advanced",
+    icon: TbBolt,
+    link: "/advanced",
+    isPro: true,
+    role: ["admin"],
+    menuID: "1",
+    children: [
+      {
+        name: "Pro Dashboard",
+        icon: TbLayoutDashboardFilled,
+        link: "/advanced/pro-dashboard",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  {
     name: "Audit Trail",
     icon: RxActivityLog,
     link: "/audit-trail",
@@ -1115,34 +1142,34 @@ const LinkItems: LinkItemProps[] = [
   //   name: "Profile",
   //   icon: FiUser,
   //   link: "/profile",
-      // role: ["admin"],
-      // menuID: "1",
-      // children: [],
+  // role: ["admin"],
+  // menuID: "1",
+  // children: [],
   // },
   // {
   //   name: "Pricing",
   //   icon: FiDollarSign,
   //   link: "/pricing",
-      // role: ["admin"],
-      // menuID: "1",
-      // children: [],
+  // role: ["admin"],
+  // menuID: "1",
+  // children: [],
   //   isLocked: true,
   // },
   // {
   //   name: "Avtivities",
   //   icon: RxActivityLog,
   //   link: "/activities",
-      // role: ["admin"],
-      // menuID: "1",
-      // children: [],
+  // role: ["admin"],
+  // menuID: "1",
+  // children: [],
   //   isLocked: true,
   // },
   // {
   //   name: "User Config",
   //   icon: FaUsersGear,
   //   link: "/users",
-      // role: ["admin"],
-      // menuID: "1",
+  // role: ["admin"],
+  // menuID: "1",
   //   children: [
   //     {
   //       name: "User Manager",
@@ -1174,8 +1201,8 @@ const LinkItems: LinkItemProps[] = [
   //   name: "Example Page",
   //   icon: FaRegFolderOpen,
   //   link: "#",
-      // role: ["admin"],
-      // menuID: "1",
+  // role: ["admin"],
+  // menuID: "1",
   //   children: [
   //     {
   //       name: "Kanban",
@@ -1575,7 +1602,17 @@ const SidebarContent = ({
   ...rest
 }: SidebarProps) => {
   const [scrollY, setScrollY] = useState(0);
-  const [hideProMenus, setHideProMenus] = useState<boolean>(false);
+  const [hideProMenus, setHideProMenus] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('hideProMenus');
+      return saved ? JSON.parse(saved) : false;
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('hideProMenus', JSON.stringify(hideProMenus));
+  }, [hideProMenus]);
   
   const handleScroll = () => {
     setScrollY(window.scrollY);

@@ -43,7 +43,7 @@ import {
   FiZap,
 } from "react-icons/fi";
 import { ProjectDataResponse } from "@/app/services/useProjects";
-import { PROJECT_STATUS_LIST } from "@/app/constants/applicationConstants";
+import { PROJECT_STATUSES } from "@/app/constants/masterStatusConstants";
 
 interface ManagerSidebarProps {
   globalFilter: string;
@@ -335,7 +335,7 @@ const ManagerSidebar = ({
               h={"20vh"}
               overflowY={"auto"}
             >
-              {PROJECT_STATUS_LIST.map((status) => {
+              {PROJECT_STATUSES.map((status) => {
                 const isSelected = statusFilter.includes(status);
                 const count = DataProjects.filter(
                   (p) => p.projectStatus === status

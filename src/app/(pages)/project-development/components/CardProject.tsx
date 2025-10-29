@@ -11,6 +11,8 @@ import {
   truncateText, 
   buildUrlPort 
 } from "@/app/helper/MasterHelper";
+import { getStatusColor } from "@/app/utils/statusUtils";
+import { StatusBadge } from "@/app/components/StatusBadge";
 import {
   Avatar,
   AvatarGroup,
@@ -53,16 +55,6 @@ interface CardProjectProps {
 const CardProject = memo(({ data }: CardProjectProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const { colorMode } = useColorMode();
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "ACTIVE": return "green";
-      case "COMPLETED": return "blue";
-      case "ONHOLD": return "orange";
-      case "INACTIVE": return "red";
-      default: return "gray";
-    }
-  };
 
   const getProgressColor = (percentage: number) => {
     if (percentage >= 80) return "green";
@@ -146,19 +138,17 @@ const CardProject = memo(({ data }: CardProjectProps) => {
         </VStack>
 
         {/* Status Badge */}
-        <Badge
+        <StatusBadge
+          status={data.projectStatus}
           position="absolute"
           top={4}
           right={4}
-          colorScheme={getStatusColor(data.projectStatus)}
           rounded="full"
           px={3}
           py={1}
           fontSize="xs"
           fontWeight="bold"
-        >
-          {data.projectStatus}
-        </Badge>
+        />
       </CardHeader>
 
       {/* Card Body */}

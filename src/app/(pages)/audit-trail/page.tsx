@@ -12,6 +12,8 @@ import {
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
 } from "@/app/constants/applicationConstants";
+import { getStatusColor } from "@/app/utils/statusUtils";
+import { StatusBadge } from "@/app/components/StatusBadge";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
@@ -144,19 +146,7 @@ function AuditTrailPage() {
         accessorKey: "status",
         cell: (info) => {
           const status = info.getValue() as string;
-          const getStatusColor = (status: string) => {
-            switch (status) {
-              case "SUCCESS":
-                return "green";
-              case "FAILED":
-                return "red";
-              case "ERROR":
-                return "orange";
-              default:
-                return "gray";
-            }
-          };
-          return <Badge colorScheme={getStatusColor(status)}>{status}</Badge>;
+          return <StatusBadge status={status} />;
         },
         header: () => <Text>Status</Text>,
         footer: (props) => props.column.id,

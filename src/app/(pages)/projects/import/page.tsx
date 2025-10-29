@@ -27,14 +27,18 @@ import {
   Flex,
   Heading,
 } from "@chakra-ui/react";
-import { FiUpload, FiDownload, FiFileText, FiCheckCircle, FiInfo } from "react-icons/fi";
+import { FiUpload, FiDownload, FiFileText, FiCheckCircle, FiInfo, FiUsers } from "react-icons/fi";
 import LayoutAdmin from "@/app/components/layoutAdmin";
 import { HeaderContent } from "@/app/components/headerContent";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
-import { radiusStyle } from "@/app/constants/applicationConstants";
+import { radiusStyle, RES_CODE_OK, MAX_SIZE_TABLE } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
+import useUsers from "@/app/services/useUsers";
+import useOrganization from "@/app/services/useOrganization";
+import { PaggingListPayload } from "@/app/types/masterTypes";
 import ImportPreviewModal from "./components/ImportPreviewModal";
+import * as XLSX from 'xlsx';
 
 import { useDocumentTitle } from "../../../hooks/useDocumentTitle";
 
@@ -49,6 +53,8 @@ export default function ProjectImportPage() {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const { List: GetUsersList } = useUsers();
+  const { List: GetOrganizationList } = useOrganization();
   
   // Auth setup (MANDATORY pattern)
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -72,6 +78,8 @@ export default function ProjectImportPage() {
   const [importedData, setImportedData] = useState<ImportedData | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isExportingOrgs, setIsExportingOrgs] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const convertExcelDate = (value: any, forAPI: boolean = false): string => {
@@ -223,6 +231,132 @@ export default function ProjectImportPage() {
     });
   };
 
+  const handleExportUsers = async () => {
+    if (!tokenData) {
+      showToast({
+        description: "Authentication required",
+        statusToast: "error",
+      });
+      return;
+    }
+
+    setIsExporting(true);
+    try {
+      const payload: PaggingListPayload = {
+        search: "",
+        limit: MAX_SIZE_TABLE,
+        page: 0,
+        filterWhere: [],
+        fieldOrder: ["nama"],
+        orderDir: "asc",
+      };
+
+      const response = await GetUsersList(payload, tokenData);
+      
+      if (!response || response.statusCode !== RES_CODE_OK) {
+        showToast({
+          description: "Failed to fetch users data",
+          statusToast: "error",
+        });
+        return;
+      }
+
+      const users = response.data || [];
+      const exportData = users.map(user => ({
+        'User ID': user.userId,
+        'Name': user.nama,
+        'Email': user.email,
+        'Phone': user.phoneNumber || '',
+        'Branch Code': user.kodeCabang || '',
+        'Branch Name': user.namaCabang || '',
+        'Work Unit Code': user.kodeUnitKerja || '',
+        'Work Unit Name': user.namaUnitKerja || '',
+        'Position Code': user.kodeJabatan || '',
+        'Position': user.jabatan || '',
+        'Status': user.userStatus
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Users");
+      
+      XLSX.writeFile(wb, `Users_Reference_${new Date().toISOString().split('T')[0]}.xlsx`);
+      
+      showToast({
+        description: "Users list exported successfully!",
+        statusToast: "success",
+      });
+    } catch (error) {
+      console.error("Export error:", error);
+      showToast({
+        description: "Failed to export users list",
+        statusToast: "error",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportOrganizations = async () => {
+    if (!tokenData) {
+      showToast({
+        description: "Authentication required",
+        statusToast: "error",
+      });
+      return;
+    }
+
+    setIsExportingOrgs(true);
+    try {
+      const payload: PaggingListPayload = {
+        search: "",
+        limit: MAX_SIZE_TABLE,
+        page: 0,
+        filterWhere: [],
+        fieldOrder: ["orgName"],
+        orderDir: "asc",
+      };
+
+      const response = await GetOrganizationList(payload, tokenData);
+      
+      if (!response || response.statusCode !== RES_CODE_OK) {
+        showToast({
+          description: "Failed to fetch organizations data",
+          statusToast: "error",
+        });
+        return;
+      }
+
+      const organizations = response.data || [];
+      const exportData = organizations.map(org => ({
+        'Organization Code': org.orgCode,
+        'Organization Name': org.orgName,
+        'Organization Type': org.orgType,
+        'Parent Code': org.orgParentCode || '',
+        'Description': org.orgDesc || ''
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Organizations");
+      
+      XLSX.writeFile(wb, `Organizations_Reference_${new Date().toISOString().split('T')[0]}.xlsx`);
+      
+      showToast({
+        description: "Organizations list exported successfully!",
+        statusToast: "success",
+      });
+    } catch (error) {
+      console.error("Export error:", error);
+      showToast({
+        description: "Failed to export organizations list",
+        statusToast: "error",
+      });
+    } finally {
+      setIsExportingOrgs(false);
+    }
+  };
+
   const handleImport = () => {
     // Convert data to API format with ISO dates
     const apiData = processDataRows(
@@ -324,6 +458,30 @@ export default function ProjectImportPage() {
                       w="full"
                     >
                       Download Excel Template
+                    </Button>
+                    <Button
+                      leftIcon={<Icon as={FiUsers} />}
+                      colorScheme="blue"
+                      variant="outline"
+                      size="lg"
+                      onClick={handleExportUsers}
+                      isLoading={isExporting}
+                      loadingText="Exporting..."
+                      w="full"
+                    >
+                      Export Users Reference
+                    </Button>
+                    <Button
+                      leftIcon={<Icon as={FiDownload} />}
+                      colorScheme="purple"
+                      variant="outline"
+                      size="lg"
+                      onClick={handleExportOrganizations}
+                      isLoading={isExportingOrgs}
+                      loadingText="Exporting..."
+                      w="full"
+                    >
+                      Export Organizations Reference
                     </Button>
                   </VStack>
                 </CardBody>

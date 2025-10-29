@@ -4,10 +4,11 @@ import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbLink,
+  Box,
   Flex,
-  Grid,
-  GridItem,
   Heading,
+  Text,
+  useColorModeValue,
 } from "@chakra-ui/react";
 
 export interface HeaderContentProps {
@@ -16,31 +17,46 @@ export interface HeaderContentProps {
 }
 
 export function HeaderContent({ titleName, breadCrumb }: HeaderContentProps) {
+  const borderColor = useColorModeValue("gray.200", "gray.600");
+  const bgGradient = useColorModeValue(
+    "linear(to-r, gray.50, white)",
+    "linear(to-r, gray.800, gray.700)"
+  );
+
   return (
     <>
       <title>KOBRA | {titleName}</title>
-      <Grid templateColumns="repeat(2, 1fr)" px={3} pb={5}>
-        <GridItem colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }}>
-          <Flex w={"full"} justifyContent={"start"} alignItems={"center"}>
-            <Heading as="h3" size="lg">
-              {titleName.toLocaleUpperCase()}
+      <Box
+        bg={bgGradient}
+        borderBottom="1px"
+        borderColor={borderColor}
+        px={6}
+        py={4}
+        mb={6}
+      >
+        <Flex justify="space-between" align="center" direction={{ base: "column", md: "row" }} gap={3}>
+          <Box>
+            <Heading as="h1" size="xl" fontWeight="600" mb={1}>
+              {titleName}
             </Heading>
-          </Flex>
-        </GridItem>
-        <GridItem colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }}>
-          <Flex w={"full"} justifyContent={"end"} alignItems={"center"}>
-            <Breadcrumb p="2">
-              {breadCrumb.map((item: string) => {
-                return (
-                  <BreadcrumbItem key={item}>
-                    <BreadcrumbLink href="#">{item}</BreadcrumbLink>
-                  </BreadcrumbItem>
-                );
-              })}
-            </Breadcrumb>
-          </Flex>
-        </GridItem>
-      </Grid>
+            <Text fontSize="sm" color="gray.500">
+              Manage and track your {titleName.toLowerCase()} efficiently
+            </Text>
+          </Box>
+          <Breadcrumb fontSize="sm" color="gray.600">
+            {breadCrumb.map((item: string, index: number) => (
+              <BreadcrumbItem key={item} isCurrentPage={index === breadCrumb.length - 1}>
+                <BreadcrumbLink 
+                  href="#" 
+                  fontWeight={index === breadCrumb.length - 1 ? "semibold" : "normal"}
+                >
+                  {item}
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+            ))}
+          </Breadcrumb>
+        </Flex>
+      </Box>
     </>
   );
 }
