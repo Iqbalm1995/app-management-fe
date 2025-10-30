@@ -15,6 +15,7 @@ import {
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
 } from "@/app/constants/applicationConstants";
+import { PaggingListPayload, ListSearchByParam } from "@/app/types/masterTypes";
 import {
   Box,
   Card,
@@ -129,7 +130,7 @@ function TeamsCenterPage() {
     if (!tokenData || !DataAuth) return;
 
     try {
-      const PayloadStats = {
+      const PayloadStats: PaggingListPayload = {
         search: "",
         limit: 999999,
         page: 0,
@@ -138,7 +139,7 @@ function TeamsCenterPage() {
         filterWhere: [],
       };
 
-      const requestData = await List(PayloadStats as any, tokenData);
+      const requestData = await List(PayloadStats, tokenData);
 
       if (requestData?.statusCode === RES_CODE_OK && requestData.data) {
         const allTeams = requestData.data as TeamsResponse[];
@@ -164,52 +165,52 @@ function TeamsCenterPage() {
 
     try {
       // Load Directorates
-      const PayloadDirectorate = {
+      const PayloadDirectorate: PaggingListPayload = {
         search: "",
         limit: 999999,
         page: 0,
         fieldOrder: ["orgName"],
         orderDir: "asc",
         filterWhere: [
-          { field: "orgType", operator: "=", value: "DIRECTORATE" }
+          { field: "orgType", operator: "=" as const, value: "DIRECTORATE" }
         ],
       };
 
-      const directorateResponse = await ListOrganizations(PayloadDirectorate as any, tokenData);
+      const directorateResponse = await ListOrganizations(PayloadDirectorate, tokenData);
       if (directorateResponse?.statusCode === RES_CODE_OK && directorateResponse.data) {
         setDirectorateData(directorateResponse.data as OrganizationResponse[]);
       }
 
       // Load Divisions
-      const PayloadDivision = {
+      const PayloadDivision: PaggingListPayload = {
         search: "",
         limit: 999999,
         page: 0,
         fieldOrder: ["orgName"],
         orderDir: "asc",
         filterWhere: [
-          { field: "orgType", operator: "=", value: "DIVISION" }
+          { field: "orgType", operator: "=" as const, value: "DIVISION" }
         ],
       };
 
-      const divisionResponse = await ListOrganizations(PayloadDivision as any, tokenData);
+      const divisionResponse = await ListOrganizations(PayloadDivision, tokenData);
       if (divisionResponse?.statusCode === RES_CODE_OK && divisionResponse.data) {
         setDivisionData(divisionResponse.data as OrganizationResponse[]);
       }
 
       // Load Groups
-      const PayloadGroup = {
+      const PayloadGroup: PaggingListPayload = {
         search: "",
         limit: 999999,
         page: 0,
         fieldOrder: ["orgName"],
         orderDir: "asc",
         filterWhere: [
-          { field: "orgType", operator: "=", value: "GROUP" }
+          { field: "orgType", operator: "=" as const, value: "GROUP" }
         ],
       };
 
-      const groupResponse = await ListOrganizations(PayloadGroup as any, tokenData);
+      const groupResponse = await ListOrganizations(PayloadGroup, tokenData);
       if (groupResponse?.statusCode === RES_CODE_OK && groupResponse.data) {
         setGroupData(groupResponse.data as OrganizationResponse[]);
       }
@@ -227,7 +228,7 @@ function TeamsCenterPage() {
       setIsLoadingProcess(true);
 
       // Build filter conditions based on selected filters
-      const filterConditions = []; // Group filtering only - following standard pattern
+      const filterConditions: ListSearchByParam[] = []; // Group filtering only - following standard pattern
 
       // Filter by group only (under division) - standard organization filtering pattern
       if (selectedGroup !== "all") {
@@ -235,7 +236,7 @@ function TeamsCenterPage() {
         if (selectedOrg) {
           filterConditions.push({
             field: "orgGroupCode",
-            operator: "=",
+            operator: "=" as const,
             value: selectedOrg.orgCode
           });
         }
@@ -244,22 +245,12 @@ function TeamsCenterPage() {
       if (selectedDirectorate !== "all") {
         const selectedOrg = DirectorateData.find(org => org.id === selectedDirectorate);
         if (selectedOrg) {
-          filterConditions.push({
-            // field: "directorateCode", // API doesn't support this field
-            operator: "=",
-            value: selectedOrg.orgCode
-          });
         }
       }
 
       if (selectedDivision !== "all") {
         const selectedOrg = DivisionData.find(org => org.id === selectedDivision);
         if (selectedOrg) {
-          filterConditions.push({
-            // field: "divisionCode", // API doesn't support this field
-            operator: "=",
-            value: selectedOrg.orgCode
-          });
         }
       }
 
@@ -268,7 +259,7 @@ function TeamsCenterPage() {
         if (selectedOrg) {
           filterConditions.push({
             field: "orgGroupCode",
-            operator: "=",
+            operator: "=" as const,
             value: selectedOrg.orgCode
           });
         }
@@ -296,7 +287,8 @@ function TeamsCenterPage() {
         setTotalPageData(0);
         setIsLoadingProcess(false);
         return;
-      } const PayloadList = {
+      }
+      const PayloadList: PaggingListPayload = {
         search: searchQuery,
         limit: pageSize,
         page: pageIndex,
@@ -305,7 +297,7 @@ function TeamsCenterPage() {
         filterWhere: filterConditions,
       };
 
-      const requestData = await List(PayloadList as any, tokenData);
+      const requestData = await List(PayloadList, tokenData);
 
       if (!requestData || requestData.statusCode !== RES_CODE_OK) {
         showToast({

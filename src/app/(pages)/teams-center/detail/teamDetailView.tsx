@@ -30,6 +30,7 @@ import {
 } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { buildUrlPort } from "@/app/helper/MasterHelper";
+import { PaggingListPayload, ListSearchByParam } from "@/app/types/masterTypes";
 import {
   Box,
   Card,
@@ -82,7 +83,14 @@ import {
   FiPlus,
 } from "react-icons/fi";
 
-interface TeamDetailViewProps { }
+type TeamDetailViewProps = object
+
+interface TeamFormValues {
+  teamName: string;
+  teamDesc: string;
+  orgGroupId: string;
+  isActive: string;
+}
 
 function TeamDetailView({ }: TeamDetailViewProps) {
   const { colorMode } = useColorMode();
@@ -134,6 +142,7 @@ function TeamDetailView({ }: TeamDetailViewProps) {
     id: string;
     name: string;
   } | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const cancelRef = useRef<any>(null);
 
   // Add member modal state
@@ -346,7 +355,7 @@ function TeamDetailView({ }: TeamDetailViewProps) {
 
     try {
       // Load Directorates (always load all)
-      const PayloadDirectorate = {
+      const PayloadDirectorate: PaggingListPayload = {
         search: "",
         limit: 999999,
         page: 0,
@@ -358,7 +367,7 @@ function TeamDetailView({ }: TeamDetailViewProps) {
       };
 
       const directorateResponse = await ListOrganizations(
-        PayloadDirectorate as any,
+        PayloadDirectorate,
         tokenData
       );
       if (
@@ -369,25 +378,15 @@ function TeamDetailView({ }: TeamDetailViewProps) {
       }
 
       // Load Divisions - if no directorate selected, load current team's division's parent divisions
-      let divisionFilter = [
-        { field: "orgType", operator: "=", value: "DIVISION" },
+      const divisionFilter: ListSearchByParam[] = [
+        { field: "orgType", operator: "=" as const, value: "DIVISION" },
+        ...(selectedDirectorate
+          ? [{ field: "parentId", operator: "=" as const, value: selectedDirectorate }]
+          : TeamData?.directorate?.id
+            ? [{ field: "parentId", operator: "=" as const, value: TeamData.directorate.id }]
+            : []),
       ];
-      if (selectedDirectorate) {
-        divisionFilter.push({
-          field: "parentId",
-          operator: "=",
-          value: selectedDirectorate,
-        });
-      } else if (TeamData?.directorate?.id) {
-        // Load divisions under current team's directorate
-        divisionFilter.push({
-          field: "parentId",
-          operator: "=",
-          value: TeamData.directorate.id,
-        });
-      }
-
-      const PayloadDivision = {
+      const PayloadDivision: PaggingListPayload = {
         search: "",
         limit: 999999,
         page: 0,
@@ -397,7 +396,7 @@ function TeamDetailView({ }: TeamDetailViewProps) {
       };
 
       const divisionResponse = await ListOrganizations(
-        PayloadDivision as any,
+        PayloadDivision,
         tokenData
       );
       if (
@@ -408,23 +407,15 @@ function TeamDetailView({ }: TeamDetailViewProps) {
       }
 
       // Load Groups - if no division selected, load current team's group's parent groups
-      let groupFilter = [{ field: "orgType", operator: "=", value: "GROUP" }];
-      if (selectedDivision) {
-        groupFilter.push({
-          field: "parentId",
-          operator: "=",
-          value: selectedDivision,
-        });
-      } else if (TeamData?.division?.id) {
-        // Load groups under current team's division
-        groupFilter.push({
-          field: "parentId",
-          operator: "=",
-          value: TeamData.division.id,
-        });
-      }
-
-      const PayloadGroup = {
+      const groupFilter: ListSearchByParam[] = [
+        { field: "orgType", operator: "=" as const, value: "GROUP" },
+        ...(selectedDivision
+          ? [{ field: "parentId", operator: "=" as const, value: selectedDivision }]
+          : TeamData?.division?.id
+            ? [{ field: "parentId", operator: "=" as const, value: TeamData.division.id }]
+            : []),
+      ];
+      const PayloadGroup: PaggingListPayload = {
         search: "",
         limit: 999999,
         page: 0,
@@ -434,7 +425,7 @@ function TeamDetailView({ }: TeamDetailViewProps) {
       };
 
       const groupResponse = await ListOrganizations(
-        PayloadGroup as any,
+        PayloadGroup,
         tokenData
       );
       if (groupResponse?.statusCode === RES_CODE_OK && groupResponse.data) {
@@ -445,7 +436,7 @@ function TeamDetailView({ }: TeamDetailViewProps) {
     }
   };
 
-  const handleUpdateTeam = async (values: any) => {
+  const handleUpdateTeam = async (values: TeamFormValues) => {
     if (!teamId || !tokenData) return;
 
     try {
