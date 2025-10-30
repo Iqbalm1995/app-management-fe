@@ -149,6 +149,7 @@ import {
   TeamTab,
   AnalyticsTab,
   TimelineTab,
+  EditTab,
 } from "./tabs";
 import LoadingMiniSquare from "@/app/components/loadingMiniSquare";
 
@@ -726,15 +727,15 @@ function ProjectManagerDetail() {
                         DataApps?.appsStatus) === "ACTIVE"
                         ? "green"
                         : (DataProject?.appsProject?.appsStatus ||
-                            DataApps?.appsStatus) === "INACTIVE"
-                        ? "red"
-                        : (DataProject?.appsProject?.appsStatus ||
+                          DataApps?.appsStatus) === "INACTIVE"
+                          ? "red"
+                          : (DataProject?.appsProject?.appsStatus ||
                             DataApps?.appsStatus) === "DEVELOPMENT"
-                        ? "blue"
-                        : (DataProject?.appsProject?.appsStatus ||
-                            DataApps?.appsStatus) === "TESTING"
-                        ? "orange"
-                        : "gray"
+                            ? "blue"
+                            : (DataProject?.appsProject?.appsStatus ||
+                              DataApps?.appsStatus) === "TESTING"
+                              ? "orange"
+                              : "gray"
                     }
                     size="sm"
                     px={2}
@@ -769,10 +770,10 @@ function ProjectManagerDetail() {
                         DataProject.projectStatus === "ACTIVE"
                           ? "green"
                           : DataProject.projectStatus === "ONHOLD"
-                          ? "orange"
-                          : DataProject.projectStatus === "COMPLETED"
-                          ? "blue"
-                          : "gray"
+                            ? "orange"
+                            : DataProject.projectStatus === "COMPLETED"
+                              ? "blue"
+                              : "gray"
                       }
                       px={3}
                       py={1}
@@ -838,9 +839,9 @@ function ProjectManagerDetail() {
                       <Text fontSize="lg" fontWeight="bold" color="orange.200">
                         {DataProject.projectRegisterDate
                           ? calculateDurationInDays(
-                              DataProject.projectRegisterDate,
-                              new Date().toISOString()
-                            )
+                            DataProject.projectRegisterDate,
+                            new Date().toISOString()
+                          )
                           : 0}
                       </Text>
                       <Text fontSize="xs" opacity={0.8}>
@@ -983,6 +984,14 @@ function ProjectManagerDetail() {
                         <Text>Timeline</Text>
                       </HStack>
                     </TabButtonCustomStyle>
+
+                    <TabButtonCustomStyle>
+                      <HStack>
+                        <FiSettings size={16} />
+                        <Text>Edit</Text>
+                      </HStack>
+                    </TabButtonCustomStyle>
+
                   </TabList>
 
                   <TabPanels
@@ -997,6 +1006,7 @@ function ProjectManagerDetail() {
                     <TeamTab DataProject={DataProject} />
                     <AnalyticsTab DataProject={DataProject} />
                     <TimelineTab DataProject={DataProject} />
+                    <EditTab DataProject={DataProject} />
                   </TabPanels>
                 </Tabs>
               </CardBody>
@@ -1141,10 +1151,10 @@ function ProjectManagerDetail() {
                               ? "green.400"
                               : DataProject.appsProject.appsStatus ===
                                 "DEVELOPMENT"
-                              ? "blue.400"
-                              : DataProject.appsProject.appsStatus === "TESTING"
-                              ? "orange.400"
-                              : "red.400"
+                                ? "blue.400"
+                                : DataProject.appsProject.appsStatus === "TESTING"
+                                  ? "orange.400"
+                                  : "red.400"
                           }
                           rounded="full"
                           border="2px solid white"
@@ -1204,11 +1214,11 @@ function ProjectManagerDetail() {
                                 ? "green"
                                 : DataProject.appsProject.appsStatus ===
                                   "DEVELOPMENT"
-                                ? "blue"
-                                : DataProject.appsProject.appsStatus ===
-                                  "TESTING"
-                                ? "orange"
-                                : "red"
+                                  ? "blue"
+                                  : DataProject.appsProject.appsStatus ===
+                                    "TESTING"
+                                    ? "orange"
+                                    : "red"
                             }
                             size="sm"
                             px={2}
@@ -1387,10 +1397,10 @@ function ProjectManagerDetail() {
                               DataProject.projectStatus === "ACTIVE"
                                 ? "green"
                                 : DataProject.projectStatus === "ONHOLD"
-                                ? "orange"
-                                : DataProject.projectStatus === "COMPLETED"
-                                ? "blue"
-                                : "gray"
+                                  ? "orange"
+                                  : DataProject.projectStatus === "COMPLETED"
+                                    ? "blue"
+                                    : "gray"
                             }
                           >
                             {DataProject.projectStatus}

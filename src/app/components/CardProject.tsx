@@ -97,7 +97,7 @@ const CardProject = memo(
         case "manager":
           return {
             linkPath:
-              linkPath || `projects-manager/manage?projectId=${data.id}`,
+              linkPath || `projects-manager/detail?projectId=${data.id}`,
             actionLabel: actionLabel || "Manage Project",
             actionIcon: actionIcon || FiSettings,
             colorScheme: "blue",
