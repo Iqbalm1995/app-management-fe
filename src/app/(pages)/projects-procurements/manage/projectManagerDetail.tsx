@@ -150,6 +150,7 @@ import {
   TeamTab,
   AnalyticsTab,
   TimelineTab,
+  EditTab,
 } from "./tabs";
 import LoadingMiniSquare from "@/app/components/loadingMiniSquare";
 import { TbLayoutGridAdd } from "react-icons/tb";
@@ -560,7 +561,12 @@ function ProjectManagerDetailView() {
                       <Text>Timeline</Text>
                     </HStack>
                   </TabButtonCustomStyle>
-                </TabList>
+                  <TabButtonCustomStyle>
+                    <HStack>
+                      <FiSettings size={16} />
+                      <Text>Edit</Text>
+                    </HStack>
+                  </TabButtonCustomStyle>                </TabList>
               </Box>
 
               {/* Content Card */}
@@ -586,6 +592,7 @@ function ProjectManagerDetailView() {
                     <TeamTab DataProject={DataProject} />
                     <AnalyticsTab DataProject={DataProject} />
                     <TimelineTab DataProject={DataProject} />
+                    <EditTab DataProject={DataProject} />
                   </TabPanels>
                 </CardBody>
               </Card>

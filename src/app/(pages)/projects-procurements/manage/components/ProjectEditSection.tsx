@@ -14,15 +14,12 @@ import {
   FormControl,
   FormLabel,
   Input,
-  Select,
   useColorMode,
-  Badge,
   Box,
 } from "@chakra-ui/react";
 import { FiEdit3, FiSave, FiX, FiSettings, FiRefreshCcw } from "react-icons/fi";
 import { useState, useEffect } from "react";
 import { radiusStyle, RES_CODE_OK, RES_GENERIC_ERROR_MSG } from "@/app/constants/applicationConstants";
-import { getStatusColor } from "@/app/utils/statusUtils";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
