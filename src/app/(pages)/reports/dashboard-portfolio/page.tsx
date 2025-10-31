@@ -34,7 +34,7 @@ import {
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { getCurrentQuarter, convertQuarterToDateRange } from "@/app/helper/MasterHelper";
-import useSnapshotServices, { DashboardFilterRequest, ProjectSummaryDashboardResponse, ProjectQuarterlyDashboardResponse, DivisionOwnerQuartileDashboardResponse } from "@/app/services/useSnapshotServices";
+import useSnapshotServices, { DashboardFilterRequest, ProjectSummaryDashboardResponse, ProjectQuarterlyDashboardResponse, DivisionOwnerQuartileDashboardResponse, ProjectCharacteristicsDashboardResponse } from "@/app/services/useSnapshotServices";
 import dynamic from "next/dynamic";
 import { ApexOptions } from "apexcharts";
 import { FiTrendingUp, FiBarChart, FiActivity, FiRefreshCw } from "react-icons/fi";
@@ -47,10 +47,11 @@ export default function DashboardPortfolioPage() {
   const [chartData, setChartData] = useState<ProjectSummaryDashboardResponse[]>([]);
   const [quarterlyData, setQuarterlyData] = useState<ProjectQuarterlyDashboardResponse[]>([]);
   const [divisionData, setDivisionData] = useState<DivisionOwnerQuartileDashboardResponse[]>([]);
+  const [characteristicsData, setCharacteristicsData] = useState<ProjectCharacteristicsDashboardResponse[]>([]);
   const [tokenData, setTokenData] = useState<string>("");
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   
-  const { getProjectSummaryDashboard, getProjectQuarterlyDashboard, getDivisionOwnerQuartileDashboard, isLoading, error } = useSnapshotServices();
+  const { getProjectSummaryDashboard, getProjectQuarterlyDashboard, getDivisionOwnerQuartileDashboard, getProjectCharacteristicsDashboard, isLoading, error } = useSnapshotServices();
   const toast = useToast();
 
   // Load token from localStorage
@@ -204,6 +205,13 @@ export default function DashboardPortfolioPage() {
     }
   };
 
+  // Update division data when quarter/year changes
+  useEffect(() => {
+    if (tokenData) {
+      loadDivisionData();
+    }
+  }, [selectedQuarter, selectedYear, tokenData]);
+
   // Update quarterly data when quarter/year changes
   useEffect(() => {
     if (tokenData) {
@@ -211,10 +219,33 @@ export default function DashboardPortfolioPage() {
     }
   }, [selectedQuarter, selectedYear, tokenData]);
 
-  // Update division data when quarter/year changes
+  // Load project characteristics data
+  const loadCharacteristicsData = async () => {
+    if (!tokenData) return;
+
+    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const filterPayload: DashboardFilterRequest = {
+      startDate: dateRange.startDate,
+      endDate: dateRange.endDate,
+    };
+
+    try {
+      const response = await getProjectCharacteristicsDashboard(filterPayload, tokenData);
+      const apiData = response?.data || [];
+      
+      // Randomize and limit to 7 characteristics
+      let randomizedData = [...apiData].sort(() => Math.random() - 0.5).slice(0, 7);
+      
+      setCharacteristicsData(randomizedData);
+    } catch (err) {
+      console.error("Failed to load characteristics data:", err);
+    }
+  };
+
+  // Update characteristics data when quarter/year changes
   useEffect(() => {
     if (tokenData) {
-      loadDivisionData();
+      loadCharacteristicsData();
     }
   }, [selectedQuarter, selectedYear, tokenData]);
 
@@ -235,7 +266,8 @@ export default function DashboardPortfolioPage() {
       await Promise.all([
         loadProjectSummaryData(),
         loadQuarterlyData(),
-        loadDivisionData()
+        loadDivisionData(),
+        loadCharacteristicsData()
       ]);
     } catch (err) {
       toast({
@@ -578,6 +610,42 @@ export default function DashboardPortfolioPage() {
   const divisionCategories = [...new Set(divisionData.map(item => shortenDivisionName(item.divisionName)))];
   const divisionFullNames = [...new Set(divisionData.map(item => item.divisionName))];
 
+  // Project Characteristics Chart Configuration
+  const characteristicsChartOptions: ApexOptions = {
+    chart: {
+      type: 'bar',
+      height: 400,
+      fontFamily: 'Inter, sans-serif',
+      toolbar: { show: false }
+    },
+    plotOptions: {
+      bar: { 
+        horizontal: true, 
+        borderRadius: 4,
+        distributed: true
+      }
+    },
+    colors: ['#ED8936', '#38B2AC', '#3182CE', '#805AD5', '#D69E2E', '#E53E3E', '#38A169'],
+    fill: {
+      colors: ['#ED8936', '#38B2AC', '#3182CE', '#805AD5', '#D69E2E', '#E53E3E', '#38A169']
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: (val: number) => val > 0 ? `${val}` : ''
+    },
+    xaxis: {
+      categories: characteristicsData.map(item => item.characteristicName)
+    },
+    tooltip: {
+      y: { formatter: (val: number) => `${val} projects` }
+    }
+  };
+
+  const characteristicsChartSeries = [{
+    name: 'Projects',
+    data: characteristicsData.map(item => item.projectCount)
+  }];
+
   // Update division chart options with categories and tooltips
   const divisionChartOptionsWithCategories: ApexOptions = {
     ...divisionChartOptions,
@@ -918,6 +986,8 @@ export default function DashboardPortfolioPage() {
                             size="xs" 
                             variant="ghost" 
                             color="white"
+                            onClick={loadCharacteristicsData}
+                            isLoading={isLoading}
                             _hover={{ bg: "whiteAlpha.200" }}
                           >
                             <FiRefreshCw />
@@ -934,12 +1004,37 @@ export default function DashboardPortfolioPage() {
                       </Flex>
                     </CardHeader>
                     <CardBody p={4}>
-                      <Flex justify="center" align="center" height="300px" direction="column">
-                        <Icon as={FiTrendingUp} size="48px" color="gray.300" mb={4} />
-                        <Text color="gray.500" fontSize="sm" textAlign="center">
-                          Coming Soon
-                        </Text>
-                      </Flex>
+                      {characteristicsData.length > 0 ? (
+                        <Box>
+                          <Chart
+                            options={characteristicsChartOptions}
+                            series={characteristicsChartSeries}
+                            type="bar"
+                            height={400}
+                          />
+                          <HStack justify="center" mt={4} spacing={6}>
+                            <Stat textAlign="center" size="sm">
+                              <StatLabel color="gray.600">Characteristics</StatLabel>
+                              <StatNumber color="orange.600" fontSize="lg">
+                                {characteristicsData.length}
+                              </StatNumber>
+                            </Stat>
+                            <Stat textAlign="center" size="sm">
+                              <StatLabel color="gray.600">Total Projects</StatLabel>
+                              <StatNumber color="blue.600" fontSize="lg">
+                                {characteristicsData.reduce((sum, item) => sum + item.projectCount, 0)}
+                              </StatNumber>
+                            </Stat>
+                          </HStack>
+                        </Box>
+                      ) : (
+                        <Flex justify="center" align="center" height="400px" direction="column">
+                          <Icon as={FiActivity} size="48px" color="gray.300" mb={4} />
+                          <Text color="gray.500" fontSize="sm" textAlign="center">
+                            No characteristics data available
+                          </Text>
+                        </Flex>
+                      )}
                     </CardBody>
                   </Card>
                 </GridItem>

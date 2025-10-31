@@ -47,6 +47,18 @@ export interface DivisionOwnerQuartileDashboardResponse {
   lastUpdated?: string;
 }
 
+export interface ProjectCharacteristicsDashboardResponse {
+  characteristicName: string;
+  projectCount: number;
+  lastUpdated?: string;
+}
+
+export interface ProjectCharacteristicsDashboardResponse {
+  characteristicName: string;
+  projectCount: number;
+  lastUpdated?: string;
+}
+
 export interface SnapshotProjectSummaryResponse {
   message: string;
   snapshotTime: string;
@@ -138,6 +150,7 @@ export interface useSnapshotServicesServices {
   getProjectSummaryDashboard: (payload: DashboardFilterRequest, token: string) => Promise<ApiGenericResponse<ProjectSummaryDashboardResponse[]> | null>;
   getProjectQuarterlyDashboard: (payload: DashboardFilterRequest, token: string) => Promise<ApiGenericResponse<ProjectQuarterlyDashboardResponse[]> | null>;
   getDivisionOwnerQuartileDashboard: (payload: DashboardFilterRequest, token: string) => Promise<ApiGenericResponse<DivisionOwnerQuartileDashboardResponse[]> | null>;
+  getProjectCharacteristicsDashboard: (payload: DashboardFilterRequest, token: string) => Promise<ApiGenericResponse<ProjectCharacteristicsDashboardResponse[]> | null>;
   isLoading: boolean;
   error: string | null;
 }
@@ -231,6 +244,7 @@ const useSnapshotServices = (): useSnapshotServicesServices => {
     getProjectSummaryDashboard: (payload: DashboardFilterRequest, token: string) => callDashboard<ProjectSummaryDashboardResponse[]>('dashboard/project-summary', payload, token),
     getProjectQuarterlyDashboard: (payload: DashboardFilterRequest, token: string) => callDashboard<ProjectQuarterlyDashboardResponse[]>('dashboard/project-quarterly', payload, token),
     getDivisionOwnerQuartileDashboard: (payload: DashboardFilterRequest, token: string) => callDashboard<DivisionOwnerQuartileDashboardResponse[]>('dashboard/division-owner-quartile', payload, token),
+    getProjectCharacteristicsDashboard: (payload: DashboardFilterRequest, token: string) => callDashboard<ProjectCharacteristicsDashboardResponse[]>('dashboard/project-characteristics', payload, token),
     isLoading,
     error,
   };
