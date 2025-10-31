@@ -917,6 +917,22 @@ export const getQuarterDateRange = (year: number, quarter: number | "all") => {
   return { startDate, endDate };
 };
 
+export const convertQuarterToDateRange = (year: number, quarter: string): { startDate: string; endDate: string } => {
+  const quarterMap: Record<string, { start: string; end: string }> = {
+    "Q1": { start: "01-01", end: "03-31" },
+    "Q2": { start: "04-01", end: "06-30" },
+    "Q3": { start: "07-01", end: "09-30" },
+    "Q4": { start: "10-01", end: "12-31" },
+    "all": { start: "01-01", end: "12-31" }
+  };
+
+  const range = quarterMap[quarter] || quarterMap["all"];
+  return {
+    startDate: `${year}-${range.start}`,
+    endDate: `${year}-${range.end}`
+  };
+};
+
 export function getRandomNumber(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min)) + min;
 }

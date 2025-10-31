@@ -16,6 +16,17 @@ export interface SnapshotRequest {
   snapshotDate: string;
 }
 
+export interface DashboardFilterRequest {
+  startDate: string;
+  endDate: string;
+}
+
+export interface ProjectSummaryDashboardResponse {
+  projectStatus: string;
+  projectCount: number;
+  percentage: number;
+}
+
 export interface SnapshotProjectSummaryResponse {
   message: string;
   snapshotTime: string;
@@ -103,6 +114,8 @@ export interface useSnapshotServicesServices {
   projectDivisionOwnerQuartal: (payload: SnapshotRequest, token: string) => Promise<ApiGenericResponse<SnapshotProjectDivisionOwnerQuartalResponse> | null>;
   userProjectClosedQuartal: (payload: SnapshotRequest, token: string) => Promise<ApiGenericResponse<SnapshotUserProjectClosedQuartalResponse> | null>;
   userProjectActiveQuartal: (payload: SnapshotRequest, token: string) => Promise<ApiGenericResponse<SnapshotUserProjectActiveQuartalResponse> | null>;
+  // Dashboard methods
+  getProjectSummaryDashboard: (payload: DashboardFilterRequest, token: string) => Promise<ApiGenericResponse<ProjectSummaryDashboardResponse[]> | null>;
   isLoading: boolean;
   error: string | null;
 }
@@ -146,6 +159,41 @@ const useSnapshotServices = (): useSnapshotServicesServices => {
     }
   };
 
+  const callDashboard = async <T>(endpoint: string, payload: DashboardFilterRequest, token: string): Promise<ApiGenericResponse<T> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    const PathEndpoint: string = `/v1/Report/${endpoint}`;
+    try {
+      const response = await axiosInstance.post<ApiGenericResponse<T>>(
+        `${UrlEndpoint}${PathEndpoint}`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(err.response?.data?.message || "Dashboard request failed");
+        return errorResponse as ApiGenericResponse<T>;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null as T,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
   return {
     projectSummary: (payload: SnapshotRequest, token: string) => callSnapshot<SnapshotProjectSummaryResponse>('snapshot-project-summary', payload, token),
     projectCharacteristic: (payload: SnapshotRequest, token: string) => callSnapshot<SnapshotProjectCharacteristicResponse>('snapshot-project-characteristic', payload, token),
@@ -157,6 +205,8 @@ const useSnapshotServices = (): useSnapshotServicesServices => {
     projectDivisionOwnerQuartal: (payload: SnapshotRequest, token: string) => callSnapshot<SnapshotProjectDivisionOwnerQuartalResponse>('snapshot-project-division-owner-quartal', payload, token),
     userProjectClosedQuartal: (payload: SnapshotRequest, token: string) => callSnapshot<SnapshotUserProjectClosedQuartalResponse>('snapshot-user-project-closed-quartal', payload, token),
     userProjectActiveQuartal: (payload: SnapshotRequest, token: string) => callSnapshot<SnapshotUserProjectActiveQuartalResponse>('snapshot-user-project-active-quartal', payload, token),
+    // Dashboard methods
+    getProjectSummaryDashboard: (payload: DashboardFilterRequest, token: string) => callDashboard<ProjectSummaryDashboardResponse[]>('dashboard/project-summary', payload, token),
     isLoading,
     error,
   };
