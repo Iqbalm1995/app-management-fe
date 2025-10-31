@@ -14,6 +14,7 @@ import {
   FormControl,
   FormLabel,
   Input,
+  Textarea,
   useColorMode,
   Box,
 } from "@chakra-ui/react";
@@ -26,9 +27,10 @@ import { AuthDataResponse } from "@/app/services/useAuthentications";
 
 interface ProjectEditSectionProps {
   DataProject: ProjectDataResponse | null;
+  onRefresh?: () => void;
 }
 
-const ProjectEditSection = ({ DataProject }: ProjectEditSectionProps) => {
+const ProjectEditSection = ({ DataProject, onRefresh }: ProjectEditSectionProps) => {
   const { colorMode } = useColorMode();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -43,6 +45,7 @@ const ProjectEditSection = ({ DataProject }: ProjectEditSectionProps) => {
   const [formData, setFormData] = useState({
     projectNo: "",
     projectName: "",
+    projectDesc: "",
   });
 
   // Auth effect
@@ -65,9 +68,18 @@ const ProjectEditSection = ({ DataProject }: ProjectEditSectionProps) => {
       setFormData({
         projectNo: DataProject.projectNo || "",
         projectName: DataProject.projectName || "",
+        projectDesc: DataProject.projectDesc || "",
       });
     }
   }, [DataProject]);
+
+  const handleRefresh = () => {
+    if (onRefresh) {
+      onRefresh();
+    } else {
+      window.location.reload();
+    }
+  };
 
   const handleSave = async () => {
     if (!DataProject || !tokenData) return;
@@ -78,7 +90,7 @@ const ProjectEditSection = ({ DataProject }: ProjectEditSectionProps) => {
         id: DataProject.id,
         projectNo: formData.projectNo,
         projectName: formData.projectName,
-        projectDesc: DataProject.projectDesc,
+        projectDesc: formData.projectDesc,
         note: DataProject.note,
         projectCategory: DataProject.projectCategory,
         projectType: DataProject.projectType,
@@ -99,8 +111,8 @@ const ProjectEditSection = ({ DataProject }: ProjectEditSectionProps) => {
           statusToast: "success",
         });
         setIsEditing(false);
-        // Refresh page data
-        window.location.reload();
+        // Refresh project data
+        handleRefresh();
       } else {
         showToast({
           description: response?.message || RES_GENERIC_ERROR_MSG,
@@ -148,7 +160,7 @@ const ProjectEditSection = ({ DataProject }: ProjectEditSectionProps) => {
             leftIcon={<FiRefreshCcw />}
             colorScheme="gray"
             rounded="full"
-            onClick={() => window.location.reload()}
+            onClick={handleRefresh}
           >
             Refresh
           </Button>
@@ -222,6 +234,27 @@ const ProjectEditSection = ({ DataProject }: ProjectEditSectionProps) => {
                 bg={isEditing ? (colorMode === "light" ? "white" : "gray.600") : (colorMode === "light" ? "gray.50" : "gray.800")}
                 borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
                 rounded="lg"
+                _readOnly={{
+                  cursor: "default",
+                  _focus: { boxShadow: "none" }
+                }}
+              />
+            </FormControl>
+
+            {/* Project Description */}
+            <FormControl>
+              <FormLabel fontSize="sm" fontWeight="semibold" color="gray.700">
+                Project Description
+              </FormLabel>
+              <Textarea
+                value={formData.projectDesc}
+                onChange={(e) => setFormData(prev => ({ ...prev, projectDesc: e.target.value }))}
+                isReadOnly={!isEditing}
+                bg={isEditing ? (colorMode === "light" ? "white" : "gray.600") : (colorMode === "light" ? "gray.50" : "gray.800")}
+                borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
+                rounded="lg"
+                rows={4}
+                placeholder="Enter project description..."
                 _readOnly={{
                   cursor: "default",
                   _focus: { boxShadow: "none" }

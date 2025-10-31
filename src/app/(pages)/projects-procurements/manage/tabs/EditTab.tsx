@@ -9,9 +9,10 @@ import ProjectEditSection from "../components/ProjectEditSection";
 
 interface EditTabProps {
   DataProject: ProjectDataResponse | null;
+  onRefresh?: () => void;
 }
 
-const EditTab = ({ DataProject }: EditTabProps) => {
+const EditTab = ({ DataProject, onRefresh }: EditTabProps) => {
   const { colorMode } = useColorMode();
   
   console.log("EditTab rendering in procurements");
@@ -23,7 +24,7 @@ const EditTab = ({ DataProject }: EditTabProps) => {
       roundedBottom={radiusStyle}
     >
       <Suspense fallback={<LoadingMiniSquare />}>
-        <ProjectEditSection DataProject={DataProject} />
+        <ProjectEditSection DataProject={DataProject} onRefresh={onRefresh} />
       </Suspense>
     </TabPanel>
   );

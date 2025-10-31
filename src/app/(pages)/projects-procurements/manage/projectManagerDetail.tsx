@@ -573,7 +573,10 @@ function ProjectManagerDetailView() {
                     <TeamTab DataProject={DataProject} />
                     <AnalyticsTab DataProject={DataProject} />
                     <TimelineTab DataProject={DataProject} />
-                    <EditTab DataProject={DataProject} />
+                    <EditTab 
+                      DataProject={DataProject} 
+                      onRefresh={() => setRefreshData((prev) => prev + 1)}
+                    />
                   </TabPanels>
                 </CardBody>
               </Card>

@@ -14,6 +14,7 @@ import {
   FormControl,
   FormLabel,
   Input,
+  Textarea,
   Select,
   useColorMode,
   Badge,
@@ -46,6 +47,7 @@ const ProjectEditSection = ({ DataProject }: ProjectEditSectionProps) => {
   const [formData, setFormData] = useState({
     projectNo: "",
     projectName: "",
+    projectDesc: "",
   });
 
   // Auth effect
@@ -68,6 +70,7 @@ const ProjectEditSection = ({ DataProject }: ProjectEditSectionProps) => {
       setFormData({
         projectNo: DataProject.projectNo || "",
         projectName: DataProject.projectName || "",
+        projectDesc: DataProject.projectDesc || "",
       });
     }
   }, [DataProject]);
@@ -81,7 +84,7 @@ const ProjectEditSection = ({ DataProject }: ProjectEditSectionProps) => {
         id: DataProject.id,
         projectNo: formData.projectNo,
         projectName: formData.projectName,
-        projectDesc: DataProject.projectDesc,
+        projectDesc: formData.projectDesc,
         note: DataProject.note,
         projectCategory: DataProject.projectCategory,
         projectType: DataProject.projectType,
@@ -225,6 +228,27 @@ const ProjectEditSection = ({ DataProject }: ProjectEditSectionProps) => {
                 bg={isEditing ? (colorMode === "light" ? "white" : "gray.600") : (colorMode === "light" ? "gray.50" : "gray.800")}
                 borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
                 rounded="lg"
+                _readOnly={{
+                  cursor: "default",
+                  _focus: { boxShadow: "none" }
+                }}
+              />
+            </FormControl>
+
+            {/* Project Description */}
+            <FormControl>
+              <FormLabel fontSize="sm" fontWeight="semibold" color="gray.700">
+                Project Description
+              </FormLabel>
+              <Textarea
+                value={formData.projectDesc}
+                onChange={(e) => setFormData(prev => ({ ...prev, projectDesc: e.target.value }))}
+                isReadOnly={!isEditing}
+                bg={isEditing ? (colorMode === "light" ? "white" : "gray.600") : (colorMode === "light" ? "gray.50" : "gray.800")}
+                borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
+                rounded="lg"
+                rows={4}
+                placeholder="Enter project description..."
                 _readOnly={{
                   cursor: "default",
                   _focus: { boxShadow: "none" }
