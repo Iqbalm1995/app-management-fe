@@ -281,6 +281,44 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                           {DataProject.projectType || "N/A"}
                         </Badge>
                       </HStack>
+                      <Divider />
+                      <HStack justify="space-between">
+                        <Text
+                          fontSize="sm"
+                          color="gray.600"
+                          fontWeight="medium"
+                        >
+                          Acquisition Code:
+                        </Text>
+                        <Badge
+                          colorScheme="orange"
+                          px={3}
+                          py={1}
+                          rounded="full"
+                          fontSize="sm"
+                        >
+                          {DataProject.projectAcquisitionCode || "N/A"}
+                        </Badge>
+                      </HStack>
+                      <Divider />
+                      <HStack justify="space-between">
+                        <Text
+                          fontSize="sm"
+                          color="gray.600"
+                          fontWeight="medium"
+                        >
+                          Acquisition Name:
+                        </Text>
+                        <Badge
+                          colorScheme="teal"
+                          px={3}
+                          py={1}
+                          rounded="full"
+                          fontSize="sm"
+                        >
+                          {DataProject.projectAcquisitionName || "N/A"}
+                        </Badge>
+                      </HStack>
                     </VStack>
                   </CardBody>
                 </Card>

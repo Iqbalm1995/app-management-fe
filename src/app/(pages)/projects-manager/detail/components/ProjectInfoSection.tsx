@@ -210,6 +210,32 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                           color="gray.600"
                           fontWeight="medium"
                         >
+                          Karakteristik:
+                        </Text>
+                        <Text fontSize="sm" fontWeight="bold" color="gray.800">
+                          {DataProject.projectCategory || "N/A"}
+                        </Text>
+                      </HStack>
+                      <Divider />
+                      <HStack justify="space-between">
+                        <Text
+                          fontSize="sm"
+                          color="gray.600"
+                          fontWeight="medium"
+                        >
+                          Sub Karakteristik:
+                        </Text>
+                        <Text fontSize="sm" fontWeight="bold" color="gray.800">
+                          {DataProject.projectType || "N/A"}
+                        </Text>
+                      </HStack>
+                      <Divider />
+                      <HStack justify="space-between">
+                        <Text
+                          fontSize="sm"
+                          color="gray.600"
+                          fontWeight="medium"
+                        >
                           Progress:
                         </Text>
                         <Text fontSize="sm" fontWeight="bold" color="gray.800">
