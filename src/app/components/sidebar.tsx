@@ -515,6 +515,15 @@ const LinkItems: LinkItemProps[] = [
     menuID: "1",
     children: [
       {
+        name: "Dashboard Portfolio",
+        icon: BiSolidReport,
+        link: "/reports/dashboard-portfolio",
+        role: ["admin"],
+        isPro: false,
+        menuID: "1",
+        children: [],
+      },
+      {
         name: "Project Portfolio",
         icon: BiSolidReport,
         link: "/reports/project-portfolio",
