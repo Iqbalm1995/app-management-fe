@@ -53,10 +53,9 @@ export interface ProjectCharacteristicsDashboardResponse {
   lastUpdated?: string;
 }
 
-export interface ProjectCharacteristicsDashboardResponse {
-  characteristicName: string;
+export interface ProjectTypeDashboardResponse {
+  projectTypeName: string;
   projectCount: number;
-  lastUpdated?: string;
 }
 
 export interface SnapshotProjectSummaryResponse {
@@ -151,6 +150,7 @@ export interface useSnapshotServicesServices {
   getProjectQuarterlyDashboard: (payload: DashboardFilterRequest, token: string) => Promise<ApiGenericResponse<ProjectQuarterlyDashboardResponse[]> | null>;
   getDivisionOwnerQuartileDashboard: (payload: DashboardFilterRequest, token: string) => Promise<ApiGenericResponse<DivisionOwnerQuartileDashboardResponse[]> | null>;
   getProjectCharacteristicsDashboard: (payload: DashboardFilterRequest, token: string) => Promise<ApiGenericResponse<ProjectCharacteristicsDashboardResponse[]> | null>;
+  getProjectTypeDashboard: (payload: DashboardFilterRequest, token: string) => Promise<ApiGenericResponse<ProjectTypeDashboardResponse[]> | null>;
   isLoading: boolean;
   error: string | null;
 }
@@ -245,6 +245,7 @@ const useSnapshotServices = (): useSnapshotServicesServices => {
     getProjectQuarterlyDashboard: (payload: DashboardFilterRequest, token: string) => callDashboard<ProjectQuarterlyDashboardResponse[]>('dashboard/project-quarterly', payload, token),
     getDivisionOwnerQuartileDashboard: (payload: DashboardFilterRequest, token: string) => callDashboard<DivisionOwnerQuartileDashboardResponse[]>('dashboard/division-owner-quartile', payload, token),
     getProjectCharacteristicsDashboard: (payload: DashboardFilterRequest, token: string) => callDashboard<ProjectCharacteristicsDashboardResponse[]>('dashboard/project-characteristics', payload, token),
+    getProjectTypeDashboard: (payload: DashboardFilterRequest, token: string) => callDashboard<ProjectTypeDashboardResponse[]>('dashboard/project-type', payload, token),
     isLoading,
     error,
   };
