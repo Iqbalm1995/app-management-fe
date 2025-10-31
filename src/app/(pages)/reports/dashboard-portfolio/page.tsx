@@ -155,9 +155,15 @@ export default function DashboardPortfolioPage() {
       const response = await getDivisionOwnerQuartileDashboard(filterPayload, tokenData);
       const apiData = response?.data || [];
       
-      // Get unique divisions and always show 3 months
+      // Get unique divisions, limit to 5, and randomize order
       const quarterMonths = getQuarterMonths(selectedQuarter);
-      const uniqueDivisions = [...new Set(apiData.map(item => item.divisionName))];
+      let uniqueDivisions = [...new Set(apiData.map(item => item.divisionName))];
+      
+      // Randomize division order
+      uniqueDivisions = uniqueDivisions.sort(() => Math.random() - 0.5);
+      
+      // Limit to maximum 5 divisions
+      uniqueDivisions = uniqueDivisions.slice(0, 5);
       
       const completeData: DivisionOwnerQuartileDashboardResponse[] = [];
       
