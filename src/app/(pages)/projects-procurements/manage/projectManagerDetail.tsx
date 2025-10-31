@@ -146,14 +146,12 @@ import {
   OverviewTab,
   DetailsTab,
   FeaturesTab,
-  DocumentationTab,
   TeamTab,
   AnalyticsTab,
   TimelineTab,
   EditTab,
 } from "./tabs";
 import LoadingMiniSquare from "@/app/components/loadingMiniSquare";
-import { TbLayoutGridAdd } from "react-icons/tb";
 import { EnhancedHeader } from "./enhancedHeader";
 
 // Calendar Event Interface
@@ -480,7 +478,7 @@ function ProjectManagerDetailView() {
           // gap={{ base: 4, lg: 6 }}
           w="full"
           gap={5}
-          // px={{ base: 2, md: 4 }}
+        // px={{ base: 2, md: 4 }}
         >
           <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 9 }} w={"full"}>
             {/* // {/* Main Content Area} */}
@@ -494,7 +492,7 @@ function ProjectManagerDetailView() {
                 // borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
                 mb={4}
                 position={"relative"}
-                // zIndex={10}
+              // zIndex={10}
               >
                 <TabList
                   gap={2}
@@ -511,36 +509,20 @@ function ProjectManagerDetailView() {
                 >
                   <TabButtonCustomStyle>
                     <HStack>
-                      <FiInfo size={16} />
-                      <Text>Details</Text>
-                    </HStack>
-                  </TabButtonCustomStyle>
-                  <TabButtonCustomStyle>
-                    <HStack>
                       <FiTarget size={16} />
                       <Text>Overview</Text>
                     </HStack>
                   </TabButtonCustomStyle>
                   <TabButtonCustomStyle>
                     <HStack>
-                      {DataProject &&
-                      DataProject.projectType == PROJECT_TYPE_PROCUREMENT ? (
-                        <>
-                          <TbLayoutGridAdd size={18} />
-                          <Text>Progression</Text>
-                        </>
-                      ) : (
-                        <>
-                          <FiCpu size={16} />
-                          <Text>Features</Text>
-                        </>
-                      )}
+                      <FiInfo size={16} />
+                      <Text>Details</Text>
                     </HStack>
                   </TabButtonCustomStyle>
                   <TabButtonCustomStyle>
                     <HStack>
-                      <FiBriefcase size={16} />
-                      <Text>Documentations</Text>
+                      <FiCpu size={16} />
+                      <Text>Features</Text>
                     </HStack>
                   </TabButtonCustomStyle>
                   <TabButtonCustomStyle>
@@ -585,10 +567,9 @@ function ProjectManagerDetailView() {
               >
                 <CardBody>
                   <TabPanels minH="600px">
-                    <DetailsTab DataProject={DataProject} />
                     <OverviewTab DataProject={DataProject} />
+                    <DetailsTab DataProject={DataProject} />
                     <FeaturesTab DataProject={DataProject} />
-                    <DocumentationTab DataProject={DataProject} />
                     <TeamTab DataProject={DataProject} />
                     <AnalyticsTab DataProject={DataProject} />
                     <TimelineTab DataProject={DataProject} />
@@ -738,11 +719,11 @@ function ProjectManagerDetailView() {
                                 ? "green.400"
                                 : DataProject.appsProject.appsStatus ===
                                   "DEVELOPMENT"
-                                ? "blue.400"
-                                : DataProject.appsProject.appsStatus ===
-                                  "TESTING"
-                                ? "orange.400"
-                                : "red.400"
+                                  ? "blue.400"
+                                  : DataProject.appsProject.appsStatus ===
+                                    "TESTING"
+                                    ? "orange.400"
+                                    : "red.400"
                             }
                             rounded="full"
                             border="2px solid white"
@@ -802,11 +783,11 @@ function ProjectManagerDetailView() {
                                   ? "green"
                                   : DataProject.appsProject.appsStatus ===
                                     "DEVELOPMENT"
-                                  ? "blue"
-                                  : DataProject.appsProject.appsStatus ===
-                                    "TESTING"
-                                  ? "orange"
-                                  : "red"
+                                    ? "blue"
+                                    : DataProject.appsProject.appsStatus ===
+                                      "TESTING"
+                                      ? "orange"
+                                      : "red"
                               }
                               size="sm"
                               px={2}
@@ -992,10 +973,10 @@ function ProjectManagerDetailView() {
                                 DataProject.projectStatus === "ACTIVE"
                                   ? "green"
                                   : DataProject.projectStatus === "ONHOLD"
-                                  ? "orange"
-                                  : DataProject.projectStatus === "COMPLETED"
-                                  ? "blue"
-                                  : "gray"
+                                    ? "orange"
+                                    : DataProject.projectStatus === "COMPLETED"
+                                      ? "blue"
+                                      : "gray"
                               }
                             >
                               {DataProject.projectStatus}

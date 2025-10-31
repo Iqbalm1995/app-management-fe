@@ -323,8 +323,8 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                         <Text fontSize="sm" fontWeight="bold" color="gray.800">
                           {DataProject.projectRegisterDate
                             ? new Date(
-                                DataProject.projectRegisterDate
-                              ).toLocaleDateString()
+                              DataProject.projectRegisterDate
+                            ).toLocaleDateString()
                             : "N/A"}
                         </Text>
                       </HStack>
@@ -418,20 +418,20 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                                 {workProgram.workProgramCode || "N/A"}
                               </Badge>
                             </HStack>
-                            
+
                             <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
                               <VStack spacing={1} align="start">
                                 <Text fontSize="xs" color="gray.500" fontWeight="medium">
                                   Budget:
                                 </Text>
                                 <Text fontSize="sm" fontWeight="bold" color="green.600">
-                                  {workProgram.workProgramBudget ? 
-                                    `Rp ${workProgram.workProgramBudget.toLocaleString()}` : 
+                                  {workProgram.workProgramBudget ?
+                                    `Rp ${workProgram.workProgramBudget.toLocaleString()}` :
                                     "Not specified"
                                   }
                                 </Text>
                               </VStack>
-                              
+
                               <VStack spacing={1} align="start">
                                 <Text fontSize="xs" color="gray.500" fontWeight="medium">
                                   Division:
@@ -440,7 +440,7 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                                   {workProgram.divisionName || "Not assigned"}
                                 </Text>
                               </VStack>
-                              
+
                               <VStack spacing={1} align="start">
                                 <Text fontSize="xs" color="gray.500" fontWeight="medium">
                                   Source:

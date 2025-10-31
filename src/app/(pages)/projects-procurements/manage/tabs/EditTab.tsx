@@ -13,6 +13,8 @@ interface EditTabProps {
 
 const EditTab = ({ DataProject }: EditTabProps) => {
   const { colorMode } = useColorMode();
+  
+  console.log("EditTab rendering in procurements");
 
   return (
     <TabPanel
