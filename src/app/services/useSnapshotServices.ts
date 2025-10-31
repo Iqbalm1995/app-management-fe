@@ -25,6 +25,26 @@ export interface ProjectSummaryDashboardResponse {
   projectStatus: string;
   projectCount: number;
   percentage: number;
+  lastUpdated?: string;
+}
+
+export interface ProjectQuarterlyDashboardResponse {
+  monthPeriod: number;
+  monthName?: string;
+  projectCount: number;
+  yearPeriod?: number;
+  quartalPeriod?: number;
+  lastUpdated?: string;
+}
+
+export interface DivisionOwnerQuartileDashboardResponse {
+  divisionName: string;
+  monthPeriod: number;
+  monthName?: string;
+  projectCount: number;
+  yearPeriod?: number;
+  quartalPeriod?: number;
+  lastUpdated?: string;
 }
 
 export interface SnapshotProjectSummaryResponse {
@@ -116,6 +136,8 @@ export interface useSnapshotServicesServices {
   userProjectActiveQuartal: (payload: SnapshotRequest, token: string) => Promise<ApiGenericResponse<SnapshotUserProjectActiveQuartalResponse> | null>;
   // Dashboard methods
   getProjectSummaryDashboard: (payload: DashboardFilterRequest, token: string) => Promise<ApiGenericResponse<ProjectSummaryDashboardResponse[]> | null>;
+  getProjectQuarterlyDashboard: (payload: DashboardFilterRequest, token: string) => Promise<ApiGenericResponse<ProjectQuarterlyDashboardResponse[]> | null>;
+  getDivisionOwnerQuartileDashboard: (payload: DashboardFilterRequest, token: string) => Promise<ApiGenericResponse<DivisionOwnerQuartileDashboardResponse[]> | null>;
   isLoading: boolean;
   error: string | null;
 }
@@ -207,6 +229,8 @@ const useSnapshotServices = (): useSnapshotServicesServices => {
     userProjectActiveQuartal: (payload: SnapshotRequest, token: string) => callSnapshot<SnapshotUserProjectActiveQuartalResponse>('snapshot-user-project-active-quartal', payload, token),
     // Dashboard methods
     getProjectSummaryDashboard: (payload: DashboardFilterRequest, token: string) => callDashboard<ProjectSummaryDashboardResponse[]>('dashboard/project-summary', payload, token),
+    getProjectQuarterlyDashboard: (payload: DashboardFilterRequest, token: string) => callDashboard<ProjectQuarterlyDashboardResponse[]>('dashboard/project-quarterly', payload, token),
+    getDivisionOwnerQuartileDashboard: (payload: DashboardFilterRequest, token: string) => callDashboard<DivisionOwnerQuartileDashboardResponse[]>('dashboard/division-owner-quartile', payload, token),
     isLoading,
     error,
   };
