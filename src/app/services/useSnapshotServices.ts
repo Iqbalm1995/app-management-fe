@@ -58,6 +58,11 @@ export interface ProjectTypeDashboardResponse {
   projectCount: number;
 }
 
+export interface ProcurementWorkProgramDashboardResponse {
+  procurementWorkProgramFlag: string;
+  projectCount: number;
+}
+
 export interface SnapshotProjectSummaryResponse {
   message: string;
   snapshotTime: string;
@@ -151,6 +156,7 @@ export interface useSnapshotServicesServices {
   getDivisionOwnerQuartileDashboard: (payload: DashboardFilterRequest, token: string) => Promise<ApiGenericResponse<DivisionOwnerQuartileDashboardResponse[]> | null>;
   getProjectCharacteristicsDashboard: (payload: DashboardFilterRequest, token: string) => Promise<ApiGenericResponse<ProjectCharacteristicsDashboardResponse[]> | null>;
   getProjectTypeDashboard: (payload: DashboardFilterRequest, token: string) => Promise<ApiGenericResponse<ProjectTypeDashboardResponse[]> | null>;
+  getProcurementWorkProgramDashboard: (payload: DashboardFilterRequest, token: string) => Promise<ApiGenericResponse<ProcurementWorkProgramDashboardResponse[]> | null>;
   isLoading: boolean;
   error: string | null;
 }
@@ -246,6 +252,7 @@ const useSnapshotServices = (): useSnapshotServicesServices => {
     getDivisionOwnerQuartileDashboard: (payload: DashboardFilterRequest, token: string) => callDashboard<DivisionOwnerQuartileDashboardResponse[]>('dashboard/division-owner-quartile', payload, token),
     getProjectCharacteristicsDashboard: (payload: DashboardFilterRequest, token: string) => callDashboard<ProjectCharacteristicsDashboardResponse[]>('dashboard/project-characteristics', payload, token),
     getProjectTypeDashboard: (payload: DashboardFilterRequest, token: string) => callDashboard<ProjectTypeDashboardResponse[]>('dashboard/project-type', payload, token),
+    getProcurementWorkProgramDashboard: (payload: DashboardFilterRequest, token: string) => callDashboard<ProcurementWorkProgramDashboardResponse[]>('dashboard/procurement-work-program', payload, token),
     isLoading,
     error,
   };

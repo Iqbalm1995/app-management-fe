@@ -34,7 +34,7 @@ import {
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { getCurrentQuarter, convertQuarterToDateRange } from "@/app/helper/MasterHelper";
-import useSnapshotServices, { DashboardFilterRequest, ProjectSummaryDashboardResponse, ProjectQuarterlyDashboardResponse, DivisionOwnerQuartileDashboardResponse, ProjectCharacteristicsDashboardResponse, ProjectTypeDashboardResponse } from "@/app/services/useSnapshotServices";
+import useSnapshotServices, { DashboardFilterRequest, ProjectSummaryDashboardResponse, ProjectQuarterlyDashboardResponse, DivisionOwnerQuartileDashboardResponse, ProjectCharacteristicsDashboardResponse, ProjectTypeDashboardResponse, ProcurementWorkProgramDashboardResponse } from "@/app/services/useSnapshotServices";
 import dynamic from "next/dynamic";
 import { ApexOptions } from "apexcharts";
 import { FiTrendingUp, FiBarChart, FiActivity, FiRefreshCw } from "react-icons/fi";
@@ -49,10 +49,11 @@ export default function DashboardPortfolioPage() {
   const [divisionData, setDivisionData] = useState<DivisionOwnerQuartileDashboardResponse[]>([]);
   const [characteristicsData, setCharacteristicsData] = useState<ProjectCharacteristicsDashboardResponse[]>([]);
   const [projectTypeData, setProjectTypeData] = useState<ProjectTypeDashboardResponse[]>([]);
+  const [procurementWorkProgramData, setProcurementWorkProgramData] = useState<ProcurementWorkProgramDashboardResponse[]>([]);
   const [tokenData, setTokenData] = useState<string>("");
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   
-  const { getProjectSummaryDashboard, getProjectQuarterlyDashboard, getDivisionOwnerQuartileDashboard, getProjectCharacteristicsDashboard, getProjectTypeDashboard, isLoading, error } = useSnapshotServices();
+  const { getProjectSummaryDashboard, getProjectQuarterlyDashboard, getDivisionOwnerQuartileDashboard, getProjectCharacteristicsDashboard, getProjectTypeDashboard, getProcurementWorkProgramDashboard, isLoading, error } = useSnapshotServices();
   const toast = useToast();
 
   // Load token from localStorage
@@ -263,6 +264,26 @@ export default function DashboardPortfolioPage() {
     }
   };
 
+  // Load procurement work program data
+  const loadProcurementWorkProgramData = async () => {
+    if (!tokenData) return;
+
+    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const filterPayload: DashboardFilterRequest = {
+      startDate: dateRange.startDate,
+      endDate: dateRange.endDate
+    };
+
+    try {
+      const response = await getProcurementWorkProgramDashboard(filterPayload, tokenData);
+      const apiData = response?.data || [];
+      
+      setProcurementWorkProgramData(apiData);
+    } catch (err) {
+      console.error("Failed to load procurement work program data:", err);
+    }
+  };
+
   // Update characteristics data when quarter/year changes
   useEffect(() => {
     if (tokenData) {
@@ -274,6 +295,13 @@ export default function DashboardPortfolioPage() {
   useEffect(() => {
     if (tokenData) {
       loadProjectTypeData();
+    }
+  }, [selectedQuarter, selectedYear, tokenData]);
+
+  // Update procurement work program data when quarter/year changes
+  useEffect(() => {
+    if (tokenData) {
+      loadProcurementWorkProgramData();
     }
   }, [selectedQuarter, selectedYear, tokenData]);
 
@@ -694,6 +722,32 @@ export default function DashboardPortfolioPage() {
   };
 
   const projectTypeChartSeries = projectTypeData.map(item => item.projectCount);
+
+  // Procurement Work Program Donut Chart Configuration
+  const procurementWorkProgramChartOptions: ApexOptions = {
+    chart: {
+      type: 'donut',
+      height: 400,
+      fontFamily: 'Inter, sans-serif'
+    },
+    colors: ['#ED8936', '#38B2AC', '#3182CE', '#805AD5', '#D69E2E', '#E53E3E', '#38A169', '#F56565', '#48BB78'],
+    labels: procurementWorkProgramData.map(item => item.procurementWorkProgramFlag),
+    dataLabels: {
+      enabled: true,
+      formatter: (val: number, opts: any) => {
+        const count = procurementWorkProgramData[opts.seriesIndex]?.projectCount || 0;
+        return `${count}`;
+      }
+    },
+    legend: {
+      position: 'bottom'
+    },
+    tooltip: {
+      y: { formatter: (val: number) => `${val} projects` }
+    }
+  };
+
+  const procurementWorkProgramChartSeries = procurementWorkProgramData.map(item => item.projectCount);
 
   const characteristicsChartSeries = [{
     name: 'Projects',
@@ -1178,6 +1232,8 @@ export default function DashboardPortfolioPage() {
                             size="xs" 
                             variant="ghost" 
                             color="white"
+                            onClick={loadProcurementWorkProgramData}
+                            isLoading={isLoading}
                             _hover={{ bg: "whiteAlpha.200" }}
                           >
                             <FiRefreshCw />
@@ -1194,12 +1250,37 @@ export default function DashboardPortfolioPage() {
                       </Flex>
                     </CardHeader>
                     <CardBody p={4}>
-                      <Flex justify="center" align="center" height="300px" direction="column">
-                        <Icon as={FiBarChart} size="48px" color="gray.300" mb={4} />
-                        <Text color="gray.500" fontSize="sm" textAlign="center">
-                          Coming Soon
-                        </Text>
-                      </Flex>
+                      {procurementWorkProgramData.length > 0 ? (
+                        <Box>
+                          <Chart
+                            options={procurementWorkProgramChartOptions}
+                            series={procurementWorkProgramChartSeries}
+                            type="donut"
+                            height={400}
+                          />
+                          <HStack justify="center" mt={4} spacing={6}>
+                            <Stat textAlign="center" size="sm">
+                              <StatLabel color="gray.600">Categories</StatLabel>
+                              <StatNumber color="pink.600" fontSize="lg">
+                                {procurementWorkProgramData.length}
+                              </StatNumber>
+                            </Stat>
+                            <Stat textAlign="center" size="sm">
+                              <StatLabel color="gray.600">Total Projects</StatLabel>
+                              <StatNumber color="pink.600" fontSize="lg">
+                                {procurementWorkProgramData.reduce((sum, item) => sum + item.projectCount, 0)}
+                              </StatNumber>
+                            </Stat>
+                          </HStack>
+                        </Box>
+                      ) : (
+                        <Flex justify="center" align="center" height="400px" direction="column">
+                          <Icon as={FiTrendingUp} size="48px" color="gray.300" mb={4} />
+                          <Text color="gray.500" fontSize="sm" textAlign="center">
+                            No procurement work program data available
+                          </Text>
+                        </Flex>
+                      )}
                     </CardBody>
                   </Card>
                 </GridItem>
