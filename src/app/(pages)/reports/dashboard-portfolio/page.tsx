@@ -423,14 +423,14 @@ export default function DashboardPortfolioPage() {
     }
   };
 
-  // Load all dev staff project closed data for modal
+  // Load all dev staff project closed data for modal (no date filter)
   const loadAllDevStaffProjectClosedData = async () => {
     if (!tokenData) return;
 
-    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    // Use wide date range to get all data
     const filterPayload: DashboardFilterRequest = {
-      startDate: dateRange.startDate,
-      endDate: dateRange.endDate
+      startDate: "2020-01-01",
+      endDate: "2030-12-31"
     };
 
     try {
@@ -2049,40 +2049,61 @@ export default function DashboardPortfolioPage() {
 
         {/* Dev Staff Project Closed Modal */}
         <Modal isOpen={isDevStaffModalOpen} onClose={() => setIsDevStaffModalOpen(false)} size="6xl">
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>Dev Staff Project Closed - All Data (Q{selectedQuarter} {selectedYear})</ModalHeader>
-            <ModalCloseButton />
-            <ModalBody>
+          <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
+          <ModalContent maxH="90vh" bg="white" shadow="2xl" rounded="xl">
+            <ModalHeader 
+              bg="red.500" 
+              color="white" 
+              roundedTop="xl" 
+              py={4}
+              fontSize="lg"
+              fontWeight="bold"
+            >
+              <HStack>
+                <Icon as={FiBarChart} />
+                <Text>Dev Staff Project Closed - All Data (Q{selectedQuarter} {selectedYear})</Text>
+              </HStack>
+            </ModalHeader>
+            <ModalCloseButton color="white" />
+            <ModalBody overflowY="auto" maxH="70vh" p={6}>
               {devStaffModalData.length > 0 ? (
                 <Box>
-                  <Chart
-                    options={{
-                      ...devStaffProjectClosedChartOptions,
-                      xaxis: {
-                        ...devStaffProjectClosedChartOptions.xaxis,
-                        categories: [...new Set(devStaffModalData.map(item => item.userFullName))]
-                      }
-                    }}
-                    series={getQuarterMonths(selectedQuarter).map(month => ({
-                      name: month.monthName,
-                      data: [...new Set(devStaffModalData.map(item => item.userFullName))].map(user => {
-                        const userMonthData = devStaffModalData.find(
-                          item => item.userFullName === user && item.monthName === month.monthName
-                        );
-                        return userMonthData ? userMonthData.projectCount : 0;
-                      })
-                    }))}
-                    type="bar"
-                    height={400}
-                  />
+                  <Box bg="gray.50" p={4} rounded="lg" mb={4}>
+                    <Chart
+                      options={{
+                        ...devStaffProjectClosedChartOptions,
+                        xaxis: {
+                          ...devStaffProjectClosedChartOptions.xaxis,
+                          categories: [...new Set(devStaffModalData.map(item => item.userFullName))]
+                        }
+                      }}
+                      series={getQuarterMonths(selectedQuarter).map(month => ({
+                        name: month.monthName,
+                        data: [...new Set(devStaffModalData.map(item => item.userFullName))].map(user => {
+                          const userMonthData = devStaffModalData.find(
+                            item => item.userFullName === user && (
+                              item.monthName === month.monthName ||
+                              item.monthName === getFullMonthName(month.monthPeriod) ||
+                              item.monthName === month.monthPeriod.toString().padStart(2, '0') ||
+                              item.monthName === month.monthPeriod.toString()
+                            )
+                          );
+                          return userMonthData ? userMonthData.projectCount : 0;
+                        })
+                      }))}
+                      type="bar"
+                      height={Math.max(400, [...new Set(devStaffModalData.map(item => item.userFullName))].length * 30)}
+                    />
+                  </Box>
                   <HStack justify="center" mt={4} spacing={6}>
-                    <Stat textAlign="center" size="sm">
-                      <StatLabel color="gray.600">Total Users</StatLabel>
-                      <StatNumber color="red.600" fontSize="lg">
-                        {[...new Set(devStaffModalData.map(item => item.userFullName))].length}
-                      </StatNumber>
-                    </Stat>
+                    <Box bg="red.50" p={4} rounded="lg" textAlign="center">
+                      <Stat>
+                        <StatLabel color="red.600" fontSize="sm" fontWeight="medium">Total Users</StatLabel>
+                        <StatNumber color="red.600" fontSize="2xl" fontWeight="bold">
+                          {[...new Set(devStaffModalData.map(item => item.userFullName))].length}
+                        </StatNumber>
+                      </Stat>
+                    </Box>
                   </HStack>
                 </Box>
               ) : (
@@ -2094,8 +2115,8 @@ export default function DashboardPortfolioPage() {
                 </Flex>
               )}
             </ModalBody>
-            <ModalFooter>
-              <Button colorScheme="blue" mr={3} onClick={() => setIsDevStaffModalOpen(false)}>
+            <ModalFooter bg="gray.50" roundedBottom="xl" py={4}>
+              <Button colorScheme="red" mr={3} onClick={() => setIsDevStaffModalOpen(false)}>
                 Close
               </Button>
             </ModalFooter>
