@@ -34,7 +34,7 @@ import {
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { getCurrentQuarter, convertQuarterToDateRange } from "@/app/helper/MasterHelper";
-import useSnapshotServices, { DashboardFilterRequest, ProjectSummaryDashboardResponse, ProjectQuarterlyDashboardResponse, DivisionOwnerQuartileDashboardResponse, ProjectCharacteristicsDashboardResponse, ProjectTypeDashboardResponse, ProcurementWorkProgramDashboardResponse, ProjectAcquisitionsDashboardResponse } from "@/app/services/useSnapshotServices";
+import useSnapshotServices, { DashboardFilterRequest, ProjectSummaryDashboardResponse, ProjectQuarterlyDashboardResponse, DivisionOwnerQuartileDashboardResponse, ProjectCharacteristicsDashboardResponse, ProjectTypeDashboardResponse, ProcurementWorkProgramDashboardResponse, ProjectAcquisitionsDashboardResponse, ProjectByGroupManageDashboardResponse } from "@/app/services/useSnapshotServices";
 import dynamic from "next/dynamic";
 import { ApexOptions } from "apexcharts";
 import { FiTrendingUp, FiBarChart, FiActivity, FiRefreshCw } from "react-icons/fi";
@@ -51,10 +51,11 @@ export default function DashboardPortfolioPage() {
   const [projectTypeData, setProjectTypeData] = useState<ProjectTypeDashboardResponse[]>([]);
   const [procurementWorkProgramData, setProcurementWorkProgramData] = useState<ProcurementWorkProgramDashboardResponse[]>([]);
   const [projectAcquisitionsData, setProjectAcquisitionsData] = useState<ProjectAcquisitionsDashboardResponse[]>([]);
+  const [projectByGroupManageData, setProjectByGroupManageData] = useState<ProjectByGroupManageDashboardResponse[]>([]);
   const [tokenData, setTokenData] = useState<string>("");
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   
-  const { getProjectSummaryDashboard, getProjectQuarterlyDashboard, getDivisionOwnerQuartileDashboard, getProjectCharacteristicsDashboard, getProjectTypeDashboard, getProcurementWorkProgramDashboard, getProjectAcquisitionsDashboard, isLoading, error } = useSnapshotServices();
+  const { getProjectSummaryDashboard, getProjectQuarterlyDashboard, getDivisionOwnerQuartileDashboard, getProjectCharacteristicsDashboard, getProjectTypeDashboard, getProcurementWorkProgramDashboard, getProjectAcquisitionsDashboard, getProjectByGroupManageDashboard, isLoading, error } = useSnapshotServices();
   const toast = useToast();
 
   // Load token from localStorage
@@ -308,6 +309,53 @@ export default function DashboardPortfolioPage() {
     }
   };
 
+  // Format group name for display
+  const formatGroupName = (name: string): string => {
+    // Handle Unknown case
+    if (name === "Unknown") {
+      return "UNK";
+    }
+    
+    // Remove "GROUP" or "GRUP" from the name
+    let formatted = name.replace(/\b(GROUP|GRUP)\b/gi, '').trim();
+    
+    // Split into words
+    const words = formatted.split(/\s+/);
+    
+    // Handle special case for "DIGITAL"
+    const initials = words.map(word => {
+      if (word.toUpperCase() === 'DIGITAL') {
+        return 'DG';
+      }
+      return word.charAt(0).toUpperCase();
+    }).join('');
+    
+    return initials;
+  };
+
+  // Load project by group manage data
+  const loadProjectByGroupManageData = async () => {
+    if (!tokenData) return;
+
+    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const filterPayload: DashboardFilterRequest = {
+      startDate: dateRange.startDate,
+      endDate: dateRange.endDate
+    };
+
+    try {
+      const response = await getProjectByGroupManageDashboard(filterPayload, tokenData);
+      const apiData = response?.data || [];
+      
+      // Randomize and limit to 5 groups
+      let randomizedData = [...apiData].sort(() => Math.random() - 0.5).slice(0, 5);
+      
+      setProjectByGroupManageData(randomizedData);
+    } catch (err) {
+      console.error("Failed to load project by group manage data:", err);
+    }
+  };
+
   // Update characteristics data when quarter/year changes
   useEffect(() => {
     if (tokenData) {
@@ -333,6 +381,13 @@ export default function DashboardPortfolioPage() {
   useEffect(() => {
     if (tokenData) {
       loadProjectAcquisitionsData();
+    }
+  }, [selectedQuarter, selectedYear, tokenData]);
+
+  // Update project by group manage data when quarter/year changes
+  useEffect(() => {
+    if (tokenData) {
+      loadProjectByGroupManageData();
     }
   }, [selectedQuarter, selectedYear, tokenData]);
 
@@ -790,7 +845,10 @@ export default function DashboardPortfolioPage() {
     chart: {
       type: 'bar',
       height: 400,
-      fontFamily: 'Inter, sans-serif'
+      fontFamily: 'Inter, sans-serif',
+      toolbar: {
+        show: false
+      }
     },
     colors: ['#ED8936', '#38B2AC', '#3182CE', '#805AD5', '#D69E2E', '#E53E3E', '#38A169'],
     plotOptions: {
@@ -805,10 +863,10 @@ export default function DashboardPortfolioPage() {
       formatter: (val: number) => `${val}`
     },
     xaxis: {
-      title: { text: 'Project Count' }
+      title: { text: 'Project Count' },
+      categories: projectAcquisitionsData.map(item => item.projectAcquisitionName)
     },
     yaxis: {
-      categories: projectAcquisitionsData.map(item => item.projectAcquisitionName),
       labels: {
         style: { fontSize: '12px' }
       }
@@ -822,6 +880,54 @@ export default function DashboardPortfolioPage() {
   const projectAcquisitionsChartSeries = [{
     name: 'Projects',
     data: projectAcquisitionsData.map(item => item.projectCount)
+  }];
+
+  // Project by Group Manage Bar Chart Configuration (horizontal)
+  const projectByGroupManageChartOptions: ApexOptions = {
+    chart: {
+      type: 'bar',
+      height: 400,
+      fontFamily: 'Inter, sans-serif',
+      toolbar: {
+        show: false
+      }
+    },
+    colors: ['#ED8936', '#38B2AC', '#3182CE', '#805AD5', '#D69E2E'],
+    plotOptions: {
+      bar: {
+        distributed: true,
+        horizontal: true,
+        columnWidth: '60%'
+      }
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: (val: number) => `${val}`
+    },
+    xaxis: {
+      title: { text: 'Project Count' },
+      categories: projectByGroupManageData.map(item => formatGroupName(item.projectGroupNameManage))
+    },
+    yaxis: {
+      labels: {
+        style: { fontSize: '12px' }
+      }
+    },
+    legend: { show: false },
+    tooltip: {
+      y: { formatter: (val: number) => `${val} projects` },
+      x: {
+        formatter: (val: any, opts: any) => {
+          const index = opts.dataPointIndex;
+          return projectByGroupManageData[index]?.projectGroupNameManage || 'Unknown';
+        }
+      }
+    }
+  };
+
+  const projectByGroupManageChartSeries = [{
+    name: 'Projects',
+    data: projectByGroupManageData.map(item => item.projectCount)
   }];
 
   // Update division chart options with categories and tooltips
@@ -855,11 +961,11 @@ export default function DashboardPortfolioPage() {
     <LayoutAdmin>
       <HeaderContent {...headerProps} />
       <Box p={6}>
-        {/* Filter Controls */}
-        <Card mb={6} rounded={radiusStyle} shadow="lg" bg="white">
-          <CardBody>
-            <Flex justify="space-between" align="center" wrap="wrap" gap={4}>
-              <Tabs variant="soft-rounded" colorScheme="blue">
+        <Tabs variant="soft-rounded" colorScheme="blue">
+          {/* Filter Controls */}
+          <Card mb={6} rounded={radiusStyle} shadow="lg" bg="white">
+            <CardBody>
+              <Flex justify="space-between" align="center" wrap="wrap" gap={4}>
                 <TabList bg="gray.100" p={1} rounded={radiusStyle}>
                   <Tab rounded={radiusStyle} _selected={{ bg: "blue.500", color: "white" }}>
                     <Icon as={FiBarChart} mr={2} />
@@ -870,7 +976,6 @@ export default function DashboardPortfolioPage() {
                     Special
                   </Tab>
                 </TabList>
-              </Tabs>
               
               <HStack spacing={4} bg="gray.50" p={4} rounded={radiusStyle}>
                 <VStack spacing={1} align="start">
@@ -934,7 +1039,6 @@ export default function DashboardPortfolioPage() {
           </CardBody>
         </Card>
 
-        <Tabs variant="unstyled">
           <TabPanels>
             <TabPanel p={0}>
               {/* 12-Column Grid Layout */}
@@ -1427,12 +1531,90 @@ export default function DashboardPortfolioPage() {
                 {/* Project by Group Management - 12 cols */}
                 <GridItem colSpan={12}>
                   <Card rounded={radiusStyle} shadow="lg" bg="white" h="full">
-                    <CardHeader bg="indigo.500" color="white" roundedTop={radiusStyle}>
+                    <CardHeader bg="purple.500" color="white" roundedTop={radiusStyle}>
                       <Flex justify="space-between" align="center">
                         <HStack>
                           <Icon as={FiBarChart} />
                           <Text fontSize="md" fontWeight="bold">
                             Project by Group Management
+                          </Text>
+                        </HStack>
+                        <HStack spacing={2}>
+                          <Button 
+                            size="xs" 
+                            variant="ghost" 
+                            color="white"
+                            onClick={loadProjectByGroupManageData}
+                            isLoading={isLoading}
+                            _hover={{ bg: "whiteAlpha.200" }}
+                          >
+                            <FiRefreshCw />
+                          </Button>
+                          <Button 
+                            size="xs" 
+                            variant="ghost" 
+                            color="white"
+                            _hover={{ bg: "whiteAlpha.200" }}
+                          >
+                            Details
+                          </Button>
+                        </HStack>
+                      </Flex>
+                    </CardHeader>
+                    <CardBody p={4}>
+                      {projectByGroupManageData.length > 0 ? (
+                        <Box>
+                          <Chart
+                            options={projectByGroupManageChartOptions}
+                            series={projectByGroupManageChartSeries}
+                            type="bar"
+                            height={400}
+                          />
+                          <HStack justify="center" mt={4} spacing={6}>
+                            <Stat textAlign="center" size="sm">
+                              <StatLabel color="gray.600">Groups</StatLabel>
+                              <StatNumber color="purple.600" fontSize="lg">
+                                {projectByGroupManageData.length}
+                              </StatNumber>
+                            </Stat>
+                            <Stat textAlign="center" size="sm">
+                              <StatLabel color="gray.600">Total Projects</StatLabel>
+                              <StatNumber color="purple.600" fontSize="lg">
+                                {projectByGroupManageData.reduce((sum, item) => sum + item.projectCount, 0)}
+                              </StatNumber>
+                            </Stat>
+                          </HStack>
+                        </Box>
+                      ) : (
+                        <Flex justify="center" align="center" height="400px" direction="column">
+                          <Icon as={FiBarChart} size="48px" color="gray.300" mb={4} />
+                          <Text color="gray.500" fontSize="sm" textAlign="center">
+                            No project by group management data available
+                          </Text>
+                        </Flex>
+                      )}
+                    </CardBody>
+                  </Card>
+                </GridItem>
+              </Grid>
+            </TabPanel>
+            
+            <TabPanel p={0}>
+              {/* 12-Column Grid Layout for Special Dashboard */}
+              <Grid 
+                templateColumns="repeat(12, 1fr)" 
+                gap={6}
+                autoRows="min-content"
+              >
+                {/* Dev Staff Project Closed - 12 cols */}
+                <GridItem colSpan={12}>
+                  <Card rounded={radiusStyle} shadow="lg" bg="white" h="full">
+                    <CardHeader bg="red.500" color="white" roundedTop={radiusStyle}>
+                      <Flex justify="space-between" align="center">
+                        <HStack>
+                          <Icon as={FiBarChart} />
+                          <Text fontSize="md" fontWeight="bold">
+                            Dev Staff Project Closed
                           </Text>
                         </HStack>
                         <HStack spacing={2}>
@@ -1456,8 +1638,50 @@ export default function DashboardPortfolioPage() {
                       </Flex>
                     </CardHeader>
                     <CardBody p={4}>
-                      <Flex justify="center" align="center" height="300px" direction="column">
-                        <Icon as={FiActivity} size="48px" color="gray.300" mb={4} />
+                      <Flex justify="center" align="center" height="400px" direction="column">
+                        <Icon as={FiBarChart} size="48px" color="gray.300" mb={4} />
+                        <Text color="gray.500" fontSize="sm" textAlign="center">
+                          Coming Soon
+                        </Text>
+                      </Flex>
+                    </CardBody>
+                  </Card>
+                </GridItem>
+
+                {/* Dev Staff Project Active - 12 cols */}
+                <GridItem colSpan={12}>
+                  <Card rounded={radiusStyle} shadow="lg" bg="white" h="full">
+                    <CardHeader bg="green.500" color="white" roundedTop={radiusStyle}>
+                      <Flex justify="space-between" align="center">
+                        <HStack>
+                          <Icon as={FiBarChart} />
+                          <Text fontSize="md" fontWeight="bold">
+                            Dev Staff Project Active
+                          </Text>
+                        </HStack>
+                        <HStack spacing={2}>
+                          <Button 
+                            size="xs" 
+                            variant="ghost" 
+                            color="white"
+                            _hover={{ bg: "whiteAlpha.200" }}
+                          >
+                            <FiRefreshCw />
+                          </Button>
+                          <Button 
+                            size="xs" 
+                            variant="ghost" 
+                            color="white"
+                            _hover={{ bg: "whiteAlpha.200" }}
+                          >
+                            Details
+                          </Button>
+                        </HStack>
+                      </Flex>
+                    </CardHeader>
+                    <CardBody p={4}>
+                      <Flex justify="center" align="center" height="400px" direction="column">
+                        <Icon as={FiBarChart} size="48px" color="gray.300" mb={4} />
                         <Text color="gray.500" fontSize="sm" textAlign="center">
                           Coming Soon
                         </Text>
@@ -1466,23 +1690,6 @@ export default function DashboardPortfolioPage() {
                   </Card>
                 </GridItem>
               </Grid>
-            </TabPanel>
-            
-            <TabPanel p={0}>
-              <Card rounded={radiusStyle} shadow="xl" bg="white" minH="500px">
-                <CardBody>
-                  <Flex direction="column" justify="center" align="center" height="400px">
-                    <Icon as={FiActivity} size="64px" color="gray.300" mb={6} />
-                    <Text fontSize="xl" fontWeight="bold" color="gray.600" mb={2}>
-                      Special Dashboard
-                    </Text>
-                    <Text color="gray.500" textAlign="center" maxW="md">
-                      Advanced analytics and specialized reports will be available here. 
-                      Stay tuned for enhanced features and insights.
-                    </Text>
-                  </Flex>
-                </CardBody>
-              </Card>
             </TabPanel>
           </TabPanels>
         </Tabs>
