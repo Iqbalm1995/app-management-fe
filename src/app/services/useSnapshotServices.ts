@@ -73,6 +73,12 @@ export interface ProjectByGroupManageDashboardResponse {
   projectCount: number;
 }
 
+export interface DevStaffProjectClosedDashboardResponse {
+  userFullName: string;
+  projectCount: number;
+  monthName: string;
+}
+
 export interface SnapshotProjectSummaryResponse {
   message: string;
   snapshotTime: string;
@@ -169,6 +175,7 @@ export interface useSnapshotServicesServices {
   getProcurementWorkProgramDashboard: (payload: DashboardFilterRequest, token: string) => Promise<ApiGenericResponse<ProcurementWorkProgramDashboardResponse[]> | null>;
   getProjectAcquisitionsDashboard: (payload: DashboardFilterRequest, token: string) => Promise<ApiGenericResponse<ProjectAcquisitionsDashboardResponse[]> | null>;
   getProjectByGroupManageDashboard: (payload: DashboardFilterRequest, token: string) => Promise<ApiGenericResponse<ProjectByGroupManageDashboardResponse[]> | null>;
+  getDevStaffProjectClosedDashboard: (payload: DashboardFilterRequest, token: string) => Promise<ApiGenericResponse<DevStaffProjectClosedDashboardResponse[]> | null>;
   isLoading: boolean;
   error: string | null;
 }
@@ -267,6 +274,7 @@ const useSnapshotServices = (): useSnapshotServicesServices => {
     getProcurementWorkProgramDashboard: (payload: DashboardFilterRequest, token: string) => callDashboard<ProcurementWorkProgramDashboardResponse[]>('dashboard/procurement-work-program', payload, token),
     getProjectAcquisitionsDashboard: (payload: DashboardFilterRequest, token: string) => callDashboard<ProjectAcquisitionsDashboardResponse[]>('dashboard/project-acquisitions', payload, token),
     getProjectByGroupManageDashboard: (payload: DashboardFilterRequest, token: string) => callDashboard<ProjectByGroupManageDashboardResponse[]>('dashboard/project-by-group-manage', payload, token),
+    getDevStaffProjectClosedDashboard: (payload: DashboardFilterRequest, token: string) => callDashboard<DevStaffProjectClosedDashboardResponse[]>('dashboard/dev-staff-project-closed', payload, token),
     isLoading,
     error,
   };

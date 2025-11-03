@@ -31,10 +31,17 @@ import {
   StatHelpText,
   Icon,
   Badge,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { getCurrentQuarter, convertQuarterToDateRange } from "@/app/helper/MasterHelper";
-import useSnapshotServices, { DashboardFilterRequest, ProjectSummaryDashboardResponse, ProjectQuarterlyDashboardResponse, DivisionOwnerQuartileDashboardResponse, ProjectCharacteristicsDashboardResponse, ProjectTypeDashboardResponse, ProcurementWorkProgramDashboardResponse, ProjectAcquisitionsDashboardResponse, ProjectByGroupManageDashboardResponse } from "@/app/services/useSnapshotServices";
+import useSnapshotServices, { DashboardFilterRequest, ProjectSummaryDashboardResponse, ProjectQuarterlyDashboardResponse, DivisionOwnerQuartileDashboardResponse, ProjectCharacteristicsDashboardResponse, ProjectTypeDashboardResponse, ProcurementWorkProgramDashboardResponse, ProjectAcquisitionsDashboardResponse, ProjectByGroupManageDashboardResponse, DevStaffProjectClosedDashboardResponse } from "@/app/services/useSnapshotServices";
 import dynamic from "next/dynamic";
 import { ApexOptions } from "apexcharts";
 import { FiTrendingUp, FiBarChart, FiActivity, FiRefreshCw } from "react-icons/fi";
@@ -53,10 +60,13 @@ export default function DashboardPortfolioPage() {
   const [projectAcquisitionsData, setProjectAcquisitionsData] = useState<ProjectAcquisitionsDashboardResponse[]>([]);
   const [projectByGroupManageData, setProjectByGroupManageData] = useState<ProjectByGroupManageDashboardResponse[]>([]);
   const [projectSummaryDevData, setProjectSummaryDevData] = useState<ProjectSummaryDashboardResponse[]>([]);
+  const [devStaffProjectClosedData, setDevStaffProjectClosedData] = useState<DevStaffProjectClosedDashboardResponse[]>([]);
+  const [devStaffModalData, setDevStaffModalData] = useState<DevStaffProjectClosedDashboardResponse[]>([]);
+  const [isDevStaffModalOpen, setIsDevStaffModalOpen] = useState(false);
   const [tokenData, setTokenData] = useState<string>("");
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   
-  const { getProjectSummaryDashboard, getProjectQuarterlyDashboard, getDivisionOwnerQuartileDashboard, getProjectCharacteristicsDashboard, getProjectTypeDashboard, getProcurementWorkProgramDashboard, getProjectAcquisitionsDashboard, getProjectByGroupManageDashboard, isLoading, error } = useSnapshotServices();
+  const { getProjectSummaryDashboard, getProjectQuarterlyDashboard, getDivisionOwnerQuartileDashboard, getProjectCharacteristicsDashboard, getProjectTypeDashboard, getProcurementWorkProgramDashboard, getProjectAcquisitionsDashboard, getProjectByGroupManageDashboard, getDevStaffProjectClosedDashboard, isLoading, error } = useSnapshotServices();
   const toast = useToast();
 
   // Load token from localStorage
@@ -377,6 +387,63 @@ export default function DashboardPortfolioPage() {
     }
   };
 
+  // Load dev staff project closed data
+  const loadDevStaffProjectClosedData = async () => {
+    if (!tokenData) return;
+
+    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const filterPayload: DashboardFilterRequest = {
+      startDate: dateRange.startDate,
+      endDate: dateRange.endDate
+    };
+
+    try {
+      const response = await getDevStaffProjectClosedDashboard(filterPayload, tokenData);
+      const apiData = response?.data || [];
+      
+      // Group by users first, then randomize users and limit to 5
+      const userGroups = apiData.reduce((acc, item) => {
+        if (!acc[item.userFullName]) {
+          acc[item.userFullName] = [];
+        }
+        acc[item.userFullName].push(item);
+        return acc;
+      }, {} as Record<string, typeof apiData>);
+      
+      // Get random 5 users
+      const userNames = Object.keys(userGroups);
+      const randomUsers = [...userNames].sort(() => Math.random() - 0.5).slice(0, 5);
+      
+      // Get all records for these 5 users
+      const randomizedData = randomUsers.flatMap(userName => userGroups[userName]);
+      
+      setDevStaffProjectClosedData(randomizedData);
+    } catch (err) {
+      console.error("Failed to load dev staff project closed data:", err);
+    }
+  };
+
+  // Load all dev staff project closed data for modal
+  const loadAllDevStaffProjectClosedData = async () => {
+    if (!tokenData) return;
+
+    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const filterPayload: DashboardFilterRequest = {
+      startDate: dateRange.startDate,
+      endDate: dateRange.endDate
+    };
+
+    try {
+      const response = await getDevStaffProjectClosedDashboard(filterPayload, tokenData);
+      const apiData = response?.data || [];
+      
+      setDevStaffModalData(apiData);
+      setIsDevStaffModalOpen(true);
+    } catch (err) {
+      console.error("Failed to load all dev staff project closed data:", err);
+    }
+  };
+
   // Update characteristics data when quarter/year changes
   useEffect(() => {
     if (tokenData) {
@@ -416,6 +483,13 @@ export default function DashboardPortfolioPage() {
   useEffect(() => {
     if (tokenData) {
       loadProjectSummaryDevData();
+    }
+  }, [selectedQuarter, selectedYear, tokenData]);
+
+  // Update dev staff project closed data when quarter/year changes
+  useEffect(() => {
+    if (tokenData) {
+      loadDevStaffProjectClosedData();
     }
   }, [selectedQuarter, selectedYear, tokenData]);
 
@@ -1014,6 +1088,109 @@ export default function DashboardPortfolioPage() {
   };
 
   const projectSummaryDevChartSeries = [activeCount, closedCount];
+
+  // Dev Staff Project Closed Chart Configuration (same as Division Owner Quartile)
+  const devStaffCategories = [...new Set(devStaffProjectClosedData.map(item => item.userFullName))];
+  const quarterMonths = getQuarterMonths(selectedQuarter);
+
+  const devStaffProjectClosedChartOptions: ApexOptions = {
+    chart: {
+      type: 'bar',
+      height: 300,
+      stacked: true,
+      fontFamily: 'Inter, sans-serif',
+      toolbar: {
+        show: false
+      }
+    },
+    colors: ['#ED8936', '#38B2AC', '#3182CE'],
+    plotOptions: {
+      bar: {
+        horizontal: true,
+        borderRadius: 4,
+        dataLabels: {
+          position: 'center'
+        }
+      }
+    },
+    dataLabels: {
+      enabled: false
+    },
+    stroke: {
+      show: true,
+      width: 2,
+      colors: ['transparent']
+    },
+    xaxis: {
+      categories: devStaffCategories,
+      labels: {
+        style: {
+          fontSize: '10px'
+        }
+      },
+      title: {
+        text: 'Project Count'
+      }
+    },
+    yaxis: {
+      title: {
+        text: 'User Full Name'
+      }
+    },
+    fill: {
+      opacity: 1
+    },
+    legend: {
+      position: 'top',
+      horizontalAlign: 'center',
+      fontSize: '12px',
+      fontWeight: 500,
+      markers: {
+        size: 12,
+        strokeWidth: 0,
+        shape: 'square'
+      }
+    },
+    tooltip: {
+      shared: false,
+      intersect: true,
+      y: {
+        formatter: (val: number, opts: any) => {
+          const seriesIndex = opts.seriesIndex;
+          const dataPointIndex = opts.dataPointIndex;
+          const monthName = quarterMonths[seriesIndex]?.monthName || '';
+          const userFullName = devStaffCategories[dataPointIndex] || '';
+          return `${monthName}: ${val} projects<br/>User: ${userFullName}`;
+        }
+      }
+    }
+  };
+
+  // Helper function to get full month name
+  const getFullMonthName = (monthNumber: number): string => {
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                   'July', 'August', 'September', 'October', 'November', 'December'];
+    return months[monthNumber - 1] || monthNumber.toString();
+  };
+
+  const devStaffProjectClosedChartSeries = quarterMonths.map(month => {
+    const seriesData = devStaffCategories.map(user => {
+      const userMonthData = devStaffProjectClosedData.find(
+        item => item.userFullName === user && (
+          item.monthName === month.monthName ||
+          item.monthName === getFullMonthName(month.monthPeriod) ||
+          item.monthName === month.monthPeriod.toString().padStart(2, '0') ||
+          item.monthName === month.monthPeriod.toString()
+        )
+      );
+      return userMonthData ? userMonthData.projectCount : 0;
+    });
+    
+    return {
+      name: month.monthName,
+      data: seriesData
+    };
+  });
 
   // Update division chart options with categories and tooltips
   const divisionChartOptionsWithCategories: ApexOptions = {
@@ -1776,6 +1953,8 @@ export default function DashboardPortfolioPage() {
                             size="xs" 
                             variant="ghost" 
                             color="white"
+                            onClick={loadDevStaffProjectClosedData}
+                            isLoading={isLoading}
                             _hover={{ bg: "whiteAlpha.200" }}
                           >
                             <FiRefreshCw />
@@ -1784,6 +1963,7 @@ export default function DashboardPortfolioPage() {
                             size="xs" 
                             variant="ghost" 
                             color="white"
+                            onClick={loadAllDevStaffProjectClosedData}
                             _hover={{ bg: "whiteAlpha.200" }}
                           >
                             Details
@@ -1792,12 +1972,31 @@ export default function DashboardPortfolioPage() {
                       </Flex>
                     </CardHeader>
                     <CardBody p={4}>
-                      <Flex justify="center" align="center" height="300px" direction="column">
-                        <Icon as={FiBarChart} size="48px" color="gray.300" mb={4} />
-                        <Text color="gray.500" fontSize="sm" textAlign="center">
-                          Coming Soon
-                        </Text>
-                      </Flex>
+                      {devStaffProjectClosedData.length > 0 ? (
+                        <Box>
+                          <Chart
+                            options={devStaffProjectClosedChartOptions}
+                            series={devStaffProjectClosedChartSeries}
+                            type="bar"
+                            height={300}
+                          />
+                          <HStack justify="center" mt={4} spacing={6}>
+                            <Stat textAlign="center" size="sm">
+                              <StatLabel color="gray.600">Q{selectedQuarter} Users</StatLabel>
+                              <StatNumber color="red.600" fontSize="lg">
+                                {devStaffCategories.length}
+                              </StatNumber>
+                            </Stat>
+                          </HStack>
+                        </Box>
+                      ) : (
+                        <Flex justify="center" align="center" height="300px" direction="column">
+                          <Icon as={FiBarChart} size="48px" color="gray.300" mb={4} />
+                          <Text color="gray.500" fontSize="sm" textAlign="center">
+                            No dev staff project closed data available
+                          </Text>
+                        </Flex>
+                      )}
                     </CardBody>
                   </Card>
                 </GridItem>
@@ -1847,6 +2046,61 @@ export default function DashboardPortfolioPage() {
             </TabPanel>
           </TabPanels>
         </Tabs>
+
+        {/* Dev Staff Project Closed Modal */}
+        <Modal isOpen={isDevStaffModalOpen} onClose={() => setIsDevStaffModalOpen(false)} size="6xl">
+          <ModalOverlay />
+          <ModalContent>
+            <ModalHeader>Dev Staff Project Closed - All Data (Q{selectedQuarter} {selectedYear})</ModalHeader>
+            <ModalCloseButton />
+            <ModalBody>
+              {devStaffModalData.length > 0 ? (
+                <Box>
+                  <Chart
+                    options={{
+                      ...devStaffProjectClosedChartOptions,
+                      xaxis: {
+                        ...devStaffProjectClosedChartOptions.xaxis,
+                        categories: [...new Set(devStaffModalData.map(item => item.userFullName))]
+                      }
+                    }}
+                    series={getQuarterMonths(selectedQuarter).map(month => ({
+                      name: month.monthName,
+                      data: [...new Set(devStaffModalData.map(item => item.userFullName))].map(user => {
+                        const userMonthData = devStaffModalData.find(
+                          item => item.userFullName === user && item.monthName === month.monthName
+                        );
+                        return userMonthData ? userMonthData.projectCount : 0;
+                      })
+                    }))}
+                    type="bar"
+                    height={400}
+                  />
+                  <HStack justify="center" mt={4} spacing={6}>
+                    <Stat textAlign="center" size="sm">
+                      <StatLabel color="gray.600">Total Users</StatLabel>
+                      <StatNumber color="red.600" fontSize="lg">
+                        {[...new Set(devStaffModalData.map(item => item.userFullName))].length}
+                      </StatNumber>
+                    </Stat>
+                  </HStack>
+                </Box>
+              ) : (
+                <Flex justify="center" align="center" height="300px" direction="column">
+                  <Icon as={FiBarChart} size="48px" color="gray.300" mb={4} />
+                  <Text color="gray.500" fontSize="sm" textAlign="center">
+                    No dev staff project closed data available
+                  </Text>
+                </Flex>
+              )}
+            </ModalBody>
+            <ModalFooter>
+              <Button colorScheme="blue" mr={3} onClick={() => setIsDevStaffModalOpen(false)}>
+                Close
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
       </Box>
     </LayoutAdmin>
   );
