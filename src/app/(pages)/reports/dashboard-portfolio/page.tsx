@@ -72,6 +72,16 @@ export default function DashboardPortfolioPage() {
   const [divisionModalData, setDivisionModalData] = useState<DivisionOwnerQuartileDashboardResponse[]>([]);
   const [isCharacteristicsModalOpen, setIsCharacteristicsModalOpen] = useState(false);
   const [characteristicsModalData, setCharacteristicsModalData] = useState<ProjectCharacteristicsDashboardResponse[]>([]);
+  const [isProjectTypeModalOpen, setIsProjectTypeModalOpen] = useState(false);
+  const [projectTypeModalData, setProjectTypeModalData] = useState<ProjectTypeDashboardResponse[]>([]);
+  const [isProcurementModalOpen, setIsProcurementModalOpen] = useState(false);
+  const [procurementModalData, setProcurementModalData] = useState<ProcurementWorkProgramDashboardResponse[]>([]);
+  const [isAcquisitionsModalOpen, setIsAcquisitionsModalOpen] = useState(false);
+  const [acquisitionsModalData, setAcquisitionsModalData] = useState<ProjectAcquisitionsDashboardResponse[]>([]);
+  const [isGroupManageModalOpen, setIsGroupManageModalOpen] = useState(false);
+  const [groupManageModalData, setGroupManageModalData] = useState<ProjectByGroupManageDashboardResponse[]>([]);
+  const [isProjectSummaryDevModalOpen, setIsProjectSummaryDevModalOpen] = useState(false);
+  const [projectSummaryDevModalData, setProjectSummaryDevModalData] = useState<ProjectSummaryDashboardResponse[]>([]);
   const [tokenData, setTokenData] = useState<string>("");
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   
@@ -600,6 +610,111 @@ export default function DashboardPortfolioPage() {
       setIsCharacteristicsModalOpen(true);
     } catch (err) {
       console.error("Failed to load all characteristics data:", err);
+    }
+  };
+
+  // Load all project type data for modal (unlimited)
+  const loadAllProjectTypeData = async () => {
+    if (!tokenData) return;
+
+    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const filterPayload: DashboardFilterRequest = {
+      startDate: dateRange.startDate,
+      endDate: dateRange.endDate,
+    };
+
+    try {
+      const response = await getProjectTypeDashboard(filterPayload, tokenData);
+      const apiData = response?.data || [];
+      
+      setProjectTypeModalData(apiData);
+      setIsProjectTypeModalOpen(true);
+    } catch (err) {
+      console.error("Failed to load all project type data:", err);
+    }
+  };
+
+  // Load all procurement work program data for modal (unlimited)
+  const loadAllProcurementData = async () => {
+    if (!tokenData) return;
+
+    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const filterPayload: DashboardFilterRequest = {
+      startDate: dateRange.startDate,
+      endDate: dateRange.endDate,
+    };
+
+    try {
+      const response = await getProcurementWorkProgramDashboard(filterPayload, tokenData);
+      const apiData = response?.data || [];
+      
+      setProcurementModalData(apiData);
+      setIsProcurementModalOpen(true);
+    } catch (err) {
+      console.error("Failed to load all procurement data:", err);
+    }
+  };
+
+  // Load all project acquisitions data for modal (unlimited)
+  const loadAllAcquisitionsData = async () => {
+    if (!tokenData) return;
+
+    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const filterPayload: DashboardFilterRequest = {
+      startDate: dateRange.startDate,
+      endDate: dateRange.endDate,
+    };
+
+    try {
+      const response = await getProjectAcquisitionsDashboard(filterPayload, tokenData);
+      const apiData = response?.data || [];
+      
+      setAcquisitionsModalData(apiData);
+      setIsAcquisitionsModalOpen(true);
+    } catch (err) {
+      console.error("Failed to load all acquisitions data:", err);
+    }
+  };
+
+  // Load all project by group manage data for modal (unlimited)
+  const loadAllGroupManageData = async () => {
+    if (!tokenData) return;
+
+    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const filterPayload: DashboardFilterRequest = {
+      startDate: dateRange.startDate,
+      endDate: dateRange.endDate,
+    };
+
+    try {
+      const response = await getProjectByGroupManageDashboard(filterPayload, tokenData);
+      const apiData = response?.data || [];
+      
+      setGroupManageModalData(apiData);
+      setIsGroupManageModalOpen(true);
+    } catch (err) {
+      console.error("Failed to load all group manage data:", err);
+    }
+  };
+
+  // Load all project summary dev data for modal (unlimited)
+  const loadAllProjectSummaryDevData = async () => {
+    if (!tokenData) return;
+
+    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const filterPayload: DashboardFilterRequest = {
+      startDate: dateRange.startDate,
+      endDate: dateRange.endDate,
+    };
+
+    try {
+      const response = await getProjectSummaryDashboard(filterPayload, tokenData);
+      const apiData = response?.data || [];
+      
+      setProjectSummaryDevModalData(apiData);
+      setIsProjectSummaryDevModalOpen(true);
+    } catch (err) {
+      console.error("Failed to load all project summary dev data:", err);
     }
   };
 
@@ -1875,6 +1990,7 @@ export default function DashboardPortfolioPage() {
                             size="xs" 
                             variant="ghost" 
                             color="white"
+                            onClick={loadAllProjectTypeData}
                             _hover={{ bg: "whiteAlpha.200" }}
                           >
                             Details
@@ -1944,6 +2060,7 @@ export default function DashboardPortfolioPage() {
                             size="xs" 
                             variant="ghost" 
                             color="white"
+                            onClick={loadAllProcurementData}
                             _hover={{ bg: "whiteAlpha.200" }}
                           >
                             Details
@@ -2013,6 +2130,7 @@ export default function DashboardPortfolioPage() {
                             size="xs" 
                             variant="ghost" 
                             color="white"
+                            onClick={loadAllAcquisitionsData}
                             _hover={{ bg: "whiteAlpha.200" }}
                           >
                             Details
@@ -2082,6 +2200,7 @@ export default function DashboardPortfolioPage() {
                             size="xs" 
                             variant="ghost" 
                             color="white"
+                            onClick={loadAllGroupManageData}
                             _hover={{ bg: "whiteAlpha.200" }}
                           >
                             Details
@@ -2160,6 +2279,7 @@ export default function DashboardPortfolioPage() {
                             size="xs" 
                             variant="ghost" 
                             color="white"
+                            onClick={loadAllProjectSummaryDevData}
                             _hover={{ bg: "whiteAlpha.200" }}
                           >
                             Details
@@ -2758,6 +2878,346 @@ export default function DashboardPortfolioPage() {
             </ModalBody>
             <ModalFooter bg="gray.50" roundedBottom="xl" py={4}>
               <Button colorScheme="orange" mr={3} onClick={() => setIsCharacteristicsModalOpen(false)}>
+                Close
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+
+        {/* Project Type Modal */}
+        <Modal isOpen={isProjectTypeModalOpen} onClose={() => setIsProjectTypeModalOpen(false)} size="6xl">
+          <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
+          <ModalContent maxH="90vh" bg="white" shadow="2xl" rounded="xl">
+            <ModalHeader 
+              bg="teal.500" 
+              color="white" 
+              roundedTop="xl" 
+              py={4}
+              fontSize="lg"
+              fontWeight="bold"
+            >
+              <HStack>
+                <Icon as={FiBarChart} />
+                <Text>Project Type - All Data (Q{selectedQuarter} {selectedYear})</Text>
+              </HStack>
+            </ModalHeader>
+            <ModalCloseButton color="white" />
+            <ModalBody overflowY="auto" maxH="70vh" p={6}>
+              {projectTypeModalData.length > 0 ? (
+                <Box>
+                  <Box bg="gray.50" p={4} rounded="lg" mb={4}>
+                    <Chart
+                      options={{
+                        ...projectTypeChartOptions,
+                        labels: projectTypeModalData.map(item => item.projectTypeName),
+                        dataLabels: {
+                          enabled: true,
+                          formatter: (val: number, opts: any) => {
+                            const count = projectTypeModalData[opts.seriesIndex]?.projectCount || 0;
+                            return `${count}`;
+                          }
+                        }
+                      }}
+                      series={projectTypeModalData.map(item => item.projectCount)}
+                      type="pie"
+                      height={400}
+                    />
+                  </Box>
+                  <HStack justify="center" mt={4} spacing={6}>
+                    <Box bg="teal.50" p={4} rounded="lg" textAlign="center">
+                      <Stat>
+                        <StatLabel color="teal.600" fontSize="sm" fontWeight="medium">Total Types</StatLabel>
+                        <StatNumber color="teal.600" fontSize="2xl" fontWeight="bold">
+                          {projectTypeModalData.length}
+                        </StatNumber>
+                      </Stat>
+                    </Box>
+                    <Box bg="blue.50" p={4} rounded="lg" textAlign="center">
+                      <Stat>
+                        <StatLabel color="blue.600" fontSize="sm" fontWeight="medium">Total Projects</StatLabel>
+                        <StatNumber color="blue.600" fontSize="2xl" fontWeight="bold">
+                          {projectTypeModalData.reduce((sum, item) => sum + item.projectCount, 0)}
+                        </StatNumber>
+                      </Stat>
+                    </Box>
+                  </HStack>
+                </Box>
+              ) : (
+                <Flex justify="center" align="center" height="300px" direction="column">
+                  <Icon as={FiBarChart} size="48px" color="gray.300" mb={4} />
+                  <Text color="gray.500" fontSize="sm" textAlign="center">
+                    No project type data available
+                  </Text>
+                </Flex>
+              )}
+            </ModalBody>
+            <ModalFooter bg="gray.50" roundedBottom="xl" py={4}>
+              <Button colorScheme="teal" mr={3} onClick={() => setIsProjectTypeModalOpen(false)}>
+                Close
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+
+        {/* Procurement Work Program Modal */}
+        <Modal isOpen={isProcurementModalOpen} onClose={() => setIsProcurementModalOpen(false)} size="6xl">
+          <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
+          <ModalContent maxH="90vh" bg="white" shadow="2xl" rounded="xl">
+            <ModalHeader bg="pink.500" color="white" roundedTop="xl" py={4} fontSize="lg" fontWeight="bold">
+              <HStack>
+                <Icon as={FiTrendingUp} />
+                <Text>Procurement Work Program - All Data (Q{selectedQuarter} {selectedYear})</Text>
+              </HStack>
+            </ModalHeader>
+            <ModalCloseButton color="white" />
+            <ModalBody overflowY="auto" maxH="70vh" p={6}>
+              {procurementModalData.length > 0 ? (
+                <Box>
+                  <Box bg="gray.50" p={4} rounded="lg" mb={4}>
+                    <Chart
+                      options={{
+                        ...procurementWorkProgramChartOptions,
+                        labels: procurementModalData.map(item => item.procurementWorkProgramFlag)
+                      }}
+                      series={procurementModalData.map(item => item.projectCount)}
+                      type="donut"
+                      height={400}
+                    />
+                  </Box>
+                  <HStack justify="center" mt={4} spacing={6}>
+                    <Box bg="pink.50" p={4} rounded="lg" textAlign="center">
+                      <Stat>
+                        <StatLabel color="pink.600" fontSize="sm" fontWeight="medium">Total Programs</StatLabel>
+                        <StatNumber color="pink.600" fontSize="2xl" fontWeight="bold">
+                          {procurementModalData.length}
+                        </StatNumber>
+                      </Stat>
+                    </Box>
+                    <Box bg="blue.50" p={4} rounded="lg" textAlign="center">
+                      <Stat>
+                        <StatLabel color="blue.600" fontSize="sm" fontWeight="medium">Total Projects</StatLabel>
+                        <StatNumber color="blue.600" fontSize="2xl" fontWeight="bold">
+                          {procurementModalData.reduce((sum, item) => sum + item.projectCount, 0)}
+                        </StatNumber>
+                      </Stat>
+                    </Box>
+                  </HStack>
+                </Box>
+              ) : (
+                <Flex justify="center" align="center" height="300px" direction="column">
+                  <Icon as={FiTrendingUp} size="48px" color="gray.300" mb={4} />
+                  <Text color="gray.500" fontSize="sm" textAlign="center">
+                    No procurement work program data available
+                  </Text>
+                </Flex>
+              )}
+            </ModalBody>
+            <ModalFooter bg="gray.50" roundedBottom="xl" py={4}>
+              <Button colorScheme="pink" mr={3} onClick={() => setIsProcurementModalOpen(false)}>
+                Close
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+
+        {/* Project Acquisitions Modal */}
+        <Modal isOpen={isAcquisitionsModalOpen} onClose={() => setIsAcquisitionsModalOpen(false)} size="6xl">
+          <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
+          <ModalContent maxH="90vh" bg="white" shadow="2xl" rounded="xl">
+            <ModalHeader bg="cyan.500" color="white" roundedTop="xl" py={4} fontSize="lg" fontWeight="bold">
+              <HStack>
+                <Icon as={FiActivity} />
+                <Text>Project Acquisitions - All Data (Q{selectedQuarter} {selectedYear})</Text>
+              </HStack>
+            </ModalHeader>
+            <ModalCloseButton color="white" />
+            <ModalBody overflowY="auto" maxH="70vh" p={6}>
+              {acquisitionsModalData.length > 0 ? (
+                <Box>
+                  <Box bg="gray.50" p={4} rounded="lg" mb={4}>
+                    <Chart
+                      options={{
+                        ...projectAcquisitionsChartOptions,
+                        xaxis: {
+                          ...projectAcquisitionsChartOptions.xaxis,
+                          categories: acquisitionsModalData.map(item => item.projectAcquisitionName)
+                        }
+                      }}
+                      series={[{
+                        name: 'Projects',
+                        data: acquisitionsModalData.map(item => item.projectCount)
+                      }]}
+                      type="bar"
+                      height={Math.max(400, acquisitionsModalData.length * 30)}
+                    />
+                  </Box>
+                  <HStack justify="center" mt={4} spacing={6}>
+                    <Box bg="cyan.50" p={4} rounded="lg" textAlign="center">
+                      <Stat>
+                        <StatLabel color="cyan.600" fontSize="sm" fontWeight="medium">Total Acquisitions</StatLabel>
+                        <StatNumber color="cyan.600" fontSize="2xl" fontWeight="bold">
+                          {acquisitionsModalData.length}
+                        </StatNumber>
+                      </Stat>
+                    </Box>
+                    <Box bg="blue.50" p={4} rounded="lg" textAlign="center">
+                      <Stat>
+                        <StatLabel color="blue.600" fontSize="sm" fontWeight="medium">Total Projects</StatLabel>
+                        <StatNumber color="blue.600" fontSize="2xl" fontWeight="bold">
+                          {acquisitionsModalData.reduce((sum, item) => sum + item.projectCount, 0)}
+                        </StatNumber>
+                      </Stat>
+                    </Box>
+                  </HStack>
+                </Box>
+              ) : (
+                <Flex justify="center" align="center" height="300px" direction="column">
+                  <Icon as={FiActivity} size="48px" color="gray.300" mb={4} />
+                  <Text color="gray.500" fontSize="sm" textAlign="center">
+                    No project acquisitions data available
+                  </Text>
+                </Flex>
+              )}
+            </ModalBody>
+            <ModalFooter bg="gray.50" roundedBottom="xl" py={4}>
+              <Button colorScheme="cyan" mr={3} onClick={() => setIsAcquisitionsModalOpen(false)}>
+                Close
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+
+        {/* Project by Group Management Modal */}
+        <Modal isOpen={isGroupManageModalOpen} onClose={() => setIsGroupManageModalOpen(false)} size="6xl">
+          <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
+          <ModalContent maxH="90vh" bg="white" shadow="2xl" rounded="xl">
+            <ModalHeader bg="purple.500" color="white" roundedTop="xl" py={4} fontSize="lg" fontWeight="bold">
+              <HStack>
+                <Icon as={FiBarChart} />
+                <Text>Project by Group Management - All Data (Q{selectedQuarter} {selectedYear})</Text>
+              </HStack>
+            </ModalHeader>
+            <ModalCloseButton color="white" />
+            <ModalBody overflowY="auto" maxH="70vh" p={6}>
+              {groupManageModalData.length > 0 ? (
+                <Box>
+                  <Box bg="gray.50" p={4} rounded="lg" mb={4}>
+                    <Chart
+                      options={{
+                        ...projectByGroupManageChartOptions,
+                        xaxis: {
+                          ...projectByGroupManageChartOptions.xaxis,
+                          categories: groupManageModalData.map(item => formatGroupName(item.projectGroupNameManage))
+                        }
+                      }}
+                      series={[{
+                        name: 'Projects',
+                        data: groupManageModalData.map(item => item.projectCount)
+                      }]}
+                      type="bar"
+                      height={Math.max(400, groupManageModalData.length * 30)}
+                    />
+                  </Box>
+                  <HStack justify="center" mt={4} spacing={6}>
+                    <Box bg="purple.50" p={4} rounded="lg" textAlign="center">
+                      <Stat>
+                        <StatLabel color="purple.600" fontSize="sm" fontWeight="medium">Total Groups</StatLabel>
+                        <StatNumber color="purple.600" fontSize="2xl" fontWeight="bold">
+                          {groupManageModalData.length}
+                        </StatNumber>
+                      </Stat>
+                    </Box>
+                    <Box bg="blue.50" p={4} rounded="lg" textAlign="center">
+                      <Stat>
+                        <StatLabel color="blue.600" fontSize="sm" fontWeight="medium">Total Projects</StatLabel>
+                        <StatNumber color="blue.600" fontSize="2xl" fontWeight="bold">
+                          {groupManageModalData.reduce((sum, item) => sum + item.projectCount, 0)}
+                        </StatNumber>
+                      </Stat>
+                    </Box>
+                  </HStack>
+                </Box>
+              ) : (
+                <Flex justify="center" align="center" height="300px" direction="column">
+                  <Icon as={FiBarChart} size="48px" color="gray.300" mb={4} />
+                  <Text color="gray.500" fontSize="sm" textAlign="center">
+                    No project by group management data available
+                  </Text>
+                </Flex>
+              )}
+            </ModalBody>
+            <ModalFooter bg="gray.50" roundedBottom="xl" py={4}>
+              <Button colorScheme="purple" mr={3} onClick={() => setIsGroupManageModalOpen(false)}>
+                Close
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+
+        {/* Project Summary Dev Modal */}
+        <Modal isOpen={isProjectSummaryDevModalOpen} onClose={() => setIsProjectSummaryDevModalOpen(false)} size="6xl">
+          <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
+          <ModalContent maxH="90vh" bg="white" shadow="2xl" rounded="xl">
+            <ModalHeader bg="blue.500" color="white" roundedTop="xl" py={4} fontSize="lg" fontWeight="bold">
+              <HStack>
+                <Icon as={FiBarChart} />
+                <Text>Project Summary Dev - All Data (Q{selectedQuarter} {selectedYear})</Text>
+              </HStack>
+            </ModalHeader>
+            <ModalCloseButton color="white" />
+            <ModalBody overflowY="auto" maxH="70vh" p={6}>
+              {projectSummaryDevModalData.length > 0 ? (
+                <Box>
+                  <Box bg="gray.50" p={4} rounded="lg" mb={4}>
+                    <Chart
+                      options={{
+                        ...projectSummaryDevChartOptions,
+                        labels: ['Active Projects', 'Closed Projects']
+                      }}
+                      series={[
+                        projectSummaryDevModalData.filter(item => {
+                          const status = item.projectStatus?.toUpperCase();
+                          return status?.includes('ACTIVE') || status?.includes('INITIATE') || status?.includes('PROGRESS') || status?.includes('PLANNING');
+                        }).reduce((sum, item) => sum + item.projectCount, 0),
+                        projectSummaryDevModalData.filter(item => {
+                          const status = item.projectStatus?.toUpperCase();
+                          return status?.includes('CLOSED') || status?.includes('COMPLETE') || status?.includes('FINISH');
+                        }).reduce((sum, item) => sum + item.projectCount, 0)
+                      ]}
+                      type="donut"
+                      height={400}
+                    />
+                  </Box>
+                  <HStack justify="center" mt={4} spacing={6}>
+                    <Box bg="blue.50" p={4} rounded="lg" textAlign="center">
+                      <Stat>
+                        <StatLabel color="blue.600" fontSize="sm" fontWeight="medium">Total Records</StatLabel>
+                        <StatNumber color="blue.600" fontSize="2xl" fontWeight="bold">
+                          {projectSummaryDevModalData.length}
+                        </StatNumber>
+                      </Stat>
+                    </Box>
+                    <Box bg="green.50" p={4} rounded="lg" textAlign="center">
+                      <Stat>
+                        <StatLabel color="green.600" fontSize="sm" fontWeight="medium">Total Projects</StatLabel>
+                        <StatNumber color="green.600" fontSize="2xl" fontWeight="bold">
+                          {projectSummaryDevModalData.reduce((sum, item) => sum + item.projectCount, 0)}
+                        </StatNumber>
+                      </Stat>
+                    </Box>
+                  </HStack>
+                </Box>
+              ) : (
+                <Flex justify="center" align="center" height="300px" direction="column">
+                  <Icon as={FiBarChart} size="48px" color="gray.300" mb={4} />
+                  <Text color="gray.500" fontSize="sm" textAlign="center">
+                    No project summary dev data available
+                  </Text>
+                </Flex>
+              )}
+            </ModalBody>
+            <ModalFooter bg="gray.50" roundedBottom="xl" py={4}>
+              <Button colorScheme="blue" mr={3} onClick={() => setIsProjectSummaryDevModalOpen(false)}>
                 Close
               </Button>
             </ModalFooter>
