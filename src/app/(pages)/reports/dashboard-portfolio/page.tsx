@@ -66,6 +66,8 @@ export default function DashboardPortfolioPage() {
   const [devStaffProjectActiveData, setDevStaffProjectActiveData] = useState<DevStaffProjectActiveDashboardResponse[]>([]);
   const [devStaffActiveModalData, setDevStaffActiveModalData] = useState<DevStaffProjectActiveDashboardResponse[]>([]);
   const [isDevStaffActiveModalOpen, setIsDevStaffActiveModalOpen] = useState(false);
+  const [isProjectSummaryModalOpen, setIsProjectSummaryModalOpen] = useState(false);
+  const [isProjectQuarterlyModalOpen, setIsProjectQuarterlyModalOpen] = useState(false);
   const [tokenData, setTokenData] = useState<string>("");
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   
@@ -502,6 +504,16 @@ export default function DashboardPortfolioPage() {
     } catch (err) {
       console.error("Failed to load all dev staff project active data:", err);
     }
+  };
+
+  // Load all project summary data for modal
+  const loadAllProjectSummaryData = () => {
+    setIsProjectSummaryModalOpen(true);
+  };
+
+  // Load all project quarterly data for modal
+  const loadAllProjectQuarterlyData = () => {
+    setIsProjectQuarterlyModalOpen(true);
   };
 
   // Update characteristics data when quarter/year changes
@@ -1498,6 +1510,7 @@ export default function DashboardPortfolioPage() {
                             size="xs" 
                             variant="ghost" 
                             color="white"
+                            onClick={loadAllProjectSummaryData}
                             _hover={{ bg: "whiteAlpha.200" }}
                           >
                             Details
@@ -1565,6 +1578,7 @@ export default function DashboardPortfolioPage() {
                             size="xs" 
                             variant="ghost" 
                             color="white"
+                            onClick={loadAllProjectQuarterlyData}
                             _hover={{ bg: "whiteAlpha.200" }}
                           >
                             Details
@@ -2378,6 +2392,120 @@ export default function DashboardPortfolioPage() {
             </ModalBody>
             <ModalFooter bg="gray.50" roundedBottom="xl" py={4}>
               <Button colorScheme="green" mr={3} onClick={() => setIsDevStaffActiveModalOpen(false)}>
+                Close
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+
+        {/* Project Quarterly Modal */}
+        <Modal isOpen={isProjectQuarterlyModalOpen} onClose={() => setIsProjectQuarterlyModalOpen(false)} size="6xl">
+          <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
+          <ModalContent maxH="90vh" bg="white" shadow="2xl" rounded="xl">
+            <ModalHeader 
+              bg="purple.500" 
+              color="white" 
+              roundedTop="xl" 
+              py={4}
+              fontSize="lg"
+              fontWeight="bold"
+            >
+              <HStack>
+                <Icon as={FiActivity} />
+                <Text>Project Quarterly - All Data (Q{selectedQuarter} {selectedYear})</Text>
+              </HStack>
+            </ModalHeader>
+            <ModalCloseButton color="white" />
+            <ModalBody overflowY="auto" maxH="70vh" p={6}>
+              {quarterlyData.length > 0 ? (
+                <Box>
+                  <Box bg="gray.50" p={4} rounded="lg" mb={4}>
+                    <Chart
+                      options={quarterlyChartOptions}
+                      series={quarterlyChartSeries}
+                      type="bar"
+                      height={400}
+                    />
+                  </Box>
+                  <HStack justify="center" mt={4} spacing={6}>
+                    <Box bg="purple.50" p={4} rounded="lg" textAlign="center">
+                      <Stat>
+                        <StatLabel color="purple.600" fontSize="sm" fontWeight="medium">Total Projects</StatLabel>
+                        <StatNumber color="purple.600" fontSize="2xl" fontWeight="bold">
+                          {quarterlyData.reduce((sum, item) => sum + item.projectCount, 0)}
+                        </StatNumber>
+                      </Stat>
+                    </Box>
+                  </HStack>
+                </Box>
+              ) : (
+                <Flex justify="center" align="center" height="300px" direction="column">
+                  <Icon as={FiActivity} size="48px" color="gray.300" mb={4} />
+                  <Text color="gray.500" fontSize="sm" textAlign="center">
+                    No project quarterly data available
+                  </Text>
+                </Flex>
+              )}
+            </ModalBody>
+            <ModalFooter bg="gray.50" roundedBottom="xl" py={4}>
+              <Button colorScheme="purple" mr={3} onClick={() => setIsProjectQuarterlyModalOpen(false)}>
+                Close
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+
+        {/* Project Summary Modal */}
+        <Modal isOpen={isProjectSummaryModalOpen} onClose={() => setIsProjectSummaryModalOpen(false)} size="6xl">
+          <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
+          <ModalContent maxH="90vh" bg="white" shadow="2xl" rounded="xl">
+            <ModalHeader 
+              bg="blue.500" 
+              color="white" 
+              roundedTop="xl" 
+              py={4}
+              fontSize="lg"
+              fontWeight="bold"
+            >
+              <HStack>
+                <Icon as={FiTrendingUp} />
+                <Text>Project Summary - All Data (Q{selectedQuarter} {selectedYear})</Text>
+              </HStack>
+            </ModalHeader>
+            <ModalCloseButton color="white" />
+            <ModalBody overflowY="auto" maxH="70vh" p={6}>
+              {chartData.length > 0 ? (
+                <Box>
+                  <Box bg="gray.50" p={4} rounded="lg" mb={4}>
+                    <Chart
+                      options={chartOptions}
+                      series={chartSeries}
+                      type="donut"
+                      height={400}
+                    />
+                  </Box>
+                  <HStack justify="center" mt={4} spacing={6}>
+                    <Box bg="blue.50" p={4} rounded="lg" textAlign="center">
+                      <Stat>
+                        <StatLabel color="blue.600" fontSize="sm" fontWeight="medium">Total Projects</StatLabel>
+                        <StatNumber color="blue.600" fontSize="2xl" fontWeight="bold">
+                          {chartData.reduce((sum, item) => sum + item.projectCount, 0)}
+                        </StatNumber>
+                      </Stat>
+                    </Box>
+                  </HStack>
+                </Box>
+              ) : (
+                <Flex justify="center" align="center" height="300px" direction="column">
+                  <Icon as={FiTrendingUp} size="48px" color="gray.300" mb={4} />
+                  <Text color="gray.500" fontSize="sm" textAlign="center">
+                    No project summary data available
+                  </Text>
+                </Flex>
+              )}
+            </ModalBody>
+            <ModalFooter bg="gray.50" roundedBottom="xl" py={4}>
+              <Button colorScheme="blue" mr={3} onClick={() => setIsProjectSummaryModalOpen(false)}>
                 Close
               </Button>
             </ModalFooter>
