@@ -52,6 +52,7 @@ export default function DashboardPortfolioPage() {
   const [procurementWorkProgramData, setProcurementWorkProgramData] = useState<ProcurementWorkProgramDashboardResponse[]>([]);
   const [projectAcquisitionsData, setProjectAcquisitionsData] = useState<ProjectAcquisitionsDashboardResponse[]>([]);
   const [projectByGroupManageData, setProjectByGroupManageData] = useState<ProjectByGroupManageDashboardResponse[]>([]);
+  const [projectSummaryDevData, setProjectSummaryDevData] = useState<ProjectSummaryDashboardResponse[]>([]);
   const [tokenData, setTokenData] = useState<string>("");
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   
@@ -356,6 +357,26 @@ export default function DashboardPortfolioPage() {
     }
   };
 
+  // Load project summary dev data (same as project summary but for dev)
+  const loadProjectSummaryDevData = async () => {
+    if (!tokenData) return;
+
+    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const filterPayload: DashboardFilterRequest = {
+      startDate: dateRange.startDate,
+      endDate: dateRange.endDate
+    };
+
+    try {
+      const response = await getProjectSummaryDashboard(filterPayload, tokenData);
+      const apiData = response?.data || [];
+      
+      setProjectSummaryDevData(apiData);
+    } catch (err) {
+      console.error("Failed to load project summary dev data:", err);
+    }
+  };
+
   // Update characteristics data when quarter/year changes
   useEffect(() => {
     if (tokenData) {
@@ -388,6 +409,13 @@ export default function DashboardPortfolioPage() {
   useEffect(() => {
     if (tokenData) {
       loadProjectByGroupManageData();
+    }
+  }, [selectedQuarter, selectedYear, tokenData]);
+
+  // Update project summary dev data when quarter/year changes
+  useEffect(() => {
+    if (tokenData) {
+      loadProjectSummaryDevData();
     }
   }, [selectedQuarter, selectedYear, tokenData]);
 
@@ -929,6 +957,63 @@ export default function DashboardPortfolioPage() {
     name: 'Projects',
     data: projectByGroupManageData.map(item => item.projectCount)
   }];
+
+  // Project Summary Dev Donut Chart Configuration (Active vs Closed)
+  const activeProjects = projectSummaryDevData.filter(item => {
+    const status = item.projectStatus?.toUpperCase();
+    return status?.includes('ACTIVE') || status?.includes('INITIATE') || status?.includes('PROGRESS') || status?.includes('PLANNING');
+  });
+  const closedProjects = projectSummaryDevData.filter(item => {
+    const status = item.projectStatus?.toUpperCase();
+    return status?.includes('CLOSED') || status?.includes('COMPLETED') || status?.includes('CANCELLED');
+  });
+  const activeCount = activeProjects.reduce((sum, item) => sum + item.projectCount, 0);
+  const closedCount = closedProjects.reduce((sum, item) => sum + item.projectCount, 0);
+
+  // Debug: Log the data to see the structure
+  console.log('Project Summary Dev Data:', projectSummaryDevData);
+  console.log('Active Count:', activeCount, 'Closed Count:', closedCount);
+
+  const projectSummaryDevChartOptions: ApexOptions = {
+    chart: {
+      type: 'donut',
+      height: 300,
+      fontFamily: 'Inter, sans-serif',
+      toolbar: {
+        show: false
+      }
+    },
+    colors: ['#38A169', '#E53E3E'],
+    labels: ['Active', 'Closed'],
+    dataLabels: {
+      enabled: true,
+      formatter: (val: number) => {
+        return Math.round(val) + '%';
+      }
+    },
+    plotOptions: {
+      pie: {
+        donut: {
+          labels: {
+            show: true,
+            total: {
+              show: true,
+              label: 'Total Projects',
+              formatter: () => `${activeCount + closedCount}`
+            }
+          }
+        }
+      }
+    },
+    legend: {
+      position: 'bottom'
+    },
+    tooltip: {
+      y: { formatter: (val: number) => `${val} projects` }
+    }
+  };
+
+  const projectSummaryDevChartSeries = [activeCount, closedCount];
 
   // Update division chart options with categories and tooltips
   const divisionChartOptionsWithCategories: ApexOptions = {
@@ -1606,8 +1691,77 @@ export default function DashboardPortfolioPage() {
                 gap={6}
                 autoRows="min-content"
               >
-                {/* Dev Staff Project Closed - 12 cols */}
-                <GridItem colSpan={12}>
+                {/* Project Summary Dev - 4 cols */}
+                <GridItem colSpan={{ base: 12, md: 6, lg: 4 }}>
+                  <Card rounded={radiusStyle} shadow="lg" bg="white" h="full">
+                    <CardHeader bg="blue.500" color="white" roundedTop={radiusStyle}>
+                      <Flex justify="space-between" align="center">
+                        <HStack>
+                          <Icon as={FiBarChart} />
+                          <Text fontSize="md" fontWeight="bold">
+                            Project Summary Dev
+                          </Text>
+                        </HStack>
+                        <HStack spacing={2}>
+                          <Button 
+                            size="xs" 
+                            variant="ghost" 
+                            color="white"
+                            onClick={loadProjectSummaryDevData}
+                            isLoading={isLoading}
+                            _hover={{ bg: "whiteAlpha.200" }}
+                          >
+                            <FiRefreshCw />
+                          </Button>
+                          <Button 
+                            size="xs" 
+                            variant="ghost" 
+                            color="white"
+                            _hover={{ bg: "whiteAlpha.200" }}
+                          >
+                            Details
+                          </Button>
+                        </HStack>
+                      </Flex>
+                    </CardHeader>
+                    <CardBody p={4}>
+                      {projectSummaryDevData.length > 0 ? (
+                        <Box>
+                          <Chart
+                            options={projectSummaryDevChartOptions}
+                            series={projectSummaryDevChartSeries}
+                            type="donut"
+                            height={300}
+                          />
+                          <HStack justify="center" mt={4} spacing={6}>
+                            <Stat textAlign="center" size="sm">
+                              <StatLabel color="gray.600">Active</StatLabel>
+                              <StatNumber color="green.600" fontSize="lg">
+                                {activeCount}
+                              </StatNumber>
+                            </Stat>
+                            <Stat textAlign="center" size="sm">
+                              <StatLabel color="gray.600">Closed</StatLabel>
+                              <StatNumber color="red.600" fontSize="lg">
+                                {closedCount}
+                              </StatNumber>
+                            </Stat>
+                          </HStack>
+                        </Box>
+                      ) : (
+                        <Flex justify="center" align="center" height="300px" direction="column">
+                          <Icon as={FiBarChart} size="48px" color="gray.300" mb={4} />
+                          <Text color="gray.500" fontSize="sm" textAlign="center">
+                            No project summary dev data available
+                          </Text>
+                        </Flex>
+                      )}
+                    </CardBody>
+                  </Card>
+                </GridItem>
+
+                {/* Dev Staff Project Closed - 8 cols */}
+                <GridItem colSpan={{ base: 12, md: 6, lg: 8 }}>
                   <Card rounded={radiusStyle} shadow="lg" bg="white" h="full">
                     <CardHeader bg="red.500" color="white" roundedTop={radiusStyle}>
                       <Flex justify="space-between" align="center">
@@ -1638,7 +1792,7 @@ export default function DashboardPortfolioPage() {
                       </Flex>
                     </CardHeader>
                     <CardBody p={4}>
-                      <Flex justify="center" align="center" height="400px" direction="column">
+                      <Flex justify="center" align="center" height="300px" direction="column">
                         <Icon as={FiBarChart} size="48px" color="gray.300" mb={4} />
                         <Text color="gray.500" fontSize="sm" textAlign="center">
                           Coming Soon
