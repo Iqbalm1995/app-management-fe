@@ -93,7 +93,7 @@ import {
   RES_GENERIC_ERROR_MSG,
   PROJECT_TYPE_INTERNAL_DEVELOPMENT,
 } from "@/app/constants/applicationConstants";
-import { 
+import {
   PROJECT_STATUSES,
   PRO_STATUS_RUNNING
 } from "@/app/constants/masterStatusConstants";
@@ -1043,8 +1043,8 @@ const ProjectManagerPage = () => {
                                   viewMode === "grid"
                                     ? "blue.500"
                                     : colorMode === "light"
-                                    ? "gray.200"
-                                    : "gray.600",
+                                      ? "gray.200"
+                                      : "gray.600",
                               }}
                               transition="all 0.2s"
                             >
@@ -1066,8 +1066,8 @@ const ProjectManagerPage = () => {
                                   viewMode === "list"
                                     ? "blue.500"
                                     : colorMode === "light"
-                                    ? "gray.200"
-                                    : "gray.600",
+                                      ? "gray.200"
+                                      : "gray.600",
                               }}
                               transition="all 0.2s"
                             >
@@ -1150,15 +1150,13 @@ const ProjectManagerPage = () => {
                               textAlign="center"
                             >
                               {globalFilter || statusFilter.length > 0
-                                ? `No projects match your current filters${
-                                    globalFilter
-                                      ? ` (search: "${globalFilter}")`
-                                      : ""
-                                  }${
-                                    statusFilter.length > 0
-                                      ? ` (status: ${statusFilter.join(", ")})`
-                                      : ""
-                                  }. Try adjusting your filters or clearing them.`
+                                ? `No projects match your current filters${globalFilter
+                                  ? ` (search: "${globalFilter}")`
+                                  : ""
+                                }${statusFilter.length > 0
+                                  ? ` (status: ${statusFilter.join(", ")})`
+                                  : ""
+                                }. Try adjusting your filters or clearing them.`
                                 : "You don't have any projects yet. Projects will appear here once they are created and assigned to your team."}
                             </Text>
                           </VStack>

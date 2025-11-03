@@ -184,6 +184,32 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                           color="gray.600"
                           fontWeight="medium"
                         >
+                          Karakteristik:
+                        </Text>
+                        <Text fontSize="sm" fontWeight="bold" color="gray.800">
+                          {DataProject.projectCategory || "N/A"}
+                        </Text>
+                      </HStack>
+                      <Divider />
+                      <HStack justify="space-between">
+                        <Text
+                          fontSize="sm"
+                          color="gray.600"
+                          fontWeight="medium"
+                        >
+                          Sub Karakteristik:
+                        </Text>
+                        <Text fontSize="sm" fontWeight="bold" color="gray.800">
+                          {DataProject.projectType || "N/A"}
+                        </Text>
+                      </HStack>
+                      <Divider />
+                      <HStack justify="space-between">
+                        <Text
+                          fontSize="sm"
+                          color="gray.600"
+                          fontWeight="medium"
+                        >
                           Status:
                         </Text>
                         <Badge
@@ -281,6 +307,44 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                           {DataProject.projectType || "N/A"}
                         </Badge>
                       </HStack>
+                      <Divider />
+                      <HStack justify="space-between">
+                        <Text
+                          fontSize="sm"
+                          color="gray.600"
+                          fontWeight="medium"
+                        >
+                          Acquisition Code:
+                        </Text>
+                        <Badge
+                          colorScheme="orange"
+                          px={3}
+                          py={1}
+                          rounded="full"
+                          fontSize="sm"
+                        >
+                          {DataProject.projectAcquisitionCode || "N/A"}
+                        </Badge>
+                      </HStack>
+                      <Divider />
+                      <HStack justify="space-between">
+                        <Text
+                          fontSize="sm"
+                          color="gray.600"
+                          fontWeight="medium"
+                        >
+                          Acquisition Name:
+                        </Text>
+                        <Badge
+                          colorScheme="teal"
+                          px={3}
+                          py={1}
+                          rounded="full"
+                          fontSize="sm"
+                        >
+                          {DataProject.projectAcquisitionName || "N/A"}
+                        </Badge>
+                      </HStack>
                     </VStack>
                   </CardBody>
                 </Card>
@@ -323,8 +387,8 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                         <Text fontSize="sm" fontWeight="bold" color="gray.800">
                           {DataProject.projectRegisterDate
                             ? new Date(
-                                DataProject.projectRegisterDate
-                              ).toLocaleDateString()
+                              DataProject.projectRegisterDate
+                            ).toLocaleDateString()
                             : "N/A"}
                         </Text>
                       </HStack>
@@ -418,20 +482,20 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                                 {workProgram.workProgramCode || "N/A"}
                               </Badge>
                             </HStack>
-                            
+
                             <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
                               <VStack spacing={1} align="start">
                                 <Text fontSize="xs" color="gray.500" fontWeight="medium">
                                   Budget:
                                 </Text>
                                 <Text fontSize="sm" fontWeight="bold" color="green.600">
-                                  {workProgram.workProgramBudget ? 
-                                    `Rp ${workProgram.workProgramBudget.toLocaleString()}` : 
+                                  {workProgram.workProgramBudget ?
+                                    `Rp ${workProgram.workProgramBudget.toLocaleString()}` :
                                     "Not specified"
                                   }
                                 </Text>
                               </VStack>
-                              
+
                               <VStack spacing={1} align="start">
                                 <Text fontSize="xs" color="gray.500" fontWeight="medium">
                                   Division:
@@ -440,7 +504,7 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                                   {workProgram.divisionName || "Not assigned"}
                                 </Text>
                               </VStack>
-                              
+
                               <VStack spacing={1} align="start">
                                 <Text fontSize="xs" color="gray.500" fontWeight="medium">
                                   Source:
