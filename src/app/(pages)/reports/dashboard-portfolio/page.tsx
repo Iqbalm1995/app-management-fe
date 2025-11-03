@@ -82,10 +82,37 @@ export default function DashboardPortfolioPage() {
   const [groupManageModalData, setGroupManageModalData] = useState<ProjectByGroupManageDashboardResponse[]>([]);
   const [isProjectSummaryDevModalOpen, setIsProjectSummaryDevModalOpen] = useState(false);
   const [projectSummaryDevModalData, setProjectSummaryDevModalData] = useState<ProjectSummaryDashboardResponse[]>([]);
+  const [isUpdateConfirmOpen, setIsUpdateConfirmOpen] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [updateProgress, setUpdateProgress] = useState(0);
+  const [updateStatus, setUpdateStatus] = useState<string>('');
   const [tokenData, setTokenData] = useState<string>("");
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   
-  const { getProjectSummaryDashboard, getProjectQuarterlyDashboard, getDivisionOwnerQuartileDashboard, getProjectCharacteristicsDashboard, getProjectTypeDashboard, getProcurementWorkProgramDashboard, getProjectAcquisitionsDashboard, getProjectByGroupManageDashboard, getDevStaffProjectClosedDashboard, getDevStaffProjectActiveDashboard, isLoading, error } = useSnapshotServices();
+  const { 
+    getProjectSummaryDashboard, 
+    getProjectQuarterlyDashboard, 
+    getDivisionOwnerQuartileDashboard, 
+    getProjectCharacteristicsDashboard, 
+    getProjectTypeDashboard, 
+    getProcurementWorkProgramDashboard, 
+    getProjectAcquisitionsDashboard, 
+    getProjectByGroupManageDashboard, 
+    getDevStaffProjectClosedDashboard, 
+    getDevStaffProjectActiveDashboard,
+    projectSummary,
+    projectCharacteristic,
+    projectType,
+    projectProcurementFlag,
+    projectAcquisition,
+    projectByGroupManage,
+    projectQuartal,
+    projectDivisionOwnerQuartal,
+    userProjectClosedQuartal,
+    userProjectActiveQuartal,
+    isLoading, 
+    error 
+  } = useSnapshotServices();
   const toast = useToast();
 
   // Load token from localStorage
@@ -715,6 +742,122 @@ export default function DashboardPortfolioPage() {
       setIsProjectSummaryDevModalOpen(true);
     } catch (err) {
       console.error("Failed to load all project summary dev data:", err);
+    }
+  };
+
+  // Handle update report with all snapshot calls
+  const handleUpdateReport = async () => {
+    if (!tokenData) {
+      toast({
+        title: "Authentication Error",
+        description: "Please login to update reports",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    setIsUpdating(true);
+    setUpdateProgress(0);
+    setIsUpdateConfirmOpen(false);
+
+    const currentDate = new Date().toISOString().split('T')[0];
+    const snapshotPayload = { snapshotDate: currentDate };
+
+    const snapshotCalls = [
+      { name: 'Project Summary', call: () => projectSummary(snapshotPayload, tokenData) },
+      { name: 'Project Characteristics', call: () => projectCharacteristic(snapshotPayload, tokenData) },
+      { name: 'Project Type', call: () => projectType(snapshotPayload, tokenData) },
+      { name: 'Procurement Work Program', call: () => projectProcurementFlag(snapshotPayload, tokenData) },
+      { name: 'Project Acquisitions', call: () => projectAcquisition(snapshotPayload, tokenData) },
+      { name: 'Project by Group Manage', call: () => projectByGroupManage(snapshotPayload, tokenData) },
+      { name: 'Project Quarterly', call: () => projectQuartal(snapshotPayload, tokenData) },
+      { name: 'Division Owner Quartile', call: () => projectDivisionOwnerQuartal(snapshotPayload, tokenData) },
+      { name: 'User Project Closed', call: () => userProjectClosedQuartal(snapshotPayload, tokenData) },
+      { name: 'User Project Active', call: () => userProjectActiveQuartal(snapshotPayload, tokenData) },
+    ];
+
+    let successCount = 0;
+    let failedCount = 0;
+
+    try {
+      // Minimum 3 seconds loading
+      const startTime = Date.now();
+
+      for (let i = 0; i < snapshotCalls.length; i++) {
+        const { name, call } = snapshotCalls[i];
+        setUpdateStatus(`Updating ${name}...`);
+        
+        try {
+          await call();
+          successCount++;
+          toast({
+            title: `${name} Updated`,
+            description: `Successfully updated ${name} data`,
+            status: "success",
+            duration: 2000,
+            isClosable: true,
+          });
+        } catch (error) {
+          failedCount++;
+          console.error(`Failed to update ${name}:`, error);
+          toast({
+            title: `${name} Update Failed`,
+            description: `Failed to update ${name} data`,
+            status: "error",
+            duration: 3000,
+            isClosable: true,
+          });
+        }
+
+        setUpdateProgress(((i + 1) / snapshotCalls.length) * 100);
+        
+        // Small delay between calls
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+
+      // Ensure minimum 3 seconds loading time
+      const elapsedTime = Date.now() - startTime;
+      if (elapsedTime < 3000) {
+        await new Promise(resolve => setTimeout(resolve, 3000 - elapsedTime));
+      }
+
+      // Final status
+      if (failedCount === 0) {
+        toast({
+          title: "Report Update Complete",
+          description: `Successfully updated all ${successCount} report snapshots`,
+          status: "success",
+          duration: 5000,
+          isClosable: true,
+        });
+      } else {
+        toast({
+          title: "Report Update Completed with Errors",
+          description: `Updated ${successCount} reports, ${failedCount} failed`,
+          status: "warning",
+          duration: 5000,
+          isClosable: true,
+        });
+      }
+
+      // Refresh dashboard data after update
+      await handleFilter();
+
+    } catch (error) {
+      console.error("Update report failed:", error);
+      toast({
+        title: "Update Failed",
+        description: "Failed to update report data. Please try again.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setIsUpdating(false);
+      setUpdateProgress(0);
+      setUpdateStatus('');
     }
   };
 
@@ -1671,6 +1814,23 @@ export default function DashboardPortfolioPage() {
                     transition="all 0.2s"
                   >
                     Filter
+                  </Button>
+                </VStack>
+                
+                <VStack spacing={1} align="start">
+                  <Text fontSize="xs" color="transparent">Update</Text>
+                  <Button 
+                    colorScheme="orange" 
+                    onClick={() => setIsUpdateConfirmOpen(true)}
+                    isLoading={isUpdating}
+                    loadingText="Updating..."
+                    size="sm"
+                    rounded={radiusStyle}
+                    leftIcon={<FiActivity />}
+                    _hover={{ transform: "translateY(-1px)", shadow: "md" }}
+                    transition="all 0.2s"
+                  >
+                    Update Report
                   </Button>
                 </VStack>
               </HStack>
@@ -3223,6 +3383,104 @@ export default function DashboardPortfolioPage() {
             </ModalFooter>
           </ModalContent>
         </Modal>
+
+        {/* Update Report Confirmation Modal */}
+        <Modal isOpen={isUpdateConfirmOpen} onClose={() => setIsUpdateConfirmOpen(false)} size="md">
+          <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
+          <ModalContent bg="white" shadow="2xl" rounded="xl">
+            <ModalHeader bg="orange.500" color="white" roundedTop="xl" py={4} fontSize="lg" fontWeight="bold">
+              <HStack>
+                <Icon as={FiActivity} />
+                <Text>Update Report Confirmation</Text>
+              </HStack>
+            </ModalHeader>
+            <ModalCloseButton color="white" />
+            <ModalBody p={6}>
+              <VStack spacing={4} align="start">
+                <Text fontSize="md" color="gray.700">
+                  This will update all report snapshots with current data. This process may take several minutes.
+                </Text>
+                <Box bg="yellow.50" p={4} rounded="lg" w="full">
+                  <HStack>
+                    <Icon as={FiActivity} color="yellow.600" />
+                    <Text fontSize="sm" color="yellow.800" fontWeight="medium">
+                      Warning: Report data processing takes time. Please do not close this page during the update.
+                    </Text>
+                  </HStack>
+                </Box>
+                <Text fontSize="sm" color="gray.600">
+                  The following reports will be updated:
+                </Text>
+                <Box bg="gray.50" p={3} rounded="md" w="full">
+                  <Text fontSize="xs" color="gray.600">
+                    • Project Summary • Project Characteristics • Project Type<br/>
+                    • Procurement Work Program • Project Acquisitions<br/>
+                    • Project by Group Manage • Project Quarterly<br/>
+                    • Division Owner Quartile • User Project Data
+                  </Text>
+                </Box>
+              </VStack>
+            </ModalBody>
+            <ModalFooter bg="gray.50" roundedBottom="xl" py={4}>
+              <Button variant="ghost" mr={3} onClick={() => setIsUpdateConfirmOpen(false)}>
+                Cancel
+              </Button>
+              <Button colorScheme="orange" onClick={handleUpdateReport}>
+                Update All Reports
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+
+        {/* Update Progress Overlay */}
+        {isUpdating && (
+          <Box
+            position="fixed"
+            top="0"
+            left="0"
+            right="0"
+            bottom="0"
+            bg="blackAlpha.600"
+            zIndex="9999"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+          >
+            <Box bg="white" p={8} rounded="xl" shadow="2xl" maxW="md" w="90%">
+              <VStack spacing={6}>
+                <HStack>
+                  <Icon as={FiActivity} color="orange.500" boxSize={6} />
+                  <Text fontSize="lg" fontWeight="bold" color="gray.800">
+                    Updating Reports
+                  </Text>
+                </HStack>
+                
+                <Box w="full">
+                  <Text fontSize="sm" color="gray.600" mb={2}>
+                    {updateStatus || 'Preparing update...'}
+                  </Text>
+                  <Box bg="gray.200" rounded="full" h="2" w="full">
+                    <Box
+                      bg="orange.500"
+                      h="2"
+                      rounded="full"
+                      transition="width 0.3s"
+                      width={`${updateProgress}%`}
+                    />
+                  </Box>
+                  <Text fontSize="xs" color="gray.500" mt={1} textAlign="center">
+                    {Math.round(updateProgress)}% Complete
+                  </Text>
+                </Box>
+
+                <Text fontSize="sm" color="gray.600" textAlign="center">
+                  Please wait while we update all report data.<br/>
+                  This process may take a few minutes.
+                </Text>
+              </VStack>
+            </Box>
+          </Box>
+        )}
       </Box>
     </LayoutAdmin>
   );
