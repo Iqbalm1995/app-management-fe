@@ -70,6 +70,8 @@ export default function DashboardPortfolioPage() {
   const [isProjectQuarterlyModalOpen, setIsProjectQuarterlyModalOpen] = useState(false);
   const [isDivisionModalOpen, setIsDivisionModalOpen] = useState(false);
   const [divisionModalData, setDivisionModalData] = useState<DivisionOwnerQuartileDashboardResponse[]>([]);
+  const [isCharacteristicsModalOpen, setIsCharacteristicsModalOpen] = useState(false);
+  const [characteristicsModalData, setCharacteristicsModalData] = useState<ProjectCharacteristicsDashboardResponse[]>([]);
   const [tokenData, setTokenData] = useState<string>("");
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   
@@ -577,6 +579,27 @@ export default function DashboardPortfolioPage() {
       setIsDivisionModalOpen(true);
     } catch (err) {
       console.error("Failed to load all division data:", err);
+    }
+  };
+
+  // Load all project characteristics data for modal (unlimited)
+  const loadAllCharacteristicsData = async () => {
+    if (!tokenData) return;
+
+    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const filterPayload: DashboardFilterRequest = {
+      startDate: dateRange.startDate,
+      endDate: dateRange.endDate,
+    };
+
+    try {
+      const response = await getProjectCharacteristicsDashboard(filterPayload, tokenData);
+      const apiData = response?.data || [];
+      
+      setCharacteristicsModalData(apiData);
+      setIsCharacteristicsModalOpen(true);
+    } catch (err) {
+      console.error("Failed to load all characteristics data:", err);
     }
   };
 
@@ -1782,6 +1805,7 @@ export default function DashboardPortfolioPage() {
                             size="xs" 
                             variant="ghost" 
                             color="white"
+                            onClick={loadAllCharacteristicsData}
                             _hover={{ bg: "whiteAlpha.200" }}
                           >
                             Details
@@ -2660,6 +2684,80 @@ export default function DashboardPortfolioPage() {
             </ModalBody>
             <ModalFooter bg="gray.50" roundedBottom="xl" py={4}>
               <Button colorScheme="blue" mr={3} onClick={() => setIsProjectSummaryModalOpen(false)}>
+                Close
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+
+        {/* Project Characteristics Modal */}
+        <Modal isOpen={isCharacteristicsModalOpen} onClose={() => setIsCharacteristicsModalOpen(false)} size="6xl">
+          <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
+          <ModalContent maxH="90vh" bg="white" shadow="2xl" rounded="xl">
+            <ModalHeader 
+              bg="orange.500" 
+              color="white" 
+              roundedTop="xl" 
+              py={4}
+              fontSize="lg"
+              fontWeight="bold"
+            >
+              <HStack>
+                <Icon as={FiActivity} />
+                <Text>Project Characteristics - All Data (Q{selectedQuarter} {selectedYear})</Text>
+              </HStack>
+            </ModalHeader>
+            <ModalCloseButton color="white" />
+            <ModalBody overflowY="auto" maxH="70vh" p={6}>
+              {characteristicsModalData.length > 0 ? (
+                <Box>
+                  <Box bg="gray.50" p={4} rounded="lg" mb={4}>
+                    <Chart
+                      options={{
+                        ...characteristicsChartOptions,
+                        xaxis: {
+                          ...characteristicsChartOptions.xaxis,
+                          categories: characteristicsModalData.map(item => item.characteristicName)
+                        }
+                      }}
+                      series={[{
+                        name: 'Projects',
+                        data: characteristicsModalData.map(item => item.projectCount)
+                      }]}
+                      type="bar"
+                      height={Math.max(400, characteristicsModalData.length * 30)}
+                    />
+                  </Box>
+                  <HStack justify="center" mt={4} spacing={6}>
+                    <Box bg="orange.50" p={4} rounded="lg" textAlign="center">
+                      <Stat>
+                        <StatLabel color="orange.600" fontSize="sm" fontWeight="medium">Total Characteristics</StatLabel>
+                        <StatNumber color="orange.600" fontSize="2xl" fontWeight="bold">
+                          {characteristicsModalData.length}
+                        </StatNumber>
+                      </Stat>
+                    </Box>
+                    <Box bg="blue.50" p={4} rounded="lg" textAlign="center">
+                      <Stat>
+                        <StatLabel color="blue.600" fontSize="sm" fontWeight="medium">Total Projects</StatLabel>
+                        <StatNumber color="blue.600" fontSize="2xl" fontWeight="bold">
+                          {characteristicsModalData.reduce((sum, item) => sum + item.projectCount, 0)}
+                        </StatNumber>
+                      </Stat>
+                    </Box>
+                  </HStack>
+                </Box>
+              ) : (
+                <Flex justify="center" align="center" height="300px" direction="column">
+                  <Icon as={FiActivity} size="48px" color="gray.300" mb={4} />
+                  <Text color="gray.500" fontSize="sm" textAlign="center">
+                    No project characteristics data available
+                  </Text>
+                </Flex>
+              )}
+            </ModalBody>
+            <ModalFooter bg="gray.50" roundedBottom="xl" py={4}>
+              <Button colorScheme="orange" mr={3} onClick={() => setIsCharacteristicsModalOpen(false)}>
                 Close
               </Button>
             </ModalFooter>
