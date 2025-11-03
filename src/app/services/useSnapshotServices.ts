@@ -162,16 +162,16 @@ export interface SnapshotUserProjectActiveQuartalResponse {
 }
 
 export interface useSnapshotServicesServices {
-  projectSummary: (payload: SnapshotRequest, token: string) => Promise<ApiGenericResponse<SnapshotProjectSummaryResponse> | null>;
-  projectCharacteristic: (payload: SnapshotRequest, token: string) => Promise<ApiGenericResponse<SnapshotProjectCharacteristicResponse> | null>;
-  projectType: (payload: SnapshotRequest, token: string) => Promise<ApiGenericResponse<SnapshotProjectTypeResponse> | null>;
-  projectProcurementFlag: (payload: SnapshotRequest, token: string) => Promise<ApiGenericResponse<SnapshotProjectProcurementResponse> | null>;
-  projectAcquisition: (payload: SnapshotRequest, token: string) => Promise<ApiGenericResponse<SnapshotProjectAcquisitionResponse> | null>;
-  projectByGroupManage: (payload: SnapshotRequest, token: string) => Promise<ApiGenericResponse<SnapshotProjectByGroupManageResponse> | null>;
-  projectQuartal: (payload: SnapshotRequest, token: string) => Promise<ApiGenericResponse<SnapshotProjectQuartalResponse> | null>;
-  projectDivisionOwnerQuartal: (payload: SnapshotRequest, token: string) => Promise<ApiGenericResponse<SnapshotProjectDivisionOwnerQuartalResponse> | null>;
-  userProjectClosedQuartal: (payload: SnapshotRequest, token: string) => Promise<ApiGenericResponse<SnapshotUserProjectClosedQuartalResponse> | null>;
-  userProjectActiveQuartal: (payload: SnapshotRequest, token: string) => Promise<ApiGenericResponse<SnapshotUserProjectActiveQuartalResponse> | null>;
+  projectSummary: (token: string) => Promise<ApiGenericResponse<SnapshotProjectSummaryResponse> | null>;
+  projectCharacteristic: (token: string) => Promise<ApiGenericResponse<SnapshotProjectCharacteristicResponse> | null>;
+  projectType: (token: string) => Promise<ApiGenericResponse<SnapshotProjectTypeResponse> | null>;
+  projectProcurementFlag: (token: string) => Promise<ApiGenericResponse<SnapshotProjectProcurementResponse> | null>;
+  projectAcquisition: (token: string) => Promise<ApiGenericResponse<SnapshotProjectAcquisitionResponse> | null>;
+  projectByGroupManage: (token: string) => Promise<ApiGenericResponse<SnapshotProjectByGroupManageResponse> | null>;
+  projectQuartal: (token: string) => Promise<ApiGenericResponse<SnapshotProjectQuartalResponse> | null>;
+  projectDivisionOwnerQuartal: (token: string) => Promise<ApiGenericResponse<SnapshotProjectDivisionOwnerQuartalResponse> | null>;
+  userProjectClosedQuartal: (token: string) => Promise<ApiGenericResponse<SnapshotUserProjectClosedQuartalResponse> | null>;
+  userProjectActiveQuartal: (token: string) => Promise<ApiGenericResponse<SnapshotUserProjectActiveQuartalResponse> | null>;
   // Dashboard methods
   getProjectSummaryDashboard: (payload: DashboardFilterRequest, token: string) => Promise<ApiGenericResponse<ProjectSummaryDashboardResponse[]> | null>;
   getProjectQuarterlyDashboard: (payload: DashboardFilterRequest, token: string) => Promise<ApiGenericResponse<ProjectQuarterlyDashboardResponse[]> | null>;
@@ -191,7 +191,7 @@ const useSnapshotServices = (): useSnapshotServicesServices => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const callSnapshot = async <T>(endpoint: string, payload: SnapshotRequest, token: string): Promise<ApiGenericResponse<T> | null> => {
+  const callSnapshot = async <T>(endpoint: string, token: string): Promise<ApiGenericResponse<T> | null> => {
     setIsLoading(true);
     setError(null);
     const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
@@ -199,7 +199,7 @@ const useSnapshotServices = (): useSnapshotServicesServices => {
     try {
       const response = await axiosInstance.post<ApiGenericResponse<T>>(
         `${UrlEndpoint}${PathEndpoint}`,
-        payload,
+        {}, // Empty body since backend doesn't expect payload
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -262,16 +262,16 @@ const useSnapshotServices = (): useSnapshotServicesServices => {
   };
 
   return {
-    projectSummary: (payload: SnapshotRequest, token: string) => callSnapshot<SnapshotProjectSummaryResponse>('snapshot-project-summary', payload, token),
-    projectCharacteristic: (payload: SnapshotRequest, token: string) => callSnapshot<SnapshotProjectCharacteristicResponse>('snapshot-project-characteristic', payload, token),
-    projectType: (payload: SnapshotRequest, token: string) => callSnapshot<SnapshotProjectTypeResponse>('snapshot-project-type', payload, token),
-    projectProcurementFlag: (payload: SnapshotRequest, token: string) => callSnapshot<SnapshotProjectProcurementResponse>('snapshot-project-procurement-workprogram-flag', payload, token),
-    projectAcquisition: (payload: SnapshotRequest, token: string) => callSnapshot<SnapshotProjectAcquisitionResponse>('snapshot-project-acquisition', payload, token),
-    projectByGroupManage: (payload: SnapshotRequest, token: string) => callSnapshot<SnapshotProjectByGroupManageResponse>('snapshot-project-by-group-manage', payload, token),
-    projectQuartal: (payload: SnapshotRequest, token: string) => callSnapshot<SnapshotProjectQuartalResponse>('snapshot-project-quartal', payload, token),
-    projectDivisionOwnerQuartal: (payload: SnapshotRequest, token: string) => callSnapshot<SnapshotProjectDivisionOwnerQuartalResponse>('snapshot-project-division-owner-quartal', payload, token),
-    userProjectClosedQuartal: (payload: SnapshotRequest, token: string) => callSnapshot<SnapshotUserProjectClosedQuartalResponse>('snapshot-user-project-closed-quartal', payload, token),
-    userProjectActiveQuartal: (payload: SnapshotRequest, token: string) => callSnapshot<SnapshotUserProjectActiveQuartalResponse>('snapshot-user-project-active-quartal', payload, token),
+    projectSummary: (token: string) => callSnapshot<SnapshotProjectSummaryResponse>('snapshot/project-summary', token),
+    projectCharacteristic: (token: string) => callSnapshot<SnapshotProjectCharacteristicResponse>('snapshot/project-characteristics', token),
+    projectType: (token: string) => callSnapshot<SnapshotProjectTypeResponse>('snapshot/project-types', token),
+    projectProcurementFlag: (token: string) => callSnapshot<SnapshotProjectProcurementResponse>('snapshot/project-procurement-workprogram-flag', token),
+    projectAcquisition: (token: string) => callSnapshot<SnapshotProjectAcquisitionResponse>('snapshot/project-acquisitions', token),
+    projectByGroupManage: (token: string) => callSnapshot<SnapshotProjectByGroupManageResponse>('snapshot/project-by-group-manage', token),
+    projectQuartal: (token: string) => callSnapshot<SnapshotProjectQuartalResponse>('snapshot/project-quartal', token),
+    projectDivisionOwnerQuartal: (token: string) => callSnapshot<SnapshotProjectDivisionOwnerQuartalResponse>('snapshot/project-division-owner-quartal', token),
+    userProjectClosedQuartal: (token: string) => callSnapshot<SnapshotUserProjectClosedQuartalResponse>('snapshot/user-project-closed-quartal', token),
+    userProjectActiveQuartal: (token: string) => callSnapshot<SnapshotUserProjectActiveQuartalResponse>('snapshot/user-project-active-quartal', token),
     // Dashboard methods
     getProjectSummaryDashboard: (payload: DashboardFilterRequest, token: string) => callDashboard<ProjectSummaryDashboardResponse[]>('dashboard/project-summary', payload, token),
     getProjectQuarterlyDashboard: (payload: DashboardFilterRequest, token: string) => callDashboard<ProjectQuarterlyDashboardResponse[]>('dashboard/project-quarterly', payload, token),

@@ -762,20 +762,17 @@ export default function DashboardPortfolioPage() {
     setUpdateProgress(0);
     setIsUpdateConfirmOpen(false);
 
-    const currentDate = new Date().toISOString().split('T')[0];
-    const snapshotPayload = { snapshotDate: currentDate };
-
     const snapshotCalls = [
-      { name: 'Project Summary', call: () => projectSummary(snapshotPayload, tokenData) },
-      { name: 'Project Characteristics', call: () => projectCharacteristic(snapshotPayload, tokenData) },
-      { name: 'Project Type', call: () => projectType(snapshotPayload, tokenData) },
-      { name: 'Procurement Work Program', call: () => projectProcurementFlag(snapshotPayload, tokenData) },
-      { name: 'Project Acquisitions', call: () => projectAcquisition(snapshotPayload, tokenData) },
-      { name: 'Project by Group Manage', call: () => projectByGroupManage(snapshotPayload, tokenData) },
-      { name: 'Project Quarterly', call: () => projectQuartal(snapshotPayload, tokenData) },
-      { name: 'Division Owner Quartile', call: () => projectDivisionOwnerQuartal(snapshotPayload, tokenData) },
-      { name: 'User Project Closed', call: () => userProjectClosedQuartal(snapshotPayload, tokenData) },
-      { name: 'User Project Active', call: () => userProjectActiveQuartal(snapshotPayload, tokenData) },
+      { name: 'Project Summary', call: () => projectSummary(tokenData) },
+      { name: 'Project Characteristics', call: () => projectCharacteristic(tokenData) },
+      { name: 'Project Type', call: () => projectType(tokenData) },
+      { name: 'Procurement Work Program', call: () => projectProcurementFlag(tokenData) },
+      { name: 'Project Acquisitions', call: () => projectAcquisition(tokenData) },
+      { name: 'Project by Group Manage', call: () => projectByGroupManage(tokenData) },
+      { name: 'Project Quarterly', call: () => projectQuartal(tokenData) },
+      { name: 'Division Owner Quartile', call: () => projectDivisionOwnerQuartal(tokenData) },
+      { name: 'User Project Closed', call: () => userProjectClosedQuartal(tokenData) },
+      { name: 'User Project Active', call: () => userProjectActiveQuartal(tokenData) },
     ];
 
     let successCount = 0;
