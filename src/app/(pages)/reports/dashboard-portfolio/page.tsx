@@ -68,6 +68,8 @@ export default function DashboardPortfolioPage() {
   const [isDevStaffActiveModalOpen, setIsDevStaffActiveModalOpen] = useState(false);
   const [isProjectSummaryModalOpen, setIsProjectSummaryModalOpen] = useState(false);
   const [isProjectQuarterlyModalOpen, setIsProjectQuarterlyModalOpen] = useState(false);
+  const [isDivisionModalOpen, setIsDivisionModalOpen] = useState(false);
+  const [divisionModalData, setDivisionModalData] = useState<DivisionOwnerQuartileDashboardResponse[]>([]);
   const [tokenData, setTokenData] = useState<string>("");
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   
@@ -428,14 +430,15 @@ export default function DashboardPortfolioPage() {
     }
   };
 
-  // Load all dev staff project closed data for modal (no date filter)
+  // Load all dev staff project closed data for modal (current filter)
   const loadAllDevStaffProjectClosedData = async () => {
     if (!tokenData) return;
 
-    // Use wide date range to get all data
+    // Use same date range as current filter
+    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
     const filterPayload: DashboardFilterRequest = {
-      startDate: "2020-01-01",
-      endDate: "2030-12-31"
+      startDate: dateRange.startDate,
+      endDate: dateRange.endDate
     };
 
     try {
@@ -489,10 +492,11 @@ export default function DashboardPortfolioPage() {
   const loadAllDevStaffProjectActiveData = async () => {
     if (!tokenData) return;
 
-    // Use wide date range to get all data
+    // Use same date range as current filter
+    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
     const filterPayload: DashboardFilterRequest = {
-      startDate: "2020-01-01",
-      endDate: "2030-12-31"
+      startDate: dateRange.startDate,
+      endDate: dateRange.endDate
     };
 
     try {
@@ -508,12 +512,72 @@ export default function DashboardPortfolioPage() {
 
   // Load all project summary data for modal
   const loadAllProjectSummaryData = () => {
+    // Uses current chartData which is already filtered by current quarter/year
     setIsProjectSummaryModalOpen(true);
   };
 
   // Load all project quarterly data for modal
   const loadAllProjectQuarterlyData = () => {
+    // Uses current quarterlyData which is already filtered by current quarter/year
     setIsProjectQuarterlyModalOpen(true);
+  };
+
+  // Load all division owner quartile data for modal (unlimited)
+  const loadAllDivisionData = async () => {
+    if (!tokenData) return;
+
+    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const filterPayload: DashboardFilterRequest = {
+      startDate: dateRange.startDate,
+      endDate: dateRange.endDate,
+    };
+
+    try {
+      const response = await getDivisionOwnerQuartileDashboard(filterPayload, tokenData);
+      const apiData = response?.data || [];
+      
+      // Get ALL unique divisions (no limit, no randomization for modal)
+      const quarterMonths = getQuarterMonths(selectedQuarter);
+      let uniqueDivisions = [...new Set(apiData.map(item => item.divisionName))];
+      
+      const completeData: DivisionOwnerQuartileDashboardResponse[] = [];
+      
+      // Create complete data structure for all divisions
+      if (uniqueDivisions.length === 0) {
+        quarterMonths.forEach(({ monthPeriod, monthName }) => {
+          completeData.push({
+            divisionName: 'No Data',
+            monthPeriod,
+            monthName,
+            projectCount: 0,
+            yearPeriod: parseInt(selectedYear),
+            quartalPeriod: parseInt(selectedQuarter)
+          });
+        });
+      } else {
+        uniqueDivisions.forEach(divisionName => {
+          quarterMonths.forEach(({ monthPeriod, monthName }) => {
+            const existingData = apiData.find(item => 
+              item.divisionName === divisionName && item.monthPeriod === monthPeriod
+            );
+            
+            completeData.push({
+              divisionName,
+              monthPeriod,
+              monthName,
+              projectCount: existingData?.projectCount || 0,
+              yearPeriod: parseInt(selectedYear),
+              quartalPeriod: parseInt(selectedQuarter)
+            });
+          });
+        });
+      }
+      
+      setDivisionModalData(completeData);
+      setIsDivisionModalOpen(true);
+    } catch (err) {
+      console.error("Failed to load all division data:", err);
+    }
   };
 
   // Update characteristics data when quarter/year changes
@@ -1648,6 +1712,7 @@ export default function DashboardPortfolioPage() {
                             size="xs" 
                             variant="ghost" 
                             color="white"
+                            onClick={loadAllDivisionData}
                             _hover={{ bg: "whiteAlpha.200" }}
                           >
                             Details
@@ -2392,6 +2457,95 @@ export default function DashboardPortfolioPage() {
             </ModalBody>
             <ModalFooter bg="gray.50" roundedBottom="xl" py={4}>
               <Button colorScheme="green" mr={3} onClick={() => setIsDevStaffActiveModalOpen(false)}>
+                Close
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+
+        {/* Division Owner Quartile Modal */}
+        <Modal isOpen={isDivisionModalOpen} onClose={() => setIsDivisionModalOpen(false)} size="6xl">
+          <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
+          <ModalContent maxH="90vh" bg="white" shadow="2xl" rounded="xl">
+            <ModalHeader 
+              bg="purple.500" 
+              color="white" 
+              roundedTop="xl" 
+              py={4}
+              fontSize="lg"
+              fontWeight="bold"
+            >
+              <HStack>
+                <Icon as={FiTrendingUp} />
+                <Text>Division Owner Quartile - All Data (Q{selectedQuarter} {selectedYear})</Text>
+              </HStack>
+            </ModalHeader>
+            <ModalCloseButton color="white" />
+            <ModalBody overflowY="auto" maxH="70vh" p={6}>
+              {divisionModalData.length > 0 ? (
+                <Box>
+                  <Box bg="gray.50" p={4} rounded="lg" mb={4}>
+                    <Chart
+                      options={{
+                        ...divisionChartOptions,
+                        xaxis: {
+                          ...divisionChartOptions.xaxis,
+                          categories: [...new Set(divisionModalData.map(item => shortenDivisionName(item.divisionName)))]
+                        },
+                        tooltip: {
+                          shared: false,
+                          intersect: true,
+                          style: {
+                            fontSize: '12px',
+                            fontFamily: 'Inter, sans-serif'
+                          },
+                          y: {
+                            formatter: (val: number, opts: any) => {
+                              const seriesIndex = opts.seriesIndex;
+                              const dataPointIndex = opts.dataPointIndex;
+                              const quarterMonths = getQuarterMonths(selectedQuarter);
+                              const monthName = quarterMonths[seriesIndex]?.monthName || '';
+                              const fullDivisionName = [...new Set(divisionModalData.map(item => item.divisionName))][dataPointIndex] || '';
+                              return `${monthName}: ${val} projects<br/>Division: ${fullDivisionName}`;
+                            }
+                          }
+                        }
+                      }}
+                      series={getQuarterMonths(selectedQuarter).map(({ monthName }) => ({
+                        name: monthName || '',
+                        data: [...new Set(divisionModalData.map(item => shortenDivisionName(item.divisionName)))].map(division => {
+                          const divisionItem = divisionModalData.find(item => 
+                            shortenDivisionName(item.divisionName) === division && item.monthName === monthName
+                          );
+                          return divisionItem?.projectCount || 0;
+                        })
+                      }))}
+                      type="bar"
+                      height={Math.max(400, [...new Set(divisionModalData.map(item => item.divisionName))].length * 30)}
+                    />
+                  </Box>
+                  <HStack justify="center" mt={4} spacing={6}>
+                    <Box bg="purple.50" p={4} rounded="lg" textAlign="center">
+                      <Stat>
+                        <StatLabel color="purple.600" fontSize="sm" fontWeight="medium">Total Divisions</StatLabel>
+                        <StatNumber color="purple.600" fontSize="2xl" fontWeight="bold">
+                          {[...new Set(divisionModalData.map(item => item.divisionName))].length}
+                        </StatNumber>
+                      </Stat>
+                    </Box>
+                  </HStack>
+                </Box>
+              ) : (
+                <Flex justify="center" align="center" height="300px" direction="column">
+                  <Icon as={FiTrendingUp} size="48px" color="gray.300" mb={4} />
+                  <Text color="gray.500" fontSize="sm" textAlign="center">
+                    No division owner quartile data available
+                  </Text>
+                </Flex>
+              )}
+            </ModalBody>
+            <ModalFooter bg="gray.50" roundedBottom="xl" py={4}>
+              <Button colorScheme="purple" mr={3} onClick={() => setIsDivisionModalOpen(false)}>
                 Close
               </Button>
             </ModalFooter>
