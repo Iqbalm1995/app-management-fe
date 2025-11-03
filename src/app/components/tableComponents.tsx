@@ -168,15 +168,15 @@ export function ControlTable({ table }: any) {
     (_, i) => i + 1
   ); // Show first 5 pages for now
   return (
-    <Flex
-      minWidth="max-content"
-      w={"full"}
-      justifyContent="center"
-      gap="2"
-      my={4}
-      overflowX={"auto"}
-    >
-      <Grid templateColumns="repeat(12, 1fr)" gap={2} w={"full"}>
+    <Box w="full" overflowX="auto">
+      <Flex
+        minWidth="max-content"
+        w={"full"}
+        justifyContent="center"
+        gap="2"
+        my={4}
+      >
+        <Grid templateColumns="repeat(12, 1fr)" gap={2} w={"full"} minW="600px">
         <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}>
           <Flex
             gap="2"
@@ -364,6 +364,7 @@ export function ControlTable({ table }: any) {
         </GridItem>
       </Grid>
     </Flex>
+    </Box>
   );
 }
 

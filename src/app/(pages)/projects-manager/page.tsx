@@ -91,9 +91,13 @@ import {
   radiusStyle,
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
-  PROJECT_STATUS_LIST,
   PROJECT_TYPE_INTERNAL_DEVELOPMENT,
 } from "@/app/constants/applicationConstants";
+import {
+  PROJECT_STATUSES,
+  PRO_STATUS_RUNNING
+} from "@/app/constants/masterStatusConstants";
+import { StatusBadge } from "@/app/components/StatusBadge";
 import {
   PaggingListPayloadCustom,
   ListSearchByParam,
@@ -574,7 +578,7 @@ const ProjectManagerPage = () => {
                       <Text fontSize="xl" fontWeight="bold" color="green.600">
                         {
                           DataProjects.filter(
-                            (p) => p.projectStatus === "ACTIVE"
+                            (p) => p.projectStatus === PRO_STATUS_RUNNING
                           ).length
                         }
                       </Text>
@@ -1009,7 +1013,7 @@ const ProjectManagerPage = () => {
                             >
                               {
                                 DataProjects.filter(
-                                  (p) => p.projectStatus === "ACTIVE"
+                                  (p) => p.projectStatus === PRO_STATUS_RUNNING
                                 ).length
                               }{" "}
                               Active
@@ -1039,8 +1043,8 @@ const ProjectManagerPage = () => {
                                   viewMode === "grid"
                                     ? "blue.500"
                                     : colorMode === "light"
-                                    ? "gray.200"
-                                    : "gray.600",
+                                      ? "gray.200"
+                                      : "gray.600",
                               }}
                               transition="all 0.2s"
                             >
@@ -1062,8 +1066,8 @@ const ProjectManagerPage = () => {
                                   viewMode === "list"
                                     ? "blue.500"
                                     : colorMode === "light"
-                                    ? "gray.200"
-                                    : "gray.600",
+                                      ? "gray.200"
+                                      : "gray.600",
                               }}
                               transition="all 0.2s"
                             >
@@ -1146,15 +1150,13 @@ const ProjectManagerPage = () => {
                               textAlign="center"
                             >
                               {globalFilter || statusFilter.length > 0
-                                ? `No projects match your current filters${
-                                    globalFilter
-                                      ? ` (search: "${globalFilter}")`
-                                      : ""
-                                  }${
-                                    statusFilter.length > 0
-                                      ? ` (status: ${statusFilter.join(", ")})`
-                                      : ""
-                                  }. Try adjusting your filters or clearing them.`
+                                ? `No projects match your current filters${globalFilter
+                                  ? ` (search: "${globalFilter}")`
+                                  : ""
+                                }${statusFilter.length > 0
+                                  ? ` (status: ${statusFilter.join(", ")})`
+                                  : ""
+                                }. Try adjusting your filters or clearing them.`
                                 : "You don't have any projects yet. Projects will appear here once they are created and assigned to your team."}
                             </Text>
                           </VStack>
@@ -1292,23 +1294,13 @@ const ProjectManagerPage = () => {
                                           }}
                                         >
                                           <VStack spacing={1}>
-                                            <Badge
-                                              colorScheme={
-                                                project.projectStatus ===
-                                                "ACTIVE"
-                                                  ? "green"
-                                                  : project.projectStatus ===
-                                                    "ONHOLD"
-                                                  ? "orange"
-                                                  : "red"
-                                              }
+                                            <StatusBadge
+                                              status={project.projectStatus}
                                               px={3}
                                               py={1}
                                               rounded="full"
                                               fontSize="xs"
-                                            >
-                                              {project.projectStatus}
-                                            </Badge>
+                                            />
                                           </VStack>
                                         </GridItem>
 
@@ -1390,23 +1382,13 @@ const ProjectManagerPage = () => {
                                       >
                                         <HStack justify="space-between">
                                           <HStack spacing={2}>
-                                            <Badge
-                                              colorScheme={
-                                                project.projectStatus ===
-                                                "ACTIVE"
-                                                  ? "green"
-                                                  : project.projectStatus ===
-                                                    "ONHOLD"
-                                                  ? "orange"
-                                                  : "red"
-                                              }
+                                            <StatusBadge
+                                              status={project.projectStatus}
                                               px={2}
                                               py={1}
                                               rounded="full"
                                               fontSize="xs"
-                                            >
-                                              {project.projectStatus}
-                                            </Badge>
+                                            />
                                           </HStack>
                                           <HStack spacing={2}>
                                             <Text

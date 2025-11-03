@@ -27,14 +27,16 @@ import {
   ENDPOINT_PORT_BASIC_OBJECT,
   MAX_SIZE_TABLE,
   radiusStyle,
+  RES_CODE_OK,
+  RES_GENERIC_ERROR_MSG,
+} from "@/app/constants/applicationConstants";
+import {
   REQ_STATUS_APPROVED,
   REQ_STATUS_CANCELED,
   REQ_STATUS_NEED_REVIEW,
   REQ_STATUS_ON_HOLD,
   REQ_STATUS_TEMPORARY_APPROVED,
-  RES_CODE_OK,
-  RES_GENERIC_ERROR_MSG,
-} from "@/app/constants/applicationConstants";
+} from "@/app/constants/masterStatusConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import {
   buildUrlPort,

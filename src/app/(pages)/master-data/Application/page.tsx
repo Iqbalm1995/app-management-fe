@@ -12,6 +12,8 @@ import {
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
 } from "@/app/constants/applicationConstants";
+import { getStatusColor } from "@/app/utils/statusUtils";
+import { StatusBadge } from "@/app/components/StatusBadge";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
@@ -717,13 +719,6 @@ function MasterDataAplikasiPage() {
                           w="full"
                         >
                           {DataAplikasi.map((app, idx) => {
-                            const getStatusColor = (status: string) => {
-                              switch (status) {
-                                case "ACTIVE": return "green";
-                                case "INACTIVE": return "red";
-                                default: return "gray";
-                              }
-                            };
 
                             return (
                               <Card
@@ -841,16 +836,14 @@ function MasterDataAplikasiPage() {
                                           >
                                             Status
                                           </Text>
-                                          <Badge
-                                            colorScheme={getStatusColor(app.appsStatus)}
+                                          <StatusBadge
+                                            status={app.appsStatus}
                                             px={2}
                                             py={1}
                                             rounded="full"
                                             fontSize="xs"
                                             fontWeight="bold"
-                                          >
-                                            {app.appsStatus}
-                                          </Badge>
+                                          />
                                         </HStack>
                                         
                                         <Button
@@ -894,13 +887,6 @@ function MasterDataAplikasiPage() {
                       <Box display={viewMode === "list" ? "block" : "none"}>
                         <VStack spacing={4} align="stretch">
                           {DataAplikasi.map((app, idx) => {
-                            const getStatusColor = (status: string) => {
-                              switch (status) {
-                                case "ACTIVE": return "green";
-                                case "INACTIVE": return "red";
-                                default: return "gray";
-                              }
-                            };
 
                             return (
                               <Card
@@ -970,17 +956,15 @@ function MasterDataAplikasiPage() {
                                             >
                                               {app.appName}
                                             </Heading>
-                                            <Badge
-                                              colorScheme={getStatusColor(app.appsStatus)}
+                                            <StatusBadge
+                                              status={app.appsStatus}
                                               px={3}
                                               py={1}
                                               rounded="full"
                                               fontSize="xs"
                                               fontWeight="bold"
                                               textTransform="uppercase"
-                                            >
-                                              {app.appsStatus}
-                                            </Badge>
+                                            />
                                           </HStack>
                                           
                                           <Text

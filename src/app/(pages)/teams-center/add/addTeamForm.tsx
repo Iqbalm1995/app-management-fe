@@ -17,6 +17,7 @@ import {
   radiusStyle,
 } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
+import { PaggingListPayload } from "@/app/types/masterTypes";
 import {
   Box,
   Button,
@@ -108,7 +109,7 @@ function AddTeamViewPage() {
 
       try {
         // Load Directorates
-        const PayloadDirectorate = {
+        const PayloadDirectorate: PaggingListPayload = {
           search: "",
           limit: 999999,
           page: 0,
@@ -117,14 +118,14 @@ function AddTeamViewPage() {
           filterWhere: [{ field: "orgType", operator: "=", value: "DIRECTORATE" }],
         };
 
-        const directorateResponse = await ListOrganizations(PayloadDirectorate as any, tokenData);
+        const directorateResponse = await ListOrganizations(PayloadDirectorate, tokenData);
         if (directorateResponse?.statusCode === RES_CODE_OK && directorateResponse.data) {
           const directorates = directorateResponse.data as OrganizationResponse[];
           setDirectorateData(directorates);
         }
 
         // Load Divisions
-        const PayloadDivision = {
+        const PayloadDivision: PaggingListPayload = {
           search: "",
           limit: 999999,
           page: 0,
@@ -133,14 +134,14 @@ function AddTeamViewPage() {
           filterWhere: [{ field: "orgType", operator: "=", value: "DIVISION" }],
         };
 
-        const divisionResponse = await ListOrganizations(PayloadDivision as any, tokenData);
+        const divisionResponse = await ListOrganizations(PayloadDivision, tokenData);
         if (divisionResponse?.statusCode === RES_CODE_OK && divisionResponse.data) {
           const divisions = divisionResponse.data as OrganizationResponse[];
           setDivisionData(divisions);
         }
 
         // Load Groups
-        const PayloadGroup = {
+        const PayloadGroup: PaggingListPayload = {
           search: "",
           limit: 999999,
           page: 0,
@@ -149,7 +150,7 @@ function AddTeamViewPage() {
           filterWhere: [{ field: "orgType", operator: "=", value: "GROUP" }],
         };
 
-        const groupResponse = await ListOrganizations(PayloadGroup as any, tokenData);
+        const groupResponse = await ListOrganizations(PayloadGroup, tokenData);
         if (groupResponse?.statusCode === RES_CODE_OK && groupResponse.data) {
           const groups = groupResponse.data as OrganizationResponse[];
           setGroupData(groups);

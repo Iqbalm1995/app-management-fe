@@ -76,8 +76,8 @@ import {
   radiusStyle,
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
-  PROJECT_STATUS_LIST,
 } from "@/app/constants/applicationConstants";
+import { PROJECT_DEVELOPMENT_STATUSES } from "@/app/constants/masterStatusConstants";
 import {
   PaggingListPayloadCustom,
   ListSearchByParam,
@@ -771,7 +771,7 @@ const ProjectManagerPage = memo(() => {
                         </Button>
 
                         {/* Status Filter Tags */}
-                        {PROJECT_STATUS_LIST.map((status) => {
+                        {PROJECT_DEVELOPMENT_STATUSES.map((status) => {
                           const isActive = statusFilter === status;
                           const projectCount = DataProjects.filter(
                             (p) => p.projectStatus === status
@@ -994,7 +994,7 @@ const ProjectManagerPage = memo(() => {
                     >
                       All ({DataProjects.length})
                     </Button>
-                    {PROJECT_STATUS_LIST.map((status) => {
+                    {PROJECT_DEVELOPMENT_STATUSES.map((status) => {
                       const isActive = statusFilter === status;
                       const projectCount = DataProjects.filter(
                         (p) => p.projectStatus === status

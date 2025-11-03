@@ -55,6 +55,7 @@ import {
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
 } from "@/app/constants/applicationConstants";
+import { REQ_STATUS_APPROVED } from "@/app/constants/masterStatusConstants";
 import {
   addParamFilter,
   addParamFilterUpdate,
@@ -566,7 +567,7 @@ const RequirementListChooseData = memo(
       const brdStatusApprove: ListSearchByParamProps = {
         field: "reqStatus",
         operator: "=",
-        value: "APPROVED",
+        value: REQ_STATUS_APPROVED,
         filterLabel: "Tipe",
       };
 
@@ -604,7 +605,7 @@ const RequirementListChooseData = memo(
       const brdStatusApproveStatic: ListSearchByParamProps = {
         field: "reqStatus",
         operator: "=",
-        value: "APPROVED",
+        value: REQ_STATUS_APPROVED,
         filterLabel: "Tipe",
       };
       const filterWhereData: ListSearchByParamProps[] = addParamFilter(

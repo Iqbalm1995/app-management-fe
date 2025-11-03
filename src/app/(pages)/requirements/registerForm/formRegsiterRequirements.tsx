@@ -43,7 +43,6 @@ import {
   ORG_CATEGORY_KEY_DIVISION,
   ORG_CATEGORY_KEY_GROUP,
   radiusStyle,
-  REQ_STATUS_REVIEW,
   REQUIREMENT_STATUS_NEW,
   REQUIREMENT_TYPE_BRD,
   RES_CODE_OK,
@@ -51,6 +50,7 @@ import {
   SELECTED_OPTION_DIRECTORATE,
   SELECTED_OPTION_DIVISION,
 } from "@/app/constants/applicationConstants";
+import { REQ_STATUS_NEED_REVIEW } from "@/app/constants/masterStatusConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import {
   calculateDurationInDays,
