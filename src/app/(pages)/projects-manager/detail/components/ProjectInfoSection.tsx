@@ -288,7 +288,7 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                           rounded="full"
                           fontSize="sm"
                         >
-                          {DataProject.projectCharasteristicName || "N/A"}
+                          {DataProject.projectCategory || "N/A"}
                         </Badge>
                       </HStack>
                       <Divider />
@@ -307,7 +307,7 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                           rounded="full"
                           fontSize="sm"
                         >
-                          {DataProject.projectSubCharasteristicName || "N/A"}
+                          {DataProject.projectType || "N/A"}
                         </Badge>
                       </HStack>
                     </VStack>
@@ -352,8 +352,8 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                         <Text fontSize="sm" fontWeight="bold" color="gray.800">
                           {DataProject.projectRegisterDate
                             ? new Date(
-                                DataProject.projectRegisterDate
-                              ).toLocaleDateString()
+                              DataProject.projectRegisterDate
+                            ).toLocaleDateString()
                             : "N/A"}
                         </Text>
                       </HStack>

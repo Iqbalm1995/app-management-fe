@@ -285,7 +285,7 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                           rounded="full"
                           fontSize="sm"
                         >
-                          {DataProject.projectCharasteristicName || "N/A"}
+                          {DataProject.projectCategory || "N/A"}
                         </Badge>
                       </HStack>
                       <Divider />
@@ -304,7 +304,7 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                           rounded="full"
                           fontSize="sm"
                         >
-                          {DataProject.projectSubCharasteristicName || "N/A"}
+                          {DataProject.projectType || "N/A"}
                         </Badge>
                       </HStack>
                       <Divider />
