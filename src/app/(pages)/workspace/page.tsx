@@ -635,6 +635,41 @@ const WorkspaceProject = () => {
     onProjectModalOpen();
   };
 
+  // Mock task counts data for prototype
+  const mockTaskCounts = {
+    all: 24,
+    toDo: 8,
+    inProgress: 6,
+    inReview: 4,
+    done: 5,
+    archived: 1,
+  };
+
+  // Mock backlogs data for prototype
+  const mockBacklogs = [
+    {
+      id: "1",
+      backlogCode: "BL-001",
+      backlogName: "User Authentication",
+      backlogDesc: "Implement user login and registration system",
+      backlogPriority: "High",
+    },
+    {
+      id: "2", 
+      backlogCode: "BL-002",
+      backlogName: "Payment Gateway",
+      backlogDesc: "Integrate payment processing system",
+      backlogPriority: "Medium",
+    },
+    {
+      id: "3",
+      backlogCode: "BL-003", 
+      backlogName: "Admin Dashboard",
+      backlogDesc: "Create administrative interface for system management",
+      backlogPriority: "Low",
+    },
+  ];
+
   const getProgressColor = (percentage: number) => {
     if (percentage >= 80) return "green";
     if (percentage >= 60) return "blue";
@@ -1709,7 +1744,7 @@ const WorkspaceProject = () => {
       </Box>
 
       {/* Project Details Modal */}
-      <Modal isOpen={isProjectModalOpen} onClose={onProjectModalClose} size="lg">
+      <Modal isOpen={isProjectModalOpen} onClose={onProjectModalClose} size="6xl">
         <ModalOverlay />
         <ModalContent borderRadius={radiusStyle}>
           <ModalHeader>
@@ -1727,137 +1762,174 @@ const WorkspaceProject = () => {
           </ModalHeader>
           <ModalCloseButton />
           
-          <ModalBody>
-            <VStack spacing={6} align="stretch">
-              {/* Project Overview */}
-              <Box>
-                <HStack justify="space-between" mb={4}>
-                  <Heading size="sm" color={accentColor}>Project Overview</Heading>
-                  <Badge colorScheme={getStatusColor(selectedProject?.projectStatus || "")} size="lg">
-                    {selectedProject?.projectStatus}
-                  </Badge>
-                </HStack>
+          <ModalBody p={8}>
+            <Grid templateColumns="1fr auto 1fr" gap={12}>
+              {/* Left Column */}
+              <VStack spacing={8} align="stretch">
+                {/* Project Overview */}
+                <Box>
+                  <HStack justify="space-between" mb={6}>
+                    <Heading size="sm" color={accentColor}>Project Overview</Heading>
+                    <Badge colorScheme={getStatusColor(selectedProject?.projectStatus || "")} size="lg">
+                      {selectedProject?.projectStatus}
+                    </Badge>
+                  </HStack>
+                  
+                  <Text fontSize="sm" color={textColor} mb={6}>
+                    {selectedProject?.projectDesc}
+                  </Text>
+                  
+                  <Grid templateColumns="repeat(2, 1fr)" gap={6}>
+                    <Box>
+                      <Text fontSize="xs" color={textColor} mb={2}>Category</Text>
+                      <Text fontSize="sm" fontWeight="medium">{selectedProject?.projectCategory}</Text>
+                    </Box>
+                    <Box>
+                      <Text fontSize="xs" color={textColor} mb={2}>Type</Text>
+                      <Text fontSize="sm" fontWeight="medium">{selectedProject?.projectType}</Text>
+                    </Box>
+                    <Box>
+                      <Text fontSize="xs" color={textColor} mb={2}>Start Date</Text>
+                      <Text fontSize="sm" fontWeight="medium">{selectedProject?.projectRegisterDate}</Text>
+                    </Box>
+                    <Box>
+                      <Text fontSize="xs" color={textColor} mb={2}>Duration</Text>
+                      <Text fontSize="sm" fontWeight="medium">{selectedProject?.projectDurationDays} days</Text>
+                    </Box>
+                  </Grid>
+                </Box>
                 
-                <Text fontSize="sm" color={textColor} mb={4}>
-                  {selectedProject?.projectDesc}
-                </Text>
-                
-                <Grid templateColumns="repeat(2, 1fr)" gap={4}>
-                  <Box>
-                    <Text fontSize="xs" color={textColor} mb={1}>Category</Text>
-                    <Text fontSize="sm" fontWeight="medium">{selectedProject?.projectCategory}</Text>
-                  </Box>
-                  <Box>
-                    <Text fontSize="xs" color={textColor} mb={1}>Type</Text>
-                    <Text fontSize="sm" fontWeight="medium">{selectedProject?.projectType}</Text>
-                  </Box>
-                  <Box>
-                    <Text fontSize="xs" color={textColor} mb={1}>Start Date</Text>
-                    <Text fontSize="sm" fontWeight="medium">{selectedProject?.projectRegisterDate}</Text>
-                  </Box>
-                  <Box>
-                    <Text fontSize="xs" color={textColor} mb={1}>Duration</Text>
-                    <Text fontSize="sm" fontWeight="medium">{selectedProject?.projectDurationDays} days</Text>
-                  </Box>
-                </Grid>
-              </Box>
-              
-              <Divider />
-              
-              {/* Progress Summary */}
-              <Box>
-                <Heading size="sm" color={accentColor} mb={4}>Progress Summary</Heading>
-                
-                <HStack spacing={6} align="center">
-                  <Box position="relative" w="80px" h="80px">
-                    <Progress
-                      value={selectedProject?.projectStatusPercentage || 0}
-                      size="lg"
-                      colorScheme="blue"
-                      bg={useColorModeValue("gray.100", "gray.700")}
-                      borderRadius="full"
-                    />
-                    <Box
-                      position="absolute"
-                      top="50%"
-                      left="50%"
-                      transform="translate(-50%, -50%)"
-                      textAlign="center"
-                    >
-                      <Text fontSize="xl" fontWeight="bold" color={accentColor}>
-                        {selectedProject?.projectStatusPercentage}%
+                {/* Team Information */}
+                <Box>
+                  <Heading size="sm" color={accentColor} mb={6}>Team Members</Heading>
+                  
+                  <HStack spacing={6} align="center">
+                    <AvatarGroup size="md" max={4}>
+                      {selectedProject?.userAssignment?.map((assignment) => (
+                        <Avatar
+                          key={assignment.id}
+                          name={assignment.userData?.nama}
+                          bg={accentColor}
+                        />
+                      ))}
+                    </AvatarGroup>
+                    
+                    <VStack align="start" spacing={2}>
+                      <Text fontSize="sm" fontWeight="medium">
+                        {selectedProject?.userAssignment?.length || 0} team members
                       </Text>
                       <Text fontSize="xs" color={textColor}>
-                        Complete
+                        {selectedProject?.userAssignment?.map(a => a.userData?.nama).join(", ")}
                       </Text>
-                    </Box>
-                  </Box>
+                    </VStack>
+                  </HStack>
+                </Box>
+              </VStack>
+              
+              {/* Vertical Divider */}
+              <Divider orientation="vertical" />
+              
+              {/* Right Column */}
+              <VStack spacing={8} align="stretch">
+                {/* Progress Summary */}
+                <Box>
+                  <Heading size="sm" color={accentColor} mb={6}>Progress Summary</Heading>
                   
-                  <VStack align="start" spacing={2} flex="1">
-                    <HStack w="full" justify="space-between">
-                      <Text fontSize="sm" color={textColor}>Project Progress</Text>
-                      <Text fontSize="sm" fontWeight="bold" color={accentColor}>
-                        {selectedProject?.projectStatusPercentage}%
-                      </Text>
-                    </HStack>
-                    <Progress
-                      value={selectedProject?.projectStatusPercentage || 0}
-                      size="md"
-                      colorScheme="blue"
-                      w="full"
-                      borderRadius="full"
-                    />
-                    <Text fontSize="xs" color={textColor}>
-                      {selectedProject?.projectStatusPercentage && selectedProject.projectStatusPercentage >= 80 
-                        ? "Excellent progress!" 
-                        : selectedProject?.projectStatusPercentage && selectedProject.projectStatusPercentage >= 50
-                        ? "Good progress"
-                        : "Getting started"}
-                    </Text>
-                  </VStack>
-                </HStack>
-              </Box>
-              
-              <Divider />
-              
-              {/* Team Information */}
-              <Box>
-                <Heading size="sm" color={accentColor} mb={4}>Team Members</Heading>
-                
-                <HStack spacing={4} align="center">
-                  <AvatarGroup size="md" max={4}>
-                    {selectedProject?.userAssignment?.map((assignment) => (
-                      <Avatar
-                        key={assignment.id}
-                        name={assignment.userData?.nama}
-                        bg={accentColor}
+                  <HStack spacing={8} align="center">
+                    <Box position="relative" w="80px" h="80px">
+                      <Progress
+                        value={selectedProject?.projectStatusPercentage || 0}
+                        size="lg"
+                        colorScheme="blue"
+                        bg={useColorModeValue("gray.100", "gray.700")}
+                        borderRadius="full"
                       />
-                    ))}
-                  </AvatarGroup>
+                      <Box
+                        position="absolute"
+                        top="50%"
+                        left="50%"
+                        transform="translate(-50%, -50%)"
+                        textAlign="center"
+                      >
+                        <Text fontSize="xl" fontWeight="bold" color={accentColor}>
+                          {selectedProject?.projectStatusPercentage}%
+                        </Text>
+                        <Text fontSize="xs" color={textColor}>
+                          Complete
+                        </Text>
+                      </Box>
+                    </Box>
+                    
+                    <VStack align="start" spacing={3} flex="1">
+                      <HStack w="full" justify="space-between">
+                        <Text fontSize="sm" color={textColor}>Project Progress</Text>
+                        <Text fontSize="sm" fontWeight="bold" color={accentColor}>
+                          {selectedProject?.projectStatusPercentage}%
+                        </Text>
+                      </HStack>
+                      <Progress
+                        value={selectedProject?.projectStatusPercentage || 0}
+                        size="md"
+                        colorScheme="blue"
+                        w="full"
+                        borderRadius="full"
+                      />
+                      <Text fontSize="xs" color={textColor}>
+                        {selectedProject?.projectStatusPercentage && selectedProject.projectStatusPercentage >= 80 
+                          ? "Excellent progress!" 
+                          : selectedProject?.projectStatusPercentage && selectedProject.projectStatusPercentage >= 50
+                          ? "Good progress"
+                          : "Getting started"}
+                      </Text>
+                    </VStack>
+                  </HStack>
+                </Box>
+                
+                {/* Task Board Summary */}
+                <Box>
+                  <Heading size="sm" color={accentColor} mb={6}>Task Board Summary</Heading>
                   
-                  <VStack align="start" spacing={1}>
-                    <Text fontSize="sm" fontWeight="medium">
-                      {selectedProject?.userAssignment?.length || 0} team members
-                    </Text>
-                    <Text fontSize="xs" color={textColor}>
-                      {selectedProject?.userAssignment?.map(a => a.userData?.nama).join(", ")}
-                    </Text>
-                  </VStack>
-                </HStack>
-              </Box>
-            </VStack>
+                  <Grid templateColumns="repeat(4, 1fr)" gap={4}>
+                    <VStack spacing={2}>
+                      <Text fontSize="lg" fontWeight="bold" color="orange.500">{mockTaskCounts.toDo}</Text>
+                      <Text fontSize="xs" color={textColor}>To Do</Text>
+                    </VStack>
+                    <VStack spacing={2}>
+                      <Text fontSize="lg" fontWeight="bold" color="blue.500">{mockTaskCounts.inProgress}</Text>
+                      <Text fontSize="xs" color={textColor}>In Progress</Text>
+                    </VStack>
+                    <VStack spacing={2}>
+                      <Text fontSize="lg" fontWeight="bold" color="purple.500">{mockTaskCounts.inReview}</Text>
+                      <Text fontSize="xs" color={textColor}>In Review</Text>
+                    </VStack>
+                    <VStack spacing={2}>
+                      <Text fontSize="lg" fontWeight="bold" color="green.500">{mockTaskCounts.done}</Text>
+                      <Text fontSize="xs" color={textColor}>Done</Text>
+                    </VStack>
+                  </Grid>
+                  
+                  <HStack justify="space-between" mt={6} p={4} bg={useColorModeValue("gray.50", "gray.700")} borderRadius="lg">
+                    <Text fontSize="sm" fontWeight="medium">Total Tasks</Text>
+                    <Text fontSize="lg" fontWeight="bold" color={accentColor}>{mockTaskCounts.all}</Text>
+                  </HStack>
+                  
+                  <HStack justify="space-between" mt={4}>
+                    <Text fontSize="sm" fontWeight="medium">Total Backlogs</Text>
+                    <Text fontSize="lg" fontWeight="bold" color={accentColor}>{mockBacklogs.length}</Text>
+                  </HStack>
+                </Box>
+              </VStack>
+            </Grid>
           </ModalBody>
 
           <ModalFooter>
-            <Button variant="ghost" mr={3} onClick={onProjectModalClose}>
-              Close
-            </Button>
             <Button
               colorScheme="blue"
               leftIcon={<Icon as={FiArrowRightCircle} />}
               borderRadius="lg"
-              size="md"
+              size="lg"
               fontWeight="bold"
+              width="full"
               _hover={{ transform: "translateY(-1px)", shadow: "lg" }}
             >
               Go To Project
