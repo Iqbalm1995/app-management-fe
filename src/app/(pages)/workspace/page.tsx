@@ -101,8 +101,8 @@ const WorkspaceProject = () => {
   const accentColor = useColorModeValue("blue.500", "blue.400");
   const cardHoverBg = useColorModeValue("gray.50", "gray.700");
   const gradientBg = useColorModeValue(
-    "linear(to-r, blue.400, purple.500)",
-    "linear(to-r, blue.600, purple.700)"
+    "linear(to-r, secondary.400, secondary.600)",
+    "linear(to-r, secondary.600, secondary.800)"
   );
 
   // Mock data for prototype
@@ -548,7 +548,15 @@ const WorkspaceProject = () => {
     },
   ];
 
-  // Calculate quarter progress
+  // Calculate real-time project status (not quarterly filtered)
+  const activeProjects = mockProjects.filter(project => 
+    project.projectStatus === "In Progress" || project.projectStatus === "Planning"
+  );
+  const closedProjects = mockProjects.filter(project => 
+    project.projectStatus === "Completed" || project.projectStatus === "Closed"
+  );
+  const totalProjects = mockProjects.length;
+  const activeProjectPercentage = totalProjects > 0 ? Math.round((activeProjects.length / totalProjects) * 100) : 0;
   const quarterTasks = getTasksInCurrentQuarter(mockTasks);
   const inProgressTasks = getTasksInCurrentQuarter(mockTasks, 'INPROGRESS');
   const completedTasks = getTasksInCurrentQuarter(mockTasks, 'DONE');
@@ -1068,7 +1076,7 @@ const WorkspaceProject = () => {
                         Q{quarter} {year} Progress
                       </Heading>
                       <Text fontSize="xs" opacity={0.9}>
-                        {totalTasks} total tasks
+                        {inProgressTasks.length} ongoing / {completedTasks.length} done
                       </Text>
                     </VStack>
                     <Box bg="whiteAlpha.200" p={2} borderRadius="lg">
@@ -1434,6 +1442,197 @@ const WorkspaceProject = () => {
                       </Box>
                     )}
                   </VStack>
+                </Box>
+              </CardBody>
+            </Card>
+
+            {/* Current Projects Status */}
+            <Card 
+              bg={bgColor} 
+              borderColor={borderColor} 
+              borderRadius={radiusStyle}
+              shadow="sm"
+              _hover={{ shadow: "md" }}
+              transition="all 0.2s"
+              overflow="hidden"
+            >
+              <CardBody p={0}>
+                {/* Header with gradient */}
+                <Box
+                  bgGradient="linear(to-r, pink.400, pink.500)"
+                  color="white"
+                  p={4}
+                  position="relative"
+                >
+                  <HStack justify="space-between" mb={3}>
+                    <VStack align="start" spacing={0}>
+                      <Heading size="sm">Project Status</Heading>
+                      <Text fontSize="xs" opacity={0.9}>
+                        {activeProjects.length} active / {closedProjects.length} closed
+                      </Text>
+                    </VStack>
+                    <Box
+                      bg="whiteAlpha.200"
+                      p={2}
+                      borderRadius="lg"
+                    >
+                      <Icon as={FiFolder} boxSize={5} />
+                    </Box>
+                  </HStack>
+                  
+                  {/* Project Status Overview */}
+                  <HStack spacing={4} align="center">
+                    <Box position="relative" w="60px" h="60px">
+                      <Progress
+                        value={activeProjectPercentage}
+                        size="lg"
+                        colorScheme="purple"
+                        bg="whiteAlpha.300"
+                        borderRadius="full"
+                        sx={{
+                          '& > div': {
+                            background: 'linear-gradient(90deg, #9F7AEA, #ED64A6)',
+                          }
+                        }}
+                      />
+                      <Box
+                        position="absolute"
+                        top="50%"
+                        left="50%"
+                        transform="translate(-50%, -50%)"
+                        textAlign="center"
+                      >
+                        <Text fontSize="lg" fontWeight="bold">
+                          {activeProjectPercentage}%
+                        </Text>
+                        <Text fontSize="xs" opacity={0.9}>
+                          Active
+                        </Text>
+                      </Box>
+                    </Box>
+                    
+                    <VStack align="start" spacing={2} flex="1">
+                      <HStack w="full" justify="space-between">
+                        <Text fontSize="xs" opacity={0.9}>Active</Text>
+                        <Text fontSize="xs" fontWeight="bold">{activeProjects.length}</Text>
+                      </HStack>
+                      <HStack w="full" justify="space-between">
+                        <Text fontSize="xs" opacity={0.9}>Closed</Text>
+                        <Text fontSize="xs" fontWeight="bold">{closedProjects.length}</Text>
+                      </HStack>
+                      <HStack w="full" justify="space-between">
+                        <Text fontSize="xs" opacity={0.9}>Total</Text>
+                        <Text fontSize="xs" fontWeight="bold">{totalProjects}</Text>
+                      </HStack>
+                    </VStack>
+                  </HStack>
+                  
+                  {/* Project Status vs Bar */}
+                  <Box mt={4}>
+                    <HStack justify="space-between" mb={2}>
+                      <Text fontSize="xs" opacity={0.9}>Project Distribution</Text>
+                      <Text fontSize="xs" opacity={0.9}>{totalProjects} projects</Text>
+                    </HStack>
+                    <Box position="relative" h="8px" bg="whiteAlpha.300" borderRadius="full" overflow="hidden">
+                      <HStack spacing={0} h="full">
+                        <Box
+                          w={totalProjects > 0 ? `${Math.round((activeProjects.length / totalProjects) * 100)}%` : "0%"}
+                          h="full"
+                          bg="purple.400"
+                        />
+                        <Box
+                          w={totalProjects > 0 ? `${Math.round((closedProjects.length / totalProjects) * 100)}%` : "0%"}
+                          h="full"
+                          bg="gray.400"
+                        />
+                      </HStack>
+                    </Box>
+                    <HStack justify="space-between" mt={2} fontSize="xs">
+                      <HStack spacing={1}>
+                        <Box w="8px" h="8px" bg="purple.400" borderRadius="full" />
+                        <Text opacity={0.9}>
+                          {totalProjects > 0 ? Math.round((activeProjects.length / totalProjects) * 100) : 0}% Active
+                        </Text>
+                      </HStack>
+                      <HStack spacing={1}>
+                        <Box w="8px" h="8px" bg="gray.400" borderRadius="full" />
+                        <Text opacity={0.9}>
+                          {totalProjects > 0 ? Math.round((closedProjects.length / totalProjects) * 100) : 0}% Closed
+                        </Text>
+                      </HStack>
+                    </HStack>
+                  </Box>
+                </Box>
+                
+                {/* Active Projects List */}
+                <Box p={4}>
+                  {activeProjects.length > 0 && (
+                    <Box>
+                      <HStack justify="space-between" mb={3}>
+                        <HStack spacing={2}>
+                          <Box w="3px" h="16px" bg="purple.500" borderRadius="full" />
+                          <Text fontSize="sm" fontWeight="semibold">
+                            Active Projects
+                          </Text>
+                        </HStack>
+                        <Badge colorScheme="purple" variant="subtle">
+                          {activeProjects.length}
+                        </Badge>
+                      </HStack>
+                      
+                      <VStack spacing={2} align="stretch">
+                        {activeProjects.slice(0, 2).map((project) => (
+                          <Box
+                            key={project.id}
+                            p={3}
+                            bg={useColorModeValue("purple.50", "purple.900")}
+                            borderRadius="lg"
+                            border="1px"
+                            borderColor={useColorModeValue("purple.100", "purple.800")}
+                            _hover={{ 
+                              borderColor: "purple.300",
+                              transform: "translateY(-1px)"
+                            }}
+                            transition="all 0.2s"
+                            cursor="pointer"
+                          >
+                            <HStack justify="space-between" align="start">
+                              <VStack align="start" spacing={1} flex="1">
+                                <Text fontSize="sm" fontWeight="medium" noOfLines={1}>
+                                  {project.projectName}
+                                </Text>
+                                <HStack spacing={2}>
+                                  <Text fontSize="xs" color={textColor}>
+                                    {project.projectNo}
+                                  </Text>
+                                  <Badge size="xs" colorScheme="purple" variant="subtle">
+                                    {project.projectCategory}
+                                  </Badge>
+                                </HStack>
+                              </VStack>
+                              <VStack align="end" spacing={1}>
+                                <Badge colorScheme={getStatusColor(project.projectStatus)} size="xs">
+                                  {project.projectStatus}
+                                </Badge>
+                                <Progress
+                                  value={project.projectStatusPercentage}
+                                  size="sm"
+                                  colorScheme="purple"
+                                  w="50px"
+                                  borderRadius="full"
+                                />
+                              </VStack>
+                            </HStack>
+                          </Box>
+                        ))}
+                        {activeProjects.length > 2 && (
+                          <Text fontSize="xs" color={textColor} textAlign="center" py={1}>
+                            +{activeProjects.length - 2} more active projects
+                          </Text>
+                        )}
+                      </VStack>
+                    </Box>
+                  )}
                 </Box>
               </CardBody>
             </Card>
