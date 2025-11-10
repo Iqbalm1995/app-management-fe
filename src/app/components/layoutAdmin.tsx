@@ -15,7 +15,7 @@ const LayoutAdmin = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // Show loading on route change
     setLoading(true);
-    
+
     // Simulate loading time
     const timer = setTimeout(() => setLoading(false), DELAY_MEDIUM);
     return () => clearTimeout(timer);
