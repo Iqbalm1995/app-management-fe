@@ -24,6 +24,14 @@ import {
   Avatar,
   AvatarGroup,
   useColorModeValue,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
+  useDisclosure,
 } from "@chakra-ui/react";
 import {
   FiSearch,
@@ -43,6 +51,7 @@ import {
   FiBell,
   FiCalendar,
   FiPlus,
+  FiArrowRightCircle,
 } from "react-icons/fi";
 import { Search2Icon } from "@chakra-ui/icons";
 
@@ -66,6 +75,9 @@ const WorkspaceProject = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [taskLimit, setTaskLimit] = useState(4);
   const [projectLimit, setProjectLimit] = useState(4);
+  const [selectedProject, setSelectedProject] = useState<ProjectDataResponse | null>(null);
+  
+  const { isOpen: isProjectModalOpen, onOpen: onProjectModalOpen, onClose: onProjectModalClose } = useDisclosure();
   
   // Get current quarter
   const getCurrentQuarter = () => {
@@ -618,6 +630,11 @@ const WorkspaceProject = () => {
     }
   };
 
+  const handleProjectClick = (project: ProjectDataResponse) => {
+    setSelectedProject(project);
+    onProjectModalOpen();
+  };
+
   const getProgressColor = (percentage: number) => {
     if (percentage >= 80) return "green";
     if (percentage >= 60) return "blue";
@@ -825,30 +842,30 @@ const WorkspaceProject = () => {
                         transform: "translateY(-2px)",
                         shadow: "lg",
                         bg: cardHoverBg,
+                        borderColor: accentColor,
                       }}
                       transition="all 0.2s"
                       cursor="pointer"
+                      borderLeft="4px solid"
+                      borderLeftColor={getStatusColor(project.projectStatus) + ".400"}
+                      onClick={() => handleProjectClick(project)}
                     >
                       <CardBody>
                         <VStack align="start" spacing={3}>
                           <HStack justify="space-between" w="full">
                             <VStack align="start" spacing={1}>
-                              <Text
-                                fontSize="xs"
-                                color="gray.500"
-                                fontWeight="medium"
-                              >
-                                #{project.projectNo}
-                              </Text>
-                              <Heading size="sm">{project.projectName}</Heading>
+                              <HStack spacing={2}>
+                                <Text fontSize="xs" color={accentColor} fontWeight="bold">
+                                  #{project.projectNo}
+                                </Text>
+                                <Badge colorScheme={getStatusColor(project.projectStatus)} variant="subtle">
+                                  {project.projectStatus}
+                                </Badge>
+                              </HStack>
+                              <Heading size="sm" color={accentColor}>
+                                {project.projectName}
+                              </Heading>
                             </VStack>
-                            <Badge
-                              colorScheme={getStatusColor(
-                                project.projectStatus
-                              )}
-                            >
-                              {project.projectStatus}
-                            </Badge>
                           </HStack>
 
                           <Text fontSize="sm" color={textColor} noOfLines={2}>
@@ -856,46 +873,53 @@ const WorkspaceProject = () => {
                           </Text>
 
                           <HStack justify="space-between" w="full">
-                            <Text fontSize="xs" color={textColor}>
-                              {project.projectCategory}
-                            </Text>
+                            <HStack spacing={2}>
+                              <Box w="8px" h="8px" bg={accentColor} borderRadius="full" />
+                              <Text fontSize="xs" color={textColor} fontWeight="medium">
+                                {project.projectCategory}
+                              </Text>
+                            </HStack>
                             <Text fontSize="xs" color={textColor}>
                               Started: {project.projectRegisterDate}
                             </Text>
                           </HStack>
 
                           <Box w="full">
-                            <HStack justify="space-between" mb={1}>
-                              <Text fontSize="xs" color={textColor}>
+                            <HStack justify="space-between" mb={2}>
+                              <Text fontSize="xs" color={textColor} fontWeight="medium">
                                 Progress
                               </Text>
-                              <Text fontSize="xs" color={textColor}>
+                              <Text fontSize="sm" fontWeight="bold" color={accentColor}>
                                 {project.projectStatusPercentage}%
                               </Text>
                             </HStack>
                             <Progress
                               value={project.projectStatusPercentage}
-                              size="sm"
-                              colorScheme={getProgressColor(
-                                project.projectStatusPercentage
-                              )}
+                              size="md"
+                              colorScheme="blue"
+                              borderRadius="full"
+                              bg={useColorModeValue("gray.100", "gray.700")}
                             />
                           </Box>
 
                           <HStack justify="space-between" w="full">
-                            <AvatarGroup size="xs" max={3}>
-                              {project.userAssignment?.map((assignment) => (
-                                <Avatar
-                                  key={assignment.id}
-                                  name={assignment.userData?.nama}
-                                />
-                              ))}
-                            </AvatarGroup>
+                            <HStack spacing={2}>
+                              <Box w="2px" h="16px" bg={accentColor} borderRadius="full" />
+                              <AvatarGroup size="xs" max={3}>
+                                {project.userAssignment?.map((assignment) => (
+                                  <Avatar
+                                    key={assignment.id}
+                                    name={assignment.userData?.nama}
+                                  />
+                                ))}
+                              </AvatarGroup>
+                            </HStack>
                             <Button
                               size="xs"
                               variant="ghost"
                               color={accentColor}
                               _hover={{ bg: accentColor, color: "white" }}
+                              fontWeight="bold"
                             >
                               View Details
                             </Button>
@@ -938,102 +962,60 @@ const WorkspaceProject = () => {
                   </Heading>
                 </HStack>
 
-                <VStack spacing={3} align="stretch">
-                  {mockTasks.slice(0, taskLimit).map((task) => (
-                    <Box
-                      key={task.id}
-                      p={4}
-                      border="1px"
-                      borderColor={borderColor}
-                      borderRadius="lg"
-                      _hover={{
-                        bg: cardHoverBg,
-                        borderColor: accentColor,
-                        transform: "translateY(-1px)",
-                      }}
-                      transition="all 0.2s"
-                      cursor="pointer"
-                    >
-                      <HStack justify="space-between" align="start">
-                        <VStack align="start" spacing={2} flex="1">
+                <VStack spacing={0} align="stretch">
+                  {mockTasks.slice(0, taskLimit).map((task, index) => (
+                    <Box key={task.id}>
+                      <HStack
+                        p={3}
+                        _hover={{ 
+                          bg: cardHoverBg,
+                          borderLeftColor: accentColor,
+                        }}
+                        transition="all 0.2s"
+                        cursor="pointer"
+                        borderLeft="3px solid transparent"
+                      >
+                        <VStack align="start" spacing={1} flex="1">
                           <HStack spacing={2} w="full">
-                            <Text
-                              fontSize="xs"
-                              color="gray.500"
-                              fontWeight="medium"
-                            >
-                              {task.taskCode}
+                            <Text fontSize="sm" fontWeight="medium" noOfLines={1} flex="1">
+                              {task.taskName}
                             </Text>
-                            <Badge
-                              colorScheme={getPriorityColor(task.taskPriority)}
-                              size="sm"
-                            >
-                              {task.taskPriority}
+                            <Badge colorScheme={getStatusColor(task.boardCodeStage)} size="sm">
+                              {task.boardName}
                             </Badge>
                           </HStack>
-
-                          <Text fontWeight="medium" fontSize="sm">
-                            {task.taskName}
-                          </Text>
-
-                          <Text fontSize="xs" color={textColor} noOfLines={2}>
-                            {task.taskDesc}
-                          </Text>
-
-                          <HStack spacing={4} w="full">
+                          
+                          <HStack spacing={3} w="full" fontSize="xs" color={textColor}>
+                            <Text>{task.taskCode}</Text>
                             <HStack spacing={1}>
-                              <Icon
-                                as={FiCheckCircle}
-                                size="12px"
-                                color="gray.400"
-                              />
-                              <Text fontSize="xs" color={textColor}>
-                                {task.countTaskItemDone}/{task.countTaskItem}
-                              </Text>
+                              <Icon as={FiCheckCircle} size="10px" />
+                              <Text>{task.countTaskItemDone}/{task.countTaskItem}</Text>
                             </HStack>
-
                             <HStack spacing={1}>
-                              <Icon
-                                as={FiActivity}
-                                size="12px"
-                                color="gray.400"
-                              />
-                              <Text fontSize="xs" color={textColor}>
-                                {task.taskPoint} pts
-                              </Text>
+                              <Icon as={FiActivity} size="10px" />
+                              <Text>{task.taskPoint} pts</Text>
                             </HStack>
-
-                            {task.assignUsers.length > 0 && (
-                              <AvatarGroup size="xs" max={2} spacing="-4px">
-                                {task.assignUsers.map((user) => (
-                                  <Avatar key={user.id} name={user.nama} />
-                                ))}
-                              </AvatarGroup>
-                            )}
+                            <Text>{task.endDate}</Text>
                           </HStack>
                         </VStack>
-
+                        
                         <VStack align="end" spacing={1}>
-                          <Badge
-                            colorScheme={getStatusColor(task.boardCodeStage)}
-                          >
-                            {task.boardName}
-                          </Badge>
-                          <Text fontSize="xs" color={textColor}>
-                            {task.endDate}
+                          <Text fontSize="xs" fontWeight="bold" color={accentColor}>
+                            {task.percentageStatus}%
                           </Text>
-                          <Box w="40px">
-                            <Progress
-                              value={task.percentageStatus}
-                              size="sm"
-                              colorScheme={getProgressColor(
-                                task.percentageStatus
-                              )}
-                              borderRadius="full"
-                            />
-                          </Box>
+                          {task.assignUsers.length > 0 && (
+                            <AvatarGroup size="xs" max={2} spacing="-2px">
+                              {task.assignUsers.map((user) => (
+                                <Avatar key={user.id} name={user.nama} />
+                              ))}
+                            </AvatarGroup>
+                          )}
                         </VStack>
                       </HStack>
+                      
+                      {index < mockTasks.slice(0, taskLimit).length - 1 && (
+                        <Divider borderColor={useColorModeValue("gray.200", "gray.600")} />
+                      )}
                     </Box>
                   ))}
 
@@ -1725,8 +1707,166 @@ const WorkspaceProject = () => {
           </VStack>
         </Grid>
       </Box>
-    </LayoutAdmin>
-  );
-};
 
-export default WorkspaceProject;
+      {/* Project Details Modal */}
+      <Modal isOpen={isProjectModalOpen} onClose={onProjectModalClose} size="lg">
+        <ModalOverlay />
+        <ModalContent borderRadius={radiusStyle}>
+          <ModalHeader>
+            <HStack spacing={3}>
+              <Box w="4px" h="24px" bg={accentColor} borderRadius="full" />
+              <VStack align="start" spacing={0}>
+                <Text fontSize="lg" fontWeight="bold">
+                  {selectedProject?.projectName}
+                </Text>
+                <Text fontSize="sm" color={textColor}>
+                  {selectedProject?.projectNo}
+                </Text>
+              </VStack>
+            </HStack>
+          </ModalHeader>
+          <ModalCloseButton />
+          
+          <ModalBody>
+            <VStack spacing={6} align="stretch">
+              {/* Project Overview */}
+              <Box>
+                <HStack justify="space-between" mb={4}>
+                  <Heading size="sm" color={accentColor}>Project Overview</Heading>
+                  <Badge colorScheme={getStatusColor(selectedProject?.projectStatus || "")} size="lg">
+                    {selectedProject?.projectStatus}
+                  </Badge>
+                </HStack>
+                
+                <Text fontSize="sm" color={textColor} mb={4}>
+                  {selectedProject?.projectDesc}
+                </Text>
+                
+                <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+                  <Box>
+                    <Text fontSize="xs" color={textColor} mb={1}>Category</Text>
+                    <Text fontSize="sm" fontWeight="medium">{selectedProject?.projectCategory}</Text>
+                  </Box>
+                  <Box>
+                    <Text fontSize="xs" color={textColor} mb={1}>Type</Text>
+                    <Text fontSize="sm" fontWeight="medium">{selectedProject?.projectType}</Text>
+                  </Box>
+                  <Box>
+                    <Text fontSize="xs" color={textColor} mb={1}>Start Date</Text>
+                    <Text fontSize="sm" fontWeight="medium">{selectedProject?.projectRegisterDate}</Text>
+                  </Box>
+                  <Box>
+                    <Text fontSize="xs" color={textColor} mb={1}>Duration</Text>
+                    <Text fontSize="sm" fontWeight="medium">{selectedProject?.projectDurationDays} days</Text>
+                  </Box>
+                </Grid>
+              </Box>
+              
+              <Divider />
+              
+              {/* Progress Summary */}
+              <Box>
+                <Heading size="sm" color={accentColor} mb={4}>Progress Summary</Heading>
+                
+                <HStack spacing={6} align="center">
+                  <Box position="relative" w="80px" h="80px">
+                    <Progress
+                      value={selectedProject?.projectStatusPercentage || 0}
+                      size="lg"
+                      colorScheme="blue"
+                      bg={useColorModeValue("gray.100", "gray.700")}
+                      borderRadius="full"
+                    />
+                    <Box
+                      position="absolute"
+                      top="50%"
+                      left="50%"
+                      transform="translate(-50%, -50%)"
+                      textAlign="center"
+                    >
+                      <Text fontSize="xl" fontWeight="bold" color={accentColor}>
+                        {selectedProject?.projectStatusPercentage}%
+                      </Text>
+                      <Text fontSize="xs" color={textColor}>
+                        Complete
+                      </Text>
+                    </Box>
+                  </Box>
+                  
+                  <VStack align="start" spacing={2} flex="1">
+                    <HStack w="full" justify="space-between">
+                      <Text fontSize="sm" color={textColor}>Project Progress</Text>
+                      <Text fontSize="sm" fontWeight="bold" color={accentColor}>
+                        {selectedProject?.projectStatusPercentage}%
+                      </Text>
+                    </HStack>
+                    <Progress
+                      value={selectedProject?.projectStatusPercentage || 0}
+                      size="md"
+                      colorScheme="blue"
+                      w="full"
+                      borderRadius="full"
+                    />
+                    <Text fontSize="xs" color={textColor}>
+                      {selectedProject?.projectStatusPercentage && selectedProject.projectStatusPercentage >= 80 
+                        ? "Excellent progress!" 
+                        : selectedProject?.projectStatusPercentage && selectedProject.projectStatusPercentage >= 50
+                        ? "Good progress"
+                        : "Getting started"}
+                    </Text>
+                  </VStack>
+                </HStack>
+              </Box>
+              
+              <Divider />
+              
+              {/* Team Information */}
+              <Box>
+                <Heading size="sm" color={accentColor} mb={4}>Team Members</Heading>
+                
+                <HStack spacing={4} align="center">
+                  <AvatarGroup size="md" max={4}>
+                    {selectedProject?.userAssignment?.map((assignment) => (
+                      <Avatar
+                        key={assignment.id}
+                        name={assignment.userData?.nama}
+                        bg={accentColor}
+                      />
+                    ))}
+                  </AvatarGroup>
+                  
+                  <VStack align="start" spacing={1}>
+                    <Text fontSize="sm" fontWeight="medium">
+                      {selectedProject?.userAssignment?.length || 0} team members
+                    </Text>
+                    <Text fontSize="xs" color={textColor}>
+                      {selectedProject?.userAssignment?.map(a => a.userData?.nama).join(", ")}
+                    </Text>
+                  </VStack>
+                </HStack>
+              </Box>
+            </VStack>
+          </ModalBody>
+
+          <ModalFooter>
+            <Button variant="ghost" mr={3} onClick={onProjectModalClose}>
+              Close
+            </Button>
+            <Button
+              colorScheme="blue"
+              leftIcon={<Icon as={FiArrowRightCircle} />}
+              borderRadius="lg"
+              size="md"
+              fontWeight="bold"
+              _hover={{ transform: "translateY(-1px)", shadow: "lg" }}
+            >
+              Go To Project
+            </Button>
+          </ModalFooter>
+          </ModalContent>
+        </Modal>
+      </LayoutAdmin>
+    );
+  };
+  
+  export default WorkspaceProject;
