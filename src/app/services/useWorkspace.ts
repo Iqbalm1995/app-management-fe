@@ -97,6 +97,14 @@ export interface QuarterProgressViewModel {
   year: number;
 }
 
+export interface ProjectStatusViewModel {
+  activeProjects: number;
+  closedProjects: number;
+  totalProjects: number;
+  activePercentage: number;
+  closedPercentage: number;
+}
+
 export interface WorkspaceProjectViewModel {
   id: string;
   name: string;
@@ -352,6 +360,28 @@ const useWorkspace = () => {
     }
   };
 
+  const GetProjectStatus = async (tokenData: string) => {
+    setLoading(true);
+    try {
+      const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+      
+      const response = await axiosInstance.get(
+        `${UrlEndpoint}/v1/Workspace/project-status`,
+        {
+          headers: {
+            Authorization: `Bearer ${tokenData}`,
+          },
+        }
+      );
+
+      setLoading(false);
+      return response.data;
+    } catch (error: any) {
+      setLoading(false);
+      return handleAxiosError(error);
+    }
+  };
+
   return {
     // Methods
     GetWorkspaceStats,
@@ -364,6 +394,7 @@ const useWorkspace = () => {
     GetUnreadCount,
     GetProjectDetail,
     GetQuarterProgress,
+    GetProjectStatus,
     
     // Loading states
     loading,
