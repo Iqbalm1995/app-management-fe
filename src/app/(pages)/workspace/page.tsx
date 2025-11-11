@@ -104,10 +104,12 @@ const WorkspaceProject = () => {
   const [tokenData, setTokenData] = useState<string>("");
 
   // Workspace API integration
-  const { GetWorkspaceStats, GetAssignedProjects, GetProjectDetail, loading } =
+  const { GetWorkspaceStats, GetAssignedProjects, GetProjectDetail, GetQuarterProgress, loading } =
     useWorkspace();
   const [stats, setStats] = useState<WorkspaceStatsViewModel | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
+  const [quarterProgress, setQuarterProgress] = useState<any>(null);
+  const [quarterProgressLoading, setQuarterProgressLoading] = useState(false);
   const [projects, setProjects] = useState<ProjectDataResponse[]>([]);
   const [totalProjectsCount, setTotalProjectsCount] = useState(0);
   const [projectDetailLoading, setProjectDetailLoading] = useState(false);
@@ -190,16 +192,6 @@ const WorkspaceProject = () => {
     }
   }, []);
 
-  // Search effect
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      setCurrentPage(1);
-      fetchProjects(searchTerm, 4, 1, false);
-    }, 300); // Debounce search
-
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm]);
-
   // Get current quarter
   const getCurrentQuarter = () => {
     const now = new Date();
@@ -210,6 +202,39 @@ const WorkspaceProject = () => {
   };
 
   const { quarter, year } = getCurrentQuarter();
+
+  // Fetch quarter progress
+  useEffect(() => {
+    const fetchQuarterProgress = async () => {
+      if (tokenData) {
+        setQuarterProgressLoading(true);
+        try {
+          const data = await GetQuarterProgress(quarter, year, tokenData);
+          if (data?.statusCode === 200) {
+            setQuarterProgress(data.data);
+          }
+        } catch (error) {
+          console.error("Error fetching quarter progress:", error);
+        } finally {
+          setQuarterProgressLoading(false);
+        }
+      }
+    };
+
+    if (tokenData) {
+      fetchQuarterProgress();
+    }
+  }, [tokenData, quarter, year]);
+
+  // Search effect
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setCurrentPage(1);
+      fetchProjects(searchTerm, 4, 1, false);
+    }, 300); // Debounce search
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
 
   // Filter tasks by current quarter
   const getTasksInCurrentQuarter = (
@@ -686,14 +711,18 @@ const WorkspaceProject = () => {
     totalProjects > 0
       ? Math.round((activeProjects.length / totalProjects) * 100)
       : 0;
-  const quarterTasks = getTasksInCurrentQuarter(mockTasks);
-  const inProgressTasks = getTasksInCurrentQuarter(mockTasks, "INPROGRESS");
-  const completedTasks = getTasksInCurrentQuarter(mockTasks, "DONE");
-  const todoTasks = getTasksInCurrentQuarter(mockTasks, "TODO");
+  // Use real API data or fallback to mock data
+  const quarterTasks = quarterProgress ? [] : getTasksInCurrentQuarter(mockTasks);
+  const inProgressTasks = quarterProgress ? [] : getTasksInCurrentQuarter(mockTasks, "INPROGRESS");
+  const completedTasks = quarterProgress ? [] : getTasksInCurrentQuarter(mockTasks, "DONE");
+  const todoTasks = quarterProgress ? [] : getTasksInCurrentQuarter(mockTasks, "TODO");
 
-  const totalTasks = quarterTasks.length;
-  const completionPercentage =
-    totalTasks > 0 ? Math.round((completedTasks.length / totalTasks) * 100) : 0;
+  const totalTasks = quarterProgress?.totalTasks || quarterTasks.length;
+  const completionPercentage = quarterProgress?.donePercentage || 
+    (totalTasks > 0 ? Math.round((completedTasks.length / totalTasks) * 100) : 0);
+  const doneCount = quarterProgress?.doneCount || completedTasks.length;
+  const inProgressCount = quarterProgress?.inProgressCount || inProgressTasks.length;
+  const todoCount = quarterProgress?.todoCount || todoTasks.length;
   const inProgressPercentage =
     totalTasks > 0
       ? Math.round((inProgressTasks.length / totalTasks) * 100)
@@ -1282,6 +1311,15 @@ const WorkspaceProject = () => {
               overflow="hidden"
             >
               <CardBody p={0}>
+                {quarterProgressLoading ? (
+                  <Box p={6} textAlign="center">
+                    <Spinner size="lg" color="blue.500" />
+                    <Text mt={2} fontSize="sm" color="gray.500">
+                      Loading quarter progress...
+                    </Text>
+                  </Box>
+                ) : (
+                  <>
                 {/* Header with gradient */}
                 <Box color="white" p={4} position="relative">
                   <HStack justify="space-between" mb={3}>
@@ -1290,8 +1328,8 @@ const WorkspaceProject = () => {
                         Q{quarter} {year} Progress
                       </Heading>
                       <Text fontSize="xs" opacity={0.9}>
-                        {inProgressTasks.length} ongoing /{" "}
-                        {completedTasks.length} done
+                        {inProgressCount} ongoing /{" "}
+                        {doneCount} done
                       </Text>
                     </VStack>
                     <Box bg="whiteAlpha.200" p={2} borderRadius="lg">
@@ -1337,7 +1375,7 @@ const WorkspaceProject = () => {
                           Completed
                         </Text>
                         <Text fontSize="xs" fontWeight="bold">
-                          {completedTasks.length}
+                          {doneCount}
                         </Text>
                       </HStack>
                       <HStack w="full" justify="space-between">
@@ -1345,7 +1383,7 @@ const WorkspaceProject = () => {
                           In Progress
                         </Text>
                         <Text fontSize="xs" fontWeight="bold">
-                          {inProgressTasks.length}
+                          {inProgressCount}
                         </Text>
                       </HStack>
                       <HStack w="full" justify="space-between">
@@ -1353,7 +1391,7 @@ const WorkspaceProject = () => {
                           To Do
                         </Text>
                         <Text fontSize="xs" fontWeight="bold">
-                          {todoTasks.length}
+                          {todoCount}
                         </Text>
                       </HStack>
                     </VStack>
@@ -1380,8 +1418,8 @@ const WorkspaceProject = () => {
                         <Box
                           w={
                             totalTasks > 0
-                              ? `${Math.round(
-                                  (completedTasks.length / totalTasks) * 100
+                              ? `${quarterProgress?.donePercentage || Math.round(
+                                  (doneCount / totalTasks) * 100
                                 )}%`
                               : "0%"
                           }
@@ -1391,8 +1429,8 @@ const WorkspaceProject = () => {
                         <Box
                           w={
                             totalTasks > 0
-                              ? `${Math.round(
-                                  (inProgressTasks.length / totalTasks) * 100
+                              ? `${quarterProgress?.inProgressPercentage || Math.round(
+                                  (inProgressCount / totalTasks) * 100
                                 )}%`
                               : "0%"
                           }
@@ -1402,8 +1440,8 @@ const WorkspaceProject = () => {
                         <Box
                           w={
                             totalTasks > 0
-                              ? `${Math.round(
-                                  (todoTasks.length / totalTasks) * 100
+                              ? `${quarterProgress?.todoPercentage || Math.round(
+                                  (todoCount / totalTasks) * 100
                                 )}%`
                               : "0%"
                           }
@@ -1421,11 +1459,11 @@ const WorkspaceProject = () => {
                           borderRadius="full"
                         />
                         <Text opacity={0.9}>
-                          {totalTasks > 0
+                          {quarterProgress?.donePercentage || (totalTasks > 0
                             ? Math.round(
-                                (completedTasks.length / totalTasks) * 100
+                                (doneCount / totalTasks) * 100
                               )
-                            : 0}
+                            : 0)}
                           % Done
                         </Text>
                       </HStack>
@@ -1437,11 +1475,11 @@ const WorkspaceProject = () => {
                           borderRadius="full"
                         />
                         <Text opacity={0.9}>
-                          {totalTasks > 0
+                          {quarterProgress?.inProgressPercentage || (totalTasks > 0
                             ? Math.round(
-                                (inProgressTasks.length / totalTasks) * 100
+                                (inProgressCount / totalTasks) * 100
                               )
-                            : 0}
+                            : 0)}
                           % Progress
                         </Text>
                       </HStack>
@@ -1453,9 +1491,9 @@ const WorkspaceProject = () => {
                           borderRadius="full"
                         />
                         <Text opacity={0.9}>
-                          {totalTasks > 0
-                            ? Math.round((todoTasks.length / totalTasks) * 100)
-                            : 0}
+                          {quarterProgress?.todoPercentage || (totalTasks > 0
+                            ? Math.round((todoCount / totalTasks) * 100)
+                            : 0)}
                           % Todo
                         </Text>
                       </HStack>
@@ -1658,6 +1696,8 @@ const WorkspaceProject = () => {
                     )}
                   </VStack>
                 </Box>
+                  </>
+                )}
               </CardBody>
             </Card>
 

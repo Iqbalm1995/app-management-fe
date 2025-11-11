@@ -85,6 +85,18 @@ export interface WorkspaceCalendarTaskViewModel {
   color: string;
 }
 
+export interface QuarterProgressViewModel {
+  doneCount: number;
+  inProgressCount: number;
+  todoCount: number;
+  totalTasks: number;
+  donePercentage: number;
+  inProgressPercentage: number;
+  todoPercentage: number;
+  quarter: number;
+  year: number;
+}
+
 export interface WorkspaceProjectViewModel {
   id: string;
   name: string;
@@ -318,6 +330,28 @@ const useWorkspace = () => {
     }
   };
 
+  const GetQuarterProgress = async (quarter: number, year: number, tokenData: string) => {
+    setLoading(true);
+    try {
+      const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+      
+      const response = await axiosInstance.get(
+        `${UrlEndpoint}/v1/Workspace/quarter-progress?quarter=${quarter}&year=${year}`,
+        {
+          headers: {
+            Authorization: `Bearer ${tokenData}`,
+          },
+        }
+      );
+
+      setLoading(false);
+      return response.data;
+    } catch (error: any) {
+      setLoading(false);
+      return handleAxiosError(error);
+    }
+  };
+
   return {
     // Methods
     GetWorkspaceStats,
@@ -329,6 +363,7 @@ const useWorkspace = () => {
     GetActivityLog,
     GetUnreadCount,
     GetProjectDetail,
+    GetQuarterProgress,
     
     // Loading states
     loading,
