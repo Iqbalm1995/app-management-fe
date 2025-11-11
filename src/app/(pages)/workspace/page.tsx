@@ -58,6 +58,7 @@ import { Search2Icon } from "@chakra-ui/icons";
 // Components
 import { HeaderContent, HeaderContentProps } from "@/app/components/headerContent";
 import LayoutAdmin from "@/app/components/layoutAdmin";
+import LoadingMiniSignature from "@/app/components/loadingMini";
 import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 import { ProjectDataResponse } from "@/app/services/useProjects";
 import { TaskViewModel } from "@/app/services/useTasks";
@@ -65,6 +66,7 @@ import useWorkspace, {
   WorkspaceStatsViewModel,
 } from "@/app/services/useWorkspace";
 import { radiusStyle } from "@/app/constants/applicationConstants";
+import { convertToCustomDateFormat, formatDateTimeBE } from "@/app/helper/MasterHelper";
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Workspace",
@@ -83,11 +85,47 @@ const WorkspaceProject = () => {
   const { isOpen: isProjectModalOpen, onOpen: onProjectModalOpen, onClose: onProjectModalClose } = useDisclosure();
   
   // Workspace API integration
-  const { GetWorkspaceStats, loading } = useWorkspace();
+  const { GetWorkspaceStats, GetAssignedProjects, loading } = useWorkspace();
   const [stats, setStats] = useState<WorkspaceStatsViewModel | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
+  const [projects, setProjects] = useState<ProjectDataResponse[]>([]);
+  const [totalProjectsCount, setTotalProjectsCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [projectsLoading, setProjectsLoading] = useState(false);
 
   // Fetch workspace stats on component mount
+  // Fetch projects function
+  const fetchProjects = async (search: string = "", limit: number = 4, page: number = 1, append: boolean = false) => {
+    const token = localStorage.getItem("tokenData");
+    if (token) {
+      setProjectsLoading(true);
+      try {
+        const payload = {
+          search: search,
+          limit: limit,
+          page: page,
+          FilterWhere: [],
+          FieldOrder: ["projectName"],
+          OrderDir: "asc"
+        };
+        const response = await GetAssignedProjects(payload, token);
+        if (response?.statusCode === 200 && response.data) {
+          if (append) {
+            setProjects(prev => [...prev, ...response.data]);
+          } else {
+            setProjects(response.data);
+          }
+          setTotalProjectsCount(response.countTotal || 0);
+          setCurrentPage(page);
+        }
+      } catch (error) {
+        console.error("❌ Error fetching projects:", error);
+      } finally {
+        setProjectsLoading(false);
+      }
+    }
+  };
+
   useEffect(() => {
     const fetchStats = async () => {
       const token = localStorage.getItem("tokenData");
@@ -115,7 +153,18 @@ const WorkspaceProject = () => {
     };
 
     fetchStats();
-  }, []); // Remove GetWorkspaceStats dependency
+    fetchProjects(); // Initial load
+  }, []);
+
+  // Search effect
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setCurrentPage(1);
+      fetchProjects(searchTerm, 4, 1, false);
+    }, 300); // Debounce search
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
   
   // Get current quarter
   const getCurrentQuarter = () => {
@@ -591,13 +640,13 @@ const WorkspaceProject = () => {
   ];
 
   // Calculate real-time project status (not quarterly filtered)
-  const activeProjects = mockProjects.filter(project => 
+  const activeProjects = projects.filter(project => 
     project.projectStatus === "In Progress" || project.projectStatus === "Planning"
   );
-  const closedProjects = mockProjects.filter(project => 
+  const closedProjects = projects.filter(project => 
     project.projectStatus === "Completed" || project.projectStatus === "Closed"
   );
-  const totalProjects = mockProjects.length;
+  const totalProjects = projects.length;
   const activeProjectPercentage = totalProjects > 0 ? Math.round((activeProjects.length / totalProjects) * 100) : 0;
   const quarterTasks = getTasksInCurrentQuarter(mockTasks);
   const inProgressTasks = getTasksInCurrentQuarter(mockTasks, 'INPROGRESS');
@@ -899,8 +948,18 @@ const WorkspaceProject = () => {
                   }
                   gap={4}
                 >
-                  {mockProjects.slice(0, projectLimit).map((project) => (
-                    <Card
+                  {projectsLoading && (
+                    <Box gridColumn="1 / -1" py={8}>
+                      <LoadingMiniSignature />
+                    </Box>
+                  )}
+                  {!projectsLoading && projects.length === 0 && (
+                    <Box gridColumn="1 / -1" textAlign="center" py={8}>
+                      <Text color="gray.500">No assigned projects found.</Text>
+                    </Box>
+                  )}
+                  {!projectsLoading && projects.map((project) => (
+                      <Card
                       key={project.id}
                       variant="outline"
                       size="sm"
@@ -932,12 +991,13 @@ const WorkspaceProject = () => {
                               <Heading size="sm" color={accentColor}>
                                 {project.projectName}
                               </Heading>
+                              <Box mt={2}>
+                                <Badge colorScheme="blue" variant="outline" size="sm">
+                                  {project.projectType}
+                                </Badge>
+                              </Box>
                             </VStack>
                           </HStack>
-
-                          <Text fontSize="sm" color={textColor} noOfLines={2}>
-                            {project.projectDesc}
-                          </Text>
 
                           <HStack justify="space-between" w="full">
                             <HStack spacing={2}>
@@ -947,7 +1007,7 @@ const WorkspaceProject = () => {
                               </Text>
                             </HStack>
                             <Text fontSize="xs" color={textColor}>
-                              Started: {project.projectRegisterDate}
+                              Started: {project.projectRegisterDate ? formatDateTimeBE(project.projectRegisterDate) : 'N/A'}
                             </Text>
                           </HStack>
 
@@ -997,12 +1057,12 @@ const WorkspaceProject = () => {
                   ))}
                 </Grid>
 
-                {projectLimit < mockProjects.length && (
+                {!projectsLoading && projects.length > 0 && projects.length < totalProjectsCount && (
                   <Button
                     variant="outline"
                     size="sm"
                     mt={4}
-                    onClick={() => setProjectLimit((prev) => prev + 4)}
+                    onClick={() => fetchProjects(searchTerm, 4, currentPage + 1, true)}
                     colorScheme="blue"
                     borderRadius="lg"
                     _hover={{ transform: "translateY(-1px)" }}
@@ -1822,7 +1882,9 @@ const WorkspaceProject = () => {
                     </Box>
                     <Box>
                       <Text fontSize="xs" color={textColor} mb={2}>Start Date</Text>
-                      <Text fontSize="sm" fontWeight="medium">{selectedProject?.projectRegisterDate}</Text>
+                      <Text fontSize="sm" fontWeight="medium">
+                        {selectedProject?.projectRegisterDate ? formatDateTimeBE(selectedProject.projectRegisterDate) : 'N/A'}
+                      </Text>
                     </Box>
                     <Box>
                       <Text fontSize="xs" color={textColor} mb={2}>Duration</Text>

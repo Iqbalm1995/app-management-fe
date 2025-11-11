@@ -160,7 +160,7 @@ const useWorkspace = () => {
       const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
       
       const response = await axiosInstance.post(
-        `${UrlEndpoint}/api/v1/workspace/assigned-projects`,
+        `${UrlEndpoint}/v1/workspace/assigned-projects`,
         payload,
         {
           headers: {
