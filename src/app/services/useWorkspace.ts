@@ -292,6 +292,32 @@ const useWorkspace = () => {
     }
   };
 
+  const GetProjectDetail = async (projectId: string, tokenData: string) => {
+    console.log("[DEBUG] GetProjectDetail called with projectId:", projectId);
+    setLoading(true);
+    try {
+      const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+      console.log("[DEBUG] Making request to:", `${UrlEndpoint}/v1/Workspace/projects/${projectId}/detail`);
+      
+      const response = await axiosInstance.get(
+        `${UrlEndpoint}/v1/Workspace/projects/${projectId}/detail`,
+        {
+          headers: {
+            Authorization: `Bearer ${tokenData}`,
+          },
+        }
+      );
+
+      console.log("[DEBUG] GetProjectDetail response:", response.data);
+      setLoading(false);
+      return response.data;
+    } catch (error: any) {
+      console.error("[DEBUG] GetProjectDetail error:", error);
+      setLoading(false);
+      return handleAxiosError(error);
+    }
+  };
+
   return {
     // Methods
     GetWorkspaceStats,
@@ -302,6 +328,7 @@ const useWorkspace = () => {
     GetNotifications,
     GetActivityLog,
     GetUnreadCount,
+    GetProjectDetail,
     
     // Loading states
     loading,

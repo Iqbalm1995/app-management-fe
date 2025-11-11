@@ -535,6 +535,18 @@ export interface ProjectFeatureUpdatePayload {
   developmentStatus: string | null;
 }
 
+export interface ProjectDetailResponse extends ProjectDataResponse {
+  taskSummary: {
+    all: number;
+    toDo: number;
+    inProgress: number;
+    inReview: number;
+    done: number;
+    archived: number;
+  };
+  backlogCount: number;
+}
+
 export interface ProjectBacklogProgressionResponse {
   totalBacklogs: number;
   totalBacklogsDone: number;
@@ -554,6 +566,10 @@ interface useProjectsServices {
     teamId: string,
     token: string
   ) => Promise<ApiGenericResponse<ProjectDataResponse | null> | null>;
+  GetProjectDetail: (
+    projectId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<ProjectDetailResponse | null> | null>;
   GetProjectCount: (
     token: string
   ) => Promise<ApiGenericResponse<ProjectCountResponse | null> | null>;
@@ -838,6 +854,47 @@ const useProjects = (): useProjectsServices => {
         const errorResponse = handleAxiosError(err);
         setError(
           err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const GetProjectDetail = async (
+    projectId: string,
+    token: string
+  ): Promise<ApiGenericResponse<ProjectDetailResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Projects/${projectId}/detail`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<ProjectDetailResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during request."
         );
         return errorResponse;
       } else {
@@ -2797,6 +2854,7 @@ const useProjects = (): useProjectsServices => {
   return {
     List,
     GetDetailById,
+    GetProjectDetail,
     GetProjectCount,
     InsertProjects,
     UpdateProjects,
