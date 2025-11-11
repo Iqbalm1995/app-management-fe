@@ -112,10 +112,10 @@ const useWorkspace = () => {
     setLoading(true);
     try {
       const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+      const PathEndpoint: string = "/v1/Workspace/stats";
       
-      const response = await axiosInstance.post(
-        `${UrlEndpoint}/api/v1/workspace/stats`,
-        {},
+      const response = await axiosInstance.get(
+        `${UrlEndpoint}${PathEndpoint}`,
         {
           headers: {
             Authorization: `Bearer ${tokenData}`,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Badge,
   Box,
@@ -61,6 +61,9 @@ import LayoutAdmin from "@/app/components/layoutAdmin";
 import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 import { ProjectDataResponse } from "@/app/services/useProjects";
 import { TaskViewModel } from "@/app/services/useTasks";
+import useWorkspace, {
+  WorkspaceStatsViewModel,
+} from "@/app/services/useWorkspace";
 import { radiusStyle } from "@/app/constants/applicationConstants";
 
 const HeaderDataContent: HeaderContentProps = {
@@ -78,6 +81,41 @@ const WorkspaceProject = () => {
   const [selectedProject, setSelectedProject] = useState<ProjectDataResponse | null>(null);
   
   const { isOpen: isProjectModalOpen, onOpen: onProjectModalOpen, onClose: onProjectModalClose } = useDisclosure();
+  
+  // Workspace API integration
+  const { GetWorkspaceStats, loading } = useWorkspace();
+  const [stats, setStats] = useState<WorkspaceStatsViewModel | null>(null);
+  const [statsLoading, setStatsLoading] = useState(false);
+
+  // Fetch workspace stats on component mount
+  useEffect(() => {
+    const fetchStats = async () => {
+      const token = localStorage.getItem("tokenData");
+      if (token) {
+        setStatsLoading(true);
+        try {
+          console.log("🔄 Fetching workspace stats...");
+          const response = await GetWorkspaceStats(token);
+          console.log("📊 Stats response:", response);
+          
+          if (response?.statusCode === 200 && response.data) {
+            console.log("✅ Stats data:", response.data);
+            setStats(response.data);
+          } else {
+            console.log("❌ Stats API failed:", response);
+          }
+        } catch (error) {
+          console.error("❌ Error fetching workspace stats:", error);
+        } finally {
+          setStatsLoading(false);
+        }
+      } else {
+        console.log("❌ No token found");
+      }
+    };
+
+    fetchStats();
+  }, []); // Remove GetWorkspaceStats dependency
   
   // Get current quarter
   const getCurrentQuarter = () => {
@@ -116,14 +154,6 @@ const WorkspaceProject = () => {
     "linear(to-r, secondary.400, secondary.600)",
     "linear(to-r, secondary.600, secondary.800)"
   );
-
-  // Mock data for prototype
-  const mockStats = {
-    totalProjects: 12,
-    activeProjects: 8,
-    completedTasks: 45,
-    pendingTasks: 23,
-  };
 
   // Mock data for prototype - using ProjectDataResponse structure
   const mockProjects: ProjectDataResponse[] = [
@@ -645,6 +675,8 @@ const WorkspaceProject = () => {
     archived: 1,
   };
 
+
+
   // Mock backlogs data for prototype
   const mockBacklogs = [
     {
@@ -707,7 +739,7 @@ const WorkspaceProject = () => {
                 </Box>
                 <VStack align="start" spacing={1}>
                   <Text fontSize="2xl" fontWeight="bold" color={accentColor}>
-                    {mockStats.totalProjects}
+                    {statsLoading ? "..." : (stats?.totalProjects ?? 0)}
                   </Text>
                   <Text color={textColor} fontSize="sm" fontWeight="medium">
                     Total Projects
@@ -736,7 +768,7 @@ const WorkspaceProject = () => {
                 </Box>
                 <VStack align="start" spacing={1}>
                   <Text fontSize="2xl" fontWeight="bold" color="green.500">
-                    {mockStats.activeProjects}
+                    {statsLoading ? "..." : (stats?.activeProjects ?? 0)}
                   </Text>
                   <Text color={textColor} fontSize="sm" fontWeight="medium">
                     Active Projects
@@ -765,10 +797,10 @@ const WorkspaceProject = () => {
                 </Box>
                 <VStack align="start" spacing={1}>
                   <Text fontSize="2xl" fontWeight="bold" color="purple.500">
-                    {mockStats.completedTasks}
+                    {statsLoading ? "..." : (stats?.totalTasks ?? 0)}
                   </Text>
                   <Text color={textColor} fontSize="sm" fontWeight="medium">
-                    Completed Tasks
+                    Total Tasks
                   </Text>
                 </VStack>
               </HStack>
@@ -794,10 +826,10 @@ const WorkspaceProject = () => {
                 </Box>
                 <VStack align="start" spacing={1}>
                   <Text fontSize="2xl" fontWeight="bold" color="orange.500">
-                    {mockStats.pendingTasks}
+                    {statsLoading ? "..." : (stats?.overdueTasks ?? 0)}
                   </Text>
                   <Text color={textColor} fontSize="sm" fontWeight="medium">
-                    Pending Tasks
+                    Overdue Tasks
                   </Text>
                 </VStack>
               </HStack>
