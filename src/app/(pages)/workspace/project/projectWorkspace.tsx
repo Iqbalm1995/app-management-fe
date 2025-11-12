@@ -140,6 +140,7 @@ import {
   FiCheckSquare,
   FiCircle,
   FiClock,
+  FiCornerDownLeft,
   FiFilter,
   FiHash,
   FiInbox,
@@ -148,6 +149,7 @@ import {
   FiMessageSquare,
   FiNavigation,
   FiPaperclip,
+  FiPlus,
   FiPlusCircle,
   FiRefreshCcw,
   FiRotateCcw,
@@ -157,6 +159,7 @@ import {
   FiShare2,
   FiTrello,
   FiUser,
+  FiX,
 } from "react-icons/fi";
 import { HorizontalFadeDivider } from "@/app/components/divider";
 import {
@@ -2114,7 +2117,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                       {/* Add new task item */}
                       <Box px={4} w="full" my={4}>
                         <form onSubmit={handleAddTaskItem}>
-                          <InputGroup size="sm">
+                          <Flex as={HStack} >
                             <Input
                               placeholder="Add a new subtask..."
                               value={newTaskItemName}
@@ -2122,21 +2125,22 @@ const TaskCard: React.FC<TaskCardProps> = ({
                                 setNewTaskItemName(e.target.value)
                               }
                               pr="4.5rem"
-                              variant={"unstyled"}
+                              variant={"flushed"}
+                              px={2}
                             />
-                            <InputRightElement width="4.5rem">
-                              <Button
-                                h="1.75rem"
-                                size="sm"
-                                type="submit"
-                                colorScheme="secondary"
-                                isDisabled={!newTaskItemName.trim()}
-                                isLoading={isAddingTaskItem}
-                              >
-                                Tambah
-                              </Button>
-                            </InputRightElement>
-                          </InputGroup>
+                            <Button
+                              h="1.75rem"
+                              size="sm"
+                              type="submit"
+                              colorScheme="secondary"
+                              isDisabled={!newTaskItemName.trim()}
+                              isLoading={isAddingTaskItem}
+                              leftIcon={<FiCornerDownLeft />}
+                              px={5}
+                            >
+                              Enter
+                            </Button>
+                          </Flex>
                         </form>
                       </Box>
                     </Box>
@@ -2672,7 +2676,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
       <Modal
         isOpen={isAssignModalOpen}
         onClose={onAssignModalClose}
-        size="2xl"
+        size="4xl"
         isCentered
         closeOnOverlayClick={false}
       >
@@ -2688,7 +2692,6 @@ const TaskCard: React.FC<TaskCardProps> = ({
               </Badge>
             </HStack>
           </ModalHeader>
-          <ModalCloseButton />
           <ModalBody>
             <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"}>
               <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }} w={"full"}>
@@ -2718,7 +2721,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                               p={3}
                               border="1px solid"
                               borderColor="gray.200"
-                              borderRadius="md"
+                              borderRadius={radiusStyle}
                               justify="space-between"
                               bg={isAlreadyAssigned ? "gray.50" : "white"}
                             >
@@ -2730,19 +2733,26 @@ const TaskCard: React.FC<TaskCardProps> = ({
                                 />
                                 <VStack align="start" spacing={0}>
                                   <Text fontWeight="medium">{user.nama}</Text>
-                                  <Text fontSize="sm" color="gray.500">
-                                    {user.email}
+                                  <Text
+                                    fontSize="x-small"
+                                    fontWeight={600}
+                                    color="secondary.500"
+                                  >
+                                    {user.jabatan}
                                   </Text>
                                 </VStack>
                               </HStack>
-                              <Button
-                                size="sm"
-                                colorScheme="blue"
-                                onClick={() => handleAddUserAssign(user)}
+                              <IconButton
+                                isRound={true}
+                                variant="solid"
+                                colorScheme="secondary"
+                                aria-label="Add"
+                                fontSize="20px"
+                                icon={<FiPlus />}
+                                size={"xs"}
                                 isDisabled={!!isAlreadyAssigned}
-                              >
-                                {isAlreadyAssigned ? "Added" : "Add"}
-                              </Button>
+                                onClick={() => handleAddUserAssign(user)}
+                              />
                             </HStack>
                           );
                         })}
@@ -2766,9 +2776,13 @@ const TaskCard: React.FC<TaskCardProps> = ({
                             p={3}
                             border="1px solid"
                             borderColor="blue.200"
-                            borderRadius="md"
+                            borderRadius={radiusStyle}
                             justify="space-between"
-                            bg="blue.50"
+                            // bg="blue.50"
+                            bgGradient={
+                              "linear(to-br, secondary.500, secondary.600)"
+                            }
+                            color={"white"}
                           >
                             <HStack spacing={3}>
                               <Avatar
@@ -2778,19 +2792,25 @@ const TaskCard: React.FC<TaskCardProps> = ({
                               />
                               <VStack align="start" spacing={0}>
                                 <Text fontWeight="medium">{user.nama}</Text>
-                                <Text fontSize="sm" color="gray.500">
-                                  {user.email}
+                                <Text
+                                  fontSize={"x-small"}
+                                  fontWeight={600}
+                                  color="secondary.900"
+                                >
+                                  {user.jabatan}
                                 </Text>
                               </VStack>
                             </HStack>
-                            <Button
-                              size="sm"
+                            <IconButton
+                              isRound={true}
+                              variant="solid"
                               colorScheme="red"
-                              variant="ghost"
+                              aria-label="Remove"
+                              fontSize="20px"
+                              icon={<FiX />}
+                              size={"xs"}
                               onClick={() => handleRemoveUserAssign(user.id)}
-                            >
-                              Remove
-                            </Button>
+                            />
                           </HStack>
                         ))}
                       </VStack>
@@ -3834,8 +3854,11 @@ function ProjectWorkspaceView() {
                         variant="ghost"
                       />
                     </Link>
-                    <VStack align="start" spacing={0}>
-                      <Heading size="md">{DataProject?.projectName || "Project Workspace"}</Heading>
+                    <VStack align="start" spacing={2}>
+                      <Heading size="md">
+                        {DataProject?.projectName || "Project Workspace"}
+                      </Heading>
+
                       <HStack spacing={3} fontSize="sm" color="gray.600">
                         <HStack spacing={1}>
                           <FiHash size={14} />
@@ -3850,10 +3873,60 @@ function ProjectWorkspaceView() {
                         {DataProject?.projectRegisterDate && (
                           <HStack spacing={1}>
                             <FiCalendar size={14} />
-                            <Text>{new Date(DataProject.projectRegisterDate).toLocaleDateString()}</Text>
+                            <Text>
+                              {new Date(
+                                DataProject.projectRegisterDate
+                              ).toLocaleDateString()}
+                            </Text>
                           </HStack>
                         )}
                       </HStack>
+
+                      {/* Application Info - Prominent Display */}
+                      {DataProject?.appsProject && (
+                        <HStack
+                          spacing={3}
+                          bg="linear-gradient(135deg, #0077ffff 0%, #764ba2 100%)"
+                          px={3}
+                          py={2}
+                          rounded={radiusStyle}
+                          shadow="md"
+                        >
+                          <Box
+                            bg="white"
+                            w="40px"
+                            h="40px"
+                            rounded={radiusStyle}
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
+                            fontWeight="bold"
+                            fontSize="lg"
+                            color="purple.600"
+                            shadow="sm"
+                          >
+                            {DataProject.appsProject.appCode
+                              ?.substring(0, 2)
+                              .toUpperCase() ||
+                              DataProject.appsProject.appName
+                                ?.substring(0, 2)
+                                .toUpperCase() ||
+                              "AP"}
+                          </Box>
+                          <VStack align="start" spacing={0}>
+                            <Text
+                              fontSize="xs"
+                              color="whiteAlpha.800"
+                              fontWeight="medium"
+                            >
+                              Application
+                            </Text>
+                            <Text fontSize="sm" color="white" fontWeight="bold">
+                              {DataProject.appsProject.appName}
+                            </Text>
+                          </VStack>
+                        </HStack>
+                      )}
                     </VStack>
                   </HStack>
 
@@ -3882,27 +3955,44 @@ function ProjectWorkspaceView() {
                 </HStack>
 
                 {/* Stats Row */}
-                <HStack spacing={6} p={3} bg={colorMode === "light" ? "gray.50" : "gray.700"} rounded={radiusStyle}>
+                <HStack
+                  spacing={6}
+                  p={3}
+                  bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                  rounded={radiusStyle}
+                >
                   <HStack spacing={2}>
                     <Icon as={FiList} color="blue.500" />
-                    <Text fontSize="sm" fontWeight="medium">{projectStats.totalTasks} Total</Text>
+                    <Text fontSize="sm" fontWeight="medium">
+                      {projectStats.totalTasks} Total
+                    </Text>
                   </HStack>
                   <HStack spacing={2}>
                     <Icon as={FiCheckCircle} color="green.500" />
-                    <Text fontSize="sm" fontWeight="medium">{projectStats.completedTasks} Done</Text>
+                    <Text fontSize="sm" fontWeight="medium">
+                      {projectStats.completedTasks} Done
+                    </Text>
                   </HStack>
                   <HStack spacing={2}>
                     <Icon as={FiLoader} color="orange.500" />
-                    <Text fontSize="sm" fontWeight="medium">{projectStats.inProgressTasks} In Progress</Text>
+                    <Text fontSize="sm" fontWeight="medium">
+                      {projectStats.inProgressTasks} In Progress
+                    </Text>
                   </HStack>
                   <HStack spacing={2}>
                     <Icon as={FiClock} color="gray.500" />
-                    <Text fontSize="sm" fontWeight="medium">{projectStats.todoTasks} To Do</Text>
+                    <Text fontSize="sm" fontWeight="medium">
+                      {projectStats.todoTasks} To Do
+                    </Text>
                   </HStack>
                   <Divider orientation="vertical" h="20px" />
                   <HStack spacing={2}>
-                    <Text fontSize="sm" fontWeight="bold" color="blue.600">{projectStats.completionPercentage}%</Text>
-                    <Text fontSize="sm" color="gray.600">Complete</Text>
+                    <Text fontSize="sm" fontWeight="bold" color="blue.600">
+                      {projectStats.completionPercentage}%
+                    </Text>
+                    <Text fontSize="sm" color="gray.600">
+                      Complete
+                    </Text>
                   </HStack>
                   {lastUpdated && (
                     <>
