@@ -503,6 +503,14 @@ const LinkItems: LinkItemProps[] = [
         menuID: "1",
         children: [],
       },
+      {
+        name: "Import Data Project Application",
+        icon: FiUpload,
+        link: "/projects/import-applications",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
     ],
   },
 
@@ -1412,7 +1420,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                 aria-label="lite mode"
                 icon={<RiMenu2Line />}
                 size={"lg"}
-                // rounded={"xl"}
+              // rounded={"xl"}
               />
             </Box>
 
@@ -1573,7 +1581,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                 pb={12}
                 pt={5}
                 minH={"100vh"}
-                // bg={"blue.100"}
+              // bg={"blue.100"}
               >
                 <AnimatePresence mode="wait">
                   <MotionBox
@@ -1622,7 +1630,7 @@ const SidebarContent = ({
   useEffect(() => {
     localStorage.setItem('hideProMenus', JSON.stringify(hideProMenus));
   }, [hideProMenus]);
-  
+
   const handleScroll = () => {
     setScrollY(window.scrollY);
   };
@@ -1665,7 +1673,7 @@ const SidebarContent = ({
         </Flex>
 
         <AdditionalProfileBar LiteModeTrigger={LiteModeTrigger} />
-        
+
         <SearchMenuButton LiteModeTrigger={LiteModeTrigger} />
 
         <Flex pt={5} pb={2} mx={3}>
@@ -1675,8 +1683,8 @@ const SidebarContent = ({
                 Menu
               </Heading>
               <Tooltip label="Hide menu pro" placement="top" hasArrow>
-                <Switch 
-                  size="sm" 
+                <Switch
+                  size="sm"
                   isChecked={hideProMenus}
                   onChange={(e) => setHideProMenus(e.target.checked)}
                 />
@@ -1807,15 +1815,15 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
               IsActiveNav
                 ? "linear(to-r, secondary.500, secondary.600)"
                 : hasActiveChild
-                ? "linear(to-r, secondary.500, secondary.600)"
-                : "linear(to-r, transparent, transparent)"
+                  ? "linear(to-r, secondary.500, secondary.600)"
+                  : "linear(to-r, transparent, transparent)"
             }
             color={
               IsActiveNav
                 ? "white" // When the navigation item is active, set color to white
                 : hasActiveChild
-                ? "gray.100" // When has active child
-                : useColorModeValue("gray.900", "gray.100") // Otherwise, set color based on the color mode
+                  ? "gray.100" // When has active child
+                  : useColorModeValue("gray.900", "gray.100") // Otherwise, set color based on the color mode
             }
             justifyContent={"center"}
             // onClick={() => {
@@ -1846,8 +1854,8 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
                     IsActiveNav
                       ? "white"
                       : hasActiveChild
-                      ? "gray.100"
-                      : useColorModeValue("gray.900", "gray.100")
+                        ? "gray.100"
+                        : useColorModeValue("gray.900", "gray.100")
                   }
                   as={data.icon}
                 />
@@ -2100,7 +2108,7 @@ function AdditionalProfileBar({
                       color={
                         colorMode == "light" ? "primary.500" : "primary.100"
                       }
-                      // color={"secondary.200"}
+                    // color={"secondary.200"}
                     >
                       {(DataAuth && DataAuth.teamRole?.specName) ||
                         (DataAuth && DataAuth.jabatan)}
@@ -2227,7 +2235,7 @@ function SearchMenuButton({ LiteModeTrigger }: { LiteModeTrigger: boolean }) {
     if (searchQuery.trim()) {
       const allMenus = getAllMenuItems(LinkItems);
       const filtered = allMenus
-        .filter(item => 
+        .filter(item =>
           item.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
           item.link !== "#"
         )
