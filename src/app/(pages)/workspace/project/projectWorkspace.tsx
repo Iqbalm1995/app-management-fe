@@ -135,10 +135,13 @@ import {
   FiAlertCircle,
   FiArchive,
   FiArrowLeft,
+  FiCalendar,
   FiCheckCircle,
   FiCheckSquare,
   FiCircle,
+  FiClock,
   FiFilter,
+  FiHash,
   FiInbox,
   FiList,
   FiLoader,
@@ -2982,7 +2985,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
           </VStack>
         </CardHeader>
 
-        <CardBody p={4} maxH="calc(100vh - 300px)" overflowY="auto">
+        <CardBody flex={1} p={2} overflowY="auto">
           <VStack spacing={3} align="stretch">
             {tasks.map((task) => (
               <TaskCard
@@ -3808,325 +3811,187 @@ function ProjectWorkspaceView() {
   return (
     <LayoutAdminWorkspace>
       <DndProvider backend={HTML5Backend}>
-        <Box p={6}>
-          {/* Enhanced Modern Header */}
+        <Box p={4}>
+          {/* Simple Clean Header */}
           <Card
-            shadow="2xl"
-            rounded="2xl"
-            border="1px"
-            borderColor={colorMode === "light" ? "gray.100" : "gray.700"}
+            shadow="sm"
+            rounded={radiusStyle}
             bg={colorMode === "light" ? "white" : "gray.800"}
-            mb={8}
-            overflow="hidden"
-            position="relative"
+            mb={4}
+            borderWidth="1px"
+            borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
           >
-            {/* Enhanced Gradient Header */}
-            <Box
-              bgGradient="linear(135deg, secondary.800, secondary.500)"
-              p={8}
-              color="white"
-              position="relative"
-              _before={{
-                content: '""',
-                position: "absolute",
-                top: "0",
-                left: "0",
-                right: "0",
-                bottom: "0",
-                bgImage:
-                  "radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%)",
-              }}
-            >
-              <HStack
-                justify="space-between"
-                align="center"
-                position="relative"
-                zIndex="1"
-              >
-                <HStack spacing={6}>
-                  <Link href="/workspace">
-                    <IconButton
-                      aria-label="Back to workspace"
-                      icon={<FiArrowLeft />}
-                      variant="ghost"
-                      color="white"
-                      size="lg"
-                      rounded="full"
-                      _hover={{
-                        bg: "whiteAlpha.200",
-                        transform: "scale(1.05)",
-                      }}
-                      transition="all 0.2s"
-                    />
-                  </Link>
-
+            <CardBody p={4}>
+              <VStack spacing={4} align="stretch">
+                {/* Top Row: Back Button + Project Info + Actions */}
+                <HStack justify="space-between" align="center">
                   <HStack spacing={4}>
-                    <Box
-                      p={3}
-                      bg="whiteAlpha.200"
-                      rounded="xl"
-                      backdropFilter="blur(10px)"
-                    >
-                      <FiTrello size={28} />
-                    </Box>
-                    <VStack align="start" spacing={1}>
-                      <Heading size="xl" color="white" fontWeight="700">
-                        Project Kanban Board
-                      </Heading>
-                      {DataProject && (
-                        <Text
-                          color="whiteAlpha.900"
-                          fontSize="lg"
-                          fontWeight="500"
-                        >
-                          {DataProject.projectName}
-                        </Text>
-                      )}
-                    </VStack>
-                  </HStack>
-                </HStack>
-
-                <HStack spacing={8}>
-                  {/* Enhanced Project Stats */}
-                  <HStack spacing={6} color="whiteAlpha.900">
-                    <VStack spacing={1} align="center">
-                      <Box
-                        p={3}
-                        bg="whiteAlpha.200"
-                        rounded="xl"
-                        backdropFilter="blur(10px)"
-                        minW="60px"
-                      >
-                        <Text
-                          fontWeight="bold"
-                          fontSize="2xl"
-                          color="white"
-                          textAlign="center"
-                        >
-                          {projectStats.totalTasks}
-                        </Text>
-                      </Box>
-                      <Text fontSize="sm" fontWeight="medium">
-                        Total Tasks
-                      </Text>
-                    </VStack>
-
-                    <VStack spacing={1} align="center">
-                      <Box
-                        p={3}
-                        bg="whiteAlpha.200"
-                        rounded="xl"
-                        backdropFilter="blur(10px)"
-                        minW="60px"
-                      >
-                        <Text
-                          fontWeight="bold"
-                          fontSize="2xl"
-                          color="white"
-                          textAlign="center"
-                        >
-                          {projectStats.completedTasks}
-                        </Text>
-                      </Box>
-                      <Text fontSize="sm" fontWeight="medium">
-                        Completed
-                      </Text>
-                    </VStack>
-
-                    <VStack spacing={1} align="center">
-                      <Box
-                        p={3}
-                        bg="whiteAlpha.200"
-                        rounded="xl"
-                        backdropFilter="blur(10px)"
-                        minW="60px"
-                      >
-                        <Text
-                          fontWeight="bold"
-                          fontSize="2xl"
-                          color="white"
-                          textAlign="center"
-                        >
-                          {projectStats.completionPercentage}%
-                        </Text>
-                      </Box>
-                      <Text fontSize="sm" fontWeight="medium">
-                        Progress
-                      </Text>
-                    </VStack>
-                  </HStack>
-
-                  <Button
-                    leftIcon={<FiInbox />}
-                    variant="outline"
-                    size="lg"
-                    onClick={() => {
-                      setIsArchivedDrawerOpen(true);
-                      loadArchivedTasks();
-                    }}
-                    color="white"
-                    borderColor="whiteAlpha.300"
-                    rounded="full"
-                    px={6}
-                    _hover={{
-                      bg: "whiteAlpha.200",
-                      borderColor: "whiteAlpha.500",
-                      transform: "translateY(-2px)",
-                    }}
-                    transition="all 0.2s"
-                    backdropFilter="blur(10px)"
-                  >
-                    Archived
-                  </Button>
-                  <Button
-                    leftIcon={<FiRefreshCcw />}
-                    variant="outline"
-                    size="lg"
-                    onClick={() => setRefreshData((prev) => prev + 1)}
-                    isLoading={IsLoadingProcess}
-                    color="white"
-                    borderColor="whiteAlpha.300"
-                    rounded="full"
-                    px={6}
-                    _hover={{
-                      bg: "whiteAlpha.200",
-                      borderColor: "whiteAlpha.500",
-                      transform: "translateY(-2px)",
-                    }}
-                    transition="all 0.2s"
-                    backdropFilter="blur(10px)"
-                  >
-                    Refresh
-                  </Button>
-                  {/* Last Updated Timestamp */}
-                  {lastUpdated && (
-                    <VStack spacing={0} align="center">
-                      <Text fontSize="xs" color="whiteAlpha.700" fontWeight="medium">
-                        Last Updated
-                      </Text>
-                      <Text fontSize="xs" color="whiteAlpha.600">
-                        {lastUpdated.toLocaleTimeString()}
-                      </Text>
-                    </VStack>
-                  )}                </HStack>
-              </HStack>
-            </Box>
-
-            {/* Enhanced Filters Section */}
-            <CardBody p={8} bg={colorMode === "light" ? "gray.50" : "gray.900"}>
-              <VStack spacing={6}>
-                {/* Filter Controls */}
-                <HStack spacing={4} wrap="wrap" w="full" justify="center">
-                  <InputGroup maxW="350px">
-                    <InputLeftElement>
-                      <FiSearch
-                        color={colorMode === "light" ? "gray.400" : "gray.500"}
+                    <Link href="/workspace">
+                      <IconButton
+                        aria-label="Back"
+                        icon={<FiArrowLeft />}
+                        size="sm"
+                        variant="ghost"
                       />
-                    </InputLeftElement>
-                    <Input
-                      placeholder="Search tasks..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      bg={colorMode === "light" ? "white" : "gray.800"}
-                      border="2px"
-                      borderColor={
-                        colorMode === "light" ? "gray.200" : "gray.600"
-                      }
-                      rounded="full"
-                      _focus={{
-                        borderColor: "secondary.400",
-                        boxShadow:
-                          "0 0 0 1px var(--chakra-colors-secondary-400)",
+                    </Link>
+                    <VStack align="start" spacing={0}>
+                      <Heading size="md">{DataProject?.projectName || "Project Workspace"}</Heading>
+                      <HStack spacing={3} fontSize="sm" color="gray.600">
+                        <HStack spacing={1}>
+                          <FiHash size={14} />
+                          <Text>{DataProject?.projectCode}</Text>
+                        </HStack>
+                        {DataProject?.proManageByDivisionName && (
+                          <HStack spacing={1}>
+                            <FiUser size={14} />
+                            <Text>{DataProject.proManageByDivisionName}</Text>
+                          </HStack>
+                        )}
+                        {DataProject?.projectRegisterDate && (
+                          <HStack spacing={1}>
+                            <FiCalendar size={14} />
+                            <Text>{new Date(DataProject.projectRegisterDate).toLocaleDateString()}</Text>
+                          </HStack>
+                        )}
+                      </HStack>
+                    </VStack>
+                  </HStack>
+
+                  <HStack spacing={2}>
+                    <Button
+                      leftIcon={<FiInbox />}
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setIsArchivedDrawerOpen(true);
+                        loadArchivedTasks();
                       }}
-                      size="lg"
-                    />
-                  </InputGroup>
-
-                  <Select
-                    placeholder="All Priorities"
-                    value={filterPriority}
-                    onChange={(e) => setFilterPriority(e.target.value)}
-                    maxW="180px"
-                    bg={colorMode === "light" ? "white" : "gray.800"}
-                    border="2px"
-                    borderColor={
-                      colorMode === "light" ? "gray.200" : "gray.600"
-                    }
-                    rounded="full"
-                    size="lg"
-                    _focus={{
-                      borderColor: "secondary.400",
-                      boxShadow: "0 0 0 1px var(--chakra-colors-secondary-400)",
-                    }}
-                  >
-                    <option value="HIGH">High Priority</option>
-                    <option value="MEDIUM">Medium Priority</option>
-                    <option value="LOW">Low Priority</option>
-                  </Select>
-
-                  <Select
-                    placeholder="All Backlogs"
-                    value={filterBacklog}
-                    onChange={(e) => setFilterBacklog(e.target.value)}
-                    maxW="220px"
-                    bg={colorMode === "light" ? "white" : "gray.800"}
-                    border="2px"
-                    borderColor={
-                      colorMode === "light" ? "gray.200" : "gray.600"
-                    }
-                    rounded="full"
-                    size="lg"
-                    _focus={{
-                      borderColor: "secondary.400",
-                      boxShadow: "0 0 0 1px var(--chakra-colors-secondary-400)",
-                    }}
-                  >
-                    {DataBacklogs.map((backlog) => (
-                      <option key={backlog.id} value={backlog.id}>
-                        {backlog.backlogName}
-                      </option>
-                    ))}
-                  </Select>
-
-                  <Button
-                    leftIcon={<FiPlusCircle />}
-                    colorScheme="secondary"
-                    size="lg"
-                    onClick={() => handleAddTask(DataBoard[0]?.id || "")}
-                    isDisabled={DataBoard.length === 0}
-                    rounded="full"
-                    px={8}
-                    shadow="lg"
-                    _hover={{
-                      transform: "translateY(-2px)",
-                      shadow: "xl",
-                    }}
-                    transition="all 0.2s"
-                  >
-                    Add Task
-                  </Button>
+                    >
+                      Archived
+                    </Button>
+                    <Button
+                      leftIcon={<FiRefreshCcw />}
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setRefreshData((prev) => prev + 1)}
+                      isLoading={IsLoadingProcess}
+                    >
+                      Refresh
+                    </Button>
+                  </HStack>
                 </HStack>
 
-                {/* Enhanced Toggle */}
-                <HStack spacing={4} justify="center">
-                  <Checkbox
-                    isChecked={showCompletedTasks}
-                    onChange={(e) => setShowCompletedTasks(e.target.checked)}
-                    colorScheme="secondary"
-                    size="lg"
-                    iconColor="white"
-                  >
-                    <Text
-                      fontWeight="medium"
-                      color={colorMode === "light" ? "gray.700" : "gray.300"}
-                    >
-                      Show completed tasks
-                    </Text>
-                  </Checkbox>
+                {/* Stats Row */}
+                <HStack spacing={6} p={3} bg={colorMode === "light" ? "gray.50" : "gray.700"} rounded={radiusStyle}>
+                  <HStack spacing={2}>
+                    <Icon as={FiList} color="blue.500" />
+                    <Text fontSize="sm" fontWeight="medium">{projectStats.totalTasks} Total</Text>
+                  </HStack>
+                  <HStack spacing={2}>
+                    <Icon as={FiCheckCircle} color="green.500" />
+                    <Text fontSize="sm" fontWeight="medium">{projectStats.completedTasks} Done</Text>
+                  </HStack>
+                  <HStack spacing={2}>
+                    <Icon as={FiLoader} color="orange.500" />
+                    <Text fontSize="sm" fontWeight="medium">{projectStats.inProgressTasks} In Progress</Text>
+                  </HStack>
+                  <HStack spacing={2}>
+                    <Icon as={FiClock} color="gray.500" />
+                    <Text fontSize="sm" fontWeight="medium">{projectStats.todoTasks} To Do</Text>
+                  </HStack>
+                  <Divider orientation="vertical" h="20px" />
+                  <HStack spacing={2}>
+                    <Text fontSize="sm" fontWeight="bold" color="blue.600">{projectStats.completionPercentage}%</Text>
+                    <Text fontSize="sm" color="gray.600">Complete</Text>
+                  </HStack>
+                  {lastUpdated && (
+                    <>
+                      <Divider orientation="vertical" h="20px" />
+                      <Text fontSize="xs" color="gray.500">
+                        Updated: {lastUpdated.toLocaleTimeString()}
+                      </Text>
+                    </>
+                  )}
                 </HStack>
               </VStack>
             </CardBody>
           </Card>
+
+          {/* Filters Section - Separate Panel */}
+          <Box
+            bg={colorMode === "light" ? "white" : "gray.800"}
+            p={3}
+            rounded={radiusStyle}
+            shadow="sm"
+            borderWidth="1px"
+            borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+            mb={4}
+          >
+            <HStack spacing={3} justify="space-between" align="center">
+              <HStack spacing={3} flex={1}>
+                <InputGroup maxW="300px">
+                  <InputLeftElement>
+                    <FiSearch />
+                  </InputLeftElement>
+                  <Input
+                    placeholder="Search tasks..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    size="sm"
+                    rounded={radiusStyle}
+                  />
+                </InputGroup>
+
+                <Select
+                  placeholder="Priority"
+                  value={filterPriority}
+                  onChange={(e) => setFilterPriority(e.target.value)}
+                  maxW="140px"
+                  size="sm"
+                  rounded={radiusStyle}
+                >
+                  <option value="HIGH">High</option>
+                  <option value="MEDIUM">Medium</option>
+                  <option value="LOW">Low</option>
+                </Select>
+
+                <Select
+                  placeholder="Backlog"
+                  value={filterBacklog}
+                  onChange={(e) => setFilterBacklog(e.target.value)}
+                  maxW="180px"
+                  size="sm"
+                  rounded={radiusStyle}
+                >
+                  {DataBacklogs.map((backlog) => (
+                    <option key={backlog.id} value={backlog.id}>
+                      {backlog.backlogName}
+                    </option>
+                  ))}
+                </Select>
+
+                <Checkbox
+                  isChecked={showCompletedTasks}
+                  onChange={(e) => setShowCompletedTasks(e.target.checked)}
+                  colorScheme="secondary"
+                  size="sm"
+                >
+                  <Text fontSize="sm">Show completed</Text>
+                </Checkbox>
+              </HStack>
+
+              <Button
+                leftIcon={<FiPlusCircle />}
+                colorScheme="blue"
+                size="sm"
+                onClick={() => handleAddTask(DataBoard[0]?.id || "")}
+                isDisabled={DataBoard.length === 0}
+                rounded={radiusStyle}
+              >
+                Add Task
+              </Button>
+            </HStack>
+          </Box>
 
           {/* Auto-saving indicator */}
           {isAutoSaving && (
@@ -4162,10 +4027,12 @@ function ProjectWorkspaceView() {
             </Box>
           ) : DataBoard.length > 0 ? (
             <Box
-              bg={colorMode === "light" ? "gray.50" : "gray.900"}
-              rounded="2xl"
-              p={6}
-              shadow="inner"
+              bg={colorMode === "light" ? "white" : "gray.800"}
+              rounded={radiusStyle}
+              p={4}
+              shadow="sm"
+              borderWidth="1px"
+              borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
             >
               <Grid
                 templateColumns={`repeat(${DataBoard.length}, 1fr)`}
