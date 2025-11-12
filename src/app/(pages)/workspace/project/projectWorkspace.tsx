@@ -3844,11 +3844,9 @@ function ProjectWorkspaceView() {
                 zIndex="1"
               >
                 <HStack spacing={6}>
-                  <Link
-                    href={`/project-development/development?projectId=${projectId}`}
-                  >
+                  <Link href="/workspace">
                     <IconButton
-                      aria-label="Back to project"
+                      aria-label="Back to workspace"
                       icon={<FiArrowLeft />}
                       variant="ghost"
                       color="white"
