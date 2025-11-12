@@ -34,6 +34,7 @@ import useMasterBoardTask, {
 } from "@/app/services/useMasterBoardTask";
 import useTasks, {
   CreateSimpleTaskPayload,
+  TaskCreatePayload,
   TaskBoardViewModel,
   TaskMovePayload,
   TaskUpdatePayload,
@@ -2958,8 +2959,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
           borderBottom="1px"
           borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
           p={4}
-          h="120px"
-          minH="120px"
+          h="70px"
         >
           <VStack spacing={3} align="stretch">
             <HStack justify="space-between">
@@ -2985,23 +2985,6 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
               </VStack>
             </HStack>
 
-            {/* Quick Stats */}
-            {tasks.length > 0 && (
-              <HStack
-                spacing={4}
-                fontSize="xs"
-                color={colorMode === "light" ? "gray.600" : "gray.400"}
-              >
-                <HStack spacing={1}>
-                  <FiCheckCircle />
-                  <Text>{stats.completed} done</Text>
-                </HStack>
-                <HStack spacing={1}>
-                  <FiLoader />
-                  <Text>{stats.inProgress} in progress</Text>
-                </HStack>
-              </HStack>
-            )}
           </VStack>
         </CardHeader>
 
@@ -3170,6 +3153,7 @@ function ProjectWorkspaceView() {
     ListTasksBoard,
     ListTasksPaged,
     CreateSimpleTask,
+    CreateTask,
     MoveTask,
     UpdateTask,
   } = useTasks();
@@ -3553,19 +3537,31 @@ function ProjectWorkspaceView() {
   };
 
   // Handle Add Task
-  const handleAddTask = (boardId: string) => {
-    // Find the target board to get its name
-    const targetBoard = DataBoard.find((board) => board.id === boardId);
+  const handleAddTask = (boardName: string) => {
+    // Find tasks in this board to get the actual boardId (TaskBoard ID, not MasterBoardTask ID)
+    const tasksInBoard = DataTasks.filter(task => task.boardName === boardName);
+    const actualBoardId = tasksInBoard.length > 0 ? tasksInBoard[0].boardId : "";
+
+    // Find the master board for display
+    const targetBoard = DataBoard.find((board) => board.boardName === boardName);
+
+    if (!actualBoardId) {
+      showToast({
+        description: "No tasks found in this board. Cannot determine board ID. Please create a task board first or add a task to another column.",
+        statusToast: "warning",
+      });
+      return;
+    }
 
     setSelectedTask(null);
-    setSelectedBoardId(boardId);
+    setSelectedBoardId(actualBoardId);
     setTaskForm({
       taskName: "",
       taskDesc: "",
       taskPriority: "MEDIUM",
       taskStartDate: "",
       taskEndDate: "",
-      boardName: targetBoard?.boardName || "", // Include boardName in form
+      boardName: targetBoard?.boardName || boardName,
       backlogId: "",
     });
     onTaskModalOpen();
@@ -3700,18 +3696,27 @@ function ProjectWorkspaceView() {
         }
       } else {
         // Create new task
-        const targetBoard = DataBoard.find(
-          (board) => board.id === selectedBoardId
-        );
+        const tasksInBoard = DataTasks.filter(task => task.boardName === taskForm.boardName);
+        const actualBoardId = tasksInBoard.length > 0 ? tasksInBoard[0].boardId : selectedBoardId;
 
-        const payload: CreateSimpleTaskPayload = {
+        // Generate task code (simple timestamp-based)
+        const taskCode = `TASK-${Date.now()}`;
+
+        const payload: TaskCreatePayload = {
           taskName: taskForm.taskName,
-          boardId: selectedBoardId,
-          projectId: projectId!,
-          backlogId: taskForm.backlogId,
+          taskCode: taskCode,
+          boardId: actualBoardId,
+          projectId: projectId || undefined,
+          backlogId: taskForm.backlogId || undefined,
+          taskDesc: taskForm.taskDesc || undefined,
+          taskPriority: taskForm.taskPriority,
+          startDate: taskForm.taskStartDate || undefined,
+          endDate: taskForm.taskEndDate || undefined,
         };
 
-        const response = await CreateSimpleTask(payload, tokenData);
+        console.log("Create Task Payload:", payload);
+
+        const response = await CreateTask(payload, tokenData);
 
         if (response?.statusCode === RES_CODE_OK) {
           setRefreshData((prev) => prev + 1);
@@ -4074,7 +4079,7 @@ function ProjectWorkspaceView() {
                 leftIcon={<FiPlusCircle />}
                 colorScheme="blue"
                 size="sm"
-                onClick={() => handleAddTask(DataBoard[0]?.id || "")}
+                onClick={() => handleAddTask(DataBoard[0]?.boardName || "")}
                 isDisabled={DataBoard.length === 0}
                 rounded={radiusStyle}
               >
