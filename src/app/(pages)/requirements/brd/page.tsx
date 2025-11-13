@@ -409,6 +409,7 @@ function ReuirementsBRDPage() {
               display={info.row.original.isHaveMemo === "N" ? "flex" : "none"}
               justifyContent="center" // center horizontally
               alignItems="center" // center vertically (useful for icon + text alignment)
+              fontSize={"x-small"}
             >
               <FiAlertTriangle />
               <Text>
@@ -535,17 +536,23 @@ function ReuirementsBRDPage() {
             <Flex fontSize={"small"} as={Stack} spacing={0}>
               <Text>Ditugaskan Oleh :</Text>
               <Text fontWeight={600} fontSize={"smaller"}>
-                {info.row.original.assignedFromName}
+                {info.row.original.assignedFromName || "-"}
               </Text>
             </Flex>
             <Flex fontSize={"small"} as={Stack} spacing={0}>
               <Text>Ditugaskan Ke :</Text>
-              {info.row.original.approvalDatas.map((x, idx) => (
-                <Text fontWeight={600} key={idx} fontSize={"smaller"}>
-                  {idx + 1}. {x.approverUserFirstName}{" "}
-                  {x.approverUserLastnameName}
+              {info.row.original.approvalDatas?.length ? (
+                info.row.original.approvalDatas.map((x, idx) => (
+                  <Text fontWeight={600} key={idx} fontSize="smaller">
+                    {idx + 1}. {x.approverUserFirstName}{" "}
+                    {x.approverUserLastnameName}
+                  </Text>
+                ))
+              ) : (
+                <Text fontWeight={600} fontSize="smaller" color="gray.500">
+                  -
                 </Text>
-              ))}
+              )}
             </Flex>
           </Flex>
         ),
@@ -580,10 +587,25 @@ function ReuirementsBRDPage() {
           >
             <Flex as={Stack} spacing={2}>
               <Flex as={Stack} spacing={0}>
-                <Text fontWeight={600}>
-                  ({info.row.original.appInitialCode})
-                </Text>
-                <Text fontWeight={600}>{info.row.original.appInitialName}</Text>
+                {info?.row?.original?.appInitialCode &&
+                info.row.original.appInitialCode.trim() !== "" ? (
+                  <>
+                    <Text fontWeight={600}>
+                      ({info.row.original.appInitialCode})
+                    </Text>
+                    <Text fontWeight={600}>
+                      {info.row.original.appInitialName}
+                    </Text>
+                  </>
+                ) : (
+                  <Text
+                    color="gray.500"
+                    fontStyle="italic"
+                    fontSize={"x-small"}
+                  >
+                    Applikasi Belum Disematkan
+                  </Text>
+                )}
               </Flex>
             </Flex>
           </Flex>

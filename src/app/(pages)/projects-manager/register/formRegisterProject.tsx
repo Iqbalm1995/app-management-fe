@@ -753,19 +753,20 @@ function FormRegisterProjectView() {
           }
 
           // insert user reviewer in parallel and wait for all
-          if (itemsData.approvalDatas.length > 0) {
-            const reviewers = await Promise.all(
-              itemsData.approvalDatas.map(async (dt) => {
+          const reviewers = await Promise.all(
+            (itemsData.approvalDatas ?? []).map(async (dt) => {
+              try {
                 return await GetUserIDServices(dt.approverUserCode);
-              })
-            );
-
-            reviewers.forEach((user) => {
-              if (user) {
-                userAssignPoject.push(user);
+              } catch {
+                return null;
               }
-            });
-          }
+            })
+          );
+
+          reviewers
+            .filter(Boolean)
+            .forEach((user) => userAssignPoject.push(user!));
+
 
           // Set state only after all async ops done
           if (userAssignPoject.length > 0) {
