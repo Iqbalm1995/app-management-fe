@@ -305,6 +305,14 @@ export const LinkItems: LinkItemProps[] = [
         menuID: "1",
         children: [],
       },
+      {
+        name: "Import Legacy Projects",
+        icon: BsCloudUpload,
+        link: "/projects/import-legacy",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
     ],
   },
 

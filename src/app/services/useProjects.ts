@@ -74,6 +74,48 @@ export interface ProjectImportDataBatchBindModel {
   batchData: ProjectImportDataBindModel[];
 }
 
+// Legacy Import Interfaces
+export interface ProjectImportLegacyDataBindModel {
+  ProjectNumber?: string;
+  ProjectName?: string;
+  DivisionCodeInitiation?: string;
+  ProjetType?: string;
+  ProjectCurrentStatus?: string;
+  ProjectStartDate?: string;
+  ProjectGoLivePlanDate?: string;
+  ProjectGoLiveRealizationDate?: string;
+  ProjectClosingDate?: string;
+}
+
+export interface ProjectImportLegacyDataBatchBindModel {
+  batchData: ProjectImportLegacyDataBindModel[];
+}
+
+export interface ProjectImportLegacyValidationResponse {
+  ProjectNumber?: string;
+  ProjectName?: string;
+  DivisionCodeInitiation?: string;
+  ProjetType?: string;
+  ProjectCurrentStatus?: string;
+  ProjectStartDate?: string;
+  ProjectGoLivePlanDate?: string;
+  ProjectGoLiveRealizationDate?: string;
+  ProjectClosingDate?: string;
+}
+
+export interface ProjectImportLegacyResponse {
+  dataImport?: ProjectImportLegacyDataBindModel;
+  validationResponse?: ProjectImportLegacyValidationResponse;
+  isValid: boolean;
+}
+
+export interface ProjectLegacyImportBatchResponse {
+  batchResponse: ProjectImportLegacyResponse[];
+  isStatus: boolean;
+  countValid: number;
+  countInvalid: number;
+}
+
 export interface ProjectImportValidationResponse {
   MemoNumber?: string;
   MemoNarrative?: string;
@@ -777,6 +819,16 @@ interface useProjectsServices {
     payload: ProjectImportDataBatchBindModel,
     token: string
   ) => Promise<ApiGenericResponse<ProjectImportBatchResponse>>;
+
+  ProjectImportLegacyValidationBatch: (
+    payload: ProjectImportLegacyDataBatchBindModel,
+    token: string
+  ) => Promise<ApiGenericResponse<ProjectLegacyImportBatchResponse | null> | null>;
+
+  ProjectImportLegacyBatch: (
+    payload: ProjectImportLegacyDataBatchBindModel,
+    token: string
+  ) => Promise<ApiGenericResponse<ProjectLegacyImportBatchResponse | null> | null>;
 
   isLoading: boolean;
   error: string | null;
@@ -2851,6 +2903,82 @@ const useProjects = (): useProjectsServices => {
     }
   };
 
+  const ProjectImportLegacyValidationBatch = async (
+    payload: ProjectImportLegacyDataBatchBindModel,
+    token: string
+  ): Promise<ApiGenericResponse<ProjectLegacyImportBatchResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/projects/import/legacy/validation";
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<ProjectLegacyImportBatchResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const ProjectImportLegacyBatch = async (
+    payload: ProjectImportLegacyDataBatchBindModel,
+    token: string
+  ): Promise<ApiGenericResponse<ProjectLegacyImportBatchResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/projects/import/legacy/";
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<ProjectLegacyImportBatchResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
   return {
     List,
     GetDetailById,
@@ -2902,6 +3030,8 @@ const useProjects = (): useProjectsServices => {
 
     ProjectImportValidationBatch,
     ProjectImportBatch,
+    ProjectImportLegacyValidationBatch,
+    ProjectImportLegacyBatch,
 
     ListProjectWorkflow,
     ListProjectWorkflowValue,
