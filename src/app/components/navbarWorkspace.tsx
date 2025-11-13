@@ -69,6 +69,7 @@ import {
   PopoverBody,
   PopoverArrow,
   PopoverCloseButton,
+  Portal,
 } from "@chakra-ui/react";
 import {
   FiHome,
@@ -153,6 +154,7 @@ import {
   BsRocketTakeoff,
 } from "react-icons/bs";
 import {
+  IoAppsOutline,
   IoCalendarNumberOutline,
   IoCalendarOutline,
   IoChatbubblesOutline,
@@ -227,6 +229,7 @@ import { LuBookHeart, LuServer } from "react-icons/lu";
 import { IoIosCodeDownload, IoMdBookmarks } from "react-icons/io";
 import { GrHelpBook } from "react-icons/gr";
 import { LinkItemProps, LinkItems } from "../constants/menuApplication";
+import { AdditionalProfileBar, SearchMenuButton } from "./sidebar";
 // import { useAuth } from "@/context/AuthContext";
 
 // Page Split
@@ -234,7 +237,11 @@ import { LinkItemProps, LinkItems } from "../constants/menuApplication";
 //   () => import("../_pieces/profile/Profile-modal")
 // );
 
-export default function NavigationAdmin({ children }: { children: ReactNode }) {
+export default function NavigationAdminWorkspace({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [LiteMode, setLiteMode] = useState<boolean>(false);
   const { isAuthenticated, authData, goLogout } = useAuth();
@@ -320,24 +327,11 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
   return (
     <>
       <Box minH="100vh">
-        <SidebarContent
+        {/* <SidebarContent
           onClose={() => onClose}
           display={{ base: "none", md: "block" }}
           LiteModeTrigger={LiteMode}
-        />
-        <Drawer
-          autoFocus={false}
-          isOpen={isOpen}
-          placement="left"
-          onClose={onClose}
-          returnFocusOnClose={false}
-          onOverlayClick={onClose}
-          size="md"
-        >
-          <DrawerContent>
-            <SidebarContent onClose={onClose} LiteModeTrigger={false} />
-          </DrawerContent>
-        </Drawer>
+        /> */}
         <Flex
           transition="0.5s ease"
           position="fixed"
@@ -345,7 +339,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
           left={0}
           right={0}
           zIndex={10}
-          ml={{ base: 0, md: LiteMode ? "95px" : WIDTH_SIDEBAR }}
+          // ml={{ base: 0, md: LiteMode ? "95px" : WIDTH_SIDEBAR }}
           px={scrollY > 0 ? 4 : 2}
         >
           {/* TOP NAV */}
@@ -382,7 +376,51 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                 icon={<RiMenu2Line />}
                 size={"lg"}
                 // rounded={"xl"}
+                display={"none"}
               />
+              {/* MENU POP OVER */}
+              <Popover>
+                <PopoverTrigger>
+                  <IconButton
+                    isRound={true}
+                    variant="solid"
+                    colorScheme="secondary"
+                    aria-label="Done"
+                    fontSize="20px"
+                    icon={<IoAppsOutline />}
+                  />
+                </PopoverTrigger>
+                <Portal>
+                  <PopoverContent
+                    borderRadius={radiusStyle}
+                    boxShadow={"none"}
+                    border={"none"}
+                    bg={"transparent"}
+                    p={0}
+                    m={0}
+                  >
+                    <SidebarContent
+                      onClose={() => onClose}
+                      display={"block"}
+                      LiteModeTrigger={false}
+                    />
+                  </PopoverContent>
+                </Portal>
+              </Popover>
+              {/* LOGO */}
+              <Flex
+                h="20"
+                alignItems="center"
+                mx="5"
+                justifyContent="space-between"
+              >
+                <LogoApplications colorText="secondary.500" />
+                <CloseButton
+                  display={{ base: "flex", md: "none" }}
+                  onClick={onClose}
+                />
+              </Flex>
+              {/* SERACH MENU */}
               <SearchMenuButton LiteModeTrigger={LiteMode} />
             </Box>
 
@@ -877,7 +915,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
         </Flex>
         <Box
           transition="0.5s ease"
-          ml={{ base: 0, md: LiteMode ? "95px" : WIDTH_SIDEBAR }}
+          // ml={{ base: 0, md: LiteMode ? "95px" : WIDTH_SIDEBAR }}
           pt={"65px"}
         >
           <Box minH={"100vh"}>
@@ -967,26 +1005,20 @@ const SidebarContent = ({
         rounded={radiusStyle}
         // minH={scrollY > 90 ? "85vh" : "97vh"}
         w={"full"}
+        pt={2}
       >
-        <Flex h="20" alignItems="center" mx="5" justifyContent="space-between">
-          {LiteModeTrigger ? (
-            <LogoApplicationsLite colorText="secondary.500" />
-          ) : (
-            <LogoApplications colorText="secondary.500" />
-          )}
-          <CloseButton
-            display={{ base: "flex", md: "none" }}
-            onClick={onClose}
-          />
-        </Flex>
-
         <AdditionalProfileBar LiteModeTrigger={LiteModeTrigger} />
         <Flex pt={5} pb={2} mx={3}>
           <VStack w={"full"} h={"65vh"} align={"start"} overflowX="auto">
             <HStack w="full" justify="space-between" align="center" pl={2}>
               <Tooltip label="Hide menu pro" placement="top" hasArrow>
                 <FormControl display="flex" alignItems="center">
-                  <FormLabel htmlFor="hide-pro" mb="0" fontSize={"smaller"} display={LiteModeTrigger ? "none" : "flex"}>
+                  <FormLabel
+                    htmlFor="hide-pro"
+                    mb="0"
+                    fontSize={"smaller"}
+                    display={LiteModeTrigger ? "none" : "flex"}
+                  >
                     Hide Pro ?
                   </FormLabel>
                   <Switch
@@ -1214,404 +1246,3 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
     </Box>
   );
 };
-
-function AdditionalBarAdvertis() {
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const [show, setShow] = React.useState(false);
-  const showToast = useToastHelperShort();
-  const [isHovered, setIsHovered] = useState(false);
-
-  return (
-    <>
-      <Box w={"full"}>
-        <Flex
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-          align="center"
-          px="4"
-          py="4"
-          my="1"
-          borderRadius="lg"
-          role="group"
-          cursor="pointer"
-          bgGradient={"linear(to-r, red.500, red.800)"}
-          //   bg={"white"}
-          color={"white"}
-          justifyContent={"center"}
-        >
-          <Flex
-            w={"full"}
-            h={"full"}
-            alignItems={"center"}
-            transition={"all .25s ease-in-out"}
-            justifyContent={"center"}
-          >
-            <Flex
-              transition="0.5s ease-in-out"
-              w={"full"}
-              h={"full"}
-              alignItems={"center"}
-              justifyContent={"center"}
-            >
-              <Text>Some Text Here</Text>
-            </Flex>
-          </Flex>
-        </Flex>
-      </Box>
-    </>
-  );
-}
-
-function AdditionalBarAlt() {
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const [show, setShow] = React.useState(false);
-  const showToast = useToastHelperShort();
-  const [isHovered, setIsHovered] = useState(false);
-
-  return (
-    <>
-      <Box w={"full"}>
-        <Flex
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-          align="center"
-          px="4"
-          py="4"
-          my="1"
-          borderRadius="lg"
-          role="group"
-          cursor="pointer"
-          color="gray.700"
-          bgGradient={"linear(to-r, gray.200, gray.300)"}
-          _hover={{
-            // transition: "0.2s ease-in-out",
-            bgGradient: "linear(to-r, red.500, red.600)",
-            color: "white",
-          }}
-          boxShadow={"sm"}
-          //   bg={"white"}
-          justifyContent={"center"}
-        >
-          <Flex
-            w={"full"}
-            h={"full"}
-            alignItems={"center"}
-            transition={"all .25s ease-in-out"}
-            justifyContent={"center"}
-          >
-            <Flex
-              transition="0.5s ease-in-out"
-              w={"full"}
-              h={"full"}
-              alignItems={"center"}
-              justifyContent={"center"}
-            >
-              <FaPowerOff />
-            </Flex>
-          </Flex>
-        </Flex>
-      </Box>
-    </>
-  );
-}
-
-export function AdditionalProfileBar({
-  LiteModeTrigger,
-}: {
-  LiteModeTrigger: boolean;
-}) {
-  const { authData, goLogout } = useAuth();
-  const { colorMode } = useColorMode();
-  const [isHovered, setIsHovered] = useState(false);
-
-  // SetUp auth data on current page
-  const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
-  const [tokenData, setTokenData] = useState<string>("");
-
-  useEffect(() => {
-    const storedData = localStorage.getItem("authData");
-    const token: string = localStorage.getItem("tokenData") as string;
-
-    if (DataAuth == null) {
-      if (storedData) {
-        const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
-        const UserData: AuthDataResponse =
-          StorageAuth.dataLogin as AuthDataResponse;
-        setDataAuth(UserData);
-      }
-    }
-
-    if (token) {
-      setTokenData(token);
-    }
-  }, [DataAuth]);
-  // End SetUp auth data on current page
-
-  return (
-    <>
-      <Flex w={"full"} as={Stack} spacing={0}>
-        <Box
-          position="relative"
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-          cursor="pointer"
-        >
-          <Box
-            bg={
-              !LiteModeTrigger
-                ? colorMode == "light"
-                  ? "gray.100"
-                  : "blackAlpha.500"
-                : "transparent"
-            }
-            color={colorMode == "light" ? "gray.900" : "white"}
-            mx={2}
-            mr={LiteModeTrigger ? 2 : 3}
-            py={LiteModeTrigger ? 0 : 2}
-            rounded={radiusStyle}
-            transition="0.5s ease-in-out"
-          >
-            <Flex
-              px={LiteModeTrigger ? 0 : 3}
-              w={"full"}
-              justifyContent={LiteModeTrigger ? "center" : "start"}
-            >
-              <Flex
-                w={"full"}
-                justifyContent={LiteModeTrigger ? "center" : "start"}
-                alignItems={"center"}
-              >
-                <Tooltip
-                  borderRadius={"xl"}
-                  hasArrow
-                  label={(DataAuth && DataAuth.nama) || ""}
-                >
-                  <Avatar
-                    size={"md"}
-                    bgGradient="linear(to-br, secondary.600, secondary.800, secondary.900)"
-                    color={"white"}
-                    name={(DataAuth && DataAuth.nama) || "U"}
-                    mr={LiteModeTrigger ? 0 : 2}
-                    cursor={"pointer"}
-                    boxShadow={"md"}
-                  />
-                </Tooltip>
-                <Flex
-                  w={"full"}
-                  h={"full"}
-                  alignItems={"start"}
-                  alignContent={"start"}
-                  display={LiteModeTrigger ? "none" : "flex"}
-                >
-                  <VStack
-                    w={"full"}
-                    h={"full"}
-                    spacing={0}
-                    align={"start"}
-                    p={1}
-                  >
-                    <Text
-                      color={colorMode == "light" ? "gray.900" : "white"}
-                      fontSize={"smaller"}
-                      fontWeight={700}
-                      lineHeight={1.2}
-                    >
-                      {DataAuth && truncateToTwoWords(DataAuth.nama)}
-                    </Text>
-                    <Text
-                      pt={1}
-                      fontSize="x-small"
-                      color={
-                        colorMode == "light" ? "primary.500" : "primary.100"
-                      }
-                      // color={"secondary.200"}
-                    >
-                      {(DataAuth && DataAuth.teamRole?.specName) ||
-                        (DataAuth && DataAuth.jabatan)}
-                    </Text>
-                  </VStack>
-                </Flex>
-              </Flex>
-
-              {/* Hover Indicator */}
-              <Flex
-                position="absolute"
-                bottom={1}
-                left="50%"
-                transform="translateX(-50%)"
-                opacity={isHovered ? 0 : 0.7}
-                transition="opacity 0.2s"
-                mt={2}
-              >
-                <Box
-                  w={6}
-                  h={1}
-                  bg={colorMode == "light" ? "gray.400" : "gray.500"}
-                  rounded="full"
-                />
-              </Flex>
-            </Flex>
-          </Box>
-
-          {/* Hover Drawer */}
-          <MotionBox
-            initial={{ height: 0, opacity: 0 }}
-            animate={{
-              height: isHovered ? "auto" : 0,
-              opacity: isHovered ? 1 : 0,
-            }}
-            transition={{ duration: 0.2, ease: "easeInOut" }}
-            overflow="hidden"
-            bg="secondary.500"
-            color="white"
-            mx={2}
-            mr={LiteModeTrigger ? 2 : 3}
-            mb={LiteModeTrigger ? 2 : 2}
-            roundedTop={LiteModeTrigger ? radiusStyle : "none"}
-            roundedBottom={radiusStyle}
-            mt={LiteModeTrigger ? 2 : -2}
-          >
-            <Flex
-              px={LiteModeTrigger ? 1 : 2}
-              py={1}
-              w={"full"}
-              justifyContent={LiteModeTrigger ? "center" : "start"}
-            >
-              <Button
-                as={Link}
-                href="/profile"
-                size="xs"
-                variant="ghost"
-                w="full"
-                leftIcon={LiteModeTrigger ? undefined : <FiUser />}
-                justifyContent={LiteModeTrigger ? "center" : "flex-start"}
-                color="white"
-                fontSize="xs"
-                h={5}
-                _hover={{
-                  bg: "secondary.600",
-                }}
-              >
-                {LiteModeTrigger ? <FaUser /> : "Go to Profile"}
-              </Button>
-            </Flex>
-          </MotionBox>
-        </Box>
-      </Flex>
-    </>
-  );
-}
-
-export function SearchMenuButton({ LiteModeTrigger }: { LiteModeTrigger: boolean }) {
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const { colorMode } = useColorMode();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filteredMenus, setFilteredMenus] = useState<LinkItemProps[]>([]);
-
-  const getAllMenuItems = (items: LinkItemProps[]): LinkItemProps[] => {
-    let allItems: LinkItemProps[] = [];
-    items.forEach((item) => {
-      allItems.push(item);
-      if (item.children && item.children.length > 0) {
-        allItems = allItems.concat(getAllMenuItems(item.children));
-      }
-    });
-    return allItems;
-  };
-
-  useEffect(() => {
-    if (searchQuery.trim()) {
-      const allMenus = getAllMenuItems(LinkItems);
-      const filtered = allMenus
-        .filter(
-          (item) =>
-            item.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-            item.link !== "#"
-        )
-        .slice(0, 5);
-      setFilteredMenus(filtered);
-    } else {
-      setFilteredMenus([]);
-    }
-  }, [searchQuery]);
-
-  return (
-    <>
-      <Flex mx={2} my={1} mr={LiteModeTrigger ? 2 : 3}>
-        <Button
-          w="full"
-          size={"md"}
-          variant="ghost"
-          color={colorMode === "light" ? "gray.700" : "gray.200"}
-          rounded="xl"
-          fontSize={"md"}
-          _hover={{
-            bg: colorMode === "light" ? "blackAlpha.300" : "whiteAlpha.300",
-          }}
-          leftIcon={LiteModeTrigger ? undefined : <Icon as={FiSearch} />}
-          onClick={onOpen}
-        >
-          {LiteModeTrigger ? <Icon as={FiSearch} /> : "Search Menu"}
-        </Button>
-      </Flex>
-
-      <Modal isOpen={isOpen} onClose={onClose} size="md">
-        <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
-        <ModalContent rounded="xl" mx={4}>
-          <ModalHeader pb={2}>Search Menu</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={6}>
-            <InputGroup>
-              <Input
-                placeholder="Type to search menus..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                rounded="lg"
-                autoFocus
-              />
-              <InputRightElement>
-                <Icon as={FiSearch} color="gray.400" />
-              </InputRightElement>
-            </InputGroup>
-
-            {filteredMenus.length > 0 && (
-              <VStack mt={4} spacing={2} align="stretch">
-                {filteredMenus.map((menu, index) => (
-                  <Box
-                    key={index}
-                    as={Link}
-                    href={menu.link}
-                    p={3}
-                    rounded="lg"
-                    bg={colorMode === "light" ? "gray.50" : "gray.700"}
-                    _hover={{
-                      bg: colorMode === "light" ? "gray.100" : "gray.600",
-                    }}
-                    onClick={onClose}
-                    cursor="pointer"
-                  >
-                    <HStack>
-                      <Icon as={menu.icon} color="secondary.500" />
-                      <Text fontWeight="medium">{menu.name}</Text>
-                      {menu.isPro && (
-                        <Badge colorScheme="purple" size="sm">
-                          Pro
-                        </Badge>
-                      )}
-                    </HStack>
-                  </Box>
-                ))}
-              </VStack>
-            )}
-
-            {searchQuery.trim() && filteredMenus.length === 0 && (
-              <Text mt={4} color="gray.500" textAlign="center">
-                No menus found for "{searchQuery}"
-              </Text>
-            )}
-          </ModalBody>
-        </ModalContent>
-      </Modal>
-    </>
-  );
-}

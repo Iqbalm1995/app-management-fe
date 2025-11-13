@@ -100,7 +100,7 @@ export interface RequirementsResponse {
   assignedToDate?: string | null;
   assignedFromId?: string | null;
   assignedFromName?: string | null;
-  approvalDatas: RequirementApprovalDataResponse[];
+  approvalDatas?: RequirementApprovalDataResponse[];
 
   // AREA 2
   userPicId?: string | null;
