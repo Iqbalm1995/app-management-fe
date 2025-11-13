@@ -358,10 +358,11 @@ export default function ImportLegacyPreviewModal({
                                   <Tooltip label={tooltipText} placement="top" hasArrow isDisabled={!hasError && value === "-"}>
                                     <Text 
                                       fontSize="sm" 
-                                      noOfLines={1}
                                       color={hasError ? "red.700" : "inherit"}
                                       fontWeight={hasError ? "medium" : "normal"}
                                       cursor={hasError ? "help" : "default"}
+                                      whiteSpace="normal"
+                                      wordBreak="break-word"
                                     >
                                       {value}
                                     </Text>
