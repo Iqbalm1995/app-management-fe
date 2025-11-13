@@ -6,8 +6,9 @@ import { Box, useColorMode } from "@chakra-ui/react";
 import { LoadingOverlay } from "./loadingOverlay";
 import { usePathname } from "next/navigation";
 import NavigationAdmin from "./sidebar";
+import NavigationAdminWorkspace from "./navbarWorkspace";
 
-const LayoutAdmin = ({ children }: { children: ReactNode }) => {
+const LayoutAdminWorkspace = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
   const [loading, setLoading] = useState(true);
   const { colorMode } = useColorMode();
@@ -31,7 +32,7 @@ const LayoutAdmin = ({ children }: { children: ReactNode }) => {
           transition="opacity 0.3s ease"
         >
           <Box minH="100vh" bg={colorMode == "light" ? "gray.100" : "gray.900"}>
-            <NavigationAdmin>{children}</NavigationAdmin>
+            <NavigationAdminWorkspace>{children}</NavigationAdminWorkspace>
           </Box>
         </Box>
       </Box>
@@ -39,4 +40,4 @@ const LayoutAdmin = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export default LayoutAdmin;
+export default LayoutAdminWorkspace;

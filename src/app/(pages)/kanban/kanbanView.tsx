@@ -155,10 +155,12 @@ import {
 } from "react-icons/fa6";
 import {
   FiAlertCircle,
+  FiArchive,
   FiArrowLeft,
   FiCheckCircle,
   FiCheckSquare,
   FiCircle,
+  FiCornerDownLeft,
   FiFilter,
   FiInbox,
   FiList,
@@ -168,6 +170,7 @@ import {
   FiPaperclip,
   FiPlusCircle,
   FiRefreshCcw,
+  FiRotateCcw,
   FiSave,
   FiSearch,
   FiShare2,
@@ -2720,7 +2723,10 @@ function DraggableTaskCard({
         size="5xl"
       >
         <ModalOverlay />
-        <ModalContent rounded={radiusStyle} bg={colorMode === "light" ? "white" : "gray.800"}>
+        <ModalContent
+          rounded={radiusStyle}
+          bg={colorMode === "light" ? "white" : "gray.800"}
+        >
           <Flex
             w={"full"}
             minH={"50px"}
@@ -3080,7 +3086,13 @@ function DraggableTaskCard({
                             top="2"
                           />
                         )}
-                        <Text fontSize="xs" color={colorMode === "light" ? "gray.500" : "gray.400"} mt={1}>
+                        <Text
+                          fontSize="xs"
+                          color={
+                            colorMode === "light" ? "gray.500" : "gray.400"
+                          }
+                          mt={1}
+                        >
                           Press Ctrl+Enter to save, Esc to cancel
                         </Text>
                       </Box>
@@ -3098,7 +3110,11 @@ function DraggableTaskCard({
                         {detailedTask.taskDesc ? (
                           <Text>{detailedTask.taskDesc}</Text>
                         ) : (
-                          <Text color={colorMode === "light" ? "gray.400" : "gray.500"}>
+                          <Text
+                            color={
+                              colorMode === "light" ? "gray.400" : "gray.500"
+                            }
+                          >
                             Add a more detailed description...
                           </Text>
                         )}
@@ -3139,7 +3155,9 @@ function DraggableTaskCard({
                           alignItems="start"
                           as={VStack}
                           spacing={2}
-                          color={colorMode === "light" ? "gray.700" : "gray.200"}
+                          color={
+                            colorMode === "light" ? "gray.700" : "gray.200"
+                          }
                           px={4}
                         >
                           {taskItems.map((item) => (
@@ -3154,7 +3172,11 @@ function DraggableTaskCard({
                         </Flex>
                       ) : (
                         <Box px={4} py={2}>
-                          <Text color={colorMode === "light" ? "gray.500" : "gray.400"}>
+                          <Text
+                            color={
+                              colorMode === "light" ? "gray.500" : "gray.400"
+                            }
+                          >
                             No subtasks yet. Add one below.
                           </Text>
                         </Box>
@@ -3164,25 +3186,31 @@ function DraggableTaskCard({
                       <Box px={4} w="full" my={4}>
                         <form onSubmit={handleAddTaskItem}>
                           <InputGroup size="sm">
-                            <Input
-                              placeholder="Add a new subtask..."
-                              value={newTaskItemName}
-                              onChange={(e) =>
-                                setNewTaskItemName(e.target.value)
-                              }
-                              pr="4.5rem"
-                              variant={"unstyled"}
-                            />
-                            <Button
-                              h="1.75rem"
-                              size="sm"
-                              type="submit"
-                              colorScheme="secondary"
-                              isDisabled={!newTaskItemName.trim()}
-                              isLoading={isAddingTaskItem}
-                            >
-                              Tambah
-                            </Button>
+                            <Flex as={HStack} spacing={3}>
+                              <Input
+                                placeholder="Add a new subtask..."
+                                value={newTaskItemName}
+                                onChange={(e) =>
+                                  setNewTaskItemName(e.target.value)
+                                }
+                                pr="4.5rem"
+                                variant={"flushed"}
+                                px={3}
+                              />
+                              <Button
+                                h="1.75rem"
+                                size="sm"
+                                type="submit"
+                                variant="solid"
+                                colorScheme="secondary"
+                                isDisabled={!newTaskItemName.trim()}
+                                isLoading={isAddingTaskItem}
+                                leftIcon={<FiCornerDownLeft />}
+                                px={5}
+                              >
+                                Enter
+                              </Button>
+                            </Flex>
                           </InputGroup>
                         </form>
                       </Box>
@@ -3522,17 +3550,36 @@ function DraggableTaskCard({
                       <Button
                         size={"sm"}
                         w={"full"}
-                        colorScheme={"red"}
-                        leftIcon={<Icon as={FaArchive} />}
+                        colorScheme={
+                          detailedTask.isArchived != null &&
+                          detailedTask.isArchived == "Y"
+                            ? "teal"
+                            : "red"
+                        }
+                        leftIcon={
+                          <Icon
+                            as={
+                              detailedTask.isArchived != null &&
+                              detailedTask.isArchived == "Y"
+                                ? FiRotateCcw
+                                : FiArchive
+                            }
+                          />
+                        }
                         onClick={() => handleArchiveTask(detailedTask.id)}
                         isLoading={isArchiving}
                       >
-                        Archive
+                        {" "}
+                        {detailedTask.isArchived != null &&
+                        detailedTask.isArchived == "Y"
+                          ? "Restore"
+                          : "Archive"}
                       </Button>
                       <Button
                         size={"sm"}
                         w={"full"}
                         colorScheme={"blue"}
+                        variant={"outline"}
                         leftIcon={<Icon as={FiShare2} />}
                       >
                         Share
@@ -3572,7 +3619,10 @@ function DraggableTaskCard({
         closeOnOverlayClick={false}
       >
         <ModalOverlay backdropFilter="blur(10px)" />
-        <ModalContent rounded={radiusStyle} bg={colorMode === "light" ? "white" : "gray.800"}>
+        <ModalContent
+          rounded={radiusStyle}
+          bg={colorMode === "light" ? "white" : "gray.800"}
+        >
           <ModalHeader>
             <HStack spacing={2} justify="space-between" w="full">
               <HStack spacing={2}>
@@ -5354,6 +5404,8 @@ function KanbanBacklogPage() {
           }
         }
         setIsLoadingProcess(false);
+
+        loadArchivedTasks;
       };
 
       GetListTasks();
@@ -5669,7 +5721,7 @@ function KanbanBacklogPage() {
             </Button>
           </Flex>
         </GridItem>
-      </Grid> 
+      </Grid>
 
       <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"}>
         <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 12 }} w={"full"}>
@@ -5718,6 +5770,7 @@ function KanbanBacklogPage() {
                   }}
                   isActive={false}
                   leftIcon={<FiList />}
+                  disabled
                 >
                   List
                 </Flex>
@@ -5758,6 +5811,7 @@ function KanbanBacklogPage() {
                 }}
                 isActive={false}
                 leftIcon={<GoFilter />}
+                disabled
               >
                 Filter
               </Flex>
@@ -5777,6 +5831,7 @@ function KanbanBacklogPage() {
                 }}
                 isActive={false}
                 leftIcon={<MdOutlineSort />}
+                disabled
               >
                 Sort By
               </Flex>

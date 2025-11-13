@@ -60,15 +60,6 @@ import {
   AlertDescription,
   Spinner,
   Badge,
-  FormControl,
-  Divider,
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-  PopoverHeader,
-  PopoverBody,
-  PopoverArrow,
-  PopoverCloseButton,
 } from "@chakra-ui/react";
 import {
   FiHome,
@@ -208,10 +199,8 @@ import {
 } from "react-icons/tb";
 import {
   FaDraftingCompass,
-  FaRegBell,
   FaRegHeart,
   FaRegStar,
-  FaUser,
   FaVial,
 } from "react-icons/fa";
 import { PiCertificate, PiFlowArrow } from "react-icons/pi";
@@ -226,13 +215,1060 @@ import { ImUserTie } from "react-icons/im";
 import { LuBookHeart, LuServer } from "react-icons/lu";
 import { IoIosCodeDownload, IoMdBookmarks } from "react-icons/io";
 import { GrHelpBook } from "react-icons/gr";
-import { LinkItemProps, LinkItems } from "../constants/menuApplication";
 // import { useAuth } from "@/context/AuthContext";
 
 // Page Split
 // const ProfileModal = React.lazy(
 //   () => import("../_pieces/profile/Profile-modal")
 // );
+
+interface LinkItemProps {
+  name: string;
+  icon: IconType;
+  link: string;
+  role: string[];
+  menuID: string;
+  children: LinkItemProps[];
+  isLocked?: boolean;
+  isPro?: boolean;
+}
+
+const LinkItems: LinkItemProps[] = [
+  {
+    name: "Dashboard",
+    icon: TbLayoutDashboardFilled,
+    link: "/home",
+    role: ["admin"],
+    menuID: "1",
+    children: [],
+  },
+  {
+    name: "Workspace",
+    icon: BsRocketTakeoff,
+    link: "/coming-soon",
+    role: ["admin"],
+    menuID: "1",
+    isPro: true,
+    children: [
+      {
+        name: "My Project",
+        icon: FaCode,
+        link: "/coming-soon",
+        role: ["admin"],
+        menuID: "1",
+        isPro: true,
+        children: [],
+      },
+    ],
+  },
+  // {
+  //   name: "Workspace",
+  //   icon: BsRocketTakeoff,
+  //   link: "/workspace",
+  //   role: ["admin"],
+  //   menuID: "1",
+  //   isPro: true,
+  //   children: [
+  //     {
+  //       name: "My Project",
+  //       icon: FaCode,
+  //       link: "/project-development",
+  //       role: ["admin"],
+  //       menuID: "1",
+  //       isPro: true,
+  //       children: [],
+  //     },
+  //   ],
+  // },
+  {
+    name: "Requirements",
+    icon: FaDraftingCompass,
+    link: "/requirements",
+    role: ["admin"],
+    menuID: "1",
+    children: [
+      {
+        name: "BRD",
+        icon: MdOutlineCircle,
+        link: "/requirements/brd",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "RFC",
+        icon: MdChangeHistory,
+        link: "/requirements/rfc",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Prerequisites (Pre-Req)",
+        icon: MdChangeHistory,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      // {
+      //   name: "Pending Review",
+      //   icon: MdOutlineCircle,
+      //   link: "/requirements/pending-reviews",
+      //     role: ["admin"],
+      //     menuID: "1",
+      //     children: [],
+      // // },
+    ],
+  },
+  {
+    name: "Projects",
+    icon: FaDiagramProject,
+    link: "/projects",
+    role: ["admin"],
+    menuID: "1",
+    children: [
+      {
+        name: "Internal Development",
+        icon: FaCode,
+        link: "/projects-manager",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Procurement",
+        icon: TbContract,
+        link: "/projects-procurements",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Deployment",
+        icon: BsCloudUpload,
+        link: "/projects-deployments",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Timeline & Milestone Simulation",
+        icon: TbTimeline,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  {
+    name: "Vendor Management",
+    icon: FiUmbrella,
+    link: "/coming-soon",
+    role: ["admin"],
+    isPro: true,
+    menuID: "1",
+    children: [
+      {
+        name: "Vendor Data",
+        icon: FiUmbrella,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Contract Data",
+        icon: LiaFileContractSolid,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Acquisition",
+        icon: FiLayers,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Work Programs / RBB",
+        icon: MdOutlineWorkOutline,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Invoice & Payment Tracking",
+        icon: CiMoneyCheck1,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  {
+    name: "Resource Management",
+    icon: TbUsers,
+    link: "/coming-soon",
+    role: ["admin"],
+    isPro: true,
+    menuID: "1",
+    children: [
+      {
+        name: "Resource Load Tracking",
+        icon: TbUserHeart,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Resource Allocation",
+        icon: TbUserShare,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Resource Availability",
+        icon: TbUserBolt,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  {
+    name: "Meeting Management",
+    icon: AiOutlineVideoCamera,
+    link: "/coming-soon",
+    role: ["admin"],
+    isPro: true,
+    menuID: "1",
+    children: [
+      {
+        name: "Meeting Invitations",
+        icon: AiOutlineVideoCameraAdd,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Meeting Calender",
+        icon: IoCalendarNumberOutline,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Minutes & Follow-Ups",
+        icon: IoCalendarOutline,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  {
+    name: "Import Data",
+    icon: FiUpload,
+    link: "/projects/import",
+    role: ["admin"],
+    menuID: "1",
+    children: [
+      {
+        name: "Import Data Project",
+        icon: FiUpload,
+        link: "/projects/import",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+
+  {
+    name: "Reports",
+    icon: BiSolidReport,
+    link: "/reports",
+    role: ["admin"],
+    isPro: false,
+    menuID: "1",
+    children: [
+      {
+        name: "Dashboard Portfolio",
+        icon: BiSolidReport,
+        link: "/reports/dashboard-portfolio",
+        role: ["admin"],
+        isPro: false,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Project Portfolio",
+        icon: BiSolidReport,
+        link: "/reports/project-portfolio",
+        role: ["admin"],
+        isPro: false,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Deployment Portfolio",
+        icon: BiSolidReport,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Application & Feature",
+        icon: RiApps2AiLine,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Project Team",
+        icon: TbUsersGroup,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Executive Summary",
+        icon: ImUserTie,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  {
+    name: "Collaboration & Sharing",
+    icon: TbShare,
+    link: "/coming-soon",
+    role: ["admin"],
+    isPro: true,
+    menuID: "1",
+    children: [
+      {
+        name: "Mention & Notification",
+        icon: TbBellShare,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Internal Sharing",
+        icon: TbMoodShare,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "External Collaboration",
+        icon: TbNavigationShare,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Chat",
+        icon: IoChatbubblesOutline,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  {
+    name: "Assets Management",
+    icon: FaRegStar,
+    link: "/coming-soon",
+    role: ["admin"],
+    isPro: true,
+    menuID: "1",
+    children: [
+      {
+        name: "Software",
+        icon: MdWebAsset,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Hardware",
+        icon: LuServer,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "License & Subscriptions",
+        icon: IoKeyOutline,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  {
+    name: "DevOps",
+    icon: BsDatabaseGear,
+    link: "/coming-soon",
+    role: ["admin"],
+    isPro: true,
+    menuID: "1",
+    children: [
+      {
+        name: "DevOps Portofolio",
+        icon: BsDatabaseGear,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "DevOps Integration",
+        icon: IoIosCodeDownload,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Source Code Repository",
+        icon: RiCodeBlock,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Engineer On Site (EoS) Report",
+        icon: HiOutlineDocumentReport,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Route Cause Analysis (RCA)",
+        icon: BiAnalyse,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Maintenance Report",
+        icon: TbFileReport,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  {
+    name: "Team Manager",
+    icon: FaChess,
+    link: "/teams",
+    role: ["admin"],
+    menuID: "1",
+    children: [],
+  },
+  {
+    name: "Team Center",
+    icon: FaUsersRays,
+    link: "/teams-center",
+    role: ["admin"],
+    menuID: "1",
+    children: [],
+  },
+  // {
+  //   name: "Server Manager",
+  //   icon: CiServer,
+  //   link: "/server-manager",
+  // role: ["admin"],
+  // menuID: "1",
+  // children: [],
+  // },
+  // {
+  //   name: "File Archive",
+  //   icon: MdOutlinePermMedia,
+  //   link: "/file-archives",
+  //   role: ["admin"],
+  //   menuID: "1",
+  //   isPro: true,
+  //   children: [],
+  // },
+  {
+    name: "Knowledge Base",
+    icon: GrHelpBook,
+    link: "/coming-soon",
+    role: ["admin"],
+    isPro: true,
+    menuID: "1",
+    children: [
+      {
+        name: "Bjb Ask",
+        icon: BsChatDots,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Bjb Apps User Guide",
+        icon: LuBookHeart,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Document Templates",
+        icon: IoMdBookmarks,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  {
+    name: "Master Data",
+    icon: FiDatabase,
+    link: "/master-data",
+    role: ["admin"],
+    menuID: "1",
+    children: [
+      {
+        name: "Master Workflow",
+        icon: PiFlowArrow,
+        link: "/master-data/workflow",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Master Constant",
+        icon: FiKey,
+        link: "/master-data/constants-data",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Master Application",
+        icon: HiOutlineDesktopComputer,
+        link: "/master-data/Application",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Master Users",
+        icon: FiUsers,
+        link: "/master-data/users",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Master Organizations",
+        icon: RiOrganizationChart,
+        link: "/master-data/organizations",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Master Organization Structure",
+        icon: RiOrganizationChart,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Master Certifications",
+        icon: PiCertificate,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Master Programming Language",
+        icon: MdOutlineCode,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Master Specializations",
+        icon: TbBolt,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  {
+    name: "Menu Name",
+    icon: TbBolt, // icon proefer
+    link: "/coming-soon", // constant
+    isPro: true, // constant
+    role: ["admin"], // constant
+    menuID: "1", // constant
+    children: [
+      {
+        name: "Menu Name",
+        icon: TbBolt, // icon proefer
+        link: "/coming-soon", // constant
+        isPro: true, // constant
+        role: ["admin"], // constant
+        menuID: "1", // constant
+        children: [], // Sub here
+      },
+    ], // Sub here
+  },
+  {
+    name: "Parameter Management",
+    icon: TbAdjustmentsCog, // general "settings/parameters" icon
+    link: "/coming-soon",
+    isPro: true,
+    role: ["admin"],
+    menuID: "1",
+    children: [
+      {
+        name: "BRD & RFC Status",
+        icon: TbListDetails,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Deployment Status",
+        icon: TbArrowsExchange,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Project Status",
+        icon: TbProgressCheck,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Project Indicators",
+        icon: TbChartInfographic,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Project Types",
+        icon: TbFolders,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Project Characteristics",
+        icon: TbCategory,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Development Status",
+        icon: TbServerCog,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Deliverables Status",
+        icon: TbClipboardList,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Maintenance Types & Categories",
+        icon: TbAdjustmentsCog,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Parameter Language Mapping",
+        icon: TbLanguage,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Project Codes",
+        icon: TbCode,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  {
+    name: "System Parameters",
+    icon: TbSettingsCog, // general system/settings icon
+    link: "/coming-soon",
+    isPro: true,
+    role: ["admin"],
+    menuID: "1",
+    children: [
+      {
+        name: "Calender Engine",
+        icon: TbCalendarTime,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Session Timeout",
+        icon: TbHourglassHigh,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "System Cut-Off Time",
+        icon: TbClockExclamation,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Announcements",
+        icon: RiMegaphoneLine,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Time Tracking",
+        icon: TbTimeline,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  {
+    name: "Advanced",
+    icon: TbBolt,
+    link: "/advanced",
+    isPro: true,
+    role: ["admin"],
+    menuID: "1",
+    children: [
+      {
+        name: "Pro Dashboard",
+        icon: TbLayoutDashboardFilled,
+        link: "/advanced/pro-dashboard",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  {
+    name: "Audit Trail",
+    icon: RxActivityLog,
+    link: "/audit-trail",
+    role: ["admin"],
+    menuID: "1",
+    children: [],
+  },
+  {
+    name: "About",
+    icon: HiOutlineInformationCircle,
+    link: "/coming-soon",
+    isPro: true,
+    role: ["admin"],
+    menuID: "1",
+    children: [
+      {
+        name: "Bjb Apps Web",
+        icon: FaRegHeart,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Bjb Apps Mobile",
+        icon: CiMobile2,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Hybrid Methodologies",
+        icon: FaVial,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  {
+    name: "Add-Ons",
+    icon: FaO,
+    link: "/coming-soon",
+    isPro: true,
+    role: ["admin"],
+    menuID: "1",
+    children: [
+      {
+        name: "System Integrations",
+        icon: MdOutlineSystemUpdateAlt,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Bjb Apps Mobile",
+        icon: CiMobile2,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  // {
+  //   name: "Profile",
+  //   icon: FiUser,
+  //   link: "/profile",
+  // role: ["admin"],
+  // menuID: "1",
+  // children: [],
+  // },
+  // {
+  //   name: "Pricing",
+  //   icon: FiDollarSign,
+  //   link: "/pricing",
+  // role: ["admin"],
+  // menuID: "1",
+  // children: [],
+  //   isLocked: true,
+  // },
+  // {
+  //   name: "Avtivities",
+  //   icon: RxActivityLog,
+  //   link: "/activities",
+  // role: ["admin"],
+  // menuID: "1",
+  // children: [],
+  //   isLocked: true,
+  // },
+  // {
+  //   name: "User Config",
+  //   icon: FaUsersGear,
+  //   link: "/users",
+  // role: ["admin"],
+  // menuID: "1",
+  //   children: [
+  //     {
+  //       name: "User Manager",
+  //       icon: FaUserPlus,
+  //       link: "/users",
+  //       role: ["admin"],
+  //       menuID: "1",
+  //       children: [],
+  //     },
+  //     {
+  //       name: "Master Role Sys",
+  //       icon: FaUsersRays,
+  //       link: "/users/roles",
+  //       role: ["admin"],
+  //       menuID: "1",
+  //       children: [],
+  //     },
+  //     {
+  //       name: "Master Division",
+  //       icon: FaFire,
+  //       link: "/users/divisions",
+  //       role: ["admin"],
+  //       menuID: "1",
+  //       children: [],
+  //     },
+  //   ],
+  // },
+  // {
+  //   name: "Example Page",
+  //   icon: FaRegFolderOpen,
+  //   link: "#",
+  // role: ["admin"],
+  // menuID: "1",
+  //   children: [
+  //     {
+  //       name: "Kanban",
+  //       icon: BsKanban,
+  //       link: "/kanban",
+  //       role: ["admin"],
+  //       menuID: "1",
+  //       children: [],
+  //     },
+  //     {
+  //       name: "Kanban Alt",
+  //       icon: BsKanban,
+  //       link: "/kanban-alt",
+  //       role: ["admin"],
+  //       menuID: "1",
+  //       children: [],
+  //     },
+  //     {
+  //       name: "Calendar",
+  //       icon: IoCalendarNumberOutline,
+  //       link: "/calendar",
+  //       role: ["admin"],
+  //       menuID: "1",
+  //       children: [],
+  //     },
+  //     {
+  //       name: "Drop Zone",
+  //       icon: MdOutlinePermMedia,
+  //       link: "/dropzone",
+  //       role: ["admin"],
+  //       menuID: "1",
+  //       children: [],
+  //     },
+  //     {
+  //       name: "User",
+  //       icon: FiUser,
+  //       link: "/users",
+  //       role: ["admin"],
+  //       menuID: "1",
+  //       children: [],
+  //     },
+  //     {
+  //       name: "Settings",
+  //       icon: FiSettings,
+  //       link: "/settings",
+  //       role: ["admin"],
+  //       menuID: "1",
+  //       children: [],
+  //     },
+  //   ],
+  // },
+];
 
 export default function NavigationAdmin({ children }: { children: ReactNode }) {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -373,7 +1409,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
               icon={<FiMenu />}
             />
 
-            <Box display={{ base: "none", md: "flex" }} w={"full"} as={HStack}>
+            <Box display={{ base: "none", md: "flex" }} w={"full"}>
               <IconButton
                 onClick={toggleLiteMode}
                 variant="ghost"
@@ -383,7 +1419,6 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                 size={"lg"}
                 // rounded={"xl"}
               />
-              <SearchMenuButton LiteModeTrigger={LiteMode} />
             </Box>
 
             <Flex
@@ -400,352 +1435,6 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
 
             <HStack spacing={{ base: "2", md: "6" }}>
               <Flex alignItems={"start"}>
-                <Popover>
-                  <PopoverTrigger>
-                    <Button variant={"ghost"} position="relative">
-                      <RiMegaphoneLine />
-                      <Badge
-                        colorScheme="orange"
-                        variant={"solid"}
-                        borderRadius="full"
-                        position="absolute"
-                        top="0"
-                        right="0"
-                        fontSize="10px"
-                        minW="18px"
-                        h="18px"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                      >
-                        2
-                      </Badge>
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    w="320px"
-                    shadow="xl"
-                    border="1px"
-                    borderColor={useColorModeValue("gray.200", "gray.600")}
-                    bg={useColorModeValue("white", "gray.800")}
-                    borderRadius={radiusStyle}
-                  >
-                    <PopoverArrow />
-                    <PopoverCloseButton />
-                    <PopoverHeader
-                      fontWeight="semibold"
-                      fontSize="md"
-                      bg={useColorModeValue("gray.50", "gray.700")}
-                      borderBottom="1px"
-                      borderColor={useColorModeValue("gray.200", "gray.600")}
-                      py={3}
-                      color={useColorModeValue("gray.800", "gray.100")}
-                      borderTopRadius={radiusStyle}
-                    >
-                      Announcements
-                    </PopoverHeader>
-                    <PopoverBody
-                      p={0}
-                      maxH="400px"
-                      overflowY="auto"
-                      borderBottomRadius={radiusStyle}
-                    >
-                      <VStack spacing={0} align="stretch">
-                        <Box
-                          p={4}
-                          borderBottom="1px"
-                          borderColor={useColorModeValue(
-                            "gray.100",
-                            "gray.600"
-                          )}
-                          _hover={{
-                            bg: useColorModeValue("orange.50", "orange.900"),
-                          }}
-                          cursor="pointer"
-                          transition="all 0.2s"
-                        >
-                          <HStack justify="space-between" align="start" mb={1}>
-                            <Text
-                              fontSize="sm"
-                              fontWeight="semibold"
-                              color={useColorModeValue("gray.800", "gray.100")}
-                            >
-                              System Maintenance
-                            </Text>
-                            <Badge colorScheme="red" size="sm">
-                              Important
-                            </Badge>
-                          </HStack>
-                          <Text
-                            fontSize="xs"
-                            color={useColorModeValue("gray.600", "gray.300")}
-                            mb={2}
-                          >
-                            Scheduled maintenance on Sunday 2:00 AM - 4:00 AM.
-                            Services may be temporarily unavailable.
-                          </Text>
-                          <Text
-                            fontSize="xs"
-                            color={useColorModeValue("gray.400", "gray.500")}
-                          >
-                            1 day ago
-                          </Text>
-                        </Box>
-
-                        <Box
-                          p={4}
-                          borderBottom="1px"
-                          borderColor={useColorModeValue(
-                            "gray.100",
-                            "gray.600"
-                          )}
-                          _hover={{
-                            bg: useColorModeValue("blue.50", "blue.900"),
-                          }}
-                          cursor="pointer"
-                          transition="all 0.2s"
-                        >
-                          <HStack justify="space-between" align="start" mb={1}>
-                            <Text
-                              fontSize="sm"
-                              fontWeight="semibold"
-                              color={useColorModeValue("gray.800", "gray.100")}
-                            >
-                              New Feature Release
-                            </Text>
-                            <Badge colorScheme="blue" size="sm">
-                              Update
-                            </Badge>
-                          </HStack>
-                          <Text
-                            fontSize="xs"
-                            color={useColorModeValue("gray.600", "gray.300")}
-                            mb={2}
-                          >
-                            MinIO object storage integration is now available
-                            for file uploads with automatic fallback.
-                          </Text>
-                          <Text
-                            fontSize="xs"
-                            color={useColorModeValue("gray.400", "gray.500")}
-                          >
-                            3 days ago
-                          </Text>
-                        </Box>
-
-                        <Box
-                          p={3}
-                          bg={useColorModeValue("gray.50", "gray.700")}
-                          textAlign="center"
-                        >
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            colorScheme="orange"
-                            fontWeight="medium"
-                            _hover={{
-                              bg: useColorModeValue("orange.100", "orange.800"),
-                            }}
-                          >
-                            View all announcements
-                          </Button>
-                        </Box>
-                      </VStack>
-                    </PopoverBody>
-                  </PopoverContent>
-                </Popover>
-                <Popover>
-                  <PopoverTrigger>
-                    <Button variant={"ghost"} position="relative">
-                      <FaRegBell />
-                      <Badge
-                        colorScheme="red"
-                        variant={"solid"}
-                        borderRadius="full"
-                        position="absolute"
-                        top="0"
-                        right="0"
-                        fontSize="10px"
-                        minW="18px"
-                        h="18px"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                      >
-                        3
-                      </Badge>
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    w="320px"
-                    shadow="xl"
-                    border="1px"
-                    borderColor={useColorModeValue("gray.200", "gray.600")}
-                    bg={useColorModeValue("white", "gray.800")}
-                    borderRadius={radiusStyle}
-                  >
-                    <PopoverArrow />
-                    <PopoverCloseButton />
-                    <PopoverHeader
-                      fontWeight="semibold"
-                      fontSize="md"
-                      bg={useColorModeValue("gray.50", "gray.700")}
-                      borderBottom="1px"
-                      borderColor={useColorModeValue("gray.200", "gray.600")}
-                      py={3}
-                      color={useColorModeValue("gray.800", "gray.100")}
-                      borderTopRadius={radiusStyle}
-                    >
-                      Notifications
-                    </PopoverHeader>
-                    <PopoverBody
-                      p={0}
-                      maxH="400px"
-                      overflowY="auto"
-                      borderBottomRadius={radiusStyle}
-                    >
-                      <VStack spacing={0} align="stretch">
-                        <Box
-                          p={4}
-                          borderBottom="1px"
-                          borderColor={useColorModeValue(
-                            "gray.100",
-                            "gray.600"
-                          )}
-                          _hover={{
-                            bg: useColorModeValue("blue.50", "blue.900"),
-                          }}
-                          cursor="pointer"
-                          transition="all 0.2s"
-                        >
-                          <HStack justify="space-between" align="start" mb={1}>
-                            <Text
-                              fontSize="sm"
-                              fontWeight="semibold"
-                              color={useColorModeValue("gray.800", "gray.100")}
-                            >
-                              New project assigned
-                            </Text>
-                            <Badge colorScheme="blue" size="sm">
-                              New
-                            </Badge>
-                          </HStack>
-                          <Text
-                            fontSize="xs"
-                            color={useColorModeValue("gray.600", "gray.300")}
-                            mb={2}
-                          >
-                            Project Alpha has been assigned to your team
-                          </Text>
-                          <Text
-                            fontSize="xs"
-                            color={useColorModeValue("gray.400", "gray.500")}
-                          >
-                            2 minutes ago
-                          </Text>
-                        </Box>
-
-                        <Box
-                          p={4}
-                          borderBottom="1px"
-                          borderColor={useColorModeValue(
-                            "gray.100",
-                            "gray.600"
-                          )}
-                          _hover={{
-                            bg: useColorModeValue("green.50", "green.900"),
-                          }}
-                          cursor="pointer"
-                          transition="all 0.2s"
-                        >
-                          <HStack justify="space-between" align="start" mb={1}>
-                            <Text
-                              fontSize="sm"
-                              fontWeight="semibold"
-                              color={useColorModeValue("gray.800", "gray.100")}
-                            >
-                              Task completed
-                            </Text>
-                            <Badge colorScheme="green" size="sm">
-                              Done
-                            </Badge>
-                          </HStack>
-                          <Text
-                            fontSize="xs"
-                            color={useColorModeValue("gray.600", "gray.300")}
-                            mb={2}
-                          >
-                            Backend API development has been completed
-                          </Text>
-                          <Text
-                            fontSize="xs"
-                            color={useColorModeValue("gray.400", "gray.500")}
-                          >
-                            1 hour ago
-                          </Text>
-                        </Box>
-
-                        <Box
-                          p={4}
-                          borderBottom="1px"
-                          borderColor={useColorModeValue(
-                            "gray.100",
-                            "gray.600"
-                          )}
-                          _hover={{
-                            bg: useColorModeValue("orange.50", "orange.900"),
-                          }}
-                          cursor="pointer"
-                          transition="all 0.2s"
-                        >
-                          <HStack justify="space-between" align="start" mb={1}>
-                            <Text
-                              fontSize="sm"
-                              fontWeight="semibold"
-                              color={useColorModeValue("gray.800", "gray.100")}
-                            >
-                              Meeting reminder
-                            </Text>
-                            <Badge colorScheme="orange" size="sm">
-                              Soon
-                            </Badge>
-                          </HStack>
-                          <Text
-                            fontSize="xs"
-                            color={useColorModeValue("gray.600", "gray.300")}
-                            mb={2}
-                          >
-                            Daily standup meeting in 15 minutes
-                          </Text>
-                          <Text
-                            fontSize="xs"
-                            color={useColorModeValue("gray.400", "gray.500")}
-                          >
-                            3 hours ago
-                          </Text>
-                        </Box>
-
-                        <Box
-                          p={3}
-                          bg={useColorModeValue("gray.50", "gray.700")}
-                          textAlign="center"
-                        >
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            colorScheme="blue"
-                            fontWeight="medium"
-                            _hover={{
-                              bg: useColorModeValue("blue.100", "blue.800"),
-                            }}
-                          >
-                            View all notifications
-                          </Button>
-                        </Box>
-                      </VStack>
-                    </PopoverBody>
-                  </PopoverContent>
-                </Popover>
                 <Button onClick={toggleColorMode} variant={"ghost"}>
                   {colorMode === "light" ? <MoonIcon /> : <SunIcon />}
                 </Button>
@@ -965,7 +1654,7 @@ const SidebarContent = ({
         border="1px"
         borderColor={useColorModeValue("gray.200", "gray.700")}
         rounded={radiusStyle}
-        // minH={scrollY > 90 ? "85vh" : "97vh"}
+        minH={scrollY > 90 ? "85vh" : "97vh"}
         w={"full"}
       >
         <Flex h="20" alignItems="center" mx="5" justifyContent="space-between">
@@ -981,21 +1670,21 @@ const SidebarContent = ({
         </Flex>
 
         <AdditionalProfileBar LiteModeTrigger={LiteModeTrigger} />
+
+        <SearchMenuButton LiteModeTrigger={LiteModeTrigger} />
+
         <Flex pt={5} pb={2} mx={3}>
           <VStack w={"full"} h={"65vh"} align={"start"} overflowX="auto">
             <HStack w="full" justify="space-between" align="center" pl={2}>
+              <Heading as="h6" size="xs">
+                Menu
+              </Heading>
               <Tooltip label="Hide menu pro" placement="top" hasArrow>
-                <FormControl display="flex" alignItems="center">
-                  <FormLabel htmlFor="hide-pro" mb="0" fontSize={"smaller"} display={LiteModeTrigger ? "none" : "flex"}>
-                    Hide Pro ?
-                  </FormLabel>
-                  <Switch
-                    id="hide-pro"
-                    size="sm"
-                    isChecked={hideProMenus}
-                    onChange={(e) => setHideProMenus(e.target.checked)}
-                  />
-                </FormControl>
+                <Switch
+                  size="sm"
+                  isChecked={hideProMenus}
+                  onChange={(e) => setHideProMenus(e.target.checked)}
+                />
               </Tooltip>
             </HStack>
             <Box w={"full"} overflowY={"auto"}>
@@ -1105,7 +1794,7 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
             align="center"
-            px="3"
+            px="4"
             py="3"
             my="1"
             rounded={radiusStyle}
@@ -1177,7 +1866,7 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
                 display={mode ? "none" : "flex"}
                 as={HStack}
               >
-                {data.isPro && <Badge colorScheme="secondary">Pro</Badge>}
+                {data.isPro && <Badge colorScheme="pink">Pro</Badge>}
                 <Text>{data.name}</Text>
                 {hasChildren && (
                   <Icon
@@ -1315,7 +2004,7 @@ function AdditionalBarAlt() {
   );
 }
 
-export function AdditionalProfileBar({
+function AdditionalProfileBar({
   LiteModeTrigger,
 }: {
   LiteModeTrigger: boolean;
@@ -1357,13 +2046,7 @@ export function AdditionalProfileBar({
           cursor="pointer"
         >
           <Box
-            bg={
-              !LiteModeTrigger
-                ? colorMode == "light"
-                  ? "gray.100"
-                  : "blackAlpha.500"
-                : "transparent"
-            }
+            bg={colorMode == "light" ? "gray.100" : "blackAlpha.500"}
             color={colorMode == "light" ? "gray.900" : "white"}
             mx={2}
             mr={LiteModeTrigger ? 2 : 3}
@@ -1373,13 +2056,14 @@ export function AdditionalProfileBar({
           >
             <Flex
               px={LiteModeTrigger ? 0 : 3}
+              pt={3}
+              pb={2}
               w={"full"}
               justifyContent={LiteModeTrigger ? "center" : "start"}
             >
               <Flex
                 w={"full"}
                 justifyContent={LiteModeTrigger ? "center" : "start"}
-                alignItems={"center"}
               >
                 <Tooltip
                   borderRadius={"xl"}
@@ -1399,7 +2083,7 @@ export function AdditionalProfileBar({
                 <Flex
                   w={"full"}
                   h={"full"}
-                  alignItems={"start"}
+                  alignItems={"center"}
                   alignContent={"start"}
                   display={LiteModeTrigger ? "none" : "flex"}
                 >
@@ -1412,14 +2096,13 @@ export function AdditionalProfileBar({
                   >
                     <Text
                       color={colorMode == "light" ? "gray.900" : "white"}
+                      // color={"white"}
                       fontSize={"smaller"}
                       fontWeight={700}
-                      lineHeight={1.2}
                     >
                       {DataAuth && truncateToTwoWords(DataAuth.nama)}
                     </Text>
                     <Text
-                      pt={1}
                       fontSize="x-small"
                       color={
                         colorMode == "light" ? "primary.500" : "primary.100"
@@ -1466,10 +2149,9 @@ export function AdditionalProfileBar({
             color="white"
             mx={2}
             mr={LiteModeTrigger ? 2 : 3}
-            mb={LiteModeTrigger ? 2 : 2}
-            roundedTop={LiteModeTrigger ? radiusStyle : "none"}
+            roundedTop="none"
             roundedBottom={radiusStyle}
-            mt={LiteModeTrigger ? 2 : -2}
+            mt={-2}
           >
             <Flex
               px={LiteModeTrigger ? 1 : 2}
@@ -1492,17 +2174,46 @@ export function AdditionalProfileBar({
                   bg: "secondary.600",
                 }}
               >
-                {LiteModeTrigger ? <FaUser /> : "Go to Profile"}
+                {LiteModeTrigger ? "👤" : "Go to Profile"}
               </Button>
             </Flex>
           </MotionBox>
         </Box>
+
+        {/* UPGRADE PLAN */}
+        <Flex m={2} pt={2} mr={LiteModeTrigger ? 2 : 3}>
+          <Flex
+            as={Button}
+            w="full"
+            size={LiteModeTrigger ? "sm" : "md"}
+            bgGradient="linear(to-r, blue.600, secondary.500, yellow.500)"
+            color="white"
+            rounded="xl"
+            fontWeight="bold"
+            fontSize={LiteModeTrigger ? "xs" : "sm"}
+            _hover={{
+              bgGradient: "linear(to-r, blue.500, secondary.400, yellow.400)",
+              transform: "translateY(-2px)",
+              boxShadow: "xl",
+            }}
+            _active={{
+              transform: "translateY(0px)",
+            }}
+            transition="all 0.2s"
+            boxShadow="lg"
+            leftIcon={LiteModeTrigger ? undefined : <FiZap />}
+            onClick={() => (window.location.href = "/pricing")}
+            display={"none"}
+          >
+            {LiteModeTrigger ? "+" : "Upgrade IT bjb +"}
+          </Flex>
+        </Flex>
       </Flex>
     </>
   );
 }
 
-export function SearchMenuButton({ LiteModeTrigger }: { LiteModeTrigger: boolean }) {
+function SearchMenuButton({ LiteModeTrigger }: { LiteModeTrigger: boolean }) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { colorMode } = useColorMode();
   const [searchQuery, setSearchQuery] = useState("");
@@ -1540,11 +2251,12 @@ export function SearchMenuButton({ LiteModeTrigger }: { LiteModeTrigger: boolean
       <Flex mx={2} my={1} mr={LiteModeTrigger ? 2 : 3}>
         <Button
           w="full"
-          size={"md"}
+          size={LiteModeTrigger ? "sm" : "md"}
           variant="ghost"
+          bg={colorMode === "light" ? "blackAlpha.200" : "whiteAlpha.200"}
           color={colorMode === "light" ? "gray.700" : "gray.200"}
           rounded="xl"
-          fontSize={"md"}
+          fontSize={LiteModeTrigger ? "xs" : "sm"}
           _hover={{
             bg: colorMode === "light" ? "blackAlpha.300" : "whiteAlpha.300",
           }}
