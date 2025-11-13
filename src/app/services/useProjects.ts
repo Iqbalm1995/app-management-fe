@@ -2921,6 +2921,7 @@ const useProjects = (): useProjectsServices => {
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        timeout: 0, // No timeout limit
       });
       setIsLoading(false);
       return response.data;
@@ -2959,6 +2960,7 @@ const useProjects = (): useProjectsServices => {
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        timeout: 0, // No timeout limit
       });
       setIsLoading(false);
       return response.data;

@@ -153,9 +153,9 @@ export default function ProjectImportLegacyPage() {
         return;
       }
 
-      // Extract data rows from row 4 onwards (A4:I1000)
+      // Extract data rows from row 4 onwards (A4:I...)
       const dataRows = XLSX.utils.sheet_to_json(worksheet, { 
-        range: "A4:I1000",
+        range: 3, // Start from row 4 (index 3)
         header: 1,
         defval: "",
         raw: false,
@@ -182,6 +182,18 @@ export default function ProjectImportLegacyPage() {
           description: "No data found starting from row 4",
           statusToast: "error",
         });
+        setIsProcessing(false);
+        setUploadProgress(0);
+        return;
+      }
+
+      // Check if data exceeds 1000 rows limit
+      if (processedRows.length >= 1000) {
+        showToast({
+          description: "Import limit is 1000 data for better performance. Please split your file.",
+          statusToast: "error",
+        });
+        resetFile();
         setIsProcessing(false);
         setUploadProgress(0);
         return;
