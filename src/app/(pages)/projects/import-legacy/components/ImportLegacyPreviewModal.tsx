@@ -75,6 +75,7 @@ export default function ImportLegacyPreviewModal({
   const [isApiValidated, setIsApiValidated] = useState(false);
   const [validationResult, setValidationResult] = useState<{valid: number, invalid: number} | null>(null);
   const [apiResponse, setApiResponse] = useState<any>(null);
+  const [statusFilter, setStatusFilter] = useState<"all" | "valid" | "invalid">("all");
 
   // Service
   const { ProjectImportLegacyValidationBatch, ProjectImportLegacyBatch } = useProjects();
@@ -205,6 +206,14 @@ export default function ImportLegacyPreviewModal({
 
   const fieldKeysArray = Object.values(data.fieldKeys).filter(key => key);
 
+  // Filter data based on validation status
+  const filteredRows = data.dataRows.filter((row, index) => {
+    if (!isApiValidated || statusFilter === "all") return true;
+    const rowValidation = apiResponse?.batchResponse?.[index];
+    const isRowValid = rowValidation?.isValid ?? true;
+    return statusFilter === "valid" ? isRowValid : !isRowValid;
+  });
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="6xl" scrollBehavior="inside">
       <ModalOverlay />
@@ -264,7 +273,37 @@ export default function ImportLegacyPreviewModal({
             {/* Data Table */}
             <Card rounded={radiusStyle}>
               <CardBody>
-                <Text fontWeight="semibold" mb={3}>Data Preview</Text>
+                <HStack justify="space-between" mb={3}>
+                  <Text fontWeight="semibold">Data Preview</Text>
+                  {isApiValidated && (
+                    <HStack spacing={2}>
+                      <Button
+                        size="sm"
+                        variant={statusFilter === "all" ? "solid" : "outline"}
+                        colorScheme="blue"
+                        onClick={() => setStatusFilter("all")}
+                      >
+                        All ({data.dataRows.length})
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={statusFilter === "valid" ? "solid" : "outline"}
+                        colorScheme="green"
+                        onClick={() => setStatusFilter("valid")}
+                      >
+                        Valid ({validationResult?.valid || 0})
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={statusFilter === "invalid" ? "solid" : "outline"}
+                        colorScheme="red"
+                        onClick={() => setStatusFilter("invalid")}
+                      >
+                        Invalid ({validationResult?.invalid || 0})
+                      </Button>
+                    </HStack>
+                  )}
+                </HStack>
                 <Box overflowX="auto" maxH="400px" overflowY="auto">
                   <Table size="sm" variant="simple">
                     <Thead position="sticky" top={0} bg={colorMode === "light" ? "gray.50" : "gray.700"} zIndex={1}>
@@ -277,13 +316,14 @@ export default function ImportLegacyPreviewModal({
                       </Tr>
                     </Thead>
                     <Tbody>
-                      {data.dataRows.map((row, rowIndex) => {
-                        const rowValidation = apiResponse?.batchResponse?.[rowIndex];
+                      {filteredRows.map((row, displayIndex) => {
+                        const originalIndex = data.dataRows.indexOf(row);
+                        const rowValidation = apiResponse?.batchResponse?.[originalIndex];
                         const isRowValid = isApiValidated ? (rowValidation?.isValid ?? true) : null;
                         
                         return (
-                          <Tr key={rowIndex} bg={isApiValidated ? (isRowValid ? "green.50" : "red.50") : "transparent"}>
-                            <Td fontWeight="medium">{rowIndex + 1}</Td>
+                          <Tr key={originalIndex} bg={isApiValidated ? (isRowValid ? "green.50" : "red.50") : "transparent"}>
+                            <Td fontWeight="medium">{originalIndex + 1}</Td>
                             <Td textAlign="center">
                               {isApiValidated ? (
                                 isRowValid ? (
@@ -302,19 +342,26 @@ export default function ImportLegacyPreviewModal({
                               
                               const apiFieldName = fieldMapping[field];
                               const validationResponse = rowValidation?.validationResponse;
-                              const validationError = validationResponse?.[apiFieldName];
                               
-                              const hasError = isApiValidated && validationError && validationError.trim() !== "";
+                              let validationError = null;
+                              if (validationResponse && apiFieldName) {
+                                // Convert PascalCase to camelCase for API response
+                                const camelCaseField = apiFieldName.charAt(0).toLowerCase() + apiFieldName.slice(1);
+                                validationError = validationResponse[camelCaseField];
+                              }
+                              
+                              const hasError = isApiValidated && validationError != null && validationError.trim() !== "";
                               const tooltipText = hasError ? validationError : value;
                               
                               return (
                                 <Td key={colIndex} bg={isApiValidated ? (hasError ? "red.100" : "transparent") : "transparent"}>
-                                  <Tooltip label={tooltipText} placement="top" hasArrow>
+                                  <Tooltip label={tooltipText} placement="top" hasArrow isDisabled={!hasError && value === "-"}>
                                     <Text 
                                       fontSize="sm" 
                                       noOfLines={1}
                                       color={hasError ? "red.700" : "inherit"}
                                       fontWeight={hasError ? "medium" : "normal"}
+                                      cursor={hasError ? "help" : "default"}
                                     >
                                       {value}
                                     </Text>
