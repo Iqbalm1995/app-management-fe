@@ -317,6 +317,24 @@ export const LinkItems: LinkItemProps[] = [
   },
 
   {
+    name: "Projects(ALT)",
+    icon: FaDiagramProject,
+    link: "/projects-alt",
+    role: ["admin"],
+    menuID: "1",
+    children: [
+      {
+        name: "Internal Development",
+        icon: FaCode,
+        link: "/projects-alt/internal-development",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+
+  {
     name: "Reports",
     icon: BiSolidReport,
     link: "/reports",
