@@ -153,11 +153,9 @@ const ProjectManagerPage = () => {
   // Table state
   const [totalPages, setTotalPageData] = useState<number>(0);
   const [globalFilter, setGlobalFilter] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<string[]>([]); // Fixed: array instead of string
-  const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 9,
-  });
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [displayCount, setDisplayCount] = useState<number>(9); // Show 9 initially
+  const [totalCount, setTotalCount] = useState<number>(0);
 
   // UI state
   const [ActionLoading, setActionLoading] = useState(false);
@@ -168,14 +166,6 @@ const ProjectManagerPage = () => {
   const delay = useCallback(
     (ms: number) => new Promise((resolve) => setTimeout(resolve, ms)),
     []
-  );
-
-  const pagination = useMemo(
-    () => ({
-      pageIndex,
-      pageSize,
-    }),
-    [pageIndex, pageSize]
   );
 
   // Auth setup effect
@@ -222,9 +212,8 @@ const ProjectManagerPage = () => {
 
       const PayloadList: PaggingListPayloadCustom = {
         search: globalFilter,
-        // teamId: DataAuth.team.id,
-        limit: pageSize,
-        page: pageIndex,
+        limit: displayCount,
+        page: 0,
         filterWhere: filterWhere,
         fieldOrder: ["createdAt"],
         orderDir: "asc",
@@ -257,11 +246,9 @@ const ProjectManagerPage = () => {
           const itemsData: ProjectDataResponse[] =
             requestData.data as ProjectDataResponse[];
           const totalData: number = requestData.countTotal as number;
-          const totalPages: number =
-            totalData > 0 ? Math.ceil(totalData / pageSize) : -1;
 
           setDataProjects(itemsData);
-          setTotalPageData(totalPages);
+          setTotalCount(totalData);
           setIsLoadingProcess(false);
         } catch (error) {
           console.error("Error fetching projects:", error);
@@ -278,8 +265,7 @@ const ProjectManagerPage = () => {
   }, [
     DataAuth,
     RefreshData,
-    pageIndex,
-    pageSize,
+    displayCount,
     globalFilter,
     statusFilter,
     tokenData,
@@ -302,55 +288,35 @@ const ProjectManagerPage = () => {
         footer: (props) => props.column.id,
       },
     ],
-    [ActionLoading, pageIndex, pageSize, colorMode]
+    [ActionLoading, colorMode]
   );
 
   const table = useReactTable({
     data: DataProjects,
     columns: columnsData,
-    pageCount: totalPages ?? 0,
     state: {
       globalFilter,
-      pagination,
     },
-    onPaginationChange: setPagination,
+    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    onGlobalFilterChange: setGlobalFilter,
     getFacetedUniqueValues: getFacetedUniqueValues(),
     getFacetedMinMaxValues: getFacetedMinMaxValues(),
     debugTable: false,
     manualFiltering: true,
-    manualPagination: true,
   });
 
   // Event handlers
   const RefreshAction = useCallback(() => {
     setTotalPageData(0);
     setDataProjects([]);
+    setDisplayCount(9);
     setRefreshData(RefreshData + 1);
   }, [RefreshData]);
 
-  // Status filter handler
-  const handleStatusFilter = useCallback(
-    (status: string) => {
-      if (statusFilter.includes(status)) {
-        setStatusFilter(statusFilter.filter((s) => s !== status));
-      } else {
-        setStatusFilter([...statusFilter, status]);
-      } // Toggle filter
-      setPagination({ pageIndex: 0, pageSize }); // Reset to first page
-    },
-    [statusFilter, pageSize]
-  );
-
-  // Clear all filters
-  const clearAllFilters = useCallback(() => {
-    setGlobalFilter("");
-    setStatusFilter([]);
-    setPagination({ pageIndex: 0, pageSize });
-  }, [pageSize]);
+  const handleLoadMore = () => {
+    setDisplayCount(prev => prev + 9);
+  };
 
   const ModalForm = useDisclosure();
 
@@ -714,183 +680,215 @@ const ProjectManagerPage = () => {
                 {table.getRowModel().rows.map((row) => {
                   const project = row.original;
                   return (
-                    <Card
-                      key={project.id}
-                      bg={colorMode === "light" ? "white" : "gray.800"}
-                      rounded={radiusStyle}
-                      shadow="lg"
-                      border="2px"
-                      borderColor="transparent"
-                      _hover={{
-                        borderColor: "secondary.400",
-                        shadow: "2xl",
-                        transform: "scale(1.02)",
-                      }}
-                      transition="all 0.2s"
-                      cursor={"pointer"}
+                    <Link
+                      href={`/project-development/development?projectId=${project.id}`}
                     >
-                      <CardBody p={0}>
-                        {/* Top Section */}
-                        <Box p={5} m={1} bg="secondary.50" rounded={radiusStyle} boxShadow={"md"}>
-                          <HStack justify="space-between" mb={3}>
-                            <Box
-                              w="48px"
-                              h="48px"
-                              bgGradient="linear(135deg, secondary.400, secondary.600)"
-                              display="flex"
-                              alignItems="center"
-                              justifyContent="center"
-                              color="white"
-                              fontSize="lg"
-                              fontWeight="bold"
-                              shadow="md"
-                              style={{
-                                borderRadius: "28%",
-                              }}
-                            >
-                              {project.projectName
-                                .substring(0, 2)
-                                .toUpperCase()}
-                            </Box>
-                            <Menu>
-                              <MenuButton
-                                as={IconButton}
-                                icon={<Icon as={FiMoreVertical} />}
-                                variant="ghost"
-                                size="sm"
-                                rounded={radiusStyle}
-                              />
-                              <MenuList rounded={radiusStyle}>
-                                <MenuItem icon={<Icon as={FiEye} />}>
-                                  View
-                                </MenuItem>
-                                <MenuItem icon={<Icon as={FiCalendar} />}>
-                                  Timeline
-                                </MenuItem>
-                                <MenuItem icon={<Icon as={FiUsers} />}>
-                                  Team
-                                </MenuItem>
-                              </MenuList>
-                            </Menu>
-                          </HStack>
-                          <Heading size="sm" noOfLines={1} mb={1}>
-                            {project.projectName}
-                          </Heading>
-                          <Text
-                            fontSize="xs"
-                            color="gray.500"
-                            noOfLines={1}
-                            mb={2}
+                      <Card
+                        key={project.id}
+                        bg={colorMode === "light" ? "white" : "gray.800"}
+                        rounded={radiusStyle}
+                        shadow="lg"
+                        border="2px"
+                        borderColor="transparent"
+                        _hover={{
+                          borderColor: "secondary.400",
+                          shadow: "2xl",
+                          transform: "scale(1.02)",
+                        }}
+                        transition="all 0.2s"
+                        cursor={"pointer"}
+                      >
+                        <CardBody p={0}>
+                          {/* Top Section */}
+                          <Box
+                            p={3}
+                            m={1}
+                            bgGradient={
+                              colorMode == "light"
+                                ? "linear(135deg, secondary.100, purple.100)"
+                                : "linear(135deg, secondary.900, purple.900)"
+                            }
+                            rounded={radiusStyle}
+                            boxShadow={"md"}
                           >
-                            {project.projectNo}
-                          </Text>
-
-                          {/* Team & App Info */}
-                          <VStack spacing={1} align="start">
-                            <HStack spacing={1} fontSize="xs">
-                              <Icon
-                                as={FiUsers}
-                                color="secondary.600"
-                                boxSize={3}
-                              />
-                              <Text color="secondary.700" fontWeight="medium">
-                                {project.userAssignment &&
-                                project.userAssignment.length > 0
-                                  ? `${project.userAssignment.length} Member${
-                                      project.userAssignment.length > 1
-                                        ? "s"
-                                        : ""
-                                    }`
-                                  : "0 Members"}
-                              </Text>
-                            </HStack>
-                            <HStack spacing={1} fontSize="xs">
-                              <Icon
-                                as={FiMonitor}
-                                color="purple.600"
-                                boxSize={3}
-                              />
-                              <Text
-                                color="purple.700"
-                                fontWeight="medium"
-                                noOfLines={1}
-                              >
-                                {project.appsProject?.appName ||
-                                  "No apps assign"}
-                              </Text>
-                            </HStack>
-                          </VStack>
-                        </Box>
-
-                        {/* Bottom Section */}
-                        <Box p={5}>
-                          <VStack spacing={3} align="stretch">
-                            <HStack justify="space-between">
-                              <Text fontSize="xs" color="gray.500">
-                                Progress
-                              </Text>
-                              <Text
-                                fontSize="sm"
+                            <HStack justify="space-between" mb={3} w={"full"}>
+                              <Box
+                                w="48px"
+                                h="48px"
+                                minW="48px"
+                                minH="48px"
+                                bgGradient={
+                                  "linear(135deg, secondary.400, secondary.600)"
+                                }
+                                display="flex"
+                                alignItems="center"
+                                justifyContent="center"
+                                color="white"
+                                fontSize="lg"
                                 fontWeight="bold"
-                                color="secondary.600"
+                                shadow="md"
+                                style={{
+                                  borderRadius: "28%",
+                                }}
                               >
-                                {project.projectStatusPercentage}%
-                              </Text>
-                            </HStack>
-                            <Progress
-                              value={project.projectStatusPercentage}
-                              size="sm"
-                              colorScheme="secondary"
-                              rounded="full"
-                              hasStripe
-                              isAnimated
-                            />
-                            <HStack spacing={2}>
-                              <StatusBadge
-                                status={project.projectStatus}
-                                size="sm"
-                                rounded={radiusStyle}
-                              />
-                              <Badge
-                                colorScheme="secondary"
-                                rounded={radiusStyle}
-                                fontSize="xs"
+                                {project.projectName
+                                  .substring(0, 2)
+                                  .toUpperCase()}
+                              </Box>
+                              <Flex
+                                w={"full"}
+                                h={"full"}
+                                justifyContent={"end"}
+                                alignItems={"end"}
+                                as={Stack}
+                                spacing={0}
                               >
-                                {project.projectCategory}
-                              </Badge>
+                                <Text
+                                  fontSize="xx-small"
+                                  color="gray.500"
+                                  noOfLines={1}
+                                >
+                                  {project.projectNo}
+                                </Text>
+                                <Tooltip
+                                  label={project.projectName}
+                                  placement="top"
+                                  hasArrow
+                                  rounded={radiusStyle}
+                                  bg={
+                                    colorMode === "light" ? "white" : "gray.700"
+                                  }
+                                  color={
+                                    colorMode === "light" ? "gray.800" : "white"
+                                  }
+                                  shadow="lg"
+                                >
+                                  <Heading
+                                    size="xs"
+                                    noOfLines={2}
+                                    mb={1}
+                                    textAlign={"right"}
+                                  >
+                                    {project.projectName}
+                                  </Heading>
+                                </Tooltip>
+                              </Flex>
                             </HStack>
-                            <Link
-                              href={`/project-development/development?projectId=${project.id}`}
+
+                            <Flex
+                              w={"full"}
+                              h={"full"}
+                              justifyContent={"space-between"}
+                              as={HStack}
+                              spacing={0}
                             >
-                              <Button
-                                w="full"
+                              <HStack spacing={1} fontSize="xs">
+                                <Icon
+                                  as={FiUsers}
+                                  color="secondary.600"
+                                  boxSize={3}
+                                />
+                                <Text
+                                  color="secondary.700"
+                                  fontWeight="medium"
+                                  fontSize={"xx-small"}
+                                >
+                                  {project.userAssignment &&
+                                  project.userAssignment.length > 0
+                                    ? `${project.userAssignment.length} Member${
+                                        project.userAssignment.length > 1
+                                          ? "s"
+                                          : ""
+                                      }`
+                                    : "0 Members"}
+                                </Text>
+                              </HStack>
+                              <HStack spacing={1} fontSize="xs">
+                                <Icon
+                                  as={FiMonitor}
+                                  color="purple.600"
+                                  boxSize={3}
+                                />
+                                <Text
+                                  color="purple.700"
+                                  fontWeight="bold"
+                                  noOfLines={1}
+                                  fontSize={"xx-small"}
+                                >
+                                  {project.appsProject?.appName ||
+                                    "No apps assign"}
+                                </Text>
+                              </HStack>
+                            </Flex>
+
+                            {/* Team & App Info */}
+                            <VStack spacing={1} align="start"></VStack>
+                          </Box>
+
+                          {/* Bottom Section */}
+                          <Box px={2} py={2}>
+                            <VStack spacing={1} align="stretch">
+                              <HStack justify="space-between">
+                                <Text fontSize="xs" color="gray.500">
+                                  Progress
+                                </Text>
+                                <Text
+                                  fontSize="sm"
+                                  fontWeight="bold"
+                                  color="secondary.600"
+                                >
+                                  {project.projectStatusPercentage}%
+                                </Text>
+                              </HStack>
+                              <Progress
+                                value={project.projectStatusPercentage}
                                 size="sm"
                                 colorScheme="secondary"
-                                rightIcon={<Icon as={FiArrowRightCircle} />}
-                                rounded={radiusStyle}
+                                rounded="full"
+                              />
+                              <Flex
+                                as={HStack}
+                                justifyContent={"end"}
+                                alignItems={"center"}
                               >
-                                Manage Project
-                              </Button>
-                            </Link>
-                          </VStack>
-                        </Box>
-                      </CardBody>
-                    </Card>
+                                <Text fontSize="xx-small" color="gray.500">
+                                  Status
+                                </Text>
+                                <StatusBadge
+                                  status={project.projectStatus}
+                                  variant="subtle"
+                                  size="sm"
+                                  rounded={"md"}
+                                />
+                              </Flex>
+                            </VStack>
+                          </Box>
+                        </CardBody>
+                      </Card>
+                    </Link>
                   );
                 })}
               </SimpleGrid>
 
-              {/* Pagination */}
-              <Flex
-                justify="center"
-                p={4}
-                mt={4}
-                bg={colorMode === "light" ? "white" : "gray.800"}
-                rounded={radiusStyle}
-                shadow="lg"
-              >
-                <ControlTable table={table} />
-              </Flex>
+              {/* Load More Button */}
+              {DataProjects.length < totalCount && (
+                <Flex
+                  justify="center"
+                  p={4}
+                  mt={4}
+                >
+                  <Button
+                    size="lg"
+                    colorScheme="secondary"
+                    onClick={handleLoadMore}
+                    isLoading={IsLoadingProcess}
+                    rounded={radiusStyle}
+                    leftIcon={<Icon as={FiArrowRightCircle} />}
+                  >
+                    Load More Projects ({DataProjects.length} of {totalCount})
+                  </Button>
+                </Flex>
+              )}
             </Box>
           )}
         </VStack>

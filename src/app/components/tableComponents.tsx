@@ -224,7 +224,7 @@ export function ControlTable({ table }: any) {
                   pl={1}
                   display={{ base: "none", sm: "none", md: "none", lg: "flex" }}
                 >
-                  Previous
+                  Prev
                 </Text>
               </Button>
               {/* Page numbers */}
