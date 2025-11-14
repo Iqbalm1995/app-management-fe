@@ -76,6 +76,7 @@ import {
   FiEye,
 } from "react-icons/fi";
 import { Search2Icon } from "@chakra-ui/icons";
+import { Select as ReactSelect } from "chakra-react-select";
 
 // Components
 import {
@@ -95,6 +96,7 @@ import { useDocumentTitle } from "../../../hooks/useDocumentTitle";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useProjects, { ProjectDataResponse } from "@/app/services/useProjects";
+import useOrganization, { OrganizationResponse } from "@/app/services/useOrganization";
 
 // Constants and Types
 import {
@@ -140,6 +142,7 @@ const ProjectManagerPage = () => {
   const { colorMode } = useColorMode();
   const { isAuthenticated, authData, goLogout } = useAuth();
   const { List } = useProjects();
+  const { List: ListOrganizations } = useOrganization();
 
   // Auth state
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -154,8 +157,10 @@ const ProjectManagerPage = () => {
   const [totalPages, setTotalPageData] = useState<number>(0);
   const [globalFilter, setGlobalFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [divisionFilter, setDivisionFilter] = useState<string>("");
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [totalCount, setTotalCount] = useState<number>(0);
+  const [DataDivisions, setDataDivisions] = useState<OrganizationResponse[]>([]);
   const pageSize = 9;
 
   // UI state
@@ -187,6 +192,27 @@ const ProjectManagerPage = () => {
     }
   }, []); // Empty dependency array - run only once on mount
 
+  // Load divisions
+  useEffect(() => {
+    if (DataAuth && tokenData) {
+      const loadDivisions = async () => {
+        const payload: PaggingListPayloadCustom = {
+          search: "",
+          limit: 1000,
+          page: 0,
+          filterWhere: [{ field: "orgType", operator: "=", value: "DIVISION" }],
+          fieldOrder: ["orgName"],
+          orderDir: "asc",
+        };
+        const response = await ListOrganizations(payload, tokenData);
+        if (response?.statusCode === RES_CODE_OK && response.data) {
+          setDataDivisions(response.data as OrganizationResponse[]);
+        }
+      };
+      loadDivisions();
+    }
+  }, [DataAuth, tokenData]);
+
   // Reset to first page when filters change
   useEffect(() => {
     if (!isLoadingMoreRef.current) {
@@ -194,7 +220,7 @@ const ProjectManagerPage = () => {
       setDataProjects([]);
     }
     isLoadingMoreRef.current = false;
-  }, [globalFilter, statusFilter]);
+  }, [globalFilter, statusFilter, divisionFilter]);
 
   // Data fetching effect
   useEffect(() => {
@@ -210,8 +236,17 @@ const ProjectManagerPage = () => {
           filterWhere.push({
             field: "projectStatus",
             operator: "=",
-            value: status, // Handle each status filter
+            value: status,
           });
+        });
+      }
+
+      // Add division filter if selected
+      if (divisionFilter) {
+        filterWhere.push({
+          field: "proOwnerDivisionCode",
+          operator: "=",
+          value: divisionFilter,
         });
       }
 
@@ -284,6 +319,7 @@ const ProjectManagerPage = () => {
     currentPage,
     globalFilter,
     statusFilter,
+    divisionFilter,
     tokenData,
   ]);
 
@@ -567,6 +603,47 @@ const ProjectManagerPage = () => {
                   Closed Only
                 </Button>
               </VStack>
+            </CardBody>
+          </Card>
+
+          {/* Division Filter */}
+          <Card
+            bg={colorMode === "light" ? "white" : "gray.800"}
+            rounded={radiusStyle}
+            shadow="lg"
+          >
+            <CardBody p={4}>
+              <Text fontSize="sm" fontWeight="bold" mb={3} color="gray.600">
+                Filter Projects By Division Owner
+              </Text>
+              <ReactSelect
+                placeholder="All Divisions"
+                size="sm"
+                isClearable
+                value={
+                  divisionFilter
+                    ? DataDivisions.find((d) => d.orgCode === divisionFilter)
+                        ? {
+                            value: divisionFilter,
+                            label: DataDivisions.find(
+                              (d) => d.orgCode === divisionFilter
+                            )!.orgName,
+                          }
+                        : null
+                    : null
+                }
+                onChange={(option) => setDivisionFilter(option?.value || "")}
+                options={DataDivisions.map((div) => ({
+                  value: div.orgCode,
+                  label: div.orgName,
+                }))}
+                chakraStyles={{
+                  container: (provided) => ({
+                    ...provided,
+                    borderRadius: radiusStyle,
+                  }),
+                }}
+              />
             </CardBody>
           </Card>
 
