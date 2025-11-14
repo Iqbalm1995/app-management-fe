@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import Link from "next/link";
 import {
   Badge,
@@ -154,13 +154,15 @@ const ProjectManagerPage = () => {
   const [totalPages, setTotalPageData] = useState<number>(0);
   const [globalFilter, setGlobalFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
-  const [displayCount, setDisplayCount] = useState<number>(9); // Show 9 initially
+  const [currentPage, setCurrentPage] = useState<number>(0);
   const [totalCount, setTotalCount] = useState<number>(0);
+  const pageSize = 9;
 
   // UI state
   const [ActionLoading, setActionLoading] = useState(false);
   const [IsEditMode, setIsEditMode] = useState(false);
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid"); // View mode state
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const isLoadingMoreRef = useRef(false);
 
   // Memoized values
   const delay = useCallback(
@@ -184,6 +186,15 @@ const ProjectManagerPage = () => {
       setTokenData(token);
     }
   }, []); // Empty dependency array - run only once on mount
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    if (!isLoadingMoreRef.current) {
+      setCurrentPage(0);
+      setDataProjects([]);
+    }
+    isLoadingMoreRef.current = false;
+  }, [globalFilter, statusFilter]);
 
   // Data fetching effect
   useEffect(() => {
@@ -212,8 +223,8 @@ const ProjectManagerPage = () => {
 
       const PayloadList: PaggingListPayloadCustom = {
         search: globalFilter,
-        limit: displayCount,
-        page: 0,
+        limit: pageSize,
+        page: currentPage,
         filterWhere: filterWhere,
         fieldOrder: ["createdAt"],
         orderDir: "asc",
@@ -247,7 +258,12 @@ const ProjectManagerPage = () => {
             requestData.data as ProjectDataResponse[];
           const totalData: number = requestData.countTotal as number;
 
-          setDataProjects(itemsData);
+          // Append data if loading more, replace if first page
+          if (currentPage === 0) {
+            setDataProjects(itemsData);
+          } else {
+            setDataProjects(prev => [...prev, ...itemsData]);
+          }
           setTotalCount(totalData);
           setIsLoadingProcess(false);
         } catch (error) {
@@ -265,7 +281,7 @@ const ProjectManagerPage = () => {
   }, [
     DataAuth,
     RefreshData,
-    displayCount,
+    currentPage,
     globalFilter,
     statusFilter,
     tokenData,
@@ -310,12 +326,13 @@ const ProjectManagerPage = () => {
   const RefreshAction = useCallback(() => {
     setTotalPageData(0);
     setDataProjects([]);
-    setDisplayCount(9);
+    setCurrentPage(0);
     setRefreshData(RefreshData + 1);
   }, [RefreshData]);
 
   const handleLoadMore = () => {
-    setDisplayCount(prev => prev + 9);
+    isLoadingMoreRef.current = true;
+    setCurrentPage(prev => prev + 1);
   };
 
   const ModalForm = useDisclosure();
@@ -604,19 +621,42 @@ const ProjectManagerPage = () => {
                   : "Manage your development projects"}
               </Text>
             </VStack>
-            <InputGroup maxW="300px">
-              <InputLeftElement>
-                <Icon as={FiSearch} color="gray.400" />
-              </InputLeftElement>
-              <Input
-                placeholder="Search projects..."
-                value={globalFilter}
-                onChange={(e) => setGlobalFilter(e.target.value)}
-                rounded={radiusStyle}
-                borderColor="secondary.200"
-                _focus={{ borderColor: "secondary.500", shadow: "md" }}
-              />
-            </InputGroup>
+            <HStack spacing={3}>
+              {/* View Toggle */}
+              <HStack spacing={1} bg={colorMode === "light" ? "gray.100" : "gray.700"} p={1} rounded={radiusStyle}>
+                <IconButton
+                  aria-label="Grid view"
+                  icon={<Icon as={FiGrid} />}
+                  size="sm"
+                  variant={viewMode === "grid" ? "solid" : "ghost"}
+                  colorScheme={viewMode === "grid" ? "secondary" : "gray"}
+                  onClick={() => setViewMode("grid")}
+                  rounded={radiusStyle}
+                />
+                <IconButton
+                  aria-label="List view"
+                  icon={<Icon as={FiList} />}
+                  size="sm"
+                  variant={viewMode === "list" ? "solid" : "ghost"}
+                  colorScheme={viewMode === "list" ? "secondary" : "gray"}
+                  onClick={() => setViewMode("list")}
+                  rounded={radiusStyle}
+                />
+              </HStack>
+              <InputGroup maxW="300px">
+                <InputLeftElement>
+                  <Icon as={FiSearch} color="gray.400" />
+                </InputLeftElement>
+                <Input
+                  placeholder="Search projects..."
+                  value={globalFilter}
+                  onChange={(e) => setGlobalFilter(e.target.value)}
+                  rounded={radiusStyle}
+                  borderColor="secondary.200"
+                  _focus={{ borderColor: "secondary.500", shadow: "md" }}
+                />
+              </InputGroup>
+            </HStack>
           </Flex>
 
           {/* Projects Grid */}
@@ -671,7 +711,8 @@ const ProjectManagerPage = () => {
             </Flex>
           ) : (
             <Box w="full" >
-              {/* Grid Cards */}
+              {/* Grid View */}
+              {viewMode === "grid" && (
               <SimpleGrid
                 columns={{ base: 1, md: 2, lg: 3 }}
                 spacing={4}
@@ -869,6 +910,74 @@ const ProjectManagerPage = () => {
                   );
                 })}
               </SimpleGrid>
+              )}
+
+              {/* List View */}
+              {viewMode === "list" && (
+                <VStack spacing={0} align="stretch" divider={<Divider />} bg={colorMode === "light" ? "white" : "gray.800"} rounded={radiusStyle} p={2}>
+                  {table.getRowModel().rows.map((row) => {
+                    const project = row.original;
+                    return (
+                      <Flex
+                        key={project.id}
+                        p={3}
+                        align="center"
+                        gap={3}
+                        _hover={{ bg: colorMode === "light" ? "gray.50" : "gray.700" }}
+                        transition="all 0.2s"
+                      >
+                        <Box
+                          w="40px"
+                          h="40px"
+                          bgGradient="linear(135deg, secondary.400, secondary.600)"
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="center"
+                          color="white"
+                          fontSize="md"
+                          fontWeight="bold"
+                          flexShrink={0}
+                          style={{ borderRadius: "28%" }}
+                        >
+                          {project.projectName.substring(0, 2).toUpperCase()}
+                        </Box>
+
+                        <VStack align="start" spacing={0} flex={1} minW={0}>
+                          <Heading size="sm" noOfLines={1}>{project.projectName}</Heading>
+                          <Text fontSize="xs" color="gray.500">{project.projectNo}</Text>
+                        </VStack>
+
+                        <HStack spacing={3} display={{ base: "none", md: "flex" }}>
+                          <HStack spacing={1}>
+                            <Icon as={FiUsers} color="secondary.600" boxSize={3} />
+                            <Text fontSize="xs" fontWeight="medium">{project.userAssignment?.length || 0}</Text>
+                          </HStack>
+                          <Text fontSize="xs" color="purple.700" maxW="120px" noOfLines={1}>
+                            {project.appsProject?.appName || "No app"}
+                          </Text>
+                        </HStack>
+
+                        <VStack spacing={0} w="80px" display={{ base: "none", lg: "flex" }}>
+                          <Text fontSize="xs" fontWeight="bold" color="secondary.600">{project.projectStatusPercentage}%</Text>
+                          <Progress value={project.projectStatusPercentage} size="sm" colorScheme="secondary" rounded="full" w="full" />
+                        </VStack>
+
+                        <StatusBadge status={project.projectStatus} variant="subtle" size="sm" rounded={radiusStyle} />
+
+                        <Link href={`/project-development/development?projectId=${project.id}`}>
+                          <IconButton
+                            aria-label="Manage"
+                            icon={<Icon as={FiArrowRightCircle} />}
+                            size="sm"
+                            colorScheme="secondary"
+                            rounded={radiusStyle}
+                          />
+                        </Link>
+                      </Flex>
+                    );
+                  })}
+                </VStack>
+              )}
 
               {/* Load More Button */}
               {DataProjects.length < totalCount && (
