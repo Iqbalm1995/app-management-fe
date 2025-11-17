@@ -31,6 +31,9 @@ import {
   ModalOverlay,
   useDisclosure,
   useColorModeValue,
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
 } from "@chakra-ui/react";
 import {
   FiFilter,
@@ -95,7 +98,7 @@ import {
 } from "@/app/constants/applicationConstants";
 import {
   PROJECT_STATUSES,
-  PRO_STATUS_RUNNING
+  PRO_STATUS_RUNNING,
 } from "@/app/constants/masterStatusConstants";
 import { StatusBadge } from "@/app/components/StatusBadge";
 import {
@@ -351,38 +354,6 @@ const ProjectManagerPage = () => {
         breadCrumb={HeaderDataContent.breadCrumb}
       />
 
-      {/* MODAL LIST REQUIREMENT FOR REGISTER PROJECT */}
-      <Modal
-        size={"6xl"}
-        isOpen={ModalForm.isOpen}
-        isCentered
-        onClose={ModalForm.onClose}
-      >
-        <ModalOverlay bg="blackAlpha.300" />
-        <ModalContent
-          rounded={radiusStyle}
-          m={2}
-          bg={useColorModeValue("white", "gray.900")}
-        >
-          <ModalHeader>Create New Project</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody w={"full"}>
-            <ModalRegisterProject />
-          </ModalBody>
-
-          <ModalFooter>
-            <Button
-              colorScheme={"gray"}
-              leftIcon={<FiX />}
-              onClick={ModalForm.onClose}
-              isLoading={ActionLoading}
-            >
-              Kembali
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-
       {/* Modern Project Manager Header Section */}
       <Box
         bg={colorMode === "light" ? "white" : "gray.800"}
@@ -480,9 +451,9 @@ const ProjectManagerPage = () => {
                 <Badge
                   colorScheme="blue"
                   px={4}
-                  py={2}
+                  py={1}
                   rounded="full"
-                  fontSize="sm"
+                  fontSize="x-small"
                   fontWeight="medium"
                 >
                   <Icon as={FiTarget} w={3} h={3} mr={2} />
@@ -491,9 +462,9 @@ const ProjectManagerPage = () => {
                 <Badge
                   colorScheme="blue"
                   px={4}
-                  py={2}
+                  py={1}
                   rounded="full"
-                  fontSize="sm"
+                  fontSize="x-small"
                   fontWeight="medium"
                 >
                   <Icon as={FiUsers} w={3} h={3} mr={2} />
@@ -502,9 +473,9 @@ const ProjectManagerPage = () => {
                 <Badge
                   colorScheme="green"
                   px={4}
-                  py={2}
+                  py={1}
                   rounded="full"
-                  fontSize="sm"
+                  fontSize="x-small"
                   fontWeight="medium"
                 >
                   <Icon as={FiBarChart2} w={3} h={3} mr={2} />
@@ -514,167 +485,31 @@ const ProjectManagerPage = () => {
             </VStack>
 
             {/* Right Content - Stats Grid */}
-            <Box>
-              <Grid templateColumns="repeat(2, 1fr)" gap={3} minW="260px">
-                {/* Total Projects */}
-                <Card
-                  bg={colorMode === "light" ? "blue.50" : "blue.900"}
-                  border="1px"
-                  borderColor={colorMode === "light" ? "blue.200" : "blue.700"}
-                  rounded="lg"
-                >
-                  <CardBody p={4} textAlign="center">
-                    <VStack spacing={2}>
-                      <Box
-                        w={8}
-                        h={8}
-                        bg="blue.500"
-                        rounded="lg"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                        color="white"
-                        fontSize="md"
-                      >
-                        <Icon as={FiFolder} boxSize={4} />
-                      </Box>
-                      <Text fontSize="xl" fontWeight="bold" color="blue.600">
-                        {DataProjects.length}
-                      </Text>
-                      <Text
-                        fontSize="xs"
-                        color={colorMode === "light" ? "blue.600" : "blue.300"}
-                      >
-                        Total Projects
-                      </Text>
-                    </VStack>
-                  </CardBody>
-                </Card>
-
-                {/* Active Projects */}
-                <Card
-                  bg={colorMode === "light" ? "green.50" : "green.900"}
-                  border="1px"
-                  borderColor={
-                    colorMode === "light" ? "green.200" : "green.700"
-                  }
-                  rounded="lg"
-                >
-                  <CardBody p={4} textAlign="center">
-                    <VStack spacing={2}>
-                      <Box
-                        w={8}
-                        h={8}
-                        bg="green.500"
-                        rounded="lg"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                        color="white"
-                        fontSize="md"
-                      >
-                        <Icon as={FiZap} boxSize={4} />
-                      </Box>
-                      <Text fontSize="xl" fontWeight="bold" color="green.600">
-                        {
-                          DataProjects.filter(
-                            (p) => p.projectStatus === PRO_STATUS_RUNNING
-                          ).length
-                        }
-                      </Text>
-                      <Text
-                        fontSize="xs"
-                        color={
-                          colorMode === "light" ? "green.600" : "green.300"
+            <Flex h={"full"}>
+              <Breadcrumb fontSize="sm" color="gray.600">
+                {HeaderDataContent.breadCrumb.map(
+                  (item: string, index: number) => (
+                    <BreadcrumbItem
+                      key={item}
+                      isCurrentPage={
+                        index === HeaderDataContent.breadCrumb.length - 1
+                      }
+                    >
+                      <BreadcrumbLink
+                        href="#"
+                        fontWeight={
+                          index === HeaderDataContent.breadCrumb.length - 1
+                            ? "semibold"
+                            : "normal"
                         }
                       >
-                        Active Projects
-                      </Text>
-                    </VStack>
-                  </CardBody>
-                </Card>
-
-                {/* Average Progress */}
-                <Card
-                  bg={colorMode === "light" ? "blue.50" : "blue.900"}
-                  border="1px"
-                  borderColor={colorMode === "light" ? "blue.200" : "blue.700"}
-                  rounded="lg"
-                >
-                  <CardBody p={4} textAlign="center">
-                    <VStack spacing={2}>
-                      <Box
-                        w={8}
-                        h={8}
-                        bg="blue.500"
-                        rounded="lg"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                        color="white"
-                        fontSize="md"
-                      >
-                        <Icon as={FiTrendingUp} boxSize={4} />
-                      </Box>
-                      <Text fontSize="xl" fontWeight="bold" color="blue.600">
-                        {Math.round(
-                          DataProjects.reduce(
-                            (acc, p) => acc + p.projectStatusPercentage,
-                            0
-                          ) / (DataProjects.length || 1)
-                        )}
-                        %
-                      </Text>
-                      <Text
-                        fontSize="xs"
-                        color={colorMode === "light" ? "blue.600" : "blue.300"}
-                      >
-                        Avg Progress
-                      </Text>
-                    </VStack>
-                  </CardBody>
-                </Card>
-
-                {/* Team Count */}
-                <Card
-                  bg={colorMode === "light" ? "orange.50" : "orange.900"}
-                  border="1px"
-                  borderColor={
-                    colorMode === "light" ? "orange.200" : "orange.700"
-                  }
-                  rounded="lg"
-                >
-                  <CardBody p={4} textAlign="center">
-                    <VStack spacing={2}>
-                      <Box
-                        w={8}
-                        h={8}
-                        bg="orange.500"
-                        rounded="lg"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                        color="white"
-                        fontSize="md"
-                      >
-                        <Icon as={FiUsers} boxSize={4} />
-                      </Box>
-                      <Text fontSize="xl" fontWeight="bold" color="orange.600">
-                        {DataAuth?.team ? 1 : 0}
-                      </Text>
-                      <Text
-                        fontSize="xs"
-                        color={
-                          colorMode === "light" ? "orange.600" : "orange.300"
-                        }
-                      >
-                        Active Teams
-                      </Text>
-                    </VStack>
-                  </CardBody>
-                </Card>
-              </Grid>
-            </Box>
+                        {item}
+                      </BreadcrumbLink>
+                    </BreadcrumbItem>
+                  )
+                )}
+              </Breadcrumb>
+            </Flex>
           </Grid>
         </Box>
       </Box>
@@ -1043,8 +878,8 @@ const ProjectManagerPage = () => {
                                   viewMode === "grid"
                                     ? "blue.500"
                                     : colorMode === "light"
-                                      ? "gray.200"
-                                      : "gray.600",
+                                    ? "gray.200"
+                                    : "gray.600",
                               }}
                               transition="all 0.2s"
                             >
@@ -1066,8 +901,8 @@ const ProjectManagerPage = () => {
                                   viewMode === "list"
                                     ? "blue.500"
                                     : colorMode === "light"
-                                      ? "gray.200"
-                                      : "gray.600",
+                                    ? "gray.200"
+                                    : "gray.600",
                               }}
                               transition="all 0.2s"
                             >
@@ -1150,13 +985,15 @@ const ProjectManagerPage = () => {
                               textAlign="center"
                             >
                               {globalFilter || statusFilter.length > 0
-                                ? `No projects match your current filters${globalFilter
-                                  ? ` (search: "${globalFilter}")`
-                                  : ""
-                                }${statusFilter.length > 0
-                                  ? ` (status: ${statusFilter.join(", ")})`
-                                  : ""
-                                }. Try adjusting your filters or clearing them.`
+                                ? `No projects match your current filters${
+                                    globalFilter
+                                      ? ` (search: "${globalFilter}")`
+                                      : ""
+                                  }${
+                                    statusFilter.length > 0
+                                      ? ` (status: ${statusFilter.join(", ")})`
+                                      : ""
+                                  }. Try adjusting your filters or clearing them.`
                                 : "You don't have any projects yet. Projects will appear here once they are created and assigned to your team."}
                             </Text>
                           </VStack>
