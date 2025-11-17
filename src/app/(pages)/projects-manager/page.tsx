@@ -354,171 +354,170 @@ const ProjectManagerPage = () => {
         breadCrumb={HeaderDataContent.breadCrumb}
       />
 
-      {/* Modern Project Manager Header Section */}
+      {/* Modern Abstract Project Manager Header */}
       <Box
-        bg={colorMode === "light" ? "white" : "gray.800"}
-        border="1px"
-        borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-        rounded="2xl"
+        position="relative"
+        bgColor={colorMode == "light" ? "white" : "gray.800"}
+        rounded={radiusStyle}
         shadow="2xl"
-        px={2}
         mx={{ base: 4, sm: 5, md: 6 }}
-        // mx={{ base: 2, md: 4 }}
         mt={{ base: 2, md: 4 }}
         mb={{ base: 4, md: 6 }}
         overflow="hidden"
-        position="relative"
+        h={{ base: "160px", md: "180px" }}
       >
-        {/* BJB Logo Overlay Pattern */}
+        {/* Abstract Geometric Shapes */}
         <Box
           position="absolute"
-          top="50%"
-          left="-100px"
-          transform="translateY(-50%)"
-          w="300px"
-          h="300px"
-          opacity="0.15"
-          zIndex={0}
-          backgroundImage="url('/img/logo-bjb-black-wing.svg')"
-          backgroundSize="contain"
-          backgroundRepeat="no-repeat"
-          backgroundPosition="center"
-          filter="brightness(0) saturate(100%) invert(27%) sepia(98%) saturate(1352%) hue-rotate(170deg) brightness(96%) contrast(97%)"
-        />
-
-        {/* Decorative Background Elements */}
-        <Box
-          position="absolute"
-          top="-40px"
-          right="-40px"
-          w="160px"
-          h="160px"
-          bg="blue.100"
+          top="-20px"
+          right="20px"
+          w="80px"
+          h="80px"
+          bg={colorMode == "light" ? "secondary.100" : "whiteAlpha.200"}
           rounded="full"
-          opacity="0.3"
-          zIndex={0}
+        />
+        <Box
+          position="absolute"
+          bottom="-10px"
+          left="30px"
+          w="60px"
+          h="60px"
+          bg={colorMode == "light" ? "secondary.200" : "whiteAlpha.300"}
+          transform="rotate(45deg)"
+        />
+        <Box
+          position="absolute"
+          top="30px"
+          left="60%"
+          w="40px"
+          h="40px"
+          bg={colorMode == "light" ? "secondary.100" : "whiteAlpha.200"}
+          rounded="md"
+          transform="rotate(30deg)"
         />
 
-        <Box
-          px={{ base: 4, sm: 5, md: 6 }}
-          py={{ base: 5, md: 6 }}
+        <VStack
+          h="full"
+          justify="center"
+          align="stretch"
+          px={{ base: 6, md: 8 }}
+          py={4}
           position="relative"
           zIndex={1}
+          spacing={4}
         >
-          <Grid
-            templateColumns={{ base: "1fr", lg: "1fr auto" }}
-            gap={6}
-            alignItems="center"
-          >
-            {/* Left Content */}
-            <VStack align="start" spacing={4}>
-              {/* Title Section */}
-              <HStack spacing={4}>
-                <Box
-                  w={"80px"}
-                  h={"80px"}
-                  bgGradient={"linear(to-br, secondary.700, secondary.400)"}
-                  rounded="2xl"
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
-                  color="white"
-                  fontSize="xl"
-                  shadow="lg"
+          {/* Top Row */}
+          <Flex justify="space-between" align="center">
+            <HStack spacing={4}>
+              <Box
+                w="60px"
+                h="60px"
+                bg="secondary.500"
+                backdropFilter="blur(10px)"
+                rounded="xl"
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                border="1px solid"
+                borderColor={
+                  colorMode == "light" ? "blackAlpha.100" : "whiteAlpha.200"
+                }
+              >
+                <Icon as={FiSettings} boxSize={6} color="white" />
+              </Box>
+              <VStack align="start" spacing={1}>
+                <Heading
+                  size="lg"
+                  color={colorMode == "light" ? "gray.900" : "white"}
+                  fontWeight="700"
+                  letterSpacing="tight"
                 >
-                  <Icon as={FiSettings} boxSize={6} color="white" />
-                </Box>
-                <VStack align="start" spacing={1}>
-                  <Heading
-                    size="xl"
-                    color={colorMode === "light" ? "gray.800" : "white"}
-                    fontWeight="bold"
-                  >
-                    Projects Management Hub
-                  </Heading>
-                  <Text
-                    fontSize="md"
-                    color={colorMode === "light" ? "gray.600" : "gray.300"}
-                    fontWeight="medium"
-                  >
-                    Oversee and manage all team projects
-                  </Text>
-                </VStack>
-              </HStack>
+                  Projects Management Hub
+                </Heading>
+                <Text
+                  fontSize="sm"
+                  color={colorMode == "light" ? "gray.500" : "white"}
+                  fontWeight="500"
+                >
+                  Oversee and manage all team projects
+                </Text>
+              </VStack>
+            </HStack>
 
-              {/* Feature Tags */}
-              <HStack spacing={3} flexWrap="wrap">
-                <Badge
-                  colorScheme="blue"
-                  px={4}
-                  py={1}
-                  rounded="full"
-                  fontSize="x-small"
-                  fontWeight="medium"
+            {/* Quick Stats */}
+            <HStack spacing={6} display={{ base: "none", lg: "flex" }}>
+              <VStack spacing={0}>
+                <Text
+                  fontSize="2xl"
+                  fontWeight="bold"
+                  color={colorMode == "light" ? "gray.900" : "white"}
                 >
-                  <Icon as={FiTarget} w={3} h={3} mr={2} />
-                  Project Management
-                </Badge>
-                <Badge
-                  colorScheme="blue"
-                  px={4}
-                  py={1}
-                  rounded="full"
-                  fontSize="x-small"
-                  fontWeight="medium"
+                  {DataProjects.length}
+                </Text>
+                <Text
+                  fontSize="xs"
+                  color={colorMode == "light" ? "gray.900" : "white"}
+                  textTransform="uppercase"
                 >
-                  <Icon as={FiUsers} w={3} h={3} mr={2} />
-                  Team Oversight
-                </Badge>
-                <Badge
-                  colorScheme="green"
-                  px={4}
-                  py={1}
-                  rounded="full"
-                  fontSize="x-small"
-                  fontWeight="medium"
+                  Projects
+                </Text>
+              </VStack>
+              <Box
+                w="1px"
+                h="40px"
+                bg={colorMode == "light" ? "blackAlpha.500" : "whiteAlpha.500"}
+              />
+              <VStack spacing={0}>
+                <Text
+                  fontSize="2xl"
+                  fontWeight="bold"
+                  color={colorMode == "light" ? "gray.900" : "white"}
                 >
-                  <Icon as={FiBarChart2} w={3} h={3} mr={2} />
-                  Management Analytics
-                </Badge>
-              </HStack>
-            </VStack>
-
-            {/* Right Content - Stats Grid */}
-            <Flex h={"full"}>
-              <Breadcrumb fontSize="sm" color="gray.600">
-                {HeaderDataContent.breadCrumb.map(
-                  (item: string, index: number) => (
-                    <BreadcrumbItem
-                      key={item}
-                      isCurrentPage={
-                        index === HeaderDataContent.breadCrumb.length - 1
-                      }
-                    >
-                      <BreadcrumbLink
-                        href="#"
-                        fontWeight={
-                          index === HeaderDataContent.breadCrumb.length - 1
-                            ? "semibold"
-                            : "normal"
-                        }
-                      >
-                        {item}
-                      </BreadcrumbLink>
-                    </BreadcrumbItem>
-                  )
-                )}
-              </Breadcrumb>
-            </Flex>
-          </Grid>
-        </Box>
+                  {
+                    DataProjects.filter(
+                      (p) => p.projectStatus === PRO_STATUS_RUNNING
+                    ).length
+                  }
+                </Text>
+                <Text
+                  fontSize="xs"
+                  color={colorMode == "light" ? "gray.900" : "white"}
+                  textTransform="uppercase"
+                >
+                  Active
+                </Text>
+              </VStack>
+              <Box w="1px" h="40px" bg="blackAlpha.300" />
+              <VStack spacing={0}>
+                <Text
+                  fontSize="2xl"
+                  fontWeight="bold"
+                  color={colorMode == "light" ? "gray.900" : "white"}
+                >
+                  {Math.round(
+                    DataProjects.reduce(
+                      (acc, p) => acc + p.projectStatusPercentage,
+                      0
+                    ) / (DataProjects.length || 1)
+                  )}%
+                </Text>
+                <Text
+                  fontSize="xs"
+                  color={colorMode == "light" ? "gray.900" : "white"}
+                  textTransform="uppercase"
+                >
+                  Avg Progress
+                </Text>
+              </VStack>
+            </HStack>
+          </Flex>
+        </VStack>
       </Box>
 
       {/* Enhanced Main Content - Grid Layout with Sidebar */}
       <Box px={{ base: 4, sm: 5, md: 6 }} w="full">
         <Grid
           templateColumns="repeat(12, 1fr)"
-          // gap={{ base: 4, lg: 6 }}
           w="full"
           gap={5}
         >
