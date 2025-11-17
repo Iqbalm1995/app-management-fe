@@ -123,9 +123,9 @@ const CardProject = memo(
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
           w="full"
-          h="400px"
-          minH="400px"
-          maxH="400px"
+          h="300px"
+          minH="300px"
+          maxH="300px"
           bg={useColorModeValue("white", "gray.800")}
           border="1px"
           borderColor={useColorModeValue("gray.200", "gray.700")}
@@ -142,87 +142,103 @@ const CardProject = memo(
           display="flex"
           flexDirection="column"
         >
-
           {/* Card Body */}
           <CardBody p={2}>
             <Flex as={Stack}>
               <Flex
+                as={Stack}
                 w={"full"}
+                h={"60px"}
+                alignItems={"center"}
+                justifyContent={"start"}
+                p={2}
                 boxShadow={"md"}
                 rounded={radiusStyle}
-                position="relative"
                 bgGradient={
                   colorMode == "light"
                     ? "linear(to-br, secondary.700, secondary.400)"
                     : "linear(to-br, secondary.900, secondary.600)"
                 }
                 color="white"
-                h={"150px"}
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
               >
-                <VStack spacing={3} position="relative" zIndex={1}>
+                <Flex w={"full"} as={HStack} justifyContent={"space-between"}>
+                  {/* Icon Inititals */}
                   <Box
-                    w={"60px"}
-                    h={"60px"}
+                    w={"40px"}
+                    h={"40px"}
                     bg="whiteAlpha.200"
                     rounded="xl"
                     display="flex"
                     alignItems="center"
                     justifyContent="center"
-                    fontSize="3xl"
+                    fontSize="smaller"
                     fontWeight="bold"
                     border="2px"
                     borderColor="whiteAlpha.300"
                   >
-                    {data.appsProject?.appShortName?.charAt(0) ||
-                      data.appsProject?.appName?.charAt(0) ||
-                      data.projectName.charAt(0)}
+                    {data.appsProject?.appShortName || "N/A"}
                   </Box>
-                  <VStack spacing={0} align="center">
+                  <Flex as={Stack} spacing={1} px={2}>
                     <Text
-                      fontSize="sm"
-                      fontWeight="bold"
-                      opacity="0.9"
-                      textAlign="center"
+                      fontSize="xx-small"
+                      textAlign={"end"}
+                      lineHeight={1}
+                      fontStyle={"italic"}
                     >
-                      {data.appsProject?.appName}
+                      App Name
                     </Text>
                     <Text
-                      fontSize="x-small"
-                      fontWeight="medium"
-                      opacity="0.8"
-                      textAlign="center"
+                      fontSize="smaller"
+                      textAlign={"end"}
+                      lineHeight={1}
+                      fontWeight={"bold"}
                     >
-                      {data.projectType}
+                      {data.appsProject?.appName || "- NO APPS REGISTEREED"}
                     </Text>
-                  </VStack>
-                </VStack>
+                  </Flex>
+                </Flex>
               </Flex>
-              <VStack spacing={4} align="stretch" flex="1" px={4} py={2}>
-                {/* Project Info */}
-                <VStack spacing={2} align="start">
-                  <HStack spacing={2} w="full" justify="space-between">
-                    <Text fontSize="xs" color="gray.500" fontWeight="medium">
-                      #{data.projectNo || data.projectCode}
+              <VStack spacing={1} align="stretch" flex="1" px={2} py={2}>
+                {/* Project Identifier */}
+                <Flex
+                  as={HStack}
+                  w={"full"}
+                  h={"43px"}
+                  justifyContent="space-between"
+                  alignItems={"start"}
+                >
+                  <Text fontSize="smaller" color="gray.500" fontWeight="medium">
+                    {data.projectNo}
+                  </Text>
+                  <HStack spacing={1}>
+                    <Icon as={FiActivity} size="12px" color="gray.500" />
+                    <Text fontSize="xs" color="gray.500">
+                      {getProjectHealthRating(data.projectStatusPercentage)}
                     </Text>
-                    <HStack spacing={1}>
-                      <Icon as={FiActivity} size="12px" color="gray.400" />
-                      <Text fontSize="xs" color="gray.500">
-                        {getProjectHealthRating(data.projectStatusPercentage)}
-                      </Text>
-                    </HStack>
                   </HStack>
+                </Flex>
+
+                {/* Project Info */}
+                <VStack spacing={0} align="start">
+                  <Text
+                    fontSize="x-small"
+                    fontWeight="medium"
+                    opacity="0.8"
+                    textAlign="center"
+                    color={"secondary.500"}
+                  >
+                    {data.projectType}
+                  </Text>
 
                   <Tooltip
                     label={data.projectName}
                     hasArrow
                     placement="top"
                     isDisabled={data.projectName.length <= 45}
+                    rounded={radiusStyle}
                   >
                     <Heading
-                      size="md"
+                      size="sm"
                       color={useColorModeValue("gray.800", "white")}
                       noOfLines={2}
                       minH="48px"
@@ -232,22 +248,9 @@ const CardProject = memo(
                       lineHeight="1.3"
                       overflow="hidden"
                     >
-                      {data.projectName}
+                      {truncateText(data.projectName, 45)}
                     </Heading>
                   </Tooltip>
-
-                  {/* App Name - Show if different from project name */}
-                  {/* {data.appsProject?.appName &&
-                data.appsProject?.appName !== data.projectName && (
-                  <Text
-                    fontSize="sm"
-                    color="gray.600"
-                    fontWeight="medium"
-                    noOfLines={1}
-                  >
-                    App: {data.appsProject?.appName}
-                  </Text>
-                )} */}
                 </VStack>
 
                 {/* Progress Section */}
@@ -270,7 +273,7 @@ const CardProject = memo(
                     value={data.projectStatusPercentage}
                     colorScheme={getProgressColor(data.projectStatusPercentage)}
                     rounded="full"
-                    size="md"
+                    size="sm"
                     bg={useColorModeValue("gray.100", "gray.700")}
                   />
                 </VStack>
@@ -289,24 +292,38 @@ const CardProject = memo(
                     </Text>
                   </HStack>
 
-                  <HStack justify="space-between" align="center">
-                    <AvatarGroup size="xs" max={4} spacing="-6px">
-                      {data.userAssignment?.map((user, idx) => (
-                        <Avatar
-                          key={idx}
-                          name={user.userData?.nama || "Unknown"}
-                          size="xs"
-                          border="1px"
-                          borderColor={useColorModeValue("white", "gray.800")}
-                        />
-                      )) || []}
-                    </AvatarGroup>
-
-                    {data.userAssignment && data.userAssignment.length > 4 && (
-                      <Text fontSize="xs" color="gray.500">
-                        +{data.userAssignment.length - 4} more
-                      </Text>
+                  <HStack justify="space-between" w={"full"}>
+                    {data.userAssignment == null ||
+                    data.userAssignment.length <= 0 ? (
+                      <Flex w={"full"}>
+                        <Text
+                          fontSize="x-small"
+                          color="gray.400"
+                          fontStyle={"italic"}
+                          textAlign={"left"}
+                        >
+                          {"- No Member Assign"}
+                        </Text>
+                      </Flex>
+                    ) : (
+                      <AvatarGroup size="2xs" max={4} spacing="-6px">
+                        {data.userAssignment?.map((user, idx) => (
+                          <Avatar
+                            key={idx}
+                            name={user.userData?.nama || "Unknown"}
+                          />
+                        )) || []}
+                      </AvatarGroup>
                     )}
+
+                    <Flex w={"full"} justifyContent={"end"}>
+                      <StatusBadge
+                        status={data.projectStatus}
+                        variant="subtle"
+                        fontSize={"x-small"}
+                        rounded={radiusStyle}
+                      />
+                    </Flex>
                   </HStack>
                 </VStack>
               </VStack>

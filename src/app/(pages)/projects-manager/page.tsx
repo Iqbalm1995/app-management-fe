@@ -1084,6 +1084,17 @@ const ProjectManagerPage = () => {
 
                                             {/* Project Details */}
                                             <VStack align="start" spacing={1}>
+                                              <Text
+                                                fontSize="x-small"
+                                                color={
+                                                  colorMode === "light"
+                                                    ? "gray.600"
+                                                    : "gray.400"
+                                                }
+                                              >
+                                                {project.projectNo}
+                                              </Text>
+
                                               <Heading
                                                 size="sm"
                                                 color={
@@ -1094,17 +1105,7 @@ const ProjectManagerPage = () => {
                                               >
                                                 {project.projectName}
                                               </Heading>
-                                              <Text
-                                                fontSize="sm"
-                                                color={
-                                                  colorMode === "light"
-                                                    ? "gray.600"
-                                                    : "gray.400"
-                                                }
-                                              >
-                                                {project.projectDesc ||
-                                                  "No description available"}
-                                              </Text>
+
                                               <HStack spacing={2}>
                                                 <Badge
                                                   colorScheme="blue"
