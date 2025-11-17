@@ -1527,9 +1527,15 @@ const ReqInfoPersonelSectionView = ({
             </FormLabel>
             <Stack spacing={0} h={"full"}>
               <OrderedList>
-                {DataRequirement.approvalDatas.map((ua, idx) => (
-                  <ListItem key={idx}>
-                    {`${ua.approverUserFirstName} (${ua.approverUserCode})`}
+                {DataRequirement.approvalDatas?.length > 0 ? (
+                  DataRequirement.approvalDatas.map((ua, idx) => (
+                    <ListItem key={idx}>
+                      {`${ua.approverUserFirstName} (${ua.approverUserCode})`}
+                    </ListItem>
+                  ))
+                ) : (
+                  <ListItem>
+                    <Text color="gray.500">Tidak ada penugasan</Text>
                   </ListItem>
                 ))}
               </OrderedList>
@@ -2594,7 +2600,17 @@ const ReqInfoAcceptanceView = ({
                   </FormLabel>
                   <Stack spacing={0} h={"full"}>
                     <OrderedList>
-                      {DataRequirement.approvalDatas.map((ua, idx) => (
+                      {DataRequirement.approvalDatas?.length > 0 ? (
+                        DataRequirement.approvalDatas.map((ua, idx) => (
+                          <ListItem key={idx}>
+                            {`${ua.approverUserFirstName} (${ua.approverUserCode})`}
+                          </ListItem>
+                        ))
+                      ) : (
+                        <ListItem>
+                          <Text color="gray.500">Tidak ada penugasan</Text>
+                        </ListItem>
+                      )}
                         <ListItem key={idx}>
                           {`${ua.approverUserFirstName} (${ua.approverUserCode})`}
                         </ListItem>

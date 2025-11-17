@@ -520,9 +520,8 @@ function RegsiterRequirementViewPage({
 
     if (isErrorResponse || !requestData) {
       showToast({
-        description: `Upload File Failed : ${
-          requestData?.message || RES_GENERIC_ERROR_MSG
-        }`,
+        description: `Upload File Failed : ${requestData?.message || RES_GENERIC_ERROR_MSG
+          }`,
         statusToast: "error",
       });
       return false;
@@ -660,10 +659,9 @@ function RegsiterRequirementViewPage({
   const handleConfirmSaveData = (data: RequirementsInsertPayload) => {
     setCaptionDialog("Konfirmasi Simpan");
     setQuestionMsgDialog(
-      `Apakah ada yakin akan submit data "${
-        formik.values.isHaveMemo == "Y"
-          ? formik.values.reqNarative
-          : type_req_param + " Tanpa Memo"
+      `Apakah ada yakin akan submit data "${formik.values.isHaveMemo == "Y"
+        ? formik.values.reqNarative
+        : type_req_param + " Tanpa Memo"
       }"?`
     );
     setOpenConfirmSaveDialog(true);
@@ -1801,9 +1799,9 @@ function RegsiterRequirementViewPage({
                               isInvalid={
                                 calculateDurationInDays(
                                   formik.values.reqInititateDate ||
-                                    new Date().toISOString(),
+                                  new Date().toISOString(),
                                   formik.values.reqAcceptedDate ||
-                                    new Date().toISOString()
+                                  new Date().toISOString()
                                 ) < 0
                               }
                             >
@@ -1815,18 +1813,18 @@ function RegsiterRequirementViewPage({
                                   <Text px={2} fontWeight={600}>
                                     {calculateDurationInDays(
                                       formik.values.reqInititateDate ||
-                                        new Date().toISOString(),
+                                      new Date().toISOString(),
                                       formik.values.reqAcceptedDate ||
-                                        new Date().toISOString()
+                                      new Date().toISOString()
                                     )}{" "}
                                     Hari Kalendar
                                   </Text>
                                   <FormErrorMessage>
                                     {calculateDurationInDays(
                                       formik.values.reqInititateDate ||
-                                        new Date().toISOString(),
+                                      new Date().toISOString(),
                                       formik.values.reqAcceptedDate ||
-                                        new Date().toISOString()
+                                      new Date().toISOString()
                                     ) < 0 && "Durasi tidak boleh negatif"}
                                   </FormErrorMessage>
                                 </Stack>
@@ -2490,7 +2488,7 @@ function RegsiterRequirementViewPage({
                                           setOptionGroupDivision([]);
                                           await LoadDataGroupOrgCustom(
                                             formik.values.userPicDivisionId ||
-                                              ""
+                                            ""
                                           );
                                         }}
                                         onChange={(e) => {
@@ -2567,10 +2565,10 @@ function RegsiterRequirementViewPage({
                                   leftover < 0
                                     ? "red.500"
                                     : leftover > 0
-                                    ? "green.500"
-                                    : colorMode === "light"
-                                    ? "black"
-                                    : "white";
+                                      ? "green.500"
+                                      : colorMode === "light"
+                                        ? "black"
+                                        : "white";
 
                                 return (
                                   <Flex w={"full"} as={Stack} key={index}>
@@ -2619,9 +2617,9 @@ function RegsiterRequirementViewPage({
                                                   typeof formik.errors
                                                     .workPrograms?.[index] ===
                                                     "object" &&
-                                                  formik.errors.workPrograms?.[
-                                                    index
-                                                  ]?.divisionId
+                                                    formik.errors.workPrograms?.[
+                                                      index
+                                                    ]?.divisionId
                                                     ? true
                                                     : false
                                                 }
@@ -2695,9 +2693,9 @@ function RegsiterRequirementViewPage({
                                                   typeof formik.errors
                                                     .workPrograms?.[index] ===
                                                     "object" &&
-                                                  formik.errors.workPrograms?.[
-                                                    index
-                                                  ]?.divisionId
+                                                    formik.errors.workPrograms?.[
+                                                      index
+                                                    ]?.divisionId
                                                     ? true
                                                     : false
                                                 }
@@ -2792,9 +2790,9 @@ function RegsiterRequirementViewPage({
                                                   typeof formik.errors
                                                     .workPrograms?.[index] ===
                                                     "object" &&
-                                                  formik.errors.workPrograms?.[
-                                                    index
-                                                  ]?.groupId
+                                                    formik.errors.workPrograms?.[
+                                                      index
+                                                    ]?.groupId
                                                     ? true
                                                     : false
                                                 }
@@ -2886,8 +2884,8 @@ function RegsiterRequirementViewPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                        formik.errors.workPrograms?.[index]
-                                          ?.workProgramCode
+                                          formik.errors.workPrograms?.[index]
+                                            ?.workProgramCode
                                           ? true
                                           : false
                                       }
@@ -2935,8 +2933,8 @@ function RegsiterRequirementViewPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                        formik.errors.workPrograms?.[index]
-                                          ?.workProgramName
+                                          formik.errors.workPrograms?.[index]
+                                            ?.workProgramName
                                           ? true
                                           : false
                                       }
@@ -2984,12 +2982,12 @@ function RegsiterRequirementViewPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                        formik.errors.workPrograms?.[index]
-                                          ?.workProgramAccName
+                                          formik.errors.workPrograms?.[index]
+                                            ?.workProgramAccName
                                           ? true
                                           : false
                                       }
-                                      isRequired
+                                      
                                     >
                                       <InputLayoutFull>
                                         <FormLabel h={"full"} mt={2}>
@@ -3033,12 +3031,12 @@ function RegsiterRequirementViewPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                        formik.errors.workPrograms?.[index]
-                                          ?.workProgramAccNumber
+                                          formik.errors.workPrograms?.[index]
+                                            ?.workProgramAccNumber
                                           ? true
                                           : false
                                       }
-                                      isRequired
+
                                     >
                                       <InputLayout>
                                         <FormLabel h={"full"} mt={2}>
@@ -3087,12 +3085,12 @@ function RegsiterRequirementViewPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                        formik.errors.workPrograms?.[index]
-                                          ?.workProgramAccCc
+                                          formik.errors.workPrograms?.[index]
+                                            ?.workProgramAccCc
                                           ? true
                                           : false
                                       }
-                                      isRequired
+
                                     >
                                       <InputLayout>
                                         <FormLabel h={"full"} mt={2}>
@@ -3141,12 +3139,12 @@ function RegsiterRequirementViewPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                        formik.errors.workPrograms?.[index]
-                                          ?.workProgramBudget
+                                          formik.errors.workPrograms?.[index]
+                                            ?.workProgramBudget
                                           ? true
                                           : false
                                       }
-                                      isRequired
+
                                     >
                                       <InputLayout>
                                         <FormLabel h={"full"} mt={2}>
@@ -3180,8 +3178,8 @@ function RegsiterRequirementViewPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                        formik.errors.workPrograms?.[index]
-                                          ?.workProgramReal
+                                          formik.errors.workPrograms?.[index]
+                                            ?.workProgramReal
                                           ? true
                                           : false
                                       }
@@ -3282,10 +3280,10 @@ function RegsiterRequirementViewPage({
                                   leftover < 0
                                     ? "red.500"
                                     : leftover > 0
-                                    ? "green.500"
-                                    : colorMode === "light"
-                                    ? "black"
-                                    : "white";
+                                      ? "green.500"
+                                      : colorMode === "light"
+                                        ? "black"
+                                        : "white";
                                 return (
                                   <Flex w={"full"} as={Stack} key={index}>
                                     <Divider key={index} />
@@ -3333,9 +3331,9 @@ function RegsiterRequirementViewPage({
                                                   typeof formik.errors
                                                     .workPrograms?.[index] ===
                                                     "object" &&
-                                                  formik.errors.workPrograms?.[
-                                                    index
-                                                  ]?.directorateId
+                                                    formik.errors.workPrograms?.[
+                                                      index
+                                                    ]?.directorateId
                                                     ? true
                                                     : false
                                                 }
@@ -3412,9 +3410,9 @@ function RegsiterRequirementViewPage({
                                                   typeof formik.errors
                                                     .workPrograms?.[index] ===
                                                     "object" &&
-                                                  formik.errors.workPrograms?.[
-                                                    index
-                                                  ]?.divisionId
+                                                    formik.errors.workPrograms?.[
+                                                      index
+                                                    ]?.divisionId
                                                     ? true
                                                     : false
                                                 }
@@ -3509,9 +3507,9 @@ function RegsiterRequirementViewPage({
                                                   typeof formik.errors
                                                     .workPrograms?.[index] ===
                                                     "object" &&
-                                                  formik.errors.workPrograms?.[
-                                                    index
-                                                  ]?.groupId
+                                                    formik.errors.workPrograms?.[
+                                                      index
+                                                    ]?.groupId
                                                     ? true
                                                     : false
                                                 }
@@ -3603,8 +3601,8 @@ function RegsiterRequirementViewPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                        formik.errors.workPrograms?.[index]
-                                          ?.workProgramCode
+                                          formik.errors.workPrograms?.[index]
+                                            ?.workProgramCode
                                           ? true
                                           : false
                                       }
@@ -3652,8 +3650,8 @@ function RegsiterRequirementViewPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                        formik.errors.workPrograms?.[index]
-                                          ?.workProgramName
+                                          formik.errors.workPrograms?.[index]
+                                            ?.workProgramName
                                           ? true
                                           : false
                                       }
@@ -3701,12 +3699,12 @@ function RegsiterRequirementViewPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                        formik.errors.workPrograms?.[index]
-                                          ?.workProgramAccName
+                                          formik.errors.workPrograms?.[index]
+                                            ?.workProgramAccName
                                           ? true
                                           : false
                                       }
-                                      isRequired
+                                      
                                     >
                                       <InputLayoutFull>
                                         <FormLabel h={"full"} mt={2}>
@@ -3750,12 +3748,12 @@ function RegsiterRequirementViewPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                        formik.errors.workPrograms?.[index]
-                                          ?.workProgramAccNumber
+                                          formik.errors.workPrograms?.[index]
+                                            ?.workProgramAccNumber
                                           ? true
                                           : false
                                       }
-                                      isRequired
+
                                     >
                                       <InputLayout>
                                         <FormLabel h={"full"} mt={2}>
@@ -3804,12 +3802,12 @@ function RegsiterRequirementViewPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                        formik.errors.workPrograms?.[index]
-                                          ?.workProgramAccCc
+                                          formik.errors.workPrograms?.[index]
+                                            ?.workProgramAccCc
                                           ? true
                                           : false
                                       }
-                                      isRequired
+
                                     >
                                       <InputLayout>
                                         <FormLabel h={"full"} mt={2}>
@@ -3858,12 +3856,12 @@ function RegsiterRequirementViewPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                        formik.errors.workPrograms?.[index]
-                                          ?.workProgramBudget
+                                          formik.errors.workPrograms?.[index]
+                                            ?.workProgramBudget
                                           ? true
                                           : false
                                       }
-                                      isRequired
+
                                     >
                                       <InputLayout>
                                         <FormLabel h={"full"} mt={2}>
@@ -3897,8 +3895,8 @@ function RegsiterRequirementViewPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                        formik.errors.workPrograms?.[index]
-                                          ?.workProgramReal
+                                          formik.errors.workPrograms?.[index]
+                                            ?.workProgramReal
                                           ? true
                                           : false
                                       }
@@ -4880,9 +4878,8 @@ const Section4BRDView = ({
           m={2}
           bg={colorMode == "light" ? "white" : "gray.900"}
         >
-          <ModalHeader>{`${
-            FormMode == "Add" ? "Tambah" : "Ubah"
-          } Fitur`}</ModalHeader>
+          <ModalHeader>{`${FormMode == "Add" ? "Tambah" : "Ubah"
+            } Fitur`}</ModalHeader>
           <ModalCloseButton color={"red.500"} />
           <ModalBody w={"full"}>
             <Flex as={Stack} w={"full"}>
@@ -5430,72 +5427,72 @@ const Section4BRDView = ({
 
                 {formik.values.appOperational24hrs ==
                   APP_OPERATIONAL_OPTIONS[1] && (
-                  <Flex as={Stack} w={"full"} py={2}>
-                    <Text color={"secondary.500"}>Pilih Hari</Text>
-                    <WeekdaySelector
-                      value={OperationalDays}
-                      onChange={setOperationalDays}
-                    />
-                    <Grid templateColumns="repeat(2, 1fr)" gap={4} w={"full"}>
-                      <GridItem
-                        colSpan={{
-                          base: 2,
-                          sm: 2,
-                          md: 1,
-                          lg: 1,
-                        }}
-                        w={"full"}
-                      >
-                        <Stack w={"full"}>
-                          <Text color={"secondary.500"}>Operasional Mulai</Text>
-                          <Input
-                            type="time"
-                            id="appOperationalHourOpen"
-                            name="appOperationalHourOpen"
-                            onChange={formik.handleChange}
-                            value={
-                              formik.values.appOperationalHourOpen
-                                ? formik.values.appOperationalHourOpen.slice(
+                    <Flex as={Stack} w={"full"} py={2}>
+                      <Text color={"secondary.500"}>Pilih Hari</Text>
+                      <WeekdaySelector
+                        value={OperationalDays}
+                        onChange={setOperationalDays}
+                      />
+                      <Grid templateColumns="repeat(2, 1fr)" gap={4} w={"full"}>
+                        <GridItem
+                          colSpan={{
+                            base: 2,
+                            sm: 2,
+                            md: 1,
+                            lg: 1,
+                          }}
+                          w={"full"}
+                        >
+                          <Stack w={"full"}>
+                            <Text color={"secondary.500"}>Operasional Mulai</Text>
+                            <Input
+                              type="time"
+                              id="appOperationalHourOpen"
+                              name="appOperationalHourOpen"
+                              onChange={formik.handleChange}
+                              value={
+                                formik.values.appOperationalHourOpen
+                                  ? formik.values.appOperationalHourOpen.slice(
                                     0,
                                     5
                                   ) // ensure HH:mm
-                                : ""
-                            }
-                          />
-                        </Stack>
-                      </GridItem>
-                      <GridItem
-                        colSpan={{
-                          base: 2,
-                          sm: 2,
-                          md: 1,
-                          lg: 1,
-                        }}
-                        w={"full"}
-                      >
-                        <Stack w={"full"}>
-                          <Text color={"secondary.500"}>
-                            Operasional Berakhir
-                          </Text>
-                          <Input
-                            type="time"
-                            id="appOperationalHourClosed"
-                            name="appOperationalHourClosed"
-                            onChange={formik.handleChange}
-                            value={
-                              formik.values.appOperationalHourClosed
-                                ? formik.values.appOperationalHourClosed.slice(
+                                  : ""
+                              }
+                            />
+                          </Stack>
+                        </GridItem>
+                        <GridItem
+                          colSpan={{
+                            base: 2,
+                            sm: 2,
+                            md: 1,
+                            lg: 1,
+                          }}
+                          w={"full"}
+                        >
+                          <Stack w={"full"}>
+                            <Text color={"secondary.500"}>
+                              Operasional Berakhir
+                            </Text>
+                            <Input
+                              type="time"
+                              id="appOperationalHourClosed"
+                              name="appOperationalHourClosed"
+                              onChange={formik.handleChange}
+                              value={
+                                formik.values.appOperationalHourClosed
+                                  ? formik.values.appOperationalHourClosed.slice(
                                     0,
                                     5
                                   ) // ensure HH:mm
-                                : ""
-                            }
-                          />
-                        </Stack>
-                      </GridItem>
-                    </Grid>
-                  </Flex>
-                )}
+                                  : ""
+                              }
+                            />
+                          </Stack>
+                        </GridItem>
+                      </Grid>
+                    </Flex>
+                  )}
 
                 <FormErrorMessage>
                   {formik.errors.appOperational24hrs}
@@ -6235,13 +6232,13 @@ const Section4RFCView = ({
       prev.map((item, i) =>
         i === index
           ? {
-              ...item,
-              backlog: choosedFeature,
-              changes: {
-                backlogName: selectedOption.label,
-                posOrder: 1,
-              },
-            }
+            ...item,
+            backlog: choosedFeature,
+            changes: {
+              backlogName: selectedOption.label,
+              posOrder: 1,
+            },
+          }
           : item
       )
     );
@@ -6642,10 +6639,10 @@ const Section4RFCView = ({
                                 (x) => x.value === item.backlog.id
                               )}
                               placeholder={"Piih Fitur Eksisting"}
-                              // value={BacklogAppsOption.find(
-                              //   (x) =>
-                              //     x.value == formik.values.senderDirectorateId
-                              // )}
+                            // value={BacklogAppsOption.find(
+                            //   (x) =>
+                            //     x.value == formik.values.senderDirectorateId
+                            // )}
                             />
                             <FormErrorMessage>
                               {formik.errors.senderDivisionId}
@@ -6779,8 +6776,8 @@ const Section4RFCView = ({
                                 setBacklogChanges(updated);
                               }}
                               placeholder={`Deskripsi Fitur Perubahan`}
-                              // maxLength={300}
-                              // isDisabled={ActionLoading}
+                            // maxLength={300}
+                            // isDisabled={ActionLoading}
                             />
                           </Stack>
                         </InputLayoutFull>
@@ -6808,8 +6805,8 @@ const Section4RFCView = ({
                                 setBacklogChanges(updated);
                               }}
                               placeholder={`Catatan Fitur Perubahan`}
-                              // maxLength={300}
-                              // isDisabled={ActionLoading}
+                            // maxLength={300}
+                            // isDisabled={ActionLoading}
                             />
                           </Stack>
                         </InputLayoutFull>
@@ -7120,72 +7117,72 @@ const Section4RFCView = ({
 
                 {formik.values.appOperational24hrs ==
                   APP_OPERATIONAL_OPTIONS[1] && (
-                  <Flex as={Stack} w={"full"} py={2}>
-                    <Text color={"secondary.500"}>Pilih Hari</Text>
-                    <WeekdaySelector
-                      value={OperationalDays}
-                      onChange={setOperationalDays}
-                    />
-                    <Grid templateColumns="repeat(2, 1fr)" gap={4} w={"full"}>
-                      <GridItem
-                        colSpan={{
-                          base: 2,
-                          sm: 2,
-                          md: 1,
-                          lg: 1,
-                        }}
-                        w={"full"}
-                      >
-                        <Stack w={"full"}>
-                          <Text color={"secondary.500"}>Operasional Mulai</Text>
-                          <Input
-                            type="time"
-                            id="appOperationalHourOpen"
-                            name="appOperationalHourOpen"
-                            onChange={formik.handleChange}
-                            value={
-                              formik.values.appOperationalHourOpen
-                                ? formik.values.appOperationalHourOpen.slice(
+                    <Flex as={Stack} w={"full"} py={2}>
+                      <Text color={"secondary.500"}>Pilih Hari</Text>
+                      <WeekdaySelector
+                        value={OperationalDays}
+                        onChange={setOperationalDays}
+                      />
+                      <Grid templateColumns="repeat(2, 1fr)" gap={4} w={"full"}>
+                        <GridItem
+                          colSpan={{
+                            base: 2,
+                            sm: 2,
+                            md: 1,
+                            lg: 1,
+                          }}
+                          w={"full"}
+                        >
+                          <Stack w={"full"}>
+                            <Text color={"secondary.500"}>Operasional Mulai</Text>
+                            <Input
+                              type="time"
+                              id="appOperationalHourOpen"
+                              name="appOperationalHourOpen"
+                              onChange={formik.handleChange}
+                              value={
+                                formik.values.appOperationalHourOpen
+                                  ? formik.values.appOperationalHourOpen.slice(
                                     0,
                                     5
                                   ) // ensure HH:mm
-                                : ""
-                            }
-                          />
-                        </Stack>
-                      </GridItem>
-                      <GridItem
-                        colSpan={{
-                          base: 2,
-                          sm: 2,
-                          md: 1,
-                          lg: 1,
-                        }}
-                        w={"full"}
-                      >
-                        <Stack w={"full"}>
-                          <Text color={"secondary.500"}>
-                            Operasional Berakhir
-                          </Text>
-                          <Input
-                            type="time"
-                            id="appOperationalHourClosed"
-                            name="appOperationalHourClosed"
-                            onChange={formik.handleChange}
-                            value={
-                              formik.values.appOperationalHourClosed
-                                ? formik.values.appOperationalHourClosed.slice(
+                                  : ""
+                              }
+                            />
+                          </Stack>
+                        </GridItem>
+                        <GridItem
+                          colSpan={{
+                            base: 2,
+                            sm: 2,
+                            md: 1,
+                            lg: 1,
+                          }}
+                          w={"full"}
+                        >
+                          <Stack w={"full"}>
+                            <Text color={"secondary.500"}>
+                              Operasional Berakhir
+                            </Text>
+                            <Input
+                              type="time"
+                              id="appOperationalHourClosed"
+                              name="appOperationalHourClosed"
+                              onChange={formik.handleChange}
+                              value={
+                                formik.values.appOperationalHourClosed
+                                  ? formik.values.appOperationalHourClosed.slice(
                                     0,
                                     5
                                   ) // ensure HH:mm
-                                : ""
-                            }
-                          />
-                        </Stack>
-                      </GridItem>
-                    </Grid>
-                  </Flex>
-                )}
+                                  : ""
+                              }
+                            />
+                          </Stack>
+                        </GridItem>
+                      </Grid>
+                    </Flex>
+                  )}
 
                 <FormErrorMessage>
                   {formik.errors.appOperational24hrs}
