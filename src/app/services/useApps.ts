@@ -68,6 +68,12 @@ export interface ApplicationMasterResponse {
   appManagePicName?: string | null;
   appBusinessOwnerPicUserId?: string | null;
   appBusinessOwnerPicName?: string | null;
+  appBusinessOwnerDivisionId?: string | null;
+  appBusinessOwnerDivisionCode?: string | null;
+  appBusinessOwnerDivisionName?: string | null;
+  appBusinessOwnerGroupId?: string | null;
+  appBusinessOwnerGroupCode?: string | null;
+  appBusinessOwnerGroupName?: string | null;
   appIsCritical: string;
   appCriticalLevel?: string | null;
   appStatusProject?: string | null;

@@ -60,10 +60,14 @@ import {
 } from "@chakra-ui/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { FiArrowLeft, FiEdit, FiSave, FiX, FiFileText, FiSettings, FiGlobe, FiFolder, FiPlus } from "react-icons/fi";
+import { FiArrowLeft, FiEdit, FiSave, FiX, FiFileText, FiSettings, FiGlobe, FiFolder, FiPlus, FiUsers } from "react-icons/fi";
 import { WeekdaySelector } from "@/app/components/inputProps/WeekDaySelector";
 import OtherInputAppsStringSeparator from "@/app/components/inputProps/InputMultiTags";
 import InputTagsArea from "@/app/components/inputProps/InputMultiTagsArea";
+import { Select } from "chakra-react-select";
+import useOrganization, { OrganizationResponse } from "@/app/services/useOrganization";
+import { ORG_CATEGORY_KEY_DIRECTORATE, ORG_CATEGORY_KEY_DIVISION, ORG_CATEGORY_KEY_GROUP, MAX_SIZE_TABLE } from "@/app/constants/applicationConstants";
+import { OptionListProps, PaggingListPayload, ListSearchByParam } from "@/app/types/masterTypes";
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Application Detail",
@@ -114,7 +118,16 @@ function ApplicationDetail() {
     appPrivateAuth: "Y",
     appHightAvailability: "Y",
     appIntegrationOthersApps: "",
+    appOwnerDivisionId: "",
+    appOwnerGroupId: "",
+    appManageByDivisionId: "",
+    appManageByGroupId: "",
+    appBusinessOwnerDivisionId: "",
+    appBusinessOwnerGroupId: "",
   });
+
+  // Organization State
+  const [OrganizationData, setOrganizationData] = useState<OrganizationResponse[]>([]);
 
   // Conditional state for Additional Info
   const [MediaAksesPublic, setMediaAksesPublic] = useState(false);
@@ -179,6 +192,59 @@ function ApplicationDetail() {
 
   // Services
   const { GetDetailById, UpdateData } = useApps();
+  const { List: ListOrganization } = useOrganization();
+
+  // Organization handlers
+  const handleSelectedCustom = (data: OptionListProps, fieldData: string) => {
+    setFormData({...formData, [fieldData]: data.value});
+  };
+
+  const handleUnSelectedCustom = (fieldData: string) => {
+    setFormData({...formData, [fieldData]: ""});
+  };
+
+  const GetDataMasterOrg = async (
+    searchValue: string = "",
+    limit: number = 1,
+    whereData: ListSearchByParam[]
+  ): Promise<OrganizationResponse[]> => {
+    const PayloadList: PaggingListPayload = {
+      search: searchValue,
+      limit: limit,
+      page: 0,
+      filterWhere: whereData,
+      fieldOrder: ["orgName"],
+      orderDir: "asc",
+    };
+    
+    const requestData = await ListOrganization(PayloadList, tokenData);
+    const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+
+    if (isErrorResponse || !requestData) {
+      showToast({
+        description: requestData?.message || RES_GENERIC_ERROR_MSG,
+        statusToast: "error",
+      });
+      return [];
+    }
+
+    if (requestData.data == null) {
+      showToast({
+        description: "Data return error",
+        statusToast: "error",
+      });
+      return [];
+    }
+
+    return requestData.data as OrganizationResponse[];
+  };
+
+  const LoadAllOrganizationData = async () => {
+    const getData = await GetDataMasterOrg("", MAX_SIZE_TABLE, []);
+    if (getData.length > 0) {
+      setOrganizationData(getData);
+    }
+  };
 
   // Handle Save
   const handleSave = async () => {
@@ -213,6 +279,12 @@ function ApplicationDetail() {
         appPrivateAuth: formData.appPrivateAuth,
         appHightAvailability: formData.appHightAvailability,
         appIntegrationOthersApps: formData.appIntegrationOthersApps,
+        appOwnerDivisionId: formData.appOwnerDivisionId || null,
+        appOwnerGroupId: formData.appOwnerGroupId || null,
+        appManageByDivisionId: formData.appManageByDivisionId || null,
+        appManageByGroupId: formData.appManageByGroupId || null,
+        appBusinessOwnerDivisionId: formData.appBusinessOwnerDivisionId || null,
+        appBusinessOwnerGroupId: formData.appBusinessOwnerGroupId || null,
       };
 
       const requestData = await UpdateData(payload, tokenData);
@@ -338,6 +410,12 @@ function ApplicationDetail() {
         appPrivateAuth: data.appPrivateAuth || "Y",
         appHightAvailability: data.appHightAvailability || "Y",
         appIntegrationOthersApps: data.appIntegrationOthersApps || "",
+        appOwnerDivisionId: data.appOwnerDivisionId || "",
+        appOwnerGroupId: data.appOwnerGroupId || "",
+        appManageByDivisionId: data.appManageByDivisionId || "",
+        appManageByGroupId: data.appManageByGroupId || "",
+        appBusinessOwnerDivisionId: data.appBusinessOwnerDivisionId || "",
+        appBusinessOwnerGroupId: data.appBusinessOwnerGroupId || "",
       });
       
       // Set conditional states
@@ -403,6 +481,7 @@ function ApplicationDetail() {
   useEffect(() => {
     if (tokenData && appId) {
       LoadApplicationData();
+      LoadAllOrganizationData();
     }
   }, [tokenData, appId]); // Remove LoadApplicationData from dependencies
 
@@ -602,6 +681,29 @@ function ApplicationDetail() {
                         <HStack spacing={2}>
                           <Icon as={FiSettings} boxSize={4} />
                           <Text>Additional Information</Text>
+                        </HStack>
+                      </Tab>
+                      <Tab 
+                        fontWeight="semibold" 
+                        px={6}
+                        py={3}
+                        rounded="xl"
+                        color={colorMode === "light" ? "gray.600" : "gray.400"}
+                        _selected={{ 
+                          color: "white",
+                          bg: "secondary.500",
+                          boxShadow: "lg",
+                          transform: "translateY(-2px)"
+                        }}
+                        _hover={{
+                          bg: colorMode === "light" ? "gray.200" : "gray.600",
+                          transform: "translateY(-1px)"
+                        }}
+                        transition="all 0.2s"
+                      >
+                        <HStack spacing={2}>
+                          <Icon as={FiUsers} boxSize={4} />
+                          <Text>Owner & Management</Text>
                         </HStack>
                       </Tab>
                       <Tab 
@@ -1324,6 +1426,223 @@ function ApplicationDetail() {
                                   </>
                                 )}
                               </FormControl>
+                            </VStack>
+                          </Box>
+                        </VStack>
+                      </TabPanel>
+
+                      {/* Owner & Management Tab */}
+                      <TabPanel p={8}>
+                        <VStack spacing={8} align="stretch">
+                          {IsEditMode && (
+                            <Flex justify="end">
+                              <HStack spacing={2}>
+                                <Button
+                                  leftIcon={<FiX />}
+                                  variant="ghost"
+                                  colorScheme="red"
+                                  size="sm"
+                                  rounded="lg"
+                                  onClick={() => setIsEditMode(false)}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  leftIcon={<FiSave />}
+                                  colorScheme="secondary"
+                                  size="sm"
+                                  rounded="lg"
+                                  isLoading={IsLoadingProcess}
+                                  onClick={handleSave}
+                                >
+                                  Save Changes
+                                </Button>
+                              </HStack>
+                            </Flex>
+                          )}
+
+                          <Box
+                            p={6}
+                            bg={colorMode === "light" ? "white" : "gray.800"}
+                            rounded="xl"
+                            border="1px solid"
+                            borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                          >
+                            <VStack spacing={6} align="stretch">
+                              {/* Application Owner */}
+                              <Box>
+                                <Heading size="sm" mb={4} color="secondary.500">
+                                  Application Owner
+                                </Heading>
+                                <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={4}>
+                                  <FormControl>
+                                    <FormLabel>Divisi</FormLabel>
+                                    <Select
+                                      options={OrganizationData.filter(f => f.orgType == ORG_CATEGORY_KEY_DIVISION).map(d => ({
+                                        label: `${d.orgName} | ${d.orgType}`,
+                                        value: d.id,
+                                      }))}
+                                      isSearchable={true}
+                                      onChange={(e) => {
+                                        if (e) {
+                                          handleSelectedCustom({ label: e.label, value: e.value }, "appOwnerDivisionId");
+                                        } else {
+                                          handleUnSelectedCustom("appOwnerDivisionId");
+                                        }
+                                      }}
+                                      placeholder="Pilih Divisi"
+                                      isLoading={IsLoadingProcess}
+                                      isDisabled={!IsEditMode}
+                                      value={OrganizationData.filter(f => f.orgType == ORG_CATEGORY_KEY_DIVISION && f.id == formData.appOwnerDivisionId).map(d => ({
+                                        label: `${d.orgName} | ${d.orgType}`,
+                                        value: d.id,
+                                      }))}
+                                    />
+                                  </FormControl>
+                                  <FormControl>
+                                    <FormLabel>Grup</FormLabel>
+                                    <Select
+                                      options={OrganizationData.filter(f => f.orgType == ORG_CATEGORY_KEY_GROUP && f.parentId == formData.appOwnerDivisionId).map(d => ({
+                                        label: `${d.orgName} | ${d.orgType}`,
+                                        value: d.id,
+                                      }))}
+                                      isSearchable={true}
+                                      onChange={(e) => {
+                                        if (e) {
+                                          handleSelectedCustom({ label: e.label, value: e.value }, "appOwnerGroupId");
+                                        } else {
+                                          handleUnSelectedCustom("appOwnerGroupId");
+                                        }
+                                      }}
+                                      placeholder="Pilih Group"
+                                      isLoading={IsLoadingProcess}
+                                      isDisabled={!IsEditMode}
+                                      value={OrganizationData.filter(f => f.orgType == ORG_CATEGORY_KEY_GROUP && f.id == formData.appOwnerGroupId).map(d => ({
+                                        label: `${d.orgName} | ${d.orgType}`,
+                                        value: d.id,
+                                      }))}
+                                    />
+                                  </FormControl>
+                                </Grid>
+                              </Box>
+
+                              <Divider />
+
+                              {/* Managed By */}
+                              <Box>
+                                <Heading size="sm" mb={4} color="secondary.500">
+                                  Managed By
+                                </Heading>
+                                <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={4}>
+                                  <FormControl>
+                                    <FormLabel>Divisi</FormLabel>
+                                    <Select
+                                      options={OrganizationData.filter(f => f.orgType == ORG_CATEGORY_KEY_DIVISION).map(d => ({
+                                        label: `${d.orgName} | ${d.orgType}`,
+                                        value: d.id,
+                                      }))}
+                                      isSearchable={true}
+                                      onChange={(e) => {
+                                        if (e) {
+                                          handleSelectedCustom({ label: e.label, value: e.value }, "appManageByDivisionId");
+                                        } else {
+                                          handleUnSelectedCustom("appManageByDivisionId");
+                                        }
+                                      }}
+                                      placeholder="Pilih Divisi"
+                                      isLoading={IsLoadingProcess}
+                                      isDisabled={!IsEditMode}
+                                      value={OrganizationData.filter(f => f.orgType == ORG_CATEGORY_KEY_DIVISION && f.id == formData.appManageByDivisionId).map(d => ({
+                                        label: `${d.orgName} | ${d.orgType}`,
+                                        value: d.id,
+                                      }))}
+                                    />
+                                  </FormControl>
+                                  <FormControl>
+                                    <FormLabel>Grup</FormLabel>
+                                    <Select
+                                      options={OrganizationData.filter(f => f.orgType == ORG_CATEGORY_KEY_GROUP && f.parentId == formData.appManageByDivisionId).map(d => ({
+                                        label: `${d.orgName} | ${d.orgType}`,
+                                        value: d.id,
+                                      }))}
+                                      isSearchable={true}
+                                      onChange={(e) => {
+                                        if (e) {
+                                          handleSelectedCustom({ label: e.label, value: e.value }, "appManageByGroupId");
+                                        } else {
+                                          handleUnSelectedCustom("appManageByGroupId");
+                                        }
+                                      }}
+                                      placeholder="Pilih Group"
+                                      isLoading={IsLoadingProcess}
+                                      isDisabled={!IsEditMode}
+                                      value={OrganizationData.filter(f => f.orgType == ORG_CATEGORY_KEY_GROUP && f.id == formData.appManageByGroupId).map(d => ({
+                                        label: `${d.orgName} | ${d.orgType}`,
+                                        value: d.id,
+                                      }))}
+                                    />
+                                  </FormControl>
+                                </Grid>
+                              </Box>
+
+                              <Divider />
+
+                              {/* Business Owner */}
+                              <Box>
+                                <Heading size="sm" mb={4} color="secondary.500">
+                                  Business Owner
+                                </Heading>
+                                <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={4}>
+                                  <FormControl>
+                                    <FormLabel>Divisi</FormLabel>
+                                    <Select
+                                      options={OrganizationData.filter(f => f.orgType == ORG_CATEGORY_KEY_DIVISION).map(d => ({
+                                        label: `${d.orgName} | ${d.orgType}`,
+                                        value: d.id,
+                                      }))}
+                                      isSearchable={true}
+                                      onChange={(e) => {
+                                        if (e) {
+                                          handleSelectedCustom({ label: e.label, value: e.value }, "appBusinessOwnerDivisionId");
+                                        } else {
+                                          handleUnSelectedCustom("appBusinessOwnerDivisionId");
+                                        }
+                                      }}
+                                      placeholder="Pilih Divisi"
+                                      isLoading={IsLoadingProcess}
+                                      isDisabled={!IsEditMode}
+                                      value={OrganizationData.filter(f => f.orgType == ORG_CATEGORY_KEY_DIVISION && f.id == formData.appBusinessOwnerDivisionId).map(d => ({
+                                        label: `${d.orgName} | ${d.orgType}`,
+                                        value: d.id,
+                                      }))}
+                                    />
+                                  </FormControl>
+                                  <FormControl>
+                                    <FormLabel>Grup</FormLabel>
+                                    <Select
+                                      options={OrganizationData.filter(f => f.orgType == ORG_CATEGORY_KEY_GROUP && f.parentId == formData.appBusinessOwnerDivisionId).map(d => ({
+                                        label: `${d.orgName} | ${d.orgType}`,
+                                        value: d.id,
+                                      }))}
+                                      isSearchable={true}
+                                      onChange={(e) => {
+                                        if (e) {
+                                          handleSelectedCustom({ label: e.label, value: e.value }, "appBusinessOwnerGroupId");
+                                        } else {
+                                          handleUnSelectedCustom("appBusinessOwnerGroupId");
+                                        }
+                                      }}
+                                      placeholder="Pilih Group"
+                                      isLoading={IsLoadingProcess}
+                                      isDisabled={!IsEditMode}
+                                      value={OrganizationData.filter(f => f.orgType == ORG_CATEGORY_KEY_GROUP && f.id == formData.appBusinessOwnerGroupId).map(d => ({
+                                        label: `${d.orgName} | ${d.orgType}`,
+                                        value: d.id,
+                                      }))}
+                                    />
+                                  </FormControl>
+                                </Grid>
+                              </Box>
                             </VStack>
                           </Box>
                         </VStack>
