@@ -488,8 +488,8 @@ function ReuirementsBRDPage() {
               <Text fontWeight={600}>
                 {info.row.original.reqInititateDate
                   ? stringToDateFormatedReverse(
-                      info.row.original.reqInititateDate
-                    )
+                    info.row.original.reqInititateDate
+                  )
                   : "-"}
               </Text>
             </Flex>
@@ -498,8 +498,8 @@ function ReuirementsBRDPage() {
               <Text fontWeight={600}>
                 {info.row.original.reqAcceptedDate
                   ? stringToDateFormatedReverse(
-                      info.row.original.reqAcceptedDate
-                    )
+                    info.row.original.reqAcceptedDate
+                  )
                   : "-"}
               </Text>
             </Flex>
@@ -541,17 +541,16 @@ function ReuirementsBRDPage() {
             </Flex>
             <Flex fontSize={"small"} as={Stack} spacing={0}>
               <Text>Ditugaskan Ke :</Text>
-              {info.row.original.approvalDatas?.length ? (
+              {info.row.original.approvalDatas?.length > 0 ? (
                 info.row.original.approvalDatas.map((x, idx) => (
-                  <Text fontWeight={600} key={idx} fontSize="smaller">
+                  <Text fontWeight={600} key={idx} fontSize={"smaller"}>
+
                     {idx + 1}. {x.approverUserFirstName}{" "}
                     {x.approverUserLastnameName}
                   </Text>
                 ))
               ) : (
-                <Text fontWeight={600} fontSize="smaller" color="gray.500">
-                  -
-                </Text>
+                <Text fontSize={"smaller"} color="gray.500">Tidak ada penugasan</Text>
               )}
             </Flex>
           </Flex>
@@ -588,7 +587,7 @@ function ReuirementsBRDPage() {
             <Flex as={Stack} spacing={2}>
               <Flex as={Stack} spacing={0}>
                 {info?.row?.original?.appInitialCode &&
-                info.row.original.appInitialCode.trim() !== "" ? (
+                  info.row.original.appInitialCode.trim() !== "" ? (
                   <>
                     <Text fontWeight={600}>
                       ({info.row.original.appInitialCode})
@@ -1013,8 +1012,8 @@ function ReuirementsBRDPage() {
                                         {" "}
                                         {dt.field === "senderDivisionId"
                                           ? OptionDivision.find(
-                                              (opt) => opt.value === dt.value
-                                            )?.label || dt.value
+                                            (opt) => opt.value === dt.value
+                                          )?.label || dt.value
                                           : dt.value}
                                       </Text>
                                     </Text>

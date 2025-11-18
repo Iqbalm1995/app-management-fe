@@ -234,6 +234,1063 @@ import { LinkItemProps, LinkItems } from "../constants/menuApplication";
 //   () => import("../_pieces/profile/Profile-modal")
 // );
 
+
+interface LinkItemProps {
+  name: string;
+  icon: IconType;
+  link: string;
+  role: string[];
+  menuID: string;
+  children: LinkItemProps[];
+  isLocked?: boolean;
+  isPro?: boolean;
+}
+
+const LinkItems: LinkItemProps[] = [
+  {
+    name: "Dashboard",
+    icon: TbLayoutDashboardFilled,
+    link: "/home",
+    role: ["admin"],
+    menuID: "1",
+    children: [],
+  },
+  {
+    name: "Workspace",
+    icon: BsRocketTakeoff,
+    link: "/coming-soon",
+    role: ["admin"],
+    menuID: "1",
+    isPro: true,
+    children: [
+      {
+        name: "My Project",
+        icon: FaCode,
+        link: "/coming-soon",
+        role: ["admin"],
+        menuID: "1",
+        isPro: true,
+        children: [],
+      },
+    ],
+  },
+  // {
+  //   name: "Workspace",
+  //   icon: BsRocketTakeoff,
+  //   link: "/workspace",
+  //   role: ["admin"],
+  //   menuID: "1",
+  //   isPro: true,
+  //   children: [
+  //     {
+  //       name: "My Project",
+  //       icon: FaCode,
+  //       link: "/project-development",
+  //       role: ["admin"],
+  //       menuID: "1",
+  //       isPro: true,
+  //       children: [],
+  //     },
+  //   ],
+  // },
+  {
+    name: "Requirements",
+    icon: FaDraftingCompass,
+    link: "/requirements",
+    role: ["admin"],
+    menuID: "1",
+    children: [
+      {
+        name: "BRD",
+        icon: MdOutlineCircle,
+        link: "/requirements/brd",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "RFC",
+        icon: MdChangeHistory,
+        link: "/requirements/rfc",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Prerequisites (Pre-Req)",
+        icon: MdChangeHistory,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      // {
+      //   name: "Pending Review",
+      //   icon: MdOutlineCircle,
+      //   link: "/requirements/pending-reviews",
+      //     role: ["admin"],
+      //     menuID: "1",
+      //     children: [],
+      // // },
+    ],
+  },
+  {
+    name: "Projects",
+    icon: FaDiagramProject,
+    link: "/projects",
+    role: ["admin"],
+    menuID: "1",
+    children: [
+      {
+        name: "Internal Development",
+        icon: FaCode,
+        link: "/projects-manager",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Procurement",
+        icon: TbContract,
+        link: "/projects-procurements",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Deployment",
+        icon: BsCloudUpload,
+        link: "/projects-deployments",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Timeline & Milestone Simulation",
+        icon: TbTimeline,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  {
+    name: "Vendor Management",
+    icon: FiUmbrella,
+    link: "/coming-soon",
+    role: ["admin"],
+    isPro: true,
+    menuID: "1",
+    children: [
+      {
+        name: "Vendor Data",
+        icon: FiUmbrella,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Contract Data",
+        icon: LiaFileContractSolid,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Acquisition",
+        icon: FiLayers,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Work Programs / RBB",
+        icon: MdOutlineWorkOutline,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Invoice & Payment Tracking",
+        icon: CiMoneyCheck1,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  {
+    name: "Resource Management",
+    icon: TbUsers,
+    link: "/coming-soon",
+    role: ["admin"],
+    isPro: true,
+    menuID: "1",
+    children: [
+      {
+        name: "Resource Load Tracking",
+        icon: TbUserHeart,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Resource Allocation",
+        icon: TbUserShare,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Resource Availability",
+        icon: TbUserBolt,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  {
+    name: "Meeting Management",
+    icon: AiOutlineVideoCamera,
+    link: "/coming-soon",
+    role: ["admin"],
+    isPro: true,
+    menuID: "1",
+    children: [
+      {
+        name: "Meeting Invitations",
+        icon: AiOutlineVideoCameraAdd,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Meeting Calender",
+        icon: IoCalendarNumberOutline,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Minutes & Follow-Ups",
+        icon: IoCalendarOutline,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  {
+    name: "Import Data",
+    icon: FiUpload,
+    link: "/projects/import",
+    role: ["admin"],
+    menuID: "1",
+    children: [
+      {
+        name: "Import Data Project",
+        icon: FiUpload,
+        link: "/projects/import",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Import Data Project Application",
+        icon: FiUpload,
+        link: "/projects/import-applications",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+
+  {
+    name: "Reports",
+    icon: BiSolidReport,
+    link: "/reports",
+    role: ["admin"],
+    isPro: false,
+    menuID: "1",
+    children: [
+      {
+        name: "Dashboard Portfolio",
+        icon: BiSolidReport,
+        link: "/reports/dashboard-portfolio",
+        role: ["admin"],
+        isPro: false,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Project Portfolio",
+        icon: BiSolidReport,
+        link: "/reports/project-portfolio",
+        role: ["admin"],
+        isPro: false,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Deployment Portfolio",
+        icon: BiSolidReport,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Application & Feature",
+        icon: RiApps2AiLine,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Project Team",
+        icon: TbUsersGroup,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Executive Summary",
+        icon: ImUserTie,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  {
+    name: "Collaboration & Sharing",
+    icon: TbShare,
+    link: "/coming-soon",
+    role: ["admin"],
+    isPro: true,
+    menuID: "1",
+    children: [
+      {
+        name: "Mention & Notification",
+        icon: TbBellShare,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Internal Sharing",
+        icon: TbMoodShare,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "External Collaboration",
+        icon: TbNavigationShare,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Chat",
+        icon: IoChatbubblesOutline,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  {
+    name: "Assets Management",
+    icon: FaRegStar,
+    link: "/coming-soon",
+    role: ["admin"],
+    isPro: true,
+    menuID: "1",
+    children: [
+      {
+        name: "Software",
+        icon: MdWebAsset,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Hardware",
+        icon: LuServer,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "License & Subscriptions",
+        icon: IoKeyOutline,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  {
+    name: "DevOps",
+    icon: BsDatabaseGear,
+    link: "/coming-soon",
+    role: ["admin"],
+    isPro: true,
+    menuID: "1",
+    children: [
+      {
+        name: "DevOps Portofolio",
+        icon: BsDatabaseGear,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "DevOps Integration",
+        icon: IoIosCodeDownload,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Source Code Repository",
+        icon: RiCodeBlock,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Engineer On Site (EoS) Report",
+        icon: HiOutlineDocumentReport,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Route Cause Analysis (RCA)",
+        icon: BiAnalyse,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Maintenance Report",
+        icon: TbFileReport,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  {
+    name: "Team Manager",
+    icon: FaChess,
+    link: "/teams",
+    role: ["admin"],
+    menuID: "1",
+    children: [],
+  },
+  {
+    name: "Team Center",
+    icon: FaUsersRays,
+    link: "/teams-center",
+    role: ["admin"],
+    menuID: "1",
+    children: [],
+  },
+  // {
+  //   name: "Server Manager",
+  //   icon: CiServer,
+  //   link: "/server-manager",
+  // role: ["admin"],
+  // menuID: "1",
+  // children: [],
+  // },
+  // {
+  //   name: "File Archive",
+  //   icon: MdOutlinePermMedia,
+  //   link: "/file-archives",
+  //   role: ["admin"],
+  //   menuID: "1",
+  //   isPro: true,
+  //   children: [],
+  // },
+  {
+    name: "Knowledge Base",
+    icon: GrHelpBook,
+    link: "/coming-soon",
+    role: ["admin"],
+    isPro: true,
+    menuID: "1",
+    children: [
+      {
+        name: "Bjb Ask",
+        icon: BsChatDots,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Bjb Apps User Guide",
+        icon: LuBookHeart,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Document Templates",
+        icon: IoMdBookmarks,
+        link: "/coming-soon",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  {
+    name: "Master Data",
+    icon: FiDatabase,
+    link: "/master-data",
+    role: ["admin"],
+    menuID: "1",
+    children: [
+      {
+        name: "Master Workflow",
+        icon: PiFlowArrow,
+        link: "/master-data/workflow",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Master Constant",
+        icon: FiKey,
+        link: "/master-data/constants-data",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Master Application",
+        icon: HiOutlineDesktopComputer,
+        link: "/master-data/Application",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Master Users",
+        icon: FiUsers,
+        link: "/master-data/users",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Master Organizations",
+        icon: RiOrganizationChart,
+        link: "/master-data/organizations",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Master Organization Structure",
+        icon: RiOrganizationChart,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Master Certifications",
+        icon: PiCertificate,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Master Programming Language",
+        icon: MdOutlineCode,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Master Specializations",
+        icon: TbBolt,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  {
+    name: "Menu Name",
+    icon: TbBolt, // icon proefer
+    link: "/coming-soon", // constant
+    isPro: true, // constant
+    role: ["admin"], // constant
+    menuID: "1", // constant
+    children: [
+      {
+        name: "Menu Name",
+        icon: TbBolt, // icon proefer
+        link: "/coming-soon", // constant
+        isPro: true, // constant
+        role: ["admin"], // constant
+        menuID: "1", // constant
+        children: [], // Sub here
+      },
+    ], // Sub here
+  },
+  {
+    name: "Parameter Management",
+    icon: TbAdjustmentsCog, // general "settings/parameters" icon
+    link: "/coming-soon",
+    isPro: true,
+    role: ["admin"],
+    menuID: "1",
+    children: [
+      {
+        name: "BRD & RFC Status",
+        icon: TbListDetails,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Deployment Status",
+        icon: TbArrowsExchange,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Project Status",
+        icon: TbProgressCheck,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Project Indicators",
+        icon: TbChartInfographic,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Project Types",
+        icon: TbFolders,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Project Characteristics",
+        icon: TbCategory,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Development Status",
+        icon: TbServerCog,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Deliverables Status",
+        icon: TbClipboardList,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Maintenance Types & Categories",
+        icon: TbAdjustmentsCog,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Parameter Language Mapping",
+        icon: TbLanguage,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Project Codes",
+        icon: TbCode,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  {
+    name: "System Parameters",
+    icon: TbSettingsCog, // general system/settings icon
+    link: "/coming-soon",
+    isPro: true,
+    role: ["admin"],
+    menuID: "1",
+    children: [
+      {
+        name: "Calender Engine",
+        icon: TbCalendarTime,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Session Timeout",
+        icon: TbHourglassHigh,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "System Cut-Off Time",
+        icon: TbClockExclamation,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Announcements",
+        icon: RiMegaphoneLine,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Time Tracking",
+        icon: TbTimeline,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  {
+    name: "Advanced",
+    icon: TbBolt,
+    link: "/advanced",
+    isPro: true,
+    role: ["admin"],
+    menuID: "1",
+    children: [
+      {
+        name: "Pro Dashboard",
+        icon: TbLayoutDashboardFilled,
+        link: "/advanced/pro-dashboard",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  {
+    name: "Audit Trail",
+    icon: RxActivityLog,
+    link: "/audit-trail",
+    role: ["admin"],
+    menuID: "1",
+    children: [],
+  },
+  {
+    name: "About",
+    icon: HiOutlineInformationCircle,
+    link: "/coming-soon",
+    isPro: true,
+    role: ["admin"],
+    menuID: "1",
+    children: [
+      {
+        name: "Bjb Apps Web",
+        icon: FaRegHeart,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Bjb Apps Mobile",
+        icon: CiMobile2,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Hybrid Methodologies",
+        icon: FaVial,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  {
+    name: "Add-Ons",
+    icon: FaO,
+    link: "/coming-soon",
+    isPro: true,
+    role: ["admin"],
+    menuID: "1",
+    children: [
+      {
+        name: "System Integrations",
+        icon: MdOutlineSystemUpdateAlt,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Bjb Apps Mobile",
+        icon: CiMobile2,
+        link: "/coming-soon",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+    ],
+  },
+  // {
+  //   name: "Profile",
+  //   icon: FiUser,
+  //   link: "/profile",
+  // role: ["admin"],
+  // menuID: "1",
+  // children: [],
+  // },
+  // {
+  //   name: "Pricing",
+  //   icon: FiDollarSign,
+  //   link: "/pricing",
+  // role: ["admin"],
+  // menuID: "1",
+  // children: [],
+  //   isLocked: true,
+  // },
+  // {
+  //   name: "Avtivities",
+  //   icon: RxActivityLog,
+  //   link: "/activities",
+  // role: ["admin"],
+  // menuID: "1",
+  // children: [],
+  //   isLocked: true,
+  // },
+  // {
+  //   name: "User Config",
+  //   icon: FaUsersGear,
+  //   link: "/users",
+  // role: ["admin"],
+  // menuID: "1",
+  //   children: [
+  //     {
+  //       name: "User Manager",
+  //       icon: FaUserPlus,
+  //       link: "/users",
+  //       role: ["admin"],
+  //       menuID: "1",
+  //       children: [],
+  //     },
+  //     {
+  //       name: "Master Role Sys",
+  //       icon: FaUsersRays,
+  //       link: "/users/roles",
+  //       role: ["admin"],
+  //       menuID: "1",
+  //       children: [],
+  //     },
+  //     {
+  //       name: "Master Division",
+  //       icon: FaFire,
+  //       link: "/users/divisions",
+  //       role: ["admin"],
+  //       menuID: "1",
+  //       children: [],
+  //     },
+  //   ],
+  // },
+  // {
+  //   name: "Example Page",
+  //   icon: FaRegFolderOpen,
+  //   link: "#",
+  // role: ["admin"],
+  // menuID: "1",
+  //   children: [
+  //     {
+  //       name: "Kanban",
+  //       icon: BsKanban,
+  //       link: "/kanban",
+  //       role: ["admin"],
+  //       menuID: "1",
+  //       children: [],
+  //     },
+  //     {
+  //       name: "Kanban Alt",
+  //       icon: BsKanban,
+  //       link: "/kanban-alt",
+  //       role: ["admin"],
+  //       menuID: "1",
+  //       children: [],
+  //     },
+  //     {
+  //       name: "Calendar",
+  //       icon: IoCalendarNumberOutline,
+  //       link: "/calendar",
+  //       role: ["admin"],
+  //       menuID: "1",
+  //       children: [],
+  //     },
+  //     {
+  //       name: "Drop Zone",
+  //       icon: MdOutlinePermMedia,
+  //       link: "/dropzone",
+  //       role: ["admin"],
+  //       menuID: "1",
+  //       children: [],
+  //     },
+  //     {
+  //       name: "User",
+  //       icon: FiUser,
+  //       link: "/users",
+  //       role: ["admin"],
+  //       menuID: "1",
+  //       children: [],
+  //     },
+  //     {
+  //       name: "Settings",
+  //       icon: FiSettings,
+  //       link: "/settings",
+  //       role: ["admin"],
+  //       menuID: "1",
+  //       children: [],
+  //     },
+  //   ],
+  // },
+];
+
 export default function NavigationAdmin({ children }: { children: ReactNode }) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [LiteMode, setLiteMode] = useState<boolean>(false);
@@ -381,7 +1438,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                 aria-label="lite mode"
                 icon={<RiMenu2Line />}
                 size={"lg"}
-                // rounded={"xl"}
+              // rounded={"xl"}
               />
               <SearchMenuButton LiteModeTrigger={LiteMode} />
             </Box>
@@ -889,7 +1946,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                 pb={12}
                 pt={5}
                 minH={"100vh"}
-                // bg={"blue.100"}
+              // bg={"blue.100"}
               >
                 <AnimatePresence mode="wait">
                   <MotionBox
@@ -981,6 +2038,10 @@ const SidebarContent = ({
         </Flex>
 
         <AdditionalProfileBar LiteModeTrigger={LiteModeTrigger} />
+
+        <SearchMenuButton LiteModeTrigger={LiteModeTrigger} />
+
+
         <Flex pt={5} pb={2} mx={3}>
           <VStack w={"full"} h={"65vh"} align={"start"} overflowX="auto">
             <HStack w="full" justify="space-between" align="center" pl={2}>
@@ -996,6 +2057,7 @@ const SidebarContent = ({
                     onChange={(e) => setHideProMenus(e.target.checked)}
                   />
                 </FormControl>
+
               </Tooltip>
             </HStack>
             <Box w={"full"} overflowY={"auto"}>
@@ -1125,15 +2187,15 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
               IsActiveNav
                 ? "linear(to-r, secondary.500, secondary.600)"
                 : hasActiveChild
-                ? "linear(to-r, secondary.500, secondary.600)"
-                : "linear(to-r, transparent, transparent)"
+                  ? "linear(to-r, secondary.500, secondary.600)"
+                  : "linear(to-r, transparent, transparent)"
             }
             color={
               IsActiveNav
                 ? "white" // When the navigation item is active, set color to white
                 : hasActiveChild
-                ? "gray.100" // When has active child
-                : useColorModeValue("gray.900", "gray.100") // Otherwise, set color based on the color mode
+                  ? "gray.100" // When has active child
+                  : useColorModeValue("gray.900", "gray.100") // Otherwise, set color based on the color mode
             }
             justifyContent={"center"}
             // onClick={() => {
@@ -1164,8 +2226,8 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
                     IsActiveNav
                       ? "white"
                       : hasActiveChild
-                      ? "gray.100"
-                      : useColorModeValue("gray.900", "gray.100")
+                        ? "gray.100"
+                        : useColorModeValue("gray.900", "gray.100")
                   }
                   as={data.icon}
                 />
@@ -1424,7 +2486,7 @@ export function AdditionalProfileBar({
                       color={
                         colorMode == "light" ? "primary.500" : "primary.100"
                       }
-                      // color={"secondary.200"}
+                    // color={"secondary.200"}
                     >
                       {(DataAuth && DataAuth.teamRole?.specName) ||
                         (DataAuth && DataAuth.jabatan)}
@@ -1523,10 +2585,16 @@ export function SearchMenuButton({ LiteModeTrigger }: { LiteModeTrigger: boolean
     if (searchQuery.trim()) {
       const allMenus = getAllMenuItems(LinkItems);
       const filtered = allMenus
+<<<<<<< HEAD
         .filter(
           (item) =>
             item.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
             item.link !== "#"
+=======
+        .filter(item =>
+          item.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+          item.link !== "#"
+>>>>>>> refan-dev-master/team-staging-master
         )
         .slice(0, 5);
       setFilteredMenus(filtered);
