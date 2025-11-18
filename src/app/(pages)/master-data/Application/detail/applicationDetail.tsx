@@ -10,6 +10,13 @@ import {
   radiusStyle,
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
+  APP_TYPE_OPTIONS,
+  APP_ENV_LOCATION_OPTIONS,
+  APP_OPERATIONAL_OPTIONS,
+  APP_RELATED_OPTIONS,
+  APP_TRANSACTIONAL_OPTIONS,
+  APP_INTEGRATED_OTHER_APPS,
+  fullDay,
 } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
@@ -43,10 +50,20 @@ import {
   VStack,
   Divider,
   Avatar,
+  Checkbox,
+  CheckboxGroup,
+  RadioGroup,
+  Radio,
+  Tag,
+  TagLabel,
+  Wrap,
 } from "@chakra-ui/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { FiArrowLeft, FiEdit, FiSave, FiX, FiFileText, FiSettings, FiGlobe, FiFolder } from "react-icons/fi";
+import { FiArrowLeft, FiEdit, FiSave, FiX, FiFileText, FiSettings, FiGlobe, FiFolder, FiPlus } from "react-icons/fi";
+import { WeekdaySelector } from "@/app/components/inputProps/WeekDaySelector";
+import OtherInputAppsStringSeparator from "@/app/components/inputProps/InputMultiTags";
+import InputTagsArea from "@/app/components/inputProps/InputMultiTagsArea";
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Application Detail",
@@ -77,7 +94,88 @@ function ApplicationDetail() {
     appShortName: "",
     appsDesc: "",
     note: "",
+    appTargetUsers: "INTERNAL",
+    appAccessFrontsiteDns: "",
+    appAccessFrontsiteIp: "",
+    appAccessBacksiteDns: "",
+    appAccessBacksiteIp: "",
+    appAccessMedia: "",
+    appTypes: "",
+    appTypeCustom: "",
+    appRelatedness: "",
+    appRelatednessDesc: "",
+    appTransactionals: "",
+    appOperational24hrs: "",
+    appOperationalDays: "",
+    appOperationalHourOpen: "",
+    appOperationalHourClosed: "",
+    appEnvLocations: "",
+    appEnvLocationsOthers: "",
+    appPrivateAuth: "Y",
+    appHightAvailability: "Y",
+    appIntegrationOthersApps: "",
   });
+
+  // Conditional state for Additional Info
+  const [MediaAksesPublic, setMediaAksesPublic] = useState(false);
+  const [MediaAksesIntranet, setMediaAksesIntranet] = useState(false);
+  const [SelectedAppsTypes, setSelectedAppsTypes] = useState<string>("");
+  const [SelectedAppsEnvLoc, setSelectedAppsEnvLoc] = useState<string>("");
+  const [OperationalDays, setOperationalDays] = useState<string>("");
+  const hasOtherAppsTypes = SelectedAppsTypes.split(",").map(s => s.trim().toLowerCase()).includes("other");
+  const hasOtherEnvLocTypes = SelectedAppsEnvLoc.split(",").map(s => s.trim().toLowerCase()).includes("other");
+
+  // Checkbox handlers
+  const handleAppysTypesCheckboxChange = (value: string) => {
+    const currentList = SelectedAppsTypes.split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    let updatedList: string[];
+
+    if (currentList.includes(value)) {
+      updatedList = currentList.filter((item) => item !== value);
+    } else {
+      updatedList = [...currentList, value];
+    }
+
+    const newValue = updatedList.join(", ") + (updatedList.length > 0 ? "," : "");
+    setSelectedAppsTypes(newValue);
+    setFormData({...formData, appTypes: newValue});
+  };
+
+  const handleAppysEnvLocCheckboxChange = (value: string) => {
+    const currentList = SelectedAppsEnvLoc.split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    let updatedList: string[];
+
+    if (currentList.includes(value)) {
+      updatedList = currentList.filter((item) => item !== value);
+    } else {
+      updatedList = [...currentList, value];
+    }
+
+    const newValue = updatedList.join(", ") + (updatedList.length > 0 ? "," : "");
+    setSelectedAppsEnvLoc(newValue);
+    setFormData({...formData, appEnvLocations: newValue});
+  };
+
+  const handleQuickAddTagIntegratedApps = (tag: string) => {
+    const currentValue = formData.appIntegrationOthersApps || "";
+    const currentTags = currentValue.split(",").map((t: string) => t.trim()).filter(Boolean);
+
+    if (!currentTags.includes(tag)) {
+      const updated = [...currentTags, tag].join(", ");
+      setFormData({...formData, appIntegrationOthersApps: updated});
+    }
+  };
+
+  // Sync OperationalDays with formData
+  useEffect(() => {
+    setFormData(prev => ({...prev, appOperationalDays: OperationalDays}));
+  }, [OperationalDays]);
 
   // Services
   const { GetDetailById, UpdateData } = useApps();
@@ -95,6 +193,26 @@ function ApplicationDetail() {
         appShortName: formData.appShortName,
         appsDesc: formData.appsDesc,
         note: formData.note,
+        appTargetUsers: formData.appTargetUsers,
+        appAccessFrontsiteDns: formData.appAccessFrontsiteDns,
+        appAccessFrontsiteIp: formData.appAccessFrontsiteIp,
+        appAccessBacksiteDns: formData.appAccessBacksiteDns,
+        appAccessBacksiteIp: formData.appAccessBacksiteIp,
+        appAccessMedia: formData.appAccessMedia,
+        appTypes: formData.appTypes,
+        appTypeCustom: formData.appTypeCustom,
+        appRelatedness: formData.appRelatedness,
+        appRelatednessDesc: formData.appRelatednessDesc,
+        appTransactionals: formData.appTransactionals,
+        appOperational24hrs: formData.appOperational24hrs,
+        appOperationalDays: formData.appOperationalDays,
+        appOperationalHourOpen: formData.appOperationalHourOpen,
+        appOperationalHourClosed: formData.appOperationalHourClosed,
+        appEnvLocations: formData.appEnvLocations,
+        appEnvLocationsOthers: formData.appEnvLocationsOthers,
+        appPrivateAuth: formData.appPrivateAuth,
+        appHightAvailability: formData.appHightAvailability,
+        appIntegrationOthersApps: formData.appIntegrationOthersApps,
       };
 
       const requestData = await UpdateData(payload, tokenData);
@@ -114,6 +232,26 @@ function ApplicationDetail() {
         appShortName: formData.appShortName,
         appsDesc: formData.appsDesc,
         note: formData.note,
+        appTargetUsers: formData.appTargetUsers,
+        appAccessFrontsiteDns: formData.appAccessFrontsiteDns,
+        appAccessFrontsiteIp: formData.appAccessFrontsiteIp,
+        appAccessBacksiteDns: formData.appAccessBacksiteDns,
+        appAccessBacksiteIp: formData.appAccessBacksiteIp,
+        appAccessMedia: formData.appAccessMedia,
+        appTypes: formData.appTypes,
+        appTypeCustom: formData.appTypeCustom,
+        appRelatedness: formData.appRelatedness,
+        appRelatednessDesc: formData.appRelatednessDesc,
+        appTransactionals: formData.appTransactionals,
+        appOperational24hrs: formData.appOperational24hrs,
+        appOperationalDays: formData.appOperationalDays,
+        appOperationalHourOpen: formData.appOperationalHourOpen,
+        appOperationalHourClosed: formData.appOperationalHourClosed,
+        appEnvLocations: formData.appEnvLocations,
+        appEnvLocationsOthers: formData.appEnvLocationsOthers,
+        appPrivateAuth: formData.appPrivateAuth,
+        appHightAvailability: formData.appHightAvailability,
+        appIntegrationOthersApps: formData.appIntegrationOthersApps,
       } : null);
 
       showToast({
@@ -180,7 +318,34 @@ function ApplicationDetail() {
         appShortName: data.appShortName,
         appsDesc: data.appsDesc || "",
         note: data.note || "",
+        appTargetUsers: data.appTargetUsers || "INTERNAL",
+        appAccessFrontsiteDns: data.appAccessFrontsiteDns || "",
+        appAccessFrontsiteIp: data.appAccessFrontsiteIp || "",
+        appAccessBacksiteDns: data.appAccessBacksiteDns || "",
+        appAccessBacksiteIp: data.appAccessBacksiteIp || "",
+        appAccessMedia: data.appAccessMedia || "",
+        appTypes: data.appTypes || "",
+        appTypeCustom: data.appTypeCustom || "",
+        appRelatedness: data.appRelatedness || "",
+        appRelatednessDesc: data.appRelatednessDesc || "",
+        appTransactionals: data.appTransactionals || "",
+        appOperational24hrs: data.appOperational24hrs || "",
+        appOperationalDays: data.appOperationalDays || "",
+        appOperationalHourOpen: data.appOperationalHourOpen || "",
+        appOperationalHourClosed: data.appOperationalHourClosed || "",
+        appEnvLocations: data.appEnvLocations || "",
+        appEnvLocationsOthers: data.appEnvLocationsOthers || "",
+        appPrivateAuth: data.appPrivateAuth || "Y",
+        appHightAvailability: data.appHightAvailability || "Y",
+        appIntegrationOthersApps: data.appIntegrationOthersApps || "",
       });
+      
+      // Set conditional states
+      setMediaAksesPublic(!!data.appAccessFrontsiteDns);
+      setMediaAksesIntranet(!!data.appAccessBacksiteIp);
+      setSelectedAppsTypes(data.appTypes || "");
+      setSelectedAppsEnvLoc(data.appEnvLocations || "");
+      setOperationalDays(data.appOperationalDays || "");
     } catch (error) {
       console.error("Error loading application:", error);
       showToast({
@@ -436,6 +601,29 @@ function ApplicationDetail() {
                       >
                         <HStack spacing={2}>
                           <Icon as={FiSettings} boxSize={4} />
+                          <Text>Additional Information</Text>
+                        </HStack>
+                      </Tab>
+                      <Tab 
+                        fontWeight="semibold" 
+                        px={6}
+                        py={3}
+                        rounded="xl"
+                        color={colorMode === "light" ? "gray.600" : "gray.400"}
+                        _selected={{ 
+                          color: "white",
+                          bg: "secondary.500",
+                          boxShadow: "lg",
+                          transform: "translateY(-2px)"
+                        }}
+                        _hover={{
+                          bg: colorMode === "light" ? "gray.200" : "gray.600",
+                          transform: "translateY(-1px)"
+                        }}
+                        transition="all 0.2s"
+                      >
+                        <HStack spacing={2}>
+                          <Icon as={FiSettings} boxSize={4} />
                           <Text>Features</Text>
                         </HStack>
                       </Tab>
@@ -648,6 +836,493 @@ function ApplicationDetail() {
                                     boxShadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
                                   }}
                                 />
+                              </FormControl>
+                            </VStack>
+                          </Box>
+                        </VStack>
+                      </TabPanel>
+
+                      {/* Additional Information Tab */}
+                      <TabPanel p={8}>
+                        <VStack spacing={8} align="stretch">
+                          {IsEditMode && (
+                            <Flex justify="end">
+                              <HStack spacing={2}>
+                                <Button
+                                  leftIcon={<FiX />}
+                                  variant="ghost"
+                                  colorScheme="red"
+                                  size="sm"
+                                  rounded="lg"
+                                  onClick={() => setIsEditMode(false)}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  leftIcon={<FiSave />}
+                                  colorScheme="secondary"
+                                  size="sm"
+                                  rounded="lg"
+                                  isLoading={IsLoadingProcess}
+                                  onClick={handleSave}
+                                >
+                                  Save Changes
+                                </Button>
+                              </HStack>
+                            </Flex>
+                          )}
+
+                          {/* Target Users */}
+                          <Box>
+                            <Text
+                              fontSize="lg"
+                              fontWeight="bold"
+                              color={colorMode === "light" ? "gray.800" : "white"}
+                              mb={4}
+                            >
+                              Target Pengguna
+                            </Text>
+                            
+                            <FormControl>
+                              <RadioGroup
+                                value={formData.appTargetUsers}
+                                onChange={(val) => IsEditMode && setFormData({...formData, appTargetUsers: val})}
+                                isDisabled={!IsEditMode}
+                              >
+                                <HStack spacing={4}>
+                                  <Radio value="EXTERNAL">EXTERNAL (NASABAH)</Radio>
+                                  <Radio value="INTERNAL">INTERNAL (BANK)</Radio>
+                                </HStack>
+                              </RadioGroup>
+                            </FormControl>
+                          </Box>
+
+                          <Divider />
+
+                          {/* Media Akses */}
+                          <Box>
+                            <Text
+                              fontSize="lg"
+                              fontWeight="bold"
+                              color={colorMode === "light" ? "gray.800" : "white"}
+                              mb={4}
+                            >
+                              Media Akses Aplikasi
+                            </Text>
+                            
+                            <Grid templateColumns="repeat(2, 1fr)" gap={6}>
+                              <GridItem>
+                                <VStack align="start" spacing={3}>
+                                  <Checkbox
+                                    isChecked={MediaAksesPublic}
+                                    onChange={(e) => {
+                                      if (IsEditMode) {
+                                        setMediaAksesPublic(e.target.checked);
+                                        if (!e.target.checked) {
+                                          setFormData({...formData, appAccessFrontsiteDns: ""});
+                                        }
+                                      }
+                                    }}
+                                    isDisabled={!IsEditMode}
+                                  >
+                                    Internet (Publik)
+                                  </Checkbox>
+                                  {MediaAksesPublic && (
+                                    <Input
+                                      value={formData.appAccessFrontsiteDns}
+                                      onChange={(e) => setFormData({...formData, appAccessFrontsiteDns: e.target.value})}
+                                      placeholder="https://"
+                                      isReadOnly={!IsEditMode}
+                                      bg={IsEditMode ? (colorMode === "light" ? "white" : "gray.700") : (colorMode === "light" ? "gray.50" : "gray.600")}
+                                      border="2px"
+                                      borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                                      rounded="xl"
+                                      cursor={IsEditMode ? "text" : "not-allowed"}
+                                      opacity={IsEditMode ? 1 : 0.6}
+                                    />
+                                  )}
+                                </VStack>
+                              </GridItem>
+                              <GridItem>
+                                <VStack align="start" spacing={3}>
+                                  <Checkbox
+                                    isChecked={MediaAksesIntranet}
+                                    onChange={(e) => {
+                                      if (IsEditMode) {
+                                        setMediaAksesIntranet(e.target.checked);
+                                        if (!e.target.checked) {
+                                          setFormData({...formData, appAccessBacksiteIp: ""});
+                                        }
+                                      }
+                                    }}
+                                    isDisabled={!IsEditMode}
+                                  >
+                                    Intranet (BackOffice)
+                                  </Checkbox>
+                                  {MediaAksesIntranet && (
+                                    <Input
+                                      value={formData.appAccessBacksiteIp}
+                                      onChange={(e) => setFormData({...formData, appAccessBacksiteIp: e.target.value})}
+                                      placeholder="http://"
+                                      isReadOnly={!IsEditMode}
+                                      bg={IsEditMode ? (colorMode === "light" ? "white" : "gray.700") : (colorMode === "light" ? "gray.50" : "gray.600")}
+                                      border="2px"
+                                      borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                                      rounded="xl"
+                                      cursor={IsEditMode ? "text" : "not-allowed"}
+                                      opacity={IsEditMode ? 1 : 0.6}
+                                    />
+                                  )}
+                                </VStack>
+                              </GridItem>
+                            </Grid>
+                          </Box>
+
+                          <Divider />
+
+                          {/* Jenis Aplikasi */}
+                          <Box>
+                            <Text
+                              fontSize="lg"
+                              fontWeight="bold"
+                              color={colorMode === "light" ? "gray.800" : "white"}
+                              mb={4}
+                            >
+                              Jenis Aplikasi
+                            </Text>
+                            
+                            <FormControl>
+                              <Text fontSize="sm" color="gray.500" mb={2}>Base Aplikasi</Text>
+                              <CheckboxGroup>
+                                <Grid templateColumns="repeat(2, 1fr)" gap={1} w="full">
+                                  {APP_TYPE_OPTIONS.map((item, idx) => (
+                                    <GridItem
+                                      key={idx}
+                                      colSpan={{
+                                        base: 2,
+                                        sm: 2,
+                                        md: 1,
+                                        lg: 1,
+                                      }}
+                                      w="full"
+                                    >
+                                      <Checkbox
+                                        isChecked={SelectedAppsTypes.includes(item)}
+                                        onChange={() => IsEditMode && handleAppysTypesCheckboxChange(item)}
+                                        isDisabled={!IsEditMode}
+                                      >
+                                        {item}
+                                      </Checkbox>
+                                    </GridItem>
+                                  ))}
+                                </Grid>
+                              </CheckboxGroup>
+                              {hasOtherAppsTypes && (
+                                <VStack align="start" spacing={2} mt={3}>
+                                  <Text fontSize="sm">Jenis lainnya</Text>
+                                  <Box pointerEvents={IsEditMode ? "auto" : "none"} opacity={IsEditMode ? 1 : 0.6} w="full">
+                                    <OtherInputAppsStringSeparator
+                                      value={formData.appTypeCustom || ""}
+                                      onChange={(val) => setFormData({...formData, appTypeCustom: val})}
+                                    />
+                                  </Box>
+                                </VStack>
+                              )}
+                            </FormControl>
+                          </Box>
+
+                          <Divider />
+
+                          {/* Keterkaitan & Kategori */}
+                          <Grid templateColumns="repeat(2, 1fr)" gap={6}>
+                            <GridItem>
+                              <Text
+                                fontSize="lg"
+                                fontWeight="bold"
+                                color={colorMode === "light" ? "gray.800" : "white"}
+                                mb={4}
+                              >
+                                Keterkaitan Aplikasi
+                              </Text>
+                              <FormControl>
+                                <RadioGroup
+                                  value={formData.appRelatedness}
+                                  onChange={(val) => {
+                                    if (IsEditMode) {
+                                      setFormData({...formData, appRelatedness: val});
+                                      if (val !== "REGULATOR") {
+                                        setFormData(prev => ({...prev, appRelatednessDesc: ""}));
+                                      }
+                                    }
+                                  }}
+                                  isDisabled={!IsEditMode}
+                                >
+                                  <HStack spacing={4}>
+                                    {APP_RELATED_OPTIONS.map((item, idx) => (
+                                      <Radio key={idx} value={item}>
+                                        {item}
+                                      </Radio>
+                                    ))}
+                                  </HStack>
+                                </RadioGroup>
+                                {formData.appRelatedness === "REGULATOR" && (
+                                  <VStack align="start" spacing={2} mt={3}>
+                                    <Text fontSize="sm">Nama Regulator</Text>
+                                    <Box pointerEvents={IsEditMode ? "auto" : "none"} opacity={IsEditMode ? 1 : 0.6} w="full">
+                                      <OtherInputAppsStringSeparator
+                                        value={formData.appRelatednessDesc || ""}
+                                        onChange={(val) => setFormData({...formData, appRelatednessDesc: val})}
+                                      />
+                                    </Box>
+                                  </VStack>
+                                )}
+                              </FormControl>
+                            </GridItem>
+                            <GridItem>
+                              <Text
+                                fontSize="lg"
+                                fontWeight="bold"
+                                color={colorMode === "light" ? "gray.800" : "white"}
+                                mb={4}
+                              >
+                                Kategori Aplikasi
+                              </Text>
+                              <FormControl>
+                                <RadioGroup
+                                  value={formData.appTransactionals}
+                                  onChange={(val) => IsEditMode && setFormData({...formData, appTransactionals: val})}
+                                  isDisabled={!IsEditMode}
+                                >
+                                  <HStack spacing={4}>
+                                    {APP_TRANSACTIONAL_OPTIONS.map((item, idx) => (
+                                      <Radio key={idx} value={item}>
+                                        {item}
+                                      </Radio>
+                                    ))}
+                                  </HStack>
+                                </RadioGroup>
+                              </FormControl>
+                            </GridItem>
+                          </Grid>
+
+                          <Divider />
+
+                          {/* Waktu Operasional */}
+                          <Box>
+                            <Text
+                              fontSize="lg"
+                              fontWeight="bold"
+                              color={colorMode === "light" ? "gray.800" : "white"}
+                              mb={4}
+                            >
+                              Waktu Operasional Aplikasi
+                            </Text>
+                            
+                            <FormControl mb={4}>
+                              <RadioGroup
+                                value={formData.appOperational24hrs}
+                                onChange={(val) => {
+                                  if (IsEditMode) {
+                                    if (val === APP_OPERATIONAL_OPTIONS[0]) {
+                                      setFormData({
+                                        ...formData,
+                                        appOperational24hrs: val,
+                                        appOperationalHourOpen: "",
+                                        appOperationalHourClosed: ""
+                                      });
+                                      setOperationalDays(fullDay.join(", "));
+                                    } else {
+                                      setFormData({
+                                        ...formData,
+                                        appOperational24hrs: val
+                                      });
+                                      setOperationalDays("");
+                                    }
+                                  }
+                                }}
+                                isDisabled={!IsEditMode}
+                              >
+                                <HStack spacing={4}>
+                                  {APP_OPERATIONAL_OPTIONS.map((item, idx) => (
+                                    <Radio key={idx} value={item}>
+                                      {item}
+                                    </Radio>
+                                  ))}
+                                </HStack>
+                              </RadioGroup>
+                            </FormControl>
+
+                            {formData.appOperational24hrs === APP_OPERATIONAL_OPTIONS[1] && (
+                              <VStack spacing={4} align="stretch">
+                                <FormControl>
+                                  <FormLabel fontSize="sm" fontWeight="semibold" color="secondary.500">Pilih Hari</FormLabel>
+                                  <Box pointerEvents={IsEditMode ? "auto" : "none"} opacity={IsEditMode ? 1 : 0.6}>
+                                    <WeekdaySelector
+                                      value={OperationalDays}
+                                      onChange={setOperationalDays}
+                                    />
+                                  </Box>
+                                </FormControl>
+                                <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+                                  <FormControl>
+                                    <FormLabel fontSize="sm" fontWeight="semibold" color="secondary.500">Operasional Mulai</FormLabel>
+                                    <Input
+                                      type="time"
+                                      value={formData.appOperationalHourOpen}
+                                      onChange={(e) => setFormData({...formData, appOperationalHourOpen: e.target.value})}
+                                      isReadOnly={!IsEditMode}
+                                      bg={IsEditMode ? (colorMode === "light" ? "white" : "gray.700") : (colorMode === "light" ? "gray.50" : "gray.600")}
+                                      border="2px"
+                                      borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                                      rounded="xl"
+                                      cursor={IsEditMode ? "text" : "not-allowed"}
+                                      opacity={IsEditMode ? 1 : 0.6}
+                                    />
+                                  </FormControl>
+                                  <FormControl>
+                                    <FormLabel fontSize="sm" fontWeight="semibold" color="secondary.500">Operasional Selesai</FormLabel>
+                                    <Input
+                                      type="time"
+                                      value={formData.appOperationalHourClosed}
+                                      onChange={(e) => setFormData({...formData, appOperationalHourClosed: e.target.value})}
+                                      isReadOnly={!IsEditMode}
+                                      bg={IsEditMode ? (colorMode === "light" ? "white" : "gray.700") : (colorMode === "light" ? "gray.50" : "gray.600")}
+                                      border="2px"
+                                      borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                                      rounded="xl"
+                                      cursor={IsEditMode ? "text" : "not-allowed"}
+                                      opacity={IsEditMode ? 1 : 0.6}
+                                    />
+                                  </FormControl>
+                                </Grid>
+                              </VStack>
+                            )}
+                          </Box>
+
+                          <Divider />
+
+                          {/* Technical Information */}
+                          <Box>
+                            <Text
+                              fontSize="lg"
+                              fontWeight="bold"
+                              color={colorMode === "light" ? "gray.800" : "white"}
+                              mb={4}
+                            >
+                              Informasi Teknis
+                            </Text>
+                            
+                            <VStack spacing={4} align="stretch">
+                              <FormControl>
+                                <FormLabel fontSize="sm" fontWeight="semibold">Target Lokasi Server</FormLabel>
+                                <CheckboxGroup>
+                                  <Grid templateColumns="repeat(2, 1fr)" gap={1} w="full">
+                                    {APP_ENV_LOCATION_OPTIONS.map((item, idx) => (
+                                      <GridItem
+                                        key={idx}
+                                        colSpan={{
+                                          base: 2,
+                                          sm: 2,
+                                          md: 1,
+                                          lg: 1,
+                                        }}
+                                        w="full"
+                                      >
+                                        <Checkbox
+                                          isChecked={SelectedAppsEnvLoc.includes(item)}
+                                          onChange={() => IsEditMode && handleAppysEnvLocCheckboxChange(item)}
+                                          isDisabled={!IsEditMode}
+                                        >
+                                          {item}
+                                        </Checkbox>
+                                      </GridItem>
+                                    ))}
+                                  </Grid>
+                                </CheckboxGroup>
+                                {hasOtherEnvLocTypes && (
+                                  <VStack align="start" spacing={2} mt={3}>
+                                    <Text fontSize="sm">Input Lainnya</Text>
+                                    <Box pointerEvents={IsEditMode ? "auto" : "none"} opacity={IsEditMode ? 1 : 0.6} w="full">
+                                      <OtherInputAppsStringSeparator
+                                        value={formData.appEnvLocationsOthers || ""}
+                                        onChange={(val) => setFormData({...formData, appEnvLocationsOthers: val})}
+                                      />
+                                    </Box>
+                                  </VStack>
+                                )}
+                              </FormControl>
+
+                              <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+                                <FormControl>
+                                  <FormLabel fontSize="sm" fontWeight="semibold">Otentikasi UIM</FormLabel>
+                                  <RadioGroup
+                                    value={formData.appPrivateAuth}
+                                    onChange={(val) => IsEditMode && setFormData({...formData, appPrivateAuth: val})}
+                                    isDisabled={!IsEditMode}
+                                  >
+                                    <HStack spacing={4}>
+                                      <Radio value="Y">Ya</Radio>
+                                      <Radio value="N">Tidak</Radio>
+                                    </HStack>
+                                  </RadioGroup>
+                                </FormControl>
+
+                                <FormControl>
+                                  <FormLabel fontSize="sm" fontWeight="semibold">High Availability</FormLabel>
+                                  <RadioGroup
+                                    value={formData.appHightAvailability}
+                                    onChange={(val) => IsEditMode && setFormData({...formData, appHightAvailability: val})}
+                                    isDisabled={!IsEditMode}
+                                  >
+                                    <HStack spacing={4}>
+                                      <Radio value="Y">Ya</Radio>
+                                      <Radio value="N">Tidak</Radio>
+                                    </HStack>
+                                  </RadioGroup>
+                                </FormControl>
+                              </Grid>
+
+                              <FormControl>
+                                <FormLabel fontSize="sm" fontWeight="semibold">Integrasi Dengan Aplikasi Lain</FormLabel>
+                                <Box pointerEvents={IsEditMode ? "auto" : "none"} opacity={IsEditMode ? 1 : 0.6}>
+                                  <InputTagsArea
+                                    name="appIntegrationOthersApps"
+                                    value={formData.appIntegrationOthersApps || ""}
+                                    onChange={(val) => setFormData({...formData, appIntegrationOthersApps: val})}
+                                  />
+                                </Box>
+                                {IsEditMode && (
+                                  <>
+                                    <Divider my={3} />
+                                    <Text fontSize="sm" fontWeight="semibold" mb={2}>Tambah Cepat</Text>
+                                    <Text fontSize="xs" color="gray.500" mb={2}>Rekomendasi Aplikasi Lain / Surrounding</Text>
+                                    <Wrap spacing={2}>
+                                      {APP_INTEGRATED_OTHER_APPS.filter((item) => {
+                                        const existingTags = (formData.appIntegrationOthersApps || "")
+                                          .split(",")
+                                          .map((t: string) => t.trim());
+                                        return !existingTags.includes(item);
+                                      }).map((item, index) => (
+                                        <Tag
+                                          key={index}
+                                          borderRadius="full"
+                                          colorScheme="secondary"
+                                          variant="solid"
+                                          px={3}
+                                          cursor="pointer"
+                                          _hover={{
+                                            bg: "secondary.700",
+                                            color: "white",
+                                          }}
+                                          onClick={() => handleQuickAddTagIntegratedApps(item)}
+                                        >
+                                          <Icon as={FiPlus} mr={1} />
+                                          <TagLabel>{item}</TagLabel>
+                                        </Tag>
+                                      ))}
+                                    </Wrap>
+                                  </>
+                                )}
                               </FormControl>
                             </VStack>
                           </Box>
