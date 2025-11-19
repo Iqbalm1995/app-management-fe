@@ -722,7 +722,10 @@ function ProjectDevelopmentDetailContent() {
                           }
                           bg={colorMode === "light" ? "white" : "gray.800"}
                         >
-                          <CardHeader bg={colorMode === "light" ? "gray.50" : "gray.700"} roundedTop="xl">
+                          <CardHeader
+                            bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                            roundedTop="xl"
+                          >
                             <Heading size="md">Quick Actions</Heading>
                           </CardHeader>
                           <CardBody p={6}>
@@ -784,7 +787,12 @@ function ProjectDevelopmentDetailContent() {
                             }
                             bg={colorMode === "light" ? "white" : "gray.800"}
                           >
-                            <CardHeader bg={colorMode === "light" ? "gray.50" : "gray.700"} roundedTop="xl">
+                            <CardHeader
+                              bg={
+                                colorMode === "light" ? "gray.50" : "gray.700"
+                              }
+                              roundedTop="xl"
+                            >
                               <Heading size="md">Sprint Progress</Heading>
                             </CardHeader>
                             <CardBody p={6}>
@@ -861,7 +869,12 @@ function ProjectDevelopmentDetailContent() {
                             }
                             bg={colorMode === "light" ? "white" : "gray.800"}
                           >
-                            <CardHeader bg={colorMode === "light" ? "gray.50" : "gray.700"} roundedTop="xl">
+                            <CardHeader
+                              bg={
+                                colorMode === "light" ? "gray.50" : "gray.700"
+                              }
+                              roundedTop="xl"
+                            >
                               <Heading size="md">Recent Activity</Heading>
                             </CardHeader>
                             <CardBody p={6}>
@@ -1132,7 +1145,10 @@ function ProjectDevelopmentDetailContent() {
                   bg={colorMode === "light" ? "white" : "gray.800"}
                   w="full"
                 >
-                  <CardHeader bg={colorMode === "light" ? "gray.50" : "gray.700"} roundedTop="xl">
+                  <CardHeader
+                    bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                    roundedTop="xl"
+                  >
                     <HStack spacing={3}>
                       <Box
                         w={8}
@@ -1289,7 +1305,10 @@ function ProjectDevelopmentDetailContent() {
                   bg={colorMode === "light" ? "white" : "gray.800"}
                   w="full"
                 >
-                  <CardHeader bg={colorMode === "light" ? "gray.50" : "gray.700"} roundedTop="xl">
+                  <CardHeader
+                    bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                    roundedTop="xl"
+                  >
                     <HStack spacing={3}>
                       <Box
                         w={8}
@@ -1377,7 +1396,10 @@ function ProjectDevelopmentDetailContent() {
                 bg={colorMode === "light" ? "white" : "gray.800"}
                 w="full"
               >
-                <CardHeader bg={colorMode === "light" ? "gray.50" : "gray.700"} roundedTop="xl">
+                <CardHeader
+                  bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                  roundedTop="xl"
+                >
                   <HStack spacing={3}>
                     <Box
                       w={8}
@@ -1456,7 +1478,10 @@ function ProjectDevelopmentDetailContent() {
                 bg={colorMode === "light" ? "white" : "gray.800"}
                 w="full"
               >
-                <CardHeader bg={colorMode === "light" ? "gray.50" : "gray.700"} roundedTop="xl">
+                <CardHeader
+                  bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                  roundedTop="xl"
+                >
                   <HStack spacing={3}>
                     <Box
                       w={8}
@@ -1532,7 +1557,10 @@ function ProjectDevelopmentDetailContent() {
                   bg={colorMode === "light" ? "white" : "gray.800"}
                   w="full"
                 >
-                  <CardHeader bg={colorMode === "light" ? "gray.50" : "gray.700"} roundedTop="xl">
+                  <CardHeader
+                    bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                    roundedTop="xl"
+                  >
                     <HStack spacing={3}>
                       <Box
                         w={8}

@@ -410,6 +410,7 @@ function ReuirementsRFCPage() {
               display={info.row.original.isHaveMemo === "N" ? "flex" : "none"}
               justifyContent="center" // center horizontally
               alignItems="center" // center vertically (useful for icon + text alignment)
+              fontSize={"x-small"}
             >
               <FiAlertTriangle />
               <Text>
@@ -541,15 +542,17 @@ function ReuirementsRFCPage() {
             </Flex>
             <Flex fontSize={"small"} as={Stack} spacing={0}>
               <Text>Ditugaskan Ke :</Text>
-              {info.row.original.approvalDatas?.length > 0 ? (
+              {info.row.original.approvalDatas?.length ? (
                 info.row.original.approvalDatas.map((x, idx) => (
-                  <Text fontWeight={600} key={idx} fontSize={"smaller"}>
+                  <Text fontWeight={600} key={idx} fontSize="smaller">
                     {idx + 1}. {x.approverUserFirstName}{" "}
                     {x.approverUserLastnameName}
                   </Text>
                 ))
               ) : (
-                <Text fontSize={"smaller"} color="gray.500">Tidak ada penugasan</Text>
+                <Text fontWeight={600} fontSize="smaller" color="gray.500">
+                  -
+                </Text>
               )}
             </Flex>
           </Flex>
@@ -668,7 +671,9 @@ function ReuirementsRFCPage() {
         id: "id",
         cell: (info) => (
           <Flex w={"full"} justifyContent={"center"}>
-            <Link href={`/requirements/detail?reqId=${info.row.original.id}&type=RFC`}>
+            <Link
+              href={`/requirements/detail?reqId=${info.row.original.id}&type=RFC`}
+            >
               <Button leftIcon={<FiInfo />} colorScheme="secondary" size="sm">
                 Detail
               </Button>

@@ -355,12 +355,24 @@ const ModalRegisterProject = memo(() => {
             </Flex>
             <Flex fontSize={"small"} as={Stack} spacing={0}>
               <Text>Ditugaskan Ke :</Text>
-              {info.row.original.approvalDatas.map((x, idx) => (
-                <Text fontWeight={600} key={idx} fontSize={"smaller"}>
-                  {idx + 1}. {x.approverUserFirstName}{" "}
-                  {x.approverUserLastnameName}
+              {Array.isArray(info.row.original.approvalDatas) &&
+              info.row.original.approvalDatas.length > 0 ? (
+                info.row.original.approvalDatas.map((x, idx) => (
+                  <Text fontWeight={600} key={idx} fontSize="smaller">
+                    {idx + 1}. {x.approverUserFirstName ?? "-"}{" "}
+                    {x.approverUserLastnameName ?? ""}
+                  </Text>
+                ))
+              ) : (
+                <Text
+                  fontWeight={600}
+                  fontSize="smaller"
+                  color="gray.500"
+                  fontStyle="italic"
+                >
+                  Tidak ada data approval
                 </Text>
-              ))}
+              )}
             </Flex>
           </Flex>
         ),

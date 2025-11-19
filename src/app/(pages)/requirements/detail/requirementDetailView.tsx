@@ -803,7 +803,7 @@ function RequirementDetailView() {
                                 Inisial Aplikasi
                               </FormLabel>
                               <Stack spacing={0} h={"full"}>
-                                <Text>{DataRequirement.appInitialCode}</Text>
+                                <Text>{DataRequirement.appInitialCode || "N/A"}</Text>
                               </Stack>
                             </InputLayoutFull>
                           </FormControl>
@@ -814,7 +814,7 @@ function RequirementDetailView() {
                                 Nama Aplikasi
                               </FormLabel>
                               <Stack spacing={0} h={"full"}>
-                                <Text>{DataRequirement.appInitialName}</Text>
+                                <Text>{DataRequirement.appInitialName || "N/A"}</Text>
                               </Stack>
                             </InputLayoutFull>
                           </FormControl>
@@ -828,7 +828,9 @@ function RequirementDetailView() {
                                 <Text>
                                   {DataRequirement.appTargetUsers == "INTERNAL"
                                     ? "INTERNAL (BANK)"
-                                    : "EXTERNAL (NASABAH)"}
+                                    : DataRequirement.appTargetUsers == "EXTERNAL"
+                                      ? "EXTERNAL (NASABAH)"
+                                      : "N/A"}
                                 </Text>
                               </Stack>
                             </InputLayoutFull>
@@ -840,23 +842,28 @@ function RequirementDetailView() {
                                 Media Akses Aplikasi
                               </FormLabel>
                               <Stack spacing={0} h={"full"}>
-                                {DataRequirement.appAccessFrontsiteDns !=
-                                  null && (
-                                  <Text>
-                                    Internet (Publik) :{" "}
-                                    <Text pl={2} as={"span"} fontWeight={600}>
-                                      {DataRequirement.appAccessFrontsiteDns}
-                                    </Text>
-                                  </Text>
-                                )}
-                                {DataRequirement.appAccessBacksiteIp !=
-                                  null && (
-                                  <Text>
-                                    Intranet (Untuk BackOffice Bank) :{" "}
-                                    <Text pl={2} as={"span"} fontWeight={600}>
-                                      {DataRequirement.appAccessBacksiteIp}
-                                    </Text>
-                                  </Text>
+                                {DataRequirement.appAccessFrontsiteDns ||
+                                  DataRequirement.appAccessBacksiteIp ? (
+                                  <>
+                                    {DataRequirement.appAccessFrontsiteDns && (
+                                      <Text>
+                                        Internet (Publik) :{" "}
+                                        <Text pl={2} as={"span"} fontWeight={600}>
+                                          {DataRequirement.appAccessFrontsiteDns}
+                                        </Text>
+                                      </Text>
+                                    )}
+                                    {DataRequirement.appAccessBacksiteIp && (
+                                      <Text>
+                                        Intranet (Untuk BackOffice Bank) :{" "}
+                                        <Text pl={2} as={"span"} fontWeight={600}>
+                                          {DataRequirement.appAccessBacksiteIp}
+                                        </Text>
+                                      </Text>
+                                    )}
+                                  </>
+                                ) : (
+                                  <Text>N/A</Text>
                                 )}
                               </Stack>
                             </InputLayoutFull>
@@ -868,7 +875,7 @@ function RequirementDetailView() {
                                 Jenis Aplikasi
                               </FormLabel>
                               <Stack spacing={2} h={"full"}>
-                                <Text>{DataRequirement.appTypes}</Text>
+                                <Text>{DataRequirement.appTypes || "N/A"}</Text>
                                 {DataRequirement.appTypeCustom && (
                                   <Text>
                                     Lainnya :{" "}
@@ -887,8 +894,8 @@ function RequirementDetailView() {
                                 Keterkaitan Aplikasi
                               </FormLabel>
                               <Stack spacing={2} h={"full"}>
-                                <Text>{DataRequirement.appRelatedness}</Text>
-                                {DataRequirement.appTypeCustom && (
+                                <Text>{DataRequirement.appRelatedness || "N/A"}</Text>
+                                {DataRequirement.appRelatednessDesc && (
                                   <Text>
                                     Lainnya :{" "}
                                     <Text pl={2} as={"span"} fontWeight={600}>
@@ -906,7 +913,7 @@ function RequirementDetailView() {
                                 Kategori Aplikasi
                               </FormLabel>
                               <Stack spacing={0} h={"full"}>
-                                <Text>{DataRequirement.appTransactionals}</Text>
+                                <Text>{DataRequirement.appTransactionals || "N/A"}</Text>
                               </Stack>
                             </InputLayoutFull>
                           </FormControl>
@@ -921,11 +928,11 @@ function RequirementDetailView() {
                                   24 Jam :{" "}
                                   <Text pl={2} as={"span"} fontWeight={600}>
                                     {DataRequirement.appOperational24hrs == null
-                                      ? "-"
+                                      ? "N/A"
                                       : DataRequirement.appOperational24hrs ==
                                         "NO"
-                                      ? "TIDAK"
-                                      : "YA"}
+                                        ? "TIDAK"
+                                        : "YA"}
                                   </Text>
                                 </Text>
 
@@ -941,27 +948,27 @@ function RequirementDetailView() {
                                     </Flex>
                                   </>
                                 ) : (
-                                  "-"
+                                  <Text>Hari : N/A</Text>
                                 )}
 
                                 {DataRequirement.appOperational24hrs !=
                                   "24-HOUR" && (
-                                  <Text>
-                                    Jam Buka :{" "}
-                                    <Text pl={2} as={"span"} fontWeight={600}>
-                                      {DataRequirement.appOperationalHourOpen}
+                                    <Text>
+                                      Jam Buka :{" "}
+                                      <Text pl={2} as={"span"} fontWeight={600}>
+                                        {DataRequirement.appOperationalHourOpen || "N/A"}
+                                      </Text>
                                     </Text>
-                                  </Text>
-                                )}
+                                  )}
                                 {DataRequirement.appOperational24hrs !=
                                   "24-HOUR" && (
-                                  <Text>
-                                    Jam Tutup :{" "}
-                                    <Text pl={2} as={"span"} fontWeight={600}>
-                                      {DataRequirement.appOperationalHourClosed}
+                                    <Text>
+                                      Jam Tutup :{" "}
+                                      <Text pl={2} as={"span"} fontWeight={600}>
+                                        {DataRequirement.appOperationalHourClosed || "N/A"}
+                                      </Text>
                                     </Text>
-                                  </Text>
-                                )}
+                                  )}
                               </Stack>
                             </InputLayoutFull>
                           </FormControl>
@@ -975,10 +982,10 @@ function RequirementDetailView() {
                                 <Text>
                                   {DataRequirement.appLiveTargetDate != null
                                     ? formatDateInputCustom(
-                                        DataRequirement.appLiveTargetDate,
-                                        "/"
-                                      )
-                                    : "-"}
+                                      DataRequirement.appLiveTargetDate,
+                                      "/"
+                                    )
+                                    : "N/A"}
                                 </Text>
                               </Stack>
                             </InputLayoutFull>
@@ -994,9 +1001,9 @@ function RequirementDetailView() {
                                   {" "}
                                   {DataRequirement.appLiveTargetDate != null
                                     ? getQuarterText(
-                                        DataRequirement.appLiveTargetDate
-                                      )
-                                    : "-"}
+                                      DataRequirement.appLiveTargetDate
+                                    )
+                                    : "N/A"}
                                 </Text>
                               </Stack>
                             </InputLayoutFull>
@@ -1008,7 +1015,7 @@ function RequirementDetailView() {
                                 Catatan
                               </FormLabel>
                               <Stack spacing={0} h={"full"}>
-                                <Text>{DataRequirement.note}</Text>
+                                <Text>{DataRequirement.note || "N/A"}</Text>
                               </Stack>
                             </InputLayoutFull>
                           </FormControl>
@@ -1044,7 +1051,7 @@ function RequirementDetailView() {
                                 Target Lokasi Server
                               </FormLabel>
                               <Stack spacing={0} h={"full"}>
-                                <Text>{DataRequirement.appEnvLocations}</Text>
+                                <Text>{DataRequirement.appEnvLocations || "N/A"}</Text>
                                 {DataRequirement.appEnvLocationsOthers && (
                                   <Text>
                                     Lainnya :{" "}
@@ -1068,7 +1075,7 @@ function RequirementDetailView() {
                                     ? DataRequirement.appPrivateAuth == "Y"
                                       ? "YA"
                                       : "TIDAK"
-                                    : "-"}
+                                    : "N/A"}
                                 </Text>
                               </Stack>
                             </InputLayoutFull>
@@ -1086,7 +1093,7 @@ function RequirementDetailView() {
                                       "Y"
                                       ? "YA"
                                       : "TIDAK"
-                                    : "-"}
+                                    : "N/A"}
                                 </Text>
                               </Stack>
                             </InputLayoutFull>
@@ -1098,9 +1105,7 @@ function RequirementDetailView() {
                                 Integrasi dengan aplikasi lain
                               </FormLabel>
                               <Stack spacing={0} h={"full"}>
-                                <Text>
-                                  {DataRequirement.appIntegrationOthersApps}
-                                </Text>
+                                <Text>{DataRequirement.appIntegrationOthersApps || "N/A"}</Text>
                               </Stack>
                             </InputLayoutFull>
                           </FormControl>
@@ -1220,7 +1225,7 @@ function RequirementDetailView() {
                                   // defaultValue={formik.values.projectDesc ?? ""}
                                   placeholder={`Catatan (Opsional)`}
                                   maxLength={300}
-                                  // isDisabled={ActionLoading}
+                                // isDisabled={ActionLoading}
                                 />
                               </Stack>
                             </InputLayoutFull>
@@ -1371,7 +1376,7 @@ const ReqInfoGeneralSectionView = ({
             </FormLabel>
             <Stack spacing={0} h={"full"}>
               {DataRequirement.isHaveMemo == "Y" ? (
-                <Text>{DataRequirement.senderDirectorateName}</Text>
+                <Text>{DataRequirement.senderDirectorateName || "N/A"}</Text>
               ) : (
                 <NoMemoAlertText />
               )}
@@ -1386,7 +1391,7 @@ const ReqInfoGeneralSectionView = ({
             </FormLabel>
             <Stack spacing={0} h={"full"}>
               {DataRequirement.isHaveMemo == "Y" ? (
-                <Text>{DataRequirement.senderDivisionName}</Text>
+                <Text>{DataRequirement.senderDivisionName || "N/A"}</Text>
               ) : (
                 <NoMemoAlertText />
               )}
@@ -1401,7 +1406,7 @@ const ReqInfoGeneralSectionView = ({
             </FormLabel>
             <Stack spacing={0} h={"full"}>
               {DataRequirement.isHaveMemo == "Y" ? (
-                <Text>{DataRequirement.reqNumber}</Text>
+                <Text>{DataRequirement.reqNumber || "N/A"}</Text>
               ) : (
                 <NoMemoAlertText />
               )}
@@ -1416,7 +1421,7 @@ const ReqInfoGeneralSectionView = ({
             </FormLabel>
             <Stack spacing={0} h={"full"}>
               {DataRequirement.isHaveMemo == "Y" ? (
-                <Text>{DataRequirement.reqNarative}</Text>
+                <Text>{DataRequirement.reqNarative || "N/A"}</Text>
               ) : (
                 <NoMemoAlertText />
               )}
@@ -1435,7 +1440,7 @@ const ReqInfoGeneralSectionView = ({
               <Text>
                 {DataRequirement.reqInititateDate != null
                   ? formatDateInputCustom(DataRequirement.reqInititateDate, "/")
-                  : "-"}
+                  : "N/A"}
               </Text>
             </Stack>
           </InputLayoutFull>
@@ -1450,7 +1455,7 @@ const ReqInfoGeneralSectionView = ({
               <Text>
                 {DataRequirement.reqAcceptedDate != null
                   ? formatDateInputCustom(DataRequirement.reqAcceptedDate, "/")
-                  : "-"}
+                  : "N/A"}
               </Text>
             </Stack>
           </InputLayoutFull>
@@ -1462,7 +1467,7 @@ const ReqInfoGeneralSectionView = ({
               Durasi Memo
             </FormLabel>
             <Stack spacing={0} h={"full"}>
-              <Text>{DataRequirement.reqDurationDay} Hari kalender</Text>
+              <Text>{DataRequirement.reqDurationDay != null ? `${DataRequirement.reqDurationDay} Hari kalender` : "N/A"}</Text>
             </Stack>
           </InputLayoutFull>
         </FormControl>
@@ -1473,7 +1478,7 @@ const ReqInfoGeneralSectionView = ({
               CarryOver
             </FormLabel>
             <Stack spacing={0} h={"full"}>
-              <Text>{DataRequirement.isCarryOver == "Y" ? "YA" : "TIDAK"}</Text>
+              <Text>{DataRequirement.isCarryOver == "Y" ? "YA" : DataRequirement.isCarryOver == "N" ? "TIDAK" : "N/A"}</Text>
             </Stack>
           </InputLayoutFull>
         </FormControl>
@@ -1501,7 +1506,7 @@ const ReqInfoPersonelSectionView = ({
               <Text>
                 {DataRequirement.assignedToDate != null
                   ? formatDateInputCustom(DataRequirement.assignedToDate, "/")
-                  : "-"}
+                  : "N/A"}
               </Text>
             </Stack>
           </InputLayoutFull>
@@ -1514,7 +1519,7 @@ const ReqInfoPersonelSectionView = ({
             </FormLabel>
             <Stack spacing={0} h={"full"}>
               <Text>
-                {`${DataRequirement.assignedFromName} (${DataRequirement.assignedFromId})`}
+                {`${DataRequirement.assignedFromName || "N/A"} (${DataRequirement.assignedFromId || "N/A"})`}
               </Text>
             </Stack>
           </InputLayoutFull>
@@ -1527,17 +1532,19 @@ const ReqInfoPersonelSectionView = ({
             </FormLabel>
             <Stack spacing={0} h={"full"}>
               <OrderedList>
-                {DataRequirement.approvalDatas?.length > 0 ? (
+
+                {DataRequirement?.approvalDatas?.length ? (
                   DataRequirement.approvalDatas.map((ua, idx) => (
                     <ListItem key={idx}>
-                      {`${ua.approverUserFirstName} (${ua.approverUserCode})`}
+                      {`${ua.approverUserFirstName ?? "N/A"} (${ua.approverUserCode ?? "N/A"
+                        })`}
                     </ListItem>
                   ))
                 ) : (
-                  <ListItem>
-                    <Text color="gray.500">Tidak ada penugasan</Text>
+                  <ListItem color="gray.500" fontStyle="italic">
+                    Tidak ada data approval
                   </ListItem>
-                ))}
+                )}
               </OrderedList>
             </Stack>
           </InputLayoutFull>
@@ -1551,7 +1558,7 @@ const ReqInfoPersonelSectionView = ({
               User ID
             </FormLabel>
             <Stack spacing={0} h={"full"}>
-              <Text>{DataRequirement.userPicId}</Text>
+              <Text>{DataRequirement.userPicId || "N/A"}</Text>
             </Stack>
           </InputLayoutFull>
         </FormControl>
@@ -1562,7 +1569,7 @@ const ReqInfoPersonelSectionView = ({
               NIK
             </FormLabel>
             <Stack spacing={0} h={"full"}>
-              <Text>{DataRequirement.userPicIdentityNumber}</Text>
+              <Text>{DataRequirement.userPicIdentityNumber || "N/A"}</Text>
             </Stack>
           </InputLayoutFull>
         </FormControl>
@@ -1573,7 +1580,7 @@ const ReqInfoPersonelSectionView = ({
               Nama Lengkap
             </FormLabel>
             <Stack spacing={0} h={"full"}>
-              <Text>{DataRequirement.userPicName}</Text>
+              <Text>{DataRequirement.userPicName || "N/A"}</Text>
             </Stack>
           </InputLayoutFull>
         </FormControl>
@@ -1584,7 +1591,7 @@ const ReqInfoPersonelSectionView = ({
               No Handphne / Whatsapp
             </FormLabel>
             <Stack spacing={0} h={"full"}>
-              <Text>{DataRequirement.userPicContanct}</Text>
+              <Text>{DataRequirement.userPicContanct || "N/A"}</Text>
             </Stack>
           </InputLayoutFull>
         </FormControl>
@@ -1595,7 +1602,7 @@ const ReqInfoPersonelSectionView = ({
               Alamat E-Mail internal Bank bjb
             </FormLabel>
             <Stack spacing={0} h={"full"}>
-              <Text>{DataRequirement.userPicEmail}</Text>
+              <Text>{DataRequirement.userPicEmail || "N/A"}</Text>
             </Stack>
           </InputLayoutFull>
         </FormControl>
@@ -1609,19 +1616,19 @@ const ReqInfoPersonelSectionView = ({
               <Text>
                 Direktorat :
                 <Text pl={2} as={"span"} fontWeight={600}>
-                  {DataRequirement.userPicDirectorateName}
+                  {DataRequirement.userPicDirectorateName || "N/A"}
                 </Text>
               </Text>
               <Text>
                 Divisi :
                 <Text pl={2} as={"span"} fontWeight={600}>
-                  {DataRequirement.userPicDivisionName}
+                  {DataRequirement.userPicDivisionName || "N/A"}
                 </Text>
               </Text>
               <Text>
                 Group :
                 <Text pl={2} as={"span"} fontWeight={600}>
-                  {DataRequirement.userPicGroupName}
+                  {DataRequirement.userPicGroupName || "N/A"}
                 </Text>
               </Text>
             </Stack>
@@ -1682,21 +1689,19 @@ const ReqInfoWorkProgramsView = ({
                       <Text>
                         Direktorat :
                         <Text pl={2} as={"span"} fontWeight={600}>
-                          {wp.directorateName != null
-                            ? wp.directorateName
-                            : "-"}
+                          {wp.directorateName || "N/A"}
                         </Text>
                       </Text>
                       <Text>
                         Divisi :
                         <Text pl={2} as={"span"} fontWeight={600}>
-                          {wp.divisionName != null ? wp.divisionName : "-"}
+                          {wp.divisionName || "N/A"}
                         </Text>
                       </Text>
                       <Text>
                         Group :
                         <Text pl={2} as={"span"} fontWeight={600}>
-                          {wp.groupName != null ? wp.groupName : "-"}
+                          {wp.groupName || "N/A"}
                         </Text>
                       </Text>
                     </Stack>
@@ -1709,7 +1714,7 @@ const ReqInfoWorkProgramsView = ({
                       Kode Program Kerja
                     </FormLabel>
                     <Stack spacing={0} h={"full"}>
-                      <Text>{wp.workProgramCode}</Text>
+                      <Text>{wp.workProgramCode || "N/A"}</Text>
                     </Stack>
                   </InputLayoutFull>
                 </FormControl>
@@ -1720,7 +1725,7 @@ const ReqInfoWorkProgramsView = ({
                       Nama Program Kerja
                     </FormLabel>
                     <Stack spacing={0} h={"full"}>
-                      <Text>{wp.workProgramName}</Text>
+                      <Text>{wp.workProgramName || "N/A"}</Text>
                     </Stack>
                   </InputLayoutFull>
                 </FormControl>
@@ -1731,7 +1736,7 @@ const ReqInfoWorkProgramsView = ({
                       Nama Akun Rekening
                     </FormLabel>
                     <Stack spacing={0} h={"full"}>
-                      <Text>{wp.workProgramAccName}</Text>
+                      <Text>{wp.workProgramAccName || "N/A"}</Text>
                     </Stack>
                   </InputLayoutFull>
                 </FormControl>
@@ -1742,7 +1747,7 @@ const ReqInfoWorkProgramsView = ({
                       Nomor Rekening
                     </FormLabel>
                     <Stack spacing={0} h={"full"}>
-                      <Text>{wp.workProgramAccNumber}</Text>
+                      <Text>{wp.workProgramAccNumber || "N/A"}</Text>
                     </Stack>
                   </InputLayoutFull>
                 </FormControl>
@@ -1753,7 +1758,7 @@ const ReqInfoWorkProgramsView = ({
                       Kode Cost Center
                     </FormLabel>
                     <Stack spacing={0} h={"full"}>
-                      <Text>{wp.workProgramAccCc}</Text>
+                      <Text>{wp.workProgramAccCc || "N/A"}</Text>
                     </Stack>
                   </InputLayoutFull>
                 </FormControl>
@@ -1764,7 +1769,7 @@ const ReqInfoWorkProgramsView = ({
                       Anggaran (Rp.)
                     </FormLabel>
                     <Stack spacing={0} h={"full"}>
-                      <Text>{formatToRupiah(wp.workProgramBudget)}</Text>
+                      <Text>{wp.workProgramBudget != null ? formatToRupiah(wp.workProgramBudget) : "N/A"}</Text>
                     </Stack>
                   </InputLayoutFull>
                 </FormControl>
@@ -1775,7 +1780,7 @@ const ReqInfoWorkProgramsView = ({
                       Realisasi (Rp.)
                     </FormLabel>
                     <Stack spacing={0} h={"full"}>
-                      <Text>{formatToRupiah(wp.workProgramReal)}</Text>
+                      <Text>{wp.workProgramReal != null ? formatToRupiah(wp.workProgramReal) : "N/A"}</Text>
                     </Stack>
                   </InputLayoutFull>
                 </FormControl>
@@ -1786,7 +1791,7 @@ const ReqInfoWorkProgramsView = ({
                       Sisa Anggaran (Rp.)
                     </FormLabel>
                     <Stack spacing={0} h={"full"}>
-                      <Text>{formatToRupiah(wp.workProgramLeftovers)}</Text>
+                      <Text>{wp.workProgramLeftovers != null ? formatToRupiah(wp.workProgramLeftovers) : "N/A"}</Text>
                     </Stack>
                   </InputLayoutFull>
                 </FormControl>
@@ -1818,21 +1823,19 @@ const ReqInfoWorkProgramsView = ({
                       <Text>
                         Direktorat :
                         <Text pl={2} as={"span"} fontWeight={600}>
-                          {wp.directorateName != null
-                            ? wp.directorateName
-                            : "-"}
+                          {wp.directorateName || "N/A"}
                         </Text>
                       </Text>
                       <Text>
                         Divisi :
                         <Text pl={2} as={"span"} fontWeight={600}>
-                          {wp.divisionName != null ? wp.divisionName : "-"}
+                          {wp.divisionName || "N/A"}
                         </Text>
                       </Text>
                       <Text>
                         Group :
                         <Text pl={2} as={"span"} fontWeight={600}>
-                          {wp.groupName != null ? wp.groupName : "-"}
+                          {wp.groupName || "N/A"}
                         </Text>
                       </Text>
                     </Stack>
@@ -1845,7 +1848,7 @@ const ReqInfoWorkProgramsView = ({
                       Kode Program Kerja
                     </FormLabel>
                     <Stack spacing={0} h={"full"}>
-                      <Text>{wp.workProgramCode}</Text>
+                      <Text>{wp.workProgramCode || "N/A"}</Text>
                     </Stack>
                   </InputLayoutFull>
                 </FormControl>
@@ -1856,7 +1859,7 @@ const ReqInfoWorkProgramsView = ({
                       Nama Program Kerja
                     </FormLabel>
                     <Stack spacing={0} h={"full"}>
-                      <Text>{wp.workProgramName}</Text>
+                      <Text>{wp.workProgramName || "N/A"}</Text>
                     </Stack>
                   </InputLayoutFull>
                 </FormControl>
@@ -1867,7 +1870,7 @@ const ReqInfoWorkProgramsView = ({
                       Nama Akun Rekening
                     </FormLabel>
                     <Stack spacing={0} h={"full"}>
-                      <Text>{wp.workProgramAccName}</Text>
+                      <Text>{wp.workProgramAccName || "N/A"}</Text>
                     </Stack>
                   </InputLayoutFull>
                 </FormControl>
@@ -1878,7 +1881,7 @@ const ReqInfoWorkProgramsView = ({
                       Nomor Rekening
                     </FormLabel>
                     <Stack spacing={0} h={"full"}>
-                      <Text>{wp.workProgramAccNumber}</Text>
+                      <Text>{wp.workProgramAccNumber || "N/A"}</Text>
                     </Stack>
                   </InputLayoutFull>
                 </FormControl>
@@ -1889,7 +1892,7 @@ const ReqInfoWorkProgramsView = ({
                       Kode Cost Center
                     </FormLabel>
                     <Stack spacing={0} h={"full"}>
-                      <Text>{wp.workProgramAccCc}</Text>
+                      <Text>{wp.workProgramAccCc || "N/A"}</Text>
                     </Stack>
                   </InputLayoutFull>
                 </FormControl>
@@ -1900,7 +1903,7 @@ const ReqInfoWorkProgramsView = ({
                       Anggaran (Rp.)
                     </FormLabel>
                     <Stack spacing={0} h={"full"}>
-                      <Text>{formatToRupiah(wp.workProgramBudget)}</Text>
+                      <Text>{wp.workProgramBudget != null ? formatToRupiah(wp.workProgramBudget) : "N/A"}</Text>
                     </Stack>
                   </InputLayoutFull>
                 </FormControl>
@@ -1911,7 +1914,7 @@ const ReqInfoWorkProgramsView = ({
                       Realisasi (Rp.)
                     </FormLabel>
                     <Stack spacing={0} h={"full"}>
-                      <Text>{formatToRupiah(wp.workProgramReal)}</Text>
+                      <Text>{wp.workProgramReal != null ? formatToRupiah(wp.workProgramReal) : "N/A"}</Text>
                     </Stack>
                   </InputLayoutFull>
                 </FormControl>
@@ -1922,7 +1925,7 @@ const ReqInfoWorkProgramsView = ({
                       Sisa Anggaran (Rp.)
                     </FormLabel>
                     <Stack spacing={0} h={"full"}>
-                      <Text>{formatToRupiah(wp.workProgramLeftovers)}</Text>
+                      <Text>{wp.workProgramLeftovers != null ? formatToRupiah(wp.workProgramLeftovers) : "N/A"}</Text>
                     </Stack>
                   </InputLayoutFull>
                 </FormControl>
@@ -1956,7 +1959,7 @@ const ReqInfoSummaryBacklogsView = ({
               Inisial Aplikasi
             </FormLabel>
             <Stack spacing={0} h={"full"}>
-              <Text>{DataRequirement.appInitialCode}</Text>
+              <Text>{DataRequirement.appInitialCode || "N/A"}</Text>
             </Stack>
           </InputLayoutFull>
         </FormControl>
@@ -1970,7 +1973,9 @@ const ReqInfoSummaryBacklogsView = ({
               <Text>
                 {DataRequirement.appTargetUsers == "INTERNAL"
                   ? "INTERNAL (BANK)"
-                  : "EXTERNAL (NASABAH)"}
+                  : DataRequirement.appTargetUsers == "EXTERNAL"
+                    ? "EXTERNAL (NASABAH)"
+                    : "N/A"}
               </Text>
             </Stack>
           </InputLayoutFull>
@@ -1982,21 +1987,28 @@ const ReqInfoSummaryBacklogsView = ({
               Media Akses Aplikasi
             </FormLabel>
             <Stack spacing={0} h={"full"}>
-              {DataRequirement.appAccessFrontsiteDns != null && (
-                <Text>
-                  Internet (Publik) :{" "}
-                  <Text pl={2} as={"span"} fontWeight={600}>
-                    {DataRequirement.appAccessFrontsiteDns}
-                  </Text>
-                </Text>
-              )}
-              {DataRequirement.appAccessBacksiteIp != null && (
-                <Text>
-                  Intranet (Untuk BackOffice Bank) :{" "}
-                  <Text pl={2} as={"span"} fontWeight={600}>
-                    {DataRequirement.appAccessBacksiteIp}
-                  </Text>
-                </Text>
+              {DataRequirement.appAccessFrontsiteDns ||
+                DataRequirement.appAccessBacksiteIp ? (
+                <>
+                  {DataRequirement.appAccessFrontsiteDns && (
+                    <Text>
+                      Internet (Publik) :{" "}
+                      <Text pl={2} as={"span"} fontWeight={600}>
+                        {DataRequirement.appAccessFrontsiteDns}
+                      </Text>
+                    </Text>
+                  )}
+                  {DataRequirement.appAccessBacksiteIp && (
+                    <Text>
+                      Intranet (Untuk BackOffice Bank) :{" "}
+                      <Text pl={2} as={"span"} fontWeight={600}>
+                        {DataRequirement.appAccessBacksiteIp}
+                      </Text>
+                    </Text>
+                  )}
+                </>
+              ) : (
+                <Text>N/A</Text>
               )}
             </Stack>
           </InputLayoutFull>
@@ -2008,7 +2020,7 @@ const ReqInfoSummaryBacklogsView = ({
               Jenis Aplikasi
             </FormLabel>
             <Stack spacing={2} h={"full"}>
-              <Text>{DataRequirement.appTypes}</Text>
+              <Text>{DataRequirement.appTypes || "N/A"}</Text>
               {DataRequirement.appTypeCustom && (
                 <Text>
                   Lainnya :{" "}
@@ -2027,8 +2039,8 @@ const ReqInfoSummaryBacklogsView = ({
               Keterkaitan Aplikasi
             </FormLabel>
             <Stack spacing={2} h={"full"}>
-              <Text>{DataRequirement.appRelatedness}</Text>
-              {DataRequirement.appTypeCustom && (
+              <Text>{DataRequirement.appRelatedness || "N/A"}</Text>
+              {DataRequirement.appRelatednessDesc && (
                 <Text>
                   Lainnya :{" "}
                   <Text pl={2} as={"span"} fontWeight={600}>
@@ -2046,7 +2058,7 @@ const ReqInfoSummaryBacklogsView = ({
               Kategori Aplikasi
             </FormLabel>
             <Stack spacing={0} h={"full"}>
-              <Text>{DataRequirement.appTransactionals}</Text>
+              <Text>{DataRequirement.appTransactionals || "N/A"}</Text>
             </Stack>
           </InputLayoutFull>
         </FormControl>
@@ -2061,10 +2073,10 @@ const ReqInfoSummaryBacklogsView = ({
                 24 Jam :{" "}
                 <Text pl={2} as={"span"} fontWeight={600}>
                   {DataRequirement.appOperational24hrs == null
-                    ? "-"
+                    ? "N/A"
                     : DataRequirement.appOperational24hrs == "NO"
-                    ? "TIDAK"
-                    : "YA"}
+                      ? "TIDAK"
+                      : "YA"}
                 </Text>
               </Text>
 
@@ -2078,14 +2090,14 @@ const ReqInfoSummaryBacklogsView = ({
                   </Flex>
                 </>
               ) : (
-                "-"
+                <Text>Hari : N/A</Text>
               )}
 
               {DataRequirement.appOperational24hrs != "24-HOUR" && (
                 <Text>
                   Jam Buka :{" "}
                   <Text pl={2} as={"span"} fontWeight={600}>
-                    {DataRequirement.appOperationalHourOpen}
+                    {DataRequirement.appOperationalHourOpen || "N/A"}
                   </Text>
                 </Text>
               )}
@@ -2093,7 +2105,7 @@ const ReqInfoSummaryBacklogsView = ({
                 <Text>
                   Jam Tutup :{" "}
                   <Text pl={2} as={"span"} fontWeight={600}>
-                    {DataRequirement.appOperationalHourClosed}
+                    {DataRequirement.appOperationalHourClosed || "N/A"}
                   </Text>
                 </Text>
               )}
@@ -2110,10 +2122,10 @@ const ReqInfoSummaryBacklogsView = ({
               <Text>
                 {DataRequirement.appLiveTargetDate != null
                   ? formatDateInputCustom(
-                      DataRequirement.appLiveTargetDate,
-                      "/"
-                    )
-                  : "-"}
+                    DataRequirement.appLiveTargetDate,
+                    "/"
+                  )
+                  : "N/A"}
               </Text>
             </Stack>
           </InputLayoutFull>
@@ -2129,7 +2141,7 @@ const ReqInfoSummaryBacklogsView = ({
                 {" "}
                 {DataRequirement.appLiveTargetDate != null
                   ? getQuarterText(DataRequirement.appLiveTargetDate)
-                  : "-"}
+                  : "N/A"}
               </Text>
             </Stack>
           </InputLayoutFull>
@@ -2141,7 +2153,7 @@ const ReqInfoSummaryBacklogsView = ({
               Catatan
             </FormLabel>
             <Stack spacing={0} h={"full"}>
-              <Text>{DataRequirement.note}</Text>
+              <Text>{DataRequirement.note || "N/A"}</Text>
             </Stack>
           </InputLayoutFull>
         </FormControl>
@@ -2154,11 +2166,9 @@ const ReqInfoSummaryBacklogsView = ({
             </FormLabel>
             <Stack spacing={0} h={"full"}>
               <Text as={"p"} fontWeight={600}>
-                {DataBacklogs != null
-                  ? DataBacklogs.length >= 0
-                    ? joinFieldValues(DataBacklogs, "backlogName", ", ")
-                    : ""
-                  : "-"}
+                {DataBacklogs != null && DataBacklogs.length > 0
+                  ? joinFieldValues(DataBacklogs, "backlogName", ", ")
+                  : "N/A"}
               </Text>
             </Stack>
           </InputLayoutFull>
@@ -2174,7 +2184,7 @@ const ReqInfoSummaryBacklogsView = ({
               Target Lokasi Server
             </FormLabel>
             <Stack spacing={0} h={"full"}>
-              <Text>{DataRequirement.appEnvLocations}</Text>
+              <Text>{DataRequirement.appEnvLocations || "N/A"}</Text>
               {DataRequirement.appEnvLocationsOthers && (
                 <Text>
                   Lainnya :{" "}
@@ -2198,7 +2208,7 @@ const ReqInfoSummaryBacklogsView = ({
                   ? DataRequirement.appPrivateAuth == "Y"
                     ? "YA"
                     : "TIDAK"
-                  : "-"}
+                  : "N/A"}
               </Text>
             </Stack>
           </InputLayoutFull>
@@ -2215,7 +2225,7 @@ const ReqInfoSummaryBacklogsView = ({
                   ? DataRequirement.appHightAvailability == "Y"
                     ? "YA"
                     : "TIDAK"
-                  : "-"}
+                  : "N/A"}
               </Text>
             </Stack>
           </InputLayoutFull>
@@ -2227,7 +2237,7 @@ const ReqInfoSummaryBacklogsView = ({
               Integrasi dengan aplikasi lain
             </FormLabel>
             <Stack spacing={0} h={"full"}>
-              <Text>{DataRequirement.appIntegrationOthersApps}</Text>
+              <Text>{DataRequirement.appIntegrationOthersApps || "N/A"}</Text>
             </Stack>
           </InputLayoutFull>
         </FormControl>
@@ -2357,19 +2367,19 @@ const ReqInfoSummaryFileAttachmentsView = ({
             </Link>
             {info.row.original.objectExtension.replace(".", "").trim() ==
               "pdf" && (
-              <Button
-                size={"sm"}
-                colorScheme={"blue"}
-                onClick={() => {
-                  handleOpenPreview(
-                    `${UrlEndpoint}${info.row.original.objectData}`
-                  );
-                }}
-                leftIcon={<FiEye />}
-              >
-                Pratinjau
-              </Button>
-            )}
+                <Button
+                  size={"sm"}
+                  colorScheme={"blue"}
+                  onClick={() => {
+                    handleOpenPreview(
+                      `${UrlEndpoint}${info.row.original.objectData}`
+                    );
+                  }}
+                  leftIcon={<FiEye />}
+                >
+                  Pratinjau
+                </Button>
+              )}
 
             {/* <Button
                 size={"sm"}
@@ -2553,10 +2563,10 @@ const ReqInfoAcceptanceView = ({
                     <Text>
                       {DataRequirement.reqReviewStartDate != null
                         ? formatDateInputCustom(
-                            DataRequirement.reqReviewStartDate,
-                            "/"
-                          )
-                        : "-"}
+                          DataRequirement.reqReviewStartDate,
+                          "/"
+                        )
+                        : "N/A"}
                     </Text>
                   </Stack>
                 </InputLayoutFullHalf>
@@ -2571,10 +2581,10 @@ const ReqInfoAcceptanceView = ({
                     <Text>
                       {DataRequirement.reqReviewEndDate != null
                         ? formatDateInputCustom(
-                            DataRequirement.reqReviewEndDate,
-                            "/"
-                          )
-                        : "-"}
+                          DataRequirement.reqReviewEndDate,
+                          "/"
+                        )
+                        : "N/A"}
                     </Text>
                   </Stack>
                 </InputLayoutFullHalf>
@@ -2587,7 +2597,7 @@ const ReqInfoAcceptanceView = ({
                   </FormLabel>
                   <Stack spacing={0} h={"full"}>
                     <Text>
-                      {DataRequirement.reqReviewDurationDay} Hari kalender
+                      {DataRequirement.reqReviewDurationDay != null ? `${DataRequirement.reqReviewDurationDay} Hari kalender` : "N/A"}
                     </Text>
                   </Stack>
                 </InputLayoutFullHalf>
@@ -2600,25 +2610,23 @@ const ReqInfoAcceptanceView = ({
                   </FormLabel>
                   <Stack spacing={0} h={"full"}>
                     <OrderedList>
-                      {DataRequirement.approvalDatas?.length > 0 ? (
+                      {DataRequirement?.approvalDatas?.length ? (
                         DataRequirement.approvalDatas.map((ua, idx) => (
                           <ListItem key={idx}>
-                            {`${ua.approverUserFirstName} (${ua.approverUserCode})`}
+                            {`${ua.approverUserFirstName ?? "N/A"} (${ua.approverUserCode ?? "N/A"
+                              })`}
                           </ListItem>
                         ))
                       ) : (
-                        <ListItem>
-                          <Text color="gray.500">Tidak ada penugasan</Text>
+                        <ListItem color="gray.500" fontStyle="italic">
+                          Tidak ada data approval
+
                         </ListItem>
                       )}
-                        <ListItem key={idx}>
-                          {`${ua.approverUserFirstName} (${ua.approverUserCode})`}
-                        </ListItem>
-                      ))}
                     </OrderedList>
-                  </Stack>
-                </InputLayoutFullHalf>
-              </FormControl>
+                  </Stack >
+                </InputLayoutFullHalf >
+              </FormControl >
 
               <FormControl>
                 <InputLayoutFullHalf>
@@ -2626,12 +2634,12 @@ const ReqInfoAcceptanceView = ({
                     Diapprove Oleh
                   </FormLabel>
                   <Stack spacing={0} h={"full"}>
-                    <Text>-</Text>
+                    <Text>N/A</Text>
                   </Stack>
                 </InputLayoutFullHalf>
               </FormControl>
-            </Flex>
-          </GridItem>
+            </Flex >
+          </GridItem >
           <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }} w={"full"}>
             <Flex as={Stack} w={"full"} spacing={5}>
               <FormControl>
@@ -2640,7 +2648,7 @@ const ReqInfoAcceptanceView = ({
                     Catatan
                   </FormLabel>
                   <Stack spacing={0} h={"full"}>
-                    <Text>-</Text>
+                    <Text>N/A</Text>
                   </Stack>
                 </InputLayoutFull>
               </FormControl>
@@ -2652,11 +2660,11 @@ const ReqInfoAcceptanceView = ({
           ></GridItem>
           <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }} w={"full"}>
             <Flex as={Stack} w={"full"} spacing={5}>
-              <SummaryStatusReq status={DataRequirement.reqStatus || "-"} />
+              <SummaryStatusReq status={DataRequirement.reqStatus || "N/A"} />
             </Flex>
           </GridItem>
-        </Grid>
-      </InputGroupPanel>
+        </Grid >
+      </InputGroupPanel >
     </>
   );
 };
