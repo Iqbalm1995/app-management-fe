@@ -187,7 +187,7 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                           Karakteristik:
                         </Text>
                         <Text fontSize="sm" fontWeight="bold" color="gray.800">
-                          {DataProject.projectCategory || "N/A"}
+                          {DataProject.projectCharasteristicName || "N/A"}
                         </Text>
                       </HStack>
                       <Divider />
@@ -200,7 +200,7 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                           Sub Karakteristik:
                         </Text>
                         <Text fontSize="sm" fontWeight="bold" color="gray.800">
-                          {DataProject.projectType || "N/A"}
+                          {DataProject.projectSubCharasteristicName || "N/A"}
                         </Text>
                       </HStack>
                       <Divider />

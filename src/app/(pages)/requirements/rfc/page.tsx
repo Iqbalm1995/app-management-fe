@@ -489,8 +489,8 @@ function ReuirementsRFCPage() {
               <Text fontWeight={600}>
                 {info.row.original.reqInititateDate
                   ? stringToDateFormatedReverse(
-                      info.row.original.reqInititateDate
-                    )
+                    info.row.original.reqInititateDate
+                  )
                   : "-"}
               </Text>
             </Flex>
@@ -499,8 +499,8 @@ function ReuirementsRFCPage() {
               <Text fontWeight={600}>
                 {info.row.original.reqAcceptedDate
                   ? stringToDateFormatedReverse(
-                      info.row.original.reqAcceptedDate
-                    )
+                    info.row.original.reqAcceptedDate
+                  )
                   : "-"}
               </Text>
             </Flex>
@@ -999,8 +999,8 @@ function ReuirementsRFCPage() {
                                         {" "}
                                         {dt.field === "senderDivisionId"
                                           ? OptionDivision.find(
-                                              (opt) => opt.value === dt.value
-                                            )?.label || dt.value
+                                            (opt) => opt.value === dt.value
+                                          )?.label || dt.value
                                           : dt.value}
                                       </Text>
                                     </Text>
