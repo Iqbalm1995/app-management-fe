@@ -3267,287 +3267,178 @@ function RegsiterRequirementViewPage({
                                         <FormLabel h={"full"} mt={2}>
                                           Divisi Proker IT
                                         </FormLabel>
-                                        <Stack spacing={0}>
-                                          <Grid
-                                            templateColumns="repeat(3, 1fr)"
-                                            gap={3}
-                                            w={"full"}
+                                        <Stack spacing={4} w={"full"}>
+                                          <FormControl
+                                            id={`workProgramDirectorateIT-${index}`}
+                                            isInvalid={
+                                              typeof formik.errors
+                                                .workPrograms?.[index] ===
+                                                "object" &&
+                                                formik.errors.workPrograms?.[
+                                                  index
+                                                ]?.directorateId
+                                                ? true
+                                                : false
+                                            }
+                                            isRequired
                                           >
-                                            <GridItem
-                                              colSpan={{
-                                                base: 3,
-                                                sm: 3,
-                                                md: 1,
-                                                lg: 1,
+                                            <FormLabel>
+                                              Direktorat
+                                            </FormLabel>
+                                            <Input
+                                              id={`workProgramDirectorateIT-${index}`}
+                                              placeholder={"Direktorat (Auto)"}
+                                              isDisabled={true}
+                                              value={
+                                                OptionDirectorate.find(
+                                                  (x) =>
+                                                    x.value ==
+                                                    formik.values
+                                                      .workPrograms[index]
+                                                      .directorateId
+                                                )?.label || ""
+                                              }
+                                            />
+                                            <FormErrorMessage>
+                                              {typeof formik.errors
+                                                .workPrograms?.[index] ===
+                                                "object" &&
+                                                formik.errors
+                                                  .workPrograms?.[index]
+                                                  ?.directorateId}
+                                            </FormErrorMessage>
+                                          </FormControl>
+
+                                          <FormControl
+                                            id={`workProgramDivisionIT-${index}`}
+                                            isInvalid={
+                                              typeof formik.errors
+                                                .workPrograms?.[index] ===
+                                                "object" &&
+                                                formik.errors.workPrograms?.[
+                                                  index
+                                                ]?.divisionId
+                                                ? true
+                                                : false
+                                            }
+                                            isRequired
+                                          >
+                                            <FormLabel>
+                                              Divisi
+                                            </FormLabel>
+                                            <Select
+                                              id={`workProgramDivisionIT-${index}`}
+                                              options={OptionDivision}
+                                              isSearchable={true}
+                                              isDisabled={true}
+                                              placeholder={"Pilih Divisi"}
+                                              isLoading={
+                                                IsLoadingProcess ||
+                                                IsLoadingDivisionSelect
+                                              }
+                                              value={
+                                                SelectedDivisionWPInternal.find(
+                                                  (x) =>
+                                                    x.indexData == index
+                                                )?.OptionData
+                                              }
+                                            />
+                                            <FormErrorMessage>
+                                              {typeof formik.errors
+                                                .workPrograms?.[index] ===
+                                                "object" &&
+                                                formik.errors
+                                                  .workPrograms?.[index]
+                                                  ?.divisionId}
+                                            </FormErrorMessage>
+                                          </FormControl>
+
+                                          <FormControl
+                                            id={`workProgramGroupDivisionIT-${index}`}
+                                            isInvalid={
+                                              typeof formik.errors
+                                                .workPrograms?.[index] ===
+                                                "object" &&
+                                                formik.errors.workPrograms?.[
+                                                  index
+                                                ]?.groupId
+                                                ? true
+                                                : false
+                                            }
+                                          >
+                                            <FormLabel>
+                                              Group
+                                            </FormLabel>
+                                            <Select
+                                              id={`workProgramGroupDivisionIT-${index}`}
+                                              options={OptionGroupDivision}
+                                              isSearchable={true}
+                                              onMenuOpen={async () => {
+                                                setOptionGroupDivision([]);
+                                                await LoadDataGroupOrgCustom(
+                                                  formik.values
+                                                    .workPrograms[index]
+                                                    .divisionId || ""
+                                                );
                                               }}
-                                              w={"full"}
-                                            >
-                                              <FormControl
-                                                id={`workProgramDirectorateIT-${index}`}
-                                                isInvalid={
-                                                  typeof formik.errors
-                                                    .workPrograms?.[index] ===
-                                                    "object" &&
-                                                    formik.errors.workPrograms?.[
-                                                      index
-                                                    ]?.directorateId
-                                                    ? true
-                                                    : false
+                                              onChange={(e) => {
+                                                if (e) {
+                                                  const selected = {
+                                                    label: e.label,
+                                                    value: e.value,
+                                                  };
+
+                                                  handleSelectedCustom(
+                                                    selected,
+                                                    `workPrograms[${index}].groupId`
+                                                  );
+                                                  setSelectedGroupWPInternal(
+                                                    (prev) => [
+                                                      ...prev,
+                                                      {
+                                                        indexData: index,
+                                                        OptionData:
+                                                          selected,
+                                                      },
+                                                    ]
+                                                  );
+                                                } else {
+                                                  handleUnSelectedCustom(
+                                                    `workPrograms[${index}].groupId`
+                                                  );
+                                                  setSelectedGroupWPInternal(
+                                                    (prev) =>
+                                                      prev.filter(
+                                                        (item) =>
+                                                          item.indexData !==
+                                                          index
+                                                      )
+                                                  );
                                                 }
-                                                isRequired
-                                              >
-                                                <FormLabel h={"full"}>
-                                                  Direktorat
-                                                </FormLabel>
-                                                {/* DIRECTORATE */}
-                                                <Select
-                                                  id={`workProgramDirectorateIT-${index}`}
-                                                  options={OptionDirectorate}
-                                                  // isSearchable={true}
-                                                  // onChange={(e) => {
-                                                  //   if (e) {
-                                                  //     const selected = {
-                                                  //       label: e.label,
-                                                  //       value: e.value,
-                                                  //     };
-
-                                                  //     handleSelectedCustom(
-                                                  //       selected,
-                                                  //       `workPrograms[${index}].directorateId`
-                                                  //     );
-                                                  //     setSelectedDirectorate(
-                                                  //       selected
-                                                  //     );
-                                                  //   } else {
-                                                  //     handleUnSelectedCustom(
-                                                  //       `workPrograms[${index}].directorateId`
-                                                  //     );
-                                                  //     setSelectedDirectorate(null);
-                                                  //   }
-                                                  // }}
-                                                  isDisabled={true}
-                                                  placeholder={
-                                                    "Pilih Directorate"
-                                                  }
-                                                  isLoading={
-                                                    IsLoadingProcess ||
-                                                    IsLoadingDirectorateSelect
-                                                  }
-                                                  value={OptionDirectorate.find(
-                                                    (x) =>
-                                                      x.value ==
-                                                      formik.values
-                                                        .workPrograms[index]
-                                                        .directorateId
-                                                  )}
-                                                />
-
-                                                <FormErrorMessage>
-                                                  {typeof formik.errors
-                                                    .workPrograms?.[index] ===
-                                                    "object" &&
-                                                    formik.errors
-                                                      .workPrograms?.[index]
-                                                      ?.directorateId}
-                                                </FormErrorMessage>
-                                              </FormControl>
-                                            </GridItem>
-                                            <GridItem
-                                              colSpan={{
-                                                base: 3,
-                                                sm: 3,
-                                                md: 1,
-                                                lg: 1,
                                               }}
-                                              w={"full"}
-                                            >
-                                              <FormControl
-                                                id={`workProgramDivisionIT-${index}`}
-                                                isInvalid={
-                                                  typeof formik.errors
-                                                    .workPrograms?.[index] ===
-                                                    "object" &&
-                                                    formik.errors.workPrograms?.[
-                                                      index
-                                                    ]?.divisionId
-                                                    ? true
-                                                    : false
-                                                }
-                                                isRequired
-                                              >
-                                                <FormLabel h={"full"}>
-                                                  Divisi
-                                                </FormLabel>
-                                                {/* DIVISION */}
-                                                <Select
-                                                  id={`workProgramDivisionIT-${index}`}
-                                                  options={OptionDivision}
-                                                  isSearchable={true}
-                                                  // onMenuOpen={async () => {
-                                                  //   setOptionDivision([]);
-                                                  //   await LoadDataDivisionCustom(
-                                                  //     formik.values.workPrograms[
-                                                  //       index
-                                                  //     ].directorateId || ""
-                                                  //   );
-                                                  // }}
-                                                  // onChange={(e) => {
-                                                  //   if (e) {
-                                                  //     const selected = {
-                                                  //       label: e.label,
-                                                  //       value: e.value,
-                                                  //     };
-
-                                                  //     handleSelectedCustom(
-                                                  //       selected,
-                                                  //       `workPrograms[${index}].divisionId`
-                                                  //     );
-                                                  //     setSelectedDivisionWPInternal(
-                                                  //       (prev) => [
-                                                  //         ...prev,
-                                                  //         {
-                                                  //           indexData: index,
-                                                  //           OptionData: selected,
-                                                  //         },
-                                                  //       ]
-                                                  //     );
-                                                  //   } else {
-                                                  //     handleUnSelectedCustom(
-                                                  //       `workPrograms[${index}].divisionId`
-                                                  //     );
-                                                  //     setSelectedDivisionWPInternal(
-                                                  //       (prev) =>
-                                                  //         prev.filter(
-                                                  //           (item) =>
-                                                  //             item.indexData !== index
-                                                  //         )
-                                                  //     );
-                                                  //   }
-                                                  // }}
-
-                                                  isDisabled={true}
-                                                  placeholder={"Pilih Divisi"}
-                                                  isLoading={
-                                                    IsLoadingProcess ||
-                                                    IsLoadingDivisionSelect
-                                                  }
-                                                  value={
-                                                    SelectedDivisionWPInternal.find(
-                                                      (x) =>
-                                                        x.indexData == index
-                                                    )?.OptionData
-                                                  }
-                                                />
-
-                                                <FormErrorMessage>
-                                                  {typeof formik.errors
-                                                    .workPrograms?.[index] ===
-                                                    "object" &&
-                                                    formik.errors
-                                                      .workPrograms?.[index]
-                                                      ?.divisionId}
-                                                </FormErrorMessage>
-                                              </FormControl>
-                                            </GridItem>
-                                            <GridItem
-                                              colSpan={{
-                                                base: 3,
-                                                sm: 3,
-                                                md: 1,
-                                                lg: 1,
-                                              }}
-                                              w={"full"}
-                                            >
-                                              <FormControl
-                                                id={`workProgramGroupDivisionIT-${index}`}
-                                                isInvalid={
-                                                  typeof formik.errors
-                                                    .workPrograms?.[index] ===
-                                                    "object" &&
-                                                    formik.errors.workPrograms?.[
-                                                      index
-                                                    ]?.groupId
-                                                    ? true
-                                                    : false
-                                                }
-                                              >
-                                                <FormLabel h={"full"}>
-                                                  Group
-                                                </FormLabel>
-                                                {/* GROUP */}
-                                                <Select
-                                                  id={`workProgramGroupDivisionIT-${index}`}
-                                                  options={OptionGroupDivision}
-                                                  isSearchable={true}
-                                                  onMenuOpen={async () => {
-                                                    setOptionGroupDivision([]);
-                                                    await LoadDataGroupOrgCustom(
-                                                      formik.values
-                                                        .workPrograms[index]
-                                                        .divisionId || ""
-                                                    );
-                                                  }}
-                                                  onChange={(e) => {
-                                                    if (e) {
-                                                      const selected = {
-                                                        label: e.label,
-                                                        value: e.value,
-                                                      };
-
-                                                      handleSelectedCustom(
-                                                        selected,
-                                                        `workPrograms[${index}].groupId`
-                                                      );
-                                                      setSelectedGroupWPInternal(
-                                                        (prev) => [
-                                                          ...prev,
-                                                          {
-                                                            indexData: index,
-                                                            OptionData:
-                                                              selected,
-                                                          },
-                                                        ]
-                                                      );
-                                                    } else {
-                                                      handleUnSelectedCustom(
-                                                        `workPrograms[${index}].groupId`
-                                                      );
-                                                      setSelectedGroupWPInternal(
-                                                        (prev) =>
-                                                          prev.filter(
-                                                            (item) =>
-                                                              item.indexData !==
-                                                              index
-                                                          )
-                                                      );
-                                                    }
-                                                  }}
-                                                  placeholder={
-                                                    "Pilih Group (Opsional)"
-                                                  }
-                                                  isLoading={
-                                                    IsLoadingProcess ||
-                                                    IsLoadingGroupDivisionSelect
-                                                  }
-                                                  value={
-                                                    SelectedGroupWPInternal.find(
-                                                      (x) =>
-                                                        x.indexData == index
-                                                    )?.OptionData
-                                                  }
-                                                />
-
-                                                <FormErrorMessage>
-                                                  {typeof formik.errors
-                                                    .workPrograms?.[index] ===
-                                                    "object" &&
-                                                    formik.errors
-                                                      .workPrograms?.[index]
-                                                      ?.divisionId}
-                                                </FormErrorMessage>
-                                              </FormControl>
-                                            </GridItem>
-                                          </Grid>
+                                              placeholder={
+                                                "Pilih Group (Opsional)"
+                                              }
+                                              isLoading={
+                                                IsLoadingProcess ||
+                                                IsLoadingGroupDivisionSelect
+                                              }
+                                              value={
+                                                SelectedGroupWPInternal.find(
+                                                  (x) =>
+                                                    x.indexData == index
+                                                )?.OptionData
+                                              }
+                                            />
+                                            <FormErrorMessage>
+                                              {typeof formik.errors
+                                                .workPrograms?.[index] ===
+                                                "object" &&
+                                                formik.errors
+                                                  .workPrograms?.[index]
+                                                  ?.groupId}
+                                            </FormErrorMessage>
+                                          </FormControl>
                                         </Stack>
                                       </InputLayoutFull>
                                     </FormControl>
