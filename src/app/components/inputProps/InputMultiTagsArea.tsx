@@ -14,6 +14,7 @@ interface InputTagsAreaProps {
   onChange: (value: string) => void;
   name?: string;
   placeholder?: string;
+  isDisabled?: boolean;
 }
 
 export default function InputTagsArea({
@@ -21,6 +22,7 @@ export default function InputTagsArea({
   onChange,
   name,
   placeholder = "Ketik dan Enter atau comma untuk menambahkan tag",
+  isDisabled = false,
 }: InputTagsAreaProps) {
   const [inputValue, setInputValue] = useState("");
 
@@ -73,7 +75,7 @@ export default function InputTagsArea({
       {tags.map((tag) => (
         <Tag key={tag} borderRadius="full" colorScheme="blue">
           <TagLabel>{tag}</TagLabel>
-          <TagCloseButton onClick={() => removeTag(tag)} />
+          <TagCloseButton onClick={() => removeTag(tag)} isDisabled={isDisabled} />
         </Tag>
       ))}
       <Textarea
@@ -87,6 +89,7 @@ export default function InputTagsArea({
         minH="30px"
         rows={1}
         flex="1"
+        isDisabled={isDisabled}
       />
     </Flex>
   );

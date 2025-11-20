@@ -959,7 +959,6 @@ function ProjectRegisterView({
 
       reviewers.filter(Boolean).forEach((user) => userAssignPoject.push(user!));
 
-
       // Set state only after all async ops done
       if (userAssignPoject.length > 0) {
         setChoosedMemberProjects(userAssignPoject);
@@ -2063,7 +2062,6 @@ function ProjectRegisterView({
         reviewers
           .filter(Boolean)
           .forEach((user) => userAssignPoject.push(user!));
-
 
         // Set state only after all async ops done
         if (userAssignPoject.length > 0) {

@@ -14,12 +14,14 @@ interface OtherInputAppsStringSeparatorProps {
   value?: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  isDisabled?: boolean;
 }
 
 export default function OtherInputAppsStringSeparator({
   value = "",
   onChange,
   placeholder = "Ketik dan Enter atau comma untuk menambahkan tag",
+  isDisabled = false,
 }: OtherInputAppsStringSeparatorProps) {
   const [tags, setTags] = useState<string[]>(
     value
@@ -73,7 +75,7 @@ export default function OtherInputAppsStringSeparator({
       {tags.map((tag) => (
         <Tag key={tag} borderRadius="full" colorScheme="blue">
           <TagLabel>{tag}</TagLabel>
-          <TagCloseButton onClick={() => OtherInputAppsRemoveTag(tag)} />
+          <TagCloseButton onClick={() => OtherInputAppsRemoveTag(tag)} isDisabled={isDisabled} />
         </Tag>
       ))}
       <Input
@@ -84,6 +86,7 @@ export default function OtherInputAppsStringSeparator({
         placeholder={placeholder}
         flex="1"
         minW="120px"
+        isDisabled={isDisabled}
       />
     </Flex>
   );

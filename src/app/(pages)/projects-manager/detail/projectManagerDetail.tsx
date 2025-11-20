@@ -171,25 +171,6 @@ const HeaderDataContent: HeaderContentProps = {
   breadCrumb: ["Home", "Project Manager", "Detail"],
 };
 
-const OptionDataProjectStatus: OptionListProps[] = [
-  {
-    label: "NEW",
-    value: "NEW",
-  },
-  {
-    label: "ACTIVE",
-    value: "ACTIVE",
-  },
-  {
-    label: "ON HOLD",
-    value: "ONHOLD",
-  },
-  {
-    label: "IN ACTIVE",
-    value: "INACTIVE",
-  },
-];
-
 const FormSchemaEditProject = Yup.object().shape({
   id: Yup.string().required("ID is required"),
   projectNo: Yup.string().required("Project Number is required"),
@@ -494,42 +475,6 @@ function ProjectManagerDetail() {
           zIndex: 0,
         }}
       >
-        {/* Simplified Background Pattern */}
-        <Box
-          position="absolute"
-          top={0}
-          left={0}
-          right={0}
-          bottom={0}
-          opacity={0.06}
-          bgImage="radial-gradient(circle at 30% 40%, white 1px, transparent 1px), radial-gradient(circle at 70% 60%, white 1px, transparent 1px)"
-          bgSize="80px 80px, 80px 80px"
-        />
-
-        {/* {/* Reduced Floating Elements} */}
-        <Box
-          position="absolute"
-          top="15%"
-          right="10%"
-          w={8}
-          h={8}
-          bg="whiteAlpha.100"
-          rounded="full"
-          blur="sm"
-          animation="pulse 4s ease-in-out infinite"
-        />
-        <Box
-          position="absolute"
-          bottom="20%"
-          left="8%"
-          w={6}
-          h={6}
-          bg="whiteAlpha.120"
-          transform="rotate(45deg)"
-          rounded="md"
-          animation="spin 15s linear infinite"
-        />
-
         {/* {/* BJB Logo in Bottom Right Corner - Responsive} */}
         <Box
           position="absolute"
@@ -682,27 +627,25 @@ function ProjectManagerDetail() {
               <VStack spacing={3} align="center">
                 <Box position="relative">
                   <Box
-                    w={"80px"}
-                    h={"80px"}
-                    bgGradient={"linear(to-br, secondary.800, secondary.400)"}
-                    rounded="2xl"
-                    display="flex"
+                    w={"75px"}
+                    h={"75px"}
+                    bgGradient={"linear(to-br, secondary.100, secondary.50)"}
+                    rounded={"30%"}
+                    display={"flex"}
                     alignItems="center"
                     justifyContent="center"
-                    fontSize="xl"
-                    fontWeight="bold"
-                    shadow="lg"
-                    border="3px solid"
-                    borderColor="whiteAlpha.300"
-                    backdropFilter="blur(10px)"
+                    fontSize={"x-large"}
+                    fontWeight={"bold"}
+                    shadow={"lg"}
                     position="relative"
                     _hover={{
                       transform: "scale(1.05)",
                     }}
                     transition="all 0.2s ease"
+                    color={"secondary.800"}
                   >
-                    {DataProject?.appsProject?.appName?.charAt(0) ||
-                      DataApps?.appName?.charAt(0) ||
+                    {DataProject?.appsProject?.appShortName ||
+                      DataApps?.appShortName ||
                       DataProject.projectName?.charAt(0) ||
                       "A"}
                   </Box>
@@ -715,39 +658,12 @@ function ProjectManagerDetail() {
                     opacity={0.95}
                     textAlign="center"
                     maxW="100px"
-                    noOfLines={1}
+                    lineHeight={1}
                   >
                     {DataProject?.appsProject?.appName ||
                       DataApps?.appName ||
-                      "Application"}
+                      "No Application"}
                   </Text>
-                  <Badge
-                    colorScheme={
-                      (DataProject?.appsProject?.appsStatus ||
-                        DataApps?.appsStatus) === "ACTIVE"
-                        ? "green"
-                        : (DataProject?.appsProject?.appsStatus ||
-                          DataApps?.appsStatus) === "INACTIVE"
-                          ? "red"
-                          : (DataProject?.appsProject?.appsStatus ||
-                            DataApps?.appsStatus) === "DEVELOPMENT"
-                            ? "blue"
-                            : (DataProject?.appsProject?.appsStatus ||
-                              DataApps?.appsStatus) === "TESTING"
-                              ? "orange"
-                              : "gray"
-                    }
-                    size="sm"
-                    px={2}
-                    py={1}
-                    rounded="full"
-                    fontSize="xs"
-                    fontWeight="bold"
-                  >
-                    {DataProject?.appsProject?.appsStatus ||
-                      DataApps?.appsStatus ||
-                      "Unknown"}
-                  </Badge>
                 </VStack>
               </VStack>
 
@@ -770,53 +686,33 @@ function ProjectManagerDetail() {
                         DataProject.projectStatus === "ACTIVE"
                           ? "green"
                           : DataProject.projectStatus === "ONHOLD"
-                            ? "orange"
-                            : DataProject.projectStatus === "COMPLETED"
-                              ? "blue"
-                              : "gray"
+                          ? "orange"
+                          : DataProject.projectStatus === "COMPLETED"
+                          ? "blue"
+                          : "gray"
                       }
-                      px={3}
-                      py={1}
+                      px={2}
                       rounded="full"
-                      fontSize="sm"
+                      fontSize="small"
                       fontWeight="semibold"
                       shadow="md"
+                      size={"sm"}
                     >
                       {DataProject.projectStatus}
                     </Badge>
                     <Badge
                       colorScheme="purple"
                       variant="solid"
-                      px={3}
-                      py={1}
+                      px={2}
                       rounded="full"
-                      fontSize="sm"
+                      fontSize="small"
                       fontWeight="semibold"
                       shadow="md"
+                      size={"sm"}
                     >
                       {DataProject.projectType}
                     </Badge>
                   </HStack>
-
-                  <Box
-                    bg="whiteAlpha.100"
-                    backdropFilter="blur(10px)"
-                    p={3}
-                    rounded="lg"
-                    border="1px solid"
-                    borderColor="whiteAlpha.200"
-                    maxW="500px"
-                  >
-                    <Text
-                      fontSize="sm"
-                      opacity={0.95}
-                      lineHeight="base"
-                      noOfLines={2}
-                    >
-                      {DataProject.projectDesc ||
-                        "Modern application with advanced features and best practices implementation."}
-                    </Text>
-                  </Box>
 
                   <HStack spacing={6} fontSize="sm" opacity={0.95}>
                     <VStack spacing={0} align="center">
@@ -839,9 +735,9 @@ function ProjectManagerDetail() {
                       <Text fontSize="lg" fontWeight="bold" color="orange.200">
                         {DataProject.projectRegisterDate
                           ? calculateDurationInDays(
-                            DataProject.projectRegisterDate,
-                            new Date().toISOString()
-                          )
+                              DataProject.projectRegisterDate,
+                              new Date().toISOString()
+                            )
                           : 0}
                       </Text>
                       <Text fontSize="xs" opacity={0.8}>
@@ -856,7 +752,7 @@ function ProjectManagerDetail() {
               <VStack spacing={3} align="center" minW="120px">
                 {DataProject.userAssignment &&
                   DataProject.userAssignment.length > 0 && (
-                    <AvatarGroup size="md" max={4} spacing="-0.5rem">
+                    <AvatarGroup size={"sm"} max={4} spacing="-0.5rem">
                       {DataProject.userAssignment
                         .slice(0, 5)
                         .map((assignment, index) => (
@@ -865,7 +761,7 @@ function ProjectManagerDetail() {
                             name={assignment.userData?.nama || "User"}
                             src={assignment.userData?.profilePict || undefined}
                             border="2px solid white"
-                            shadow="md"
+                            shadow={"md"}
                             _hover={{
                               transform: "scale(1.05)",
                               zIndex: 10,
@@ -991,7 +887,6 @@ function ProjectManagerDetail() {
                         <Text>Edit</Text>
                       </HStack>
                     </TabButtonCustomStyle>
-
                   </TabList>
 
                   <TabPanels
@@ -1151,10 +1046,10 @@ function ProjectManagerDetail() {
                               ? "green.400"
                               : DataProject.appsProject.appsStatus ===
                                 "DEVELOPMENT"
-                                ? "blue.400"
-                                : DataProject.appsProject.appsStatus === "TESTING"
-                                  ? "orange.400"
-                                  : "red.400"
+                              ? "blue.400"
+                              : DataProject.appsProject.appsStatus === "TESTING"
+                              ? "orange.400"
+                              : "red.400"
                           }
                           rounded="full"
                           border="2px solid white"
@@ -1214,11 +1109,11 @@ function ProjectManagerDetail() {
                                 ? "green"
                                 : DataProject.appsProject.appsStatus ===
                                   "DEVELOPMENT"
-                                  ? "blue"
-                                  : DataProject.appsProject.appsStatus ===
-                                    "TESTING"
-                                    ? "orange"
-                                    : "red"
+                                ? "blue"
+                                : DataProject.appsProject.appsStatus ===
+                                  "TESTING"
+                                ? "orange"
+                                : "red"
                             }
                             size="sm"
                             px={2}
@@ -1397,10 +1292,10 @@ function ProjectManagerDetail() {
                               DataProject.projectStatus === "ACTIVE"
                                 ? "green"
                                 : DataProject.projectStatus === "ONHOLD"
-                                  ? "orange"
-                                  : DataProject.projectStatus === "COMPLETED"
-                                    ? "blue"
-                                    : "gray"
+                                ? "orange"
+                                : DataProject.projectStatus === "COMPLETED"
+                                ? "blue"
+                                : "gray"
                             }
                           >
                             {DataProject.projectStatus}

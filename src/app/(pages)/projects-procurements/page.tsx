@@ -96,10 +96,10 @@ import {
   RES_GENERIC_ERROR_MSG,
   PROJECT_TYPE_PROCUREMENT,
 } from "@/app/constants/applicationConstants";
-import { 
+import {
   PROJECT_STATUSES,
   PRO_STATUS_RUNNING,
-  PRO_STATUS_COMPLETED
+  PRO_STATUS_COMPLETED,
 } from "@/app/constants/masterStatusConstants";
 import { StatusBadge } from "@/app/components/StatusBadge";
 import {
@@ -473,8 +473,9 @@ const ProjectManagerPage = () => {
                   color={colorMode == "light" ? "gray.900" : "white"}
                 >
                   {
-                    DataProjects.filter((p) => p.projectStatus === PRO_STATUS_RUNNING)
-                      .length
+                    DataProjects.filter(
+                      (p) => p.projectStatus === PRO_STATUS_RUNNING
+                    ).length
                   }
                 </Text>
                 <Text
@@ -562,8 +563,9 @@ const ProjectManagerPage = () => {
               <VStack spacing={0}>
                 <Text fontSize="lg" fontWeight="bold" color="white">
                   {
-                    DataProjects.filter((p) => p.projectStatus === PRO_STATUS_RUNNING)
-                      .length
+                    DataProjects.filter(
+                      (p) => p.projectStatus === PRO_STATUS_RUNNING
+                    ).length
                   }
                 </Text>
                 <Text fontSize="xs" color="whiteAlpha.700">

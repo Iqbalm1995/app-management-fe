@@ -984,8 +984,6 @@ const SidebarContent = ({
 
         <AdditionalProfileBar LiteModeTrigger={LiteModeTrigger} />
 
-        <SearchMenuButton LiteModeTrigger={LiteModeTrigger} />
-
 
         <Flex pt={5} pb={2} mx={3}>
           <VStack w={"full"} h={"65vh"} align={"start"} overflowX="auto">
