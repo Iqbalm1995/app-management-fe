@@ -1144,65 +1144,139 @@ function RequirementDetailView() {
                                 >
                                   <Wrap spacing={5}>
                                     <Box
-                                      bg={"green.200"}
-                                      _hover={{
-                                        bg: "green.400",
-                                      }}
+                                      bg={
+                                        DataRequirement.reqStatus ===
+                                        REQ_STATUS_APPROVED
+                                          ? "green.400"
+                                          : "gray.200"
+                                      }
                                       py={2}
                                       px={4}
                                       rounded={"md"}
-                                      color={"green.800"}
+                                      color={
+                                        DataRequirement.reqStatus ===
+                                        REQ_STATUS_APPROVED
+                                          ? "green.900"
+                                          : "gray.500"
+                                      }
                                       fontWeight={600}
+                                      opacity={
+                                        DataRequirement.reqStatus ===
+                                        REQ_STATUS_APPROVED
+                                          ? 1
+                                          : 0.5
+                                      }
                                     >
-                                      <Radio value={REQ_STATUS_APPROVED}>
+                                      <Radio
+                                        value={REQ_STATUS_APPROVED}
+                                        isDisabled={
+                                          DataRequirement.reqStatus !==
+                                          REQ_STATUS_APPROVED
+                                        }
+                                      >
                                         {REQ_STATUS_APPROVED}
                                       </Radio>
                                     </Box>
                                     <Box
-                                      bg={"teal.200"}
-                                      _hover={{
-                                        bg: "teal.400",
-                                      }}
+                                      bg={
+                                        DataRequirement.reqStatus ===
+                                        REQ_STATUS_TEMPORARY_APPROVED
+                                          ? "teal.400"
+                                          : "gray.200"
+                                      }
                                       py={2}
                                       px={4}
                                       rounded={"md"}
-                                      color={"teal.800"}
+                                      color={
+                                        DataRequirement.reqStatus ===
+                                        REQ_STATUS_TEMPORARY_APPROVED
+                                          ? "teal.900"
+                                          : "gray.500"
+                                      }
                                       fontWeight={600}
+                                      opacity={
+                                        DataRequirement.reqStatus ===
+                                        REQ_STATUS_TEMPORARY_APPROVED
+                                          ? 1
+                                          : 0.5
+                                      }
                                     >
                                       <Radio
                                         value={REQ_STATUS_TEMPORARY_APPROVED}
+                                        isDisabled={
+                                          DataRequirement.reqStatus !==
+                                          REQ_STATUS_TEMPORARY_APPROVED
+                                        }
                                       >
                                         {REQ_STATUS_TEMPORARY_APPROVED}
                                       </Radio>
                                     </Box>
 
                                     <Box
-                                      bg={"yellow.200"}
-                                      _hover={{
-                                        bg: "yellow.400",
-                                      }}
+                                      bg={
+                                        DataRequirement.reqStatus ===
+                                        REQ_STATUS_ON_HOLD
+                                          ? "yellow.400"
+                                          : "gray.200"
+                                      }
                                       py={2}
                                       px={4}
                                       rounded={"md"}
-                                      color={"yellow.800"}
+                                      color={
+                                        DataRequirement.reqStatus ===
+                                        REQ_STATUS_ON_HOLD
+                                          ? "yellow.900"
+                                          : "gray.500"
+                                      }
                                       fontWeight={600}
+                                      opacity={
+                                        DataRequirement.reqStatus ===
+                                        REQ_STATUS_ON_HOLD
+                                          ? 1
+                                          : 0.5
+                                      }
                                     >
-                                      <Radio value={REQ_STATUS_ON_HOLD}>
+                                      <Radio
+                                        value={REQ_STATUS_ON_HOLD}
+                                        isDisabled={
+                                          DataRequirement.reqStatus !==
+                                          REQ_STATUS_ON_HOLD
+                                        }
+                                      >
                                         {REQ_STATUS_ON_HOLD}
                                       </Radio>
                                     </Box>
                                     <Box
-                                      bg={"red.200"}
-                                      _hover={{
-                                        bg: "red.400",
-                                      }}
+                                      bg={
+                                        DataRequirement.reqStatus ===
+                                        REQ_STATUS_CANCELED
+                                          ? "red.400"
+                                          : "gray.200"
+                                      }
                                       py={2}
                                       px={4}
                                       rounded={"md"}
-                                      color={"red.800"}
+                                      color={
+                                        DataRequirement.reqStatus ===
+                                        REQ_STATUS_CANCELED
+                                          ? "red.900"
+                                          : "gray.500"
+                                      }
                                       fontWeight={600}
+                                      opacity={
+                                        DataRequirement.reqStatus ===
+                                        REQ_STATUS_CANCELED
+                                          ? 1
+                                          : 0.5
+                                      }
                                     >
-                                      <Radio value={REQ_STATUS_CANCELED}>
+                                      <Radio
+                                        value={REQ_STATUS_CANCELED}
+                                        isDisabled={
+                                          DataRequirement.reqStatus !==
+                                          REQ_STATUS_CANCELED
+                                        }
+                                      >
                                         {REQ_STATUS_CANCELED}
                                       </Radio>
                                     </Box>
@@ -2255,10 +2329,22 @@ const ReqInfoSummaryFileAttachmentsView = ({
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
 
-  const UrlEndpoint: string = buildUrlPort(
-    ENDPOINT_API_BASEURL_OBJECT,
-    ENDPOINT_PORT_BASIC_OBJECT
-  );
+  const handleDownloadFile = async (url: string, filename: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error("Download failed:", error);
+    }
+  };
 
   const columnsData = useMemo<ColumnDef<MediaObjectResponse>[]>(
     () => [
@@ -2353,18 +2439,19 @@ const ReqInfoSummaryFileAttachmentsView = ({
         id: "id",
         cell: (info) => (
           <Flex w={"full"} as={Wrap} justifyContent={"start"}>
-            <Link
-              href={`${UrlEndpoint}${info.row.original.objectData}`}
-              target="_blank"
+            <Button
+              size={"sm"}
+              colorScheme={"blue"}
+              leftIcon={<FiDownload />}
+              onClick={() =>
+                handleDownloadFile(
+                  info.row.original.objectFullPath || "",
+                  info.row.original.objectRawName
+                )
+              }
             >
-              <Button
-                size={"sm"}
-                colorScheme={"blue"}
-                leftIcon={<FiDownload />}
-              >
-                Unduh
-              </Button>
-            </Link>
+              Unduh
+            </Button>
             {info.row.original.objectExtension.replace(".", "").trim() ==
               "pdf" && (
                 <Button
@@ -2372,7 +2459,7 @@ const ReqInfoSummaryFileAttachmentsView = ({
                   colorScheme={"blue"}
                   onClick={() => {
                     handleOpenPreview(
-                      `${UrlEndpoint}${info.row.original.objectData}`
+                      info.row.original.objectFullPath || ""
                     );
                   }}
                   leftIcon={<FiEye />}
