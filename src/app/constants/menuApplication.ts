@@ -1,23 +1,93 @@
 import { IconType } from "react-icons";
 import { AiOutlineVideoCamera, AiOutlineVideoCameraAdd } from "react-icons/ai";
 import { BiAnalyse, BiSolidReport } from "react-icons/bi";
-import { BsChatDots, BsCloudUpload, BsDatabaseGear, BsRocketTakeoff } from "react-icons/bs";
+import {
+  BsChatDots,
+  BsCloudUpload,
+  BsDatabaseGear,
+  BsRocketTakeoff,
+} from "react-icons/bs";
 import { CiMobile2, CiMoneyCheck1 } from "react-icons/ci";
-import { FaChess, FaCode, FaDraftingCompass, FaRegHeart, FaRegStar, FaVial } from "react-icons/fa";
+import {
+  FaChess,
+  FaCode,
+  FaDraftingCompass,
+  FaRegHeart,
+  FaRegStar,
+  FaVial,
+} from "react-icons/fa";
 import { FaDiagramProject, FaO, FaUsersRays } from "react-icons/fa6";
-import { FiDatabase, FiKey, FiLayers, FiUmbrella, FiUpload, FiUsers } from "react-icons/fi";
+import {
+  FiDatabase,
+  FiKey,
+  FiLayers,
+  FiUmbrella,
+  FiUpload,
+  FiUsers,
+} from "react-icons/fi";
 import { GrHelpBook } from "react-icons/gr";
-import { HiOutlineDesktopComputer, HiOutlineDocumentReport, HiOutlineInformationCircle } from "react-icons/hi";
+import {
+  HiOutlineDesktopComputer,
+  HiOutlineDocumentReport,
+  HiOutlineInformationCircle,
+} from "react-icons/hi";
 import { ImUserTie } from "react-icons/im";
 import { IoIosCodeDownload, IoMdBookmarks } from "react-icons/io";
-import { IoCalendarNumberOutline, IoCalendarOutline, IoChatbubblesOutline, IoKeyOutline } from "react-icons/io5";
+import {
+  IoCalendarNumberOutline,
+  IoCalendarOutline,
+  IoChatbubblesOutline,
+  IoKeyOutline,
+} from "react-icons/io5";
 import { LiaFileContractSolid } from "react-icons/lia";
 import { LuBookHeart, LuServer } from "react-icons/lu";
-import { MdChangeHistory, MdOutlineCircle, MdOutlineCode, MdOutlineSystemUpdateAlt, MdOutlineWorkOutline, MdWebAsset } from "react-icons/md";
+import {
+  MdChangeHistory,
+  MdOutlineCircle,
+  MdOutlineCode,
+  MdOutlineSystemUpdateAlt,
+  MdOutlineWorkOutline,
+  MdWebAsset,
+} from "react-icons/md";
 import { PiCertificate, PiFlowArrow } from "react-icons/pi";
-import { RiApps2AiLine, RiCodeBlock, RiMegaphoneLine, RiOrganizationChart } from "react-icons/ri";
+import {
+  RiApps2AiLine,
+  RiCodeBlock,
+  RiMegaphoneLine,
+  RiOrganizationChart,
+} from "react-icons/ri";
 import { RxActivityLog } from "react-icons/rx";
-import { TbAdjustmentsCog, TbArrowsExchange, TbBellShare, TbBolt, TbCalendarTime, TbCategory, TbChartInfographic, TbClipboardList, TbClockExclamation, TbCode, TbContract, TbFileReport, TbFolders, TbHourglassHigh, TbLanguage, TbLayoutDashboardFilled, TbListDetails, TbMoodShare, TbNavigationShare, TbProgressCheck, TbServerCog, TbSettingsCog, TbShare, TbTimeline, TbUserBolt, TbUserHeart, TbUsers, TbUsersGroup, TbUserShare } from "react-icons/tb";
+import {
+  TbAdjustmentsCog,
+  TbArrowsExchange,
+  TbBellShare,
+  TbBolt,
+  TbCalendarTime,
+  TbCategory,
+  TbChartInfographic,
+  TbClipboardList,
+  TbClockExclamation,
+  TbCode,
+  TbContract,
+  TbFileReport,
+  TbFolders,
+  TbHourglassHigh,
+  TbLanguage,
+  TbLayoutDashboardFilled,
+  TbListDetails,
+  TbMoodShare,
+  TbNavigationShare,
+  TbProgressCheck,
+  TbServerCog,
+  TbSettingsCog,
+  TbShare,
+  TbTimeline,
+  TbUserBolt,
+  TbUserHeart,
+  TbUsers,
+  TbUsersGroup,
+  TbUserShare,
+} from "react-icons/tb";
 
 export interface LinkItemProps {
   name: string;
@@ -313,8 +383,34 @@ export const LinkItems: LinkItemProps[] = [
         menuID: "1",
         children: [],
       },
+      // {
+      //   name: "Import Applications",
+      //   icon: RiApps2AiLine,
+      //   link: "/projects/import-applications",
+      //   role: ["admin"],
+      //   menuID: "1",
+      //   children: [],
+      // },
     ],
   },
+
+  // {
+  //   name: "Projects(ALT)",
+  //   icon: FaDiagramProject,
+  //   link: "/projects-alt",
+  //   role: ["admin"],
+  //   menuID: "1",
+  //   children: [
+  //     {
+  //       name: "Internal Development",
+  //       icon: FaCode,
+  //       link: "/projects-alt/internal-development",
+  //       role: ["admin"],
+  //       menuID: "1",
+  //       children: [],
+  //     },
+  //   ],
+  // },
 
   {
     name: "Reports",

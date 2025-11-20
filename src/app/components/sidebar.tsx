@@ -234,6 +234,8 @@ import { LinkItemProps, LinkItems } from "../constants/menuApplication";
 //   () => import("../_pieces/profile/Profile-modal")
 // );
 
+
+
 export default function NavigationAdmin({ children }: { children: ReactNode }) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [LiteMode, setLiteMode] = useState<boolean>(false);
@@ -381,7 +383,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                 aria-label="lite mode"
                 icon={<RiMenu2Line />}
                 size={"lg"}
-                // rounded={"xl"}
+              // rounded={"xl"}
               />
               <SearchMenuButton LiteModeTrigger={LiteMode} />
             </Box>
@@ -889,7 +891,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                 pb={12}
                 pt={5}
                 minH={"100vh"}
-                // bg={"blue.100"}
+              // bg={"blue.100"}
               >
                 <AnimatePresence mode="wait">
                   <MotionBox
@@ -981,10 +983,13 @@ const SidebarContent = ({
         </Flex>
 
         <AdditionalProfileBar LiteModeTrigger={LiteModeTrigger} />
+
+
         <Flex pt={5} pb={2} mx={3}>
           <VStack w={"full"} h={"65vh"} align={"start"} overflowX="auto">
             <HStack w="full" justify="space-between" align="center" pl={2}>
               <Tooltip label="Hide menu pro" placement="top" hasArrow>
+
                 <FormControl display="flex" alignItems="center">
                   <FormLabel htmlFor="hide-pro" mb="0" fontSize={"smaller"} display={LiteModeTrigger ? "none" : "flex"}>
                     Hide Pro ?
@@ -996,8 +1001,9 @@ const SidebarContent = ({
                     onChange={(e) => setHideProMenus(e.target.checked)}
                   />
                 </FormControl>
-              </Tooltip>
-            </HStack>
+
+              </Tooltip >
+            </HStack >
             <Box w={"full"} overflowY={"auto"}>
               {LinkItems.filter((link) => !hideProMenus || !link.isPro).map(
                 (link) => (
@@ -1008,10 +1014,10 @@ const SidebarContent = ({
             <Spacer />
             {/* <AdditionalBarAdvertis /> */}
             {/* <AdditionalBarAlt /> */}
-          </VStack>
-        </Flex>
-      </Box>
-    </Box>
+          </VStack >
+        </Flex >
+      </Box >
+    </Box >
   );
 };
 
@@ -1125,15 +1131,15 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
               IsActiveNav
                 ? "linear(to-r, secondary.500, secondary.600)"
                 : hasActiveChild
-                ? "linear(to-r, secondary.500, secondary.600)"
-                : "linear(to-r, transparent, transparent)"
+                  ? "linear(to-r, secondary.500, secondary.600)"
+                  : "linear(to-r, transparent, transparent)"
             }
             color={
               IsActiveNav
                 ? "white" // When the navigation item is active, set color to white
                 : hasActiveChild
-                ? "gray.100" // When has active child
-                : useColorModeValue("gray.900", "gray.100") // Otherwise, set color based on the color mode
+                  ? "gray.100" // When has active child
+                  : useColorModeValue("gray.900", "gray.100") // Otherwise, set color based on the color mode
             }
             justifyContent={"center"}
             // onClick={() => {
@@ -1164,8 +1170,8 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
                     IsActiveNav
                       ? "white"
                       : hasActiveChild
-                      ? "gray.100"
-                      : useColorModeValue("gray.900", "gray.100")
+                        ? "gray.100"
+                        : useColorModeValue("gray.900", "gray.100")
                   }
                   as={data.icon}
                 />
@@ -1424,7 +1430,7 @@ export function AdditionalProfileBar({
                       color={
                         colorMode == "light" ? "primary.500" : "primary.100"
                       }
-                      // color={"secondary.200"}
+                    // color={"secondary.200"}
                     >
                       {(DataAuth && DataAuth.teamRole?.specName) ||
                         (DataAuth && DataAuth.jabatan)}
@@ -1527,6 +1533,7 @@ export function SearchMenuButton({ LiteModeTrigger }: { LiteModeTrigger: boolean
           (item) =>
             item.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
             item.link !== "#"
+
         )
         .slice(0, 5);
       setFilteredMenus(filtered);

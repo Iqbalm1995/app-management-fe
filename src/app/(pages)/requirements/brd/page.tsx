@@ -488,8 +488,8 @@ function ReuirementsBRDPage() {
               <Text fontWeight={600}>
                 {info.row.original.reqInititateDate
                   ? stringToDateFormatedReverse(
-                      info.row.original.reqInititateDate
-                    )
+                    info.row.original.reqInititateDate
+                  )
                   : "-"}
               </Text>
             </Flex>
@@ -498,8 +498,8 @@ function ReuirementsBRDPage() {
               <Text fontWeight={600}>
                 {info.row.original.reqAcceptedDate
                   ? stringToDateFormatedReverse(
-                      info.row.original.reqAcceptedDate
-                    )
+                    info.row.original.reqAcceptedDate
+                  )
                   : "-"}
               </Text>
             </Flex>
@@ -549,9 +549,11 @@ function ReuirementsBRDPage() {
                   </Text>
                 ))
               ) : (
+
                 <Text fontWeight={600} fontSize="smaller" color="gray.500">
                   -
                 </Text>
+
               )}
             </Flex>
           </Flex>
@@ -1013,8 +1015,8 @@ function ReuirementsBRDPage() {
                                         {" "}
                                         {dt.field === "senderDivisionId"
                                           ? OptionDivision.find(
-                                              (opt) => opt.value === dt.value
-                                            )?.label || dt.value
+                                            (opt) => opt.value === dt.value
+                                          )?.label || dt.value
                                           : dt.value}
                                       </Text>
                                     </Text>

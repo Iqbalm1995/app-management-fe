@@ -71,37 +71,32 @@ export const PROJECT_DEVELOPMENT_STATUSES = [
 
 // STATUS COLOR MAPPINGS
 export const STATUS_COLORS = {
+  "CANCELED": "red",
+  "ON_HOLD": "orange",
+
   // Requirement Status Colors
   "DRAFT": "gray",
-  "CARRY OVER": "orange", 
+  "CARRY OVER": "orange",
   "NEEDS REVIEW": "yellow",
   "IN PROGRESS REVIEW": "blue",
   "TEMPORARY APPROVED": "cyan",
   "APPROVED": "green",
-  "REQ_ON_HOLD": "orange",
-  "REQ_CANCELED": "red",
 
   // Project Status Colors
   "INITIATE": "blue",
-  "RUNNING": "green", 
+  "RUNNING": "green",
   "TEMPORARY CLOSED": "orange",
-  "CLOSED": "gray",
+  "CLOSED": "green",
   "COMPLETED": "green",
-  "PRO_ON_HOLD": "orange",
-  "PRO_CANCELED": "red",
 
   // Project Development Status Colors
   "NOT STARTED": "gray",
-  "DEV_INITIATE": "blue",
   "ON DEVELOPMENT": "purple",
   "READY FOR TESTING": "cyan",
   "UNIT TEST IN PROGRESS": "yellow",
-  "SIT IN PROGRESS": "orange", 
+  "SIT IN PROGRESS": "orange",
   "UAT IN PROGRESS": "pink",
   "READY FOR DEPLOYMENT": "teal",
-  "DEV_COMPLETED": "green",
-  "DEV_ON_HOLD": "orange",
-  "DEV_CANCELED": "red",
 } as const;
 
 // UTILITY FUNCTIONS
@@ -111,7 +106,7 @@ export const getStatusColor = (status: string): string => {
   if (status === "CANCELED") return "red";
   if (status === "INITIATE") return "blue";
   if (status === "COMPLETED") return "green";
-  
+
   return STATUS_COLORS[status as keyof typeof STATUS_COLORS] || "gray";
 };
 
@@ -127,20 +122,24 @@ export interface StatusOption {
 }
 
 // STATUS OPTIONS FOR DROPDOWNS
-export const REQUIREMENT_STATUS_OPTIONS: StatusOption[] = REQUIREMENT_STATUSES.map(status => ({
-  value: status,
-  label: status,
-  colorScheme: getStatusColor(status),
-}));
+export const REQUIREMENT_STATUS_OPTIONS: StatusOption[] =
+  REQUIREMENT_STATUSES.map((status) => ({
+    value: status,
+    label: status,
+    colorScheme: getStatusColor(status),
+  }));
 
-export const PROJECT_STATUS_OPTIONS: StatusOption[] = PROJECT_STATUSES.map(status => ({
-  value: status,
-  label: status,
-  colorScheme: getStatusColor(status),
-}));
+export const PROJECT_STATUS_OPTIONS: StatusOption[] = PROJECT_STATUSES.map(
+  (status) => ({
+    value: status,
+    label: status,
+    colorScheme: getStatusColor(status),
+  })
+);
 
-export const PROJECT_DEVELOPMENT_STATUS_OPTIONS: StatusOption[] = PROJECT_DEVELOPMENT_STATUSES.map(status => ({
-  value: status,
-  label: status,
-  colorScheme: getStatusColor(status),
-}));
+export const PROJECT_DEVELOPMENT_STATUS_OPTIONS: StatusOption[] =
+  PROJECT_DEVELOPMENT_STATUSES.map((status) => ({
+    value: status,
+    label: status,
+    colorScheme: getStatusColor(status),
+  }));

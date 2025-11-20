@@ -118,263 +118,242 @@ const CardProject = memo(
     const config = getDefaultConfig();
 
     return (
-      <Card
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        w="full"
-        h="480px"
-        minH="480px"
-        maxH="480px"
-        bg={useColorModeValue("white", "gray.800")}
-        border="1px"
-        borderColor={useColorModeValue("gray.200", "gray.700")}
-        rounded="2xl"
-        shadow={isHovered ? "2xl" : "lg"}
-        transition="all 0.3s ease"
-        // transform={isHovered ? "translateY(-8px)" : "translateY(0)"}
-        _hover={{
-          cursor: "pointer",
-          // borderColor: variant === "manager" ? "blue.300" : "secondary.300",
-        }}
-        overflow="hidden"
-        position="relative"
-        display="flex"
-        flexDirection="column"
-      >
-        {/* Header with App Icon and Status */}
-        <CardHeader
-          p={0}
+      <Link href={config.linkPath} style={{ width: "100%" }}>
+        <Card
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          w="full"
+          h="300px"
+          minH="300px"
+          maxH="300px"
+          bg={useColorModeValue("white", "gray.800")}
+          border="1px"
+          borderColor={useColorModeValue("gray.200", "gray.700")}
+          rounded="2xl"
+          shadow={isHovered ? "2xl" : "lg"}
+          transition="all 0.3s ease"
+          // transform={isHovered ? "translateY(-8px)" : "translateY(0)"}
+          _hover={{
+            cursor: "pointer",
+            // borderColor: variant === "manager" ? "blue.300" : "secondary.300",
+          }}
+          overflow="hidden"
           position="relative"
-          // bgGradient={
-          //   variant === "manager"
-          //     ? "linear(to-br, teal.700, teal.400)"
-          //     : "linear(to-br, secondary.700, secondary.400)"
-          // }
-          bgGradient={"linear(to-br, secondary.700, secondary.400)"}
-          color="white"
-          h="200px"
           display="flex"
-          alignItems="center"
-          justifyContent="center"
+          flexDirection="column"
         >
-          {/* App Icon */}
-          <VStack spacing={3} position="relative" zIndex={1}>
-            <Box
-              w={"60px"}
-              h={"60px"}
-              bg="whiteAlpha.200"
-              rounded="xl"
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-              fontSize="3xl"
-              fontWeight="bold"
-              border="2px"
-              borderColor="whiteAlpha.300"
-            >
-              {data.appsProject?.appShortName?.charAt(0) ||
-                data.appsProject?.appName?.charAt(0) ||
-                data.projectName.charAt(0)}
-            </Box>
-            <VStack spacing={0} align="center">
-              <Text
-                fontSize="sm"
-                fontWeight="bold"
-                opacity="0.9"
-                textAlign="center"
+          {/* Card Body */}
+          <CardBody p={2}>
+            <Flex as={Stack}>
+              <Flex
+                as={Stack}
+                w={"full"}
+                h={"60px"}
+                alignItems={"center"}
+                justifyContent={"start"}
+                p={2}
+                boxShadow={"md"}
+                rounded={radiusStyle}
+                bgGradient={
+                  colorMode == "light"
+                    ? "linear(to-br, secondary.700, secondary.400)"
+                    : "linear(to-br, secondary.900, secondary.600)"
+                }
+                color="white"
               >
-                {data.appsProject?.appName}
-              </Text>
-              <Text
-                fontSize="xs"
-                fontWeight="medium"
-                opacity="0.8"
-                textAlign="center"
-              >
-                {data.projectType} | {data.projectCategory}
-              </Text>
-            </VStack>
-          </VStack>
-
-          {/* Status Badge */}
-          {/* <Badge
-            position="absolute"
-            top={4}
-            right={4}
-            colorScheme={getStatusColor(data.projectStatus)}
-            rounded="full"
-            px={2}
-            py={1}
-            fontSize="xs"
-            fontWeight="bold"
-          >
-            {data.projectStatus}
-          </Badge> */}
-        </CardHeader>
-
-        {/* Card Body */}
-        <CardBody p={6} flex="1" display="flex" flexDirection="column">
-          <VStack spacing={4} align="stretch" flex="1">
-            {/* Project Info */}
-            <VStack spacing={2} align="start">
-              <HStack spacing={2} w="full" justify="space-between">
-                <Text fontSize="xs" color="gray.500" fontWeight="medium">
-                  #{data.projectNo || data.projectCode}
-                </Text>
-                <HStack spacing={1}>
-                  <Icon as={FiActivity} size="12px" color="gray.400" />
-                  <Text fontSize="xs" color="gray.500">
-                    {getProjectHealthRating(data.projectStatusPercentage)}
-                  </Text>
-                </HStack>
-              </HStack>
-
-              <Tooltip
-                label={data.projectName}
-                hasArrow
-                placement="top"
-                isDisabled={data.projectName.length <= 45}
-              >
-                <Heading
-                  size="md"
-                  color={useColorModeValue("gray.800", "white")}
-                  noOfLines={2}
-                  minH="48px"
-                  maxH="48px"
-                  display="flex"
-                  alignItems="start"
-                  lineHeight="1.3"
-                  overflow="hidden"
-                >
-                  {data.projectName}
-                </Heading>
-              </Tooltip>
-
-              {/* App Name - Show if different from project name */}
-              {/* {data.appsProject?.appName &&
-                data.appsProject?.appName !== data.projectName && (
-                  <Text
-                    fontSize="sm"
-                    color="gray.600"
-                    fontWeight="medium"
-                    noOfLines={1}
+                <Flex w={"full"} as={HStack} justifyContent={"space-between"}>
+                  {/* Icon Inititals */}
+                  <Box
+                    w={"40px"}
+                    h={"40px"}
+                    bg="whiteAlpha.200"
+                    rounded="xl"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                    fontSize="smaller"
+                    fontWeight="bold"
+                    border="2px"
+                    borderColor="whiteAlpha.300"
                   >
-                    App: {data.appsProject?.appName}
-                  </Text>
-                )} */}
-            </VStack>
-
-            {/* Progress Section */}
-            <VStack spacing={2} align="stretch">
-              <HStack justify="space-between">
-                <Text fontSize="sm" color="gray.600" fontWeight="medium">
-                  Progress
-                </Text>
-                <Text
-                  fontSize="sm"
-                  fontWeight="bold"
-                  color={`${getProgressColor(
-                    data.projectStatusPercentage
-                  )}.500`}
+                    {data.appsProject?.appShortName || "N/A"}
+                  </Box>
+                  <Flex as={Stack} spacing={1} px={2}>
+                    <Text
+                      fontSize="xx-small"
+                      textAlign={"end"}
+                      lineHeight={1}
+                      fontStyle={"italic"}
+                    >
+                      App Name
+                    </Text>
+                    <Text
+                      fontSize="smaller"
+                      textAlign={"end"}
+                      lineHeight={1}
+                      fontWeight={"bold"}
+                    >
+                      {data.appsProject?.appName || "- NO APPS REGISTEREED"}
+                    </Text>
+                  </Flex>
+                </Flex>
+              </Flex>
+              <VStack spacing={1} align="stretch" flex="1" px={2} py={2}>
+                {/* Project Identifier */}
+                <Flex
+                  as={HStack}
+                  w={"full"}
+                  h={"43px"}
+                  justifyContent="space-between"
+                  alignItems={"start"}
                 >
-                  {data.projectStatusPercentage}%
-                </Text>
-              </HStack>
-              <Progress
-                value={data.projectStatusPercentage}
-                colorScheme={getProgressColor(data.projectStatusPercentage)}
-                rounded="full"
-                size="md"
-                bg={useColorModeValue("gray.100", "gray.700")}
-              />
-            </VStack>
-
-            {/* Team Section */}
-            <VStack spacing={1} align="stretch" flex="1">
-              <HStack justify="space-between">
-                <HStack spacing={2}>
-                  <Icon as={FiUsers} size="14px" color="gray.500" />
-                  <Text fontSize="sm" color="gray.600" fontWeight="medium">
-                    Team
+                  <Text fontSize="smaller" color="gray.500" fontWeight="medium">
+                    {data.projectNo}
                   </Text>
-                </HStack>
-                <Text fontSize="xs" color="gray.500">
-                  {data.userAssignment?.length || 0} members
-                </Text>
-              </HStack>
+                  <HStack spacing={1}>
+                    <Icon as={FiActivity} size="12px" color="gray.500" />
+                    <Text fontSize="xs" color="gray.500">
+                      {getProjectHealthRating(data.projectStatusPercentage)}
+                    </Text>
+                  </HStack>
+                </Flex>
 
-              <HStack justify="space-between" align="center">
-                <AvatarGroup size="xs" max={4} spacing="-6px">
-                  {data.userAssignment?.map((user, idx) => (
-                    <Avatar
-                      key={idx}
-                      name={user.userData?.nama || "Unknown"}
-                      size="xs"
-                      border="1px"
-                      borderColor={useColorModeValue("white", "gray.800")}
-                    />
-                  )) || []}
-                </AvatarGroup>
-
-                {data.userAssignment && data.userAssignment.length > 4 && (
-                  <Text fontSize="xs" color="gray.500">
-                    +{data.userAssignment.length - 4} more
+                {/* Project Info */}
+                <VStack spacing={0} align="start">
+                  <Text
+                    fontSize="x-small"
+                    fontWeight="medium"
+                    opacity="0.8"
+                    textAlign="center"
+                    color={"secondary.500"}
+                  >
+                    {data.projectType}
                   </Text>
-                )}
-              </HStack>
-            </VStack>
 
-            {/* Quick Actions - Always at bottom */}
-            <Box mt="auto">
-              <Link href={config.linkPath} style={{ width: "100%" }}>
-                <Button
-                  size="md"
-                  colorScheme={config.colorScheme}
-                  leftIcon={<Icon as={config.actionIcon} />}
-                  w="full"
-                  rounded="lg"
-                  _hover={{
-                    transform: "translateY(-1px)",
-                    shadow: "lg",
-                  }}
-                  transition="all 0.2s"
-                  fontWeight="bold"
-                  // bgGradient={
-                  //   variant === "manager"
-                  //     ? "linear(to-r, teal.700, teal.400)"
-                  //     : "linear(to-r, secondary.700, secondary.400)"
-                  // }
-                >
-                  {config.actionLabel}
-                </Button>
-              </Link>
-            </Box>
-          </VStack>
-        </CardBody>
+                  <Tooltip
+                    label={data.projectName}
+                    hasArrow
+                    placement="top"
+                    isDisabled={data.projectName.length <= 45}
+                    rounded={radiusStyle}
+                  >
+                    <Heading
+                      size="sm"
+                      color={useColorModeValue("gray.800", "white")}
+                      noOfLines={2}
+                      minH="48px"
+                      maxH="48px"
+                      display="flex"
+                      alignItems="start"
+                      lineHeight="1.3"
+                      overflow="hidden"
+                    >
+                      {truncateText(data.projectName, 45)}
+                    </Heading>
+                  </Tooltip>
+                </VStack>
 
-        {/* Hover Overlay */}
-        {isHovered && (
-          <Box
-            position="absolute"
-            top="0"
-            left="0"
-            right="0"
-            bottom="0"
-            bg={
-              variant === "manager"
-                ? "blue.500"
-                : variant === "procurement"
-                ? "yellow.500"
-                : variant === "deployment"
-                ? "green.500"
-                : "secondary.500"
-            }
-            opacity="0.05"
-            rounded="2xl"
-            pointerEvents="none"
-          />
-        )}
-      </Card>
+                {/* Progress Section */}
+                <VStack spacing={2} align="stretch">
+                  <HStack justify="space-between">
+                    <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                      Progress
+                    </Text>
+                    <Text
+                      fontSize="sm"
+                      fontWeight="bold"
+                      color={`${getProgressColor(
+                        data.projectStatusPercentage
+                      )}.500`}
+                    >
+                      {data.projectStatusPercentage}%
+                    </Text>
+                  </HStack>
+                  <Progress
+                    value={data.projectStatusPercentage}
+                    colorScheme={getProgressColor(data.projectStatusPercentage)}
+                    rounded="full"
+                    size="sm"
+                    bg={useColorModeValue("gray.100", "gray.700")}
+                  />
+                </VStack>
+
+                {/* Team Section */}
+                <VStack spacing={1} align="stretch" flex="1">
+                  <HStack justify="space-between">
+                    <HStack spacing={2}>
+                      <Icon as={FiUsers} size="14px" color="gray.500" />
+                      <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                        Team
+                      </Text>
+                    </HStack>
+                    <Text fontSize="xs" color="gray.500">
+                      {data.userAssignment?.length || 0} members
+                    </Text>
+                  </HStack>
+
+                  <HStack justify="space-between" w={"full"}>
+                    {data.userAssignment == null ||
+                    data.userAssignment.length <= 0 ? (
+                      <Flex w={"full"}>
+                        <Text
+                          fontSize="x-small"
+                          color="gray.400"
+                          fontStyle={"italic"}
+                          textAlign={"left"}
+                        >
+                          {"- No Member Assign"}
+                        </Text>
+                      </Flex>
+                    ) : (
+                      <AvatarGroup size="2xs" max={4} spacing="-6px">
+                        {data.userAssignment?.map((user, idx) => (
+                          <Avatar
+                            key={idx}
+                            name={user.userData?.nama || "Unknown"}
+                          />
+                        )) || []}
+                      </AvatarGroup>
+                    )}
+
+                    <Flex w={"full"} justifyContent={"end"}>
+                      <StatusBadge
+                        status={data.projectStatus}
+                        variant="subtle"
+                        fontSize={"x-small"}
+                        rounded={radiusStyle}
+                      />
+                    </Flex>
+                  </HStack>
+                </VStack>
+              </VStack>
+            </Flex>
+          </CardBody>
+
+          {/* Hover Overlay */}
+          {isHovered && (
+            <Box
+              position="absolute"
+              top="0"
+              left="0"
+              right="0"
+              bottom="0"
+              bg={
+                variant === "manager"
+                  ? "blue.500"
+                  : variant === "procurement"
+                  ? "yellow.500"
+                  : variant === "deployment"
+                  ? "green.500"
+                  : "secondary.500"
+              }
+              opacity="0.05"
+              rounded="2xl"
+              pointerEvents="none"
+            />
+          )}
+        </Card>
+      </Link>
     );
   }
 );

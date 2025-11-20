@@ -380,3 +380,64 @@ export const PROJECT_TYPE_DEPLOYMENT = "DEPLOYMENT";
 // KEY OPTIONS
 export const KEY_OPTION_PROJECT_CHARACTERISTICS = "PROJECT_CHARACTERISTICS";
 export const KEY_OPTION_PROJECT_ACQUISITIONS = "PROJECT_ACQUISITION";
+
+// APPLICATION FEATURES
+export const APP_CRITICAL_LEVEL_OPTIONS = [
+  "Mission Critical",
+  "Important",
+  "Support",
+  "Lainnya",
+];
+
+export const APP_DEVELOPMENT_METHOD_OPTIONS = ["Inhouse", "3rd Party(Vendor)"];
+
+export const APP_PROGRAMMING_LANGUAGES = [
+  "JavaScript",
+  "TypeScript",
+  "Python",
+  "Java",
+  "C#",
+  "PHP",
+  "Go",
+  "Ruby",
+  "Kotlin",
+  "Swift",
+  "C++",
+  "C",
+  "Rust",
+  "Dart",
+  "SQL",
+  "HTML/CSS",
+  "Shell Script",
+  "R",
+  "Scala",
+  "Perl",
+];
+
+export const APP_PROGRAMMING_FRAMEWORKS = [
+  "React",
+  "Next.js",
+  "Angular",
+  "Vue.js",
+  "Node.js",
+  "Express.js",
+  "NestJS",
+  "Spring Boot",
+  "Django",
+  "Flask",
+  "FastAPI",
+  ".NET Core",
+  "ASP.NET",
+  "Laravel",
+  "CodeIgniter",
+  "Symfony",
+  "Ruby on Rails",
+  "Flutter",
+  "React Native",
+  "Ionic",
+  "Xamarin",
+  "Android SDK",
+  "iOS SDK",
+  "TensorFlow",
+  "PyTorch",
+];

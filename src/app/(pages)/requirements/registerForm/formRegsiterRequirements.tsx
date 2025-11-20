@@ -520,9 +520,8 @@ function RegsiterRequirementViewPage({
 
     if (isErrorResponse || !requestData) {
       showToast({
-        description: `Upload File Failed : ${
-          requestData?.message || RES_GENERIC_ERROR_MSG
-        }`,
+        description: `Upload File Failed : ${requestData?.message || RES_GENERIC_ERROR_MSG
+          }`,
         statusToast: "error",
       });
       return false;
@@ -660,10 +659,9 @@ function RegsiterRequirementViewPage({
   const handleConfirmSaveData = (data: RequirementsInsertPayload) => {
     setCaptionDialog("Konfirmasi Simpan");
     setQuestionMsgDialog(
-      `Apakah ada yakin akan submit data "${
-        formik.values.isHaveMemo == "Y"
-          ? formik.values.reqNarative
-          : type_req_param + " Tanpa Memo"
+      `Apakah ada yakin akan submit data "${formik.values.isHaveMemo == "Y"
+        ? formik.values.reqNarative
+        : type_req_param + " Tanpa Memo"
       }"?`
     );
     setOpenConfirmSaveDialog(true);
@@ -1554,44 +1552,21 @@ function RegsiterRequirementViewPage({
                                         }
                                       >
                                         <FormLabel h={"full"}>
-                                          Divisi Pengirim
+                                          Direktorat Pengirim
                                         </FormLabel>
                                         <Stack spacing={0}>
                                           <Select
                                             id={`senderDirectorateId`}
                                             options={OptionDirectorate}
                                             isSearchable={true}
-                                            onChange={(e) => {
-                                              if (e) {
-                                                const selected = {
-                                                  label: e.label,
-                                                  value: e.value,
-                                                };
-                                                handleSelectedCustom(
-                                                  selected,
-                                                  "senderDirectorateId"
-                                                );
-                                              } else {
-                                                handleUnSelectedCustom(
-                                                  "senderDirectorateId"
-                                                );
-                                              }
-                                            }}
-                                            placeholder={
-                                              "Pilih Directorate Pengirim"
-                                            }
-                                            isDisabled={
-                                              formik.values.isHaveMemo == "N"
-                                            }
+                                            placeholder={"Direktorat (Auto)"}
                                             value={OptionDirectorate.find(
-                                              (x) =>
-                                                x.value ==
-                                                formik.values
-                                                  .senderDirectorateId
+                                              (x) => x.value == formik.values.senderDirectorateId
                                             )}
+                                            isDisabled={true}
                                           />
                                           <FormErrorMessage>
-                                            {formik.errors.senderDivisionId}
+                                            {formik.errors.senderDirectorateId}
                                           </FormErrorMessage>
                                         </Stack>
                                       </FormControl>
@@ -1618,43 +1593,49 @@ function RegsiterRequirementViewPage({
                                           <Select
                                             id={`senderDivisionId`}
                                             options={OptionDivision}
+                                            isSearchable={true}
                                             onMenuOpen={async () => {
                                               setOptionDivision([]);
-                                              await LoadDataDivisionCustom(
-                                                formik.values
-                                                  .senderDirectorateId || ""
-                                              );
+                                              const whereParam: ListSearchByParam[] = [
+                                                {
+                                                  field: "orgType",
+                                                  operator: "=",
+                                                  value: ORG_CATEGORY_KEY_DIVISION,
+                                                },
+                                              ];
+                                              const dataDivision = await GetDataMasterOrg("", MAX_SIZE_TABLE, whereParam);
+                                              const mapOptionData: OptionListProps[] = dataDivision.map((d) => ({
+                                                label: `${d.orgName} | ${d.orgType}`,
+                                                value: d.id,
+                                              }));
+                                              setOptionDivision(mapOptionData);
                                             }}
-                                            isSearchable={true}
-                                            onChange={(e) => {
+                                            onChange={async (e) => {
                                               if (e) {
                                                 const selected = {
                                                   label: e.label,
                                                   value: e.value,
                                                 };
-
-                                                handleSelectedCustom(
-                                                  selected,
-                                                  "senderDivisionId"
-                                                );
-                                                setSelectedDivisionSender(
-                                                  selected
-                                                );
+                                                handleSelectedCustom(selected, "senderDivisionId");
+                                                setSelectedDivisionSender(selected);
                                                 setSelectedDivision(selected);
+                                                
+                                                const whereParam: ListSearchByParam[] = [
+                                                  { field: "id", operator: "=", value: e.value },
+                                                ];
+                                                const divisionData = await GetDataMasterOrg("", 1, whereParam);
+                                                if (divisionData.length > 0 && divisionData[0].parentId) {
+                                                  formik.setFieldValue("senderDirectorateId", divisionData[0].parentId);
+                                                }
                                               } else {
-                                                handleUnSelectedCustom(
-                                                  "senderDivisionId"
-                                                );
+                                                handleUnSelectedCustom("senderDivisionId");
+                                                handleUnSelectedCustom("senderDirectorateId");
                                                 setSelectedDivisionSender(null);
                                                 setSelectedDivision(null);
                                               }
                                             }}
-                                            placeholder={
-                                              "Pilih Divisi Pengirim"
-                                            }
-                                            isDisabled={
-                                              formik.values.isHaveMemo == "N"
-                                            }
+                                            placeholder={"Pilih Divisi Pengirim"}
+                                            isDisabled={formik.values.isHaveMemo == "N"}
                                             value={SelectedDivisionSender}
                                           />
                                           <FormErrorMessage>
@@ -1801,9 +1782,9 @@ function RegsiterRequirementViewPage({
                               isInvalid={
                                 calculateDurationInDays(
                                   formik.values.reqInititateDate ||
-                                    new Date().toISOString(),
+                                  new Date().toISOString(),
                                   formik.values.reqAcceptedDate ||
-                                    new Date().toISOString()
+                                  new Date().toISOString()
                                 ) < 0
                               }
                             >
@@ -1815,18 +1796,18 @@ function RegsiterRequirementViewPage({
                                   <Text px={2} fontWeight={600}>
                                     {calculateDurationInDays(
                                       formik.values.reqInititateDate ||
-                                        new Date().toISOString(),
+                                      new Date().toISOString(),
                                       formik.values.reqAcceptedDate ||
-                                        new Date().toISOString()
+                                      new Date().toISOString()
                                     )}{" "}
                                     Hari Kalendar
                                   </Text>
                                   <FormErrorMessage>
                                     {calculateDurationInDays(
                                       formik.values.reqInititateDate ||
-                                        new Date().toISOString(),
+                                      new Date().toISOString(),
                                       formik.values.reqAcceptedDate ||
-                                        new Date().toISOString()
+                                      new Date().toISOString()
                                     ) < 0 && "Durasi tidak boleh negatif"}
                                   </FormErrorMessage>
                                 </Stack>
@@ -2354,12 +2335,12 @@ function RegsiterRequirementViewPage({
                               </FormLabel>
                               <Stack spacing={0}>
                                 <Grid
-                                  templateColumns="repeat(3, 1fr)"
+                                  templateColumns="repeat(2, 1fr)"
                                   gap={3}
                                   w={"full"}
                                 >
                                   <GridItem
-                                    colSpan={{ base: 3, sm: 3, md: 1, lg: 1 }}
+                                    colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }}
                                     w={"full"}
                                   >
                                     <FormControl
@@ -2375,40 +2356,22 @@ function RegsiterRequirementViewPage({
                                         Direktorat
                                       </FormLabel>
                                       <Select
-                                        id={`senderDirectorateId`}
+                                        id={`userPicDirectorateId`}
                                         options={OptionDirectorate}
                                         isSearchable={true}
-                                        onChange={(e) => {
-                                          if (e) {
-                                            const selected = {
-                                              label: e.label,
-                                              value: e.value,
-                                            };
-                                            handleSelectedCustom(
-                                              selected,
-                                              "userPicDirectorateId"
-                                            );
-                                          } else {
-                                            handleUnSelectedCustom(
-                                              "userPicDirectorateId"
-                                            );
-                                          }
-                                        }}
-                                        placeholder={"Pilih Directorate PIC"}
+                                        placeholder={"Direktorat (Auto)"}
                                         value={OptionDirectorate.find(
-                                          (x) =>
-                                            x.value ==
-                                            formik.values.userPicDirectorateId
+                                          (x) => x.value == formik.values.userPicDirectorateId
                                         )}
+                                        isDisabled={true}
                                       />
-
                                       <FormErrorMessage>
                                         {formik.errors.userPicDirectorateId}
                                       </FormErrorMessage>
                                     </FormControl>
                                   </GridItem>
                                   <GridItem
-                                    colSpan={{ base: 3, sm: 3, md: 1, lg: 1 }}
+                                    colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }}
                                     w={"full"}
                                   >
                                     <FormControl
@@ -2429,44 +2392,58 @@ function RegsiterRequirementViewPage({
                                         isSearchable={true}
                                         onMenuOpen={async () => {
                                           setOptionDivision([]);
-                                          await LoadDataDivisionCustom(
-                                            formik.values
-                                              .userPicDirectorateId || ""
-                                          );
+                                          const whereParam: ListSearchByParam[] = [
+                                            {
+                                              field: "orgType",
+                                              operator: "=",
+                                              value: ORG_CATEGORY_KEY_DIVISION,
+                                            },
+                                          ];
+                                          const dataDivision = await GetDataMasterOrg("", MAX_SIZE_TABLE, whereParam);
+                                          const mapOptionData: OptionListProps[] = dataDivision.map((d) => ({
+                                            label: `${d.orgName} | ${d.orgType}`,
+                                            value: d.id,
+                                          }));
+                                          setOptionDivision(mapOptionData);
                                         }}
-                                        onChange={(e) => {
+                                        onChange={async (e) => {
                                           if (e) {
                                             const selected = {
                                               label: e.label,
                                               value: e.value,
                                             };
-                                            handleSelectedCustom(
-                                              selected,
-                                              "userPicDivisionId"
-                                            );
+                                            handleSelectedCustom(selected, "userPicDivisionId");
                                             setSelectedDivisionPIC(selected);
+
+                                            const whereParam: ListSearchByParam[] = [
+                                              { field: "id", operator: "=", value: e.value },
+                                            ];
+                                            const divisionData = await GetDataMasterOrg("", 1, whereParam);
+                                            if (divisionData.length > 0 && divisionData[0].parentId) {
+                                              formik.setFieldValue("userPicDirectorateId", divisionData[0].parentId);
+                                            }
+
+                                            formik.setFieldValue("userPicGroupId", null);
+                                            setSelectedGroupOrgPIC(null);
                                           } else {
-                                            handleUnSelectedCustom(
-                                              "userPicDivisionId"
-                                            );
+                                            handleUnSelectedCustom("userPicDivisionId");
+                                            handleUnSelectedCustom("userPicDirectorateId");
+                                            handleUnSelectedCustom("userPicGroupId");
                                             setSelectedDivisionPIC(null);
+                                            setSelectedGroupOrgPIC(null);
                                           }
                                         }}
                                         placeholder={"Pilih Divisi PIC"}
-                                        isLoading={
-                                          IsLoadingProcess ||
-                                          IsLoadingDivisionSelect
-                                        }
+                                        isLoading={IsLoadingProcess || IsLoadingDivisionSelect}
                                         value={SelectedDivisionPIC}
                                       />
-
                                       <FormErrorMessage>
                                         {formik.errors.userPicDivisionId}
                                       </FormErrorMessage>
                                     </FormControl>
                                   </GridItem>
                                   <GridItem
-                                    colSpan={{ base: 3, sm: 3, md: 1, lg: 1 }}
+                                    colSpan={{ base: 2, sm: 2, md: 2, lg: 2 }}
                                     w={"full"}
                                   >
                                     <FormControl
@@ -2490,7 +2467,7 @@ function RegsiterRequirementViewPage({
                                           setOptionGroupDivision([]);
                                           await LoadDataGroupOrgCustom(
                                             formik.values.userPicDivisionId ||
-                                              ""
+                                            ""
                                           );
                                         }}
                                         onChange={(e) => {
@@ -2511,7 +2488,7 @@ function RegsiterRequirementViewPage({
                                             setSelectedGroupOrgPIC(null);
                                           }
                                         }}
-                                        placeholder={"Pilih Divisi PIC"}
+                                        placeholder={"Pilih Grup PIC"}
                                         isLoading={
                                           IsLoadingProcess ||
                                           IsLoadingGroupDivisionSelect
@@ -2567,10 +2544,10 @@ function RegsiterRequirementViewPage({
                                   leftover < 0
                                     ? "red.500"
                                     : leftover > 0
-                                    ? "green.500"
-                                    : colorMode === "light"
-                                    ? "black"
-                                    : "white";
+                                      ? "green.500"
+                                      : colorMode === "light"
+                                        ? "black"
+                                        : "white";
 
                                 return (
                                   <Flex w={"full"} as={Stack} key={index}>
@@ -2598,284 +2575,261 @@ function RegsiterRequirementViewPage({
                                         <FormLabel h={"full"} mt={2}>
                                           Divisi Proker User
                                         </FormLabel>
-                                        <Stack spacing={0}>
-                                          <Grid
-                                            templateColumns="repeat(3, 1fr)"
-                                            gap={3}
-                                            w={"full"}
+                                        <Stack spacing={4} w={"full"}>
+                                          <FormControl
+                                            id={`workProgramDirectorate-${index}`}
+                                            isInvalid={
+                                              typeof formik.errors
+                                                .workPrograms?.[index] ===
+                                                "object" &&
+                                                formik.errors.workPrograms?.[
+                                                  index
+                                                ]?.directorateId
+                                                ? true
+                                                : false
+                                            }
+                                            isRequired
                                           >
-                                            <GridItem
-                                              colSpan={{
-                                                base: 3,
-                                                sm: 3,
-                                                md: 1,
-                                                lg: 1,
-                                              }}
-                                              w={"full"}
-                                            >
-                                              <FormControl
-                                                id={`workProgramDirectorate-${index}`}
-                                                isInvalid={
-                                                  typeof formik.errors
-                                                    .workPrograms?.[index] ===
-                                                    "object" &&
-                                                  formik.errors.workPrograms?.[
-                                                    index
-                                                  ]?.divisionId
-                                                    ? true
-                                                    : false
-                                                }
-                                                isRequired
-                                              >
-                                                <FormLabel h={"full"}>
-                                                  Direktorat
-                                                </FormLabel>
-                                                <Stack spacing={0}>
-                                                  {/* DIRECTORATE */}
-                                                  <Select
-                                                    id={`workProgramDirectorate-${index}`}
-                                                    options={OptionDirectorate}
-                                                    isSearchable={true}
-                                                    onChange={(e) => {
-                                                      if (e) {
-                                                        const selected = {
-                                                          label: e.label,
-                                                          value: e.value,
-                                                        };
+                                            <FormLabel>
+                                              Direktorat
+                                            </FormLabel>
+                                            <Input
+                                              id={`workProgramDirectorate-${index}`}
+                                              placeholder={"Direktorat (Auto)"}
+                                              isDisabled={true}
+                                              value={
+                                                OptionDirectorate.find(
+                                                  (x) =>
+                                                    x.value ==
+                                                    formik.values
+                                                      .workPrograms[index]
+                                                      .directorateId
+                                                )?.label || ""
+                                              }
+                                            />
+                                            <FormErrorMessage>
+                                              {typeof formik.errors
+                                                .workPrograms?.[index] ===
+                                                "object" &&
+                                                formik.errors
+                                                  .workPrograms?.[index]
+                                                  ?.directorateId}
+                                            </FormErrorMessage>
+                                          </FormControl>
 
-                                                        handleSelectedCustom(
+                                          <FormControl
+                                            id={`workProgramDivision-${index}`}
+                                            isInvalid={
+                                              typeof formik.errors
+                                                .workPrograms?.[index] ===
+                                                "object" &&
+                                                formik.errors.workPrograms?.[
+                                                  index
+                                                ]?.divisionId
+                                                ? true
+                                                : false
+                                            }
+                                            isRequired
+                                          >
+                                            <FormLabel>
+                                              Divisi
+                                            </FormLabel>
+                                            <Select
+                                              id={`workProgramDivision-${index}`}
+                                              options={OptionDivision}
+                                              isSearchable={true}
+                                              onMenuOpen={async () => {
+                                                setOptionDivision([]);
+                                                const whereParam: ListSearchByParam[] = [
+                                                  {
+                                                    field: "orgType",
+                                                    operator: "=",
+                                                    value: ORG_CATEGORY_KEY_DIVISION,
+                                                  },
+                                                ];
+                                                const dataDivision = await GetDataMasterOrg("", MAX_SIZE_TABLE, whereParam);
+                                                const mapOptionData: OptionListProps[] = dataDivision.map((d) => ({
+                                                  label: `${d.orgName} | ${d.orgType}`,
+                                                  value: d.id,
+                                                }));
+                                                setOptionDivision(mapOptionData);
+                                              }}
+                                              onChange={async (e) => {
+                                                if (e) {
+                                                  const selected = {
+                                                    label: e.label,
+                                                    value: e.value,
+                                                  };
+
+                                                  handleSelectedCustom(
+                                                    selected,
+                                                    `workPrograms[${index}].divisionId`
+                                                  );
+                                                  setSelectedDivisionWPExternal(
+                                                    (prev) => [
+                                                      ...prev,
+                                                      {
+                                                        indexData: index,
+                                                        OptionData: selected,
+                                                      },
+                                                    ]
+                                                  );
+
+                                                  const whereParam: ListSearchByParam[] = [
+                                                    { field: "id", operator: "=", value: e.value },
+                                                  ];
+                                                  const divisionData = await GetDataMasterOrg("", 1, whereParam);
+                                                  if (divisionData.length > 0 && divisionData[0].parentId) {
+                                                    formik.setFieldValue(`workPrograms[${index}].directorateId`, divisionData[0].parentId);
+                                                  }
+
+                                                  formik.setFieldValue(`workPrograms[${index}].groupId`, null);
+                                                  setSelectedGroupWPExternal(
+                                                    (prev) =>
+                                                      prev.filter(
+                                                        (item) =>
+                                                          item.indexData !==
+                                                          index
+                                                      )
+                                                  );
+                                                } else {
+                                                  handleUnSelectedCustom(
+                                                    `workPrograms[${index}].divisionId`
+                                                  );
+                                                  handleUnSelectedCustom(
+                                                    `workPrograms[${index}].directorateId`
+                                                  );
+                                                  handleUnSelectedCustom(
+                                                    `workPrograms[${index}].groupId`
+                                                  );
+                                                  setSelectedDivisionWPExternal(
+                                                    (prev) =>
+                                                      prev.filter(
+                                                        (item) =>
+                                                          item.indexData !==
+                                                          index
+                                                      )
+                                                  );
+                                                  setSelectedGroupWPExternal(
+                                                    (prev) =>
+                                                      prev.filter(
+                                                        (item) =>
+                                                          item.indexData !==
+                                                          index
+                                                      )
+                                                  );
+                                                }
+                                              }}
+                                              placeholder={"Pilih Divisi"}
+                                              isLoading={
+                                                IsLoadingProcess ||
+                                                IsLoadingDivisionSelect
+                                              }
+                                              value={
+                                                SelectedDivisionWPExternal.find(
+                                                  (x) =>
+                                                    x.indexData == index
+                                                )?.OptionData
+                                              }
+                                            />
+
+                                            <FormErrorMessage>
+                                              {typeof formik.errors
+                                                .workPrograms?.[index] ===
+                                                "object" &&
+                                                formik.errors
+                                                  .workPrograms?.[index]
+                                                  ?.divisionId}
+                                            </FormErrorMessage>
+                                          </FormControl>
+
+                                          <FormControl
+                                            id={`workProgramGroupDivision-${index}`}
+                                            isInvalid={
+                                              typeof formik.errors
+                                                .workPrograms?.[index] ===
+                                                "object" &&
+                                                formik.errors.workPrograms?.[
+                                                  index
+                                                ]?.groupId
+                                                ? true
+                                                : false
+                                            }
+                                          >
+                                            <FormLabel>
+                                              Group
+                                            </FormLabel>
+                                            <Select
+                                              id={`workProgramGroupDivision-${index}`}
+                                              options={OptionGroupDivision}
+                                              isSearchable={true}
+                                              onMenuOpen={async () => {
+                                                setOptionGroupDivision([]);
+                                                await LoadDataGroupOrgCustom(
+                                                  formik.values
+                                                    .workPrograms[index]
+                                                    .divisionId || ""
+                                                );
+                                              }}
+                                              onChange={(e) => {
+                                                if (e) {
+                                                  const selected = {
+                                                    label: e.label,
+                                                    value: e.value,
+                                                  };
+
+                                                  handleSelectedCustom(
+                                                    selected,
+                                                    `workPrograms[${index}].groupId`
+                                                  );
+                                                  setSelectedGroupWPExternal(
+                                                    (prev) => [
+                                                      ...prev,
+                                                      {
+                                                        indexData: index,
+                                                        OptionData:
                                                           selected,
-                                                          `workPrograms[${index}].directorateId`
-                                                        );
-                                                      } else {
-                                                        handleUnSelectedCustom(
-                                                          `workPrograms[${index}].directorateId`
-                                                        );
-                                                      }
-                                                    }}
-                                                    placeholder={
-                                                      "Pilih Directorate"
-                                                    }
-                                                    isLoading={
-                                                      IsLoadingProcess ||
-                                                      IsLoadingDirectorateSelect
-                                                    }
-                                                    value={OptionDirectorate.find(
-                                                      (x) =>
-                                                        x.value ==
-                                                        formik.values
-                                                          .workPrograms[index]
-                                                          .directorateId
-                                                    )}
-                                                  />
-
-                                                  <FormErrorMessage>
-                                                    {typeof formik.errors
-                                                      .workPrograms?.[index] ===
-                                                      "object" &&
-                                                      formik.errors
-                                                        .workPrograms?.[index]
-                                                        ?.directorateId}
-                                                  </FormErrorMessage>
-                                                </Stack>
-                                              </FormControl>
-                                            </GridItem>
-                                            <GridItem
-                                              colSpan={{
-                                                base: 3,
-                                                sm: 3,
-                                                md: 1,
-                                                lg: 1,
-                                              }}
-                                              w={"full"}
-                                            >
-                                              <FormControl
-                                                id={`workProgramDivision-${index}`}
-                                                isInvalid={
-                                                  typeof formik.errors
-                                                    .workPrograms?.[index] ===
-                                                    "object" &&
-                                                  formik.errors.workPrograms?.[
-                                                    index
-                                                  ]?.divisionId
-                                                    ? true
-                                                    : false
+                                                      },
+                                                    ]
+                                                  );
+                                                } else {
+                                                  handleUnSelectedCustom(
+                                                    `workPrograms[${index}].groupId`
+                                                  );
+                                                  setSelectedGroupWPExternal(
+                                                    (prev) =>
+                                                      prev.filter(
+                                                        (item) =>
+                                                          item.indexData !==
+                                                          index
+                                                      )
+                                                  );
                                                 }
-                                                isRequired
-                                              >
-                                                <FormLabel h={"full"}>
-                                                  Divisi
-                                                </FormLabel>
-                                                {/* DIVISION */}
-                                                <Select
-                                                  id={`workProgramDivision-${index}`}
-                                                  options={OptionDivision}
-                                                  isSearchable={true}
-                                                  onMenuOpen={async () => {
-                                                    setOptionDivision([]);
-                                                    await LoadDataDivisionCustom(
-                                                      formik.values
-                                                        .workPrograms[index]
-                                                        .directorateId || ""
-                                                    );
-                                                  }}
-                                                  onChange={(e) => {
-                                                    if (e) {
-                                                      const selected = {
-                                                        label: e.label,
-                                                        value: e.value,
-                                                      };
-
-                                                      handleSelectedCustom(
-                                                        selected,
-                                                        `workPrograms[${index}].divisionId`
-                                                      );
-                                                      setSelectedDivisionWPExternal(
-                                                        (prev) => [
-                                                          ...prev,
-                                                          {
-                                                            indexData: index,
-                                                            OptionData:
-                                                              selected,
-                                                          },
-                                                        ]
-                                                      );
-                                                    } else {
-                                                      handleUnSelectedCustom(
-                                                        `workPrograms[${index}].divisionId`
-                                                      );
-                                                      setSelectedDivisionWPExternal(
-                                                        (prev) =>
-                                                          prev.filter(
-                                                            (item) =>
-                                                              item.indexData !==
-                                                              index
-                                                          )
-                                                      );
-                                                    }
-                                                  }}
-                                                  placeholder={"Pilih Divisi"}
-                                                  isLoading={
-                                                    IsLoadingProcess ||
-                                                    IsLoadingDivisionSelect
-                                                  }
-                                                  value={
-                                                    SelectedDivisionWPExternal.find(
-                                                      (x) =>
-                                                        x.indexData == index
-                                                    )?.OptionData
-                                                  }
-                                                />
-
-                                                <FormErrorMessage>
-                                                  {typeof formik.errors
-                                                    .workPrograms?.[index] ===
-                                                    "object" &&
-                                                    formik.errors
-                                                      .workPrograms?.[index]
-                                                      ?.divisionId}
-                                                </FormErrorMessage>
-                                              </FormControl>
-                                            </GridItem>
-                                            <GridItem
-                                              colSpan={{
-                                                base: 3,
-                                                sm: 3,
-                                                md: 1,
-                                                lg: 1,
                                               }}
-                                              w={"full"}
-                                            >
-                                              <FormControl
-                                                id={`workProgramGroupDivision-${index}`}
-                                                isInvalid={
-                                                  typeof formik.errors
-                                                    .workPrograms?.[index] ===
-                                                    "object" &&
-                                                  formik.errors.workPrograms?.[
-                                                    index
-                                                  ]?.groupId
-                                                    ? true
-                                                    : false
-                                                }
-                                              >
-                                                <FormLabel h={"full"}>
-                                                  Group
-                                                </FormLabel>
-                                                {/* GROUP */}
-                                                <Select
-                                                  id={`workProgramGroupDivision-${index}`}
-                                                  options={OptionGroupDivision}
-                                                  isSearchable={true}
-                                                  onMenuOpen={async () => {
-                                                    setOptionGroupDivision([]);
-                                                    await LoadDataGroupOrgCustom(
-                                                      formik.values
-                                                        .workPrograms[index]
-                                                        .divisionId || ""
-                                                    );
-                                                  }}
-                                                  onChange={(e) => {
-                                                    if (e) {
-                                                      const selected = {
-                                                        label: e.label,
-                                                        value: e.value,
-                                                      };
+                                              placeholder={
+                                                "Pilih Group (Opsional)"
+                                              }
+                                              isLoading={
+                                                IsLoadingProcess ||
+                                                IsLoadingGroupDivisionSelect
+                                              }
+                                              value={
+                                                SelectedGroupWPExternal.find(
+                                                  (x) =>
+                                                    x.indexData == index
+                                                )?.OptionData
+                                              }
+                                            />
 
-                                                      handleSelectedCustom(
-                                                        selected,
-                                                        `workPrograms[${index}].groupId`
-                                                      );
-                                                      setSelectedGroupWPExternal(
-                                                        (prev) => [
-                                                          ...prev,
-                                                          {
-                                                            indexData: index,
-                                                            OptionData:
-                                                              selected,
-                                                          },
-                                                        ]
-                                                      );
-                                                    } else {
-                                                      handleUnSelectedCustom(
-                                                        `workPrograms[${index}].groupId`
-                                                      );
-                                                      setSelectedGroupWPExternal(
-                                                        (prev) =>
-                                                          prev.filter(
-                                                            (item) =>
-                                                              item.indexData !==
-                                                              index
-                                                          )
-                                                      );
-                                                    }
-                                                  }}
-                                                  placeholder={
-                                                    "Pilih Group (Opsional)"
-                                                  }
-                                                  isLoading={
-                                                    IsLoadingProcess ||
-                                                    IsLoadingGroupDivisionSelect
-                                                  }
-                                                  value={
-                                                    SelectedGroupWPExternal.find(
-                                                      (x) =>
-                                                        x.indexData == index
-                                                    )?.OptionData
-                                                  }
-                                                />
-
-                                                <FormErrorMessage>
-                                                  {typeof formik.errors
-                                                    .workPrograms?.[index] ===
-                                                    "object" &&
-                                                    formik.errors
-                                                      .workPrograms?.[index]
-                                                      ?.divisionId}
-                                                </FormErrorMessage>
-                                              </FormControl>
-                                            </GridItem>
-                                          </Grid>
+                                            <FormErrorMessage>
+                                              {typeof formik.errors
+                                                .workPrograms?.[index] ===
+                                                "object" &&
+                                                formik.errors
+                                                  .workPrograms?.[index]
+                                                  ?.groupId}
+                                            </FormErrorMessage>
+                                          </FormControl>
                                         </Stack>
                                       </InputLayoutFull>
                                     </FormControl>
@@ -2886,12 +2840,13 @@ function RegsiterRequirementViewPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                        formik.errors.workPrograms?.[index]
-                                          ?.workProgramCode
+                                          formik.errors.workPrograms?.[index]
+                                            ?.workProgramCode
                                           ? true
                                           : false
                                       }
                                       isRequired
+                                      mt={6}
                                     >
                                       <InputLayout>
                                         <FormLabel h={"full"} mt={2}>
@@ -2935,8 +2890,8 @@ function RegsiterRequirementViewPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                        formik.errors.workPrograms?.[index]
-                                          ?.workProgramName
+                                          formik.errors.workPrograms?.[index]
+                                            ?.workProgramName
                                           ? true
                                           : false
                                       }
@@ -2984,12 +2939,12 @@ function RegsiterRequirementViewPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                        formik.errors.workPrograms?.[index]
-                                          ?.workProgramAccName
+                                          formik.errors.workPrograms?.[index]
+                                            ?.workProgramAccName
                                           ? true
                                           : false
                                       }
-                                      isRequired
+
                                     >
                                       <InputLayoutFull>
                                         <FormLabel h={"full"} mt={2}>
@@ -3033,12 +2988,12 @@ function RegsiterRequirementViewPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                        formik.errors.workPrograms?.[index]
-                                          ?.workProgramAccNumber
+                                          formik.errors.workPrograms?.[index]
+                                            ?.workProgramAccNumber
                                           ? true
                                           : false
                                       }
-                                      isRequired
+
                                     >
                                       <InputLayout>
                                         <FormLabel h={"full"} mt={2}>
@@ -3087,12 +3042,12 @@ function RegsiterRequirementViewPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                        formik.errors.workPrograms?.[index]
-                                          ?.workProgramAccCc
+                                          formik.errors.workPrograms?.[index]
+                                            ?.workProgramAccCc
                                           ? true
                                           : false
                                       }
-                                      isRequired
+
                                     >
                                       <InputLayout>
                                         <FormLabel h={"full"} mt={2}>
@@ -3141,12 +3096,12 @@ function RegsiterRequirementViewPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                        formik.errors.workPrograms?.[index]
-                                          ?.workProgramBudget
+                                          formik.errors.workPrograms?.[index]
+                                            ?.workProgramBudget
                                           ? true
                                           : false
                                       }
-                                      isRequired
+
                                     >
                                       <InputLayout>
                                         <FormLabel h={"full"} mt={2}>
@@ -3180,8 +3135,8 @@ function RegsiterRequirementViewPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                        formik.errors.workPrograms?.[index]
-                                          ?.workProgramReal
+                                          formik.errors.workPrograms?.[index]
+                                            ?.workProgramReal
                                           ? true
                                           : false
                                       }
@@ -3282,10 +3237,10 @@ function RegsiterRequirementViewPage({
                                   leftover < 0
                                     ? "red.500"
                                     : leftover > 0
-                                    ? "green.500"
-                                    : colorMode === "light"
-                                    ? "black"
-                                    : "white";
+                                      ? "green.500"
+                                      : colorMode === "light"
+                                        ? "black"
+                                        : "white";
                                 return (
                                   <Flex w={"full"} as={Stack} key={index}>
                                     <Divider key={index} />
@@ -3312,287 +3267,178 @@ function RegsiterRequirementViewPage({
                                         <FormLabel h={"full"} mt={2}>
                                           Divisi Proker IT
                                         </FormLabel>
-                                        <Stack spacing={0}>
-                                          <Grid
-                                            templateColumns="repeat(3, 1fr)"
-                                            gap={3}
-                                            w={"full"}
+                                        <Stack spacing={4} w={"full"}>
+                                          <FormControl
+                                            id={`workProgramDirectorateIT-${index}`}
+                                            isInvalid={
+                                              typeof formik.errors
+                                                .workPrograms?.[index] ===
+                                                "object" &&
+                                                formik.errors.workPrograms?.[
+                                                  index
+                                                ]?.directorateId
+                                                ? true
+                                                : false
+                                            }
+                                            isRequired
                                           >
-                                            <GridItem
-                                              colSpan={{
-                                                base: 3,
-                                                sm: 3,
-                                                md: 1,
-                                                lg: 1,
+                                            <FormLabel>
+                                              Direktorat
+                                            </FormLabel>
+                                            <Input
+                                              id={`workProgramDirectorateIT-${index}`}
+                                              placeholder={"Direktorat (Auto)"}
+                                              isDisabled={true}
+                                              value={
+                                                OptionDirectorate.find(
+                                                  (x) =>
+                                                    x.value ==
+                                                    formik.values
+                                                      .workPrograms[index]
+                                                      .directorateId
+                                                )?.label || ""
+                                              }
+                                            />
+                                            <FormErrorMessage>
+                                              {typeof formik.errors
+                                                .workPrograms?.[index] ===
+                                                "object" &&
+                                                formik.errors
+                                                  .workPrograms?.[index]
+                                                  ?.directorateId}
+                                            </FormErrorMessage>
+                                          </FormControl>
+
+                                          <FormControl
+                                            id={`workProgramDivisionIT-${index}`}
+                                            isInvalid={
+                                              typeof formik.errors
+                                                .workPrograms?.[index] ===
+                                                "object" &&
+                                                formik.errors.workPrograms?.[
+                                                  index
+                                                ]?.divisionId
+                                                ? true
+                                                : false
+                                            }
+                                            isRequired
+                                          >
+                                            <FormLabel>
+                                              Divisi
+                                            </FormLabel>
+                                            <Select
+                                              id={`workProgramDivisionIT-${index}`}
+                                              options={OptionDivision}
+                                              isSearchable={true}
+                                              isDisabled={true}
+                                              placeholder={"Pilih Divisi"}
+                                              isLoading={
+                                                IsLoadingProcess ||
+                                                IsLoadingDivisionSelect
+                                              }
+                                              value={
+                                                SelectedDivisionWPInternal.find(
+                                                  (x) =>
+                                                    x.indexData == index
+                                                )?.OptionData
+                                              }
+                                            />
+                                            <FormErrorMessage>
+                                              {typeof formik.errors
+                                                .workPrograms?.[index] ===
+                                                "object" &&
+                                                formik.errors
+                                                  .workPrograms?.[index]
+                                                  ?.divisionId}
+                                            </FormErrorMessage>
+                                          </FormControl>
+
+                                          <FormControl
+                                            id={`workProgramGroupDivisionIT-${index}`}
+                                            isInvalid={
+                                              typeof formik.errors
+                                                .workPrograms?.[index] ===
+                                                "object" &&
+                                                formik.errors.workPrograms?.[
+                                                  index
+                                                ]?.groupId
+                                                ? true
+                                                : false
+                                            }
+                                          >
+                                            <FormLabel>
+                                              Group
+                                            </FormLabel>
+                                            <Select
+                                              id={`workProgramGroupDivisionIT-${index}`}
+                                              options={OptionGroupDivision}
+                                              isSearchable={true}
+                                              onMenuOpen={async () => {
+                                                setOptionGroupDivision([]);
+                                                await LoadDataGroupOrgCustom(
+                                                  formik.values
+                                                    .workPrograms[index]
+                                                    .divisionId || ""
+                                                );
                                               }}
-                                              w={"full"}
-                                            >
-                                              <FormControl
-                                                id={`workProgramDirectorateIT-${index}`}
-                                                isInvalid={
-                                                  typeof formik.errors
-                                                    .workPrograms?.[index] ===
-                                                    "object" &&
-                                                  formik.errors.workPrograms?.[
-                                                    index
-                                                  ]?.directorateId
-                                                    ? true
-                                                    : false
+                                              onChange={(e) => {
+                                                if (e) {
+                                                  const selected = {
+                                                    label: e.label,
+                                                    value: e.value,
+                                                  };
+
+                                                  handleSelectedCustom(
+                                                    selected,
+                                                    `workPrograms[${index}].groupId`
+                                                  );
+                                                  setSelectedGroupWPInternal(
+                                                    (prev) => [
+                                                      ...prev,
+                                                      {
+                                                        indexData: index,
+                                                        OptionData:
+                                                          selected,
+                                                      },
+                                                    ]
+                                                  );
+                                                } else {
+                                                  handleUnSelectedCustom(
+                                                    `workPrograms[${index}].groupId`
+                                                  );
+                                                  setSelectedGroupWPInternal(
+                                                    (prev) =>
+                                                      prev.filter(
+                                                        (item) =>
+                                                          item.indexData !==
+                                                          index
+                                                      )
+                                                  );
                                                 }
-                                                isRequired
-                                              >
-                                                <FormLabel h={"full"}>
-                                                  Direktorat
-                                                </FormLabel>
-                                                {/* DIRECTORATE */}
-                                                <Select
-                                                  id={`workProgramDirectorateIT-${index}`}
-                                                  options={OptionDirectorate}
-                                                  // isSearchable={true}
-                                                  // onChange={(e) => {
-                                                  //   if (e) {
-                                                  //     const selected = {
-                                                  //       label: e.label,
-                                                  //       value: e.value,
-                                                  //     };
-
-                                                  //     handleSelectedCustom(
-                                                  //       selected,
-                                                  //       `workPrograms[${index}].directorateId`
-                                                  //     );
-                                                  //     setSelectedDirectorate(
-                                                  //       selected
-                                                  //     );
-                                                  //   } else {
-                                                  //     handleUnSelectedCustom(
-                                                  //       `workPrograms[${index}].directorateId`
-                                                  //     );
-                                                  //     setSelectedDirectorate(null);
-                                                  //   }
-                                                  // }}
-                                                  isDisabled={true}
-                                                  placeholder={
-                                                    "Pilih Directorate"
-                                                  }
-                                                  isLoading={
-                                                    IsLoadingProcess ||
-                                                    IsLoadingDirectorateSelect
-                                                  }
-                                                  value={OptionDirectorate.find(
-                                                    (x) =>
-                                                      x.value ==
-                                                      formik.values
-                                                        .workPrograms[index]
-                                                        .directorateId
-                                                  )}
-                                                />
-
-                                                <FormErrorMessage>
-                                                  {typeof formik.errors
-                                                    .workPrograms?.[index] ===
-                                                    "object" &&
-                                                    formik.errors
-                                                      .workPrograms?.[index]
-                                                      ?.directorateId}
-                                                </FormErrorMessage>
-                                              </FormControl>
-                                            </GridItem>
-                                            <GridItem
-                                              colSpan={{
-                                                base: 3,
-                                                sm: 3,
-                                                md: 1,
-                                                lg: 1,
                                               }}
-                                              w={"full"}
-                                            >
-                                              <FormControl
-                                                id={`workProgramDivisionIT-${index}`}
-                                                isInvalid={
-                                                  typeof formik.errors
-                                                    .workPrograms?.[index] ===
-                                                    "object" &&
-                                                  formik.errors.workPrograms?.[
-                                                    index
-                                                  ]?.divisionId
-                                                    ? true
-                                                    : false
-                                                }
-                                                isRequired
-                                              >
-                                                <FormLabel h={"full"}>
-                                                  Divisi
-                                                </FormLabel>
-                                                {/* DIVISION */}
-                                                <Select
-                                                  id={`workProgramDivisionIT-${index}`}
-                                                  options={OptionDivision}
-                                                  isSearchable={true}
-                                                  // onMenuOpen={async () => {
-                                                  //   setOptionDivision([]);
-                                                  //   await LoadDataDivisionCustom(
-                                                  //     formik.values.workPrograms[
-                                                  //       index
-                                                  //     ].directorateId || ""
-                                                  //   );
-                                                  // }}
-                                                  // onChange={(e) => {
-                                                  //   if (e) {
-                                                  //     const selected = {
-                                                  //       label: e.label,
-                                                  //       value: e.value,
-                                                  //     };
-
-                                                  //     handleSelectedCustom(
-                                                  //       selected,
-                                                  //       `workPrograms[${index}].divisionId`
-                                                  //     );
-                                                  //     setSelectedDivisionWPInternal(
-                                                  //       (prev) => [
-                                                  //         ...prev,
-                                                  //         {
-                                                  //           indexData: index,
-                                                  //           OptionData: selected,
-                                                  //         },
-                                                  //       ]
-                                                  //     );
-                                                  //   } else {
-                                                  //     handleUnSelectedCustom(
-                                                  //       `workPrograms[${index}].divisionId`
-                                                  //     );
-                                                  //     setSelectedDivisionWPInternal(
-                                                  //       (prev) =>
-                                                  //         prev.filter(
-                                                  //           (item) =>
-                                                  //             item.indexData !== index
-                                                  //         )
-                                                  //     );
-                                                  //   }
-                                                  // }}
-
-                                                  isDisabled={true}
-                                                  placeholder={"Pilih Divisi"}
-                                                  isLoading={
-                                                    IsLoadingProcess ||
-                                                    IsLoadingDivisionSelect
-                                                  }
-                                                  value={
-                                                    SelectedDivisionWPInternal.find(
-                                                      (x) =>
-                                                        x.indexData == index
-                                                    )?.OptionData
-                                                  }
-                                                />
-
-                                                <FormErrorMessage>
-                                                  {typeof formik.errors
-                                                    .workPrograms?.[index] ===
-                                                    "object" &&
-                                                    formik.errors
-                                                      .workPrograms?.[index]
-                                                      ?.divisionId}
-                                                </FormErrorMessage>
-                                              </FormControl>
-                                            </GridItem>
-                                            <GridItem
-                                              colSpan={{
-                                                base: 3,
-                                                sm: 3,
-                                                md: 1,
-                                                lg: 1,
-                                              }}
-                                              w={"full"}
-                                            >
-                                              <FormControl
-                                                id={`workProgramGroupDivisionIT-${index}`}
-                                                isInvalid={
-                                                  typeof formik.errors
-                                                    .workPrograms?.[index] ===
-                                                    "object" &&
-                                                  formik.errors.workPrograms?.[
-                                                    index
-                                                  ]?.groupId
-                                                    ? true
-                                                    : false
-                                                }
-                                              >
-                                                <FormLabel h={"full"}>
-                                                  Group
-                                                </FormLabel>
-                                                {/* GROUP */}
-                                                <Select
-                                                  id={`workProgramGroupDivisionIT-${index}`}
-                                                  options={OptionGroupDivision}
-                                                  isSearchable={true}
-                                                  onMenuOpen={async () => {
-                                                    setOptionGroupDivision([]);
-                                                    await LoadDataGroupOrgCustom(
-                                                      formik.values
-                                                        .workPrograms[index]
-                                                        .divisionId || ""
-                                                    );
-                                                  }}
-                                                  onChange={(e) => {
-                                                    if (e) {
-                                                      const selected = {
-                                                        label: e.label,
-                                                        value: e.value,
-                                                      };
-
-                                                      handleSelectedCustom(
-                                                        selected,
-                                                        `workPrograms[${index}].groupId`
-                                                      );
-                                                      setSelectedGroupWPInternal(
-                                                        (prev) => [
-                                                          ...prev,
-                                                          {
-                                                            indexData: index,
-                                                            OptionData:
-                                                              selected,
-                                                          },
-                                                        ]
-                                                      );
-                                                    } else {
-                                                      handleUnSelectedCustom(
-                                                        `workPrograms[${index}].groupId`
-                                                      );
-                                                      setSelectedGroupWPInternal(
-                                                        (prev) =>
-                                                          prev.filter(
-                                                            (item) =>
-                                                              item.indexData !==
-                                                              index
-                                                          )
-                                                      );
-                                                    }
-                                                  }}
-                                                  placeholder={
-                                                    "Pilih Group (Opsional)"
-                                                  }
-                                                  isLoading={
-                                                    IsLoadingProcess ||
-                                                    IsLoadingGroupDivisionSelect
-                                                  }
-                                                  value={
-                                                    SelectedGroupWPInternal.find(
-                                                      (x) =>
-                                                        x.indexData == index
-                                                    )?.OptionData
-                                                  }
-                                                />
-
-                                                <FormErrorMessage>
-                                                  {typeof formik.errors
-                                                    .workPrograms?.[index] ===
-                                                    "object" &&
-                                                    formik.errors
-                                                      .workPrograms?.[index]
-                                                      ?.divisionId}
-                                                </FormErrorMessage>
-                                              </FormControl>
-                                            </GridItem>
-                                          </Grid>
+                                              placeholder={
+                                                "Pilih Group (Opsional)"
+                                              }
+                                              isLoading={
+                                                IsLoadingProcess ||
+                                                IsLoadingGroupDivisionSelect
+                                              }
+                                              value={
+                                                SelectedGroupWPInternal.find(
+                                                  (x) =>
+                                                    x.indexData == index
+                                                )?.OptionData
+                                              }
+                                            />
+                                            <FormErrorMessage>
+                                              {typeof formik.errors
+                                                .workPrograms?.[index] ===
+                                                "object" &&
+                                                formik.errors
+                                                  .workPrograms?.[index]
+                                                  ?.groupId}
+                                            </FormErrorMessage>
+                                          </FormControl>
                                         </Stack>
                                       </InputLayoutFull>
                                     </FormControl>
@@ -3603,8 +3449,8 @@ function RegsiterRequirementViewPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                        formik.errors.workPrograms?.[index]
-                                          ?.workProgramCode
+                                          formik.errors.workPrograms?.[index]
+                                            ?.workProgramCode
                                           ? true
                                           : false
                                       }
@@ -3652,8 +3498,8 @@ function RegsiterRequirementViewPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                        formik.errors.workPrograms?.[index]
-                                          ?.workProgramName
+                                          formik.errors.workPrograms?.[index]
+                                            ?.workProgramName
                                           ? true
                                           : false
                                       }
@@ -3701,12 +3547,12 @@ function RegsiterRequirementViewPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                        formik.errors.workPrograms?.[index]
-                                          ?.workProgramAccName
+                                          formik.errors.workPrograms?.[index]
+                                            ?.workProgramAccName
                                           ? true
                                           : false
                                       }
-                                      isRequired
+
                                     >
                                       <InputLayoutFull>
                                         <FormLabel h={"full"} mt={2}>
@@ -3750,12 +3596,12 @@ function RegsiterRequirementViewPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                        formik.errors.workPrograms?.[index]
-                                          ?.workProgramAccNumber
+                                          formik.errors.workPrograms?.[index]
+                                            ?.workProgramAccNumber
                                           ? true
                                           : false
                                       }
-                                      isRequired
+
                                     >
                                       <InputLayout>
                                         <FormLabel h={"full"} mt={2}>
@@ -3804,12 +3650,12 @@ function RegsiterRequirementViewPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                        formik.errors.workPrograms?.[index]
-                                          ?.workProgramAccCc
+                                          formik.errors.workPrograms?.[index]
+                                            ?.workProgramAccCc
                                           ? true
                                           : false
                                       }
-                                      isRequired
+
                                     >
                                       <InputLayout>
                                         <FormLabel h={"full"} mt={2}>
@@ -3858,12 +3704,12 @@ function RegsiterRequirementViewPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                        formik.errors.workPrograms?.[index]
-                                          ?.workProgramBudget
+                                          formik.errors.workPrograms?.[index]
+                                            ?.workProgramBudget
                                           ? true
                                           : false
                                       }
-                                      isRequired
+
                                     >
                                       <InputLayout>
                                         <FormLabel h={"full"} mt={2}>
@@ -3897,8 +3743,8 @@ function RegsiterRequirementViewPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                        formik.errors.workPrograms?.[index]
-                                          ?.workProgramReal
+                                          formik.errors.workPrograms?.[index]
+                                            ?.workProgramReal
                                           ? true
                                           : false
                                       }
@@ -4648,103 +4494,98 @@ const Section4BRDView = ({
 
       formik.setFieldValue(
         "appTargetUsers",
-        data.requirementData?.appTargetUsers
+        data.appTargetUsers
       );
-      if (data.requirementData?.appAccessFrontsiteDns) {
+      if (data.appAccessFrontsiteDns) {
         setMediaAksesPublic(true);
       }
       formik.setFieldValue(
         "appAccessFrontsiteDns",
-        data.requirementData?.appAccessFrontsiteDns
+        data.appAccessFrontsiteDns
       );
       formik.setFieldValue(
         "appAccessFrontsiteIp",
-        data.requirementData?.appAccessFrontsiteIp
+        data.appAccessFrontsiteIp
       );
       formik.setFieldValue(
         "appAccessBacksiteDns",
-        data.requirementData?.appAccessBacksiteDns
+        data.appAccessBacksiteDns
       );
-      if (data.requirementData?.appAccessBacksiteIp) {
+      if (data.appAccessBacksiteIp) {
         setMediaAksesIntranet(true);
       }
       formik.setFieldValue(
         "appAccessBacksiteIp",
-        data.requirementData?.appAccessBacksiteIp
+        data.appAccessBacksiteIp
       );
 
       formik.setFieldValue(
         "backlogChange",
-        data.requirementData?.backlogChange
+        null
       );
       formik.setFieldValue(
         "appAccessMedia",
-        data.requirementData?.appAccessMedia
+        data.appAccessMedia
       );
-      formik.setFieldValue("appTypes", data.requirementData?.appTypes);
+      formik.setFieldValue("appTypes", data.appTypes);
       formik.setFieldValue(
         "appTypeCustom",
-        data.requirementData?.appTypeCustom
+        data.appTypeCustom
       );
       formik.setFieldValue(
         "appRelatedness",
-        data.requirementData?.appRelatedness
+        data.appRelatedness
       );
       formik.setFieldValue(
         "appRelatednessDesc",
-        data.requirementData?.appRelatednessDesc
+        data.appRelatednessDesc
       );
       formik.setFieldValue(
         "appTransactionals",
-        data.requirementData?.appTransactionals
+        data.appTransactionals
       );
       formik.setFieldValue(
         "appOperational24hrs",
-        data.requirementData?.appOperational24hrs
+        data.appOperational24hrs
       );
       formik.setFieldValue(
         "appOperationalDays",
-        data.requirementData?.appOperationalDays
+        data.appOperationalDays
       );
       formik.setFieldValue(
         "appOperationalHourOpen",
-        data.requirementData?.appOperationalHourOpen
+        data.appOperationalHourOpen
       );
       formik.setFieldValue(
         "appOperationalHourClosed",
-        data.requirementData?.appOperationalHourClosed
+        data.appOperationalHourClosed
       );
-      formik.setFieldValue(
-        "appLiveTargetDate",
-        data.requirementData?.appLiveTargetDate
-          ? stringToDateFormatedReverse(data.requirementData?.appLiveTargetDate)
-          : null
-      );
+      formik.setFieldValue("appLiveTargetDate", null);
 
       formik.setFieldValue(
         "appEnvLocations",
-        data.requirementData?.appEnvLocations
+        data.appEnvLocations
       );
       formik.setFieldValue(
         "appEnvLocationsOthers",
-        data.requirementData?.appEnvLocationsOthers
+        data.appEnvLocationsOthers
       );
       formik.setFieldValue(
         "appPrivateAuth",
-        data.requirementData?.appPrivateAuth
+        data.appPrivateAuth
       );
       formik.setFieldValue(
         "appHightAvailability",
-        data.requirementData?.appHightAvailability
+        data.appHightAvailability
       );
       formik.setFieldValue(
         "appIntegrationOthersApps",
-        data.requirementData?.appIntegrationOthersApps
+        data.appIntegrationOthersApps
       );
 
-      setSelectedAppsTypes(data.requirementData?.appTypes || "");
-      setOperationalDays(data.requirementData?.appOperationalDays || "");
-      setSelectedAppsEnvLoc(data.requirementData?.appEnvLocations || "");
+      setSelectedAppsTypes(data.appTypes || "");
+      setOperationalDays(data.appOperationalDays || "");
+      setSelectedAppsEnvLoc(data.appEnvLocations || "");
     }
   };
 
@@ -4880,9 +4721,8 @@ const Section4BRDView = ({
           m={2}
           bg={colorMode == "light" ? "white" : "gray.900"}
         >
-          <ModalHeader>{`${
-            FormMode == "Add" ? "Tambah" : "Ubah"
-          } Fitur`}</ModalHeader>
+          <ModalHeader>{`${FormMode == "Add" ? "Tambah" : "Ubah"
+            } Fitur`}</ModalHeader>
           <ModalCloseButton color={"red.500"} />
           <ModalBody w={"full"}>
             <Flex as={Stack} w={"full"}>
@@ -5178,6 +5018,7 @@ const Section4BRDView = ({
                     formik.setFieldValue("appTargetUsers", val)
                   }
                   value={formik.values.appTargetUsers ?? ""}
+                  isDisabled={ApplicationExistingChoosed !== null}
                 >
                   <Flex w={"full"} as={HStack}>
                     <Radio value={"EXTERNAL"}>EXTERNAL (NASABAH)</Radio>
@@ -5214,6 +5055,7 @@ const Section4BRDView = ({
                           setMediaAksesPublic(!MediaAksesPublic);
                           console.log(e);
                         }}
+                        isDisabled={ApplicationExistingChoosed !== null}
                       >
                         Internet (Publik)
                       </Checkbox>
@@ -5228,7 +5070,7 @@ const Section4BRDView = ({
                         placeholder={`https://`}
                         minLength={5}
                         maxLength={150}
-                        isDisabled={!MediaAksesPublic}
+                        isDisabled={!MediaAksesPublic || ApplicationExistingChoosed !== null}
                       />
                     </Flex>
                   </GridItem>
@@ -5248,6 +5090,7 @@ const Section4BRDView = ({
                           setMediaAksesIntranet(!MediaAksesIntranet);
                           console.log(e);
                         }}
+                        isDisabled={ApplicationExistingChoosed !== null}
                       >
                         Intranet (Untuk BackOffice Bank)
                       </Checkbox>
@@ -5260,7 +5103,7 @@ const Section4BRDView = ({
                         placeholder={`http://`}
                         minLength={5}
                         maxLength={150}
-                        isDisabled={!MediaAksesIntranet}
+                        isDisabled={!MediaAksesIntranet || ApplicationExistingChoosed !== null}
                       />
                     </Flex>
                   </GridItem>
@@ -5303,6 +5146,7 @@ const Section4BRDView = ({
                           key={idx}
                           isChecked={SelectedAppsTypes.includes(item)}
                           onChange={() => handleAppysTypesCheckboxChange(item)}
+                          isDisabled={ApplicationExistingChoosed !== null}
                         >
                           {item}
                         </Checkbox>
@@ -5318,6 +5162,7 @@ const Section4BRDView = ({
                       onChange={(val) => {
                         formik.setFieldValue("appTypeCustom", val);
                       }}
+                      isDisabled={ApplicationExistingChoosed !== null}
                     />
                   </Flex>
                 )}
@@ -5338,6 +5183,7 @@ const Section4BRDView = ({
                         formik.setFieldValue("appRelatedness", val)
                       }
                       value={formik.values.appRelatedness ?? ""}
+                      isDisabled={ApplicationExistingChoosed !== null}
                     >
                       <Flex w={"full"} as={HStack}>
                         <Radio value={APP_RELATED_OPTIONS[0]}>
@@ -5357,6 +5203,7 @@ const Section4BRDView = ({
                           onChange={(val) => {
                             formik.setFieldValue("appRelatednessDesc", val);
                           }}
+                          isDisabled={ApplicationExistingChoosed !== null}
                         />
                       </Flex>
                     )}
@@ -5381,6 +5228,7 @@ const Section4BRDView = ({
                     formik.setFieldValue("appTransactionals", val)
                   }
                   value={formik.values.appTransactionals ?? ""}
+                  isDisabled={ApplicationExistingChoosed !== null}
                 >
                   <Flex w={"full"} as={HStack}>
                     {APP_TRANSACTIONAL_OPTIONS.map((item, idx) => (
@@ -5418,6 +5266,7 @@ const Section4BRDView = ({
                     }
                   }}
                   value={formik.values.appOperational24hrs ?? ""}
+                  isDisabled={ApplicationExistingChoosed !== null}
                 >
                   <Flex w={"full"} as={HStack}>
                     {APP_OPERATIONAL_OPTIONS.map((item, idx) => (
@@ -5430,72 +5279,76 @@ const Section4BRDView = ({
 
                 {formik.values.appOperational24hrs ==
                   APP_OPERATIONAL_OPTIONS[1] && (
-                  <Flex as={Stack} w={"full"} py={2}>
-                    <Text color={"secondary.500"}>Pilih Hari</Text>
-                    <WeekdaySelector
-                      value={OperationalDays}
-                      onChange={setOperationalDays}
-                    />
-                    <Grid templateColumns="repeat(2, 1fr)" gap={4} w={"full"}>
-                      <GridItem
-                        colSpan={{
-                          base: 2,
-                          sm: 2,
-                          md: 1,
-                          lg: 1,
-                        }}
-                        w={"full"}
-                      >
-                        <Stack w={"full"}>
-                          <Text color={"secondary.500"}>Operasional Mulai</Text>
-                          <Input
-                            type="time"
-                            id="appOperationalHourOpen"
-                            name="appOperationalHourOpen"
-                            onChange={formik.handleChange}
-                            value={
-                              formik.values.appOperationalHourOpen
-                                ? formik.values.appOperationalHourOpen.slice(
+                    <Flex as={Stack} w={"full"} py={2}>
+                      <Text color={"secondary.500"}>Pilih Hari</Text>
+                      <Box pointerEvents={ApplicationExistingChoosed !== null ? "none" : "auto"} opacity={ApplicationExistingChoosed !== null ? 0.6 : 1}>
+                        <WeekdaySelector
+                        value={OperationalDays}
+                        onChange={setOperationalDays}
+                      />
+                      </Box>
+                      <Grid templateColumns="repeat(2, 1fr)" gap={4} w={"full"}>
+                        <GridItem
+                          colSpan={{
+                            base: 2,
+                            sm: 2,
+                            md: 1,
+                            lg: 1,
+                          }}
+                          w={"full"}
+                        >
+                          <Stack w={"full"}>
+                            <Text color={"secondary.500"}>Operasional Mulai</Text>
+                            <Input
+                              type="time"
+                              id="appOperationalHourOpen"
+                              name="appOperationalHourOpen"
+                              onChange={formik.handleChange}
+                              value={
+                                formik.values.appOperationalHourOpen
+                                  ? formik.values.appOperationalHourOpen.slice(
                                     0,
                                     5
                                   ) // ensure HH:mm
-                                : ""
-                            }
-                          />
-                        </Stack>
-                      </GridItem>
-                      <GridItem
-                        colSpan={{
-                          base: 2,
-                          sm: 2,
-                          md: 1,
-                          lg: 1,
-                        }}
-                        w={"full"}
-                      >
-                        <Stack w={"full"}>
-                          <Text color={"secondary.500"}>
-                            Operasional Berakhir
-                          </Text>
-                          <Input
-                            type="time"
-                            id="appOperationalHourClosed"
-                            name="appOperationalHourClosed"
-                            onChange={formik.handleChange}
-                            value={
-                              formik.values.appOperationalHourClosed
-                                ? formik.values.appOperationalHourClosed.slice(
+                                  : ""
+                              }
+                              isDisabled={ApplicationExistingChoosed !== null}
+                            />
+                          </Stack>
+                        </GridItem>
+                        <GridItem
+                          colSpan={{
+                            base: 2,
+                            sm: 2,
+                            md: 1,
+                            lg: 1,
+                          }}
+                          w={"full"}
+                        >
+                          <Stack w={"full"}>
+                            <Text color={"secondary.500"}>
+                              Operasional Berakhir
+                            </Text>
+                            <Input
+                              type="time"
+                              id="appOperationalHourClosed"
+                              name="appOperationalHourClosed"
+                              onChange={formik.handleChange}
+                              value={
+                                formik.values.appOperationalHourClosed
+                                  ? formik.values.appOperationalHourClosed.slice(
                                     0,
                                     5
                                   ) // ensure HH:mm
-                                : ""
-                            }
-                          />
-                        </Stack>
-                      </GridItem>
-                    </Grid>
-                  </Flex>
-                )}
+                                  : ""
+                              }
+                              isDisabled={ApplicationExistingChoosed !== null}
+                            />
+                          </Stack>
+                        </GridItem>
+                      </Grid>
+                    </Flex>
+                  )}
 
                 <FormErrorMessage>
                   {formik.errors.appOperational24hrs}
@@ -5631,6 +5484,7 @@ const Section4BRDView = ({
                           key={idx}
                           isChecked={SelectedAppsEnvLoc.includes(item)}
                           onChange={() => handleAppysEnvLocCheckboxChange(item)}
+                          isDisabled={ApplicationExistingChoosed !== null}
                         >
                           {item}
                         </Checkbox>
@@ -5646,6 +5500,7 @@ const Section4BRDView = ({
                       onChange={(val) => {
                         formik.setFieldValue("appEnvLocationsOthers", val);
                       }}
+                      isDisabled={ApplicationExistingChoosed !== null}
                     />
                   </Flex>
                 )}
@@ -5695,6 +5550,7 @@ const Section4BRDView = ({
                     formik.setFieldValue("appHightAvailability", val)
                   }
                   value={formik.values.appHightAvailability ?? ""}
+                  isDisabled={ApplicationExistingChoosed !== null}
                 >
                   <Flex w={"full"} as={HStack}>
                     <Radio value={"Y"}>Ya</Radio>
@@ -5721,6 +5577,7 @@ const Section4BRDView = ({
                   onChange={(val) => {
                     formik.setFieldValue("appIntegrationOthersApps", val);
                   }}
+                  isDisabled={ApplicationExistingChoosed !== null}
                 />
                 <FormErrorMessage>
                   {formik.errors.appAccessMedia}
@@ -6063,41 +5920,41 @@ const Section4RFCView = ({
       formik.setFieldValue("appHightAvailability", "Y");
       formik.setFieldValue("appIntegrationOthersApps", "");
     } else {
-      if (data.requirementData == null) {
-        setApplicationExistingChoosed(null);
-        setBacklogAppsOption([]);
-        setBacklogChanges([]);
-        setSelectedAppsTypes("");
-        setOperationalDays("");
-        setSelectedAppsEnvLoc("");
-        setMediaAksesPublic(false);
-        setMediaAksesIntranet(false);
-        formik.setFieldValue("appInitialCode", null);
-        formik.setFieldValue("appInitialName", null);
-        showToast({
-          description: "Aplikasi belum mempunyai BRD",
-          statusToast: "warning",
-        });
-        return;
-      }
+      // if (data.requirementData == null) {
+      //   setApplicationExistingChoosed(null);
+      //   setBacklogAppsOption([]);
+      //   setBacklogChanges([]);
+      //   setSelectedAppsTypes("");
+      //   setOperationalDays("");
+      //   setSelectedAppsEnvLoc("");
+      //   setMediaAksesPublic(false);
+      //   setMediaAksesIntranet(false);
+      //   formik.setFieldValue("appInitialCode", null);
+      //   formik.setFieldValue("appInitialName", null);
+      //   showToast({
+      //     description: "Aplikasi belum mempunyai BRD",
+      //     statusToast: "warning",
+      //   });
+      //   return;
+      // }
 
-      if (data.countProjectAll == 0 || data.countProjectOnGoing > 0) {
-        setApplicationExistingChoosed(null);
-        setBacklogAppsOption([]);
-        setBacklogChanges([]);
-        setSelectedAppsTypes("");
-        setOperationalDays("");
-        setSelectedAppsEnvLoc("");
-        setMediaAksesPublic(false);
-        setMediaAksesIntranet(false);
-        formik.setFieldValue("appInitialCode", null);
-        formik.setFieldValue("appInitialName", null);
-        showToast({
-          description: `Aplikasi masih memiliki ${data.countProjectOnGoing} project berjalan`,
-          statusToast: "warning",
-        });
-        return;
-      }
+      // if (data.countProjectAll == 0 || data.countProjectOnGoing > 0) {
+      //   setApplicationExistingChoosed(null);
+      //   setBacklogAppsOption([]);
+      //   setBacklogChanges([]);
+      //   setSelectedAppsTypes("");
+      //   setOperationalDays("");
+      //   setSelectedAppsEnvLoc("");
+      //   setMediaAksesPublic(false);
+      //   setMediaAksesIntranet(false);
+      //   formik.setFieldValue("appInitialCode", null);
+      //   formik.setFieldValue("appInitialName", null);
+      //   showToast({
+      //     description: `Aplikasi masih memiliki ${data.countProjectOnGoing} project berjalan`,
+      //     statusToast: "warning",
+      //   });
+      //   return;
+      // }
 
       setApplicationExistingChoosed(data);
       formik.setFieldValue("appInitialCode", data.appShortName);
@@ -6105,97 +5962,92 @@ const Section4RFCView = ({
 
       formik.setFieldValue(
         "appTargetUsers",
-        data.requirementData.appTargetUsers
+        data.appTargetUsers
       );
-      if (data.requirementData.appAccessFrontsiteDns) {
+      if (data.appAccessFrontsiteDns) {
         setMediaAksesPublic(true);
       }
       formik.setFieldValue(
         "appAccessFrontsiteDns",
-        data.requirementData.appAccessFrontsiteDns
+        data.appAccessFrontsiteDns
       );
       formik.setFieldValue(
         "appAccessFrontsiteIp",
-        data.requirementData.appAccessFrontsiteIp
+        data.appAccessFrontsiteIp
       );
       formik.setFieldValue(
         "appAccessBacksiteDns",
-        data.requirementData.appAccessBacksiteDns
+        data.appAccessBacksiteDns
       );
-      if (data.requirementData.appAccessBacksiteIp) {
+      if (data.appAccessBacksiteIp) {
         setMediaAksesIntranet(true);
       }
       formik.setFieldValue(
         "appAccessBacksiteIp",
-        data.requirementData.appAccessBacksiteIp
+        data.appAccessBacksiteIp
       );
 
-      formik.setFieldValue("backlogChange", data.requirementData.backlogChange);
+      formik.setFieldValue("backlogChange", null);
       formik.setFieldValue(
         "appAccessMedia",
-        data.requirementData.appAccessMedia
+        data.appAccessMedia
       );
-      formik.setFieldValue("appTypes", data.requirementData.appTypes);
-      formik.setFieldValue("appTypeCustom", data.requirementData.appTypeCustom);
+      formik.setFieldValue("appTypes", data.appTypes);
+      formik.setFieldValue("appTypeCustom", data.appTypeCustom);
       formik.setFieldValue(
         "appRelatedness",
-        data.requirementData.appRelatedness
+        data.appRelatedness
       );
       formik.setFieldValue(
         "appRelatednessDesc",
-        data.requirementData.appRelatednessDesc
+        data.appRelatednessDesc
       );
       formik.setFieldValue(
         "appTransactionals",
-        data.requirementData.appTransactionals
+        data.appTransactionals
       );
       formik.setFieldValue(
         "appOperational24hrs",
-        data.requirementData.appOperational24hrs
+        data.appOperational24hrs
       );
       formik.setFieldValue(
         "appOperationalDays",
-        data.requirementData.appOperationalDays
+        data.appOperationalDays
       );
       formik.setFieldValue(
         "appOperationalHourOpen",
-        data.requirementData.appOperationalHourOpen
+        data.appOperationalHourOpen
       );
       formik.setFieldValue(
         "appOperationalHourClosed",
-        data.requirementData.appOperationalHourClosed
+        data.appOperationalHourClosed
       );
-      formik.setFieldValue(
-        "appLiveTargetDate",
-        data.requirementData.appLiveTargetDate
-          ? stringToDateFormatedReverse(data.requirementData.appLiveTargetDate)
-          : null
-      );
+      formik.setFieldValue("appLiveTargetDate", null);
 
       formik.setFieldValue(
         "appEnvLocations",
-        data.requirementData.appEnvLocations
+        data.appEnvLocations
       );
       formik.setFieldValue(
         "appEnvLocationsOthers",
-        data.requirementData.appEnvLocationsOthers
+        data.appEnvLocationsOthers
       );
       formik.setFieldValue(
         "appPrivateAuth",
-        data.requirementData.appPrivateAuth
+        data.appPrivateAuth
       );
       formik.setFieldValue(
         "appHightAvailability",
-        data.requirementData.appHightAvailability
+        data.appHightAvailability
       );
       formik.setFieldValue(
         "appIntegrationOthersApps",
-        data.requirementData.appIntegrationOthersApps
+        data.appIntegrationOthersApps
       );
 
-      setSelectedAppsTypes(data.requirementData.appTypes || "");
-      setOperationalDays(data.requirementData.appOperationalDays || "");
-      setSelectedAppsEnvLoc(data.requirementData.appEnvLocations || "");
+      setSelectedAppsTypes(data.appTypes || "");
+      setOperationalDays(data.appOperationalDays || "");
+      setSelectedAppsEnvLoc(data.appEnvLocations || "");
 
       const WhereParams: ListSearchByParam[] = [
         {
@@ -6235,13 +6087,13 @@ const Section4RFCView = ({
       prev.map((item, i) =>
         i === index
           ? {
-              ...item,
-              backlog: choosedFeature,
-              changes: {
-                backlogName: selectedOption.label,
-                posOrder: 1,
-              },
-            }
+            ...item,
+            backlog: choosedFeature,
+            changes: {
+              backlogName: selectedOption.label,
+              posOrder: 1,
+            },
+          }
           : item
       )
     );
@@ -6642,10 +6494,10 @@ const Section4RFCView = ({
                                 (x) => x.value === item.backlog.id
                               )}
                               placeholder={"Piih Fitur Eksisting"}
-                              // value={BacklogAppsOption.find(
-                              //   (x) =>
-                              //     x.value == formik.values.senderDirectorateId
-                              // )}
+                            // value={BacklogAppsOption.find(
+                            //   (x) =>
+                            //     x.value == formik.values.senderDirectorateId
+                            // )}
                             />
                             <FormErrorMessage>
                               {formik.errors.senderDivisionId}
@@ -6779,8 +6631,8 @@ const Section4RFCView = ({
                                 setBacklogChanges(updated);
                               }}
                               placeholder={`Deskripsi Fitur Perubahan`}
-                              // maxLength={300}
-                              // isDisabled={ActionLoading}
+                            // maxLength={300}
+                            // isDisabled={ActionLoading}
                             />
                           </Stack>
                         </InputLayoutFull>
@@ -6808,8 +6660,8 @@ const Section4RFCView = ({
                                 setBacklogChanges(updated);
                               }}
                               placeholder={`Catatan Fitur Perubahan`}
-                              // maxLength={300}
-                              // isDisabled={ActionLoading}
+                            // maxLength={300}
+                            // isDisabled={ActionLoading}
                             />
                           </Stack>
                         </InputLayoutFull>
@@ -6868,6 +6720,7 @@ const Section4RFCView = ({
                     formik.setFieldValue("appTargetUsers", val)
                   }
                   value={formik.values.appTargetUsers ?? ""}
+                  isDisabled={ApplicationExistingChoosed !== null}
                 >
                   <Flex w={"full"} as={HStack}>
                     <Radio value={"EXTERNAL"}>EXTERNAL (NASABAH)</Radio>
@@ -6904,6 +6757,7 @@ const Section4RFCView = ({
                           setMediaAksesPublic(!MediaAksesPublic);
                           console.log(e);
                         }}
+                        isDisabled={ApplicationExistingChoosed !== null}
                       >
                         Internet (Publik)
                       </Checkbox>
@@ -6918,7 +6772,7 @@ const Section4RFCView = ({
                         placeholder={`https://`}
                         minLength={5}
                         maxLength={150}
-                        isDisabled={!MediaAksesPublic}
+                        isDisabled={!MediaAksesPublic || ApplicationExistingChoosed !== null}
                       />
                     </Flex>
                   </GridItem>
@@ -6938,6 +6792,7 @@ const Section4RFCView = ({
                           setMediaAksesIntranet(!MediaAksesIntranet);
                           console.log(e);
                         }}
+                        isDisabled={ApplicationExistingChoosed !== null}
                       >
                         Intranet (Untuk BackOffice Bank)
                       </Checkbox>
@@ -6950,7 +6805,7 @@ const Section4RFCView = ({
                         placeholder={`http://`}
                         minLength={5}
                         maxLength={150}
-                        isDisabled={!MediaAksesIntranet}
+                        isDisabled={!MediaAksesIntranet || ApplicationExistingChoosed !== null}
                       />
                     </Flex>
                   </GridItem>
@@ -6993,6 +6848,7 @@ const Section4RFCView = ({
                           key={idx}
                           isChecked={SelectedAppsTypes.includes(item)}
                           onChange={() => handleAppysTypesCheckboxChange(item)}
+                          isDisabled={ApplicationExistingChoosed !== null}
                         >
                           {item}
                         </Checkbox>
@@ -7008,6 +6864,7 @@ const Section4RFCView = ({
                       onChange={(val) => {
                         formik.setFieldValue("appTypeCustom", val);
                       }}
+                      isDisabled={ApplicationExistingChoosed !== null}
                     />
                   </Flex>
                 )}
@@ -7028,6 +6885,7 @@ const Section4RFCView = ({
                         formik.setFieldValue("appRelatedness", val)
                       }
                       value={formik.values.appRelatedness ?? ""}
+                      isDisabled={ApplicationExistingChoosed !== null}
                     >
                       <Flex w={"full"} as={HStack}>
                         <Radio value={APP_RELATED_OPTIONS[0]}>
@@ -7047,6 +6905,7 @@ const Section4RFCView = ({
                           onChange={(val) => {
                             formik.setFieldValue("appRelatednessDesc", val);
                           }}
+                          isDisabled={ApplicationExistingChoosed !== null}
                         />
                       </Flex>
                     )}
@@ -7071,6 +6930,7 @@ const Section4RFCView = ({
                     formik.setFieldValue("appTransactionals", val)
                   }
                   value={formik.values.appTransactionals ?? ""}
+                  isDisabled={ApplicationExistingChoosed !== null}
                 >
                   <Flex w={"full"} as={HStack}>
                     {APP_TRANSACTIONAL_OPTIONS.map((item, idx) => (
@@ -7108,6 +6968,7 @@ const Section4RFCView = ({
                     }
                   }}
                   value={formik.values.appOperational24hrs ?? ""}
+                  isDisabled={ApplicationExistingChoosed !== null}
                 >
                   <Flex w={"full"} as={HStack}>
                     {APP_OPERATIONAL_OPTIONS.map((item, idx) => (
@@ -7120,72 +6981,76 @@ const Section4RFCView = ({
 
                 {formik.values.appOperational24hrs ==
                   APP_OPERATIONAL_OPTIONS[1] && (
-                  <Flex as={Stack} w={"full"} py={2}>
-                    <Text color={"secondary.500"}>Pilih Hari</Text>
-                    <WeekdaySelector
-                      value={OperationalDays}
-                      onChange={setOperationalDays}
-                    />
-                    <Grid templateColumns="repeat(2, 1fr)" gap={4} w={"full"}>
-                      <GridItem
-                        colSpan={{
-                          base: 2,
-                          sm: 2,
-                          md: 1,
-                          lg: 1,
-                        }}
-                        w={"full"}
-                      >
-                        <Stack w={"full"}>
-                          <Text color={"secondary.500"}>Operasional Mulai</Text>
-                          <Input
-                            type="time"
-                            id="appOperationalHourOpen"
-                            name="appOperationalHourOpen"
-                            onChange={formik.handleChange}
-                            value={
-                              formik.values.appOperationalHourOpen
-                                ? formik.values.appOperationalHourOpen.slice(
+                    <Flex as={Stack} w={"full"} py={2}>
+                      <Text color={"secondary.500"}>Pilih Hari</Text>
+                      <Box pointerEvents={ApplicationExistingChoosed !== null ? "none" : "auto"} opacity={ApplicationExistingChoosed !== null ? 0.6 : 1}>
+                        <WeekdaySelector
+                        value={OperationalDays}
+                        onChange={setOperationalDays}
+                      />
+                      </Box>
+                      <Grid templateColumns="repeat(2, 1fr)" gap={4} w={"full"}>
+                        <GridItem
+                          colSpan={{
+                            base: 2,
+                            sm: 2,
+                            md: 1,
+                            lg: 1,
+                          }}
+                          w={"full"}
+                        >
+                          <Stack w={"full"}>
+                            <Text color={"secondary.500"}>Operasional Mulai</Text>
+                            <Input
+                              type="time"
+                              id="appOperationalHourOpen"
+                              name="appOperationalHourOpen"
+                              onChange={formik.handleChange}
+                              value={
+                                formik.values.appOperationalHourOpen
+                                  ? formik.values.appOperationalHourOpen.slice(
                                     0,
                                     5
                                   ) // ensure HH:mm
-                                : ""
-                            }
-                          />
-                        </Stack>
-                      </GridItem>
-                      <GridItem
-                        colSpan={{
-                          base: 2,
-                          sm: 2,
-                          md: 1,
-                          lg: 1,
-                        }}
-                        w={"full"}
-                      >
-                        <Stack w={"full"}>
-                          <Text color={"secondary.500"}>
-                            Operasional Berakhir
-                          </Text>
-                          <Input
-                            type="time"
-                            id="appOperationalHourClosed"
-                            name="appOperationalHourClosed"
-                            onChange={formik.handleChange}
-                            value={
-                              formik.values.appOperationalHourClosed
-                                ? formik.values.appOperationalHourClosed.slice(
+                                  : ""
+                              }
+                              isDisabled={ApplicationExistingChoosed !== null}
+                            />
+                          </Stack>
+                        </GridItem>
+                        <GridItem
+                          colSpan={{
+                            base: 2,
+                            sm: 2,
+                            md: 1,
+                            lg: 1,
+                          }}
+                          w={"full"}
+                        >
+                          <Stack w={"full"}>
+                            <Text color={"secondary.500"}>
+                              Operasional Berakhir
+                            </Text>
+                            <Input
+                              type="time"
+                              id="appOperationalHourClosed"
+                              name="appOperationalHourClosed"
+                              onChange={formik.handleChange}
+                              value={
+                                formik.values.appOperationalHourClosed
+                                  ? formik.values.appOperationalHourClosed.slice(
                                     0,
                                     5
                                   ) // ensure HH:mm
-                                : ""
-                            }
-                          />
-                        </Stack>
-                      </GridItem>
-                    </Grid>
-                  </Flex>
-                )}
+                                  : ""
+                              }
+                              isDisabled={ApplicationExistingChoosed !== null}
+                            />
+                          </Stack>
+                        </GridItem>
+                      </Grid>
+                    </Flex>
+                  )}
 
                 <FormErrorMessage>
                   {formik.errors.appOperational24hrs}
@@ -7289,6 +7154,7 @@ const Section4RFCView = ({
                           key={idx}
                           isChecked={SelectedAppsEnvLoc.includes(item)}
                           onChange={() => handleAppysEnvLocCheckboxChange(item)}
+                          isDisabled={ApplicationExistingChoosed !== null}
                         >
                           {item}
                         </Checkbox>
@@ -7304,6 +7170,7 @@ const Section4RFCView = ({
                       onChange={(val) => {
                         formik.setFieldValue("appEnvLocationsOthers", val);
                       }}
+                      isDisabled={ApplicationExistingChoosed !== null}
                     />
                   </Flex>
                 )}
@@ -7353,6 +7220,7 @@ const Section4RFCView = ({
                     formik.setFieldValue("appHightAvailability", val)
                   }
                   value={formik.values.appHightAvailability ?? ""}
+                  isDisabled={ApplicationExistingChoosed !== null}
                 >
                   <Flex w={"full"} as={HStack}>
                     <Radio value={"Y"}>Ya</Radio>
@@ -7379,6 +7247,7 @@ const Section4RFCView = ({
                   onChange={(val) => {
                     formik.setFieldValue("appIntegrationOthersApps", val);
                   }}
+                  isDisabled={ApplicationExistingChoosed !== null}
                 />
                 <FormErrorMessage>
                   {formik.errors.appAccessMedia}
