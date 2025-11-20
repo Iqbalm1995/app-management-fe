@@ -26,6 +26,9 @@ import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useApps, { ApplicationMasterResponse } from "@/app/services/useApps";
+import useRequirements, {
+  BacklogDataResponse,
+} from "@/app/services/useRequirements";
 import {
   Box,
   Button,
@@ -270,6 +273,14 @@ function ApplicationDetail() {
   // Services
   const { GetDetailById, UpdateData } = useApps();
   const { List: ListOrganization } = useOrganization();
+  const { ListBacklog } = useRequirements();
+
+  // Backlog State
+  const [DataBacklogs, setDataBacklogs] = useState<BacklogDataResponse[]>([]);
+  const [IsLoadingBacklogs, setIsLoadingBacklogs] = useState(false);
+  const [BacklogPage, setBacklogPage] = useState(0);
+  const [BacklogHasMore, setBacklogHasMore] = useState(false);
+  const BACKLOG_PAGE_SIZE = 15;
   const { List: ListUsers } = useUsers();
   const { ListConstantData } = useConstants();
 
@@ -722,6 +733,53 @@ function ApplicationDetail() {
     }
   }, [appId, tokenData, GetDetailById, showToast]);
 
+  // Load Backlogs
+  const LoadBacklogs = useCallback(
+    async (page: number = 0, append: boolean = false) => {
+      if (!appId || !tokenData) return;
+
+      try {
+        setIsLoadingBacklogs(true);
+        const payload: PaggingListPayload = {
+          search: "",
+          limit: BACKLOG_PAGE_SIZE,
+          page: page,
+          filterWhere: [
+            {
+              field: "AppsId",
+              operator: "=",
+              value: appId,
+            },
+          ],
+          fieldOrder: ["PosOrder", "CreatedAt"],
+          orderDir: "desc",
+        };
+
+        const requestData = await ListBacklog(payload, tokenData);
+
+        if (requestData?.statusCode === RES_CODE_OK && requestData.data) {
+          const newData = requestData.data as BacklogDataResponse[];
+          if (append) {
+            setDataBacklogs((prev) => [...prev, ...newData]);
+          } else {
+            setDataBacklogs(newData);
+          }
+          setBacklogHasMore(newData.length === BACKLOG_PAGE_SIZE);
+          setBacklogPage(page);
+        }
+      } catch (error) {
+        console.error("Error loading backlogs:", error);
+      } finally {
+        setIsLoadingBacklogs(false);
+      }
+    },
+    [appId, tokenData, ListBacklog, BACKLOG_PAGE_SIZE]
+  );
+
+  const handleLoadMoreBacklogs = () => {
+    LoadBacklogs(BacklogPage + 1, true);
+  };
+
   // Update Application
   const handleUpdate = async () => {
     if (!appId || !tokenData) return;
@@ -770,6 +828,7 @@ function ApplicationDetail() {
       LoadApplicationData();
       LoadAllOrganizationData();
       LoadProjectStatuses();
+      LoadBacklogs();
     }
   }, [tokenData, appId]); // Remove LoadApplicationData from dependencies
 
@@ -3749,85 +3808,155 @@ function ApplicationDetail() {
 
                       {/* Features Tab */}
                       <TabPanel p={8}>
-                        <VStack
-                          spacing={8}
-                          align="center"
-                          justify="center"
-                          minH="500px"
-                        >
-                          <Box
-                            p={12}
-                            bg={colorMode === "light" ? "white" : "gray.800"}
-                            rounded="3xl"
-                            border="3px dashed"
-                            borderColor="secondary.300"
-                            textAlign="center"
-                            maxW="500px"
-                            position="relative"
-                            _before={{
-                              content: '""',
-                              position: "absolute",
-                              top: "-2px",
-                              left: "-2px",
-                              right: "-2px",
-                              bottom: "-2px",
-                              bgGradient:
-                                "linear(45deg, secondary.400, purple.400, secondary.400)",
-                              rounded: "3xl",
-                              zIndex: -1,
-                              opacity: 0.1,
-                            }}
-                          >
-                            <Box
-                              w={20}
-                              h={20}
-                              bg="secondary.100"
-                              rounded="full"
-                              display="flex"
-                              alignItems="center"
-                              justifyContent="center"
-                              mx="auto"
-                              mb={6}
-                            >
+                        <Flex as={Stack} w={"full"} spacing={4}>
+                          <Flex justify="space-between" align="center">
+                            <HStack spacing={3}>
                               <Icon
-                                as={FiSettings}
-                                boxSize={10}
-                                color="secondary.600"
+                                as={FiFileText}
+                                boxSize={6}
+                                color="secondary.500"
                               />
-                            </Box>
-                            <Text
-                              fontSize="2xl"
-                              fontWeight="bold"
-                              color={
-                                colorMode === "light" ? "gray.800" : "white"
-                              }
-                              mb={4}
-                            >
-                              Features Management
-                            </Text>
-                            <Text
-                              color={
-                                colorMode === "light" ? "gray.600" : "gray.400"
-                              }
-                              fontSize="lg"
-                              lineHeight="tall"
-                            >
-                              Application features and capabilities will be
-                              managed here. Configure feature flags,
-                              permissions, and functionality modules.
-                            </Text>
+                              <Heading size="md">Backlog Features</Heading>
+                            </HStack>
                             <Badge
                               colorScheme="secondary"
-                              variant="subtle"
-                              mt={4}
-                              px={4}
-                              py={2}
-                              rounded="full"
+                              fontSize="md"
+                              px={3}
+                              py={1}
                             >
-                              Not Implemented
+                              {DataBacklogs.length} Items
                             </Badge>
-                          </Box>
-                        </VStack>
+                          </Flex>
+                        </Flex>
+                        <Box w={"full"} pt={4}>
+                          {IsLoadingBacklogs && DataBacklogs.length === 0 ? (
+                            <Flex justify="center" align="center" minH="200px">
+                              <LoadingMiniSignature />
+                            </Flex>
+                          ) : DataBacklogs.length === 0 ? (
+                            <VStack spacing={4} py={12}>
+                              <Icon
+                                as={FiFileText}
+                                boxSize={16}
+                                color="gray.300"
+                              />
+                              <Text color="gray.500" fontSize="lg">
+                                No backlogs found for this application
+                              </Text>
+                            </VStack>
+                          ) : (
+                            <Stack spacing={0} divider={<Divider />}>
+                              {DataBacklogs.map((backlog) => (
+                                <Box
+                                  key={backlog.id}
+                                  p={2}
+                                  _hover={{
+                                    bg:
+                                      colorMode === "light"
+                                        ? "gray.50"
+                                        : "gray.700",
+                                  }}
+                                  transition="all 0.2s"
+                                >
+                                  <HStack spacing={2} w="full" mb={1}>
+                                    <Badge colorScheme="blue" fontSize="xs">
+                                      #{backlog.posOrder}
+                                    </Badge>
+                                    <Text
+                                      fontWeight="600"
+                                      fontSize="sm"
+                                      flex={1}
+                                      noOfLines={1}
+                                    >
+                                      {backlog.backlogName}
+                                    </Text>
+                                    <Badge
+                                      colorScheme={
+                                        backlog.isLive === "Y"
+                                          ? "green"
+                                          : "gray"
+                                      }
+                                      fontSize="xs"
+                                    >
+                                      {backlog.isLive === "Y"
+                                        ? "Live"
+                                        : "Not Live"}
+                                    </Badge>
+                                  </HStack>
+
+                                  {backlog.backlogDesc && (
+                                    <Text
+                                      fontSize="xs"
+                                      color="gray.600"
+                                      noOfLines={1}
+                                      mb={1}
+                                    >
+                                      {backlog.backlogDesc}
+                                    </Text>
+                                  )}
+
+                                  <HStack
+                                    spacing={1}
+                                    fontSize="xs"
+                                    flexWrap="wrap"
+                                    color="gray.500"
+                                  >
+                                    <Text>{backlog.backlogCode}</Text>
+                                    <Text>•</Text>
+                                    <Badge colorScheme="purple" size="sm">
+                                      {backlog.developmentStatus}
+                                    </Badge>
+                                    {backlog.urgency && (
+                                      <>
+                                        <Text>•</Text>
+                                        <Badge colorScheme="orange" size="sm">
+                                          {backlog.urgency}
+                                        </Badge>
+                                      </>
+                                    )}
+                                    {backlog.priority && (
+                                      <>
+                                        <Text>•</Text>
+                                        <Badge colorScheme="red" size="sm">
+                                          {backlog.priority}
+                                        </Badge>
+                                      </>
+                                    )}
+                                    {backlog.version && (
+                                      <>
+                                        <Text>•</Text>
+                                        <Text>v{backlog.version}</Text>
+                                      </>
+                                    )}
+                                    {backlog.createdAt && (
+                                      <>
+                                        <Text>•</Text>
+                                        <Text>
+                                          {new Date(
+                                            backlog.createdAt
+                                          ).toLocaleDateString()}
+                                        </Text>
+                                      </>
+                                    )}
+                                  </HStack>
+                                </Box>
+                              ))}
+                              {BacklogHasMore && (
+                                <Box p={2} textAlign="center">
+                                  <Button
+                                    onClick={handleLoadMoreBacklogs}
+                                    isLoading={IsLoadingBacklogs}
+                                    colorScheme="secondary"
+                                    variant="outline"
+                                    size="xs"
+                                  >
+                                    Load More
+                                  </Button>
+                                </Box>
+                              )}
+                            </Stack>
+                          )}
+                        </Box>
                       </TabPanel>
 
                       {/* Environment Tab */}
