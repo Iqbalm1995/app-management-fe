@@ -64,7 +64,7 @@ import {
 } from "@chakra-ui/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { FiArrowLeft, FiEdit, FiSave, FiX, FiFileText, FiSettings, FiGlobe, FiFolder, FiPlus, FiUsers } from "react-icons/fi";
+import { FiArrowLeft, FiEdit, FiSave, FiX, FiFileText, FiSettings, FiGlobe, FiFolder, FiPlus, FiUsers, FiEye } from "react-icons/fi";
 import { WeekdaySelector } from "@/app/components/inputProps/WeekDaySelector";
 import OtherInputAppsStringSeparator from "@/app/components/inputProps/InputMultiTags";
 import InputTagsArea from "@/app/components/inputProps/InputMultiTagsArea";
@@ -849,6 +849,23 @@ function ApplicationDetail() {
                       borderBottom="1px"
                       borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
                       gap={2}
+                      overflowX="auto"
+                      overflowY="hidden"
+                      css={{
+                        '&::-webkit-scrollbar': {
+                          height: '6px',
+                        },
+                        '&::-webkit-scrollbar-track': {
+                          background: colorMode === "light" ? "#f1f1f1" : "#2D3748",
+                        },
+                        '&::-webkit-scrollbar-thumb': {
+                          background: colorMode === "light" ? "#888" : "#4A5568",
+                          borderRadius: '3px',
+                        },
+                        '&::-webkit-scrollbar-thumb:hover': {
+                          background: colorMode === "light" ? "#555" : "#718096",
+                        },
+                      }}
                     >
                       <Tab 
                         fontWeight="semibold" 
@@ -856,6 +873,33 @@ function ApplicationDetail() {
                         py={3}
                         rounded="xl"
                         color={colorMode === "light" ? "gray.600" : "gray.400"}
+                        flexShrink={0}
+                        whiteSpace="nowrap"
+                        _selected={{ 
+                          color: "white",
+                          bg: "secondary.500",
+                          boxShadow: "lg",
+                          transform: "translateY(-2px)"
+                        }}
+                        _hover={{
+                          bg: colorMode === "light" ? "gray.200" : "gray.600",
+                          transform: "translateY(-1px)"
+                        }}
+                        transition="all 0.2s"
+                      >
+                        <HStack spacing={2}>
+                          <Icon as={FiEye} boxSize={4} />
+                          <Text>Overview</Text>
+                        </HStack>
+                      </Tab>
+                      <Tab 
+                        fontWeight="semibold" 
+                        px={6}
+                        py={3}
+                        rounded="xl"
+                        color={colorMode === "light" ? "gray.600" : "gray.400"}
+                        flexShrink={0}
+                        whiteSpace="nowrap"
                         _selected={{ 
                           color: "white",
                           bg: "secondary.500",
@@ -879,6 +923,8 @@ function ApplicationDetail() {
                         py={3}
                         rounded="xl"
                         color={colorMode === "light" ? "gray.600" : "gray.400"}
+                        flexShrink={0}
+                        whiteSpace="nowrap"
                         _selected={{ 
                           color: "white",
                           bg: "secondary.500",
@@ -902,6 +948,8 @@ function ApplicationDetail() {
                         py={3}
                         rounded="xl"
                         color={colorMode === "light" ? "gray.600" : "gray.400"}
+                        flexShrink={0}
+                        whiteSpace="nowrap"
                         _selected={{ 
                           color: "white",
                           bg: "secondary.500",
@@ -925,6 +973,8 @@ function ApplicationDetail() {
                         py={3}
                         rounded="xl"
                         color={colorMode === "light" ? "gray.600" : "gray.400"}
+                        flexShrink={0}
+                        whiteSpace="nowrap"
                         _selected={{ 
                           color: "white",
                           bg: "secondary.500",
@@ -948,6 +998,8 @@ function ApplicationDetail() {
                         py={3}
                         rounded="xl"
                         color={colorMode === "light" ? "gray.600" : "gray.400"}
+                        flexShrink={0}
+                        whiteSpace="nowrap"
                         _selected={{ 
                           color: "white",
                           bg: "secondary.500",
@@ -991,6 +1043,267 @@ function ApplicationDetail() {
                     </TabList>
 
                     <TabPanels>
+                      {/* Overview Tab */}
+                      <TabPanel p={8}>
+                        <VStack spacing={6} align="stretch">
+                          {/* Basic Information Section */}
+                          <Box
+                            p={6}
+                            bg={colorMode === "light" ? "white" : "gray.800"}
+                            rounded="xl"
+                            border="1px solid"
+                            borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                          >
+                            <Heading size="md" mb={4} color="secondary.500">Informasi Dasar</Heading>
+                            <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={4}>
+                              <Box>
+                                <Text fontSize="sm" color="gray.500">Kode Aplikasi</Text>
+                                <Text fontWeight="semibold">{DataApplication?.appCode || "-"}</Text>
+                              </Box>
+                              <Box>
+                                <Text fontSize="sm" color="gray.500">Nama Aplikasi</Text>
+                                <Text fontWeight="semibold">{DataApplication?.appName || "-"}</Text>
+                              </Box>
+                              <Box>
+                                <Text fontSize="sm" color="gray.500">Nama Singkat</Text>
+                                <Text fontWeight="semibold">{DataApplication?.appShortName || "-"}</Text>
+                              </Box>
+                              <Box>
+                                <Text fontSize="sm" color="gray.500">Status</Text>
+                                <Badge colorScheme={DataApplication?.appsStatus === "ACTIVE" ? "green" : "red"}>
+                                  {DataApplication?.appsStatus || "-"}
+                                </Badge>
+                              </Box>
+                              <Box gridColumn={{ base: "1", md: "1 / -1" }}>
+                                <Text fontSize="sm" color="gray.500">Deskripsi</Text>
+                                <Text>{DataApplication?.appsDesc || "-"}</Text>
+                              </Box>
+                              <Box gridColumn={{ base: "1", md: "1 / -1" }}>
+                                <Text fontSize="sm" color="gray.500">Catatan</Text>
+                                <Text>{DataApplication?.note || "-"}</Text>
+                              </Box>
+                            </Grid>
+                          </Box>
+
+                          {/* Access & Target Section */}
+                          <Box
+                            p={6}
+                            bg={colorMode === "light" ? "white" : "gray.800"}
+                            rounded="xl"
+                            border="1px solid"
+                            borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                          >
+                            <Heading size="md" mb={4} color="secondary.500">Akses & Target</Heading>
+                            <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={4}>
+                              <Box>
+                                <Text fontSize="sm" color="gray.500">Target Pengguna</Text>
+                                <Text fontWeight="semibold">{DataApplication?.appTargetUsers || "-"}</Text>
+                              </Box>
+                              <Box>
+                                <Text fontSize="sm" color="gray.500">Media Akses</Text>
+                                <Text fontWeight="semibold">{DataApplication?.appAccessMedia || "-"}</Text>
+                              </Box>
+                              <Box>
+                                <Text fontSize="sm" color="gray.500">DNS Frontsite</Text>
+                                <Text>{DataApplication?.appAccessFrontsiteDns || "-"}</Text>
+                              </Box>
+                              <Box>
+                                <Text fontSize="sm" color="gray.500">IP Frontsite</Text>
+                                <Text>{DataApplication?.appAccessFrontsiteIp || "-"}</Text>
+                              </Box>
+                              <Box>
+                                <Text fontSize="sm" color="gray.500">DNS Backsite</Text>
+                                <Text>{DataApplication?.appAccessBacksiteDns || "-"}</Text>
+                              </Box>
+                              <Box>
+                                <Text fontSize="sm" color="gray.500">IP Backsite</Text>
+                                <Text>{DataApplication?.appAccessBacksiteIp || "-"}</Text>
+                              </Box>
+                            </Grid>
+                          </Box>
+
+                          {/* Application Details Section */}
+                          <Box
+                            p={6}
+                            bg={colorMode === "light" ? "white" : "gray.800"}
+                            rounded="xl"
+                            border="1px solid"
+                            borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                          >
+                            <Heading size="md" mb={4} color="secondary.500">Detail Aplikasi</Heading>
+                            <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={4}>
+                              <Box>
+                                <Text fontSize="sm" color="gray.500">Jenis Aplikasi</Text>
+                                <Wrap mt={1}>
+                                  {DataApplication?.appTypes?.split(",").map((type, idx) => (
+                                    <Tag key={idx} size="sm" colorScheme="blue">{type.trim()}</Tag>
+                                  )) || <Text>-</Text>}
+                                </Wrap>
+                              </Box>
+                              <Box>
+                                <Text fontSize="sm" color="gray.500">Keterkaitan</Text>
+                                <Text fontWeight="semibold">{DataApplication?.appRelatedness || "-"}</Text>
+                              </Box>
+                              <Box>
+                                <Text fontSize="sm" color="gray.500">Kategori</Text>
+                                <Text fontWeight="semibold">{DataApplication?.appTransactionals || "-"}</Text>
+                              </Box>
+                              <Box>
+                                <Text fontSize="sm" color="gray.500">Waktu Operasional</Text>
+                                <Text fontWeight="semibold">{DataApplication?.appOperational24hrs || "-"}</Text>
+                              </Box>
+                              <Box>
+                                <Text fontSize="sm" color="gray.500">Lokasi Server</Text>
+                                <Wrap mt={1}>
+                                  {DataApplication?.appEnvLocations?.split(",").map((loc, idx) => (
+                                    <Tag key={idx} size="sm" colorScheme="green">{loc.trim()}</Tag>
+                                  )) || <Text>-</Text>}
+                                </Wrap>
+                              </Box>
+                              <Box>
+                                <Text fontSize="sm" color="gray.500">Private Auth</Text>
+                                <Badge colorScheme={DataApplication?.appPrivateAuth === "Y" ? "green" : "red"}>
+                                  {DataApplication?.appPrivateAuth === "Y" ? "Ya" : "Tidak"}
+                                </Badge>
+                              </Box>
+                              <Box>
+                                <Text fontSize="sm" color="gray.500">High Availability</Text>
+                                <Badge colorScheme={DataApplication?.appHightAvailability === "Y" ? "green" : "red"}>
+                                  {DataApplication?.appHightAvailability === "Y" ? "Ya" : "Tidak"}
+                                </Badge>
+                              </Box>
+                              <Box>
+                                <Text fontSize="sm" color="gray.500">Integrasi Aplikasi Lain</Text>
+                                <Wrap mt={1}>
+                                  {DataApplication?.appIntegrationOthersApps?.split(",").map((app, idx) => (
+                                    <Tag key={idx} size="sm" colorScheme="purple">{app.trim()}</Tag>
+                                  )) || <Text>-</Text>}
+                                </Wrap>
+                              </Box>
+                            </Grid>
+                          </Box>
+
+                          {/* Owner & Management Section */}
+                          <Box
+                            p={6}
+                            bg={colorMode === "light" ? "white" : "gray.800"}
+                            rounded="xl"
+                            border="1px solid"
+                            borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                          >
+                            <Heading size="md" mb={4} color="secondary.500">Owner & Management</Heading>
+                            <VStack spacing={4} align="stretch">
+                              <Box>
+                                <Text fontSize="sm" fontWeight="bold" mb={2}>Application Owner</Text>
+                                <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={3}>
+                                  <Box>
+                                    <Text fontSize="sm" color="gray.500">Divisi</Text>
+                                    <Text>{DataApplication?.appOwnerDivisionName || "-"}</Text>
+                                  </Box>
+                                  <Box>
+                                    <Text fontSize="sm" color="gray.500">Grup</Text>
+                                    <Text>{DataApplication?.appOwnerGroupName || "-"}</Text>
+                                  </Box>
+                                  <Box>
+                                    <Text fontSize="sm" color="gray.500">PIC</Text>
+                                    <Text>{DataApplication?.appOwnerPicName || DataApplication?.appOwnerPicUserId || "-"}</Text>
+                                  </Box>
+                                </Grid>
+                              </Box>
+                              <Divider />
+                              <Box>
+                                <Text fontSize="sm" fontWeight="bold" mb={2}>Managed By</Text>
+                                <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={3}>
+                                  <Box>
+                                    <Text fontSize="sm" color="gray.500">Divisi</Text>
+                                    <Text>{DataApplication?.appManageByDivisionName || "-"}</Text>
+                                  </Box>
+                                  <Box>
+                                    <Text fontSize="sm" color="gray.500">Grup</Text>
+                                    <Text>{DataApplication?.appManageByGroupName || "-"}</Text>
+                                  </Box>
+                                  <Box>
+                                    <Text fontSize="sm" color="gray.500">PIC</Text>
+                                    <Text>{DataApplication?.appManagePicName || DataApplication?.appManagePicUserId || "-"}</Text>
+                                  </Box>
+                                </Grid>
+                              </Box>
+                              <Divider />
+                              <Box>
+                                <Text fontSize="sm" fontWeight="bold" mb={2}>Business Owner</Text>
+                                <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={3}>
+                                  <Box>
+                                    <Text fontSize="sm" color="gray.500">Divisi</Text>
+                                    <Text>{DataApplication?.appBusinessOwnerDivisionName || "-"}</Text>
+                                  </Box>
+                                  <Box>
+                                    <Text fontSize="sm" color="gray.500">Grup</Text>
+                                    <Text>{DataApplication?.appBusinessOwnerGroupName || "-"}</Text>
+                                  </Box>
+                                  <Box>
+                                    <Text fontSize="sm" color="gray.500">PIC</Text>
+                                    <Text>{DataApplication?.appBusinessOwnerPicName || DataApplication?.appBusinessOwnerPicUserId || "-"}</Text>
+                                  </Box>
+                                </Grid>
+                              </Box>
+                            </VStack>
+                          </Box>
+
+                          {/* Features & Technology Section */}
+                          <Box
+                            p={6}
+                            bg={colorMode === "light" ? "white" : "gray.800"}
+                            rounded="xl"
+                            border="1px solid"
+                            borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                          >
+                            <Heading size="md" mb={4} color="secondary.500">Fitur & Teknologi</Heading>
+                            <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={4}>
+                              <Box>
+                                <Text fontSize="sm" color="gray.500">Aplikasi Kritikal</Text>
+                                <Badge colorScheme={DataApplication?.appIsCritical === "Y" ? "red" : "gray"}>
+                                  {DataApplication?.appIsCritical === "Y" ? "Ya" : "Tidak"}
+                                </Badge>
+                              </Box>
+                              {DataApplication?.appIsCritical === "Y" && (
+                                <Box>
+                                  <Text fontSize="sm" color="gray.500">Level Kritikal</Text>
+                                  <Text fontWeight="semibold">{DataApplication?.appCriticalLevel || "-"}</Text>
+                                </Box>
+                              )}
+                              <Box>
+                                <Text fontSize="sm" color="gray.500">Status Project</Text>
+                                <Text fontWeight="semibold">{DataApplication?.appStatusProject || "-"}</Text>
+                              </Box>
+                              <Box>
+                                <Text fontSize="sm" color="gray.500">Tahun Inisiasi</Text>
+                                <Text fontWeight="semibold">{DataApplication?.appInitaiteYear || "-"}</Text>
+                              </Box>
+                              <Box>
+                                <Text fontSize="sm" color="gray.500">Metode Pengembangan</Text>
+                                <Text fontWeight="semibold">{DataApplication?.appDevelopmentMethod || "-"}</Text>
+                              </Box>
+                              <Box gridColumn={{ base: "1", md: "1 / -1" }}>
+                                <Text fontSize="sm" color="gray.500">Bahasa Pemrograman</Text>
+                                <Wrap mt={1}>
+                                  {DataApplication?.appProgrammingLanguages?.split(",").map((lang, idx) => (
+                                    <Tag key={idx} size="sm" colorScheme="secondary">{lang.trim()}</Tag>
+                                  )) || <Text>-</Text>}
+                                </Wrap>
+                              </Box>
+                              <Box gridColumn={{ base: "1", md: "1 / -1" }}>
+                                <Text fontSize="sm" color="gray.500">Framework</Text>
+                                <Wrap mt={1}>
+                                  {DataApplication?.appProgrammingFrameworks?.split(",").map((fw, idx) => (
+                                    <Tag key={idx} size="sm" colorScheme="purple">{fw.trim()}</Tag>
+                                  )) || <Text>-</Text>}
+                                </Wrap>
+                              </Box>
+                            </Grid>
+                          </Box>
+                        </VStack>
+                      </TabPanel>
+
                       {/* Main Information Tab */}
                       <TabPanel p={8}>
                         <VStack spacing={8} align="stretch">
