@@ -1131,106 +1131,109 @@ function RequirementDetailView() {
                           />
                         </InputGroupPanel>
 
-                        <InputGroupPanel headerTitle={"Update Status"}>
-                          <FormControl>
-                            <InputLayoutFull>
-                              <FormLabel h={"full"} mt={2}>
-                                Status Action
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <RadioGroup
-                                  onChange={setStatusRequirement}
-                                  value={StatusRequirement || ""}
-                                >
-                                  <Wrap spacing={5}>
-                                    <Box
-                                      bg={"green.200"}
-                                      _hover={{
-                                        bg: "green.400",
-                                      }}
-                                      py={2}
-                                      px={4}
-                                      rounded={"md"}
-                                      color={"green.800"}
-                                      fontWeight={600}
-                                    >
-                                      <Radio value={REQ_STATUS_APPROVED}>
-                                        {REQ_STATUS_APPROVED}
-                                      </Radio>
-                                    </Box>
-                                    <Box
-                                      bg={"teal.200"}
-                                      _hover={{
-                                        bg: "teal.400",
-                                      }}
-                                      py={2}
-                                      px={4}
-                                      rounded={"md"}
-                                      color={"teal.800"}
-                                      fontWeight={600}
-                                    >
-                                      <Radio
-                                        value={REQ_STATUS_TEMPORARY_APPROVED}
+                        {/* {steps[activeStep]?.description !== "Lampiran && Approval" && (
+                          <InputGroupPanel headerTitle={"Update Status"}>
+                            <FormControl>
+                              <InputLayoutFull>
+                                <FormLabel h={"full"} mt={2}>
+                                  Status Action
+                                </FormLabel>
+                                <Stack spacing={0} h={"full"}>
+                                  <RadioGroup
+                                    onChange={setStatusRequirement}
+                                    value={StatusRequirement || ""}
+                                  >
+                                    <Wrap spacing={5}>
+                                      <Box
+                                        bg={"green.200"}
+                                        _hover={{
+                                          bg: "green.400",
+                                        }}
+                                        py={2}
+                                        px={4}
+                                        rounded={"md"}
+                                        color={"green.800"}
+                                        fontWeight={600}
                                       >
-                                        {REQ_STATUS_TEMPORARY_APPROVED}
-                                      </Radio>
-                                    </Box>
+                                        <Radio value={REQ_STATUS_APPROVED}>
+                                          {REQ_STATUS_APPROVED}
+                                        </Radio>
+                                      </Box>
+                                      <Box
+                                        bg={"teal.200"}
+                                        _hover={{
+                                          bg: "teal.400",
+                                        }}
+                                        py={2}
+                                        px={4}
+                                        rounded={"md"}
+                                        color={"teal.800"}
+                                        fontWeight={600}
+                                      >
+                                        <Radio
+                                          value={REQ_STATUS_TEMPORARY_APPROVED}
+                                        >
+                                          {REQ_STATUS_TEMPORARY_APPROVED}
+                                        </Radio>
+                                      </Box>
 
-                                    <Box
-                                      bg={"yellow.200"}
-                                      _hover={{
-                                        bg: "yellow.400",
-                                      }}
-                                      py={2}
-                                      px={4}
-                                      rounded={"md"}
-                                      color={"yellow.800"}
-                                      fontWeight={600}
-                                    >
-                                      <Radio value={REQ_STATUS_ON_HOLD}>
-                                        {REQ_STATUS_ON_HOLD}
-                                      </Radio>
-                                    </Box>
-                                    <Box
-                                      bg={"red.200"}
-                                      _hover={{
-                                        bg: "red.400",
-                                      }}
-                                      py={2}
-                                      px={4}
-                                      rounded={"md"}
-                                      color={"red.800"}
-                                      fontWeight={600}
-                                    >
-                                      <Radio value={REQ_STATUS_CANCELED}>
-                                        {REQ_STATUS_CANCELED}
-                                      </Radio>
-                                    </Box>
-                                  </Wrap>
-                                </RadioGroup>
-                              </Stack>
-                            </InputLayoutFull>
-                          </FormControl>
+                                      <Box
+                                        bg={"yellow.200"}
+                                        _hover={{
+                                          bg: "yellow.400",
+                                        }}
+                                        py={2}
+                                        px={4}
+                                        rounded={"md"}
+                                        color={"yellow.800"}
+                                        fontWeight={600}
+                                      >
+                                        <Radio value={REQ_STATUS_ON_HOLD}>
+                                          {REQ_STATUS_ON_HOLD}
+                                        </Radio>
+                                      </Box>
+                                      <Box
+                                        bg={"red.200"}
+                                        _hover={{
+                                          bg: "red.400",
+                                        }}
+                                        py={2}
+                                        px={4}
+                                        rounded={"md"}
+                                        color={"red.800"}
+                                        fontWeight={600}
+                                      >
+                                        <Radio value={REQ_STATUS_CANCELED}>
+                                          {REQ_STATUS_CANCELED}
+                                        </Radio>
+                                      </Box>
+                                    </Wrap>
+                                  </RadioGroup>
+                                </Stack>
+                              </InputLayoutFull>
+                            </FormControl>
 
-                          <FormControl>
-                            <InputLayoutFull>
-                              <FormLabel h={"full"} mt={2}>
-                                Catatan
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
-                                <Textarea
-                                  id="reqNote"
-                                  name="reqNote"
-                                  // onChange={formik.handleChange}
-                                  // defaultValue={formik.values.projectDesc ?? ""}
-                                  placeholder={`Catatan (Opsional)`}
-                                  maxLength={300}
-                                // isDisabled={ActionLoading}
-                                />
-                              </Stack>
-                            </InputLayoutFull>
-                          </FormControl>
-                        </InputGroupPanel>
+                            <FormControl>
+                              <InputLayoutFull>
+                                <FormLabel h={"full"} mt={2}>
+                                  Catatan
+                                </FormLabel>
+                                <Stack spacing={0} h={"full"}>
+                                  <Textarea
+                                    id="reqNote"
+                                    name="reqNote"
+                                    // onChange={formik.handleChange}
+                                    // defaultValue={formik.values.projectDesc ?? ""}
+                                    placeholder={`Catatan (Opsional)`}
+                                    maxLength={300}
+                                  // isDisabled={ActionLoading}
+                                  />
+                                </Stack>
+                              </InputLayoutFull>
+                            </FormControl>
+
+                          </InputGroupPanel>
+                        )} */}
                       </Flex>
                     )}
 
