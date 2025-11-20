@@ -130,7 +130,7 @@ function MasterDataAplikasiPage() {
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
   const [ActionLoading, setActionLoading] = useState(false);
   const [selectedKategori, setSelectedKategori] = useState<string>("all");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
 
   // Pagination state
   const [totalPages, setTotalPageData] = useState<number>(0);
@@ -741,111 +741,120 @@ function MasterDataAplikasiPage() {
                               <Card
                                 key={app.id}
                                 w="full"
-                                h="320px"
-                                minH="320px"
-                                maxH="320px"
-                                bg={colorMode === "light" ? "white" : "gray.800"}
+                                h="240px"
+                                minH="240px"
+                                maxH="240px"
+                                bg={
+                                  colorMode === "light" ? "white" : "gray.800"
+                                }
                                 border="1px"
                                 borderColor={
-                                  colorMode === "light" ? "gray.200" : "gray.700"
+                                  colorMode === "light"
+                                    ? "gray.200"
+                                    : "gray.700"
                                 }
-                                rounded="2xl"
+                                rounded={radiusStyle}
                                 shadow="lg"
                                 transition="all 0.3s ease"
                                 _hover={{
                                   cursor: "pointer",
                                   shadow: "2xl",
                                   transform: "translateY(-4px)",
-                                  borderColor: colorMode === "light" ? "secondary.300" : "secondary.600",
+                                  borderColor:
+                                    colorMode === "light"
+                                      ? "secondary.300"
+                                      : "secondary.600",
                                 }}
                                 overflow="hidden"
                                 position="relative"
                                 display="flex"
                                 flexDirection="column"
                               >
-                                {/* Status Color Bar */}
-                                <Box
-                                  position="absolute"
-                                  top={0}
-                                  left={0}
-                                  right={0}
-                                  h="4px"
-                                  bgGradient={`linear(to-r, ${getStatusColor(app.appsStatus)}.400, ${getStatusColor(app.appsStatus)}.600)`}
-                                />
-
-                                {/* Header with App Icon */}
-                                <CardHeader
-                                  p={0}
-                                  position="relative"
-                                  bgGradient={"linear(to-br, secondary.700, secondary.400)"}
-                                  color="white"
-                                  h="140px"
+                                {/* Card Body */}
+                                <CardBody
+                                  p={2}
+                                  flex="1"
                                   display="flex"
-                                  alignItems="center"
-                                  justifyContent="center"
+                                  flexDirection="column"
                                 >
-                                  <VStack spacing={3} position="relative" zIndex={1}>
-                                    <Box
-                                      w={"70px"}
-                                      h={"70px"}
-                                      bg="whiteAlpha.200"
-                                      rounded="xl"
+                                  <VStack spacing={4} align="stretch" flex="1">
+                                    {/* Header with App Icon */}
+                                    <Flex
+                                      p={0}
+                                      position="relative"
+                                      bgGradient={
+                                        "linear(to-br, secondary.700, secondary.400)"
+                                      }
+                                      rounded={radiusStyle}
+                                      color="white"
+                                      h="140px"
                                       display="flex"
                                       alignItems="center"
                                       justifyContent="center"
-                                      fontSize="xl"
-                                      fontWeight="bold"
-                                      border="2px"
-                                      borderColor="whiteAlpha.300"
                                     >
-                                      {(app.appShortName || app.appName || "APP").length > 5 ? (app.appShortName || app.appName || "A").charAt(0).toUpperCase() : (app.appShortName || app.appName || "APP")}
-                                    </Box>
-                                    <VStack spacing={0} align="center">
-                                      <Text
-                                        fontSize="sm"
-                                        fontWeight="bold"
-                                        opacity="0.9"
-                                        textAlign="center"
-                                        noOfLines={1}
+                                      <VStack
+                                        spacing={3}
+                                        position="relative"
+                                        zIndex={1}
                                       >
-                                        {app.appName}
-                                      </Text>
-                                      <Text
-                                        fontSize="xs"
-                                        fontWeight="medium"
-                                        opacity="0.8"
-                                        textAlign="center"
-                                      >
-                                        #{app.appCode}
-                                      </Text>
-                                    </VStack>
-                                  </VStack>
-                                </CardHeader>
-
-                                {/* Card Body */}
-                                <CardBody p={6} flex="1" display="flex" flexDirection="column">
-                                  <VStack spacing={4} align="stretch" flex="1">
-                                    {/* App Description */}
-                                    <VStack spacing={2} align="start">
-                                      <Text
-                                        fontSize="sm"
-                                        color={
-                                          colorMode === "light"
-                                            ? "gray.600"
-                                            : "gray.400"
-                                        }
-                                        noOfLines={3}
-                                        lineHeight="1.4"
-                                        minH="60px"
-                                      >
-                                        {app.appsDesc || "No description available"}
-                                      </Text>
-                                    </VStack>
+                                        <Box
+                                          w={"70px"}
+                                          h={"70px"}
+                                          bg="whiteAlpha.200"
+                                          rounded="xl"
+                                          display="flex"
+                                          alignItems="center"
+                                          justifyContent="center"
+                                          fontSize="xl"
+                                          fontWeight="bold"
+                                          border="2px"
+                                          borderColor="whiteAlpha.300"
+                                        >
+                                          {(
+                                            app.appShortName ||
+                                            app.appName ||
+                                            "APP"
+                                          ).length > 5
+                                            ? (
+                                                app.appShortName ||
+                                                app.appName ||
+                                                "A"
+                                              )
+                                                .charAt(0)
+                                                .toUpperCase()
+                                            : app.appShortName ||
+                                              app.appName ||
+                                              "APP"}
+                                        </Box>
+                                        <VStack spacing={0} align="center">
+                                          <Text
+                                            fontSize="sm"
+                                            fontWeight="bold"
+                                            opacity="0.9"
+                                            textAlign="center"
+                                            noOfLines={1}
+                                          >
+                                            {app.appName}
+                                          </Text>
+                                          <Text
+                                            fontSize="xs"
+                                            fontWeight="medium"
+                                            opacity="0.8"
+                                            textAlign="center"
+                                          >
+                                            #{app.appCode}
+                                          </Text>
+                                        </VStack>
+                                      </VStack>
+                                    </Flex>
 
                                     {/* Status and Actions - Always at bottom */}
                                     <Box mt="auto">
                                       <VStack spacing={3}>
-                                        <HStack justify="space-between" w="full">
+                                        <HStack
+                                          justify="space-between"
+                                          w="full"
+                                        >
                                           <Text
                                             fontSize="xs"
                                             color="gray.500"
@@ -862,7 +871,7 @@ function MasterDataAplikasiPage() {
                                             fontWeight="bold"
                                           />
                                         </HStack>
-                                        
+
                                         <Button
                                           size="sm"
                                           colorScheme="secondary"
@@ -911,11 +920,20 @@ function MasterDataAplikasiPage() {
                                 rounded="xl"
                                 shadow="lg"
                                 border="1px"
-                                borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-                                bg={colorMode === "light" ? "white" : "gray.800"}
+                                borderColor={
+                                  colorMode === "light"
+                                    ? "gray.200"
+                                    : "gray.700"
+                                }
+                                bg={
+                                  colorMode === "light" ? "white" : "gray.800"
+                                }
                                 _hover={{
                                   shadow: "2xl",
-                                  borderColor: colorMode === "light" ? "secondary.300" : "secondary.600",
+                                  borderColor:
+                                    colorMode === "light"
+                                      ? "secondary.300"
+                                      : "secondary.600",
                                   transform: "translateY(-2px)",
                                 }}
                                 transition="all 0.3s ease"
@@ -929,7 +947,7 @@ function MasterDataAplikasiPage() {
                                   left={0}
                                   right={0}
                                   h="4px"
-                                  bgGradient={`linear(to-r, ${getStatusColor(app.appsStatus)}.400, ${getStatusColor(app.appsStatus)}.600)`}
+                                  bgGradient={`linear(to-r, secondary.400, secondary.600)`}
                                 />
 
                                 <CardBody p={6}>
@@ -957,7 +975,21 @@ function MasterDataAplikasiPage() {
                                         flexShrink={0}
                                         shadow="lg"
                                       >
-                                        {(app.appShortName || app.appName || "APP").length > 5 ? (app.appShortName || app.appName || "A").charAt(0).toUpperCase() : (app.appShortName || app.appName || "APP")}
+                                        {(
+                                          app.appShortName ||
+                                          app.appName ||
+                                          "APP"
+                                        ).length > 5
+                                          ? (
+                                              app.appShortName ||
+                                              app.appName ||
+                                              "A"
+                                            )
+                                              .charAt(0)
+                                              .toUpperCase()
+                                          : app.appShortName ||
+                                            app.appName ||
+                                            "APP"}
                                       </Box>
                                     </GridItem>
 
@@ -968,7 +1000,11 @@ function MasterDataAplikasiPage() {
                                           <HStack spacing={2} align="center">
                                             <Heading
                                               size="md"
-                                              color={colorMode === "light" ? "gray.800" : "white"}
+                                              color={
+                                                colorMode === "light"
+                                                  ? "gray.800"
+                                                  : "white"
+                                              }
                                               fontWeight="bold"
                                             >
                                               {app.appName}
@@ -983,18 +1019,26 @@ function MasterDataAplikasiPage() {
                                               textTransform="uppercase"
                                             />
                                           </HStack>
-                                          
+
                                           <Text
                                             fontSize="sm"
-                                            color={colorMode === "light" ? "gray.600" : "gray.400"}
+                                            color={
+                                              colorMode === "light"
+                                                ? "gray.600"
+                                                : "gray.400"
+                                            }
                                             fontWeight="medium"
                                           >
-                                            #{app.appCode} • Application System
+                                            #{app.appCode}
                                           </Text>
-                                          
+
                                           <Text
                                             fontSize="sm"
-                                            color={colorMode === "light" ? "gray.500" : "gray.500"}
+                                            color={
+                                              colorMode === "light"
+                                                ? "gray.500"
+                                                : "gray.500"
+                                            }
                                             noOfLines={2}
                                             lineHeight="1.4"
                                           >
@@ -1012,7 +1056,12 @@ function MasterDataAplikasiPage() {
                                             fontSize="xs"
                                             fontWeight="medium"
                                           >
-                                            <Icon as={HiOutlineDesktopComputer} w={3} h={3} mr={1} />
+                                            <Icon
+                                              as={HiOutlineDesktopComputer}
+                                              w={3}
+                                              h={3}
+                                              mr={1}
+                                            />
                                             System Application
                                           </Badge>
                                           <Badge
@@ -1024,7 +1073,12 @@ function MasterDataAplikasiPage() {
                                             fontSize="xs"
                                             fontWeight="medium"
                                           >
-                                            <Icon as={FiSettings} w={3} h={3} mr={1} />
+                                            <Icon
+                                              as={FiSettings}
+                                              w={3}
+                                              h={3}
+                                              mr={1}
+                                            />
                                             Configurable
                                           </Badge>
                                         </HStack>
@@ -1032,11 +1086,17 @@ function MasterDataAplikasiPage() {
                                     </GridItem>
 
                                     {/* App Type */}
-                                    <GridItem display={{ base: "none", lg: "block" }}>
+                                    <GridItem
+                                      display={{ base: "none", lg: "block" }}
+                                    >
                                       <VStack spacing={2} align="center">
                                         <Text
                                           fontSize="xs"
-                                          color={colorMode === "light" ? "gray.500" : "gray.400"}
+                                          color={
+                                            colorMode === "light"
+                                              ? "gray.500"
+                                              : "gray.400"
+                                          }
                                           fontWeight="medium"
                                           textTransform="uppercase"
                                           letterSpacing="wide"
@@ -1058,12 +1118,22 @@ function MasterDataAplikasiPage() {
                                     </GridItem>
 
                                     {/* Health Status */}
-                                    <GridItem display={{ base: "none", md: "block" }}>
-                                      <VStack spacing={3} align="center" minW="120px">
+                                    <GridItem
+                                      display={{ base: "none", md: "block" }}
+                                    >
+                                      <VStack
+                                        spacing={3}
+                                        align="center"
+                                        minW="120px"
+                                      >
                                         <VStack spacing={1} align="center">
                                           <Text
                                             fontSize="xs"
-                                            color={colorMode === "light" ? "gray.500" : "gray.400"}
+                                            color={
+                                              colorMode === "light"
+                                                ? "gray.500"
+                                                : "gray.400"
+                                            }
                                             fontWeight="medium"
                                             textTransform="uppercase"
                                             letterSpacing="wide"
@@ -1073,24 +1143,42 @@ function MasterDataAplikasiPage() {
                                           <Text
                                             fontSize="lg"
                                             fontWeight="bold"
-                                            color={app.appsStatus === "ACTIVE" ? "green.500" : "red.500"}
+                                            color={
+                                              app.appsStatus === "ACTIVE"
+                                                ? "green.500"
+                                                : "red.500"
+                                            }
                                           >
-                                            {app.appsStatus === "ACTIVE" ? "98%" : "0%"}
+                                            {app.appsStatus === "ACTIVE"
+                                              ? "98%"
+                                              : "0%"}
                                           </Text>
                                         </VStack>
                                         <Box w="80px" position="relative">
                                           <Box
                                             w="full"
                                             h="8px"
-                                            bg={colorMode === "light" ? "gray.100" : "gray.700"}
+                                            bg={
+                                              colorMode === "light"
+                                                ? "gray.100"
+                                                : "gray.700"
+                                            }
                                             rounded="full"
                                             overflow="hidden"
                                           >
                                             <Box
                                               h="full"
-                                              bgGradient={app.appsStatus === "ACTIVE" ? "linear(to-r, green.400, green.600)" : "linear(to-r, red.400, red.600)"}
+                                              bgGradient={
+                                                app.appsStatus === "ACTIVE"
+                                                  ? "linear(to-r, green.400, green.600)"
+                                                  : "linear(to-r, red.400, red.600)"
+                                              }
                                               rounded="full"
-                                              w={app.appsStatus === "ACTIVE" ? "98%" : "0%"}
+                                              w={
+                                                app.appsStatus === "ACTIVE"
+                                                  ? "98%"
+                                                  : "0%"
+                                              }
                                               transition="all 0.3s ease"
                                             />
                                           </Box>
@@ -1104,7 +1192,9 @@ function MasterDataAplikasiPage() {
                                         <Button
                                           size="sm"
                                           colorScheme="secondary"
-                                          leftIcon={<Icon as={FiSettings} boxSize={3} />}
+                                          leftIcon={
+                                            <Icon as={FiSettings} boxSize={3} />
+                                          }
                                           rounded="lg"
                                           _hover={{
                                             transform: "translateY(-1px)",
@@ -1115,44 +1205,40 @@ function MasterDataAplikasiPage() {
                                           px={4}
                                           bgGradient="linear(to-r, secondary.500, secondary.600)"
                                           _active={{
-                                            bgGradient: "linear(to-r, secondary.600, secondary.700)",
+                                            bgGradient:
+                                              "linear(to-r, secondary.600, secondary.700)",
                                           }}
                                           as={Link}
                                           href={`/master-data/Application/detail?id=${app.id}`}
                                         >
                                           Configure
                                         </Button>
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          colorScheme="secondary"
-                                          leftIcon={<Icon as={FiCode} boxSize={3} />}
-                                          rounded="lg"
-                                          _hover={{
-                                            transform: "translateY(-1px)",
-                                            shadow: "md",
-                                            bg: "secondary.50",
-                                          }}
-                                          transition="all 0.2s"
-                                          fontWeight="medium"
-                                          px={4}
-                                          as={Link}
-                                          href={`/master-data/Application/detail?id=${app.id}`}
-                                        >
-                                          Details
-                                        </Button>
                                       </VStack>
                                     </GridItem>
                                   </Grid>
 
                                   {/* Mobile Enhanced Layout */}
-                                  <Box display={{ base: "block", md: "none" }} mt={4} pt={4} borderTop="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"}>
+                                  <Box
+                                    display={{ base: "block", md: "none" }}
+                                    mt={4}
+                                    pt={4}
+                                    borderTop="1px"
+                                    borderColor={
+                                      colorMode === "light"
+                                        ? "gray.200"
+                                        : "gray.700"
+                                    }
+                                  >
                                     <Grid templateColumns="1fr 1fr" gap={4}>
                                       {/* Mobile Health */}
                                       <VStack spacing={2} align="start">
                                         <Text
                                           fontSize="xs"
-                                          color={colorMode === "light" ? "gray.500" : "gray.400"}
+                                          color={
+                                            colorMode === "light"
+                                              ? "gray.500"
+                                              : "gray.400"
+                                          }
                                           fontWeight="medium"
                                           textTransform="uppercase"
                                           letterSpacing="wide"
@@ -1163,23 +1249,41 @@ function MasterDataAplikasiPage() {
                                           <Text
                                             fontSize="md"
                                             fontWeight="bold"
-                                            color={app.appsStatus === "ACTIVE" ? "green.500" : "red.500"}
+                                            color={
+                                              app.appsStatus === "ACTIVE"
+                                                ? "green.500"
+                                                : "red.500"
+                                            }
                                           >
-                                            {app.appsStatus === "ACTIVE" ? "98%" : "0%"}
+                                            {app.appsStatus === "ACTIVE"
+                                              ? "98%"
+                                              : "0%"}
                                           </Text>
                                           <Box flex={1} maxW="60px">
                                             <Box
                                               w="full"
                                               h="6px"
-                                              bg={colorMode === "light" ? "gray.100" : "gray.700"}
+                                              bg={
+                                                colorMode === "light"
+                                                  ? "gray.100"
+                                                  : "gray.700"
+                                              }
                                               rounded="full"
                                               overflow="hidden"
                                             >
                                               <Box
                                                 h="full"
-                                                bgGradient={app.appsStatus === "ACTIVE" ? "linear(to-r, green.400, green.600)" : "linear(to-r, red.400, red.600)"}
+                                                bgGradient={
+                                                  app.appsStatus === "ACTIVE"
+                                                    ? "linear(to-r, green.400, green.600)"
+                                                    : "linear(to-r, red.400, red.600)"
+                                                }
                                                 rounded="full"
-                                                w={app.appsStatus === "ACTIVE" ? "98%" : "0%"}
+                                                w={
+                                                  app.appsStatus === "ACTIVE"
+                                                    ? "98%"
+                                                    : "0%"
+                                                }
                                               />
                                             </Box>
                                           </Box>
@@ -1190,7 +1294,11 @@ function MasterDataAplikasiPage() {
                                       <VStack spacing={2} align="start">
                                         <Text
                                           fontSize="xs"
-                                          color={colorMode === "light" ? "gray.500" : "gray.400"}
+                                          color={
+                                            colorMode === "light"
+                                              ? "gray.500"
+                                              : "gray.400"
+                                          }
                                           fontWeight="medium"
                                           textTransform="uppercase"
                                           letterSpacing="wide"
@@ -1212,11 +1320,17 @@ function MasterDataAplikasiPage() {
                                     </Grid>
 
                                     {/* Mobile Action Buttons */}
-                                    <HStack spacing={3} mt={4} justify="stretch">
+                                    <HStack
+                                      spacing={3}
+                                      mt={4}
+                                      justify="stretch"
+                                    >
                                       <Button
                                         size="sm"
                                         colorScheme="secondary"
-                                        leftIcon={<Icon as={FiSettings} boxSize={3} />}
+                                        leftIcon={
+                                          <Icon as={FiSettings} boxSize={3} />
+                                        }
                                         rounded="lg"
                                         flex={1}
                                         fontWeight="bold"
@@ -1230,7 +1344,9 @@ function MasterDataAplikasiPage() {
                                         size="sm"
                                         variant="outline"
                                         colorScheme="secondary"
-                                        leftIcon={<Icon as={FiCode} boxSize={3} />}
+                                        leftIcon={
+                                          <Icon as={FiCode} boxSize={3} />
+                                        }
                                         rounded="lg"
                                         flex={1}
                                         fontWeight="medium"
