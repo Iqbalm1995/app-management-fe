@@ -166,24 +166,41 @@ function MasterDataAplikasiPage() {
     if (!tokenData || !DataAuth) return;
 
     try {
-      const PayloadStats: PaggingListPayloadCustom = {
+      // Get total count
+      const PayloadTotal: PaggingListPayloadCustom = {
         search: "",
-        limit: 1000, // Large number to get all data for counting
+        limit: 1,
         page: 0,
         fieldOrder: ["createdAt"],
         orderDir: "desc",
         filterWhere: [],
       };
 
-      const requestData = await List(PayloadStats as any, tokenData);
+      // Get active count
+      const PayloadActive: PaggingListPayloadCustom = {
+        search: "",
+        limit: 1,
+        page: 0,
+        fieldOrder: ["createdAt"],
+        orderDir: "desc",
+        filterWhere: [
+          {
+            field: "appsStatus",
+            operator: "=",
+            value: "ACTIVE",
+          },
+        ],
+      };
+
+      const [totalResponse, activeResponse] = await Promise.all([
+        List(PayloadTotal as any, tokenData),
+        List(PayloadActive as any, tokenData),
+      ]);
       
-      if (requestData?.statusCode === RES_CODE_OK && requestData.data) {
-        const allApps = requestData.data as ApplicationMasterResponse[];
-        const activeApps = allApps.filter(app => app.appsStatus === "ACTIVE");
-        
+      if (totalResponse?.statusCode === RES_CODE_OK && activeResponse?.statusCode === RES_CODE_OK) {
         setStatsData({
-          total: allApps.length,
-          active: activeApps.length,
+          total: totalResponse.countTotal || 0,
+          active: activeResponse.countTotal || 0,
         });
       }
     } catch (error) {
