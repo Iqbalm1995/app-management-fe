@@ -541,27 +541,19 @@ function ReuirementsBRDPage() {
             </Flex>
             <Flex fontSize={"small"} as={Stack} spacing={0}>
               <Text>Ditugaskan Ke :</Text>
-<<<<<<< HEAD
-              {info.row.original.approvalDatas?.length > 0 ? (
-                info.row.original.approvalDatas.map((x, idx) => (
-                  <Text fontWeight={600} key={idx} fontSize={"smaller"}>
-=======
               {info.row.original.approvalDatas?.length ? (
                 info.row.original.approvalDatas.map((x, idx) => (
                   <Text fontWeight={600} key={idx} fontSize="smaller">
->>>>>>> dev
                     {idx + 1}. {x.approverUserFirstName}{" "}
                     {x.approverUserLastnameName}
                   </Text>
                 ))
               ) : (
-<<<<<<< HEAD
-                <Text fontSize={"smaller"} color="gray.500">Tidak ada penugasan</Text>
-=======
+
                 <Text fontWeight={600} fontSize="smaller" color="gray.500">
                   -
                 </Text>
->>>>>>> dev
+
               )}
             </Flex>
           </Flex>

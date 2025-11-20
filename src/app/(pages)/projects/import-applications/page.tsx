@@ -395,27 +395,6 @@ export default function ProjectApplicationImportPage() {
                     >
                       Download Template
                     </Button>
-                    <Button
-                      variant="outline"
-                      colorScheme="blue"
-                      leftIcon={<Icon as={FiUsers} />}
-                      onClick={handleExportUsers}
-                      w="full"
-                      rounded="lg"
-                    >
-                      Export Users List
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      colorScheme="purple"
-                      leftIcon={<Icon as={FiDatabase} />}
-                      onClick={handleExportOrganizations}
-                      w="full"
-                      rounded="lg"
-                    >
-                      Export Organizations
-                    </Button>
                   </VStack>
                 </CardBody>
               </Card>

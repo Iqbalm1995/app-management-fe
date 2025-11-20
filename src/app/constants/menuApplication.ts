@@ -313,6 +313,14 @@ export const LinkItems: LinkItemProps[] = [
         menuID: "1",
         children: [],
       },
+      // {
+      //   name: "Import Applications",
+      //   icon: RiApps2AiLine,
+      //   link: "/projects/import-applications",
+      //   role: ["admin"],
+      //   menuID: "1",
+      //   children: [],
+      // },
     ],
   },
 
