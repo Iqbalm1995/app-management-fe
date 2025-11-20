@@ -4494,103 +4494,98 @@ const Section4BRDView = ({
 
       formik.setFieldValue(
         "appTargetUsers",
-        data.requirementData?.appTargetUsers
+        data.appTargetUsers
       );
-      if (data.requirementData?.appAccessFrontsiteDns) {
+      if (data.appAccessFrontsiteDns) {
         setMediaAksesPublic(true);
       }
       formik.setFieldValue(
         "appAccessFrontsiteDns",
-        data.requirementData?.appAccessFrontsiteDns
+        data.appAccessFrontsiteDns
       );
       formik.setFieldValue(
         "appAccessFrontsiteIp",
-        data.requirementData?.appAccessFrontsiteIp
+        data.appAccessFrontsiteIp
       );
       formik.setFieldValue(
         "appAccessBacksiteDns",
-        data.requirementData?.appAccessBacksiteDns
+        data.appAccessBacksiteDns
       );
-      if (data.requirementData?.appAccessBacksiteIp) {
+      if (data.appAccessBacksiteIp) {
         setMediaAksesIntranet(true);
       }
       formik.setFieldValue(
         "appAccessBacksiteIp",
-        data.requirementData?.appAccessBacksiteIp
+        data.appAccessBacksiteIp
       );
 
       formik.setFieldValue(
         "backlogChange",
-        data.requirementData?.backlogChange
+        null
       );
       formik.setFieldValue(
         "appAccessMedia",
-        data.requirementData?.appAccessMedia
+        data.appAccessMedia
       );
-      formik.setFieldValue("appTypes", data.requirementData?.appTypes);
+      formik.setFieldValue("appTypes", data.appTypes);
       formik.setFieldValue(
         "appTypeCustom",
-        data.requirementData?.appTypeCustom
+        data.appTypeCustom
       );
       formik.setFieldValue(
         "appRelatedness",
-        data.requirementData?.appRelatedness
+        data.appRelatedness
       );
       formik.setFieldValue(
         "appRelatednessDesc",
-        data.requirementData?.appRelatednessDesc
+        data.appRelatednessDesc
       );
       formik.setFieldValue(
         "appTransactionals",
-        data.requirementData?.appTransactionals
+        data.appTransactionals
       );
       formik.setFieldValue(
         "appOperational24hrs",
-        data.requirementData?.appOperational24hrs
+        data.appOperational24hrs
       );
       formik.setFieldValue(
         "appOperationalDays",
-        data.requirementData?.appOperationalDays
+        data.appOperationalDays
       );
       formik.setFieldValue(
         "appOperationalHourOpen",
-        data.requirementData?.appOperationalHourOpen
+        data.appOperationalHourOpen
       );
       formik.setFieldValue(
         "appOperationalHourClosed",
-        data.requirementData?.appOperationalHourClosed
+        data.appOperationalHourClosed
       );
-      formik.setFieldValue(
-        "appLiveTargetDate",
-        data.requirementData?.appLiveTargetDate
-          ? stringToDateFormatedReverse(data.requirementData?.appLiveTargetDate)
-          : null
-      );
+      formik.setFieldValue("appLiveTargetDate", null);
 
       formik.setFieldValue(
         "appEnvLocations",
-        data.requirementData?.appEnvLocations
+        data.appEnvLocations
       );
       formik.setFieldValue(
         "appEnvLocationsOthers",
-        data.requirementData?.appEnvLocationsOthers
+        data.appEnvLocationsOthers
       );
       formik.setFieldValue(
         "appPrivateAuth",
-        data.requirementData?.appPrivateAuth
+        data.appPrivateAuth
       );
       formik.setFieldValue(
         "appHightAvailability",
-        data.requirementData?.appHightAvailability
+        data.appHightAvailability
       );
       formik.setFieldValue(
         "appIntegrationOthersApps",
-        data.requirementData?.appIntegrationOthersApps
+        data.appIntegrationOthersApps
       );
 
-      setSelectedAppsTypes(data.requirementData?.appTypes || "");
-      setOperationalDays(data.requirementData?.appOperationalDays || "");
-      setSelectedAppsEnvLoc(data.requirementData?.appEnvLocations || "");
+      setSelectedAppsTypes(data.appTypes || "");
+      setOperationalDays(data.appOperationalDays || "");
+      setSelectedAppsEnvLoc(data.appEnvLocations || "");
     }
   };
 
@@ -5023,6 +5018,7 @@ const Section4BRDView = ({
                     formik.setFieldValue("appTargetUsers", val)
                   }
                   value={formik.values.appTargetUsers ?? ""}
+                  isDisabled={ApplicationExistingChoosed !== null}
                 >
                   <Flex w={"full"} as={HStack}>
                     <Radio value={"EXTERNAL"}>EXTERNAL (NASABAH)</Radio>
@@ -5059,6 +5055,7 @@ const Section4BRDView = ({
                           setMediaAksesPublic(!MediaAksesPublic);
                           console.log(e);
                         }}
+                        isDisabled={ApplicationExistingChoosed !== null}
                       >
                         Internet (Publik)
                       </Checkbox>
@@ -5073,7 +5070,7 @@ const Section4BRDView = ({
                         placeholder={`https://`}
                         minLength={5}
                         maxLength={150}
-                        isDisabled={!MediaAksesPublic}
+                        isDisabled={!MediaAksesPublic || ApplicationExistingChoosed !== null}
                       />
                     </Flex>
                   </GridItem>
@@ -5093,6 +5090,7 @@ const Section4BRDView = ({
                           setMediaAksesIntranet(!MediaAksesIntranet);
                           console.log(e);
                         }}
+                        isDisabled={ApplicationExistingChoosed !== null}
                       >
                         Intranet (Untuk BackOffice Bank)
                       </Checkbox>
@@ -5105,7 +5103,7 @@ const Section4BRDView = ({
                         placeholder={`http://`}
                         minLength={5}
                         maxLength={150}
-                        isDisabled={!MediaAksesIntranet}
+                        isDisabled={!MediaAksesIntranet || ApplicationExistingChoosed !== null}
                       />
                     </Flex>
                   </GridItem>
@@ -5148,6 +5146,7 @@ const Section4BRDView = ({
                           key={idx}
                           isChecked={SelectedAppsTypes.includes(item)}
                           onChange={() => handleAppysTypesCheckboxChange(item)}
+                          isDisabled={ApplicationExistingChoosed !== null}
                         >
                           {item}
                         </Checkbox>
@@ -5163,6 +5162,7 @@ const Section4BRDView = ({
                       onChange={(val) => {
                         formik.setFieldValue("appTypeCustom", val);
                       }}
+                      isDisabled={ApplicationExistingChoosed !== null}
                     />
                   </Flex>
                 )}
@@ -5183,6 +5183,7 @@ const Section4BRDView = ({
                         formik.setFieldValue("appRelatedness", val)
                       }
                       value={formik.values.appRelatedness ?? ""}
+                      isDisabled={ApplicationExistingChoosed !== null}
                     >
                       <Flex w={"full"} as={HStack}>
                         <Radio value={APP_RELATED_OPTIONS[0]}>
@@ -5202,6 +5203,7 @@ const Section4BRDView = ({
                           onChange={(val) => {
                             formik.setFieldValue("appRelatednessDesc", val);
                           }}
+                          isDisabled={ApplicationExistingChoosed !== null}
                         />
                       </Flex>
                     )}
@@ -5226,6 +5228,7 @@ const Section4BRDView = ({
                     formik.setFieldValue("appTransactionals", val)
                   }
                   value={formik.values.appTransactionals ?? ""}
+                  isDisabled={ApplicationExistingChoosed !== null}
                 >
                   <Flex w={"full"} as={HStack}>
                     {APP_TRANSACTIONAL_OPTIONS.map((item, idx) => (
@@ -5263,6 +5266,7 @@ const Section4BRDView = ({
                     }
                   }}
                   value={formik.values.appOperational24hrs ?? ""}
+                  isDisabled={ApplicationExistingChoosed !== null}
                 >
                   <Flex w={"full"} as={HStack}>
                     {APP_OPERATIONAL_OPTIONS.map((item, idx) => (
@@ -5277,10 +5281,12 @@ const Section4BRDView = ({
                   APP_OPERATIONAL_OPTIONS[1] && (
                     <Flex as={Stack} w={"full"} py={2}>
                       <Text color={"secondary.500"}>Pilih Hari</Text>
-                      <WeekdaySelector
+                      <Box pointerEvents={ApplicationExistingChoosed !== null ? "none" : "auto"} opacity={ApplicationExistingChoosed !== null ? 0.6 : 1}>
+                        <WeekdaySelector
                         value={OperationalDays}
                         onChange={setOperationalDays}
                       />
+                      </Box>
                       <Grid templateColumns="repeat(2, 1fr)" gap={4} w={"full"}>
                         <GridItem
                           colSpan={{
@@ -5306,6 +5312,7 @@ const Section4BRDView = ({
                                   ) // ensure HH:mm
                                   : ""
                               }
+                              isDisabled={ApplicationExistingChoosed !== null}
                             />
                           </Stack>
                         </GridItem>
@@ -5335,6 +5342,7 @@ const Section4BRDView = ({
                                   ) // ensure HH:mm
                                   : ""
                               }
+                              isDisabled={ApplicationExistingChoosed !== null}
                             />
                           </Stack>
                         </GridItem>
@@ -5476,6 +5484,7 @@ const Section4BRDView = ({
                           key={idx}
                           isChecked={SelectedAppsEnvLoc.includes(item)}
                           onChange={() => handleAppysEnvLocCheckboxChange(item)}
+                          isDisabled={ApplicationExistingChoosed !== null}
                         >
                           {item}
                         </Checkbox>
@@ -5491,6 +5500,7 @@ const Section4BRDView = ({
                       onChange={(val) => {
                         formik.setFieldValue("appEnvLocationsOthers", val);
                       }}
+                      isDisabled={ApplicationExistingChoosed !== null}
                     />
                   </Flex>
                 )}
@@ -5540,6 +5550,7 @@ const Section4BRDView = ({
                     formik.setFieldValue("appHightAvailability", val)
                   }
                   value={formik.values.appHightAvailability ?? ""}
+                  isDisabled={ApplicationExistingChoosed !== null}
                 >
                   <Flex w={"full"} as={HStack}>
                     <Radio value={"Y"}>Ya</Radio>
@@ -5566,6 +5577,7 @@ const Section4BRDView = ({
                   onChange={(val) => {
                     formik.setFieldValue("appIntegrationOthersApps", val);
                   }}
+                  isDisabled={ApplicationExistingChoosed !== null}
                 />
                 <FormErrorMessage>
                   {formik.errors.appAccessMedia}
@@ -5908,41 +5920,41 @@ const Section4RFCView = ({
       formik.setFieldValue("appHightAvailability", "Y");
       formik.setFieldValue("appIntegrationOthersApps", "");
     } else {
-      if (data.requirementData == null) {
-        setApplicationExistingChoosed(null);
-        setBacklogAppsOption([]);
-        setBacklogChanges([]);
-        setSelectedAppsTypes("");
-        setOperationalDays("");
-        setSelectedAppsEnvLoc("");
-        setMediaAksesPublic(false);
-        setMediaAksesIntranet(false);
-        formik.setFieldValue("appInitialCode", null);
-        formik.setFieldValue("appInitialName", null);
-        showToast({
-          description: "Aplikasi belum mempunyai BRD",
-          statusToast: "warning",
-        });
-        return;
-      }
+      // if (data.requirementData == null) {
+      //   setApplicationExistingChoosed(null);
+      //   setBacklogAppsOption([]);
+      //   setBacklogChanges([]);
+      //   setSelectedAppsTypes("");
+      //   setOperationalDays("");
+      //   setSelectedAppsEnvLoc("");
+      //   setMediaAksesPublic(false);
+      //   setMediaAksesIntranet(false);
+      //   formik.setFieldValue("appInitialCode", null);
+      //   formik.setFieldValue("appInitialName", null);
+      //   showToast({
+      //     description: "Aplikasi belum mempunyai BRD",
+      //     statusToast: "warning",
+      //   });
+      //   return;
+      // }
 
-      if (data.countProjectAll == 0 || data.countProjectOnGoing > 0) {
-        setApplicationExistingChoosed(null);
-        setBacklogAppsOption([]);
-        setBacklogChanges([]);
-        setSelectedAppsTypes("");
-        setOperationalDays("");
-        setSelectedAppsEnvLoc("");
-        setMediaAksesPublic(false);
-        setMediaAksesIntranet(false);
-        formik.setFieldValue("appInitialCode", null);
-        formik.setFieldValue("appInitialName", null);
-        showToast({
-          description: `Aplikasi masih memiliki ${data.countProjectOnGoing} project berjalan`,
-          statusToast: "warning",
-        });
-        return;
-      }
+      // if (data.countProjectAll == 0 || data.countProjectOnGoing > 0) {
+      //   setApplicationExistingChoosed(null);
+      //   setBacklogAppsOption([]);
+      //   setBacklogChanges([]);
+      //   setSelectedAppsTypes("");
+      //   setOperationalDays("");
+      //   setSelectedAppsEnvLoc("");
+      //   setMediaAksesPublic(false);
+      //   setMediaAksesIntranet(false);
+      //   formik.setFieldValue("appInitialCode", null);
+      //   formik.setFieldValue("appInitialName", null);
+      //   showToast({
+      //     description: `Aplikasi masih memiliki ${data.countProjectOnGoing} project berjalan`,
+      //     statusToast: "warning",
+      //   });
+      //   return;
+      // }
 
       setApplicationExistingChoosed(data);
       formik.setFieldValue("appInitialCode", data.appShortName);
@@ -5950,97 +5962,92 @@ const Section4RFCView = ({
 
       formik.setFieldValue(
         "appTargetUsers",
-        data.requirementData.appTargetUsers
+        data.appTargetUsers
       );
-      if (data.requirementData.appAccessFrontsiteDns) {
+      if (data.appAccessFrontsiteDns) {
         setMediaAksesPublic(true);
       }
       formik.setFieldValue(
         "appAccessFrontsiteDns",
-        data.requirementData.appAccessFrontsiteDns
+        data.appAccessFrontsiteDns
       );
       formik.setFieldValue(
         "appAccessFrontsiteIp",
-        data.requirementData.appAccessFrontsiteIp
+        data.appAccessFrontsiteIp
       );
       formik.setFieldValue(
         "appAccessBacksiteDns",
-        data.requirementData.appAccessBacksiteDns
+        data.appAccessBacksiteDns
       );
-      if (data.requirementData.appAccessBacksiteIp) {
+      if (data.appAccessBacksiteIp) {
         setMediaAksesIntranet(true);
       }
       formik.setFieldValue(
         "appAccessBacksiteIp",
-        data.requirementData.appAccessBacksiteIp
+        data.appAccessBacksiteIp
       );
 
-      formik.setFieldValue("backlogChange", data.requirementData.backlogChange);
+      formik.setFieldValue("backlogChange", null);
       formik.setFieldValue(
         "appAccessMedia",
-        data.requirementData.appAccessMedia
+        data.appAccessMedia
       );
-      formik.setFieldValue("appTypes", data.requirementData.appTypes);
-      formik.setFieldValue("appTypeCustom", data.requirementData.appTypeCustom);
+      formik.setFieldValue("appTypes", data.appTypes);
+      formik.setFieldValue("appTypeCustom", data.appTypeCustom);
       formik.setFieldValue(
         "appRelatedness",
-        data.requirementData.appRelatedness
+        data.appRelatedness
       );
       formik.setFieldValue(
         "appRelatednessDesc",
-        data.requirementData.appRelatednessDesc
+        data.appRelatednessDesc
       );
       formik.setFieldValue(
         "appTransactionals",
-        data.requirementData.appTransactionals
+        data.appTransactionals
       );
       formik.setFieldValue(
         "appOperational24hrs",
-        data.requirementData.appOperational24hrs
+        data.appOperational24hrs
       );
       formik.setFieldValue(
         "appOperationalDays",
-        data.requirementData.appOperationalDays
+        data.appOperationalDays
       );
       formik.setFieldValue(
         "appOperationalHourOpen",
-        data.requirementData.appOperationalHourOpen
+        data.appOperationalHourOpen
       );
       formik.setFieldValue(
         "appOperationalHourClosed",
-        data.requirementData.appOperationalHourClosed
+        data.appOperationalHourClosed
       );
-      formik.setFieldValue(
-        "appLiveTargetDate",
-        data.requirementData.appLiveTargetDate
-          ? stringToDateFormatedReverse(data.requirementData.appLiveTargetDate)
-          : null
-      );
+      formik.setFieldValue("appLiveTargetDate", null);
 
       formik.setFieldValue(
         "appEnvLocations",
-        data.requirementData.appEnvLocations
+        data.appEnvLocations
       );
       formik.setFieldValue(
         "appEnvLocationsOthers",
-        data.requirementData.appEnvLocationsOthers
+        data.appEnvLocationsOthers
       );
       formik.setFieldValue(
         "appPrivateAuth",
-        data.requirementData.appPrivateAuth
+        data.appPrivateAuth
       );
       formik.setFieldValue(
         "appHightAvailability",
-        data.requirementData.appHightAvailability
+        data.appHightAvailability
       );
       formik.setFieldValue(
         "appIntegrationOthersApps",
-        data.requirementData.appIntegrationOthersApps
+        data.appIntegrationOthersApps
       );
 
-      setSelectedAppsTypes(data.requirementData.appTypes || "");
-      setOperationalDays(data.requirementData.appOperationalDays || "");
-      setSelectedAppsEnvLoc(data.requirementData.appEnvLocations || "");
+      setSelectedAppsTypes(data.appTypes || "");
+      setOperationalDays(data.appOperationalDays || "");
+      setSelectedAppsEnvLoc(data.appEnvLocations || "");
 
       const WhereParams: ListSearchByParam[] = [
         {
@@ -6713,6 +6720,7 @@ const Section4RFCView = ({
                     formik.setFieldValue("appTargetUsers", val)
                   }
                   value={formik.values.appTargetUsers ?? ""}
+                  isDisabled={ApplicationExistingChoosed !== null}
                 >
                   <Flex w={"full"} as={HStack}>
                     <Radio value={"EXTERNAL"}>EXTERNAL (NASABAH)</Radio>
@@ -6749,6 +6757,7 @@ const Section4RFCView = ({
                           setMediaAksesPublic(!MediaAksesPublic);
                           console.log(e);
                         }}
+                        isDisabled={ApplicationExistingChoosed !== null}
                       >
                         Internet (Publik)
                       </Checkbox>
@@ -6763,7 +6772,7 @@ const Section4RFCView = ({
                         placeholder={`https://`}
                         minLength={5}
                         maxLength={150}
-                        isDisabled={!MediaAksesPublic}
+                        isDisabled={!MediaAksesPublic || ApplicationExistingChoosed !== null}
                       />
                     </Flex>
                   </GridItem>
@@ -6783,6 +6792,7 @@ const Section4RFCView = ({
                           setMediaAksesIntranet(!MediaAksesIntranet);
                           console.log(e);
                         }}
+                        isDisabled={ApplicationExistingChoosed !== null}
                       >
                         Intranet (Untuk BackOffice Bank)
                       </Checkbox>
@@ -6795,7 +6805,7 @@ const Section4RFCView = ({
                         placeholder={`http://`}
                         minLength={5}
                         maxLength={150}
-                        isDisabled={!MediaAksesIntranet}
+                        isDisabled={!MediaAksesIntranet || ApplicationExistingChoosed !== null}
                       />
                     </Flex>
                   </GridItem>
@@ -6838,6 +6848,7 @@ const Section4RFCView = ({
                           key={idx}
                           isChecked={SelectedAppsTypes.includes(item)}
                           onChange={() => handleAppysTypesCheckboxChange(item)}
+                          isDisabled={ApplicationExistingChoosed !== null}
                         >
                           {item}
                         </Checkbox>
@@ -6853,6 +6864,7 @@ const Section4RFCView = ({
                       onChange={(val) => {
                         formik.setFieldValue("appTypeCustom", val);
                       }}
+                      isDisabled={ApplicationExistingChoosed !== null}
                     />
                   </Flex>
                 )}
@@ -6873,6 +6885,7 @@ const Section4RFCView = ({
                         formik.setFieldValue("appRelatedness", val)
                       }
                       value={formik.values.appRelatedness ?? ""}
+                      isDisabled={ApplicationExistingChoosed !== null}
                     >
                       <Flex w={"full"} as={HStack}>
                         <Radio value={APP_RELATED_OPTIONS[0]}>
@@ -6892,6 +6905,7 @@ const Section4RFCView = ({
                           onChange={(val) => {
                             formik.setFieldValue("appRelatednessDesc", val);
                           }}
+                          isDisabled={ApplicationExistingChoosed !== null}
                         />
                       </Flex>
                     )}
@@ -6916,6 +6930,7 @@ const Section4RFCView = ({
                     formik.setFieldValue("appTransactionals", val)
                   }
                   value={formik.values.appTransactionals ?? ""}
+                  isDisabled={ApplicationExistingChoosed !== null}
                 >
                   <Flex w={"full"} as={HStack}>
                     {APP_TRANSACTIONAL_OPTIONS.map((item, idx) => (
@@ -6953,6 +6968,7 @@ const Section4RFCView = ({
                     }
                   }}
                   value={formik.values.appOperational24hrs ?? ""}
+                  isDisabled={ApplicationExistingChoosed !== null}
                 >
                   <Flex w={"full"} as={HStack}>
                     {APP_OPERATIONAL_OPTIONS.map((item, idx) => (
@@ -6967,10 +6983,12 @@ const Section4RFCView = ({
                   APP_OPERATIONAL_OPTIONS[1] && (
                     <Flex as={Stack} w={"full"} py={2}>
                       <Text color={"secondary.500"}>Pilih Hari</Text>
-                      <WeekdaySelector
+                      <Box pointerEvents={ApplicationExistingChoosed !== null ? "none" : "auto"} opacity={ApplicationExistingChoosed !== null ? 0.6 : 1}>
+                        <WeekdaySelector
                         value={OperationalDays}
                         onChange={setOperationalDays}
                       />
+                      </Box>
                       <Grid templateColumns="repeat(2, 1fr)" gap={4} w={"full"}>
                         <GridItem
                           colSpan={{
@@ -6996,6 +7014,7 @@ const Section4RFCView = ({
                                   ) // ensure HH:mm
                                   : ""
                               }
+                              isDisabled={ApplicationExistingChoosed !== null}
                             />
                           </Stack>
                         </GridItem>
@@ -7025,6 +7044,7 @@ const Section4RFCView = ({
                                   ) // ensure HH:mm
                                   : ""
                               }
+                              isDisabled={ApplicationExistingChoosed !== null}
                             />
                           </Stack>
                         </GridItem>
@@ -7134,6 +7154,7 @@ const Section4RFCView = ({
                           key={idx}
                           isChecked={SelectedAppsEnvLoc.includes(item)}
                           onChange={() => handleAppysEnvLocCheckboxChange(item)}
+                          isDisabled={ApplicationExistingChoosed !== null}
                         >
                           {item}
                         </Checkbox>
@@ -7149,6 +7170,7 @@ const Section4RFCView = ({
                       onChange={(val) => {
                         formik.setFieldValue("appEnvLocationsOthers", val);
                       }}
+                      isDisabled={ApplicationExistingChoosed !== null}
                     />
                   </Flex>
                 )}
@@ -7198,6 +7220,7 @@ const Section4RFCView = ({
                     formik.setFieldValue("appHightAvailability", val)
                   }
                   value={formik.values.appHightAvailability ?? ""}
+                  isDisabled={ApplicationExistingChoosed !== null}
                 >
                   <Flex w={"full"} as={HStack}>
                     <Radio value={"Y"}>Ya</Radio>
@@ -7224,6 +7247,7 @@ const Section4RFCView = ({
                   onChange={(val) => {
                     formik.setFieldValue("appIntegrationOthersApps", val);
                   }}
+                  isDisabled={ApplicationExistingChoosed !== null}
                 />
                 <FormErrorMessage>
                   {formik.errors.appAccessMedia}
