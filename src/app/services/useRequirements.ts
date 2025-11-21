@@ -377,6 +377,14 @@ interface useRequirements {
     payload: RequirementsInsertPayload,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
+  RegisterDraft: (
+    payload: RequirementsInsertPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  RegisterUpdate: (
+    payload: RequirementsInsertPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
   GetReqParentAppsByAppsId: (
     appsId: string,
     token: string
@@ -564,6 +572,88 @@ const useRequirements = (): useRequirements => {
       ENDPOINT_PORT_BASIC
     );
     const PathEndpoint: string = `/v1/Requirement/insert`;
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const RegisterDraft = async (
+    payload: RequirementsInsertPayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Requirement/register-draft`;
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const RegisterUpdate = async (
+    payload: RequirementsInsertPayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Requirement/register-update`;
     try {
       const response = await axiosInstance.post<
         ApiGenericResponse<string | null>
@@ -1051,6 +1141,8 @@ const useRequirements = (): useRequirements => {
     ListUnregistProject,
     GetDetailById,
     InsertReq,
+    RegisterDraft,
+    RegisterUpdate,
     GetReqParentAppsByAppsId,
     GetReqParentAppsByAppsCode,
     GetReqParentAppsByAppsInitial,
