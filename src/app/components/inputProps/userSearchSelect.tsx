@@ -52,11 +52,10 @@ function UserSearchSelect({
           <Box>
             <Stack spacing={0}>
               <Text fontWeight={600}>
-                {user.nama} ({user.userId})
+                {user.nama} 
               </Text>
               <Text fontWeight={500} fontSize="small" color="gray.600">
-                {user.team?.teamName ?? "No Team"} |{" "}
-                {user.teamRole?.specName ?? "No Role"}
+                {user.userId} | {user.email}
               </Text>
             </Stack>
           </Box>
