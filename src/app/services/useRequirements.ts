@@ -182,7 +182,8 @@ export interface WorkProgramsPayload {
 }
 
 export interface ReqBacklogPayload {
-  backlogId?: string | null;
+  localId?: string; // For client-side operations only
+  backlogId?: string | null; // Database ID
   parentBacklogId?: string | null;
   backlogName: string;
   backlogDesc?: string | null;

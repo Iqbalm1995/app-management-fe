@@ -879,6 +879,7 @@ function RegisterRequirementFormPage({
       const backlogResponse = await ListBacklog(backlogPayload, tokenData);
       if (backlogResponse?.statusCode === RES_CODE_OK && backlogResponse.data) {
         const backlogs = backlogResponse.data.map((b: BacklogDataResponse, index: number) => ({
+          localId: b.id, // Use database ID as localId for loaded items
           backlogId: b.id,
           parentBacklogId: null,
           backlogName: b.backlogName,
@@ -886,6 +887,7 @@ function RegisterRequirementFormPage({
           note: null,
           posOrder: index + 1
         }));
+        console.log("Loaded backlogs:", backlogs);
         setDataBackLogs(backlogs);
       }
 
@@ -1027,6 +1029,7 @@ function RegisterRequirementFormPage({
 
   const UpdateDraftRequirement = async (data: RequirementsInsertPayload) => {
     console.log("UpdateDraftRequirement - ChoosedMemberProjects:", ChoosedMemberProjects);
+    console.log("UpdateDraftRequirement - DataBackLogs:", DataBackLogs);
     
     const picAssignUsersPayload = ChoosedMemberProjects.map(m => ({ 
       Id: m.id || null,
@@ -1045,7 +1048,7 @@ function RegisterRequirementFormPage({
         BacklogDesc: b.backlogDesc,
         Note: b.note,
         PosOrder: b.posOrder,
-        backlogId: b.backlogId,
+        backlogId: b.backlogId || null,
         parentBacklogId: b.parentBacklogId,
         backlogName: b.backlogName,
         backlogDesc: b.backlogDesc,
@@ -1088,6 +1091,8 @@ function RegisterRequirementFormPage({
       })),
     };
 
+    console.log("UpdateDraftRequirement - Payload backlogFeatures:", payload.backlogFeatures);
+
     const requestData = await RegisterUpdate(payload, tokenData);
     const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
 
@@ -1102,6 +1107,29 @@ function RegisterRequirementFormPage({
 
     // Small delay to ensure requirement is updated in database
     await delay(500);
+
+    // Reload backlogs to get backend-generated IDs for new items
+    const backlogPayload: PaggingListPayload = {
+      search: "",
+      limit: MAX_SIZE_TABLE,
+      page: 0,
+      filterWhere: [{ field: "reqId", operator: "=", value: requirementId! }],
+      fieldOrder: ["createdAt"],
+      orderDir: "asc",
+    };
+    const backlogResponse = await ListBacklog(backlogPayload, tokenData);
+    if (backlogResponse?.statusCode === RES_CODE_OK && backlogResponse.data) {
+      const backlogs = backlogResponse.data.map((b: BacklogDataResponse, index: number) => ({
+        localId: b.id,
+        backlogId: b.id,
+        parentBacklogId: null,
+        backlogName: b.backlogName,
+        backlogDesc: b.backlogDesc,
+        note: null,
+        posOrder: index + 1
+      }));
+      setDataBackLogs(backlogs);
+    }
 
     await uploadFilesForDraft(requirementId!);
 
@@ -1134,7 +1162,7 @@ function RegisterRequirementFormPage({
         BacklogDesc: b.backlogDesc,
         Note: b.note,
         PosOrder: b.posOrder,
-        backlogId: b.backlogId,
+        backlogId: b.backlogId || null,
         parentBacklogId: b.parentBacklogId,
         backlogName: b.backlogName,
         backlogDesc: b.backlogDesc,
@@ -4936,8 +4964,7 @@ const Section4BRDView = ({
                 colorScheme={"secondary"}
                 variant="solid"
                 onClick={() =>
-                  info.row.original.backlogId &&
-                  movePriority(info.row.original.backlogId, "up")
+                  movePriority((info.row.original.localId || info.row.original.backlogId)!, "up")
                 }
                 isDisabled={info.row.original.posOrder === 1}
               >
@@ -4950,8 +4977,7 @@ const Section4BRDView = ({
                 colorScheme={"secondary"}
                 variant="solid"
                 onClick={() =>
-                  info.row.original.backlogId &&
-                  movePriority(info.row.original.backlogId, "down")
+                  movePriority((info.row.original.localId || info.row.original.backlogId)!, "down")
                 }
                 isDisabled={info.row.original.posOrder === DataBackLogs.length}
               >
@@ -5046,8 +5072,8 @@ const Section4BRDView = ({
   };
 
   const addBacklog = (name: string, desc?: string) => {
-    const generateFakeId = () => {
-      return `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+    const generateLocalId = () => {
+      return `local-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
     };
 
     const isDuplicate = DataBackLogs.some(
@@ -5063,10 +5089,11 @@ const Section4BRDView = ({
     }
 
     const newBacklog: ReqBacklogPayload = {
-      backlogId: generateFakeId(),
+      localId: generateLocalId(), // For client-side operations
+      backlogId: null, // null = new backlog to be inserted
       backlogName: name,
       backlogDesc: desc || null,
-      posOrder: DataBackLogs.length + 1, // Auto-increment priority
+      posOrder: DataBackLogs.length + 1,
     };
 
     setDataBackLogs((prev) => [...prev, newBacklog]);
@@ -5170,7 +5197,8 @@ const Section4BRDView = ({
       "backlogFeatures",
       DataBackLogs.map((item) => ({
         ...item,
-        backlogId: null,
+        // Keep backlogId if it exists (for editing), otherwise set to null (for new)
+        backlogId: item.backlogId || null,
       }))
     );
   }, [DataBackLogs]);
