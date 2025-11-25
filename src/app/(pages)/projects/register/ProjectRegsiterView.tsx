@@ -1993,9 +1993,9 @@ function ProjectRegisterView({
         DataRequirement.senderDivisionId
       );
 
-      const mapDataWorkPrograms = mapWorkProgramData(
-        DataRequirement.workPrograms
-      );
+      const mapDataWorkPrograms = DataRequirement.workPrograms && DataRequirement.workPrograms.length > 0
+        ? mapWorkProgramData(DataRequirement.workPrograms)
+        : [];
       formik.setFieldValue("workPrograms", mapDataWorkPrograms);
 
       const CountInternalWorkPrograms = mapDataWorkPrograms.filter(
