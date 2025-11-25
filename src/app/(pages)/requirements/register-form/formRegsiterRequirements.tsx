@@ -50,7 +50,7 @@ import {
   SELECTED_OPTION_DIRECTORATE,
   SELECTED_OPTION_DIVISION,
 } from "@/app/constants/applicationConstants";
-import { REQ_STATUS_NEED_REVIEW } from "@/app/constants/masterStatusConstants";
+import { REQ_STATUS_NEED_REVIEW, REQ_STATUS_CAN_EDIT } from "@/app/constants/masterStatusConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import {
   calculateDurationInDays,
@@ -620,9 +620,10 @@ function RegisterRequirementFormPage({
   const loadUploadedFiles = async (reqId: string) => {
     const payload: PaggingListPayloadCustom = {
       search: "",
+      reqId: reqId,
       limit: 100,
       page: 0,
-      filterWhere: [{ field: "KeyId", operator: "=", value: reqId }],
+      filterWhere: [],
       fieldOrder: ["createdAt"],
       orderDir: "desc",
     };
@@ -659,6 +660,17 @@ function RegisterRequirementFormPage({
       const requestData = await GetDetailById(reqId, tokenData);
       if (requestData?.statusCode === RES_CODE_OK && requestData.data) {
         const reqData = requestData.data;
+
+        // Check if requirement status allows editing
+        if (reqData.reqStatus && !REQ_STATUS_CAN_EDIT.includes(reqData.reqStatus) && reqData.isHaveMemo !== "N") {
+          showToast({
+            description: `Cannot edit requirement with status: ${reqData.reqStatus}. Only ${REQ_STATUS_CAN_EDIT.join(", ")} can be edited.`,
+            statusToast: "warning",
+          });
+          const reqType = reqData.requirementType?.toLowerCase() || "brd";
+          router.push(`/requirements/${reqType}`);
+          return;
+        }
         
         // Populate formik with requirement data
         formik.setValues({
@@ -4694,18 +4706,19 @@ function RegisterRequirementFormPage({
                           </Text>
                         </Flex>
 
-                        {/* Table Preview */}
-                        <Flex w={"full"} p={4}>
-                          <Table variant="simple" size="sm" w="full">
-                            <Thead>
-                              <Tr>
-                                <Th>Preview</Th>
-                                <Th>File Name</Th>
-                                <Th isNumeric>Actions</Th>
-                              </Tr>
-                            </Thead>
-                            <Tbody>
-                              {files.map((file, index) => (
+                        {/* Table Preview - Only show when there are pending files */}
+                        {files.length > 0 && (
+                          <Flex w={"full"} p={4}>
+                            <Table variant="simple" size="sm" w="full">
+                              <Thead>
+                                <Tr>
+                                  <Th>Preview</Th>
+                                  <Th>File Name</Th>
+                                  <Th isNumeric>Actions</Th>
+                                </Tr>
+                              </Thead>
+                              <Tbody>
+                                {files.map((file, index) => (
                                 <Tr key={index}>
                                   <Td>
                                     {file.type.startsWith("image/") ? (
@@ -4750,6 +4763,7 @@ function RegisterRequirementFormPage({
                             </Tbody>
                           </Table>
                         </Flex>
+                        )}
 
                         {/* <Box
                           overflowY={"auto"}

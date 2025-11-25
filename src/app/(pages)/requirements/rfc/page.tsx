@@ -43,6 +43,7 @@ import {
   REQ_STATUS_IN_PROGRESS_REVIEW,
   REQ_STATUS_NEED_REVIEW,
   REQ_STATUS_ON_HOLD,
+  REQ_STATUS_CAN_EDIT,
   REQUIREMENT_STATUS_OPTIONS,
 } from "@/app/constants/masterStatusConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
@@ -127,6 +128,7 @@ import {
   useColorMode,
   useDisclosure,
   useSteps,
+  VStack,
   Wrap,
   WrapItem,
 } from "@chakra-ui/react";
@@ -144,7 +146,7 @@ import {
 import { Formik, FormikState, useFormik } from "formik";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
-import { redirect, useParams, usePathname } from "next/navigation";
+import { redirect, useParams, usePathname, useRouter } from "next/navigation";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   FiAlertTriangle,
@@ -152,6 +154,7 @@ import {
   FiArrowRight,
   FiChevronDown,
   FiChevronUp,
+  FiEdit,
   FiFilter,
   FiInfo,
   FiMinusCircle,
@@ -221,6 +224,7 @@ const brdFilter: ListSearchByParamProps = {
 
 function ReuirementsRFCPage() {
   // SetUp auth data on current page
+  const router = useRouter();
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -668,21 +672,36 @@ function ReuirementsRFCPage() {
       },
       {
         accessorFn: (row) => row.id,
-        id: "id",
-        cell: (info) => (
-          <Flex w={"full"} justifyContent={"center"}>
-            <Link
-              href={`/requirements/detail?reqId=${info.row.original.id}&type=RFC`}
-            >
-              <Button leftIcon={<FiInfo />} colorScheme="secondary" size="sm">
-                Detail
-              </Button>
-            </Link>
-          </Flex>
-        ),
+        id: "actions",
+        cell: (info) => {
+          const canEdit = (info.row.original.reqStatus && REQ_STATUS_CAN_EDIT.includes(info.row.original.reqStatus)) || info.row.original.isHaveMemo === "N";
+          return (
+            <Flex w={"full"} justifyContent={"center"}>
+              <VStack spacing={1} w="full">
+                <Button
+                  leftIcon={<FiEdit />}
+                  colorScheme="blue"
+                  size="xs"
+                  w="full"
+                  isDisabled={!canEdit}
+                  onClick={() => router.push(`/requirements/rfc/register?id=${info.row.original.id}`)}
+                >
+                  Edit
+                </Button>
+                <Link
+                  href={`/requirements/detail?reqId=${info.row.original.id}&type=RFC`}
+                  style={{ width: '100%' }}
+                >
+                  <Button leftIcon={<FiInfo />} colorScheme="secondary" size="xs" w="full">
+                    Detail
+                  </Button>
+                </Link>
+              </VStack>
+            </Flex>
+          );
+        },
         header: () => "",
         footer: (props) => props.column.id,
-        // Custom variable
         meta: {
           isFilterable: false,
         },
