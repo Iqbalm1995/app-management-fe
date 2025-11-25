@@ -324,9 +324,8 @@ function FormRegisterProjectView() {
 
     if (isErrorResponse || !requestData) {
       showToast({
-        description: `Upload File Failed : ${
-          requestData?.message || RES_GENERIC_ERROR_MSG
-        }`,
+        description: `Upload File Failed : ${requestData?.message || RES_GENERIC_ERROR_MSG
+          }`,
         statusToast: "error",
       });
       return false;
@@ -580,24 +579,24 @@ function FormRegisterProjectView() {
     const whereDataFilter: ListSearchByParam[] =
       divisionId.length > 0
         ? [
-            {
-              field: "parentId",
-              operator: "=",
-              value: divisionId || "",
-            },
-            {
-              field: "orgType",
-              operator: "=",
-              value: "GROUP",
-            },
-          ]
+          {
+            field: "parentId",
+            operator: "=",
+            value: divisionId || "",
+          },
+          {
+            field: "orgType",
+            operator: "=",
+            value: "GROUP",
+          },
+        ]
         : [
-            {
-              field: "orgType",
-              operator: "=",
-              value: "GROUP",
-            },
-          ];
+          {
+            field: "orgType",
+            operator: "=",
+            value: "GROUP",
+          },
+        ];
     const PayloadList: PaggingListPayload = {
       search: searchValue,
       limit: limit,
@@ -1662,7 +1661,7 @@ function FormRegisterProjectView() {
                               placeholder={`Nama Project`}
                               minLength={3}
                               maxLength={200}
-                              // isDisabled={ActionLoading}
+                            // isDisabled={ActionLoading}
                             />
                             <FormErrorMessage>
                               {formik.errors.projectName}
@@ -1719,7 +1718,7 @@ function FormRegisterProjectView() {
                               defaultValue={formik.values.projectDesc ?? ""}
                               placeholder={`Perlihal`}
                               maxLength={300}
-                              // isDisabled={ActionLoading}
+                            // isDisabled={ActionLoading}
                             />
                             <FormErrorMessage>
                               {formik.errors.projectDesc}
@@ -1776,7 +1775,7 @@ function FormRegisterProjectView() {
                               type="date"
                               onChange={formik.handleChange}
                               value={formik.values.projectRegisterDate}
-                              // isDisabled={ActionLoading}
+                            // isDisabled={ActionLoading}
                             />
                             <FormErrorMessage>
                               {formik.errors.projectRegisterDate}
@@ -1863,7 +1862,7 @@ function FormRegisterProjectView() {
                               defaultValue={formik.values.note ?? ""}
                               placeholder={`Perlihal`}
                               maxLength={300}
-                              // isDisabled={ActionLoading}
+                            // isDisabled={ActionLoading}
                             />
                             <FormErrorMessage>
                               {formik.errors.note}
@@ -2438,10 +2437,10 @@ function FormRegisterProjectView() {
                                         <VStack
                                           align="start"
                                           spacing={1}
-                                          // px={2}
+                                        // px={2}
                                         >
                                           {DataWorkflowPresets.map((preset) => (
-                                            <Flex
+                                            <Flex key={preset.id}
                                               as={HStack}
                                               w={"full"}
                                               justifyContent={"space-between"}
@@ -2469,17 +2468,17 @@ function FormRegisterProjectView() {
                                                 <Text
                                                   fontWeight={
                                                     selectedPreset?.id ===
-                                                    preset.id
+                                                      preset.id
                                                       ? 600
                                                       : 500
                                                   }
                                                   color={
                                                     selectedPreset?.id ===
-                                                    preset.id
+                                                      preset.id
                                                       ? "gray.900"
                                                       : colorMode == "light"
-                                                      ? "gray.900"
-                                                      : "white"
+                                                        ? "gray.900"
+                                                        : "white"
                                                   }
                                                 >
                                                   {preset.wfPresetName}
@@ -2494,7 +2493,7 @@ function FormRegisterProjectView() {
                                                   variant={"solid"}
                                                   colorScheme={
                                                     selectedPreset?.id ===
-                                                    preset.id
+                                                      preset.id
                                                       ? "red"
                                                       : "secondary"
                                                   }
@@ -2509,7 +2508,7 @@ function FormRegisterProjectView() {
                                                   }
                                                 >
                                                   {selectedPreset?.id ===
-                                                  preset.id ? (
+                                                    preset.id ? (
                                                     <FiMinus />
                                                   ) : (
                                                     <FiPlus />
