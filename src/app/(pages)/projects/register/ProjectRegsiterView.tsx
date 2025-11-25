@@ -2132,6 +2132,7 @@ function ProjectRegisterView({
         isOpen={ModalForm.isOpen}
         isCentered
         onClose={ModalForm.onClose}
+        scrollBehavior="inside"
       >
         <ModalOverlay bg="blackAlpha.300" />
         <ModalContent
@@ -2642,12 +2643,12 @@ function ProjectRegisterView({
                             </FormLabel>
                             <Stack spacing={0}>
                               <Grid
-                                templateColumns="repeat(3, 1fr)"
+                                templateColumns="repeat(2, 1fr)"
                                 gap={3}
                                 w={"full"}
                               >
                                 <GridItem
-                                  colSpan={{ base: 3, sm: 3, md: 1, lg: 1 }}
+                                  colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }}
                                   w={"full"}
                                 >
                                   <FormControl
@@ -2663,7 +2664,7 @@ function ProjectRegisterView({
                                       Direktorat
                                     </FormLabel>
                                     <Select
-                                      isDisabled={true}
+                                      isDisabled={false}
                                       id={`proOwnerDirectorateId`}
                                       options={OrganizationData.filter(
                                         (f) =>
@@ -2709,7 +2710,7 @@ function ProjectRegisterView({
                                   </FormControl>
                                 </GridItem>
                                 <GridItem
-                                  colSpan={{ base: 3, sm: 3, md: 1, lg: 1 }}
+                                  colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }}
                                   w={"full"}
                                 >
                                   <FormControl
@@ -2725,7 +2726,7 @@ function ProjectRegisterView({
                                       Divisi
                                     </FormLabel>
                                     <Select
-                                      isDisabled={true}
+                                      isDisabled={false}
                                       id={`proOwnerDivisionId`}
                                       options={OrganizationData.filter(
                                         (f) =>
@@ -2776,7 +2777,7 @@ function ProjectRegisterView({
                                   </FormControl>
                                 </GridItem>
                                 <GridItem
-                                  colSpan={{ base: 3, sm: 3, md: 1, lg: 1 }}
+                                  colSpan={{ base: 2, sm: 2, md: 2, lg: 2 }}
                                   w={"full"}
                                 >
                                   <FormControl
@@ -2788,7 +2789,7 @@ function ProjectRegisterView({
                                     }
                                     // isRequired
                                   >
-                                    <FormLabel h={"full"} mt={2}>
+                                    <FormLabel h={"full"}>
                                       Grup
                                     </FormLabel>
 
@@ -2844,6 +2845,7 @@ function ProjectRegisterView({
                         </FormControl>
 
                         <FormControl
+                          mt={3}
                           id={"projectCharasteristicCode"}
                           isInvalid={
                             formik.errors.projectCharasteristicCode
