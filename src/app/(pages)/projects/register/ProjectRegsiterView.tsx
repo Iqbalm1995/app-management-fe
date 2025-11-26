@@ -1069,17 +1069,63 @@ function ProjectRegisterView({
           size="lg"
           onChange={() => {
             const newSelected = new Set(selectedWorkflowProcurementsIds);
-            const toggleWorkflow = (
-              wf: WorkflowGroupResponse,
-              add: boolean
-            ) => {
-              if (add) newSelected.add(wf.id);
-              else newSelected.delete(wf.id);
+            const isCurrentlyChecked = newSelected.has(workflow.id);
+            
+            // Helper to get all child IDs recursively
+            const getAllChildIds = (wf: WorkflowGroupResponse): string[] => {
+              const ids: string[] = [];
               if (wf.workflowChild?.length > 0) {
-                wf.workflowChild.forEach((child) => toggleWorkflow(child, add));
+                wf.workflowChild.forEach((child) => {
+                  ids.push(child.id);
+                  ids.push(...getAllChildIds(child));
+                });
+              }
+              return ids;
+            };
+            
+            // Helper to find parent and update its state
+            const updateParentState = (allWorkflows: WorkflowGroupResponse[], targetId: string): void => {
+              const findParent = (workflows: WorkflowGroupResponse[], childId: string): WorkflowGroupResponse | null => {
+                for (const wf of workflows) {
+                  if (wf.workflowChild?.some(c => c.id === childId)) {
+                    return wf;
+                  }
+                  if (wf.workflowChild?.length > 0) {
+                    const found = findParent(wf.workflowChild, childId);
+                    if (found) return found;
+                  }
+                }
+                return null;
+              };
+              
+              const parent = findParent(allWorkflows, targetId);
+              if (parent && parent.workflowChild) {
+                const anyChildChecked = parent.workflowChild.some(child => newSelected.has(child.id));
+                
+                if (anyChildChecked) {
+                  newSelected.add(parent.id);
+                } else {
+                  newSelected.delete(parent.id);
+                }
+                
+                // Recursively update parent's parent
+                updateParentState(allWorkflows, parent.id);
               }
             };
-            toggleWorkflow(workflow, !newSelected.has(workflow.id));
+            
+            if (isCurrentlyChecked) {
+              // Unchecking: remove this and all children
+              newSelected.delete(workflow.id);
+              getAllChildIds(workflow).forEach(id => newSelected.delete(id));
+            } else {
+              // Checking: add this and all children
+              newSelected.add(workflow.id);
+              getAllChildIds(workflow).forEach(id => newSelected.add(id));
+            }
+            
+            // Update parent states
+            updateParentState(DataWorkflowGroupsProcurements, workflow.id);
+            
             setSelectedWorkflowProcurementsIds(newSelected);
             formik.setFieldValue(
               "projectPlanWorkflowBacklogsIds",
@@ -1234,6 +1280,52 @@ function ProjectRegisterView({
     level: number = 0
   ) => {
     if (level >= 3) return [];
+
+    const getAllChildIds = (wf: WorkflowGroupResponse): string[] => {
+      let ids = [wf.id];
+      if (wf.workflowChild?.length > 0) {
+        wf.workflowChild.forEach((child) => {
+          ids = ids.concat(getAllChildIds(child));
+        });
+      }
+      return ids;
+    };
+
+    const findParent = (
+      targetId: string,
+      workflows: WorkflowGroupResponse[]
+    ): WorkflowGroupResponse | null => {
+      for (const wf of workflows) {
+        if (wf.workflowChild?.some((child) => child.id === targetId)) {
+          return wf;
+        }
+        if (wf.workflowChild?.length > 0) {
+          const found = findParent(targetId, wf.workflowChild);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    const updateParentState = (
+      childId: string,
+      newSelected: Set<string>,
+      allWorkflows: WorkflowGroupResponse[]
+    ) => {
+      const parent = findParent(childId, allWorkflows);
+      if (parent) {
+        const hasAnyChildSelected = parent.workflowChild?.some((child) =>
+          newSelected.has(child.id)
+        );
+        if (hasAnyChildSelected) {
+          newSelected.add(parent.id);
+        } else {
+          newSelected.delete(parent.id);
+        }
+        updateParentState(parent.id, newSelected, allWorkflows);
+      }
+    };
+
     return workflows.map((workflow) => (
       <Box key={workflow.id} w="full" ml={level * 4}>
         <Checkbox
@@ -1242,17 +1334,18 @@ function ProjectRegisterView({
           size="lg"
           onChange={() => {
             const newSelected = new Set(selectedWorkflowIds);
-            const toggleWorkflow = (
-              wf: WorkflowGroupResponse,
-              add: boolean
-            ) => {
-              if (add) newSelected.add(wf.id);
-              else newSelected.delete(wf.id);
-              if (wf.workflowChild?.length > 0) {
-                wf.workflowChild.forEach((child) => toggleWorkflow(child, add));
-              }
-            };
-            toggleWorkflow(workflow, !newSelected.has(workflow.id));
+            const isCurrentlyChecked = newSelected.has(workflow.id);
+
+            if (isCurrentlyChecked) {
+              const allIds = getAllChildIds(workflow);
+              allIds.forEach((id) => newSelected.delete(id));
+              updateParentState(workflow.id, newSelected, DataWorkflowGroups);
+            } else {
+              const allIds = getAllChildIds(workflow);
+              allIds.forEach((id) => newSelected.add(id));
+              updateParentState(workflow.id, newSelected, DataWorkflowGroups);
+            }
+
             setSelectedWorkflowIds(newSelected);
             formik.setFieldValue(
               "projectPlanWorkflowIds",
@@ -1275,7 +1368,6 @@ function ProjectRegisterView({
       </Box>
     ));
   };
-
   const handleSelectPreset = async (presetId: string) => {
     try {
       // If clicking the currently selected preset, clear selection
@@ -2663,8 +2755,7 @@ function ProjectRegisterView({
                                     <FormLabel h={"full"} mt={2}>
                                       Direktorat
                                     </FormLabel>
-                                    <Select
-                                      isDisabled={false}
+                                      <Select
                                       id={`proOwnerDirectorateId`}
                                       options={OrganizationData.filter(
                                         (f) =>
@@ -2675,6 +2766,7 @@ function ProjectRegisterView({
                                         value: d.id,
                                       }))}
                                       isSearchable={true}
+                                      isDisabled={true}
                                       onChange={(e) => {
                                         if (e) {
                                           const selected = {
