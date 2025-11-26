@@ -823,11 +823,12 @@ function ProjectRegisterView({
 
             // Generate project number when we have the count
             if (
-              formik.values.proOwnerDivisionId &&
+              (formik.values.proOwnerDivisionId || formik.values.proManageByDivisionId) &&
               OrganizationData.length > 0
             ) {
+              const divisionId = formik.values.proManageByDivisionId || formik.values.proOwnerDivisionId;
               const division = OrganizationData.find(
-                (org) => org.id === formik.values.proManageByDivisionId
+                (org) => org.id === divisionId
               );
               if (division) {
                 const externalCount = formik.values.workPrograms.filter(
@@ -860,6 +861,7 @@ function ProjectRegisterView({
     getProjectCount();
   }, [
     tokenData,
+    formik.values.proOwnerDivisionId,
     formik.values.proManageByDivisionId,
     formik.values.workPrograms,
     formik.values.projectAcquisitionCode,
