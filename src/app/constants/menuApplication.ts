@@ -127,6 +127,15 @@ export const LinkItems: LinkItemProps[] = [
         isPro: false,
         children: [],
       },
+      {
+        name: "Development",
+        icon: MdOutlineCode,
+        link: "/workspace/development",
+        role: ["admin"],
+        menuID: "1",
+        isPro: false,
+        children: [],
+      },
     ],
   },
   // {
