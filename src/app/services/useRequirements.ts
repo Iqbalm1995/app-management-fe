@@ -279,6 +279,7 @@ export interface BacklogDataResponse {
   developmentStatus: string;
   progressionPercentage: number;
   reffId: string | null;
+  projectId: string | null;
   note: string | null;
   version: string;
   isLive: string;
