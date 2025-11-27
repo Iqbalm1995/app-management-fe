@@ -250,7 +250,7 @@ interface ProjectRegisterViewProps {
   projectTypeRegister: string;
 }
 
-function ProjectRegisterView({
+export default function ProjectRegisterView({
   projectTypeRegister,
 }: ProjectRegisterViewProps) {
   const showToast = useToastHelper();
@@ -2052,6 +2052,25 @@ function ProjectRegisterView({
 
   // end open modal memo
 
+  const mapWorkProgramData = (
+    dataResponse: RequirementWorkProgramDataResponse[]
+  ) => {
+    // map with WorkProgramsPayload
+    return dataResponse.map((item) => ({
+      directorateId: item.directorateId || "",
+      divisionId: item.divisionId,
+      groupId: item.groupId,
+      workProgramSource: item.workProgramSource,
+      workProgramCode: item.workProgramCode,
+      workProgramName: item.workProgramName,
+      workProgramAccName: item.workProgramAccName,
+      workProgramAccNumber: item.workProgramAccNumber,
+      workProgramAccCc: item.workProgramAccCc,
+      workProgramBudget: item.workProgramBudget,
+      workProgramReal: item.workProgramReal,
+    }));
+  };
+
   // load reff from data requirements
   useEffect(() => {
     // projectTypeRegister;
@@ -2169,26 +2188,7 @@ function ProjectRegisterView({
     }
   }, [DataAuth, DataRequirement, IsHaveMemo]);
 
-  // end load reff from data requirements
-
-  const mapWorkProgramData = (
-    dataResponse: RequirementWorkProgramDataResponse[]
-  ) => {
-    // map with WorkProgramsPayload
-    return dataResponse.map((item) => ({
-      directorateId: item.directorateId || "",
-      divisionId: item.divisionId,
-      groupId: item.groupId,
-      workProgramSource: item.workProgramSource,
-      workProgramCode: item.workProgramCode,
-      workProgramName: item.workProgramName,
-      workProgramAccName: item.workProgramAccName,
-      workProgramAccNumber: item.workProgramAccNumber,
-      workProgramAccCc: item.workProgramAccCc,
-      workProgramBudget: item.workProgramBudget,
-      workProgramReal: item.workProgramReal,
-    }));
-  };
+  // end load reff from data requirements 
 
   // reset filled data from req
   const handleResetReffFromRequirementData = () => {
@@ -2606,30 +2606,28 @@ function ProjectRegisterView({
                         </FormControl>
                       </InputGroupPanel>
 
-                      <InputGroupPanel
-                        headerTitle={
-                          <Flex justifyContent="space-between" alignItems="center" w="full">
-                            <Text>Informasi Umum</Text>
-                            <HStack spacing={2}>
-                              <Text fontSize="sm" color="gray.600">Manual</Text>
-                              <Switch
-                                size="sm"
-                                isChecked={ProjectNoMode === "auto"}
-                                onChange={(e) => {
-                                  const newMode = e.target.checked ? "auto" : "manual";
-                                  setProjectNoMode(newMode);
-                                  if (newMode === "manual") {
-                                    formik.setFieldValue("projectNo", "");
-                                  }
-                                }}
-                                colorScheme="blue"
-                                isDisabled={IsHaveMemo === "N"}
-                              />
-                              <Text fontSize="sm" color="gray.600">Auto</Text>
-                            </HStack>
-                          </Flex>
-                        }
-                      >
+                      <InputGroupPanel headerTitle="Informasi Umum">
+                        <Flex justifyContent="flex-end" mb={3}>
+                          <HStack spacing={2}>
+                            <Text fontSize="sm" color="gray.600">Manual</Text>
+                            <Switch
+                              size="sm"
+                              isChecked={ProjectNoMode === "auto"}
+                              onChange={(e) => {
+                                const newMode = e.target.checked ? "auto" : "manual";
+                                setProjectNoMode(newMode);
+                                if (newMode === "manual") {
+                                  formik.setFieldValue("projectNo", "");
+                                }
+                              }}
+                              colorScheme="blue"
+                              isDisabled={IsHaveMemo === "N"}
+                            />
+                            <Text fontSize="sm" color="gray.600">Auto</Text>
+                          </HStack>
+                        </Flex>
+
+
                         <FormControl
                           id="projectNo"
                           isInvalid={formik.errors.projectNo ? true : false}
@@ -5690,9 +5688,8 @@ function ProjectRegisterView({
             </Flex>
           </GridItem>
         </Grid>
-      )
-      }
-    </LayoutAdmin >
+      )}
+    </LayoutAdmin>
   );
 }
 
@@ -5983,4 +5980,3 @@ const AdditionalInfoUpdate = ({
   );
 };
 
-export default ProjectRegisterView;
