@@ -95,20 +95,43 @@ export default function ProjectImportPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const convertExcelDate = (value: any, forAPI: boolean = false): string => {
+    let date: Date | null = null;
+
     // Check if it's a number (Excel serial date)
     if (typeof value === "number" && value > 25000 && value < 100000) {
-      // Excel serial date conversion (Excel epoch starts from 1900-01-01)
       const excelEpoch = new Date(1900, 0, 1);
-      const date = new Date(
-        excelEpoch.getTime() + (value - 2) * 24 * 60 * 60 * 1000
-      );
+      date = new Date(excelEpoch.getTime() + (value - 2) * 24 * 60 * 60 * 1000);
+    } 
+    // Check if it's a string date (e.g., "3/28/25", "10/16/25")
+    else if (typeof value === "string" && value.trim()) {
+      const trimmed = value.trim();
+      
+      // Try parsing M/d/yy or MM/dd/yy format
+      const parts = trimmed.split("/");
+      if (parts.length === 3) {
+        let month = parseInt(parts[0]);
+        let day = parseInt(parts[1]);
+        let year = parseInt(parts[2]);
+        
+        // Handle 2-digit year (assume 2000s)
+        if (year < 100) {
+          year += 2000;
+        }
+        
+        // Validate ranges
+        if (month >= 1 && month <= 12 && day >= 1 && day <= 31 && year >= 1900) {
+          date = new Date(year, month - 1, day);
+        }
+      }
+    }
 
+    if (date && !isNaN(date.getTime())) {
       if (forAPI) {
-        // Return ISO format for API: "2025-10-20T00:00:00.000Z"
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, "0");
+        // Return dd/MM/yyyy format for backend
         const day = String(date.getDate()).padStart(2, "0");
-        return `${year}-${month}-${day}T00:00:00.000Z`;
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
       } else {
         // Return dd/mm/yyyy for display
         const day = String(date.getDate()).padStart(2, "0");
@@ -117,6 +140,7 @@ export default function ProjectImportPage() {
         return `${day}/${month}/${year}`;
       }
     }
+    
     return value?.toString() || "";
   };
 
@@ -211,14 +235,25 @@ export default function ProjectImportPage() {
         dateNF: "dd/mm/yyyy", // Date format
       });
 
+      const filteredRows = (dataRows as Record<string, any>[]).filter((row) =>
+        Object.values(row).some((val) => val !== "")
+      );
+
+      // Check data limit
+      if (filteredRows.length > MAX_SIZE_TABLE) {
+        showToast({
+          description: `Data limit exceeded! Maximum ${MAX_SIZE_TABLE} rows allowed, but found ${filteredRows.length} rows.`,
+          statusToast: "error",
+        });
+        setIsProcessing(false);
+        setUploadProgress(0);
+        return;
+      }
+
       setImportedData({
         requiredFlags,
         fieldKeys,
-        dataRows: processDataRows(
-          (dataRows as Record<string, any>[]).filter((row) =>
-            Object.values(row).some((val) => val !== "")
-          )
-        ),
+        dataRows: processDataRows(filteredRows),
       });
 
       setUploadProgress(100);
