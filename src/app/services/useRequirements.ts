@@ -155,6 +155,11 @@ export interface RequirementsResponse {
 
   note?: string | null;
 
+  // BACKLOG COUNTS
+  backlogCount?: number;
+  backlogAvailableCount?: number;
+  backlogTakenCount?: number;
+
   // ADDITIONAL
   createdAt: string;
   createdBy: string;

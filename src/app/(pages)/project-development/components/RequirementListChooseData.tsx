@@ -70,6 +70,9 @@ import {
   FiCheckCircle,
   FiFilter,
   FiX,
+  FiList,
+  FiUnlock,
+  FiLock,
 } from "react-icons/fi";
 import Link from "next/link";
 
@@ -83,12 +86,14 @@ const brdFilter: ListSearchByParamProps = {
 interface RequirementListChooseDataProps {
   onRequirementSelect?: (requirement: RequirementsResponse | null) => void;
   selectedRequirement?: RequirementsResponse | null;
+  onClose?: () => void;
 }
 
 const RequirementListChooseData = memo(
   ({
     onRequirementSelect,
     selectedRequirement,
+    onClose,
   }: RequirementListChooseDataProps) => {
     const showToast = useToastHelper();
     const { colorMode } = useColorMode();
@@ -473,6 +478,40 @@ const RequirementListChooseData = memo(
           } as ColumnMetaCustom,
         },
         {
+          accessorFn: (row) => row.backlogCount,
+          id: "backlogCount",
+          cell: (info) => (
+            <Flex
+              w={"full"}
+              h={"full"}
+              justifyContent={"center"}
+              alignItems={"start"}
+              as={Stack}
+              spacing={1}
+            >
+              <Flex fontSize={"small"} as={Stack} spacing={1}>
+                <HStack spacing={1}>
+                  <FiList />
+                  <Text>Total: {info.row.original.backlogCount || 0}</Text>
+                </HStack>
+                <HStack spacing={1} color="green.500">
+                  <FiUnlock />
+                  <Text>Available: {info.row.original.backlogAvailableCount || 0}</Text>
+                </HStack>
+                <HStack spacing={1} color="orange.500">
+                  <FiLock />
+                  <Text>Taken: {info.row.original.backlogTakenCount || 0}</Text>
+                </HStack>
+              </Flex>
+            </Flex>
+          ),
+          header: () => <span>Backlogs</span>,
+          footer: (props) => props.column.id,
+          meta: {
+            isFilterable: false,
+          } as ColumnMetaCustom,
+        },
+        {
           accessorFn: (row) => row.reqStatus,
           id: "reqStatus",
           cell: (info) => (
@@ -536,11 +575,13 @@ const RequirementListChooseData = memo(
                 }
                 onClick={() => {
                   const requirement = info.row.original;
+                  const isDeselecting = selectedRequirement?.id === requirement.id;
                   onRequirementSelect?.(
-                    selectedRequirement?.id === requirement.id
-                      ? null
-                      : requirement
+                    isDeselecting ? null : requirement
                   );
+                  if (!isDeselecting) {
+                    onClose?.();
+                  }
                 }}
                 rightIcon={
                   selectedRequirement?.id === info.row.original.id ? (

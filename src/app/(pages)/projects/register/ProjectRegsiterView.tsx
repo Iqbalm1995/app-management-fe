@@ -2335,6 +2335,7 @@ export default function ProjectRegisterView({
             <RequirementListChooseData
               selectedRequirement={DataRequirement}
               onRequirementSelect={setDataRequirement}
+              onClose={ModalForm.onClose}
             />
           </ModalBody>
 
@@ -2851,7 +2852,7 @@ export default function ProjectRegisterView({
                                   // );
                                   formik.setFieldValue(
                                     `projectName`,
-                                    e.target.value
+                                    e.target.value.toUpperCase()
                                   );
                                 }}
                                 value={formik.values.projectName ?? ""}
