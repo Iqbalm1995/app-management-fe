@@ -433,9 +433,9 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
         page: 0,
         filterWhere: [
           {
-            field: "reqId",
+            field: "projectId",
             operator: "=",
-            value: DataProject.reqParentId,
+            value: DataProject.id,
           },
         ],
         fieldOrder: ["createdAt"],

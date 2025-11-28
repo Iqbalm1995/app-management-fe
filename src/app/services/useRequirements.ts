@@ -155,6 +155,11 @@ export interface RequirementsResponse {
 
   note?: string | null;
 
+  // BACKLOG COUNTS
+  backlogCount?: number;
+  backlogAvailableCount?: number;
+  backlogTakenCount?: number;
+
   // ADDITIONAL
   createdAt: string;
   createdBy: string;
@@ -279,6 +284,7 @@ export interface BacklogDataResponse {
   developmentStatus: string;
   progressionPercentage: number;
   reffId: string | null;
+  projectId: string | null;
   note: string | null;
   version: string;
   isLive: string;

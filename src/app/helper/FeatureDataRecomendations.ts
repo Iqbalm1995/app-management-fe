@@ -9,41 +9,41 @@ export interface FeatureDataRecomendationsProps {
 //   },
 export const FeatureRecomentionsBacklogs: FeatureDataRecomendationsProps[] = [
   {
-    featureName: "Login",
+    featureName: "LOGIN",
     featureDescription: "Fitur autentikasi untuk masuk ke dalam sistem.",
   },
   {
-    featureName: "Transaksi",
+    featureName: "TRANSAKSI",
     featureDescription: "Melakukan dan mengelola transaksi keuangan.",
   },
   {
-    featureName: "Mutasi Rekening",
+    featureName: "MUTASI REKENING",
     featureDescription: "Menampilkan riwayat keluar masuk dana pada rekening.",
   },
   {
-    featureName: "Dashboard",
+    featureName: "DASHBOARD",
     featureDescription: "Tampilan ringkasan informasi dan statistik utama.",
   },
   {
-    featureName: "Monitoring",
+    featureName: "MONITORING",
     featureDescription:
       "Pemantauan aktivitas dan status sistem secara real-time.",
   },
   {
-    featureName: "Export Laporan PDF / EXCEL",
+    featureName: "EXPORT LAPORAN PDF / EXCEL",
     featureDescription: "Mengunduh laporan dalam format PDF atau Excel.",
   },
   {
-    featureName: "User Manajemen",
+    featureName: "USER MANAJEMEN",
     featureDescription: "Mengelola data dan peran pengguna dalam sistem.",
   },
   {
-    featureName: "Audit Trail",
+    featureName: "AUDIT TRAIL",
     featureDescription:
       "Mencatat jejak aktivitas pengguna untuk keperluan audit.",
   },
   {
-    featureName: "Pembayaran Terjadwal",
+    featureName: "PEMBAYARAN TERJADWAL",
     featureDescription:
       "Menjadwalkan pembayaran secara otomatis sesuai waktu yang ditentukan.",
   },
