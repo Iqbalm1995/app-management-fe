@@ -1,14 +1,13 @@
 "use client";
 
 import { ConfirmationDialog } from "@/app/components/confirmationDialog";
-import {
+import ENDPOINT_PORT_BASIC_OBJECT, {
   DELAY_MEDIUM,
   MAX_SIZE_TABLE,
   radiusStyle,
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
   ENDPOINT_API_BASEURL_OBJECT,
-  ENDPOINT_PORT_BASIC_OBJECT,
 } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import {
@@ -1008,7 +1007,8 @@ export const DynamicWorkflowBox = ({
   const { colorMode } = useColorMode();
   const { isOpen, onToggle } = useDisclosure({ defaultIsOpen: level < 3 });
 
-  const hasChildren = workflow.workflowChild && workflow.workflowChild.length > 0;
+  const hasChildren =
+    workflow.workflowChild && workflow.workflowChild.length > 0;
   const isLeafNode = !hasChildren;
 
   if (isLeafNode) {
@@ -1046,7 +1046,9 @@ export const DynamicWorkflowBox = ({
       <Collapse in={isOpen}>
         <CardBody pt={0}>
           {/* Check if children are leaf nodes to render table */}
-          {workflow.workflowChild.some(child => !child.workflowChild || child.workflowChild.length === 0) ? (
+          {workflow.workflowChild.some(
+            (child) => !child.workflowChild || child.workflowChild.length === 0
+          ) ? (
             // Render table if children are leaf nodes
             <Flex
               mt={2}
@@ -1061,7 +1063,9 @@ export const DynamicWorkflowBox = ({
                 <Thead>
                   <Tr
                     bg={colorMode == "light" ? "secondary.50" : "gray.900"}
-                    color={colorMode == "light" ? "secondary.800" : "secondary.500"}
+                    color={
+                      colorMode == "light" ? "secondary.800" : "secondary.500"
+                    }
                   >
                     <Th py={3}>Jenis Dokumen</Th>
                     <Th py={3}>Nama Dokumen</Th>
@@ -1115,13 +1119,16 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
   const [ActionLoading, setActionLoading] = useState(false);
-  const [ListProjectWFValue, setListProjectWFValue] = useState<ProjectWorkflowValueResponse[]>([]);
+  const [ListProjectWFValue, setListProjectWFValue] = useState<
+    ProjectWorkflowValueResponse[]
+  >([]);
 
   const UrlEndpoint: string = buildUrlPort(
     ENDPOINT_API_BASEURL_OBJECT,
     ENDPOINT_PORT_BASIC_OBJECT
   );
-  const { InsertProjectWorkflowValue, ListProjectWorkflowValue } = useProjects();
+  const { InsertProjectWorkflowValue, ListProjectWorkflowValue } =
+    useProjects();
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
@@ -1129,7 +1136,8 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
 
     if (DataAuth == null && storedData) {
       const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
-      const UserData: AuthDataResponse = StorageAuth.dataLogin as AuthDataResponse;
+      const UserData: AuthDataResponse =
+        StorageAuth.dataLogin as AuthDataResponse;
       setDataAuth(UserData);
     }
 
@@ -1149,7 +1157,7 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
     onSubmit: async (values) => {
       setActionLoading(true);
       const requestData = await InsertProjectWorkflowValue(values, tokenData);
-      
+
       if (requestData?.statusCode === RES_CODE_OK) {
         showToast({
           description: "Creating new requirement data successfully",
@@ -1180,11 +1188,13 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
       search: "",
       limit: MAX_SIZE_TABLE,
       page: 0,
-      filterWhere: [{ field: "projectWorkflowId", operator: "=", value: workflow.id }],
+      filterWhere: [
+        { field: "projectWorkflowId", operator: "=", value: workflow.id },
+      ],
       fieldOrder: ["createdAt"],
       orderDir: "desc",
     };
-    
+
     const requestData = await ListProjectWorkflowValue(PayloadList, tokenData);
     if (requestData?.statusCode === RES_CODE_OK && requestData.data) {
       setListProjectWFValue(requestData.data as ProjectWorkflowValueResponse[]);
@@ -1195,7 +1205,9 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
   return (
     <>
       <Tr fontWeight="medium" fontSize="sm">
-        <Td><Text>{workflow.wfgName}</Text></Td>
+        <Td>
+          <Text>{workflow.wfgName}</Text>
+        </Td>
         <Td>
           {workflow.workflowValues?.length > 0 ? (
             <Text>{workflow.workflowValues[0].documentName}</Text>
@@ -1212,26 +1224,50 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
         </Td>
         <Td>
           {workflow.workflowValues?.length > 0 ? (
-            <Text>{convertToCustomDateFormat(workflow.workflowValues[0].documentDate)}</Text>
+            <Text>
+              {convertToCustomDateFormat(
+                workflow.workflowValues[0].documentDate
+              )}
+            </Text>
           ) : (
             <Text textAlign={"center"}>{"-"}</Text>
           )}
         </Td>
         <Td>
           {workflow.workflowValues?.length > 0 ? (
-            <Text textAlign={"center"}>{workflow.workflowValues[0].documentVersion}</Text>
+            <Text textAlign={"center"}>
+              {workflow.workflowValues[0].documentVersion}
+            </Text>
           ) : (
             <Text textAlign={"center"}>{"-"}</Text>
           )}
         </Td>
         <Td>
-          <Flex as={Stack} textAlign={"center"} justifyContent={"center"} align={"center"} w={"full"}>
+          <Flex
+            as={Stack}
+            textAlign={"center"}
+            justifyContent={"center"}
+            align={"center"}
+            w={"full"}
+          >
             {workflow.workflowValues?.length > 0 ? (
-              <Tooltip rounded={"md"} hasArrow label={"File sudah di upload"} bg={"secondary.500"} color={"white"}>
+              <Tooltip
+                rounded={"md"}
+                hasArrow
+                label={"File sudah di upload"}
+                bg={"secondary.500"}
+                color={"white"}
+              >
                 <Icon as={FiCheckCircle} color={"green.500"} />
               </Tooltip>
             ) : (
-              <Tooltip rounded={"md"} hasArrow label={"Belum ada upload files"} bg={"yellow.300"} color={"gray.800"}>
+              <Tooltip
+                rounded={"md"}
+                hasArrow
+                label={"Belum ada upload files"}
+                bg={"yellow.300"}
+                color={"gray.800"}
+              >
                 <Icon as={FiAlertTriangle} color={"yellow.300"} />
               </Tooltip>
             )}
@@ -1239,10 +1275,22 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
         </Td>
         <Td>
           <HStack spacing={2}>
-            <Button size="xs" colorScheme="blue" variant="outline" leftIcon={<FiUpload />} onClick={handleOpenForm}>
+            <Button
+              size="xs"
+              colorScheme="blue"
+              variant="outline"
+              leftIcon={<FiUpload />}
+              onClick={handleOpenForm}
+            >
               Upload
             </Button>
-            <Button size="xs" colorScheme="gray" variant="outline" leftIcon={<FiEye />} onClick={handleOpenDetail}>
+            <Button
+              size="xs"
+              colorScheme="gray"
+              variant="outline"
+              leftIcon={<FiEye />}
+              onClick={handleOpenDetail}
+            >
               Detail
             </Button>
           </HStack>
@@ -1250,15 +1298,29 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
       </Tr>
 
       {/* Reuse existing modals from WorkflowLevel2Box */}
-      <Modal size={"xl"} isOpen={ModalForm.isOpen} onClose={ModalForm.onClose} closeOnOverlayClick={false} scrollBehavior={"inside"}>
+      <Modal
+        size={"xl"}
+        isOpen={ModalForm.isOpen}
+        onClose={ModalForm.onClose}
+        closeOnOverlayClick={false}
+        scrollBehavior={"inside"}
+      >
         <ModalOverlay bg="blackAlpha.300" />
-        <ModalContent rounded={radiusStyle} m={2} bg={colorMode == "light" ? "white" : "gray.900"} maxH="90vh">
+        <ModalContent
+          rounded={radiusStyle}
+          m={2}
+          bg={colorMode == "light" ? "white" : "gray.900"}
+          maxH="90vh"
+        >
           <form onSubmit={formik.handleSubmit}>
             <ModalHeader>Upload New Document</ModalHeader>
             <ModalCloseButton color={"red.500"} />
             <ModalBody w={"full"} maxH="70vh" overflowY="auto" p={6}>
               <VStack spacing={4} align="stretch" w="full">
-                <FormControl isInvalid={!!formik.errors.DocumentName} isRequired>
+                <FormControl
+                  isInvalid={!!formik.errors.DocumentName}
+                  isRequired
+                >
                   <FormLabel>Nama Dokumen</FormLabel>
                   <Input
                     name="DocumentName"
@@ -1267,12 +1329,17 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
                     onChange={formik.handleChange}
                     isDisabled={ActionLoading}
                   />
-                  <FormErrorMessage>{formik.errors.DocumentName}</FormErrorMessage>
+                  <FormErrorMessage>
+                    {formik.errors.DocumentName}
+                  </FormErrorMessage>
                 </FormControl>
 
                 <Grid templateColumns="repeat(2, 1fr)" gap={4}>
                   <GridItem>
-                    <FormControl isInvalid={!!formik.errors.DocumentNumber} isRequired>
+                    <FormControl
+                      isInvalid={!!formik.errors.DocumentNumber}
+                      isRequired
+                    >
                       <FormLabel>Nomor Dokumen</FormLabel>
                       <Input
                         name="DocumentNumber"
@@ -1281,11 +1348,16 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
                         onChange={formik.handleChange}
                         isDisabled={ActionLoading}
                       />
-                      <FormErrorMessage>{formik.errors.DocumentNumber}</FormErrorMessage>
+                      <FormErrorMessage>
+                        {formik.errors.DocumentNumber}
+                      </FormErrorMessage>
                     </FormControl>
                   </GridItem>
                   <GridItem>
-                    <FormControl isInvalid={!!formik.errors.DocumentDate} isRequired>
+                    <FormControl
+                      isInvalid={!!formik.errors.DocumentDate}
+                      isRequired
+                    >
                       <FormLabel>Tanggal Dokumen</FormLabel>
                       <Input
                         name="DocumentDate"
@@ -1294,12 +1366,17 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
                         onChange={formik.handleChange}
                         isDisabled={ActionLoading}
                       />
-                      <FormErrorMessage>{formik.errors.DocumentDate}</FormErrorMessage>
+                      <FormErrorMessage>
+                        {formik.errors.DocumentDate}
+                      </FormErrorMessage>
                     </FormControl>
                   </GridItem>
                 </Grid>
 
-                <FormControl isInvalid={!!formik.errors.DocumentVersion} isRequired>
+                <FormControl
+                  isInvalid={!!formik.errors.DocumentVersion}
+                  isRequired
+                >
                   <FormLabel>Versi Dokumen</FormLabel>
                   <Input
                     name="DocumentVersion"
@@ -1308,7 +1385,9 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
                     onChange={formik.handleChange}
                     isDisabled={ActionLoading}
                   />
-                  <FormErrorMessage>{formik.errors.DocumentVersion}</FormErrorMessage>
+                  <FormErrorMessage>
+                    {formik.errors.DocumentVersion}
+                  </FormErrorMessage>
                 </FormControl>
 
                 <FormControl isInvalid={!!formik.errors.file} isRequired>
@@ -1330,10 +1409,19 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
                 </FormControl>
 
                 <HStack spacing={3} justify="flex-end" pt={4}>
-                  <Button variant="outline" onClick={ModalForm.onClose} isDisabled={ActionLoading}>
+                  <Button
+                    variant="outline"
+                    onClick={ModalForm.onClose}
+                    isDisabled={ActionLoading}
+                  >
                     Batal
                   </Button>
-                  <Button type="submit" colorScheme="blue" isLoading={ActionLoading} loadingText="Menyimpan...">
+                  <Button
+                    type="submit"
+                    colorScheme="blue"
+                    isLoading={ActionLoading}
+                    loadingText="Menyimpan..."
+                  >
                     Simpan Dokumen
                   </Button>
                 </HStack>
@@ -1343,48 +1431,101 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
         </ModalContent>
       </Modal>
 
-      <Modal size={"xl"} isOpen={ModalDetailWF.isOpen} onClose={ModalDetailWF.onClose} scrollBehavior={"inside"}>
+      <Modal
+        size={"xl"}
+        isOpen={ModalDetailWF.isOpen}
+        onClose={ModalDetailWF.onClose}
+        scrollBehavior={"inside"}
+      >
         <ModalOverlay bg="blackAlpha.300" />
-        <ModalContent rounded={radiusStyle} m={2} bg={colorMode == "light" ? "white" : "gray.900"} maxH="90vh">
+        <ModalContent
+          rounded={radiusStyle}
+          m={2}
+          bg={colorMode == "light" ? "white" : "gray.900"}
+          maxH="90vh"
+        >
           <ModalCloseButton color={"red.500"} />
           <ModalBody w={"full"} maxH="70vh" overflowY="auto" p={6}>
             {ListProjectWFValue?.length > 0 ? (
               <VStack spacing={4} align="stretch" w="full">
-                <Text fontSize="lg" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"}>
+                <Text
+                  fontSize="lg"
+                  fontWeight="bold"
+                  color={colorMode === "light" ? "gray.800" : "white"}
+                >
                   Document History ({ListProjectWFValue.length})
                 </Text>
                 <Accordion allowToggle defaultIndex={0}>
                   {ListProjectWFValue.map((item, index) => (
-                    <AccordionItem key={item.id} border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.600"} rounded={radiusStyle} mb={2}>
-                      <AccordionButton p={4} _hover={{ bg: colorMode === "light" ? "gray.50" : "gray.700" }}>
+                    <AccordionItem
+                      key={item.id}
+                      border="1px"
+                      borderColor={
+                        colorMode === "light" ? "gray.200" : "gray.600"
+                      }
+                      rounded={radiusStyle}
+                      mb={2}
+                    >
+                      <AccordionButton
+                        p={4}
+                        _hover={{
+                          bg: colorMode === "light" ? "gray.50" : "gray.700",
+                        }}
+                      >
                         <Box flex="1" textAlign="left">
                           <Text fontWeight="medium">{item.documentName}</Text>
                           <Text fontSize="sm" color="gray.500">
-                            {item.documentNumber} • v{item.documentVersion} • {convertToCustomDateFormat(item.documentDate)}
+                            {item.documentNumber} • v{item.documentVersion} •{" "}
+                            {convertToCustomDateFormat(item.documentDate)}
                           </Text>
                         </Box>
                         <AccordionIcon />
                       </AccordionButton>
                       <AccordionPanel pb={4}>
                         {item.mediaObjectData && (
-                          <Box p={3} bg={colorMode === "light" ? "gray.50" : "gray.700"} rounded="md" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.600"}>
+                          <Box
+                            p={3}
+                            bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                            rounded="md"
+                            border="1px"
+                            borderColor={
+                              colorMode === "light" ? "gray.200" : "gray.600"
+                            }
+                          >
                             <HStack spacing={3}>
-                              <Box display="flex" justifyContent="center" alignItems="center" boxSize="40px">
-                                {renderFileIconSTR(item.mediaObjectData.objectExtension?.trim() || "file")}
+                              <Box
+                                display="flex"
+                                justifyContent="center"
+                                alignItems="center"
+                                boxSize="40px"
+                              >
+                                {renderFileIconSTR(
+                                  item.mediaObjectData.objectExtension?.trim() ||
+                                    "file"
+                                )}
                               </Box>
                               <VStack align="start" spacing={1} flex="1">
-                                <Text fontSize="sm" fontWeight="medium" noOfLines={1}>
-                                  {item.mediaObjectData.objectRawName || item.documentName}
+                                <Text
+                                  fontSize="sm"
+                                  fontWeight="medium"
+                                  noOfLines={1}
+                                >
+                                  {item.mediaObjectData.objectRawName ||
+                                    item.documentName}
                                 </Text>
                                 <HStack spacing={2}>
                                   {item.mediaObjectData.objectExtension && (
                                     <Badge colorScheme="gray" size="sm">
-                                      {item.mediaObjectData.objectExtension.replace(".", "").toUpperCase()}
+                                      {item.mediaObjectData.objectExtension
+                                        .replace(".", "")
+                                        .toUpperCase()}
                                     </Badge>
                                   )}
                                   {item.mediaObjectData.objectSize && (
                                     <Badge colorScheme="blue" size="sm">
-                                      {formatKBMB(item.mediaObjectData.objectSize)}
+                                      {formatKBMB(
+                                        item.mediaObjectData.objectSize
+                                      )}
                                     </Badge>
                                   )}
                                 </HStack>

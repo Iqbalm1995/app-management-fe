@@ -8105,10 +8105,10 @@ const Section4RFCView = ({
                         <Button
                           size="xs"
                           variant="ghost"
-                          onClick={() =>
-                            (backlog.backlogId || backlog.localId) &&
-                            movePriority((backlog.backlogId || backlog.localId), "up")
-                          }
+                          onClick={() => {
+                            const id = backlog.backlogId || backlog.localId;
+                            if (id) movePriority(id, "up");
+                          }}
                           isDisabled={backlog.posOrder === 1}
                         >
                           <ChevronUpIcon />
@@ -8116,10 +8116,10 @@ const Section4RFCView = ({
                         <Button
                           size="xs"
                           variant="ghost"
-                          onClick={() =>
-                            (backlog.backlogId || backlog.localId) &&
-                            movePriority((backlog.backlogId || backlog.localId), "down")
-                          }
+                          onClick={() => {
+                            const id = backlog.backlogId || backlog.localId;
+                            if (id) movePriority(id, "down");
+                          }}
                           isDisabled={
                             backlog.posOrder === sortedDataBackLogs.length
                           }
