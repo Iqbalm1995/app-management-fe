@@ -22,7 +22,8 @@ import {
   TableComponentWithFilterCTX,
   TableComponentWithFilterCTXNoBorder,
 } from "@/app/components/tableComponentV2";
-import ENDPOINT_PORT_BASIC_OBJECT, {
+import {
+  ENDPOINT_PORT_BASIC_OBJECT,
   ENDPOINT_API_BASEURL_OBJECT,
   MAX_SIZE_TABLE,
   radiusStyle,
