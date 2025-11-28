@@ -1,13 +1,14 @@
 "use client";
 
 import { ConfirmationDialog } from "@/app/components/confirmationDialog";
-import ENDPOINT_PORT_BASIC_OBJECT, {
+import {
   DELAY_MEDIUM,
   MAX_SIZE_TABLE,
   radiusStyle,
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
   ENDPOINT_API_BASEURL_OBJECT,
+  ENDPOINT_PORT_BASIC_OBJECT,
 } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import {
