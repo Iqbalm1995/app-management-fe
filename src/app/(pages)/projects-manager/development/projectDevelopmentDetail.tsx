@@ -99,13 +99,13 @@ function ProjectDevelopmentDetailContent() {
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
     const token = localStorage.getItem("tokenData") as string;
-    
+
     if (DataAuth == null && storedData) {
       const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
       const UserData: AuthDataResponse = StorageAuth.dataLogin as AuthDataResponse;
       setDataAuth(UserData);
     }
-    
+
     if (token) setTokenData(token);
   }, [DataAuth]);
 
@@ -115,7 +115,7 @@ function ProjectDevelopmentDetailContent() {
       setIsLoadingProcess(true);
       const GetDataList = async () => {
         const requestData = await GetDetailById(projectId, tokenData);
-        
+
         if (!requestData || requestData.statusCode !== RES_CODE_OK) {
           showToast({
             description: requestData?.message || RES_GENERIC_ERROR_MSG,
@@ -174,7 +174,7 @@ function ProjectDevelopmentDetailContent() {
           bgImage="radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 50%, white 1px, transparent 1px)"
           bgSize="30px 30px"
         />
-        
+
         <VStack spacing={4} align="stretch" position="relative" zIndex={1}>
           {/* Navigation & Actions */}
           <HStack justify="space-between" align="center">
@@ -190,7 +190,7 @@ function ProjectDevelopmentDetailContent() {
                   Back to Projects
                 </Button>
               </Link>
-              
+
               <Badge colorScheme="purple" px={3} py={1} rounded="full">
                 Development View
               </Badge>
@@ -228,7 +228,7 @@ function ProjectDevelopmentDetailContent() {
                   >
                     <FiCode size={32} />
                   </Box>
-                  
+
                   <VStack align="start" spacing={1}>
                     <Heading size="xl" color="white">
                       {DataProject.projectName}
@@ -249,11 +249,11 @@ function ProjectDevelopmentDetailContent() {
                   >
                     {DataProject.projectStatus}
                   </Badge>
-                  
+
                   <Badge colorScheme="blue" px={3} py={1} rounded="full" fontSize="sm">
                     {DataProject.projectCategory}
                   </Badge>
-                  
+
                   <Badge colorScheme="purple" px={3} py={1} rounded="full" fontSize="sm">
                     {DataProject.projectType}
                   </Badge>
@@ -298,7 +298,7 @@ function ProjectDevelopmentDetailContent() {
 
       {/* Main Content */}
       <Box px={{ base: 2, md: 4 }} w="full" maxW="100vw" overflow="hidden">
-        <Stack 
+        <Stack
           direction={{ base: "column", lg: "row" }}
           spacing={{ base: 4, md: 6 }}
           align="stretch"
@@ -678,7 +678,7 @@ function ProjectDevelopmentDetailContent() {
                                       <Badge
                                         colorScheme={
                                           item.status === "completed" ? "green" :
-                                          item.status === "active" ? "blue" : "gray"
+                                            item.status === "active" ? "blue" : "gray"
                                         }
                                         rounded="full"
                                       >
@@ -689,7 +689,7 @@ function ProjectDevelopmentDetailContent() {
                                       value={item.progress}
                                       colorScheme={
                                         item.status === "completed" ? "green" :
-                                        item.status === "active" ? "blue" : "gray"
+                                          item.status === "active" ? "blue" : "gray"
                                       }
                                       rounded="full"
                                       size="sm"
@@ -721,7 +721,7 @@ function ProjectDevelopmentDetailContent() {
                                       h={3}
                                       bg={
                                         activity.type === "success" ? "green.500" :
-                                        activity.type === "info" ? "blue.500" : "orange.500"
+                                          activity.type === "info" ? "blue.500" : "orange.500"
                                       }
                                       rounded="full"
                                       flexShrink={0}
@@ -883,7 +883,7 @@ function ProjectDevelopmentDetailContent() {
           </Box>
 
           {/* Development Sidebar */}
-          <Box 
+          <Box
             w={{ base: "full", lg: "300px" }}
             flexShrink={0}
           >
@@ -960,9 +960,9 @@ function ProjectDevelopmentDetailContent() {
 
                         <Box>
                           <Text fontSize="xs" color="gray.500" mb={1}>STATUS</Text>
-                          <Badge 
-                            colorScheme={DataProject.appsProject.appsStatus === "ACTIVE" ? "green" : "orange"} 
-                            rounded="full" 
+                          <Badge
+                            colorScheme={DataProject.appsProject.appsStatus === "ACTIVE" ? "green" : "orange"}
+                            rounded="full"
                             size="sm"
                           >
                             {DataProject.appsProject.appsStatus || "ACTIVE"}
@@ -1004,7 +1004,7 @@ function ProjectDevelopmentDetailContent() {
                         >
                           View Application
                         </Button>
-                        
+
                         <Button
                           leftIcon={<FiSettings />}
                           variant="ghost"
@@ -1081,7 +1081,7 @@ function ProjectDevelopmentDetailContent() {
                           </Badge>
                         </HStack>
                       ))}
-                      
+
                       {DataProject.userAssignment && DataProject.userAssignment.length > 4 && (
                         <Text fontSize="sm" color="gray.600" textAlign="center">
                           +{DataProject.userAssignment.length - 4} more members
@@ -1126,7 +1126,7 @@ function ProjectDevelopmentDetailContent() {
                       </HStack>
                       <Progress value={65} colorScheme="blue" rounded="full" size="sm" />
                     </Box>
-                    
+
                     <VStack spacing={2} align="stretch">
                       <HStack justify="space-between">
                         <Text fontSize="sm" color="gray.600">Start Date</Text>
@@ -1181,7 +1181,7 @@ function ProjectDevelopmentDetailContent() {
                     >
                       Git Repository
                     </Button>
-                    
+
                     <Button
                       leftIcon={<FiCpu />}
                       variant="ghost"
@@ -1191,7 +1191,7 @@ function ProjectDevelopmentDetailContent() {
                     >
                       CI/CD Pipeline
                     </Button>
-                    
+
                     <Button
                       leftIcon={<FiBarChart />}
                       variant="ghost"
@@ -1201,7 +1201,7 @@ function ProjectDevelopmentDetailContent() {
                     >
                       Code Quality
                     </Button>
-                    
+
                     <Button
                       leftIcon={<FiTarget />}
                       variant="ghost"
@@ -1247,32 +1247,32 @@ function ProjectDevelopmentDetailContent() {
                         <Text fontSize="xs" color="gray.500" mb={1}>PROJECT CODE</Text>
                         <Text fontSize="sm" fontWeight="medium">{DataProject.projectCode}</Text>
                       </Box>
-                      
+
                       <Box>
                         <Text fontSize="xs" color="gray.500" mb={1}>CATEGORY</Text>
                         <Badge colorScheme="blue" rounded="full" size="sm">
                           {DataProject.projectCategory}
                         </Badge>
                       </Box>
-                      
+
                       <Box>
                         <Text fontSize="xs" color="gray.500" mb={1}>TYPE</Text>
                         <Badge colorScheme="purple" rounded="full" size="sm">
                           {DataProject.projectType}
                         </Badge>
                       </Box>
-                      
+
                       <Box>
                         <Text fontSize="xs" color="gray.500" mb={1}>STATUS</Text>
-                        <Badge 
-                          colorScheme={DataProject.projectStatus === "ACTIVE" ? "green" : "orange"} 
-                          rounded="full" 
+                        <Badge
+                          colorScheme={DataProject.projectStatus === "ACTIVE" ? "green" : "orange"}
+                          rounded="full"
                           size="sm"
                         >
                           {DataProject.projectStatus}
                         </Badge>
                       </Box>
-                      
+
                       {DataProject.projectRegisterDate && (
                         <Box>
                           <Text fontSize="xs" color="gray.500" mb={1}>START DATE</Text>
