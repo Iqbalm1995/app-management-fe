@@ -2567,6 +2567,14 @@ const ReqInfoSummaryFileAttachmentsView = ({
   const [UrlFilePDF, setUrlFilePDF] = useState<string>("");
 
   const handleOpenPreview = (urlData: string) => {
+    if (!urlData || urlData.trim() === "") {
+      showToast({
+        description: "URL file tidak tersedia untuk pratinjau",
+        statusToast: "error",
+      });
+      return;
+    }
+    
     setUrlFilePDF(urlData);
     ModalPreview.onOpen();
   };
@@ -2593,13 +2601,33 @@ const ReqInfoSummaryFileAttachmentsView = ({
             <ModalCloseButton />
             <ModalBody w={"full"}>
               <Flex as={Stack} w={"full"}>
-                {/* <Text>{UrlFilePDF}</Text> */}
-                <iframe
-                  src={`/api/proxy-pdf?url=${encodeURIComponent(UrlFilePDF)}`}
-                  width="100%"
-                  height="600px"
-                  style={{ border: "none" }}
-                />
+                {UrlFilePDF && UrlFilePDF.trim() !== "" ? (
+                  <iframe
+                    src={`/api/proxy-pdf?url=${encodeURIComponent(UrlFilePDF)}`}
+                    width="100%"
+                    height="600px"
+                    style={{ border: "none" }}
+                    onError={() => {
+                      showToast({
+                        description: "Gagal memuat pratinjau file. Silakan coba lagi atau unduh file.",
+                        statusToast: "error",
+                      });
+                    }}
+                  />
+                ) : (
+                  <Flex
+                    w="100%"
+                    h="600px"
+                    alignItems="center"
+                    justifyContent="center"
+                    bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                    rounded="md"
+                  >
+                    <Text color="gray.500">
+                      File tidak dapat ditampilkan. URL tidak tersedia.
+                    </Text>
+                  </Flex>
+                )}
                 {/* <ExcelViewer
                         fileUrl={`/api/proxy-pdf?url=${encodeURIComponent(UrlFilePDF)}`}
                       /> */}

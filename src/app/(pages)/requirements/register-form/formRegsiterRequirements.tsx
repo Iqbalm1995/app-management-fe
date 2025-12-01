@@ -1256,7 +1256,7 @@ function RegisterRequirementFormPage({
       }
       if (DataBackLogs.length <= 0) {
         showToast({
-          description: "Fitur BRD tidak boleh kosong",
+          description: "Scope of Work BRD tidak boleh kosong",
           statusToast: "warning",
         });
         return;
@@ -2184,7 +2184,7 @@ function RegisterRequirementFormPage({
                                   </RadioGroup>
                                   <FormHelperText as={"i"} fontSize={"xs"}>
                                     Jika belum memiliki Memo pengantar, ada
-                                    benerapa informasi yang akan inputkan lain
+                                    beberapa informasi yang akan inputkan lain
                                     waktu jika Memo pengantar sudah ada.*
                                   </FormHelperText>
                                   <FormErrorMessage>
@@ -2805,6 +2805,20 @@ function RegisterRequirementFormPage({
                                               spacing={5}
                                               key={index}
                                             >
+                                              <Box
+                                                minW="30px"
+                                                h="30px"
+                                                bg="secondary.500"
+                                                color="white"
+                                                rounded="full"
+                                                display="flex"
+                                                alignItems="center"
+                                                justifyContent="center"
+                                                fontWeight="bold"
+                                                fontSize="sm"
+                                              >
+                                                {index + 1}
+                                              </Box>
                                               <Box>
                                                 <Avatar name={dt.nama} src="" />
                                               </Box>
@@ -4959,11 +4973,12 @@ const Section4BRDView = ({
     ];
 
     setDataBackLogs(newData);
-    
+
     showToast({
-      description: "Urutan fitur berhasil diubah",
+      description: "Urutan Scope of Work berhasil diubah",
       statusToast: "success",
-    });  };
+    });
+  };
 
   const columnsData = useMemo<ColumnDef<ReqBacklogPayload>[]>(
     () => [
@@ -5012,7 +5027,7 @@ const Section4BRDView = ({
         accessorFn: (row) => row.backlogName,
         id: "backlogName",
         cell: (info) => <Flex>{info.row.original.backlogName}</Flex>,
-        header: () => <span>Nama Fitur</span>,
+        header: () => <span>Nama Scope of Work</span>,
         footer: (props) => props.column.id,
       },
       {
@@ -5098,7 +5113,7 @@ const Section4BRDView = ({
 
     if (isDuplicate) {
       showToast({
-        description: "Fitur sudah ada di daftar",
+        description: "Scope of Work sudah ada di daftar",
         statusToast: "warning",
       });
       return;
@@ -5115,7 +5130,7 @@ const Section4BRDView = ({
     setDataBackLogs((prev) => [...prev, newBacklog]);
 
     showToast({
-      description: "Fitur ditambahkan",
+      description: "Scope of Work ditambahkan",
       statusToast: "success",
     });
   };
@@ -5128,7 +5143,7 @@ const Section4BRDView = ({
     );
 
     showToast({
-      description: "Fitur diubah",
+      description: "Scope of Work diubah",
       statusToast: "success",
     });
 
@@ -5138,7 +5153,7 @@ const Section4BRDView = ({
   const removeBacklog = (backlogId: string | undefined | null) => {
     if (backlogId == undefined || backlogId == null) {
       showToast({
-        description: "Fitur ID error",
+        description: "Scope of Work ID error",
         statusToast: "warning",
       });
       return;
@@ -5150,16 +5165,17 @@ const Section4BRDView = ({
         return itemId !== backlogId;
       })
     );
-    
+
     showToast({
-      description: "Fitur dihapus",
+      description: "Scope of Work dihapus",
       statusToast: "success",
-    });  };
+    });
+  };
 
   const handleSaveBacklog = () => {
     if (!TextBackLogName.trim()) {
       showToast({
-        description: "Nama fitur tidak boleh kosong",
+        description: "Nama Scope of Work tidak boleh kosong",
         statusToast: "warning",
       });
       return;
@@ -5201,7 +5217,7 @@ const Section4BRDView = ({
     console.log(DataBackLogs);
     if (backlogId == undefined || backlogId == null) {
       showToast({
-        description: "Fitur ID error",
+        description: "Scope of Work ID error",
         statusToast: "warning",
       });
       return;
@@ -5524,12 +5540,12 @@ const Section4BRDView = ({
           bg={colorMode == "light" ? "white" : "gray.900"}
         >
           <ModalHeader>{`${FormMode == "Add" ? "Tambah" : "Ubah"
-            } Fitur`}</ModalHeader>
+            } Scope of Work`}</ModalHeader>
           <ModalCloseButton color={"red.500"} />
           <ModalBody w={"full"}>
             <Flex as={Stack} w={"full"}>
               <FormControl>
-                <FormLabel>Nama Fitur</FormLabel>
+                <FormLabel>Nama Scope of Work</FormLabel>
                 <Input
                   id="backlogFeatureName"
                   name="backlogFeatureName"
@@ -5539,7 +5555,7 @@ const Section4BRDView = ({
                     setTextBackLogName(upper);
                   }}
                   value={TextBackLogName}
-                  placeholder={`Nama Fitur`}
+                  placeholder={`Nama Scope of Work`}
                   minLength={3}
                   maxLength={200}
                   isDisabled={ActionLoading}
@@ -5552,7 +5568,7 @@ const Section4BRDView = ({
                   name="backlogFeatureDesc"
                   onChange={(e) => setTextBackLogDesc(e.target.value)}
                   value={TextBackLogDesc}
-                  placeholder={`Deskripsi Fitur`}
+                  placeholder={`Deskripsi Scope of Work`}
                   maxLength={300}
                   isDisabled={ActionLoading}
                 />
@@ -5567,13 +5583,13 @@ const Section4BRDView = ({
                 onClick={() => handleSaveBacklog()}
                 isDisabled={ActionLoading || !TextBackLogName.trim()}
               >
-                {FormMode == "Add" ? "Tambah" : "Ubah"} Fitur
+                {FormMode == "Add" ? "Tambah" : "Ubah"} Scope of Work
               </Button>
 
               <Divider py={1} />
               <Text fontSize={"smaller"}>Tambah Cepat</Text>
               <FormControl>
-                <FormLabel>Rekomendasi Fitur Umum</FormLabel>
+                <FormLabel>Rekomendasi Scope of Work Umum</FormLabel>
                 <Flex as={Wrap} w={"full"}>
                   {FeatureRecomentionsBacklogs.map((item, index) => {
                     if (
@@ -6246,7 +6262,7 @@ const Section4BRDView = ({
           <FormControl id="backlogFeatures">
             <InputLayoutFull>
               <FormLabel h={"full"} mt={2}>
-                Fitur Aplikasi
+                Scope Of Work
               </FormLabel>
               <Stack spacing={2} h={"full"}>
                 <Flex
@@ -6264,7 +6280,7 @@ const Section4BRDView = ({
                     colorScheme={"secondary"}
                     onClick={() => handleOpenForm()}
                   >
-                    Tambah Fitur
+                    Tambah Scope Of Work
                   </Button>
 
                   <TableComponentFullSm table={table} />
@@ -6560,11 +6576,12 @@ const Section4RFCView = ({
     ];
 
     setDataBackLogs(newData);
-    
+
     showToast({
-      description: "Urutan fitur berhasil diubah",
+      description: "Urutan Scope of Work berhasil diubah",
       statusToast: "success",
-    });  };
+    });
+  };
 
   // Backlog Setup
   // NEW BACKLOG RFC
@@ -7203,7 +7220,7 @@ const Section4RFCView = ({
                       justifyContent={"space-between"}
                     >
                       <Heading as="h5" size="sm">
-                        Fitur - {index + 1}
+                        Scope - {index + 1}
                       </Heading>
                       <Button
                         size="sm"
@@ -7254,7 +7271,7 @@ const Section4RFCView = ({
                       <FormControl>
                         <InputLayoutFull>
                           <FormLabel h={"full"} mt={2}>
-                            Fitur
+                            Scope of Work
                           </FormLabel>
                           <Stack spacing={0}>
                             <Select
@@ -7270,7 +7287,7 @@ const Section4RFCView = ({
                               value={BacklogAppsOption.find(
                                 (x) => x.value === item.backlog.id
                               )}
-                              placeholder={"Piih Fitur Eksisting"}
+                              placeholder={"Piih Scope of Work Eksisting"}
                             // value={BacklogAppsOption.find(
                             //   (x) =>
                             //     x.value == formik.values.senderDirectorateId
@@ -7293,7 +7310,7 @@ const Section4RFCView = ({
                               name={`backlogExistingDesc-${1}`}
                               // onChange={(e) => setTextBackLogDesc(e.target.value)}
                               value={item.backlog.backlogDesc || ""}
-                              placeholder={`Deskripsi Fitur Eksisting`}
+                              placeholder={`Deskripsi Scope Eksisting`}
                               // maxLength={300}
                               isDisabled={true}
                             />
@@ -7311,7 +7328,7 @@ const Section4RFCView = ({
                               name={`backlogExistingNote-${1}`}
                               // onChange={(e) => setTextBackLogDesc(e.target.value)}
                               value={item.backlog.note || ""}
-                              placeholder={`Deskripsi Fitur Eksisting`}
+                              placeholder={`Deskripsi Scope Eksisting`}
                               // maxLength={300}
                               isDisabled={true}
                             />
@@ -7356,14 +7373,14 @@ const Section4RFCView = ({
                       <FormControl>
                         <InputLayoutFull>
                           <FormLabel h={"full"} mt={2}>
-                            Fitur
+                            Scope Of Work
                           </FormLabel>
                           <Stack spacing={0}>
                             <Input
                               id={`backlogChanges-${1}`}
                               name={`backlogChanges-${1}`}
                               type="text"
-                              placeholder={`Nama Fitur Perubahan`}
+                              placeholder={`Nama Scope Perubahan`}
                               value={item.changes?.backlogName ?? ""}
                               onChange={(e) => {
                                 const updated = [...BacklogChanges];
@@ -7407,7 +7424,7 @@ const Section4RFCView = ({
                                   e.target.value;
                                 setBacklogChanges(updated);
                               }}
-                              placeholder={`Deskripsi Fitur Perubahan`}
+                              placeholder={`Deskripsi Scope Perubahan`}
                             // maxLength={300}
                             // isDisabled={ActionLoading}
                             />
@@ -7436,7 +7453,7 @@ const Section4RFCView = ({
                                 updated[index].changes!.note = e.target.value;
                                 setBacklogChanges(updated);
                               }}
-                              placeholder={`Catatan Fitur Perubahan`}
+                              placeholder={`Catatan Scope Perubahan`}
                             // maxLength={300}
                             // isDisabled={ActionLoading}
                             />

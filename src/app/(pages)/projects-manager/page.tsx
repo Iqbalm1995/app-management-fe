@@ -606,7 +606,7 @@ const ProjectManagerPage = () => {
                             >
                               Refresh
                             </Button>
-                            {/* <Button
+                            <Button
                               size={"md"}
                               colorScheme={"secondary"}
                               leftIcon={<FiPlusSquare />}
@@ -614,17 +614,7 @@ const ProjectManagerPage = () => {
                               onClick={() => handleAddNew()}
                             >
                               Register New Project
-                            </Button> */}
-                            <Link href={`projects-manager/register`}>
-                              <Button
-                                size={"md"}
-                                colorScheme={"secondary"}
-                                leftIcon={<FiPlusSquare />}
-                                isLoading={ActionLoading}
-                              >
-                                Register New Project
-                              </Button>
-                            </Link>
+                            </Button>
                           </Flex>
                         </Flex>
 
@@ -877,8 +867,8 @@ const ProjectManagerPage = () => {
                                   viewMode === "grid"
                                     ? "blue.500"
                                     : colorMode === "light"
-                                    ? "gray.200"
-                                    : "gray.600",
+                                      ? "gray.200"
+                                      : "gray.600",
                               }}
                               transition="all 0.2s"
                             >
@@ -900,8 +890,8 @@ const ProjectManagerPage = () => {
                                   viewMode === "list"
                                     ? "blue.500"
                                     : colorMode === "light"
-                                    ? "gray.200"
-                                    : "gray.600",
+                                      ? "gray.200"
+                                      : "gray.600",
                               }}
                               transition="all 0.2s"
                             >
@@ -984,15 +974,13 @@ const ProjectManagerPage = () => {
                               textAlign="center"
                             >
                               {globalFilter || statusFilter.length > 0
-                                ? `No projects match your current filters${
-                                    globalFilter
-                                      ? ` (search: "${globalFilter}")`
-                                      : ""
-                                  }${
-                                    statusFilter.length > 0
-                                      ? ` (status: ${statusFilter.join(", ")})`
-                                      : ""
-                                  }. Try adjusting your filters or clearing them.`
+                                ? `No projects match your current filters${globalFilter
+                                  ? ` (search: "${globalFilter}")`
+                                  : ""
+                                }${statusFilter.length > 0
+                                  ? ` (status: ${statusFilter.join(", ")})`
+                                  : ""
+                                }. Try adjusting your filters or clearing them.`
                                 : "You don't have any projects yet. Projects will appear here once they are created and assigned to your team."}
                             </Text>
                           </VStack>
@@ -1272,6 +1260,29 @@ const ProjectManagerPage = () => {
           </GridItem>
         </Grid>
       </Box>
+      {/* Modal for Memo Selection */}
+      <Modal
+        size="6xl"
+        isOpen={ModalForm.isOpen}
+        onClose={ModalForm.onClose}
+        closeOnOverlayClick={false}
+        scrollBehavior="inside"
+      >
+        <ModalOverlay bg="blackAlpha.300" />
+        <ModalContent
+          rounded="xl"
+          mt={8}
+          mx={4}
+          bg={colorMode === "light" ? "white" : "gray.900"}
+        >
+          <ModalHeader>Pilih Memo Requirement</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <ModalRegisterProject />
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+
     </LayoutAdmin>
   );
 };

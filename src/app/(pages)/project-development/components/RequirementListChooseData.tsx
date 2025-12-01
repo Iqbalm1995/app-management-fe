@@ -580,7 +580,7 @@ const RequirementListChooseData = memo(
                     isDeselecting ? null : requirement
                   );
                   if (!isDeselecting) {
-                    onClose?.();
+                    // onClose?.(); // Removed to keep modal open
                   }
                 }}
                 rightIcon={
