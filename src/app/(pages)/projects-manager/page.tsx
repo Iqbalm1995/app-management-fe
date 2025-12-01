@@ -1265,13 +1265,14 @@ const ProjectManagerPage = () => {
         size="6xl"
         isOpen={ModalForm.isOpen}
         onClose={ModalForm.onClose}
-        isCentered
         closeOnOverlayClick={false}
+        scrollBehavior="inside"
       >
         <ModalOverlay bg="blackAlpha.300" />
         <ModalContent
           rounded="xl"
-          m={4}
+          mt={8}
+          mx={4}
           bg={colorMode === "light" ? "white" : "gray.900"}
         >
           <ModalHeader>Pilih Memo Requirement</ModalHeader>
