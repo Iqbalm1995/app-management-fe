@@ -17,7 +17,7 @@ const WorkstageProcurementTab = ({ DataProject }: WorkstageProcurementTabProps) 
   return (
     <TabPanel roundedBottom={radiusStyle}>
       <Suspense fallback={<LoadingMiniSignature />}>
-        <ProjectFeatureView DataProject={DataProject} />
+        <ProjectFeatureView DataProject={DataProject} viewType="workflow" />
       </Suspense>
     </TabPanel>
   );

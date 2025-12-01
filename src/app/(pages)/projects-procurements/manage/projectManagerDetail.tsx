@@ -147,6 +147,7 @@ import {
   DetailsTab,
   FeaturesTab,
   WorkstageProcurementTab,
+  DocumentationTab,
   TeamTab,
   AnalyticsTab,
   TimelineTab,
@@ -536,6 +537,12 @@ function ProjectManagerDetailView() {
                   </TabButtonCustomStyle>
                   <TabButtonCustomStyle>
                     <HStack>
+                      <FiFileText size={16} />
+                      <Text>Documentation</Text>
+                    </HStack>
+                  </TabButtonCustomStyle>
+                  <TabButtonCustomStyle>
+                    <HStack>
                       <FiUsers size={16} />
                       <Text>Team</Text>
                     </HStack>
@@ -582,6 +589,7 @@ function ProjectManagerDetailView() {
                       <FeaturesTab DataProject={DataProject} />
                     )}
                     <WorkstageProcurementTab DataProject={DataProject} />
+                    <DocumentationTab DataProject={DataProject} />
                     <TeamTab DataProject={DataProject} />
                     <AnalyticsTab DataProject={DataProject} />
                     <TimelineTab DataProject={DataProject} />

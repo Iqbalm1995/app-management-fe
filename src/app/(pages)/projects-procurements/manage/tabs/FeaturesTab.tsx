@@ -21,7 +21,7 @@ const FeaturesTab = ({ DataProject }: FeaturesTabProps) => {
       roundedBottom={radiusStyle}
     >
       <Suspense fallback={<LoadingMiniSignature />}>
-        <ProjectFeatureView DataProject={DataProject} />
+        <ProjectFeatureView DataProject={DataProject} viewType="backlogs" />
       </Suspense>
     </TabPanel>
   );

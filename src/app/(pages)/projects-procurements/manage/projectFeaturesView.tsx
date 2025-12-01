@@ -133,12 +133,13 @@ import Link from "next/link";
 
 interface ProjectFeatureViewProps {
   DataProject: ProjectDataResponse | null;
+  viewType?: "backlogs" | "workflow";
 }
 
 // Motion-enhanced version of CardBody
 const MotionCardBody = motion(CardBody);
 
-const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
+const ProjectFeatureView = ({ DataProject, viewType = "workflow" }: ProjectFeatureViewProps) => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
 
@@ -250,26 +251,25 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
               />
             )}
 
-          {/* SECTION FOR TYPE PROCUREMENT AND HAVE REQUIREMENT DATA */}
-          {DataProject.projectType == PROJECT_TYPE_PROCUREMENT &&
-            DataRequirement && (
-              <FeatureBacklogsView
-                DataProject={DataProject}
-                DataRequirement={DataRequirement}
-                onRefresh={RefreshAction}
-                refreshTrigger={RefreshData}
-              />
-            )}
-
-          {/* SECTION FOR TYPE POCUREMENT AND DONT HAVE REQUIREMENT DATA */}
-          {DataProject.projectType == PROJECT_TYPE_PROCUREMENT &&
-            !DataRequirement && (
-              <WorkFlowBacklogsView
-                DataProject={DataProject}
-                onRefresh={RefreshAction}
-                refreshTrigger={RefreshData}
-              />
-            )}
+          {/* SECTION FOR TYPE PROCUREMENT */}
+          {DataProject.projectType == PROJECT_TYPE_PROCUREMENT && (
+            <>
+              {viewType === "backlogs" && DataRequirement ? (
+                <FeatureBacklogsView
+                  DataProject={DataProject}
+                  DataRequirement={DataRequirement}
+                  onRefresh={RefreshAction}
+                  refreshTrigger={RefreshData}
+                />
+              ) : (
+                <WorkFlowBacklogsView
+                  DataProject={DataProject}
+                  onRefresh={RefreshAction}
+                  refreshTrigger={RefreshData}
+                />
+              )}
+            </>
+          )}
         </>
       )}
     </Flex>

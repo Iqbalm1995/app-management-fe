@@ -5411,228 +5411,214 @@ export default function ProjectRegisterView({
                       {/* FOR TYPE PROJECT REGISTER PROCUREMENT */}
                       {projectTypeRegister == PROJECT_TYPE_PROCUREMENT && (
                         <Flex as={Stack} w={"full"} spacing={5}>
-                          {DataRequirement != null ? (
-                            <>
-                              {IsLoadingProcess ? (
-                                <LoadingMiniSignature />
-                              ) : (
-                                // TABLE NEW DESIGN
-                                <TableComponentWithFilterCTX
-                                  table={table}
-                                  handleFilterChange={handleFilterChange}
-                                />
-                              )}
-                            </>
-                          ) : (
-                            <Grid
-                              templateColumns="repeat(12, 1fr)"
-                              gap={4}
+                          <Grid
+                            templateColumns="repeat(12, 1fr)"
+                            gap={4}
+                            w={"full"}
+                          >
+                            <GridItem
+                              colSpan={{ base: 12, sm: 12, md: 8, lg: 8 }}
                               w={"full"}
                             >
-                              <GridItem
-                                colSpan={{ base: 12, sm: 12, md: 8, lg: 8 }}
+                              <Flex
+                                as={Stack}
+                                p={6}
                                 w={"full"}
+                                spacing={4}
+                                rounded={radiusStyle}
+                                borderWidth={1}
+                                boxShadow={"md"}
+                                borderColor={
+                                  colorMode == "light"
+                                    ? "gray.100"
+                                    : "gray.900"
+                                }
                               >
-                                <Flex
-                                  as={Stack}
-                                  p={6}
-                                  w={"full"}
-                                  spacing={4}
-                                  rounded={radiusStyle}
-                                  borderWidth={1}
-                                  boxShadow={"md"}
-                                  borderColor={
-                                    colorMode == "light"
-                                      ? "gray.100"
-                                      : "gray.900"
-                                  }
-                                >
-                                  <Flex as={Stack} w={"full"}>
-                                    <Heading size="md">
-                                      Choose Work Stages for Procurement
-                                    </Heading>
-                                    <Text
-                                      fontSize="sm"
-                                      color={
-                                        colorMode == "light"
-                                          ? "gray.500"
-                                          : "gray.400"
-                                      }
-                                    >
-                                      Select procurement workflow stages for
-                                      this project
-                                    </Text>
-                                  </Flex>
-
-                                  {IsLoadingWorkflowProcurements ? (
-                                    <LoadingMiniSignature />
-                                  ) : (
-                                    renderWorkflowLevelProcurement(
-                                      DataWorkflowGroupsProcurements
-                                    )
-                                  )}
+                                <Flex as={Stack} w={"full"}>
+                                  <Heading size="md">
+                                    Choose Work Stages for Procurement
+                                  </Heading>
+                                  <Text
+                                    fontSize="sm"
+                                    color={
+                                      colorMode == "light"
+                                        ? "gray.500"
+                                        : "gray.400"
+                                    }
+                                  >
+                                    Select procurement workflow stages for
+                                    this project
+                                  </Text>
                                 </Flex>
-                              </GridItem>
-                              <GridItem
-                                colSpan={{ base: 12, sm: 12, md: 4, lg: 4 }}
-                                w={"full"}
+
+                                {IsLoadingWorkflowProcurements ? (
+                                  <LoadingMiniSignature />
+                                ) : (
+                                  renderWorkflowLevelProcurement(
+                                    DataWorkflowGroupsProcurements
+                                  )
+                                )}
+                              </Flex>
+                            </GridItem>
+                            <GridItem
+                              colSpan={{ base: 12, sm: 12, md: 4, lg: 4 }}
+                              w={"full"}
+                            >
+                              <Card
+                                rounded={radiusStyle}
+                                bgColor={
+                                  colorMode == "light"
+                                    ? "gray.100"
+                                    : "gray.900"
+                                }
                               >
-                                <Card
-                                  rounded={radiusStyle}
-                                  bgColor={
-                                    colorMode == "light"
-                                      ? "gray.100"
-                                      : "gray.900"
-                                  }
-                                >
-                                  <CardBody>
-                                    <Flex
-                                      w={"full"}
-                                      as={Stack}
-                                      minH={"500px"}
-                                      spacing={6}
-                                    >
-                                      <HStack spacing={4} align={"center"}>
-                                        <Box
-                                          w={12}
-                                          h={12}
-                                          bgColor={
+                                <CardBody>
+                                  <Flex
+                                    w={"full"}
+                                    as={Stack}
+                                    minH={"500px"}
+                                    spacing={6}
+                                  >
+                                    <HStack spacing={4} align={"center"}>
+                                      <Box
+                                        w={12}
+                                        h={12}
+                                        bgColor={
+                                          colorMode == "light"
+                                            ? "secondary.500"
+                                            : "gray.800"
+                                        }
+                                        rounded="lg"
+                                        display="flex"
+                                        alignItems="center"
+                                        justifyContent="center"
+                                      >
+                                        <Icon
+                                          as={BsLightningChargeFill}
+                                          color={
                                             colorMode == "light"
-                                              ? "secondary.500"
-                                              : "gray.800"
+                                              ? "white"
+                                              : "secondary.500"
                                           }
-                                          rounded="lg"
-                                          display="flex"
-                                          alignItems="center"
-                                          justifyContent="center"
+                                        />
+                                      </Box>
+                                      <VStack
+                                        align="start"
+                                        spacing={0}
+                                        flex={1}
+                                      >
+                                        <Text
+                                          fontSize="lg"
+                                          fontWeight="bold"
+                                          color={"secondary.500"}
                                         >
-                                          <Icon
-                                            as={BsLightningChargeFill}
-                                            color={
-                                              colorMode == "light"
-                                                ? "white"
-                                                : "secondary.500"
-                                            }
-                                          />
-                                        </Box>
-                                        <VStack
-                                          align="start"
-                                          spacing={0}
-                                          flex={1}
+                                          Procurement Stage Preset
+                                        </Text>
+                                        <Text
+                                          fontSize="sm"
+                                          color={
+                                            colorMode == "light"
+                                              ? "gray.500"
+                                              : "gray.400"
+                                          }
+                                          lineHeight={1.2}
                                         >
-                                          <Text
-                                            fontSize="lg"
-                                            fontWeight="bold"
-                                            color={"secondary.500"}
-                                          >
-                                            Procurement Stage Preset
-                                          </Text>
-                                          <Text
-                                            fontSize="sm"
-                                            color={
-                                              colorMode == "light"
-                                                ? "gray.500"
-                                                : "gray.400"
-                                            }
-                                            lineHeight={1.2}
-                                          >
-                                            Select procurement workflow stages
-                                            preset
-                                          </Text>
-                                        </VStack>
-                                      </HStack>
-                                      <Flex as={Stack} w={"full"}>
-                                        {DataWorkflowPresetsProcurements.length >
-                                          0 ? (
-                                          <VStack align="start" spacing={1}>
-                                            {DataWorkflowPresetsProcurements.map(
-                                              (preset) => (
+                                          Select procurement workflow stages
+                                          preset
+                                        </Text>
+                                      </VStack>
+                                    </HStack>
+                                    <Flex as={Stack} w={"full"}>
+                                      {DataWorkflowPresetsProcurements.length >
+                                        0 ? (
+                                        <VStack align="start" spacing={1}>
+                                          {DataWorkflowPresetsProcurements.map(
+                                            (preset) => (
+                                              <Flex
+                                                key={preset.id}
+                                                as={HStack}
+                                                w={"full"}
+                                                justifyContent={
+                                                  "space-between"
+                                                }
+                                                alignItems={"center"}
+                                                bgColor={
+                                                  selectedPresetProcurement?.id ===
+                                                    preset.id
+                                                    ? "secondary.100"
+                                                    : "transparent"
+                                                }
+                                                rounded={radiusStyle}
+                                                px={4}
+                                                py={3}
+                                              >
                                                 <Flex
-                                                  key={preset.id}
+                                                  justifyContent={"start"}
                                                   as={HStack}
-                                                  w={"full"}
-                                                  justifyContent={
-                                                    "space-between"
-                                                  }
+                                                  spacing={4}
                                                   alignItems={"center"}
-                                                  bgColor={
-                                                    selectedPresetProcurement?.id ===
-                                                      preset.id
-                                                      ? "secondary.100"
-                                                      : "transparent"
-                                                  }
-                                                  rounded={radiusStyle}
-                                                  px={4}
-                                                  py={3}
                                                 >
-                                                  <Flex
-                                                    justifyContent={"start"}
-                                                    as={HStack}
-                                                    spacing={4}
-                                                    alignItems={"center"}
-                                                  >
-                                                    <Icon
-                                                      as={FaCircle}
-                                                      color={"secondary.500"}
-                                                      boxSize={2}
-                                                    />
-                                                    <Text
-                                                      fontWeight={
-                                                        selectedPresetProcurement?.id ===
-                                                          preset.id
-                                                          ? 600
-                                                          : 500
-                                                      }
-                                                      color={
-                                                        selectedPresetProcurement?.id ===
-                                                          preset.id
-                                                          ? "gray.900"
-                                                          : colorMode == "light"
-                                                            ? "gray.900"
-                                                            : "white"
-                                                      }
-                                                    >
-                                                      {preset.wfPresetName}
-                                                    </Text>
-                                                  </Flex>
-                                                  <Button
-                                                    variant={"solid"}
-                                                    colorScheme={
+                                                  <Icon
+                                                    as={FaCircle}
+                                                    color={"secondary.500"}
+                                                    boxSize={2}
+                                                  />
+                                                  <Text
+                                                    fontWeight={
                                                       selectedPresetProcurement?.id ===
                                                         preset.id
-                                                        ? "red"
-                                                        : "secondary"
+                                                        ? 600
+                                                        : 500
                                                     }
-                                                    size={"xs"}
-                                                    onClick={() =>
-                                                      handleSelectPresetProcurement(
+                                                    color={
+                                                      selectedPresetProcurement?.id ===
                                                         preset.id
-                                                      )
+                                                        ? "gray.900"
+                                                        : colorMode == "light"
+                                                          ? "gray.900"
+                                                          : "white"
                                                     }
                                                   >
-                                                    {selectedPresetProcurement?.id ===
-                                                      preset.id ? (
-                                                      <FiMinus />
-                                                    ) : (
-                                                      <FiPlus />
-                                                    )}
-                                                  </Button>
+                                                    {preset.wfPresetName}
+                                                  </Text>
                                                 </Flex>
-                                              )
-                                            )}
-                                          </VStack>
-                                        ) : (
-                                          <Text fontSize="sm" color="gray.500">
-                                            No procurement presets available
-                                          </Text>
-                                        )}
-                                      </Flex>
+                                                <Button
+                                                  variant={"solid"}
+                                                  colorScheme={
+                                                    selectedPresetProcurement?.id ===
+                                                      preset.id
+                                                      ? "red"
+                                                      : "secondary"
+                                                  }
+                                                  size={"xs"}
+                                                  onClick={() =>
+                                                    handleSelectPresetProcurement(
+                                                      preset.id
+                                                    )
+                                                  }
+                                                >
+                                                  {selectedPresetProcurement?.id ===
+                                                    preset.id ? (
+                                                    <FiMinus />
+                                                  ) : (
+                                                    <FiPlus />
+                                                  )}
+                                                </Button>
+                                              </Flex>
+                                            )
+                                          )}
+                                        </VStack>
+                                      ) : (
+                                        <Text fontSize="sm" color="gray.500">
+                                          No procurement presets available
+                                        </Text>
+                                      )}
                                     </Flex>
-                                  </CardBody>
-                                </Card>
-                              </GridItem>
-                            </Grid>
-                          )}
+                                  </Flex>
+                                </CardBody>
+                              </Card>
+                            </GridItem>
+                          </Grid>
                         </Flex>
                       )}
                     </Flex>
