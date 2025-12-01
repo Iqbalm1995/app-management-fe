@@ -450,9 +450,8 @@ export default function ProjectRegisterView({
 
     if (isErrorResponse || !requestData) {
       showToast({
-        description: `Upload File Failed : ${
-          requestData?.message || RES_GENERIC_ERROR_MSG
-        }`,
+        description: `Upload File Failed : ${requestData?.message || RES_GENERIC_ERROR_MSG
+          }`,
         statusToast: "error",
       });
       return false;
@@ -472,7 +471,7 @@ export default function ProjectRegisterView({
     const selectedBacklogsList = projectTypeRegister == PROJECT_TYPE_INTERNAL_DEVELOPMENT
       ? DataBacklogsRequirement.filter((b) => selectedBacklogIds.includes(b.id))
       : [];
-    
+
     const backlogsProject: BacklogUpdatePayload[] = mapBacklogArrayToUpdatePayload(selectedBacklogsList);
 
     const payload: ProjectRegisterPayload = {
@@ -806,9 +805,8 @@ export default function ProjectRegisterView({
     if (projectTypeRegister === PROJECT_TYPE_INTERNAL_DEVELOPMENT) {
       return `${projectNumber}/${organizationDivisionCode}/BJB/${externalRBB}/${internalRBB}/${currentYear}`;
     } else if (projectTypeRegister === PROJECT_TYPE_PROCUREMENT) {
-      return `${projectNumber}/${organizationDivisionCode}/BJB/${externalRBB}/${internalRBB}/${currentYear}/${
-        projectAcquisitionCode || ""
-      }`;
+      return `${projectNumber}/${organizationDivisionCode}/BJB/${externalRBB}/${internalRBB}/${currentYear}/${projectAcquisitionCode || ""
+        }`;
     }
 
     return "";
@@ -999,6 +997,20 @@ export default function ProjectRegisterView({
   const [selectedBacklogIds, setSelectedBacklogIds] = useState<string[]>([]);
 
   const [globalFilter, setGlobalFilter] = useState<string>("");
+  const [availableBacklogsFilter, setAvailableBacklogsFilter] = useState<string>("");
+  // Pagination state for selected backlogs
+  const [selectedBacklogsPagination, setSelectedBacklogsPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+
+  const selectedBacklogsPaginationMemo = useMemo(
+    () => ({
+      pageIndex: selectedBacklogsPagination.pageIndex,
+      pageSize: selectedBacklogsPagination.pageSize,
+    }),
+    [selectedBacklogsPagination.pageIndex, selectedBacklogsPagination.pageSize]
+  );
 
   const updateBacklog = (
     backlogId: string,
@@ -1054,8 +1066,19 @@ export default function ProjectRegisterView({
   );
 
   const availableBacklogs = useMemo(
-    () => DataBacklogsRequirement.filter((b) => b.projectId === null),
-    [DataBacklogsRequirement]
+    () => {
+      let filtered = DataBacklogsRequirement.filter((b) => b.projectId === null);
+
+      if (availableBacklogsFilter) {
+        filtered = filtered.filter((backlog) =>
+          backlog.backlogName.toLowerCase().includes(availableBacklogsFilter.toLowerCase()) ||
+          backlog.backlogDesc?.toLowerCase().includes(availableBacklogsFilter.toLowerCase())
+        );
+      }
+
+      return filtered;
+    },
+    [DataBacklogsRequirement, availableBacklogsFilter]
   );
 
   const selectedBacklogs = useMemo(
@@ -1566,7 +1589,7 @@ export default function ProjectRegisterView({
               <Flex as={Stack} spacing={0}>
                 <Text fontWeight={600}>{info.row.original.backlogName}</Text>
                 <Text fontSize={"smaller"} color={"gray.500"}>
-                  #{info.row.original.backlogCode}
+                  {/* #{info.row.original.backlogCode} */}
                 </Text>
               </Flex>
             </Flex>
@@ -1796,7 +1819,13 @@ export default function ProjectRegisterView({
   const selectedBacklogsTable = useReactTable({
     data: selectedBacklogs,
     columns: columnsData,
+    pageCount: Math.ceil(selectedBacklogs.length / selectedBacklogsPagination.pageSize),
+    state: {
+      pagination: selectedBacklogsPaginationMemo,
+    },
+    onPaginationChange: setSelectedBacklogsPagination,
     getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
     debugTable: false,
     manualFiltering: false,
     manualPagination: false,
@@ -2402,7 +2431,7 @@ export default function ProjectRegisterView({
             w={"full"}
             display={
               projectTypeRegister == PROJECT_TYPE_PROCUREMENT &&
-              IsHaveMemo == "N"
+                IsHaveMemo == "N"
                 ? "none"
                 : "box"
             }
@@ -2458,7 +2487,7 @@ export default function ProjectRegisterView({
                             >
                               {DataRequirement
                                 ? DataRequirement.reqNarative.toUpperCase() +
-                                  " "
+                                " "
                                 : "NO REQUIREMENT REFERENCE "}
                             </Text>
                           </Link>
@@ -2477,7 +2506,7 @@ export default function ProjectRegisterView({
                       <Text fontSize="sm" color="secondary.200">
                         {DataRequirement
                           ? DataRequirement.reqNarative ||
-                            "No description available"
+                          "No description available"
                           : "-"}
                       </Text>
                       <HStack spacing={4}>
@@ -2546,7 +2575,7 @@ export default function ProjectRegisterView({
                         fontWeight="bold"
                         fontSize={
                           ApplicationData &&
-                          ApplicationData.appShortName.length > 3
+                            ApplicationData.appShortName.length > 3
                             ? "small"
                             : "x-large"
                         }
@@ -2635,7 +2664,7 @@ export default function ProjectRegisterView({
                                       }
                                     >
                                       {projectTypeRegister !=
-                                      PROJECT_TYPE_PROCUREMENT
+                                        PROJECT_TYPE_PROCUREMENT
                                         ? "Belum"
                                         : "Tidak (Dikhususkan untuk IT)"}
                                     </Radio>
@@ -2655,7 +2684,7 @@ export default function ProjectRegisterView({
                           isRequired={IsHaveMemo == "Y"}
                           display={
                             projectTypeRegister == PROJECT_TYPE_PROCUREMENT &&
-                            IsHaveMemo == "N"
+                              IsHaveMemo == "N"
                               ? "none"
                               : "flex"
                           }
@@ -2765,11 +2794,11 @@ export default function ProjectRegisterView({
                                 {ProjectNoMode === "auto"
                                   ? "Nomor project digenerate otomatis"
                                   : `Contoh: ${new Date().getFullYear()}/${String(
-                                      new Date().getMonth() + 1
-                                    ).padStart(
-                                      2,
-                                      "0"
-                                    )}/BJB/XXXX/${new Date().getFullYear()}-A/1`}
+                                    new Date().getMonth() + 1
+                                  ).padStart(
+                                    2,
+                                    "0"
+                                  )}/BJB/XXXX/${new Date().getFullYear()}-A/1`}
                               </Text>
                               <FormErrorMessage>
                                 {formik.errors.projectNo}
@@ -2859,7 +2888,7 @@ export default function ProjectRegisterView({
                                 placeholder={`Nama Project`}
                                 minLength={3}
                                 maxLength={200}
-                                // isDisabled={ActionLoading}
+                              // isDisabled={ActionLoading}
                               />
                               <FormErrorMessage>
                                 {formik.errors.projectName}
@@ -2927,9 +2956,9 @@ export default function ProjectRegisterView({
                                       value={OrganizationData.filter(
                                         (f) =>
                                           f.orgType ==
-                                            ORG_CATEGORY_KEY_DIRECTORATE &&
+                                          ORG_CATEGORY_KEY_DIRECTORATE &&
                                           f.id ==
-                                            formik.values.proOwnerDirectorateId
+                                          formik.values.proOwnerDirectorateId
                                       ).map((d) => ({
                                         label: `${d.orgName} | ${d.orgType}`,
                                         value: d.id,
@@ -3060,7 +3089,7 @@ export default function ProjectRegisterView({
                                         ? true
                                         : false
                                     }
-                                    // isRequired
+                                  // isRequired
                                   >
                                     <FormLabel h={"full"}>Grup</FormLabel>
 
@@ -3070,7 +3099,7 @@ export default function ProjectRegisterView({
                                         (f) =>
                                           f.orgType == ORG_CATEGORY_KEY_GROUP &&
                                           f.parentId ==
-                                            formik.values.proOwnerDivisionId
+                                          formik.values.proOwnerDivisionId
                                       ).map((d) => ({
                                         label: `${d.orgName} | ${d.orgType}`,
                                         value: d.id,
@@ -3250,7 +3279,7 @@ export default function ProjectRegisterView({
                                 defaultValue={formik.values.projectDesc ?? ""}
                                 placeholder={`Perlihal`}
                                 maxLength={300}
-                                // isDisabled={ActionLoading}
+                              // isDisabled={ActionLoading}
                               />
                               <FormErrorMessage>
                                 {formik.errors.projectDesc}
@@ -3277,7 +3306,7 @@ export default function ProjectRegisterView({
                                 type="date"
                                 onChange={formik.handleChange}
                                 value={formik.values.projectRegisterDate}
-                                // isDisabled={ActionLoading}
+                              // isDisabled={ActionLoading}
                               />
                               <FormErrorMessage>
                                 {formik.errors.projectRegisterDate}
@@ -3302,7 +3331,7 @@ export default function ProjectRegisterView({
                                 defaultValue={formik.values.note ?? ""}
                                 placeholder={`Perlihal`}
                                 maxLength={300}
-                                // isDisabled={ActionLoading}
+                              // isDisabled={ActionLoading}
                               />
                               <FormErrorMessage>
                                 {formik.errors.note}
@@ -3352,10 +3381,10 @@ export default function ProjectRegisterView({
                                 leftover < 0
                                   ? "red.500"
                                   : leftover > 0
-                                  ? "green.500"
-                                  : colorMode === "light"
-                                  ? "black"
-                                  : "white";
+                                    ? "green.500"
+                                    : colorMode === "light"
+                                      ? "black"
+                                      : "white";
 
                               return (
                                 <Flex w={"full"} as={Stack} key={index}>
@@ -3407,9 +3436,9 @@ export default function ProjectRegisterView({
                                                 typeof formik.errors
                                                   .workPrograms?.[index] ===
                                                   "object" &&
-                                                formik.errors.workPrograms?.[
-                                                  index
-                                                ]?.divisionId
+                                                  formik.errors.workPrograms?.[
+                                                    index
+                                                  ]?.divisionId
                                                   ? true
                                                   : false
                                               }
@@ -3458,11 +3487,11 @@ export default function ProjectRegisterView({
                                                   value={OrganizationData.filter(
                                                     (f) =>
                                                       f.orgType ==
-                                                        ORG_CATEGORY_KEY_DIRECTORATE &&
+                                                      ORG_CATEGORY_KEY_DIRECTORATE &&
                                                       f.id ==
-                                                        formik.values
-                                                          .workPrograms[index]
-                                                          .directorateId
+                                                      formik.values
+                                                        .workPrograms[index]
+                                                        .directorateId
                                                   ).map((d) => ({
                                                     label: `${d.orgName} | ${d.orgType}`,
                                                     value: d.id,
@@ -3495,9 +3524,9 @@ export default function ProjectRegisterView({
                                                 typeof formik.errors
                                                   .workPrograms?.[index] ===
                                                   "object" &&
-                                                formik.errors.workPrograms?.[
-                                                  index
-                                                ]?.divisionId
+                                                  formik.errors.workPrograms?.[
+                                                    index
+                                                  ]?.divisionId
                                                   ? true
                                                   : false
                                               }
@@ -3515,11 +3544,11 @@ export default function ProjectRegisterView({
                                                 options={OrganizationData.filter(
                                                   (f) =>
                                                     f.orgType ==
-                                                      ORG_CATEGORY_KEY_DIVISION &&
+                                                    ORG_CATEGORY_KEY_DIVISION &&
                                                     f.parentId ==
-                                                      formik.values
-                                                        .workPrograms[index]
-                                                        .directorateId
+                                                    formik.values
+                                                      .workPrograms[index]
+                                                      .directorateId
                                                 ).map((d) => ({
                                                   label: `${d.orgName} | ${d.orgType}`,
                                                   value: d.id,
@@ -3546,11 +3575,11 @@ export default function ProjectRegisterView({
                                                 value={OrganizationData.filter(
                                                   (f) =>
                                                     f.orgType ==
-                                                      ORG_CATEGORY_KEY_DIVISION &&
+                                                    ORG_CATEGORY_KEY_DIVISION &&
                                                     f.id ==
-                                                      formik.values
-                                                        .workPrograms[index]
-                                                        .divisionId
+                                                    formik.values
+                                                      .workPrograms[index]
+                                                      .divisionId
                                                 ).map((d) => ({
                                                   label: `${d.orgName} | ${d.orgType}`,
                                                   value: d.id,
@@ -3582,9 +3611,9 @@ export default function ProjectRegisterView({
                                                 typeof formik.errors
                                                   .workPrograms?.[index] ===
                                                   "object" &&
-                                                formik.errors.workPrograms?.[
-                                                  index
-                                                ]?.groupId
+                                                  formik.errors.workPrograms?.[
+                                                    index
+                                                  ]?.groupId
                                                   ? true
                                                   : false
                                               }
@@ -3601,11 +3630,11 @@ export default function ProjectRegisterView({
                                                 options={OrganizationData.filter(
                                                   (f) =>
                                                     f.orgType ==
-                                                      ORG_CATEGORY_KEY_GROUP &&
+                                                    ORG_CATEGORY_KEY_GROUP &&
                                                     f.parentId ==
-                                                      formik.values
-                                                        .workPrograms[index]
-                                                        .divisionId
+                                                    formik.values
+                                                      .workPrograms[index]
+                                                      .divisionId
                                                 ).map((d) => ({
                                                   label: `${d.orgName} | ${d.orgType}`,
                                                   value: d.id,
@@ -3635,11 +3664,11 @@ export default function ProjectRegisterView({
                                                 value={OrganizationData.filter(
                                                   (f) =>
                                                     f.orgType ==
-                                                      ORG_CATEGORY_KEY_GROUP &&
+                                                    ORG_CATEGORY_KEY_GROUP &&
                                                     f.id ==
-                                                      formik.values
-                                                        .workPrograms[index]
-                                                        .groupId
+                                                    formik.values
+                                                      .workPrograms[index]
+                                                      .groupId
                                                 ).map((d) => ({
                                                   label: `${d.orgName} | ${d.orgType}`,
                                                   value: d.id,
@@ -3667,8 +3696,8 @@ export default function ProjectRegisterView({
                                       typeof formik.errors.workPrograms?.[
                                         index
                                       ] === "object" &&
-                                      formik.errors.workPrograms?.[index]
-                                        ?.workProgramCode
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramCode
                                         ? true
                                         : false
                                     }
@@ -3718,8 +3747,8 @@ export default function ProjectRegisterView({
                                       typeof formik.errors.workPrograms?.[
                                         index
                                       ] === "object" &&
-                                      formik.errors.workPrograms?.[index]
-                                        ?.workProgramName
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramName
                                         ? true
                                         : false
                                     }
@@ -3769,8 +3798,8 @@ export default function ProjectRegisterView({
                                       typeof formik.errors.workPrograms?.[
                                         index
                                       ] === "object" &&
-                                      formik.errors.workPrograms?.[index]
-                                        ?.workProgramAccName
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramAccName
                                         ? true
                                         : false
                                     }
@@ -3820,8 +3849,8 @@ export default function ProjectRegisterView({
                                       typeof formik.errors.workPrograms?.[
                                         index
                                       ] === "object" &&
-                                      formik.errors.workPrograms?.[index]
-                                        ?.workProgramAccNumber
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramAccNumber
                                         ? true
                                         : false
                                     }
@@ -3876,8 +3905,8 @@ export default function ProjectRegisterView({
                                       typeof formik.errors.workPrograms?.[
                                         index
                                       ] === "object" &&
-                                      formik.errors.workPrograms?.[index]
-                                        ?.workProgramAccCc
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramAccCc
                                         ? true
                                         : false
                                     }
@@ -3931,8 +3960,8 @@ export default function ProjectRegisterView({
                                       typeof formik.errors.workPrograms?.[
                                         index
                                       ] === "object" &&
-                                      formik.errors.workPrograms?.[index]
-                                        ?.workProgramBudget
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramBudget
                                         ? true
                                         : false
                                     }
@@ -3973,8 +4002,8 @@ export default function ProjectRegisterView({
                                       typeof formik.errors.workPrograms?.[
                                         index
                                       ] === "object" &&
-                                      formik.errors.workPrograms?.[index]
-                                        ?.workProgramReal
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramReal
                                         ? true
                                         : false
                                     }
@@ -4086,10 +4115,10 @@ export default function ProjectRegisterView({
                                 leftover < 0
                                   ? "red.500"
                                   : leftover > 0
-                                  ? "green.500"
-                                  : colorMode === "light"
-                                  ? "black"
-                                  : "white";
+                                    ? "green.500"
+                                    : colorMode === "light"
+                                      ? "black"
+                                      : "white";
                               return (
                                 <Flex w={"full"} as={Stack} key={index}>
                                   <Divider key={index} />
@@ -4140,9 +4169,9 @@ export default function ProjectRegisterView({
                                                 typeof formik.errors
                                                   .workPrograms?.[index] ===
                                                   "object" &&
-                                                formik.errors.workPrograms?.[
-                                                  index
-                                                ]?.directorateId
+                                                  formik.errors.workPrograms?.[
+                                                    index
+                                                  ]?.directorateId
                                                   ? true
                                                   : false
                                               }
@@ -4170,11 +4199,11 @@ export default function ProjectRegisterView({
                                                 value={OrganizationData.filter(
                                                   (f) =>
                                                     f.orgType ==
-                                                      ORG_CATEGORY_KEY_DIRECTORATE &&
+                                                    ORG_CATEGORY_KEY_DIRECTORATE &&
                                                     f.id ==
-                                                      formik.values
-                                                        .workPrograms[index]
-                                                        .directorateId
+                                                    formik.values
+                                                      .workPrograms[index]
+                                                      .directorateId
                                                 ).map((d) => ({
                                                   label: `${d.orgName} | ${d.orgType}`,
                                                   value: d.id,
@@ -4206,9 +4235,9 @@ export default function ProjectRegisterView({
                                                 typeof formik.errors
                                                   .workPrograms?.[index] ===
                                                   "object" &&
-                                                formik.errors.workPrograms?.[
-                                                  index
-                                                ]?.divisionId
+                                                  formik.errors.workPrograms?.[
+                                                    index
+                                                  ]?.divisionId
                                                   ? true
                                                   : false
                                               }
@@ -4223,11 +4252,11 @@ export default function ProjectRegisterView({
                                                 options={OrganizationData.filter(
                                                   (f) =>
                                                     f.orgType ==
-                                                      ORG_CATEGORY_KEY_DIVISION &&
+                                                    ORG_CATEGORY_KEY_DIVISION &&
                                                     f.parentId ==
-                                                      formik.values
-                                                        .workPrograms[index]
-                                                        .directorateId
+                                                    formik.values
+                                                      .workPrograms[index]
+                                                      .directorateId
                                                 ).map((d) => ({
                                                   label: `${d.orgName} | ${d.orgType}`,
                                                   value: d.id,
@@ -4239,11 +4268,11 @@ export default function ProjectRegisterView({
                                                 value={OrganizationData.filter(
                                                   (f) =>
                                                     f.orgType ==
-                                                      ORG_CATEGORY_KEY_DIVISION &&
+                                                    ORG_CATEGORY_KEY_DIVISION &&
                                                     f.id ==
-                                                      formik.values
-                                                        .workPrograms[index]
-                                                        .divisionId
+                                                    formik.values
+                                                      .workPrograms[index]
+                                                      .divisionId
                                                 ).map((d) => ({
                                                   label: `${d.orgName} | ${d.orgType}`,
                                                   value: d.id,
@@ -4275,9 +4304,9 @@ export default function ProjectRegisterView({
                                                 typeof formik.errors
                                                   .workPrograms?.[index] ===
                                                   "object" &&
-                                                formik.errors.workPrograms?.[
-                                                  index
-                                                ]?.groupId
+                                                  formik.errors.workPrograms?.[
+                                                    index
+                                                  ]?.groupId
                                                   ? true
                                                   : false
                                               }
@@ -4291,11 +4320,11 @@ export default function ProjectRegisterView({
                                                 options={OrganizationData.filter(
                                                   (f) =>
                                                     f.orgType ==
-                                                      ORG_CATEGORY_KEY_GROUP &&
+                                                    ORG_CATEGORY_KEY_GROUP &&
                                                     f.parentId ==
-                                                      formik.values
-                                                        .workPrograms[index]
-                                                        .divisionId
+                                                    formik.values
+                                                      .workPrograms[index]
+                                                      .divisionId
                                                 ).map((d) => ({
                                                   label: `${d.orgName} | ${d.orgType}`,
                                                   value: d.id,
@@ -4327,11 +4356,11 @@ export default function ProjectRegisterView({
                                                 value={OrganizationData.filter(
                                                   (f) =>
                                                     f.orgType ==
-                                                      ORG_CATEGORY_KEY_GROUP &&
+                                                    ORG_CATEGORY_KEY_GROUP &&
                                                     f.id ==
-                                                      formik.values
-                                                        .workPrograms[index]
-                                                        .groupId
+                                                    formik.values
+                                                      .workPrograms[index]
+                                                      .groupId
                                                 ).map((d) => ({
                                                   label: `${d.orgName} | ${d.orgType}`,
                                                   value: d.id,
@@ -4359,8 +4388,8 @@ export default function ProjectRegisterView({
                                       typeof formik.errors.workPrograms?.[
                                         index
                                       ] === "object" &&
-                                      formik.errors.workPrograms?.[index]
-                                        ?.workProgramCode
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramCode
                                         ? true
                                         : false
                                     }
@@ -4410,8 +4439,8 @@ export default function ProjectRegisterView({
                                       typeof formik.errors.workPrograms?.[
                                         index
                                       ] === "object" &&
-                                      formik.errors.workPrograms?.[index]
-                                        ?.workProgramName
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramName
                                         ? true
                                         : false
                                     }
@@ -4461,8 +4490,8 @@ export default function ProjectRegisterView({
                                       typeof formik.errors.workPrograms?.[
                                         index
                                       ] === "object" &&
-                                      formik.errors.workPrograms?.[index]
-                                        ?.workProgramAccName
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramAccName
                                         ? true
                                         : false
                                     }
@@ -4512,8 +4541,8 @@ export default function ProjectRegisterView({
                                       typeof formik.errors.workPrograms?.[
                                         index
                                       ] === "object" &&
-                                      formik.errors.workPrograms?.[index]
-                                        ?.workProgramAccNumber
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramAccNumber
                                         ? true
                                         : false
                                     }
@@ -4568,8 +4597,8 @@ export default function ProjectRegisterView({
                                       typeof formik.errors.workPrograms?.[
                                         index
                                       ] === "object" &&
-                                      formik.errors.workPrograms?.[index]
-                                        ?.workProgramAccCc
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramAccCc
                                         ? true
                                         : false
                                     }
@@ -4623,8 +4652,8 @@ export default function ProjectRegisterView({
                                       typeof formik.errors.workPrograms?.[
                                         index
                                       ] === "object" &&
-                                      formik.errors.workPrograms?.[index]
-                                        ?.workProgramBudget
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramBudget
                                         ? true
                                         : false
                                     }
@@ -4665,8 +4694,8 @@ export default function ProjectRegisterView({
                                       typeof formik.errors.workPrograms?.[
                                         index
                                       ] === "object" &&
-                                      formik.errors.workPrograms?.[index]
-                                        ?.workProgramReal
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramReal
                                         ? true
                                         : false
                                     }
@@ -5048,10 +5077,10 @@ export default function ProjectRegisterView({
                                             value={OrganizationData.filter(
                                               (f) =>
                                                 f.orgType ==
-                                                  ORG_CATEGORY_KEY_DIRECTORATE &&
+                                                ORG_CATEGORY_KEY_DIRECTORATE &&
                                                 f.id ==
-                                                  formik.values
-                                                    .proManageByDirectorateId
+                                                formik.values
+                                                  .proManageByDirectorateId
                                             ).map((d) => ({
                                               label: `${d.orgName} | ${d.orgType}`,
                                               value: d.id,
@@ -5096,10 +5125,10 @@ export default function ProjectRegisterView({
                                             options={OrganizationData.filter(
                                               (f) =>
                                                 f.orgType ==
-                                                  ORG_CATEGORY_KEY_DIVISION &&
+                                                ORG_CATEGORY_KEY_DIVISION &&
                                                 f.parentId ==
-                                                  formik.values
-                                                    .proManageByDirectorateId
+                                                formik.values
+                                                  .proManageByDirectorateId
                                             ).map((d) => ({
                                               label: `${d.orgName} | ${d.orgType}`,
                                               value: d.id,
@@ -5128,10 +5157,10 @@ export default function ProjectRegisterView({
                                             value={OrganizationData.filter(
                                               (f) =>
                                                 f.orgType ==
-                                                  ORG_CATEGORY_KEY_DIVISION &&
+                                                ORG_CATEGORY_KEY_DIVISION &&
                                                 f.id ==
-                                                  formik.values
-                                                    .proManageByDivisionId
+                                                formik.values
+                                                  .proManageByDivisionId
                                             ).map((d) => ({
                                               label: `${d.orgName} | ${d.orgType}`,
                                               value: d.id,
@@ -5162,7 +5191,7 @@ export default function ProjectRegisterView({
                                               ? true
                                               : false
                                           }
-                                          // isRequired
+                                        // isRequired
                                         >
                                           <FormLabel h={"full"} mt={2}>
                                             Grup
@@ -5173,10 +5202,10 @@ export default function ProjectRegisterView({
                                             options={OrganizationData.filter(
                                               (f) =>
                                                 f.orgType ==
-                                                  ORG_CATEGORY_KEY_GROUP &&
+                                                ORG_CATEGORY_KEY_GROUP &&
                                                 f.parentId ==
-                                                  formik.values
-                                                    .proManageByDivisionId
+                                                formik.values
+                                                  .proManageByDivisionId
                                             ).map((d) => ({
                                               label: `${d.orgName} | ${d.orgType}`,
                                               value: d.id,
@@ -5205,10 +5234,10 @@ export default function ProjectRegisterView({
                                             value={OrganizationData.filter(
                                               (f) =>
                                                 f.orgType ==
-                                                  ORG_CATEGORY_KEY_GROUP &&
+                                                ORG_CATEGORY_KEY_GROUP &&
                                                 f.id ==
-                                                  formik.values
-                                                    .proManageByGroupId
+                                                formik.values
+                                                  .proManageByGroupId
                                             ).map((d) => ({
                                               label: `${d.orgName} | ${d.orgType}`,
                                               value: d.id,
@@ -5236,144 +5265,156 @@ export default function ProjectRegisterView({
                       {/* FOR TYPE PROJECT REGISTER INTERNAL DEVELOPMENT */}
                       {projectTypeRegister ==
                         PROJECT_TYPE_INTERNAL_DEVELOPMENT && (
-                        <>
-                          {IsLoadingProcess ? (
-                            <LoadingMiniSignature />
-                          ) : (
-                            <VStack spacing={6} align="stretch" w="full">
-                              {/* Section 1: Already Assigned Backlogs */}
-                              {assignedBacklogs.length > 0 && (
+                          <>
+                            {IsLoadingProcess ? (
+                              <LoadingMiniSignature />
+                            ) : (
+                              <VStack spacing={6} align="stretch" w="full">
+                                {/* Section 1: Already Assigned Backlogs */}
+                                {assignedBacklogs.length > 0 && (
+                                  <Card rounded={radiusStyle}>
+                                    <CardHeader>
+                                      <Heading size="md">Already Assigned to Other Projects</Heading>
+                                      <Text fontSize="sm" color="gray.500">
+                                        These backlogs are already assigned and cannot be selected
+                                      </Text>
+                                    </CardHeader>
+                                    <CardBody>
+                                      <Table size="sm" variant="simple">
+                                        <Thead>
+                                          <Tr>
+                                            <Th>Backlog Name</Th>
+                                            <Th>Priority</Th>
+                                            <Th>Status</Th>
+                                            <Th>Project ID</Th>
+                                          </Tr>
+                                        </Thead>
+                                        <Tbody>
+                                          {assignedBacklogs.map((backlog) => (
+                                            <Tr key={backlog.id} opacity={0.6}>
+                                              <Td>{backlog.backlogName}</Td>
+                                              <Td>
+                                                <Badge colorScheme={priorityColor(backlog.priority)}>
+                                                  {backlog.priority}
+                                                </Badge>
+                                              </Td>
+                                              <Td>{backlog.developmentStatus}</Td>
+                                              <Td>
+                                                <Text fontSize="xs" color="gray.500">
+                                                  {backlog.projectId}
+                                                </Text>
+                                              </Td>
+                                            </Tr>
+                                          ))}
+                                        </Tbody>
+                                      </Table>
+                                    </CardBody>
+                                  </Card>
+                                )}
+
+                                {/* Section 2: Available Backlogs (Can Select) */}
                                 <Card rounded={radiusStyle}>
                                   <CardHeader>
-                                    <Heading size="md">Already Assigned to Other Projects</Heading>
-                                    <Text fontSize="sm" color="gray.500">
-                                      These backlogs are already assigned and cannot be selected
-                                    </Text>
-                                  </CardHeader>
-                                  <CardBody>
-                                    <Table size="sm" variant="simple">
-                                      <Thead>
-                                        <Tr>
-                                          <Th>Backlog Name</Th>
-                                          <Th>Priority</Th>
-                                          <Th>Status</Th>
-                                          <Th>Project ID</Th>
-                                        </Tr>
-                                      </Thead>
-                                      <Tbody>
-                                        {assignedBacklogs.map((backlog) => (
-                                          <Tr key={backlog.id} opacity={0.6}>
-                                            <Td>{backlog.backlogName}</Td>
-                                            <Td>
-                                              <Badge colorScheme={priorityColor(backlog.priority)}>
-                                                {backlog.priority}
-                                              </Badge>
-                                            </Td>
-                                            <Td>{backlog.developmentStatus}</Td>
-                                            <Td>
-                                              <Text fontSize="xs" color="gray.500">
-                                                {backlog.projectId}
-                                              </Text>
-                                            </Td>
-                                          </Tr>
-                                        ))}
-                                      </Tbody>
-                                    </Table>
-                                  </CardBody>
+                                    <HStack justify="space-between">
+                                      <Box>
+                                        <Heading size="md">Available Backlogs</Heading>
+                                        <Text fontSize="sm" color="gray.500">
+                                          Select backlogs to include in this project
+                                        </Text>
+                                      </Box>
+                                      <HStack spacing={3}>
+                                        <Input
+                                          type="text"
+                                          placeholder="Search backlogs..."
+                                          bg={colorMode === "light" ? "white" : "gray.800"}
+                                          size="sm"
+                                          onChange={(e) => setAvailableBacklogsFilter(e.target.value)}
+                                          value={availableBacklogsFilter}
+                                          w="250px"
+                                        />
+                                        <Checkbox
+                                          isChecked={
+                                            availableBacklogs.length > 0 &&
+                                            selectedBacklogIds.length === availableBacklogs.length
+                                          }
+                                          isIndeterminate={
+                                            selectedBacklogIds.length > 0 &&
+                                            selectedBacklogIds.length < availableBacklogs.length
+                                          }
+                                          onChange={(e) => toggleAllAvailableBacklogs(e.target.checked)}
+                                        >
+                                          Select All
+                                        </Checkbox>
+                                      </HStack>
+                                    </HStack>
+                                </CardHeader>                                    <CardBody>
+                                      {availableBacklogs.length === 0 ? (
+                                        <Text color="gray.500" textAlign="center" py={4}>
+                                          {availableBacklogsFilter
+                                            ? `No backlogs found matching "${availableBacklogsFilter}"`
+                                            : "No available backlogs to select"}
+                                        </Text>
+                                      ) : (
+                                        <Table size="sm" variant="simple">
+                                          <Thead>
+                                            <Tr>
+                                              <Th w="50px">Select</Th>
+                                              <Th>Backlog Name</Th>
+                                              <Th>Priority</Th>
+                                              <Th>Urgency</Th>
+                                              <Th>Impact</Th>
+                                              <Th>Status</Th>
+                                            </Tr>
+                                          </Thead>
+                                          <Tbody>
+                                            {availableBacklogs.map((backlog) => (
+                                              <Tr key={backlog.id}>
+                                                <Td>
+                                                  <Checkbox
+                                                    isChecked={selectedBacklogIds.includes(backlog.id)}
+                                                    onChange={() => toggleBacklogSelection(backlog.id)}
+                                                  />
+                                                </Td>
+                                                <Td>{backlog.backlogName}</Td>
+                                                <Td>
+                                                  <Badge colorScheme={priorityColor(backlog.priority)}>
+                                                    {backlog.priority}
+                                                  </Badge>
+                                                </Td>
+                                                <Td>{backlog.urgency}</Td>
+                                                <Td>{backlog.impact}</Td>
+                                                <Td>{backlog.developmentStatus}</Td>
+                                              </Tr>
+                                            ))}
+                                          </Tbody>
+                                        </Table>
+                                      )}
+                                    </CardBody>
                                 </Card>
-                              )}
 
-                              {/* Section 2: Available Backlogs (Can Select) */}
-                              <Card rounded={radiusStyle}>
-                                <CardHeader>
-                                  <HStack justify="space-between">
-                                    <Box>
-                                      <Heading size="md">Available Backlogs</Heading>
+                                {/* Section 3: Selected Backlogs (Editable) */}
+                                {selectedBacklogs.length > 0 && (
+                                  <Card rounded={radiusStyle} borderColor="blue.500" borderWidth="2px">
+                                    <CardHeader>
+                                      <Heading size="md">
+                                        Selected Backlogs ({selectedBacklogs.length})
+                                      </Heading>
                                       <Text fontSize="sm" color="gray.500">
-                                        Select backlogs to include in this project
+                                        Edit details for selected backlogs that will be included in this project
                                       </Text>
-                                    </Box>
-                                    <Checkbox
-                                      isChecked={
-                                        availableBacklogs.length > 0 &&
-                                        selectedBacklogIds.length === availableBacklogs.length
-                                      }
-                                      isIndeterminate={
-                                        selectedBacklogIds.length > 0 &&
-                                        selectedBacklogIds.length < availableBacklogs.length
-                                      }
-                                      onChange={(e) => toggleAllAvailableBacklogs(e.target.checked)}
-                                    >
-                                      Select All
-                                    </Checkbox>
-                                  </HStack>
-                                </CardHeader>
-                                <CardBody>
-                                  {availableBacklogs.length === 0 ? (
-                                    <Text color="gray.500" textAlign="center" py={4}>
-                                      No available backlogs to select
-                                    </Text>
-                                  ) : (
-                                    <Table size="sm" variant="simple">
-                                      <Thead>
-                                        <Tr>
-                                          <Th w="50px">Select</Th>
-                                          <Th>Backlog Name</Th>
-                                          <Th>Priority</Th>
-                                          <Th>Urgency</Th>
-                                          <Th>Impact</Th>
-                                          <Th>Status</Th>
-                                        </Tr>
-                                      </Thead>
-                                      <Tbody>
-                                        {availableBacklogs.map((backlog) => (
-                                          <Tr key={backlog.id}>
-                                            <Td>
-                                              <Checkbox
-                                                isChecked={selectedBacklogIds.includes(backlog.id)}
-                                                onChange={() => toggleBacklogSelection(backlog.id)}
-                                              />
-                                            </Td>
-                                            <Td>{backlog.backlogName}</Td>
-                                            <Td>
-                                              <Badge colorScheme={priorityColor(backlog.priority)}>
-                                                {backlog.priority}
-                                              </Badge>
-                                            </Td>
-                                            <Td>{backlog.urgency}</Td>
-                                            <Td>{backlog.impact}</Td>
-                                            <Td>{backlog.developmentStatus}</Td>
-                                          </Tr>
-                                        ))}
-                                      </Tbody>
-                                    </Table>
-                                  )}
-                                </CardBody>
-                              </Card>
-
-                              {/* Section 3: Selected Backlogs (Editable) */}
-                              {selectedBacklogs.length > 0 && (
-                                <Card rounded={radiusStyle} borderColor="blue.500" borderWidth="2px">
-                                  <CardHeader>
-                                    <Heading size="md">
-                                      Selected Backlogs ({selectedBacklogs.length})
-                                    </Heading>
-                                    <Text fontSize="sm" color="gray.500">
-                                      Edit details for selected backlogs that will be included in this project
-                                    </Text>
-                                  </CardHeader>
-                                  <CardBody>
-                                    <TableComponentWithFilterCTX
-                                      table={selectedBacklogsTable}
-                                      handleFilterChange={handleFilterChange}
-                                    />
-                                  </CardBody>
-                                </Card>
-                              )}
-                            </VStack>
-                          )}
-                        </>
-                      )}
+                                    </CardHeader>
+                                    <CardBody>
+                                      <TableComponentWithFilterCTX
+                                        table={selectedBacklogsTable}
+                                        handleFilterChange={handleFilterChange}
+                                      />
+                                    </CardBody>
+                                  </Card>
+                                )}
+                              </VStack>
+                            )}
+                          </>
+                        )}
 
                       {/* FOR TYPE PROJECT REGISTER PROCUREMENT */}
                       {projectTypeRegister == PROJECT_TYPE_PROCUREMENT && (
@@ -5510,7 +5551,7 @@ export default function ProjectRegisterView({
                                       </HStack>
                                       <Flex as={Stack} w={"full"}>
                                         {DataWorkflowPresetsProcurements.length >
-                                        0 ? (
+                                          0 ? (
                                           <VStack align="start" spacing={1}>
                                             {DataWorkflowPresetsProcurements.map(
                                               (preset) => (
@@ -5524,7 +5565,7 @@ export default function ProjectRegisterView({
                                                   alignItems={"center"}
                                                   bgColor={
                                                     selectedPresetProcurement?.id ===
-                                                    preset.id
+                                                      preset.id
                                                       ? "secondary.100"
                                                       : "transparent"
                                                   }
@@ -5546,17 +5587,17 @@ export default function ProjectRegisterView({
                                                     <Text
                                                       fontWeight={
                                                         selectedPresetProcurement?.id ===
-                                                        preset.id
+                                                          preset.id
                                                           ? 600
                                                           : 500
                                                       }
                                                       color={
                                                         selectedPresetProcurement?.id ===
-                                                        preset.id
+                                                          preset.id
                                                           ? "gray.900"
                                                           : colorMode == "light"
-                                                          ? "gray.900"
-                                                          : "white"
+                                                            ? "gray.900"
+                                                            : "white"
                                                       }
                                                     >
                                                       {preset.wfPresetName}
@@ -5566,7 +5607,7 @@ export default function ProjectRegisterView({
                                                     variant={"solid"}
                                                     colorScheme={
                                                       selectedPresetProcurement?.id ===
-                                                      preset.id
+                                                        preset.id
                                                         ? "red"
                                                         : "secondary"
                                                     }
@@ -5578,7 +5619,7 @@ export default function ProjectRegisterView({
                                                     }
                                                   >
                                                     {selectedPresetProcurement?.id ===
-                                                    preset.id ? (
+                                                      preset.id ? (
                                                       <FiMinus />
                                                     ) : (
                                                       <FiPlus />
@@ -5725,7 +5766,7 @@ export default function ProjectRegisterView({
                                         <VStack
                                           align="start"
                                           spacing={1}
-                                          // px={2}
+                                        // px={2}
                                         >
                                           {DataWorkflowPresets.map((preset) => (
                                             <Flex
@@ -5757,17 +5798,17 @@ export default function ProjectRegisterView({
                                                 <Text
                                                   fontWeight={
                                                     selectedPreset?.id ===
-                                                    preset.id
+                                                      preset.id
                                                       ? 600
                                                       : 500
                                                   }
                                                   color={
                                                     selectedPreset?.id ===
-                                                    preset.id
+                                                      preset.id
                                                       ? "gray.900"
                                                       : colorMode == "light"
-                                                      ? "gray.900"
-                                                      : "white"
+                                                        ? "gray.900"
+                                                        : "white"
                                                   }
                                                 >
                                                   {preset.wfPresetName}
@@ -5782,7 +5823,7 @@ export default function ProjectRegisterView({
                                                   variant={"solid"}
                                                   colorScheme={
                                                     selectedPreset?.id ===
-                                                    preset.id
+                                                      preset.id
                                                       ? "red"
                                                       : "secondary"
                                                   }
@@ -5797,7 +5838,7 @@ export default function ProjectRegisterView({
                                                   }
                                                 >
                                                   {selectedPreset?.id ===
-                                                  preset.id ? (
+                                                    preset.id ? (
                                                     <FiMinus />
                                                   ) : (
                                                     <FiPlus />
