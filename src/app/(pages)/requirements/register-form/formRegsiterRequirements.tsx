@@ -6516,6 +6516,8 @@ const EmptyBacklogChangesData: BacklogChangesData = {
     priority: "",
     developmentStatus: "",
     progressionPercentage: 0,
+    backlogImplementStartdate: null,
+    backlogImplementEnddate: null,
     reffId: null,
     projectId: null,
     version: "",

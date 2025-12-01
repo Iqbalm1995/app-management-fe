@@ -146,6 +146,7 @@ import {
   OverviewTab,
   DetailsTab,
   FeaturesTab,
+  WorkstageProcurementTab,
   TeamTab,
   AnalyticsTab,
   TimelineTab,
@@ -519,10 +520,18 @@ function ProjectManagerDetailView() {
                       <Text>Details</Text>
                     </HStack>
                   </TabButtonCustomStyle>
+                  {DataProject?.reqParentId && (
+                    <TabButtonCustomStyle>
+                      <HStack>
+                        <FiCpu size={16} />
+                        <Text>Features</Text>
+                      </HStack>
+                    </TabButtonCustomStyle>
+                  )}
                   <TabButtonCustomStyle>
                     <HStack>
-                      <FiCpu size={16} />
-                      <Text>Features</Text>
+                      <FiPlayCircle size={16} />
+                      <Text>Workstage Procurement</Text>
                     </HStack>
                   </TabButtonCustomStyle>
                   <TabButtonCustomStyle>
@@ -569,7 +578,10 @@ function ProjectManagerDetailView() {
                   <TabPanels minH="600px">
                     <OverviewTab DataProject={DataProject} />
                     <DetailsTab DataProject={DataProject} />
-                    <FeaturesTab DataProject={DataProject} />
+                    {DataProject?.reqParentId && (
+                      <FeaturesTab DataProject={DataProject} />
+                    )}
+                    <WorkstageProcurementTab DataProject={DataProject} />
                     <TeamTab DataProject={DataProject} />
                     <AnalyticsTab DataProject={DataProject} />
                     <TimelineTab DataProject={DataProject} />

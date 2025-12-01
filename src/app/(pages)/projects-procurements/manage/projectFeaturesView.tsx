@@ -1479,8 +1479,12 @@ const BacklogEditForm = ({
       urgency: backlog.urgency || "",
       impact: backlog.impact || "",
       priority: backlog.priority || "",
-      backlogImplementStartdate: "",
-      backlogImplementEnddate: "",
+      backlogImplementStartdate: backlog.backlogImplementStartdate
+        ? backlog.backlogImplementStartdate.split("T")[0]
+        : "",
+      backlogImplementEnddate: backlog.backlogImplementEnddate
+        ? backlog.backlogImplementEnddate.split("T")[0]
+        : "",
     },
     onSubmit: (values) => {
       onSubmit(values);

@@ -283,6 +283,8 @@ export interface BacklogDataResponse {
   priority: string;
   developmentStatus: string;
   progressionPercentage: number;
+  backlogImplementStartdate: string | null;
+  backlogImplementEnddate: string | null;
   reffId: string | null;
   projectId: string | null;
   note: string | null;

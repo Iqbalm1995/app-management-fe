@@ -5041,10 +5041,6 @@ export default function ProjectRegisterView({
                                             Direktorat
                                           </FormLabel>
                                           <Select
-                                            isDisabled={
-                                              projectTypeRegister ==
-                                              PROJECT_TYPE_PROCUREMENT
-                                            }
                                             id={`proManageByDirectorateId`}
                                             options={OrganizationData.filter(
                                               (f) =>
@@ -5117,10 +5113,6 @@ export default function ProjectRegisterView({
                                             Divisi
                                           </FormLabel>
                                           <Select
-                                            isDisabled={
-                                              projectTypeRegister ==
-                                              PROJECT_TYPE_PROCUREMENT
-                                            }
                                             id={`proManageByDivisionId`}
                                             options={OrganizationData.filter(
                                               (f) =>
