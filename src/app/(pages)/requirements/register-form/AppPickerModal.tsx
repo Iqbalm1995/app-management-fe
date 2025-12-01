@@ -246,17 +246,6 @@ export default function AppPickerModalForm({
                               >
                                 {app.appsStatus}
                               </Badge>
-                              <Text
-                                fontSize="xs"
-                                color={
-                                  colorMode === "light"
-                                    ? "gray.600"
-                                    : "gray.400"
-                                }
-                                noOfLines={1}
-                              >
-                                {app.appCode}
-                              </Text>
                             </VStack>
                           </VStack>
                         </CardBody>
