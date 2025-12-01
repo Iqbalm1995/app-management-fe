@@ -2628,7 +2628,6 @@ const ReqInfoSummaryFileAttachmentsView = ({
                     </Text>
                   </Flex>
                 )}
-                />
                 {/* <ExcelViewer
                         fileUrl={`/api/proxy-pdf?url=${encodeURIComponent(UrlFilePDF)}`}
                       /> */}
