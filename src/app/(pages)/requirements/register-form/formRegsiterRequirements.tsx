@@ -760,7 +760,7 @@ function RegisterRequirementFormPage({
           ]);
           if (directorateData.length > 0) {
             setSelectedDirectorateIT({
-              label: `${directorateData[0].orgName} | ${directorateData[0].orgType}`,
+              label: `${directorateData[0].orgName}`,
               value: directorateData[0].id
             });
           }
@@ -773,7 +773,7 @@ function RegisterRequirementFormPage({
           ]);
           if (divisionData.length > 0) {
             setSelectedDivisionSender({
-              label: `${divisionData[0].orgName} | ${divisionData[0].orgType}`,
+              label: `${divisionData[0].orgName}`,
               value: divisionData[0].id
             });
           }
@@ -794,7 +794,7 @@ function RegisterRequirementFormPage({
           ]);
           if (divisionData.length > 0) {
             setSelectedDivisionPIC({
-              label: `${divisionData[0].orgName} | ${divisionData[0].orgType}`,
+              label: `${divisionData[0].orgName}`,
               value: divisionData[0].id
             });
           }
@@ -807,7 +807,7 @@ function RegisterRequirementFormPage({
           ]);
           if (groupData.length > 0) {
             setSelectedGroupOrgPIC({
-              label: `${groupData[0].orgName} | ${groupData[0].orgType}`,
+              label: `${groupData[0].orgName}`,
               value: groupData[0].id
             });
           }
@@ -839,7 +839,7 @@ function RegisterRequirementFormPage({
               internalWPs.push({
                 indexData: internalIndex,
                 OptionData: divisionData.length > 0 ? {
-                  label: `${divisionData[0].orgName} | ${divisionData[0].orgType}`,
+                  label: `${divisionData[0].orgName}`,
                   value: divisionData[0].id
                 } : { label: "", value: "" }
               });
@@ -848,7 +848,7 @@ function RegisterRequirementFormPage({
               externalWPs.push({
                 indexData: externalIndex,
                 OptionData: divisionData.length > 0 ? {
-                  label: `${divisionData[0].orgName} | ${divisionData[0].orgType}`,
+                  label: `${divisionData[0].orgName}`,
                   value: divisionData[0].id
                 } : { label: "", value: "" }
               });
@@ -1616,7 +1616,7 @@ function RegisterRequirementFormPage({
 
       // Template Mapping
       // const mapOptionData: OptionListProps[] = itemsData.map((d) => ({
-      //   label: `${d.orgName} | ${d.orgType}`,
+      //   label: `${d.orgName}`,
       //   value: d.id,
       // }));
 
@@ -1652,7 +1652,7 @@ function RegisterRequirementFormPage({
       );
 
       const mapOptionData: OptionListProps[] = dataDivision.map((d) => ({
-        label: `${d.orgName} | ${d.orgType}`,
+        label: `${d.orgName}`,
         value: d.id,
       }));
 
@@ -1713,7 +1713,7 @@ function RegisterRequirementFormPage({
       );
 
       const mapOptionData: OptionListProps[] = dataDivision.map((d) => ({
-        label: `${d.orgName} | ${d.orgType}`,
+        label: `${d.orgName}`,
         value: d.id,
       }));
 
@@ -1774,7 +1774,7 @@ function RegisterRequirementFormPage({
       );
 
       const mapOptionData: OptionListProps[] = dataDivision.map((d) => ({
-        label: `${d.orgName} | ${d.orgType}`,
+        label: `${d.orgName}`,
         value: d.id,
       }));
 
@@ -2301,7 +2301,7 @@ function RegisterRequirementFormPage({
                                                 );
                                               const mapOptionData: OptionListProps[] =
                                                 dataDivision.map((d) => ({
-                                                  label: `${d.orgName} | ${d.orgType}`,
+                                                  label: `${d.orgName}`,
                                                   value: d.id,
                                                 }));
                                               setOptionDivision(mapOptionData);
@@ -3147,7 +3147,7 @@ function RegisterRequirementFormPage({
                                             );
                                           const mapOptionData: OptionListProps[] =
                                             dataDivision.map((d) => ({
-                                              label: `${d.orgName} | ${d.orgType}`,
+                                              label: `${d.orgName}`,
                                               value: d.id,
                                             }));
                                           setOptionDivision(mapOptionData);
@@ -3430,7 +3430,7 @@ function RegisterRequirementFormPage({
                                                   );
                                                 const mapOptionData: OptionListProps[] =
                                                   dataDivision.map((d) => ({
-                                                    label: `${d.orgName} | ${d.orgType}`,
+                                                    label: `${d.orgName}`,
                                                     value: d.id,
                                                   }));
                                                 setOptionDivision(
@@ -5779,7 +5779,7 @@ const Section4BRDView = ({
               spacing={5}
             >
               <Heading as="h5" size="sm">
-                Apliaksi Eksisting
+                Aplikasi Eksisting
               </Heading>
               {/* ICON APP */}
               <Flex
@@ -5815,11 +5815,6 @@ const Section4BRDView = ({
                     {ApplicationExistingChoosed.appName.toUpperCase()}
                   </Heading>
                 </Flex>
-                <Box>
-                  <Text fontSize={"small"}>
-                    ID APPS : {ApplicationExistingChoosed.appCode}
-                  </Text>
-                </Box>
               </Flex>
             </Flex>
           )}
@@ -6494,6 +6489,7 @@ interface Section4RFCProps {
 interface BacklogChangesData {
   backlog: BacklogDataResponse;
   changes?: ReqBacklogPayload | null;
+  showKondisiEksisting?: boolean;
 }
 
 const EmptyBacklogChangesData: BacklogChangesData = {
@@ -6529,6 +6525,7 @@ const EmptyBacklogChangesData: BacklogChangesData = {
     updatedBy: "",
   },
   changes: null,
+  showKondisiEksisting: true,
 };
 
 // STEP 4 SECTION RFC
@@ -6593,7 +6590,6 @@ const Section4RFCView = ({
   const [BacklogAppsOption, setBacklogAppsOption] = useState<OptionListProps[]>(
     []
   );
-
   useEffect(() => {
     const updatedBacklogData: ReqBacklogPayload[] = BacklogChanges.map(
       (dt) => ({
@@ -7155,7 +7151,7 @@ const Section4RFCView = ({
               spacing={5}
             >
               <Heading as="h5" size="sm">
-                Apliaksi Eksisting
+                Aplikasi Eksisting
               </Heading>
               {/* ICON APP */}
               <Flex
@@ -7191,15 +7187,9 @@ const Section4RFCView = ({
                     {ApplicationExistingChoosed.appName.toUpperCase()}
                   </Heading>
                 </Flex>
-                <Box>
-                  <Text fontSize={"small"}>
-                    ID APPS : {ApplicationExistingChoosed.appCode}
-                  </Text>
-                </Box>
               </Flex>
             </Flex>
           )}
-
           <InputGroupPanel headerTitle={`Perubahan Sistem`}>
             <Flex
               w={"full"}
@@ -7208,7 +7198,7 @@ const Section4RFCView = ({
             >
               {BacklogChanges.map((item, index) => (
                 <Grid
-                  templateColumns="repeat(2, 1fr)"
+                  templateColumns={item.showKondisiEksisting ? "repeat(2, 1fr)" : "1fr"}
                   gap={4}
                   w={"full"}
                   key={index}
@@ -7222,123 +7212,144 @@ const Section4RFCView = ({
                       <Heading as="h5" size="sm">
                         Scope - {index + 1}
                       </Heading>
-                      <Button
-                        size="sm"
-                        colorScheme="red"
-                        leftIcon={<FiMinusCircle />}
-                        mt={2}
-                        onClick={() => handleRemoveBacklogChange(index)}
-                      >
-                        Hapus
-                      </Button>
+                      <HStack spacing={2}>
+                        <HStack spacing={2}>
+                          <Text fontSize="sm" fontWeight="medium">
+                            Tampilkan Kondisi Eksisting
+                          </Text>
+                          <Switch
+                            isChecked={item.showKondisiEksisting ?? true}
+                            onChange={(e) => {
+                              const updated = BacklogChanges.map((item, i) =>
+                                i === index
+                                  ? { ...item, showKondisiEksisting: e.target.checked }
+                                  : item
+                              );
+                              setBacklogChanges(updated);
+                            }}
+                            colorScheme="blue"
+                            size="sm"
+                          />
+                        </HStack>
+                        <Button
+                          size="sm"
+                          colorScheme="red"
+                          leftIcon={<FiMinusCircle />}
+                          onClick={() => handleRemoveBacklogChange(index)}
+                        >
+                          Hapus
+                        </Button>
+                      </HStack>
                     </Flex>
                   </GridItem>
-                  <GridItem
-                    colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }}
-                    w={"full"}
-                  >
-                    <Flex
-                      as={Stack}
+                  {item.showKondisiEksisting && (
+                    <GridItem
+                      colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }}
                       w={"full"}
-                      p={5}
-                      rounded={radiusStyle}
-                      border={"2px"}
-                      borderColor={
-                        colorMode == "light" ? "gray.200" : "gray.700"
-                      }
-                      spacing={2}
-                      boxShadow={"md"}
-                      minH={"280px"}
                     >
                       <Flex
+                        as={Stack}
                         w={"full"}
-                        as={HStack}
-                        justifyContent={"space-between"}
+                        p={5}
+                        rounded={radiusStyle}
+                        border={"2px"}
+                        borderColor={
+                          colorMode == "light" ? "gray.200" : "gray.700"
+                        }
+                        spacing={2}
+                        boxShadow={"md"}
+                        minH={"280px"}
                       >
-                        <Heading as="h5" size="sm">
-                          Kondisi Eksisting
-                        </Heading>
-                        <Badge
-                          colorScheme={"gray"}
-                          fontSize={"medium"}
-                          px={2}
-                          rounded={"md"}
+                        <Flex
+                          w={"full"}
+                          as={HStack}
+                          justifyContent={"space-between"}
                         >
-                          Lama
-                        </Badge>
+                          <Heading as="h5" size="sm">
+                            Kondisi Eksisting
+                          </Heading>
+                          <Badge
+                            colorScheme={"gray"}
+                            fontSize={"medium"}
+                            px={2}
+                            rounded={"md"}
+                          >
+                            Lama
+                          </Badge>
+                        </Flex>
+                        <Divider borderColor={"gray.300"} />
+                        <FormControl>
+                          <InputLayoutFull>
+                            <FormLabel h={"full"} mt={2}>
+                              Scope of Work
+                            </FormLabel>
+                            <Stack spacing={0}>
+                              <Select
+                                id={`backlogExisting-${1}`}
+                                options={BacklogAppsOption.filter(
+                                  (opt) =>
+                                    !BacklogChanges.some(
+                                      (b) => b.backlog.id === opt.value
+                                    )
+                                )}
+                                isSearchable={true}
+                                onChange={(e) => handleBacklogChange(e, index)}
+                                value={BacklogAppsOption.find(
+                                  (x) => x.value === item.backlog.id
+                                )}
+                                placeholder={"Piih Scope of Work Eksisting"}
+                              // value={BacklogAppsOption.find(
+                              //   (x) =>
+                              //     x.value == formik.values.senderDirectorateId
+                              // )}
+                              />
+                              <FormErrorMessage>
+                                {formik.errors.senderDivisionId}
+                              </FormErrorMessage>
+                            </Stack>
+                          </InputLayoutFull>
+                        </FormControl>
+                        <FormControl>
+                          <InputLayoutFull>
+                            <FormLabel h={"full"} mt={2}>
+                              Deskripsi
+                            </FormLabel>
+                            <Stack spacing={0}>
+                              <Textarea
+                                id={`backlogExistingDesc-${1}`}
+                                name={`backlogExistingDesc-${1}`}
+                                // onChange={(e) => setTextBackLogDesc(e.target.value)}
+                                value={item.backlog.backlogDesc || ""}
+                                placeholder={`Deskripsi Scope Eksisting`}
+                                // maxLength={300}
+                                isDisabled={true}
+                              />
+                            </Stack>
+                          </InputLayoutFull>
+                        </FormControl>
+                        <FormControl>
+                          <InputLayoutFull>
+                            <FormLabel h={"full"} mt={2}>
+                              Catatan
+                            </FormLabel>
+                            <Stack spacing={0}>
+                              <Textarea
+                                id={`backlogExistingNote-${1}`}
+                                name={`backlogExistingNote-${1}`}
+                                // onChange={(e) => setTextBackLogDesc(e.target.value)}
+                                value={item.backlog.note || ""}
+                                placeholder={`Deskripsi Scope Eksisting`}
+                                // maxLength={300}
+                                isDisabled={true}
+                              />
+                            </Stack>
+                          </InputLayoutFull>
+                        </FormControl>
                       </Flex>
-                      <Divider borderColor={"gray.300"} />
-                      <FormControl>
-                        <InputLayoutFull>
-                          <FormLabel h={"full"} mt={2}>
-                            Scope of Work
-                          </FormLabel>
-                          <Stack spacing={0}>
-                            <Select
-                              id={`backlogExisting-${1}`}
-                              options={BacklogAppsOption.filter(
-                                (opt) =>
-                                  !BacklogChanges.some(
-                                    (b) => b.backlog.id === opt.value
-                                  )
-                              )}
-                              isSearchable={true}
-                              onChange={(e) => handleBacklogChange(e, index)}
-                              value={BacklogAppsOption.find(
-                                (x) => x.value === item.backlog.id
-                              )}
-                              placeholder={"Piih Scope of Work Eksisting"}
-                            // value={BacklogAppsOption.find(
-                            //   (x) =>
-                            //     x.value == formik.values.senderDirectorateId
-                            // )}
-                            />
-                            <FormErrorMessage>
-                              {formik.errors.senderDivisionId}
-                            </FormErrorMessage>
-                          </Stack>
-                        </InputLayoutFull>
-                      </FormControl>
-                      <FormControl>
-                        <InputLayoutFull>
-                          <FormLabel h={"full"} mt={2}>
-                            Deskripsi
-                          </FormLabel>
-                          <Stack spacing={0}>
-                            <Textarea
-                              id={`backlogExistingDesc-${1}`}
-                              name={`backlogExistingDesc-${1}`}
-                              // onChange={(e) => setTextBackLogDesc(e.target.value)}
-                              value={item.backlog.backlogDesc || ""}
-                              placeholder={`Deskripsi Scope Eksisting`}
-                              // maxLength={300}
-                              isDisabled={true}
-                            />
-                          </Stack>
-                        </InputLayoutFull>
-                      </FormControl>
-                      <FormControl>
-                        <InputLayoutFull>
-                          <FormLabel h={"full"} mt={2}>
-                            Catatan
-                          </FormLabel>
-                          <Stack spacing={0}>
-                            <Textarea
-                              id={`backlogExistingNote-${1}`}
-                              name={`backlogExistingNote-${1}`}
-                              // onChange={(e) => setTextBackLogDesc(e.target.value)}
-                              value={item.backlog.note || ""}
-                              placeholder={`Deskripsi Scope Eksisting`}
-                              // maxLength={300}
-                              isDisabled={true}
-                            />
-                          </Stack>
-                        </InputLayoutFull>
-                      </FormControl>
-                    </Flex>
-                  </GridItem>
+                    </GridItem>
+                  )}
                   <GridItem
-                    colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }}
+                    colSpan={item.showKondisiEksisting ? { base: 2, sm: 2, md: 1, lg: 1 } : { base: 2, sm: 2, md: 2, lg: 2 }}
                     w={"full"}
                   >
                     <Flex
@@ -7480,7 +7491,7 @@ const Section4RFCView = ({
               ) : (
                 <Flex w={"full"} justifyContent={"center"}>
                   <Text textAlign={"center"}>
-                    Pilih dulu aplikasi eksisting
+                    Silahkan Pilih Aplikasi Eksisting Terlebih Dahulu
                   </Text>
                 </Flex>
               )}
