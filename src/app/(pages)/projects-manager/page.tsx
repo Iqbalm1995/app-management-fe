@@ -336,16 +336,6 @@ const ProjectManagerPage = () => {
 
   const ModalForm = useDisclosure();
 
-  const handleAddNew = () => {
-    if (DataAuth && DataAuth.team) {
-      ModalForm.onOpen();
-    } else {
-      showToast({
-        description: "Team ID is invalid",
-        statusToast: "error",
-      });
-    }
-  };
 
   return (
     <LayoutAdmin>
@@ -606,15 +596,16 @@ const ProjectManagerPage = () => {
                             >
                               Refresh
                             </Button>
-                            <Button
-                              size={"md"}
-                              colorScheme={"secondary"}
-                              leftIcon={<FiPlusSquare />}
-                              isLoading={ActionLoading}
-                              onClick={() => handleAddNew()}
-                            >
-                              Register New Project
-                            </Button>
+                            <Link href={`projects-manager/register`}>
+                              <Button
+                                size={"md"}
+                                colorScheme={"secondary"}
+                                leftIcon={<FiPlusSquare />}
+                                isLoading={ActionLoading}
+                              >
+                                Register New Project
+                              </Button>
+                            </Link>
                           </Flex>
                         </Flex>
 

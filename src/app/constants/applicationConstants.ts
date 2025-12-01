@@ -85,7 +85,7 @@ export const AES_KEY: string = "BJBPortalAESKeys";
 // http://192.168.239.117:5000
 // export const BASE_URL_MAIN: string = "http://192.168.239.117";
 export const BASE_URL_MAIN: string = "https://localhost";
-export const BASE_PORT_MAIN: string = "5555";
+export const BASE_PORT_MAIN: string = "8998";
 
 // Base Url Endpoint API
 // export const ENDPOINT_API_BASEURL: string = "http://192.168.239.117";
