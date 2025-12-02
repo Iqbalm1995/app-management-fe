@@ -7,25 +7,20 @@ import { Suspense } from "react";
 import LoadingMiniSignature from "@/app/components/loadingMini";
 import ProjectFeatureView from "../projectFeaturesView";
 
-interface FeaturesTabProps {
+interface WorkstageProcurementTabProps {
   DataProject: ProjectDataResponse | null;
 }
 
-const FeaturesTab = ({ DataProject }: FeaturesTabProps) => {
+const WorkstageProcurementTab = ({ DataProject }: WorkstageProcurementTabProps) => {
   const { colorMode } = useColorMode();
 
   return (
-    <TabPanel
-      p={8}
-      bg={colorMode === "light" ? "gray.50" : "gray.900"}
-      roundedBottom={radiusStyle}
-    >
+    <TabPanel roundedBottom={radiusStyle}>
       <Suspense fallback={<LoadingMiniSignature />}>
-        <ProjectFeatureView DataProject={DataProject} viewType="backlogs" />
+        <ProjectFeatureView DataProject={DataProject} viewType="workflow" />
       </Suspense>
     </TabPanel>
   );
 };
 
-export default FeaturesTab;
-
+export default WorkstageProcurementTab;

@@ -283,6 +283,8 @@ export interface BacklogDataResponse {
   priority: string;
   developmentStatus: string;
   progressionPercentage: number;
+  backlogImplementStartdate: string | null;
+  backlogImplementEnddate: string | null;
   reffId: string | null;
   projectId: string | null;
   note: string | null;
@@ -295,6 +297,43 @@ export interface BacklogDataResponse {
   updatedAt: string | null;
   updatedBy: string;
   reffData?: BacklogDataResponse | null;
+  backlogHistories?: BacklogHistoryDataResponse[];
+}
+
+export interface BacklogHistoryDataResponse {
+  id: string;
+  backlogIdParent: string;
+  backlogCode: string;
+  backlogName: string;
+  backlogDesc: string | null;
+  envSide: string | null;
+  maintenanceCategory: string | null;
+  maintenanceType: string | null;
+  rppb: string;
+  licensing: string;
+  backogRegistered: string | null;
+  backlogStartdate: string | null;
+  backlogEnddate: string | null;
+  urgency: string;
+  impact: string;
+  priority: string;
+  developmentStatus: string;
+  backlogImplementStartdate: string | null;
+  backlogImplementEnddate: string | null;
+  procurementWorkflowId: string | null;
+  projectId: string | null;
+  reqId: string | null;
+  reffId: string | null;
+  appsId: string | null;
+  note: string | null;
+  version: string;
+  isLive: string;
+  posOrder: number;
+  createdAt: string;
+  createdBy: string;
+  updatedAt: string | null;
+  updatedBy: string | null;
+  deletedAt: string | null;
 }
 
 export interface BacklogInsertPayload {

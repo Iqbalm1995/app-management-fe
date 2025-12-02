@@ -35,6 +35,7 @@ import {
 } from "@/app/types/masterTypes";
 import {
   Box,
+  Badge,
   Button,
   ButtonGroup,
   Card,
@@ -62,6 +63,14 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverHeader,
+  PopoverBody,
+  PopoverArrow,
+  PopoverCloseButton,
+  Spinner,
   Progress,
   Radio,
   RadioGroup,
@@ -69,7 +78,12 @@ import {
   Stack,
   StackDivider,
   Switch,
+  Tab,
   Table,
+  TabList,
+  TabPanel,
+  TabPanels,
+  Tabs,
   Tbody,
   Td,
   Text,
@@ -98,8 +112,10 @@ import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  FiActivity,
   FiChevronDown,
   FiChevronUp,
+  FiClock,
   FiEdit,
   FiEye,
   FiMoreVertical,
@@ -124,8 +140,11 @@ import { InputLayoutFull } from "@/app/components/layoutContentBody";
 
 import useRequirements, {
   BacklogDataResponse,
+  BacklogHistoryDataResponse,
   RequirementsResponse,
 } from "@/app/services/useRequirements";
+import useLogActivityUsers from "@/app/services/useLogActivityUsers";
+import useUsers, { UsersResponse } from "@/app/services/useUsers";
 import { TableComponentWithFilterCTX } from "@/app/components/tableComponentV2";
 import { HamburgerIcon } from "@chakra-ui/icons";
 import { BsKanban } from "react-icons/bs";
@@ -133,12 +152,16 @@ import Link from "next/link";
 
 interface ProjectFeatureViewProps {
   DataProject: ProjectDataResponse | null;
+  viewType?: "backlogs" | "workflow";
 }
 
 // Motion-enhanced version of CardBody
 const MotionCardBody = motion(CardBody);
 
-const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
+const ProjectFeatureView = ({
+  DataProject,
+  viewType = "workflow",
+}: ProjectFeatureViewProps) => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
 
@@ -250,26 +273,25 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
               />
             )}
 
-          {/* SECTION FOR TYPE PROCUREMENT AND HAVE REQUIREMENT DATA */}
-          {DataProject.projectType == PROJECT_TYPE_PROCUREMENT &&
-            DataRequirement && (
-              <FeatureBacklogsView
-                DataProject={DataProject}
-                DataRequirement={DataRequirement}
-                onRefresh={RefreshAction}
-                refreshTrigger={RefreshData}
-              />
-            )}
-
-          {/* SECTION FOR TYPE POCUREMENT AND DONT HAVE REQUIREMENT DATA */}
-          {DataProject.projectType == PROJECT_TYPE_PROCUREMENT &&
-            !DataRequirement && (
-              <WorkFlowBacklogsView
-                DataProject={DataProject}
-                onRefresh={RefreshAction}
-                refreshTrigger={RefreshData}
-              />
-            )}
+          {/* SECTION FOR TYPE PROCUREMENT */}
+          {DataProject.projectType == PROJECT_TYPE_PROCUREMENT && (
+            <>
+              {viewType === "backlogs" && DataRequirement ? (
+                <FeatureBacklogsView
+                  DataProject={DataProject}
+                  DataRequirement={DataRequirement}
+                  onRefresh={RefreshAction}
+                  refreshTrigger={RefreshData}
+                />
+              ) : (
+                <WorkFlowBacklogsView
+                  DataProject={DataProject}
+                  onRefresh={RefreshAction}
+                  refreshTrigger={RefreshData}
+                />
+              )}
+            </>
+          )}
         </>
       )}
     </Flex>
@@ -355,6 +377,88 @@ const FeatureBacklogsView = ({
     });
   const [OverallProgress, setOverallProgress] = useState<number>(0);
   const [ProgressColor, setProgressColor] = useState<string>("red");
+
+  // Modal state for editing backlog
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedBacklog, setSelectedBacklog] =
+    useState<BacklogDataResponse | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const { UpdateBacklog, GetDetailBacklogById } = useRequirements();
+
+  const handleEditBacklog = async (backlog: BacklogDataResponse) => {
+    setIsEditModalOpen(true);
+    setSelectedBacklog(backlog); // Set initial data
+
+    // Get token from localStorage
+    const token: string = localStorage.getItem("tokenData") as string;
+
+    // Fetch full backlog detail with history
+    const backlogDetail = await GetDetailBacklogById(backlog.id, token);
+    if (backlogDetail?.statusCode === RES_CODE_OK && backlogDetail.data) {
+      setSelectedBacklog(backlogDetail.data);
+    }
+  };
+
+  const handleSaveBacklog = async (values: any) => {
+    if (!selectedBacklog) return;
+
+    setIsSaving(true);
+
+    // Prepare payload with all required fields
+    const payload = {
+      id: selectedBacklog.id,
+      backlogName: values.backlogName,
+      backlogDesc: values.backlogDesc || null,
+      envSide: selectedBacklog.envSide,
+      maintenanceCategory: selectedBacklog.maintenanceCategory,
+      maintenanceType: selectedBacklog.maintenanceType,
+      rppb: selectedBacklog.rppb,
+      licensing: selectedBacklog.licensing,
+      backogRegistered: selectedBacklog.backogRegistered,
+      backlogStartdate: values.backlogStartdate || null,
+      backlogEnddate: values.backlogEnddate || null,
+      urgency: values.urgency,
+      impact: values.impact,
+      priority: values.priority,
+      developmentStatus: selectedBacklog.developmentStatus, // Keep original status
+      backlogImplementStartdate: values.backlogImplementStartdate || null,
+      backlogImplementEnddate: values.backlogImplementEnddate || null,
+      reffId: selectedBacklog.reffId,
+      posOrder: selectedBacklog.posOrder,
+    };
+
+    const requestData = await UpdateBacklog(payload, tokenData);
+    const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+
+    if (isErrorResponse || !requestData) {
+      showToast({
+        description: requestData?.message || RES_GENERIC_ERROR_MSG,
+        statusToast: "error",
+      });
+      setIsSaving(false);
+      return;
+    }
+
+    // Reload backlog detail with updated history
+    const updatedBacklogData = await GetDetailBacklogById(
+      selectedBacklog.id,
+      tokenData
+    );
+    if (
+      updatedBacklogData?.statusCode === RES_CODE_OK &&
+      updatedBacklogData.data
+    ) {
+      setSelectedBacklog(updatedBacklogData.data);
+    }
+
+    showToast({
+      description: "Backlog updated successfully",
+      statusToast: "success",
+    });
+    setIsSaving(false);
+    onRefresh();
+  };
 
   const columnsData = useMemo<ColumnDef<BacklogDataResponse>[]>(
     () => [
@@ -514,6 +618,14 @@ const FeatureBacklogsView = ({
         id: "id",
         cell: (info) => (
           <Flex w={"full"} justifyContent={"center"} as={Wrap}>
+            <Button
+              size={"xs"}
+              colorScheme={"blue"}
+              leftIcon={<FiEdit />}
+              onClick={() => handleEditBacklog(info.row.original)}
+            >
+              Edit
+            </Button>
             <Link href={`/kanban-view`}>
               <Button size={"xs"} colorScheme={"purple"} leftIcon={<FiEye />}>
                 Preview
@@ -745,7 +857,267 @@ const FeatureBacklogsView = ({
         <Text fontWeight={600}>Data Project</Text>
         <pre>{JSON.stringify(DataProject, null, 2)}</pre>
       </Box>
+
+      {/* Edit Backlog Modal */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        size="4xl"
+      >
+        <ModalOverlay />
+        <ModalContent maxH="90vh">
+          <ModalHeader>Edit Backlog</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={6} overflowY="auto">
+            {selectedBacklog && (
+              <>
+                {/* Beautiful Backlog Name Highlight */}
+                <Box
+                  p={4}
+                  bg="blue.50"
+                  border="1px"
+                  borderColor="blue.200"
+                  rounded="lg"
+                  borderLeft="4px"
+                  borderLeftColor="blue.500"
+                  mb={4}
+                >
+                  <HStack spacing={3}>
+                    <Box w={3} h={3} bg="blue.500" rounded="full" />
+                    <VStack align="start" spacing={1}>
+                      <Text fontSize="lg" fontWeight="bold" color="blue.700">
+                        {selectedBacklog.backlogName}
+                      </Text>
+                      <Text fontSize="sm" color="gray.600">
+                        {selectedBacklog.backlogCode}
+                      </Text>
+                    </VStack>
+                  </HStack>
+                </Box>
+
+                {/* Tabs for Edit and History */}
+                <Tabs variant="soft-rounded" colorScheme="blue" >
+                  <TabList bg="gray.100" p={1} rounded={radiusStyle}>
+                    <Tab
+                      rounded={radiusStyle}
+                      _selected={{ bg: "blue.500", color: "white" }}
+                    >
+                      <HStack>
+                        <FiEdit size={16} />
+                        <Text>Edit Details</Text>
+                      </HStack>
+                    </Tab>
+                    <Tab
+                      rounded={radiusStyle}
+                      _selected={{ bg: "blue.500", color: "white" }}
+                    >
+                      <HStack>
+                        <FiClock size={16} />
+                        <Text>
+                          History (
+                          {selectedBacklog.backlogHistories?.length || 0})
+                        </Text>
+                      </HStack>
+                    </Tab>
+                  </TabList>
+
+                  <TabPanels>
+                    <TabPanel px={0}>
+                      <BacklogEditFormFeatures
+                        backlog={selectedBacklog}
+                        onSubmit={handleSaveBacklog}
+                        isLoading={isSaving}
+                      />
+                    </TabPanel>
+                    <TabPanel px={0}>
+                      <BacklogHistoryList
+                        histories={selectedBacklog.backlogHistories || []}
+                      />
+                    </TabPanel>
+                  </TabPanels>
+                </Tabs>
+              </>
+            )}
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </Flex>
+  );
+};
+
+// Backlog Edit Form Component for Features Tab
+interface BacklogEditFormFeaturesProps {
+  backlog: BacklogDataResponse;
+  onSubmit: (values: any) => void;
+  isLoading: boolean;
+}
+
+const BacklogEditFormFeatures = ({
+  backlog,
+  onSubmit,
+  isLoading,
+}: BacklogEditFormFeaturesProps) => {
+  const formik = useFormik({
+    initialValues: {
+      backlogName: backlog.backlogName || "",
+      backlogDesc: backlog.backlogDesc || "",
+      backlogStartdate: backlog.backlogStartdate
+        ? backlog.backlogStartdate.split("T")[0]
+        : "",
+      backlogEnddate: backlog.backlogEnddate
+        ? backlog.backlogEnddate.split("T")[0]
+        : "",
+      urgency: backlog.urgency || "",
+      impact: backlog.impact || "",
+      priority: backlog.priority || "",
+      backlogImplementStartdate: backlog.backlogImplementStartdate
+        ? backlog.backlogImplementStartdate.split("T")[0]
+        : "",
+      backlogImplementEnddate: backlog.backlogImplementEnddate
+        ? backlog.backlogImplementEnddate.split("T")[0]
+        : "",
+    },
+    onSubmit: (values) => {
+      onSubmit(values);
+    },
+  });
+
+  // Auto-calculate priority when impact or urgency changes
+  useEffect(() => {
+    if (formik.values.impact && formik.values.urgency) {
+      const calculatedPriority = getPriorityFromMatrix(
+        formik.values.impact,
+        formik.values.urgency
+      );
+      if (formik.values.priority !== calculatedPriority) {
+        formik.setFieldValue("priority", calculatedPriority);
+      }
+    }
+  }, [formik.values.impact, formik.values.urgency]);
+
+  return (
+    <form onSubmit={formik.handleSubmit}>
+      <VStack spacing={4}>
+        <FormControl>
+          <FormLabel>Backlog Name</FormLabel>
+          <Input
+            name="backlogName"
+            value={formik.values.backlogName}
+            onChange={formik.handleChange}
+            placeholder="Enter backlog name"
+          />
+        </FormControl>
+
+        <FormControl>
+          <FormLabel>Description</FormLabel>
+          <Textarea
+            name="backlogDesc"
+            value={formik.values.backlogDesc}
+            onChange={formik.handleChange}
+            placeholder="Enter backlog description"
+          />
+        </FormControl>
+
+        <Grid templateColumns="1fr 1fr" gap={4} w="full">
+          <FormControl>
+            <FormLabel>Start Date</FormLabel>
+            <Input
+              type="date"
+              name="backlogStartdate"
+              value={formik.values.backlogStartdate}
+              onChange={formik.handleChange}
+            />
+          </FormControl>
+          <FormControl>
+            <FormLabel>End Date</FormLabel>
+            <Input
+              type="date"
+              name="backlogEnddate"
+              value={formik.values.backlogEnddate}
+              onChange={formik.handleChange}
+            />
+          </FormControl>
+        </Grid>
+
+        <Grid templateColumns="1fr 1fr 1fr" gap={4} w="full">
+          <FormControl>
+            <FormLabel>Urgency</FormLabel>
+            <Select
+              name="urgency"
+              value={formik.values.urgency}
+              onChange={formik.handleChange}
+              placeholder="Select urgency"
+            >
+              {LocalPrioritiesOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl>
+            <FormLabel>Impact</FormLabel>
+            <Select
+              name="impact"
+              value={formik.values.impact}
+              onChange={formik.handleChange}
+              placeholder="Select impact"
+            >
+              {LocalPrioritiesOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl>
+            <FormLabel>Priority</FormLabel>
+            <Input
+              name="priority"
+              value={formik.values.priority}
+              isReadOnly
+              bg="gray.100"
+              placeholder="Auto-calculated"
+            />
+          </FormControl>
+        </Grid>
+
+        <Grid templateColumns="1fr 1fr" gap={4} w="full">
+          <FormControl>
+            <FormLabel>Implementation Start</FormLabel>
+            <Input
+              type="date"
+              name="backlogImplementStartdate"
+              value={formik.values.backlogImplementStartdate}
+              onChange={formik.handleChange}
+            />
+          </FormControl>
+          <FormControl>
+            <FormLabel>Implementation End</FormLabel>
+            <Input
+              type="date"
+              name="backlogImplementEnddate"
+              value={formik.values.backlogImplementEnddate}
+              onChange={formik.handleChange}
+            />
+          </FormControl>
+        </Grid>
+
+        <HStack spacing={3} w="full" justify="end">
+          <Button variant="outline" onClick={() => formik.resetForm()}>
+            Reset
+          </Button>
+          <Button
+            type="submit"
+            colorScheme="blue"
+            isLoading={isLoading}
+            loadingText="Updating..."
+          >
+            Update Backlog
+          </Button>
+        </HStack>
+      </VStack>
+    </form>
   );
 };
 
@@ -1479,8 +1851,12 @@ const BacklogEditForm = ({
       urgency: backlog.urgency || "",
       impact: backlog.impact || "",
       priority: backlog.priority || "",
-      backlogImplementStartdate: "",
-      backlogImplementEnddate: "",
+      backlogImplementStartdate: backlog.backlogImplementStartdate
+        ? backlog.backlogImplementStartdate.split("T")[0]
+        : "",
+      backlogImplementEnddate: backlog.backlogImplementEnddate
+        ? backlog.backlogImplementEnddate.split("T")[0]
+        : "",
     },
     onSubmit: (values) => {
       onSubmit(values);
@@ -1613,6 +1989,212 @@ const BacklogEditForm = ({
         </HStack>
       </VStack>
     </form>
+  );
+};
+
+// User Detail Popover Component
+const UserDetailPopover = ({ userId }: { userId: string }) => {
+  const [userDetail, setUserDetail] = useState<UsersResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const { GetDetailByUserId } = useUsers();
+
+  const handleFetchUser = async () => {
+    setIsLoading(true);
+    const token = localStorage.getItem("tokenData") || "";
+    try {
+      const response = await GetDetailByUserId(userId, token);
+      if (response?.data) {
+        setUserDetail(response.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch user details:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Popover onOpen={handleFetchUser} placement="left">
+      <PopoverTrigger>
+        <Text
+          fontSize="sm"
+          cursor="pointer"
+          color="blue.500"
+          _hover={{ textDecoration: "underline" }}
+        >
+          {userId}
+        </Text>
+      </PopoverTrigger>
+      <PopoverContent rounded={radiusStyle}>
+        <PopoverArrow />
+        <PopoverCloseButton />
+        <PopoverHeader fontWeight="bold">User Details</PopoverHeader>
+        <PopoverBody>
+          {isLoading ? (
+            <Flex justify="center" py={4}>
+              <Spinner size="sm" />
+            </Flex>
+          ) : userDetail ? (
+            <VStack align="start" spacing={1}>
+              <Box>
+                <Text fontSize="xs" color="gray.500">
+                  User Id
+                </Text>
+                <Text fontSize="sm" fontWeight="medium">
+                  {userDetail.userId}
+                </Text>
+              </Box>
+              <Box>
+                <Text fontSize="xs" color="gray.500">
+                  Name
+                </Text>
+                <Text fontSize="sm" fontWeight="medium">
+                  {userDetail.nama}
+                </Text>
+              </Box>
+              <Box>
+                <Text fontSize="xs" color="gray.500">
+                  Email
+                </Text>
+                <Text fontSize="sm">{userDetail.email}</Text>
+              </Box>
+              <Box>
+                <Text fontSize="xs" color="gray.500">
+                  Jabatan
+                </Text>
+                <Text fontSize="sm">{userDetail.jabatan || "-"}</Text>
+              </Box>
+              <Box>
+                <Text fontSize="xs" color="gray.500">
+                  Unit Kerja
+                </Text>
+                <Text fontSize="sm">{userDetail.namaUnitKerja || "-"}</Text>
+              </Box>
+            </VStack>
+          ) : (
+            <Text fontSize="sm" color="gray.500">
+              No user data available
+            </Text>
+          )}
+        </PopoverBody>
+      </PopoverContent>
+    </Popover>
+  );
+};
+
+// Backlog History List Component
+interface BacklogHistoryListProps {
+  histories: BacklogHistoryDataResponse[];
+}
+
+const BacklogHistoryList = ({ histories }: BacklogHistoryListProps) => {
+  const { colorMode } = useColorMode();
+
+  if (histories.length === 0) {
+    return (
+      <Box textAlign="center" py={8}>
+        <Text color="gray.500">No history records found</Text>
+      </Box>
+    );
+  }
+
+  return (
+    <VStack spacing={4} align="stretch">
+      {histories.map((history, index) => (
+        <Box
+          key={history.id}
+          p={4}
+          border="1px"
+          borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+          rounded={radiusStyle}
+          boxShadow={"md"}
+          bg={colorMode === "light" ? "white" : "gray.800"}
+        >
+          <HStack justify="space-between" mb={3}>
+            <VStack align="start" spacing={0}>
+              <Text fontSize="sm" fontWeight="medium" color="gray.600">
+                Updated at
+              </Text>
+              <Text fontSize="sm">
+                {new Date(history.createdAt).toLocaleString()}
+              </Text>
+            </VStack>
+            <VStack align="end" spacing={0}>
+              <Text fontSize="sm" fontWeight="medium" color="gray.600">
+                Updated by
+              </Text>
+              <UserDetailPopover userId={history.createdBy} />
+            </VStack>
+          </HStack>
+
+          <Grid templateColumns="repeat(2, 1fr)" gap={3}>
+            <Box>
+              <Text fontSize="xs" color="gray.500" mb={1}>
+                Backlog Name
+              </Text>
+              <Text fontSize="sm" fontWeight="medium">
+                {history.backlogName}
+              </Text>
+            </Box>
+            <Box>
+              <Text fontSize="xs" color="gray.500" mb={1}>
+                Priority
+              </Text>
+              <Badge colorScheme={priorityColor(history.priority)}>
+                {history.priority}
+              </Badge>
+            </Box>
+            <Box>
+              <Text fontSize="xs" color="gray.500" mb={1}>
+                Start Date
+              </Text>
+              <Text fontSize="sm">
+                {history.backlogStartdate
+                  ? new Date(history.backlogStartdate).toLocaleDateString()
+                  : "-"}
+              </Text>
+            </Box>
+            <Box>
+              <Text fontSize="xs" color="gray.500" mb={1}>
+                End Date
+              </Text>
+              <Text fontSize="sm">
+                {history.backlogEnddate
+                  ? new Date(history.backlogEnddate).toLocaleDateString()
+                  : "-"}
+              </Text>
+            </Box>
+            <Box>
+              <Text fontSize="xs" color="gray.500" mb={1}>
+                Urgency / Impact
+              </Text>
+              <HStack>
+                <Badge size="sm">{history.urgency}</Badge>
+                <Text>/</Text>
+                <Badge size="sm">{history.impact}</Badge>
+              </HStack>
+            </Box>
+            <Box>
+              <Text fontSize="xs" color="gray.500" mb={1}>
+                Development Status
+              </Text>
+              <Badge>{history.developmentStatus}</Badge>
+            </Box>
+          </Grid>
+
+          {history.backlogDesc && (
+            <Box mt={3}>
+              <Text fontSize="xs" color="gray.500" mb={1}>
+                Description
+              </Text>
+              <Text fontSize="sm" noOfLines={2}>
+                {history.backlogDesc}
+              </Text>
+            </Box>
+          )}
+        </Box>
+      ))}
+    </VStack>
   );
 };
 

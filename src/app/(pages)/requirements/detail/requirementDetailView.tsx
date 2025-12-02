@@ -288,7 +288,7 @@ function RequirementDetailView() {
             </Flex>
           </Flex>
         ),
-        header: () => <span>Nama Fitur</span>,
+        header: () => <span>Nama Scope</span>,
         footer: (props) => props.column.id,
         // Custom variable
         meta: {
@@ -312,7 +312,7 @@ function RequirementDetailView() {
             </Flex>
           </Flex>
         ),
-        header: () => <span>Deskripsi Fitur</span>,
+        header: () => <span>Deskripsi Scope</span>,
         footer: (props) => props.column.id,
         // Custom variable
         meta: {
@@ -519,6 +519,7 @@ function RequirementDetailView() {
     data: DataBacklogsRequirement,
     columns: columnsDataBacklogs,
     getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
     debugTable: false,
     manualFiltering: false,
     manualPagination: false,
@@ -618,7 +619,7 @@ function RequirementDetailView() {
           m={2}
           bg={colorMode == "light" ? "white" : "gray.900"}
         >
-          <ModalHeader>{`Data Fitur`}</ModalHeader>
+          <ModalHeader>{`Data Scope of Work`}</ModalHeader>
           <ModalCloseButton color={"red.500"} />
           <ModalBody w={"full"}>
             <Flex as={Stack} w={"full"} spacing={5}>
@@ -831,8 +832,8 @@ function RequirementDetailView() {
                                     ? "INTERNAL (BANK)"
                                     : DataRequirement.appTargetUsers ==
                                       "EXTERNAL"
-                                    ? "EXTERNAL (NASABAH)"
-                                    : "N/A"}
+                                      ? "EXTERNAL (NASABAH)"
+                                      : "N/A"}
                                 </Text>
                               </Stack>
                             </InputLayoutFull>
@@ -845,7 +846,7 @@ function RequirementDetailView() {
                               </FormLabel>
                               <Stack spacing={0} h={"full"}>
                                 {DataRequirement.appAccessFrontsiteDns ||
-                                DataRequirement.appAccessBacksiteIp ? (
+                                  DataRequirement.appAccessBacksiteIp ? (
                                   <>
                                     {DataRequirement.appAccessFrontsiteDns && (
                                       <Text>
@@ -947,8 +948,8 @@ function RequirementDetailView() {
                                       ? "N/A"
                                       : DataRequirement.appOperational24hrs ==
                                         "NO"
-                                      ? "TIDAK"
-                                      : "YA"}
+                                        ? "TIDAK"
+                                        : "YA"}
                                   </Text>
                                 </Text>
 
@@ -969,24 +970,24 @@ function RequirementDetailView() {
 
                                 {DataRequirement.appOperational24hrs !=
                                   "24-HOUR" && (
-                                  <Text>
-                                    Jam Buka :{" "}
-                                    <Text pl={2} as={"span"} fontWeight={600}>
-                                      {DataRequirement.appOperationalHourOpen ||
-                                        "N/A"}
+                                    <Text>
+                                      Jam Buka :{" "}
+                                      <Text pl={2} as={"span"} fontWeight={600}>
+                                        {DataRequirement.appOperationalHourOpen ||
+                                          "N/A"}
+                                      </Text>
                                     </Text>
-                                  </Text>
-                                )}
+                                  )}
                                 {DataRequirement.appOperational24hrs !=
                                   "24-HOUR" && (
-                                  <Text>
-                                    Jam Tutup :{" "}
-                                    <Text pl={2} as={"span"} fontWeight={600}>
-                                      {DataRequirement.appOperationalHourClosed ||
-                                        "N/A"}
+                                    <Text>
+                                      Jam Tutup :{" "}
+                                      <Text pl={2} as={"span"} fontWeight={600}>
+                                        {DataRequirement.appOperationalHourClosed ||
+                                          "N/A"}
+                                      </Text>
                                     </Text>
-                                  </Text>
-                                )}
+                                  )}
                               </Stack>
                             </InputLayoutFull>
                           </FormControl>
@@ -1000,9 +1001,9 @@ function RequirementDetailView() {
                                 <Text>
                                   {DataRequirement.appLiveTargetDate != null
                                     ? formatDateInputCustom(
-                                        DataRequirement.appLiveTargetDate,
-                                        "/"
-                                      )
+                                      DataRequirement.appLiveTargetDate,
+                                      "/"
+                                    )
                                     : "N/A"}
                                 </Text>
                               </Stack>
@@ -1019,8 +1020,8 @@ function RequirementDetailView() {
                                   {" "}
                                   {DataRequirement.appLiveTargetDate != null
                                     ? getQuarterText(
-                                        DataRequirement.appLiveTargetDate
-                                      )
+                                      DataRequirement.appLiveTargetDate
+                                    )
                                     : "N/A"}
                                 </Text>
                               </Stack>
@@ -1041,7 +1042,7 @@ function RequirementDetailView() {
                           <FormControl>
                             <InputLayoutFull>
                               <FormLabel h={"full"} mt={2}>
-                                Fitur Aplikasi
+                                Scope Aplikasi
                               </FormLabel>
                               <Box mt={-3}>
                                 <Button
@@ -1052,7 +1053,7 @@ function RequirementDetailView() {
                                   size="sm"
                                   leftIcon={<FiInfo />}
                                 >
-                                  Detail Fitur ({DataBacklogsRequirement.length}
+                                  Detail Scope of Work ({DataBacklogsRequirement.length}
                                   )
                                 </Button>
                               </Box>
@@ -1169,7 +1170,7 @@ function RequirementDetailView() {
                                     <Box
                                       bg={
                                         DataRequirement.reqStatus ===
-                                        REQ_STATUS_APPROVED
+                                          REQ_STATUS_APPROVED
                                           ? "green.400"
                                           : "gray.200"
                                       }
@@ -1178,14 +1179,14 @@ function RequirementDetailView() {
                                       rounded={"md"}
                                       color={
                                         DataRequirement.reqStatus ===
-                                        REQ_STATUS_APPROVED
+                                          REQ_STATUS_APPROVED
                                           ? "green.900"
                                           : "gray.500"
                                       }
                                       fontWeight={600}
                                       opacity={
                                         DataRequirement.reqStatus ===
-                                        REQ_STATUS_APPROVED
+                                          REQ_STATUS_APPROVED
                                           ? 1
                                           : 0.5
                                       }
@@ -1203,7 +1204,7 @@ function RequirementDetailView() {
                                     <Box
                                       bg={
                                         DataRequirement.reqStatus ===
-                                        REQ_STATUS_TEMPORARY_APPROVED
+                                          REQ_STATUS_TEMPORARY_APPROVED
                                           ? "teal.400"
                                           : "gray.200"
                                       }
@@ -1212,14 +1213,14 @@ function RequirementDetailView() {
                                       rounded={"md"}
                                       color={
                                         DataRequirement.reqStatus ===
-                                        REQ_STATUS_TEMPORARY_APPROVED
+                                          REQ_STATUS_TEMPORARY_APPROVED
                                           ? "teal.900"
                                           : "gray.500"
                                       }
                                       fontWeight={600}
                                       opacity={
                                         DataRequirement.reqStatus ===
-                                        REQ_STATUS_TEMPORARY_APPROVED
+                                          REQ_STATUS_TEMPORARY_APPROVED
                                           ? 1
                                           : 0.5
                                       }
@@ -1238,7 +1239,7 @@ function RequirementDetailView() {
                                     <Box
                                       bg={
                                         DataRequirement.reqStatus ===
-                                        REQ_STATUS_ON_HOLD
+                                          REQ_STATUS_ON_HOLD
                                           ? "yellow.400"
                                           : "gray.200"
                                       }
@@ -1247,14 +1248,14 @@ function RequirementDetailView() {
                                       rounded={"md"}
                                       color={
                                         DataRequirement.reqStatus ===
-                                        REQ_STATUS_ON_HOLD
+                                          REQ_STATUS_ON_HOLD
                                           ? "yellow.900"
                                           : "gray.500"
                                       }
                                       fontWeight={600}
                                       opacity={
                                         DataRequirement.reqStatus ===
-                                        REQ_STATUS_ON_HOLD
+                                          REQ_STATUS_ON_HOLD
                                           ? 1
                                           : 0.5
                                       }
@@ -1272,7 +1273,7 @@ function RequirementDetailView() {
                                     <Box
                                       bg={
                                         DataRequirement.reqStatus ===
-                                        REQ_STATUS_CANCELED
+                                          REQ_STATUS_CANCELED
                                           ? "red.400"
                                           : "gray.200"
                                       }
@@ -1281,14 +1282,14 @@ function RequirementDetailView() {
                                       rounded={"md"}
                                       color={
                                         DataRequirement.reqStatus ===
-                                        REQ_STATUS_CANCELED
+                                          REQ_STATUS_CANCELED
                                           ? "red.900"
                                           : "gray.500"
                                       }
                                       fontWeight={600}
                                       opacity={
                                         DataRequirement.reqStatus ===
-                                        REQ_STATUS_CANCELED
+                                          REQ_STATUS_CANCELED
                                           ? 1
                                           : 0.5
                                       }
@@ -1322,7 +1323,7 @@ function RequirementDetailView() {
                                   // defaultValue={formik.values.projectDesc ?? ""}
                                   placeholder={`Catatan (Opsional)`}
                                   maxLength={300}
-                                  // isDisabled={ActionLoading}
+                                // isDisabled={ActionLoading}
                                 />
                               </Stack>
                             </InputLayoutFull>
@@ -1583,8 +1584,8 @@ const ReqInfoGeneralSectionView = ({
                 {DataRequirement.isCarryOver == "Y"
                   ? "YA"
                   : DataRequirement.isCarryOver == "N"
-                  ? "TIDAK"
-                  : "N/A"}
+                    ? "TIDAK"
+                    : "N/A"}
               </Text>
             </Stack>
           </InputLayoutFull>
@@ -1626,9 +1627,8 @@ const ReqInfoPersonelSectionView = ({
             </FormLabel>
             <Stack spacing={0} h={"full"}>
               <Text>
-                {`${DataRequirement.assignedFromName || "N/A"} (${
-                  DataRequirement.assignedFromId || "N/A"
-                })`}
+                {`${DataRequirement.assignedFromName || "N/A"} (${DataRequirement.assignedFromId || "N/A"
+                  })`}
               </Text>
             </Stack>
           </InputLayoutFull>
@@ -1644,9 +1644,8 @@ const ReqInfoPersonelSectionView = ({
                 {DataRequirement?.approvalDatas?.length ? (
                   DataRequirement.approvalDatas.map((ua, idx) => (
                     <ListItem key={idx}>
-                      {`${ua.approverUserFirstName ?? "N/A"} (${
-                        ua.approverUserCode ?? "N/A"
-                      })`}
+                      {`${ua.approverUserFirstName ?? "N/A"} (${ua.approverUserCode ?? "N/A"
+                        })`}
                     </ListItem>
                   ))
                 ) : (
@@ -2107,8 +2106,8 @@ const ReqInfoSummaryBacklogsView = ({
                 {DataRequirement.appTargetUsers == "INTERNAL"
                   ? "INTERNAL (BANK)"
                   : DataRequirement.appTargetUsers == "EXTERNAL"
-                  ? "EXTERNAL (NASABAH)"
-                  : "N/A"}
+                    ? "EXTERNAL (NASABAH)"
+                    : "N/A"}
               </Text>
             </Stack>
           </InputLayoutFull>
@@ -2121,7 +2120,7 @@ const ReqInfoSummaryBacklogsView = ({
             </FormLabel>
             <Stack spacing={0} h={"full"}>
               {DataRequirement.appAccessFrontsiteDns ||
-              DataRequirement.appAccessBacksiteIp ? (
+                DataRequirement.appAccessBacksiteIp ? (
                 <>
                   {DataRequirement.appAccessFrontsiteDns && (
                     <Text>
@@ -2208,8 +2207,8 @@ const ReqInfoSummaryBacklogsView = ({
                   {DataRequirement.appOperational24hrs == null
                     ? "N/A"
                     : DataRequirement.appOperational24hrs == "NO"
-                    ? "TIDAK"
-                    : "YA"}
+                      ? "TIDAK"
+                      : "YA"}
                 </Text>
               </Text>
 
@@ -2255,9 +2254,9 @@ const ReqInfoSummaryBacklogsView = ({
               <Text>
                 {DataRequirement.appLiveTargetDate != null
                   ? formatDateInputCustom(
-                      DataRequirement.appLiveTargetDate,
-                      "/"
-                    )
+                    DataRequirement.appLiveTargetDate,
+                    "/"
+                  )
                   : "N/A"}
               </Text>
             </Stack>
@@ -2294,7 +2293,7 @@ const ReqInfoSummaryBacklogsView = ({
         <FormControl>
           <InputLayoutFull>
             <FormLabel h={"full"} mt={2}>
-              Fitur Aplikasi{" "}
+              Scope Aplikasi{" "}
               {DataBacklogs != null && `(${DataBacklogs.length})`}
             </FormLabel>
             <Stack spacing={0} h={"full"}>
@@ -2506,17 +2505,17 @@ const ReqInfoSummaryFileAttachmentsView = ({
             </Button>
             {info.row.original.objectExtension.replace(".", "").trim() ==
               "pdf" && (
-              <Button
-                size={"sm"}
-                colorScheme={"blue"}
-                onClick={() => {
-                  handleOpenPreview(info.row.original.objectFullPath || "");
-                }}
-                leftIcon={<FiEye />}
-              >
-                Pratinjau
-              </Button>
-            )}
+                <Button
+                  size={"sm"}
+                  colorScheme={"blue"}
+                  onClick={() => {
+                    handleOpenPreview(info.row.original.objectFullPath || "");
+                  }}
+                  leftIcon={<FiEye />}
+                >
+                  Pratinjau
+                </Button>
+              )}
 
             {/* <Button
                 size={"sm"}
@@ -2564,7 +2563,7 @@ const ReqInfoSummaryFileAttachmentsView = ({
       });
       return;
     }
-    
+
     setUrlFilePDF(urlData);
     ModalPreview.onOpen();
   };
@@ -2728,9 +2727,9 @@ const ReqInfoAcceptanceView = ({
                     <Text>
                       {DataRequirement.reqReviewStartDate != null
                         ? formatDateInputCustom(
-                            DataRequirement.reqReviewStartDate,
-                            "/"
-                          )
+                          DataRequirement.reqReviewStartDate,
+                          "/"
+                        )
                         : "N/A"}
                     </Text>
                   </Stack>
@@ -2746,9 +2745,9 @@ const ReqInfoAcceptanceView = ({
                     <Text>
                       {DataRequirement.reqReviewEndDate != null
                         ? formatDateInputCustom(
-                            DataRequirement.reqReviewEndDate,
-                            "/"
-                          )
+                          DataRequirement.reqReviewEndDate,
+                          "/"
+                        )
                         : "N/A"}
                     </Text>
                   </Stack>
@@ -2780,9 +2779,8 @@ const ReqInfoAcceptanceView = ({
                       {DataRequirement?.approvalDatas?.length ? (
                         DataRequirement.approvalDatas.map((ua, idx) => (
                           <ListItem key={idx}>
-                            {`${ua.approverUserFirstName ?? "N/A"} (${
-                              ua.approverUserCode ?? "N/A"
-                            })`}
+                            {`${ua.approverUserFirstName ?? "N/A"} (${ua.approverUserCode ?? "N/A"
+                              })`}
                           </ListItem>
                         ))
                       ) : (
@@ -2903,7 +2901,7 @@ const RfcBacklogChangesView = ({
                 <FormControl>
                   <InputLayoutFull>
                     <FormLabel h={"full"} mt={2}>
-                      Nama Fitur
+                      Nama Scope
                     </FormLabel>
                     <Text>{backlog.reffData?.backlogName || "-"}</Text>
                   </InputLayoutFull>
@@ -2971,7 +2969,7 @@ const RfcBacklogChangesView = ({
                 <FormControl>
                   <InputLayoutFull>
                     <FormLabel h={"full"} mt={2}>
-                      Nama Fitur
+                      Nama Scope
                     </FormLabel>
                     <Text>{backlog.backlogName || "-"}</Text>
                   </InputLayoutFull>
