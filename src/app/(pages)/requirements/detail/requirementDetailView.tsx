@@ -284,9 +284,6 @@ function RequirementDetailView() {
             <Flex as={Stack} spacing={2}>
               <Flex as={Stack} spacing={0}>
                 <Text fontWeight={600}>{info.row.original.backlogName}</Text>
-                <Text fontSize={"smaller"} color={"gray.500"}>
-                  #{info.row.original.backlogCode}
-                </Text>
               </Flex>
             </Flex>
           </Flex>
