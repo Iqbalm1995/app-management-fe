@@ -896,10 +896,10 @@ const FeatureBacklogsView = ({
                 </Box>
 
                 {/* Tabs for Edit and History */}
-                <Tabs variant="soft-rounded" colorScheme="blue">
-                  <TabList bg="gray.100" p={1} rounded="md">
+                <Tabs variant="soft-rounded" colorScheme="blue" >
+                  <TabList bg="gray.100" p={1} rounded={radiusStyle}>
                     <Tab
-                      rounded="md"
+                      rounded={radiusStyle}
                       _selected={{ bg: "blue.500", color: "white" }}
                     >
                       <HStack>
@@ -908,7 +908,7 @@ const FeatureBacklogsView = ({
                       </HStack>
                     </Tab>
                     <Tab
-                      rounded="md"
+                      rounded={radiusStyle}
                       _selected={{ bg: "blue.500", color: "white" }}
                     >
                       <HStack>
