@@ -564,7 +564,7 @@ function RegisterRequirementFormPage({
     const requestData = await InsertReq(data, tokenData);
     const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
 
-    if (files.length <= 0) {
+    if (files.length <= 0 && data.isHaveMemo !== "N") {
       showToast({
         description: `upload files must be uploaded, at least one.`,
         statusToast: "warning",
@@ -1153,7 +1153,7 @@ function RegisterRequirementFormPage({
 
   const SubmitDraftRequirement = async (data: RequirementsInsertPayload) => {
     const totalFiles = uploadedFiles.length + files.length;
-    if (totalFiles <= 0) {
+    if (totalFiles <= 0 && data.isHaveMemo !== "N") {
       showToast({
         description: `Upload files must be uploaded, at least one.`,
         statusToast: "warning",
@@ -1306,7 +1306,7 @@ function RegisterRequirementFormPage({
 
   const handleConfirmSaveData = (data: RequirementsInsertPayload) => {
     const totalFiles = uploadedFiles.length + files.length;
-    if (totalFiles === 0) {
+    if (totalFiles === 0 && data.isHaveMemo !== "N") {
       showToast({
         description: "File upload attachments, cannot be empty.",
         statusToast: "warning",
@@ -1317,7 +1317,7 @@ function RegisterRequirementFormPage({
     setCaptionDialog("Konfirmasi Submit");
     setQuestionMsgDialog(
       `Apakah ada yakin akan submit data "${formik.values.isHaveMemo == "Y"
-        ? formik.values.reqNarative
+        ? formik.values.reqNumber
         : type_req_param + " Tanpa Memo"
       }"?`
     );
@@ -2428,7 +2428,7 @@ function RegisterRequirementFormPage({
                                     defaultValue={
                                       formik.values.reqNarative ?? ""
                                     }
-                                    placeholder={`Perlihal`}
+                                    placeholder={`Perihal`}
                                     maxLength={300}
                                     isDisabled={
                                       ActionLoading ||

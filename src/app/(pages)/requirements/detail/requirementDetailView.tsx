@@ -284,9 +284,6 @@ function RequirementDetailView() {
             <Flex as={Stack} spacing={2}>
               <Flex as={Stack} spacing={0}>
                 <Text fontWeight={600}>{info.row.original.backlogName}</Text>
-                <Text fontSize={"smaller"} color={"gray.500"}>
-                  #{info.row.original.backlogCode}
-                </Text>
               </Flex>
             </Flex>
           </Flex>
@@ -2464,13 +2461,6 @@ const ReqInfoSummaryFileAttachmentsView = ({
             {/* <Link href={info.row.original.objectFullPath}> */}
             {/* <Text>{info.row.original.objectData}</Text> */}
             {/* </Link> */}
-            <Text
-              fontWeight={600}
-              fontSize={"xx-small"}
-              color={"secondary.700"}
-            >
-              {info.row.original.objectCode}
-            </Text>
           </Stack>
         ),
         header: () => <span>Nama File</span>,
