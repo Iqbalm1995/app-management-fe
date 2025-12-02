@@ -1317,7 +1317,7 @@ function RegisterRequirementFormPage({
     setCaptionDialog("Konfirmasi Submit");
     setQuestionMsgDialog(
       `Apakah ada yakin akan submit data "${formik.values.isHaveMemo == "Y"
-        ? formik.values.reqNarative
+        ? formik.values.reqNumber
         : type_req_param + " Tanpa Memo"
       }"?`
     );
@@ -2428,7 +2428,7 @@ function RegisterRequirementFormPage({
                                     defaultValue={
                                       formik.values.reqNarative ?? ""
                                     }
-                                    placeholder={`Perlihal`}
+                                    placeholder={`Perihal`}
                                     maxLength={300}
                                     isDisabled={
                                       ActionLoading ||
