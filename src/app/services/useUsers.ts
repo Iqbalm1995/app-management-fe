@@ -104,6 +104,13 @@ export interface UserTeamResponse {
   teamPict?: string | null;
   orgGroupId?: string | null;
   orgGroupCode?: string | null;
+  organization?: TeamOrganizationHierarchy | null;
+}
+
+export interface TeamOrganizationHierarchy {
+  directorate?: OrganizationShortResponse | null;
+  division?: OrganizationShortResponse | null;
+  group?: OrganizationShortResponse | null;
 }
 
 export interface UserTeamRoleResponse {
