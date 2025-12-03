@@ -288,14 +288,6 @@ function LandingPage() {
                         Launch Your Project Apps
                       </Button>
                     </Box>
-
-                    <Text
-                      fontSize="md"
-                      color={colorMode === "light" ? "gray.600" : "gray.400"}
-                    >
-                      Join thousands of teams building better project management
-                      solutions
-                    </Text>
                   </VStack>
                 </VStack>
               </GridItem>

@@ -17,16 +17,14 @@ export const LogoApplications = ({ colorText }: { colorText: string }) => {
           ></Image>
           <Text
             fontWeight={600}
-            fontSize={"xl"}
-            letterSpacing={{
-              base: 1,
-              sm: 1,
-              md: 5,
-              lg: 5,
-            }}
+            fontSize={{ base: "md", md: "lg" }}
+            letterSpacing={{ base: 0, sm: 0, md: 1, lg: 2 }}
             color={colorText}
+            whiteSpace="nowrap"
+            overflow="hidden"
+            textOverflow="ellipsis"
           >
-            KOBRA
+            bjb aPPs
           </Text>
         </HStack>
       </Link>
@@ -90,7 +88,7 @@ export const LogoApps = () => {
         <Text
           fontWeight={600}
           fontSize={"2xl"}
-          // textShadow={"2px 2px 3px rgba(0, 0, 0, 0.3)"}
+        // textShadow={"2px 2px 3px rgba(0, 0, 0, 0.3)"}
         >
           A
         </Text>
@@ -98,21 +96,21 @@ export const LogoApps = () => {
           fontWeight={600}
           fontSize={"2xl"}
           color={"secondary.500"}
-          // textShadow={"2px 2px 3px rgba(0, 0, 0, 0.3)"}
+        // textShadow={"2px 2px 3px rgba(0, 0, 0, 0.3)"}
         >
           P
         </Text>
         <Text
           fontWeight={600}
           fontSize={"2xl"}
-          // textShadow={"2px 2px 3px rgba(0, 0, 0, 0.3)"}
+        // textShadow={"2px 2px 3px rgba(0, 0, 0, 0.3)"}
         >
           P
         </Text>
         <Text
           fontWeight={600}
           fontSize={"2xl"}
-          // textShadow={"2px 2px 3px rgba(0, 0, 0, 0.3)"}
+        // textShadow={"2px 2px 3px rgba(0, 0, 0, 0.3)"}
         >
           S
         </Text>

@@ -37,7 +37,7 @@ const LayoutLanding = ({ children }: { children: ReactNode }) => {
     <>
       <Box position="relative" minHeight="100vh">
         <Head>
-          <title>KOBRA - Applications Management</title>
+          <title>bjb aPPs - Applications Management</title>
         </Head>
 
         <LoadingOverlay isLoading={loading} />

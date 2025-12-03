@@ -1,13 +1,13 @@
 import type { Metadata } from 'next'
 
 export function generateMetadata(pageName?: string): Metadata {
-  const title = pageName 
-    ? `KOBRA - Project Management Apps | ${pageName}`
-    : 'KOBRA - Project Management Apps'
-  
+  const title = pageName
+    ? `bjb aPPs - Project Management Apps | ${pageName}`
+    : 'bjb aPPs - Project Management Apps'
+
   return {
     title,
-    description: 'KOBRA Project Management System - Comprehensive project management solution',
+    description: 'bjb aPPs Project Management System - Comprehensive project management solution',
     icons: {
       icon: '/img/favicon-bjb.png',
       shortcut: '/img/favicon-bjb.png',

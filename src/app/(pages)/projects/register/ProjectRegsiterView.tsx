@@ -2777,8 +2777,8 @@ export default function ProjectRegisterView({
                                 value={formik.values.projectNo ?? ""}
                                 placeholder={
                                   ProjectNoMode === "manual"
-                                    ? "0000/00/BJB/XXXX/0000-A/0"
-                                    : "2025/11/BJB/XXXX/2025-A/1"
+                                    ? "0000/00/BJB/XXXX/XXXX/0000-A/0"
+                                    : "0000/00/BJB/XXXX/XXXX/0000-A/0"
                                 }
                                 minLength={25}
                                 maxLength={100}
@@ -2793,7 +2793,7 @@ export default function ProjectRegisterView({
                               <Text fontSize="xs" color="gray.500" mt={1}>
                                 {ProjectNoMode === "auto"
                                   ? "Nomor project digenerate otomatis"
-                                  : "Contoh: YYYY/MM/BJB/XXXX/YYYY-A/0"}
+                                  : "Contoh: 0000/00/BJB/XXXX/XXXX/0000-A/0"}
                               </Text>
                               <FormErrorMessage>
                                 {formik.errors.projectNo}
