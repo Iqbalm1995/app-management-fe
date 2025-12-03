@@ -893,7 +893,7 @@ function RegisterRequirementFormPage({
           const backlogs = backlogResponse.data.map((b: BacklogDataResponse, index: number) => ({
             localId: b.id, // Use database ID as localId for loaded items
             backlogId: b.id,
-            parentBacklogId: b.parentBacklogId,
+            parentBacklogId: b.reffId,
             backlogName: b.backlogName,
             backlogDesc: b.backlogDesc,
             note: b.note,
@@ -6636,9 +6636,9 @@ const Section4RFCView = ({
 
       // Group backlogs by parent-child relationship
       BacklogApps.forEach((b: BacklogDataResponse) => {
-        if (b.parentBacklogId) {
+        if (b.reffId) {
           // This is a change (child)
-          const parentBacklog = backlogMap.get(b.parentBacklogId);
+          const parentBacklog = backlogMap.get(b.reffId);
           if (parentBacklog) {
             // Find if parent already exists in backlogChangesData
             let existingEntry = backlogChangesData.find(
@@ -6667,7 +6667,7 @@ const Section4RFCView = ({
               };
             }
           }
-        } else if (!BacklogApps.some((child: BacklogDataResponse) => child.parentBacklogId === b.id)) {
+        } else if (!BacklogApps.some((child: BacklogDataResponse) => child.reffId === b.id)) {
           // This is a standalone backlog (no children)
           backlogChangesData.push({
             backlog: b,
@@ -6689,18 +6689,35 @@ const Section4RFCView = ({
       const backlogAppsData: BacklogDataResponse[] = DataBackLogs.map((b) => ({
         id: b.backlogId || "",
         reqId: "",
-        appId: "",
-        parentBacklogId: b.parentBacklogId,
+        backlogCode: "",
         backlogName: b.backlogName,
         backlogDesc: b.backlogDesc || "",
-        note: b.note || "",
-        posOrder: b.posOrder || 1,
-        isLive: "N",
+        envSide: null,
+        maintenanceCategory: null,
+        maintenanceType: null,
+        rppb: "",
+        licensing: "",
+        backogRegistered: null,
+        backlogStartdate: null,
+        backlogEnddate: null,
+        urgency: "",
+        impact: "",
+        priority: "",
         developmentStatus: "",
+        progressionPercentage: 0,
+        backlogImplementStartdate: null,
+        backlogImplementEnddate: null,
+        reffId: b.parentBacklogId || null,
+        projectId: null,
+        note: b.note || "",
+        version: "",
+        isLive: "N",
+        appsId: "",
+        posOrder: b.posOrder || 1,
         createdAt: new Date().toISOString(),
         createdBy: "",
         updatedAt: null,
-        updatedBy: null,
+        updatedBy: "",
       }));
       console.log("Populated BacklogApps from DataBackLogs:", backlogAppsData);
       setBacklogApps(backlogAppsData);
@@ -6805,7 +6822,7 @@ const Section4RFCView = ({
     const loadBacklogOptions = async () => {
       if (ApplicationExistingChoosed && tokenData) {
         console.log("Loading backlog options for app:", ApplicationExistingChoosed.id);
-        const WhereParams: FilterWhereProps[] = [
+        const WhereParams: ListSearchByParam[] = [
           { field: "appsId", operator: "=", value: ApplicationExistingChoosed.id },
         ];
         await GetListBacklog("", MAX_SIZE_TABLE, WhereParams);
