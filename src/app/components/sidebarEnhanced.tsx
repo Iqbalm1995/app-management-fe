@@ -353,7 +353,7 @@ const MobileNav = ({ onOpen, ...rest }: MobileProps) => {
         fontFamily="monospace"
         fontWeight="bold"
       >
-        KOBRA
+        bjb aPPs
       </Text>
 
       <HStack spacing={{ base: "0", md: "6" }}>

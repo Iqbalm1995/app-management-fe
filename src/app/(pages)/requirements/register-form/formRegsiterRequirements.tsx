@@ -893,14 +893,15 @@ function RegisterRequirementFormPage({
           const backlogs = backlogResponse.data.map((b: BacklogDataResponse, index: number) => ({
             localId: b.id, // Use database ID as localId for loaded items
             backlogId: b.id,
-            parentBacklogId: null,
+            parentBacklogId: b.parentBacklogId,
             backlogName: b.backlogName,
             backlogDesc: b.backlogDesc,
-            note: null,
-            posOrder: index + 1
+            note: b.note,
+            posOrder: b.posOrder || (index + 1)
           }));
           console.log("Loaded backlogs:", backlogs);
           setDataBackLogs(backlogs);
+
         }
 
         // Load uploaded files
@@ -1053,20 +1054,34 @@ function RegisterRequirementFormPage({
       requirementId: requirementId!,
       isSubmitSave: false,
       ...data,
-      backlogFeatures: DataBackLogs.map(b => ({
-        Id: b.backlogId || null,
-        ParentBacklogId: b.parentBacklogId,
-        BacklogName: b.backlogName,
-        BacklogDesc: b.backlogDesc,
-        Note: b.note,
-        PosOrder: b.posOrder,
-        backlogId: b.backlogId || null,
-        parentBacklogId: b.parentBacklogId,
-        backlogName: b.backlogName,
-        backlogDesc: b.backlogDesc,
-        note: b.note,
-        posOrder: b.posOrder
-      })),
+      backlogFeatures: (data.requirementType === "RFC" && data.backlogFeatures && data.backlogFeatures.length > 0)
+        ? data.backlogFeatures.map((b: any) => ({
+            Id: b.id || null,
+            ParentBacklogId: b.parentBacklogId,
+            BacklogName: b.backlogName,
+            BacklogDesc: b.backlogDesc,
+            Note: b.note,
+            PosOrder: b.posOrder,
+            parentBacklogId: b.parentBacklogId,
+            backlogName: b.backlogName,
+            backlogDesc: b.backlogDesc,
+            note: b.note,
+            posOrder: b.posOrder
+          }))
+        : DataBackLogs.map(b => ({
+            Id: b.backlogId || null,
+            ParentBacklogId: b.parentBacklogId,
+            BacklogName: b.backlogName,
+            BacklogDesc: b.backlogDesc,
+            Note: b.note,
+            PosOrder: b.posOrder,
+            backlogId: b.backlogId || null,
+            parentBacklogId: b.parentBacklogId,
+            backlogName: b.backlogName,
+            backlogDesc: b.backlogDesc,
+            note: b.note,
+            posOrder: b.posOrder
+          })),
       picAssignUsers: ChoosedMemberProjects.map(m => ({
         Id: m.id || null,
         UserId: m.userId,
@@ -1167,20 +1182,34 @@ function RegisterRequirementFormPage({
       requirementId: requirementId!,
       isSubmitSave: true,
       ...data,
-      backlogFeatures: DataBackLogs.map(b => ({
-        Id: b.backlogId || null,
-        ParentBacklogId: b.parentBacklogId,
-        BacklogName: b.backlogName,
-        BacklogDesc: b.backlogDesc,
-        Note: b.note,
-        PosOrder: b.posOrder,
-        backlogId: b.backlogId || null,
-        parentBacklogId: b.parentBacklogId,
-        backlogName: b.backlogName,
-        backlogDesc: b.backlogDesc,
-        note: b.note,
-        posOrder: b.posOrder
-      })),
+      backlogFeatures: (data.requirementType === "RFC" && data.backlogFeatures && data.backlogFeatures.length > 0)
+        ? data.backlogFeatures.map((b: any) => ({
+            Id: b.id || null,
+            ParentBacklogId: b.parentBacklogId,
+            BacklogName: b.backlogName,
+            BacklogDesc: b.backlogDesc,
+            Note: b.note,
+            PosOrder: b.posOrder,
+            parentBacklogId: b.parentBacklogId,
+            backlogName: b.backlogName,
+            backlogDesc: b.backlogDesc,
+            note: b.note,
+            posOrder: b.posOrder
+          }))
+        : DataBackLogs.map(b => ({
+            Id: b.backlogId || null,
+            ParentBacklogId: b.parentBacklogId,
+            BacklogName: b.backlogName,
+            BacklogDesc: b.backlogDesc,
+            Note: b.note,
+            PosOrder: b.posOrder,
+            backlogId: b.backlogId || null,
+            parentBacklogId: b.parentBacklogId,
+            backlogName: b.backlogName,
+            backlogDesc: b.backlogDesc,
+            note: b.note,
+            posOrder: b.posOrder
+          })),
       picAssignUsers: ChoosedMemberProjects.map(m => ({
         Id: m.id || null,
         UserId: m.userId,
@@ -6593,6 +6622,90 @@ const Section4RFCView = ({
   const [BacklogAppsOption, setBacklogAppsOption] = useState<OptionListProps[]>(
     []
   );
+
+  // Populate BacklogChanges from BacklogApps when draft is loaded
+  useEffect(() => {
+    if (BacklogApps.length > 0 && BacklogChanges.length === 0) {
+      const backlogChangesData: BacklogChangesData[] = [];
+      const backlogMap = new Map<string, BacklogDataResponse>();
+      
+      // Create map of all backlogs
+      BacklogApps.forEach((b: BacklogDataResponse) => {
+        backlogMap.set(b.id, b);
+      });
+
+      // Group backlogs by parent-child relationship
+      BacklogApps.forEach((b: BacklogDataResponse) => {
+        if (b.parentBacklogId) {
+          // This is a change (child)
+          const parentBacklog = backlogMap.get(b.parentBacklogId);
+          if (parentBacklog) {
+            // Find if parent already exists in backlogChangesData
+            let existingEntry = backlogChangesData.find(
+              (entry) => entry.backlog.id === parentBacklog.id
+            );
+            
+            if (!existingEntry) {
+              // Create new entry with parent and child
+              backlogChangesData.push({
+                backlog: parentBacklog,
+                changes: {
+                  backlogName: b.backlogName,
+                  backlogDesc: b.backlogDesc || "",
+                  note: b.note || "",
+                  posOrder: b.posOrder || 1,
+                },
+                showKondisiEksisting: true,
+              });
+            } else {
+              // Update existing entry with changes
+              existingEntry.changes = {
+                backlogName: b.backlogName,
+                backlogDesc: b.backlogDesc || "",
+                note: b.note || "",
+                posOrder: b.posOrder || 1,
+              };
+            }
+          }
+        } else if (!BacklogApps.some((child: BacklogDataResponse) => child.parentBacklogId === b.id)) {
+          // This is a standalone backlog (no children)
+          backlogChangesData.push({
+            backlog: b,
+            changes: null,
+            showKondisiEksisting: false,
+          });
+        }
+      });
+
+      console.log("Populated BacklogChanges from BacklogApps:", backlogChangesData);
+      setBacklogChanges(backlogChangesData);
+    }
+
+  }, [BacklogApps]);
+  // Populate BacklogApps from DataBackLogs when draft is loaded (for RFC)
+  useEffect(() => {
+    if (DataBackLogs.length > 0 && BacklogApps.length === 0 && type_req_param === "RFC") {
+      // Convert DataBackLogs to BacklogDataResponse format
+      const backlogAppsData: BacklogDataResponse[] = DataBackLogs.map((b) => ({
+        id: b.backlogId || "",
+        reqId: "",
+        appId: "",
+        parentBacklogId: b.parentBacklogId,
+        backlogName: b.backlogName,
+        backlogDesc: b.backlogDesc || "",
+        note: b.note || "",
+        posOrder: b.posOrder || 1,
+        isLive: "N",
+        developmentStatus: "",
+        createdAt: new Date().toISOString(),
+        createdBy: "",
+        updatedAt: null,
+        updatedBy: null,
+      }));
+      console.log("Populated BacklogApps from DataBackLogs:", backlogAppsData);
+      setBacklogApps(backlogAppsData);
+    }
+  }, [DataBackLogs, type_req_param]);
   useEffect(() => {
     const updatedBacklogData: ReqBacklogPayload[] = BacklogChanges.map(
       (dt) => ({
@@ -6679,6 +6792,27 @@ const Section4RFCView = ({
     useState<ApplicationMasterResponse | null>(null);
   const [SearchAppsText, setSearchAppsText] = useState<string>("");
 
+  // Sync ApplicationExistingChoosed when selectedApp is loaded
+  useEffect(() => {
+    if (selectedApp && !ApplicationExistingChoosed) {
+      setApplicationExistingChoosed(selectedApp);
+    }
+  }, [selectedApp]);
+
+
+  // Load BacklogAppsOption when ApplicationExistingChoosed is set (from draft)
+  useEffect(() => {
+    const loadBacklogOptions = async () => {
+      if (ApplicationExistingChoosed && tokenData) {
+        console.log("Loading backlog options for app:", ApplicationExistingChoosed.id);
+        const WhereParams: FilterWhereProps[] = [
+          { field: "appsId", operator: "=", value: ApplicationExistingChoosed.id },
+        ];
+        await GetListBacklog("", MAX_SIZE_TABLE, WhereParams);
+      }
+    };
+    loadBacklogOptions();
+  }, [ApplicationExistingChoosed, tokenData]);
   const GetDataApplications = async (
     searchValue: string = "",
     limit: number = 1
@@ -6735,6 +6869,7 @@ const Section4RFCView = ({
       formik.setFieldValue("appInitialName", null);
       formik.setFieldValue("appTargetUsers", "INTERNAL");
       formik.setFieldValue("appAccessFrontsiteDns", null);
+
       formik.setFieldValue("appAccessFrontsiteIp", null);
       formik.setFieldValue("appAccessBacksiteDns", null);
       formik.setFieldValue("appAccessBacksiteIp", null);
@@ -7314,7 +7449,7 @@ const Section4RFCView = ({
                             <Stack spacing={0}>
                               <Select
                                 id={`backlogExisting-${1}`}
-                                options={[{ label: "Scope yang belum ada di memo", value: "NEW_SCOPE" }, ...BacklogAppsOption.filter(
+                                options={[/* { label: "Scope yang belum ada di memo", value: "NEW_SCOPE" }, */ ...BacklogAppsOption.filter(
                                   (opt) =>
                                     !BacklogChanges.some(
                                       (b) => b.backlog.id === opt.value

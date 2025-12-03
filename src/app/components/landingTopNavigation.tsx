@@ -264,7 +264,7 @@ export default function TopNavigationLanding() {
                         Home
                       </MenuItem>
                     </Link>
-                    <Link href={`#`}>
+                    <Link href={`/change-password`}>
                       <MenuItem
                         icon={<MdPassword />}
                         color={colorMode == "light" ? "gray.800" : "white"}

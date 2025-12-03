@@ -25,15 +25,18 @@ import {
 } from "@chakra-ui/react";
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import { useFormik } from "formik";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FiSave, FiArrowLeft } from "react-icons/fi";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import * as Yup from "yup";
 import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { encryptAES } from "@/app/helper/HashHelper";
 import { RES_CODE_OK, RES_GENERIC_ERROR_MSG } from "@/app/constants/applicationConstants";
 import useUsers from "@/app/services/useUsers";
+import { AuthDataModelInterface } from "@/app/context/AuthContext";
+import { AuthDataResponse } from "@/app/services/useAuthentications";
 
 interface ChangePasswordModel {
   userId: string;
@@ -64,12 +67,31 @@ export default function ChangePasswordPage() {
   useDocumentTitle("Change Password");
   const { colorMode } = useColorMode();
   const showToast = useToastHelper();
+  const router = useRouter();
   const { EditUserPassword } = useUsers();
   
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // Check if user is logged in and auto-fill userId
+  useEffect(() => {
+    const storedData = localStorage.getItem("authData");
+    if (storedData) {
+      try {
+        const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
+        const UserData: AuthDataResponse = StorageAuth.dataLogin as AuthDataResponse;
+        if (UserData?.userId) {
+          formik.setFieldValue("userId", UserData.userId);
+          setIsLoggedIn(true);
+        }
+      } catch (error) {
+        console.error("Error parsing auth data:", error);
+      }
+    }
+  }, []);
 
   const formik = useFormik<ChangePasswordModel>({
     initialValues: initialValues,
@@ -106,8 +128,21 @@ export default function ChangePasswordPage() {
         statusToast: "success",
       });
 
-      // Reset form
-      formik.resetForm();
+      // Logout if user was logged in
+      if (isLoggedIn) {
+        localStorage.removeItem("authData");
+        localStorage.removeItem("tokenData");
+        showToast({
+          description: "Silakan login kembali dengan password baru",
+          statusToast: "info",
+        });
+        setTimeout(() => {
+          router.push("/");
+        }, 2000);
+      } else {
+        // Reset form for non-logged in users
+        formik.resetForm();
+      }
     } catch (error) {
       showToast({
         description: "Terjadi kesalahan saat mengubah password",
@@ -157,6 +192,7 @@ export default function ChangePasswordPage() {
                       placeholder="Masukkan User ID Anda"
                       onChange={formik.handleChange}
                       value={formik.values.userId}
+                      isReadOnly={isLoggedIn}
                     />
                     <FormErrorMessage>{formik.errors.userId}</FormErrorMessage>
                   </FormControl>
@@ -259,14 +295,14 @@ export default function ChangePasswordPage() {
                       Ubah Password
                     </Button>
 
-                    <Link href="/">
+                    <Link href={isLoggedIn ? "/home" : "/"}>
                       <Button
                         variant="outline"
                         size="lg"
                         w="full"
                         leftIcon={<FiArrowLeft />}
                       >
-                        Kembali ke Login
+                        {isLoggedIn ? "Kembali" : "Kembali ke Login"}
                       </Button>
                     </Link>
                   </VStack>

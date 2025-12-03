@@ -62,19 +62,24 @@ interface AbstractUIDesignProps {
 
 const HighlightTextLanding: HighlightTextLandingProps[] = [
   {
-    title: "App Development",
-    desc: "Create custom project management applications",
+    title: "Team Collaboration",
+    desc: "Real-time collaboration tools and workflows that foster strong teamwork and help members work together toward shared goals.",
     color: "blue",
   },
   {
-    title: "Team Collaboration",
-    desc: "Real-time collaboration tools and workflows",
+    title: "Performance & Productivity Focus",
+    desc: "Enables the improvement of both individual and team performance through productivity-enhancing features.",
     color: "purple",
+  },
+  {
+    title: "Dynamic yet Structured",
+    desc: "Prioritizes flexibility in project management while maintaining an organized and well-structured system.",
+    color: "pink",
   },
   {
     title: "Analytics & Reports",
     desc: "Advanced insights and performance tracking",
-    color: "pink",
+    color: "green",
   },
 ];
 

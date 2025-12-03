@@ -4809,26 +4809,28 @@ export default function ProjectRegisterView({
                                   </Flex>
                                 )}
                                 {(() => {
+                                  console.log("ChoosedMemberProjects:", ChoosedMemberProjects);
+                                  console.log("Sample member team:", ChoosedMemberProjects[0]?.team);
                                   const grouped = ChoosedMemberProjects.reduce((acc, member) => {
-                                    const teamKey = member.team?.teamCode || "UNREGISTERED";
-                                    const teamName = member.team?.teamName || "NOT ASSIGNED TO TEAM";
+                                    const groupCode = member.team?.organization?.group?.orgCode || "UNREGISTERED";
+                                    const groupName = member.team?.organization?.group?.orgName || "UNREGISTERED MEMBER GROUP";
 
-                                    if (!acc[teamKey]) {
-                                      acc[teamKey] = { teamName, members: [] };
+                                    if (!acc[groupCode]) {
+                                      acc[groupCode] = { groupName, members: [] };
                                     }
-                                    acc[teamKey].members.push(member);
+                                    acc[groupCode].members.push(member);
                                     return acc;
-                                  }, {} as Record<string, { teamName: string; members: typeof ChoosedMemberProjects }>);
+                                  }, {} as Record<string, { groupName: string; members: typeof ChoosedMemberProjects }>);
 
-                                  return Object.entries(grouped).map(([teamKey, { teamName, members }]) => (
-                                    <Box key={teamKey} w={"full"} mb={4}>
+                                  return Object.entries(grouped).map(([groupCode, { groupName, members }]) => (
+                                    <Box key={groupCode} w={"full"} mb={4}>
                                       <Text
                                         pb={1}
                                         fontWeight={600}
                                         fontSize="lg"
                                         color="white"
                                       >
-                                        {teamName} ({members.length})
+                                        {groupName} ({members.length})
                                       </Text>
                                       <Stack spacing={2}>
                                         {members.map((dt, index) => (
@@ -4845,7 +4847,7 @@ export default function ProjectRegisterView({
                                             boxShadow={"md"}
                                             as={HStack}
                                             spacing={5}
-                                            key={`${teamKey}-${index}`}
+                                            key={`${groupCode}-${index}`}
                                           >
                                             <Box>
                                               <Avatar name={dt.nama} src="" />
