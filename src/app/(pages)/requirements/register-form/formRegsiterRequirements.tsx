@@ -2968,7 +2968,7 @@ function RegisterRequirementFormPage({
                                   placeholder={`Nama Lengkap PIC`}
                                   minLength={9}
                                   maxLength={225}
-                                  // isDisabled={true}
+                                  // isDisabled={item.backlog.id !== "NEW_SCOPE"}
                                   isDisabled={ActionLoading}
                                 />
                                 <FormErrorMessage>
@@ -6756,7 +6756,7 @@ const Section4RFCView = ({
       formik.setFieldValue("appPrivateAuth", "Y");
       formik.setFieldValue("appHightAvailability", "Y");
       formik.setFieldValue("appIntegrationOthersApps", "");
-    } else {
+    }
       // if (data.requirementData == null) {
       //   setApplicationExistingChoosed(null);
       //   setBacklogAppsOption([]);
@@ -6847,20 +6847,19 @@ const Section4RFCView = ({
           operator: "=",
           value: data.id,
         },
-        {
-          field: "isLive",
-          operator: "=",
-          value: "Y",
-        },
-        {
-          field: "developmentStatus",
-          operator: "=",
-          value: "DONE",
-        },
+        //         {
+        //           field: "isLive",
+        //           operator: "=",
+        //           value: "Y",
+        //         },
+        //         {
+        //           field: "developmentStatus",
+        //           operator: "=",
+        //           value: "DONE",
+        //         },
       ];
 
       await GetListBacklog("", MAX_SIZE_TABLE, WhereParams);
-    }
   };
 
   const handleBacklogChange = (
@@ -6868,6 +6867,32 @@ const Section4RFCView = ({
     index: number
   ) => {
     if (!selectedOption?.value) return;
+
+    // Handle NEW_SCOPE selection
+    if (selectedOption.value === "NEW_SCOPE") {
+      console.log("NEW_SCOPE selected, setting id to NEW_SCOPE");
+      setBacklogChanges((prev) =>
+        prev.map((item, i) =>
+          i === index
+            ? {
+              ...item,
+              backlog: {
+                ...item.backlog,
+                id: "NEW_SCOPE",
+                backlogName: "",
+                backlogDesc: "",
+                note: "",
+              },
+              changes: {
+                backlogName: "",
+                posOrder: 1,
+              },
+            }
+            : item
+        )
+      );
+      return;
+    }
 
     const choosedFeature = BacklogApps.find(
       (x) => x.id === selectedOption.value
@@ -7288,22 +7313,22 @@ const Section4RFCView = ({
                             <Stack spacing={0}>
                               <Select
                                 id={`backlogExisting-${1}`}
-                                options={BacklogAppsOption.filter(
+                                options={[{ label: "Scope yang belum ada di memo", value: "NEW_SCOPE" }, ...BacklogAppsOption.filter(
                                   (opt) =>
                                     !BacklogChanges.some(
                                       (b) => b.backlog.id === opt.value
                                     )
-                                )}
+                                )]}
                                 isSearchable={true}
+                                value={
+                                  item.backlog.id === "NEW_SCOPE"
+                                    ? { label: "Scope yang belum ada di memo", value: "NEW_SCOPE" }
+                                    : BacklogAppsOption.find(
+                                      (x) => x.value === item.backlog.id
+                                    )
+                                }
                                 onChange={(e) => handleBacklogChange(e, index)}
-                                value={BacklogAppsOption.find(
-                                  (x) => x.value === item.backlog.id
-                                )}
                                 placeholder={"Piih Scope of Work Eksisting"}
-                              // value={BacklogAppsOption.find(
-                              //   (x) =>
-                              //     x.value == formik.values.senderDirectorateId
-                              // )}
                               />
                               <FormErrorMessage>
                                 {formik.errors.senderDivisionId}
@@ -7320,11 +7345,15 @@ const Section4RFCView = ({
                               <Textarea
                                 id={`backlogExistingDesc-${1}`}
                                 name={`backlogExistingDesc-${1}`}
-                                // onChange={(e) => setTextBackLogDesc(e.target.value)}
-                                value={item.backlog.backlogDesc || ""}
+                                onChange={(e) => {
+                                  const updated = [...BacklogChanges];
+                                  updated[index].backlog.backlogDesc = e.target.value;
+                                  setBacklogChanges(updated);
+                                }}
                                 placeholder={`Deskripsi Scope Eksisting`}
-                                // maxLength={300}
-                                isDisabled={true}
+                                value={item.backlog.backlogDesc || ""}
+                                isDisabled={item.backlog.id !== "NEW_SCOPE"}
+                              // maxLength={300}
                               />
                             </Stack>
                           </InputLayoutFull>
@@ -7338,11 +7367,14 @@ const Section4RFCView = ({
                               <Textarea
                                 id={`backlogExistingNote-${1}`}
                                 name={`backlogExistingNote-${1}`}
-                                // onChange={(e) => setTextBackLogDesc(e.target.value)}
+                                onChange={(e) => {
+                                  const updated = [...BacklogChanges];
+                                  updated[index].backlog.note = e.target.value;
+                                  setBacklogChanges(updated);
+                                }}
                                 value={item.backlog.note || ""}
                                 placeholder={`Deskripsi Scope Eksisting`}
-                                // maxLength={300}
-                                isDisabled={true}
+                                isDisabled={item.backlog.id !== "NEW_SCOPE"}
                               />
                             </Stack>
                           </InputLayoutFull>
