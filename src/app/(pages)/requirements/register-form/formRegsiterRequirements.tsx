@@ -323,6 +323,7 @@ const FormSchema = yup.object().shape({
     .of(
       yup.object({
         backlogId: yup.string().nullable(),
+        parentBacklogId: yup.string().nullable(),
         backlogName: yup.string().required("Backlog name is required"),
         backlogDesc: yup.string().nullable(),
       })
@@ -1254,9 +1255,9 @@ function RegisterRequirementFormPage({
         });
         return;
       }
-      if (DataBackLogs.length <= 0) {
+      if ((type_req_param === "BRD" && DataBackLogs.length <= 0) || (type_req_param === "RFC" && (!values.backlogFeatures || values.backlogFeatures.length <= 0))) {
         showToast({
-          description: "Scope of Work BRD tidak boleh kosong",
+          description: type_req_param === "BRD" ? "Scope of Work BRD tidak boleh kosong" : "Perubahan Sistem tidak boleh kosong",
           statusToast: "warning",
         });
         return;
