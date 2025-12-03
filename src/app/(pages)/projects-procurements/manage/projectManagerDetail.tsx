@@ -85,7 +85,7 @@ import { Select } from "chakra-react-select";
 import { useFormik } from "formik";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useRef } from "react";
 import { BsKanban } from "react-icons/bs";
 import {
   FiActivity,
@@ -116,6 +116,8 @@ import {
   FiBriefcase,
   FiUpload,
   FiEye,
+  FiChevronLeft,
+  FiChevronRight,
 } from "react-icons/fi";
 import { FaCircle } from "react-icons/fa6";
 import * as Yup from "yup";
@@ -236,6 +238,19 @@ function ProjectManagerDetailView() {
   // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
+
+  // Tabs scroll navigation
+  const tabsRef = useRef<HTMLDivElement>(null);
+
+  const scrollTabs = (direction: "left" | "right") => {
+    if (tabsRef.current) {
+      const scrollAmount = 300;
+      tabsRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
@@ -480,23 +495,15 @@ function ProjectManagerDetailView() {
           // gap={{ base: 4, lg: 6 }}
           w="full"
           gap={5}
-        // px={{ base: 2, md: 4 }}
+          // px={{ base: 2, md: 4 }}
         >
           <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 9 }} w={"full"}>
             {/* // {/* Main Content Area} */}
             <Tabs variant={"unstyled"} colorScheme={"secondary"} size={"lg"}>
               {/* Floating Tabs Container */}
-              <Box
-                // bg={colorMode === "light" ? "white" : "gray.800"}
-                // shadow="lg"
-                // rounded={radiusStyle}
-                // border="1px"
-                // borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-                mb={4}
-                position={"relative"}
-              // zIndex={10}
-              >
+              <Box mb={4}>
                 <TabList
+                  ref={tabsRef}
                   gap={2}
                   p={2}
                   overflowX={"auto"}
@@ -532,7 +539,7 @@ function ProjectManagerDetailView() {
                   <TabButtonCustomStyle>
                     <HStack>
                       <FiPlayCircle size={16} />
-                      <Text>Workstage Procurement</Text>
+                      <Text>Procurement</Text>
                     </HStack>
                   </TabButtonCustomStyle>
                   <TabButtonCustomStyle>
@@ -564,7 +571,32 @@ function ProjectManagerDetailView() {
                       <FiSettings size={16} />
                       <Text>Edit</Text>
                     </HStack>
-                  </TabButtonCustomStyle>                </TabList>
+                  </TabButtonCustomStyle>{" "}
+                </TabList>
+
+                {/* Navigation Buttons */}
+                <Flex justify="flex-end" mt={2}>
+                  <HStack spacing={1}>
+                    <Button
+                      size="xs"
+                      onClick={() => scrollTabs("left")}
+                      bg={colorMode === "light" ? "white" : "gray.700"}
+                      shadow="md"
+                      _hover={{ bg: colorMode === "light" ? "gray.100" : "gray.600" }}
+                    >
+                      <FiChevronLeft />
+                    </Button>
+                    <Button
+                      size="xs"
+                      onClick={() => scrollTabs("right")}
+                      bg={colorMode === "light" ? "white" : "gray.700"}
+                      shadow="md"
+                      _hover={{ bg: colorMode === "light" ? "gray.100" : "gray.600" }}
+                    >
+                      <FiChevronRight />
+                    </Button>
+                  </HStack>
+                </Flex>
               </Box>
 
               {/* Content Card */}
@@ -593,8 +625,8 @@ function ProjectManagerDetailView() {
                     <TeamTab DataProject={DataProject} />
                     <AnalyticsTab DataProject={DataProject} />
                     <TimelineTab DataProject={DataProject} />
-                    <EditTab 
-                      DataProject={DataProject} 
+                    <EditTab
+                      DataProject={DataProject}
                       onRefresh={() => setRefreshData((prev) => prev + 1)}
                     />
                   </TabPanels>
@@ -742,11 +774,11 @@ function ProjectManagerDetailView() {
                                 ? "green.400"
                                 : DataProject.appsProject.appsStatus ===
                                   "DEVELOPMENT"
-                                  ? "blue.400"
-                                  : DataProject.appsProject.appsStatus ===
-                                    "TESTING"
-                                    ? "orange.400"
-                                    : "red.400"
+                                ? "blue.400"
+                                : DataProject.appsProject.appsStatus ===
+                                  "TESTING"
+                                ? "orange.400"
+                                : "red.400"
                             }
                             rounded="full"
                             border="2px solid white"
@@ -806,11 +838,11 @@ function ProjectManagerDetailView() {
                                   ? "green"
                                   : DataProject.appsProject.appsStatus ===
                                     "DEVELOPMENT"
-                                    ? "blue"
-                                    : DataProject.appsProject.appsStatus ===
-                                      "TESTING"
-                                      ? "orange"
-                                      : "red"
+                                  ? "blue"
+                                  : DataProject.appsProject.appsStatus ===
+                                    "TESTING"
+                                  ? "orange"
+                                  : "red"
                               }
                               size="sm"
                               px={2}
@@ -996,10 +1028,10 @@ function ProjectManagerDetailView() {
                                 DataProject.projectStatus === "ACTIVE"
                                   ? "green"
                                   : DataProject.projectStatus === "ONHOLD"
-                                    ? "orange"
-                                    : DataProject.projectStatus === "COMPLETED"
-                                      ? "blue"
-                                      : "gray"
+                                  ? "orange"
+                                  : DataProject.projectStatus === "COMPLETED"
+                                  ? "blue"
+                                  : "gray"
                               }
                             >
                               {DataProject.projectStatus}

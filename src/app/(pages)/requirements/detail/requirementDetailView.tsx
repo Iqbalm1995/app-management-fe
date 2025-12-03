@@ -702,7 +702,7 @@ function RequirementDetailView() {
                       }}
                     >
                       {steps.map((step, index) => (
-                        <Step key={index}>
+                        <Step key={index} onClick={() => setActiveStep(index)} style={{ cursor: 'pointer' }}>
                           <StepIndicator>
                             <StepStatus
                               complete={<StepNumber />}
@@ -2397,21 +2397,15 @@ const ReqInfoSummaryFileAttachmentsView = ({
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
 
-  const handleDownloadFile = async (url: string, filename: string) => {
-    try {
-      const response = await fetch(url);
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(blobUrl);
-    } catch (error) {
-      console.error("Download failed:", error);
+  const handleDownloadFile = (url: string) => {
+    if (!url || url.trim() === "") {
+      showToast({
+        description: "URL file tidak tersedia",
+        statusToast: "error",
+      });
+      return;
     }
+    window.open(url, '_blank');
   };
 
   const columnsData = useMemo<ColumnDef<MediaObjectResponse>[]>(
@@ -2505,10 +2499,7 @@ const ReqInfoSummaryFileAttachmentsView = ({
               colorScheme={"blue"}
               leftIcon={<FiDownload />}
               onClick={() =>
-                handleDownloadFile(
-                  info.row.original.objectFullPath || "",
-                  info.row.original.objectRawName
-                )
+                handleDownloadFile(info.row.original.objectFullPath || "")
               }
             >
               Unduh
@@ -2601,18 +2592,20 @@ const ReqInfoSummaryFileAttachmentsView = ({
             <ModalBody w={"full"}>
               <Flex as={Stack} w={"full"}>
                 {UrlFilePDF && UrlFilePDF.trim() !== "" ? (
-                  <iframe
-                    src={`/api/proxy-pdf?url=${encodeURIComponent(UrlFilePDF)}`}
+                  <object
+                    data={UrlFilePDF}
+                    type="application/pdf"
                     width="100%"
                     height="600px"
                     style={{ border: "none" }}
-                    onError={() => {
-                      showToast({
-                        description: "Gagal memuat pratinjau file. Silakan coba lagi atau unduh file.",
-                        statusToast: "error",
-                      });
-                    }}
-                  />
+                  >
+                    <iframe
+                      src={`https://docs.google.com/viewer?url=${encodeURIComponent(UrlFilePDF)}&embedded=true`}
+                      width="100%"
+                      height="600px"
+                      style={{ border: "none" }}
+                    />
+                  </object>
                 ) : (
                   <Flex
                     w="100%"

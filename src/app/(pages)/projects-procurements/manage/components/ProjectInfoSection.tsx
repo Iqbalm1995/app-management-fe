@@ -28,6 +28,7 @@ import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useProjects, { ProjectDataResponse } from "@/app/services/useProjects";
+import useRequirements, { RequirementsResponse } from "@/app/services/useRequirements";
 import {
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
@@ -43,10 +44,12 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
   const { GetDetailById } = useProjects();
+  const { GetDetailById: GetRequirementDetailById } = useRequirements();
 
   // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
+  const [RequirementData, setRequirementData] = useState<RequirementsResponse | null>(null);
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
@@ -65,6 +68,27 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
       setTokenData(token);
     }
   }, [DataAuth]);
+
+  // Fetch requirement data when project data is available
+  useEffect(() => {
+    const fetchRequirementData = async () => {
+      if (DataProject?.reqParentId && tokenData) {
+        try {
+          const response = await GetRequirementDetailById(
+            DataProject.reqParentId,
+            tokenData
+          );
+          if (response && response.statusCode === RES_CODE_OK) {
+            setRequirementData(response.data);
+          }
+        } catch (error) {
+          console.error("Error fetching requirement data:", error);
+        }
+      }
+    };
+
+    fetchRequirementData();
+  }, [DataProject?.reqParentId, tokenData]);
 
   const [RefreshData, setRefreshData] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
@@ -148,15 +172,13 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                         >
                           Project Number:
                         </Text>
-                        <Badge
-                          colorScheme="blue"
-                          px={3}
-                          py={1}
-                          rounded="full"
+                        <Text
                           fontSize="sm"
+                          fontWeight="bold"
+                          color="blue.600"
                         >
                           {DataProject.projectNo || "N/A"}
-                        </Badge>
+                        </Text>
                       </HStack>
                       <Divider />
                       <HStack justify="space-between">
@@ -212,19 +234,17 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                         >
                           Status:
                         </Text>
-                        <Badge
-                          colorScheme={
-                            DataProject.projectStatus === "ACTIVE"
-                              ? "green"
-                              : "red"
-                          }
-                          px={3}
-                          py={1}
-                          rounded="full"
+                        <Text
                           fontSize="sm"
+                          fontWeight="bold"
+                          color={
+                            DataProject.projectStatus === "ACTIVE"
+                              ? "green.600"
+                              : "red.600"
+                          }
                         >
                           {DataProject.projectStatus || "N/A"}
-                        </Badge>
+                        </Text>
                       </HStack>
                       <Divider />
                       <HStack justify="space-between">
@@ -278,15 +298,14 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                         >
                           Category:
                         </Text>
-                        <Badge
-                          colorScheme="purple"
-                          px={3}
-                          py={1}
-                          rounded="full"
+                        <Text
                           fontSize="sm"
+                          fontWeight="bold"
+                          color="purple.600"
+                          textAlign="right"
                         >
                           {DataProject.projectCategory || "N/A"}
-                        </Badge>
+                        </Text>
                       </HStack>
                       <Divider />
                       <HStack justify="space-between">
@@ -297,15 +316,14 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                         >
                           Type:
                         </Text>
-                        <Badge
-                          colorScheme="cyan"
-                          px={3}
-                          py={1}
-                          rounded="full"
+                        <Text
                           fontSize="sm"
+                          fontWeight="bold"
+                          color="cyan.600"
+                          textAlign="right"
                         >
                           {DataProject.projectType || "N/A"}
-                        </Badge>
+                        </Text>
                       </HStack>
                       <Divider />
                       <HStack justify="space-between">
@@ -316,15 +334,14 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                         >
                           Acquisition Code:
                         </Text>
-                        <Badge
-                          colorScheme="orange"
-                          px={3}
-                          py={1}
-                          rounded="full"
+                        <Text
                           fontSize="sm"
+                          fontWeight="bold"
+                          color="orange.600"
+                          textAlign="right"
                         >
                           {DataProject.projectAcquisitionCode || "N/A"}
-                        </Badge>
+                        </Text>
                       </HStack>
                       <Divider />
                       <HStack justify="space-between">
@@ -335,15 +352,14 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                         >
                           Acquisition Name:
                         </Text>
-                        <Badge
-                          colorScheme="teal"
-                          px={3}
-                          py={1}
-                          rounded="full"
+                        <Text
                           fontSize="sm"
+                          fontWeight="bold"
+                          color="teal.600"
+                          textAlign="right"
                         >
                           {DataProject.projectAcquisitionName || "N/A"}
-                        </Badge>
+                        </Text>
                       </HStack>
                     </VStack>
                   </CardBody>
@@ -462,7 +478,135 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                   </HStack>
                 </CardHeader>
                 <CardBody p={6}>
-                  {DataProject.workPrograms && DataProject.workPrograms.length > 0 ? (
+                  {RequirementData ? (
+                    <VStack spacing={6} align="stretch">
+                      {/* Requirement Details */}
+                      <Box
+                        p={5}
+                        bg={colorMode === "light" ? "blue.50" : "gray.700"}
+                        rounded="lg"
+                        border="1px"
+                        borderColor={colorMode === "light" ? "blue.200" : "blue.600"}
+                      >
+                        <VStack spacing={4} align="stretch">
+                          <HStack justify="space-between">
+                            <Text fontSize="md" fontWeight="bold" color={colorMode === "light" ? "blue.800" : "blue.200"}>
+                              {RequirementData.reqNumber || "Requirement"}
+                            </Text>
+                            <Badge colorScheme="blue" fontSize="xs">
+                              {RequirementData.requirementType || "N/A"}
+                            </Badge>
+                          </HStack>
+                          
+                          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                            <Box>
+                              <Text fontSize="xs" color="gray.500" fontWeight="medium">Perihal:</Text>
+                              <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                                {RequirementData.reqNarative || "N/A"}
+                              </Text>
+                            </Box>
+                            <Box>
+                              <Text fontSize="xs" color="gray.500" fontWeight="medium">Divisi Pengirim:</Text>
+                              <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                                {RequirementData.senderDivisionName || "N/A"}
+                              </Text>
+                            </Box>
+                            <Box>
+                              <Text fontSize="xs" color="gray.500" fontWeight="medium">Tanggal Memo:</Text>
+                              <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                                {RequirementData.reqInititateDate 
+                                  ? new Date(RequirementData.reqInititateDate).toLocaleDateString()
+                                  : "N/A"}
+                              </Text>
+                            </Box>
+                            <Box>
+                              <Text fontSize="xs" color="gray.500" fontWeight="medium">Tanggal Diterima:</Text>
+                              <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                                {RequirementData.reqAcceptedDate 
+                                  ? new Date(RequirementData.reqAcceptedDate).toLocaleDateString()
+                                  : "N/A"}
+                              </Text>
+                            </Box>
+                            <Box>
+                              <Text fontSize="xs" color="gray.500" fontWeight="medium">Durasi:</Text>
+                              <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                                {RequirementData.reqDurationDay 
+                                  ? `${RequirementData.reqDurationDay} Hari kalender`
+                                  : "N/A"}
+                              </Text>
+                            </Box>
+                            <Box>
+                              <Text fontSize="xs" color="gray.500" fontWeight="medium">CarryOver:</Text>
+                              <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                                {RequirementData.isCarryOver === "Y" ? "YA" : RequirementData.isCarryOver === "N" ? "TIDAK" : "N/A"}
+                              </Text>
+                            </Box>
+                          </SimpleGrid>
+                        </VStack>
+                      </Box>
+
+                      {/* Work Programs */}
+                      {DataProject.workPrograms && DataProject.workPrograms.length > 0 && (
+                        <>
+                          <Divider />
+                          <Text fontSize="sm" fontWeight="bold" color="gray.600">Work Programs</Text>
+                          {DataProject.workPrograms.map((workProgram, index) => (
+                            <Box
+                              key={index}
+                              p={4}
+                              bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                              rounded="lg"
+                              border="1px"
+                              borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                            >
+                              <VStack spacing={3} align="stretch">
+                                <HStack justify="space-between">
+                                  <Text fontSize="sm" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"}>
+                                    {workProgram.workProgramName || "Work Program"}
+                                  </Text>
+                                  <Badge colorScheme="blue" fontSize="xs">
+                                    {workProgram.workProgramCode || "N/A"}
+                                  </Badge>
+                                </HStack>
+
+                                <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
+                                  <VStack spacing={1} align="start">
+                                    <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                                      Budget:
+                                    </Text>
+                                    <Text fontSize="sm" fontWeight="bold" color="green.600">
+                                      {workProgram.workProgramBudget ?
+                                        `Rp ${workProgram.workProgramBudget.toLocaleString()}` :
+                                        "Not specified"
+                                      }
+                                    </Text>
+                                  </VStack>
+
+                                  <VStack spacing={1} align="start">
+                                    <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                                      Division:
+                                    </Text>
+                                    <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                                      {workProgram.divisionName || "Not assigned"}
+                                    </Text>
+                                  </VStack>
+
+                                  <VStack spacing={1} align="start">
+                                    <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                                      Source:
+                                    </Text>
+                                    <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                                      {workProgram.workProgramSource || "Not specified"}
+                                    </Text>
+                                  </VStack>
+                                </SimpleGrid>
+                              </VStack>
+                            </Box>
+                          ))}
+                        </>
+                      )}
+                    </VStack>
+                  ) : DataProject.workPrograms && DataProject.workPrograms.length > 0 ? (
                     <VStack spacing={4} align="stretch">
                       {DataProject.workPrograms.map((workProgram, index) => (
                         <Box
