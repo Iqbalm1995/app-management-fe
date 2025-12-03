@@ -2672,7 +2672,7 @@ export default function ProjectRegisterView({
                                 </RadioGroup>
                                 <FormHelperText as={"i"} fontSize={"xs"}>
                                   Jika belum memiliki Memo pengantar, ada
-                                  benerapa informasi yang akan inputkan lain
+                                  beberapa informasi yang akan inputkan lain
                                   waktu jika Memo pengantar sudah ada.*
                                 </FormHelperText>
                               </Stack>
@@ -2793,12 +2793,7 @@ export default function ProjectRegisterView({
                               <Text fontSize="xs" color="gray.500" mt={1}>
                                 {ProjectNoMode === "auto"
                                   ? "Nomor project digenerate otomatis"
-                                  : `Contoh: ${new Date().getFullYear()}/${String(
-                                    new Date().getMonth() + 1
-                                  ).padStart(
-                                    2,
-                                    "0"
-                                  )}/BJB/XXXX/${new Date().getFullYear()}-A/1`}
+                                  : "Contoh: YYYY/MM/BJB/XXXX/YYYY-A/0"}
                               </Text>
                               <FormErrorMessage>
                                 {formik.errors.projectNo}
@@ -4813,76 +4808,101 @@ export default function ProjectRegisterView({
                                     <Text pt={5}>Not have personel yet.</Text>
                                   </Flex>
                                 )}
-                                {ChoosedMemberProjects.map((dt, index) => {
-                                  return (
-                                    <Flex
-                                      bg={
-                                        colorMode == "light"
-                                          ? "white"
-                                          : "gray.800"
-                                      }
-                                      w={"full"}
-                                      py={4}
-                                      px={5}
-                                      rounded={radiusStyle}
-                                      boxShadow={"md"}
-                                      as={HStack}
-                                      spacing={5}
-                                      key={index}
-                                    >
-                                      <Box>
-                                        <Avatar name={dt.nama} src="" />
-                                      </Box>
-                                      <Box>
-                                        <Stack spacing={0}>
-                                          <Text
-                                            color={
+                                {(() => {
+                                  const grouped = ChoosedMemberProjects.reduce((acc, member) => {
+                                    const teamKey = member.team?.teamCode || "UNREGISTERED";
+                                    const teamName = member.team?.teamName || "NOT ASSIGNED TO TEAM";
+
+                                    if (!acc[teamKey]) {
+                                      acc[teamKey] = { teamName, members: [] };
+                                    }
+                                    acc[teamKey].members.push(member);
+                                    return acc;
+                                  }, {} as Record<string, { teamName: string; members: typeof ChoosedMemberProjects }>);
+
+                                  return Object.entries(grouped).map(([teamKey, { teamName, members }]) => (
+                                    <Box key={teamKey} w={"full"} mb={4}>
+                                      <Text
+                                        pb={1}
+                                        fontWeight={600}
+                                        fontSize="lg"
+                                        color="white"
+                                      >
+                                        {teamName} ({members.length})
+                                      </Text>
+                                      <Stack spacing={2}>
+                                        {members.map((dt, index) => (
+                                          <Flex
+                                            bg={
                                               colorMode == "light"
-                                                ? "gray.900"
-                                                : "gray.100"
+                                                ? "white"
+                                                : "gray.800"
                                             }
-                                            fontWeight={600}
-                                          >
-                                            {dt.nama} ({dt.userId})
-                                          </Text>
-                                          <Text
-                                            fontWeight={500}
-                                            fontSize={"small"}
-                                            color={
-                                              colorMode == "light"
-                                                ? "secondary.800"
-                                                : "secondary.200"
-                                            }
-                                          >
-                                            {dt.team?.teamName || dt.jabatan} |{" "}
-                                            {dt.teamRole?.specName ||
-                                              dt.namaUnitKerja}
-                                          </Text>
-                                        </Stack>
-                                      </Box>
-                                      <Spacer />
-                                      <>
-                                        <Tooltip
-                                          label={"Remove"}
-                                          placement="right-end"
-                                          hasArrow
-                                        >
-                                          <Button
-                                            colorScheme={"red"}
-                                            variant={"ghost"}
+                                            w={"full"}
+                                            py={4}
+                                            px={5}
                                             rounded={radiusStyle}
-                                            size={"md"}
-                                            onClick={() =>
-                                              handleRemoveUserAssign(dt.id)
-                                            }
+                                            boxShadow={"md"}
+                                            as={HStack}
+                                            spacing={5}
+                                            key={`${teamKey}-${index}`}
                                           >
-                                            <FiX />
-                                          </Button>
-                                        </Tooltip>
-                                      </>
-                                    </Flex>
-                                  );
-                                })}
+                                            <Box>
+                                              <Avatar name={dt.nama} src="" />
+                                            </Box>
+                                            <Box>
+                                              <Stack spacing={0}>
+                                                <Text
+                                                  color={
+                                                    colorMode == "light"
+                                                      ? "gray.900"
+                                                      : "gray.100"
+                                                  }
+                                                  fontWeight={600}
+                                                >
+                                                  {dt.nama} ({dt.userId})
+                                                </Text>
+                                                <Text
+                                                  fontWeight={500}
+                                                  fontSize={"small"}
+                                                  color={
+                                                    colorMode == "light"
+                                                      ? "secondary.800"
+                                                      : "secondary.200"
+                                                  }
+                                                >
+                                                  {dt.team?.teamName || dt.jabatan} |{" "}
+                                                  {dt.teamRole?.specName ||
+                                                    dt.namaUnitKerja}
+                                                </Text>
+                                              </Stack>
+                                            </Box>
+                                            <Spacer />
+                                            <>
+                                              <Tooltip
+                                                label={"Remove"}
+                                                placement="right-end"
+                                                hasArrow
+                                              >
+                                                <Button
+                                                  colorScheme={"red"}
+                                                  variant={"ghost"}
+                                                  rounded={radiusStyle}
+                                                  size={"md"}
+                                                  onClick={() =>
+                                                    handleRemoveUserAssign(dt.id)
+                                                  }
+                                                >
+                                                  <FiX />
+                                                </Button>
+                                              </Tooltip>
+                                            </>
+                                          </Flex>
+                                        ))}
+                                      </Stack>
+                                    </Box>
+                                  ));
+                                })()}
                               </Flex>
                             </CardBody>
                           </Card>
@@ -5339,49 +5359,49 @@ export default function ProjectRegisterView({
                                         </Checkbox>
                                       </HStack>
                                     </HStack>
-                                </CardHeader>                                    <CardBody>
-                                      {availableBacklogs.length === 0 ? (
-                                        <Text color="gray.500" textAlign="center" py={4}>
-                                          {availableBacklogsFilter
-                                            ? `No backlogs found matching "${availableBacklogsFilter}"`
-                                            : "No available backlogs to select"}
-                                        </Text>
-                                      ) : (
-                                        <Table size="sm" variant="simple">
-                                          <Thead>
-                                            <Tr>
-                                              <Th w="50px">Select</Th>
-                                              <Th>Backlog Name</Th>
-                                              <Th>Priority</Th>
-                                              <Th>Urgency</Th>
-                                              <Th>Impact</Th>
-                                              <Th>Status</Th>
+                                  </CardHeader>                                    <CardBody>
+                                    {availableBacklogs.length === 0 ? (
+                                      <Text color="gray.500" textAlign="center" py={4}>
+                                        {availableBacklogsFilter
+                                          ? `No backlogs found matching "${availableBacklogsFilter}"`
+                                          : "No available backlogs to select"}
+                                      </Text>
+                                    ) : (
+                                      <Table size="sm" variant="simple">
+                                        <Thead>
+                                          <Tr>
+                                            <Th w="50px">Select</Th>
+                                            <Th>Backlog Name</Th>
+                                            <Th>Priority</Th>
+                                            <Th>Urgency</Th>
+                                            <Th>Impact</Th>
+                                            <Th>Status</Th>
+                                          </Tr>
+                                        </Thead>
+                                        <Tbody>
+                                          {availableBacklogs.map((backlog) => (
+                                            <Tr key={backlog.id}>
+                                              <Td>
+                                                <Checkbox
+                                                  isChecked={selectedBacklogIds.includes(backlog.id)}
+                                                  onChange={() => toggleBacklogSelection(backlog.id)}
+                                                />
+                                              </Td>
+                                              <Td>{backlog.backlogName}</Td>
+                                              <Td>
+                                                <Badge colorScheme={priorityColor(backlog.priority)}>
+                                                  {backlog.priority}
+                                                </Badge>
+                                              </Td>
+                                              <Td>{backlog.urgency}</Td>
+                                              <Td>{backlog.impact}</Td>
+                                              <Td>{backlog.developmentStatus}</Td>
                                             </Tr>
-                                          </Thead>
-                                          <Tbody>
-                                            {availableBacklogs.map((backlog) => (
-                                              <Tr key={backlog.id}>
-                                                <Td>
-                                                  <Checkbox
-                                                    isChecked={selectedBacklogIds.includes(backlog.id)}
-                                                    onChange={() => toggleBacklogSelection(backlog.id)}
-                                                  />
-                                                </Td>
-                                                <Td>{backlog.backlogName}</Td>
-                                                <Td>
-                                                  <Badge colorScheme={priorityColor(backlog.priority)}>
-                                                    {backlog.priority}
-                                                  </Badge>
-                                                </Td>
-                                                <Td>{backlog.urgency}</Td>
-                                                <Td>{backlog.impact}</Td>
-                                                <Td>{backlog.developmentStatus}</Td>
-                                              </Tr>
-                                            ))}
-                                          </Tbody>
-                                        </Table>
-                                      )}
-                                    </CardBody>
+                                          ))}
+                                        </Tbody>
+                                      </Table>
+                                    )}
+                                  </CardBody>
                                 </Card>
 
                                 {/* Section 3: Selected Backlogs (Editable) */}
