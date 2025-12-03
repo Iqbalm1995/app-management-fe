@@ -625,9 +625,12 @@ function RequirementDetailView() {
             <Flex as={Stack} w={"full"} spacing={5}>
               {IsLoadingProcess ? (
                 <LoadingMiniSignature />
+              ) : DataRequirement?.requirementType === "RFC" ? (
+                <RfcBacklogChangesView
+                  DataBacklogs={DataBacklogsRequirement}
+                  colorMode={colorMode}
+                />
               ) : (
-                // <TableComponentFull table={table} />
-                // TABLE NEW DESIGN
                 <TableComponentWithFilterCTX
                   table={tableBacklogs}
                   handleFilterChange={handleFilterChange}
@@ -1367,6 +1370,7 @@ function RequirementDetailView() {
                           DataBacklogs={DataBacklogsRequirement}
                           steps={steps}
                           activeStep={activeStep}
+                          OpenBacklogModal={OpenBacklogModal}
                         />
                         <InputGroupPanel headerTitle={`Lampiran`}>
                           <ReqInfoSummaryFileAttachmentsViewSimple
@@ -1457,6 +1461,7 @@ interface ReqSectionProps {
   DataAttachment?: MediaObjectResponse[];
   steps: StepsProps[];
   activeStep: number;
+  OpenBacklogModal?: () => void;
 }
 
 const ReqInfoGeneralSectionView = ({
@@ -2079,6 +2084,7 @@ const ReqInfoSummaryBacklogsView = ({
   DataBacklogs,
   steps,
   activeStep,
+  OpenBacklogModal,
 }: ReqSectionProps) => {
   return (
     <>
@@ -2293,16 +2299,20 @@ const ReqInfoSummaryBacklogsView = ({
         <FormControl>
           <InputLayoutFull>
             <FormLabel h={"full"} mt={2}>
-              Scope Aplikasi{" "}
-              {DataBacklogs != null && `(${DataBacklogs.length})`}
+              Scope Aplikasi
             </FormLabel>
-            <Stack spacing={0} h={"full"}>
-              <Text as={"p"} fontWeight={600}>
-                {DataBacklogs != null && DataBacklogs.length > 0
-                  ? joinFieldValues(DataBacklogs, "backlogName", ", ")
-                  : "N/A"}
-              </Text>
-            </Stack>
+            <Box mt={-3}>
+              <Button
+                onClick={() => {
+                  OpenBacklogModal?.();
+                }}
+                colorScheme="secondary"
+                size="sm"
+                leftIcon={<FiInfo />}
+              >
+                Detail Scope of Work ({DataBacklogs?.length || 0})
+              </Button>
+            </Box>
           </InputLayoutFull>
         </FormControl>
       </InputGroupPanel>
