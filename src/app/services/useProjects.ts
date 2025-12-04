@@ -338,6 +338,36 @@ export interface ProjectRegisterPayload {
   workPrograms: WorkProgramsPayload[];
 }
 
+export interface ProjectRegisterUpdatePayload {
+  id: string;
+  reqParentId?: string | null;
+  projectType: string;
+  projectNo?: string | null;
+  projectName: string;
+  projectDesc?: string | null;
+  note?: string | null;
+  projectCategory: string;
+  projectRegisterDate: string;
+  projectClosedDate?: string | null;
+  projectAcquisitionCode?: string | null;
+  projectCharasteristicCode?: string | null;
+  projectSubCharasteristicCode?: string | null;
+  proOwnerDirectorateId?: string | null;
+  proManageByDirectorateId?: string | null;
+  proOwnerDivisionId?: string | null;
+  proOwnerGroupId?: string | null;
+  proManageByDivisionId?: string | null;
+  proManageByGroupId?: string | null;
+  proManageByTeamId?: string | null;
+  userAssigns: ProjectUserInsertPayload[];
+  projectPlanWorkflowBacklogsIds: string[];
+  projectPlanWorkflowIds: string[];
+  backlogsProject: BacklogUpdatePayload[];
+  workProgramsBacklogs: WorkProgramsPayload[];
+  workPrograms: WorkProgramsPayload[];
+  isSubmit: boolean;
+}
+
 export interface ProjectWorkflowValueInsertPayload {
   // id: string;
   ReffParentId?: string | null;
@@ -650,6 +680,14 @@ interface useProjectsServices {
   ) => Promise<ApiGenericResponse<string | null> | null>;
   RegisterProjectNew: (
     payload: ProjectRegisterPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  RegisterProjectDraft: (
+    payload: ProjectRegisterPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  UpdateProjectRegister: (
+    payload: ProjectRegisterUpdatePayload,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
   UpdateProjects: (
@@ -1087,6 +1125,90 @@ const useProjects = (): useProjectsServices => {
       ENDPOINT_PORT_BASIC
     );
     const PathEndpoint: string = "/v1/Projects/register-new";
+
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const RegisterProjectDraft = async (
+    payload: ProjectRegisterPayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/Projects/register-draft";
+
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const UpdateProjectRegister = async (
+    payload: ProjectRegisterUpdatePayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/Projects/register-update";
 
     try {
       const response = await axiosInstance.post<
@@ -3063,6 +3185,8 @@ const useProjects = (): useProjectsServices => {
     GetProjectCount,
     InsertProjects,
     RegisterProjectNew,
+    RegisterProjectDraft,
+    UpdateProjectRegister,
     UpdateProjects,
     DeleteProjects,
     ListPIC,

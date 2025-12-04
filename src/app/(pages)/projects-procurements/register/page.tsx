@@ -1,8 +1,8 @@
 "use client";
 
 import { Suspense } from "react";
-import ProjectRegisterView from "../../projects/register/ProjectRegsiterView";
 import { PROJECT_TYPE_PROCUREMENT } from "@/app/constants/applicationConstants";
+import ProjectRegisterView from "../../projects/register/ProjectRegisterDraftView";
 
 const PRJ_TYPE_REGISTER: string = PROJECT_TYPE_PROCUREMENT;
 
