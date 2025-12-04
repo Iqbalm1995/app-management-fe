@@ -87,6 +87,7 @@ type TeamDetailViewProps = object
 
 interface TeamFormValues {
   teamName: string;
+  teamCode: string;
   teamDesc: string;
   orgGroupId: string;
   isActive: string;
@@ -172,6 +173,7 @@ function TeamDetailView({ }: TeamDetailViewProps) {
       .required("Team name is required")
       .min(3, "Minimum 3 characters")
       .max(100, "Maximum 100 characters"),
+    teamCode: Yup.string().required("Team code is required"),
     teamDesc: Yup.string().max(500, "Maximum 500 characters"),
     orgGroupId: Yup.string().required("Organization group is required"),
     isActive: Yup.string().required("Status is required"),
@@ -181,6 +183,7 @@ function TeamDetailView({ }: TeamDetailViewProps) {
   const formik = useFormik({
     initialValues: {
       teamName: "",
+      teamCode: "",
       teamDesc: "",
       orgGroupId: "",
       isActive: "ACTIVE",
@@ -222,6 +225,7 @@ function TeamDetailView({ }: TeamDetailViewProps) {
     if (TeamData) {
       formik.setValues({
         teamName: TeamData.teamName,
+        teamCode: TeamData.teamCode,
         teamDesc: TeamData.teamDesc || "",
         orgGroupId: TeamData.group?.id || TeamData.orgGroupId, // Use group.id if available
         isActive: TeamData.isActive,
@@ -458,6 +462,7 @@ function TeamDetailView({ }: TeamDetailViewProps) {
       // Build payload using TeamUpdatePayload interface
       const payload = {
         id: teamId,
+        teamCode: values.teamCode || "",
         teamName: values.teamName || "",
         teamDesc: values.teamDesc || null,
         isActive: values.isActive || "ACTIVE",
@@ -710,6 +715,7 @@ function TeamDetailView({ }: TeamDetailViewProps) {
     if (TeamData) {
       formik.setValues({
         teamName: TeamData.teamName,
+        teamCode: TeamData.teamCode,
         teamDesc: TeamData.teamDesc || "",
         orgGroupId: TeamData.group?.id || TeamData.orgGroupId, // Use group.id if available
         isActive: TeamData.isActive,
@@ -1064,6 +1070,37 @@ function TeamDetailView({ }: TeamDetailViewProps) {
                         />
                         <FormErrorMessage>
                           {formik.errors.teamName}
+                        </FormErrorMessage>
+                      </FormControl>
+
+                      <FormControl isInvalid={!!formik.errors.teamCode}>
+                        <FormLabel
+                          fontWeight="bold"
+                          color={
+                            colorMode === "light" ? "gray.700" : "gray.300"
+                          }
+                        >
+                          Initial Team
+                        </FormLabel>
+                        <Input
+                          name="teamCode"
+                          value={formik.values.teamCode}
+                          onChange={formik.handleChange}
+                          placeholder="Enter team initial"
+                          bg={colorMode === "light" ? "white" : "gray.700"}
+                          border="2px"
+                          borderColor={
+                            colorMode === "light" ? "gray.200" : "gray.600"
+                          }
+                          rounded="xl"
+                          _focus={{
+                            borderColor: "secondary.500",
+                            shadow:
+                              "0 0 0 1px var(--chakra-colors-secondary-500)",
+                          }}
+                        />
+                        <FormErrorMessage>
+                          {formik.errors.teamCode}
                         </FormErrorMessage>
                       </FormControl>
 

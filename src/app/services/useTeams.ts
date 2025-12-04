@@ -64,6 +64,7 @@ export interface TeamInsertPayload {
 
 export interface TeamUpdatePayload {
   id: string;
+  teamCode: string;
   teamName: string;
   teamDesc: string | null;
   isActive: string;
@@ -413,6 +414,7 @@ const useTeams = (): useTeamsServices => {
     const formData = new FormData();
     formData.append("Id", payload.id);
     formData.append("TeamName", payload.teamName);
+    formData.append("TeamCode", payload.teamCode);
     // Only append if TeamDesc is not null or undefined
     if (payload.teamDesc !== null && payload.teamDesc !== undefined) {
       formData.append("TeamDesc", payload.teamDesc);

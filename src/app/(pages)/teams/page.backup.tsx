@@ -305,6 +305,7 @@ const TeamProfileSettingProps = () => {
       id: "", // Matches 'id' in the interface
       teamName: "", // Matches 'teamName' in the interface
       teamDesc: null, // Matches 'teamDesc' in the interface
+      teamCode: "",
       uploadPict: null, // Matches 'uploadPict' in the interface
       isActive: "ACTIVE", // Matches 'isActive' in the interface
       deletePict: false, // Matches 'deletePict' in the interface
@@ -320,6 +321,7 @@ const TeamProfileSettingProps = () => {
         id: values.id, // Ensure camelCase usage
         teamName: values.teamName, // Ensure camelCase usage
         teamDesc: values.teamDesc,
+        teamCode: values.teamCode,
         uploadPict: values.uploadPict,
         isActive: values.isActive,
         deletePict: values.deletePict,

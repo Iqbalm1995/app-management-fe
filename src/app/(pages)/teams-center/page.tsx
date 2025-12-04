@@ -807,7 +807,7 @@ function TeamsCenterPage() {
                                   color={colorMode === "light" ? "gray.600" : "gray.400"}
                                   fontWeight="semibold"
                                 >
-                                  {/* team.totalMember || */ 0}
+                                  {team.memberCount || 0}
                                 </Text>
                               </HStack>
                             </HStack>

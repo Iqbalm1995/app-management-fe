@@ -305,6 +305,7 @@ const TeamProfileSettingProps = () => {
   const formik = useFormik<TeamUpdatePayload>({
     initialValues: {
       id: "", // Matches 'id' in the interface
+      teamCode: "",
       teamName: "", // Matches 'teamName' in the interface
       teamDesc: null, // Matches 'teamDesc' in the interface
       uploadPict: null, // Matches 'uploadPict' in the interface
@@ -320,6 +321,7 @@ const TeamProfileSettingProps = () => {
       console.log(values);
       await handleConfirmSaveData({
         id: values.id, // Ensure camelCase usage
+        teamCode: values.teamCode,
         teamName: values.teamName, // Ensure camelCase usage
         teamDesc: values.teamDesc,
         uploadPict: values.uploadPict,
