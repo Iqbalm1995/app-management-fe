@@ -2777,8 +2777,8 @@ export default function ProjectRegisterView({
                                 value={formik.values.projectNo ?? ""}
                                 placeholder={
                                   ProjectNoMode === "manual"
-                                    ? "0000/00/BJB/XXXX/XXXX/0000-A/0"
-                                    : "0000/00/BJB/XXXX/XXXX/0000-A/0"
+                                    ? "0000/00/BJB/RBB/RBB/YYYY"
+                                    : "0000/00/BJB/RBB/RBB/YYYY"
                                 }
                                 minLength={25}
                                 maxLength={100}
@@ -2793,7 +2793,7 @@ export default function ProjectRegisterView({
                               <Text fontSize="xs" color="gray.500" mt={1}>
                                 {ProjectNoMode === "auto"
                                   ? "Nomor project digenerate otomatis"
-                                  : "Contoh: 0000/00/BJB/XXXX/XXXX/0000-A/0"}
+                                  : "Contoh: 0000/00/BJB/RBB/RBB/YYYY"}
                               </Text>
                               <FormErrorMessage>
                                 {formik.errors.projectNo}
@@ -3272,7 +3272,7 @@ export default function ProjectRegisterView({
                                 name="projectDesc"
                                 onChange={formik.handleChange}
                                 defaultValue={formik.values.projectDesc ?? ""}
-                                placeholder={`Perlihal`}
+                                placeholder={`Perihal`}
                                 maxLength={300}
                               // isDisabled={ActionLoading}
                               />
@@ -3324,7 +3324,7 @@ export default function ProjectRegisterView({
                                 name="note"
                                 onChange={formik.handleChange}
                                 defaultValue={formik.values.note ?? ""}
-                                placeholder={`Perlihal`}
+                                placeholder={`Perihal`}
                                 maxLength={300}
                               // isDisabled={ActionLoading}
                               />
@@ -6237,7 +6237,7 @@ const AdditionalInfoUpdate = ({
               </FormControl>
 
               <FormControl display="flex" alignItems="center">
-                <FormLabel mb="0">RPPB/ Non RPPB</FormLabel>
+                <FormLabel mb="0">RPPB</FormLabel>
                 <Switch
                   name="rppb"
                   isChecked={formInputs.rppb === "Y"}

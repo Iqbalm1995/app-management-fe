@@ -302,9 +302,8 @@ function FormRegisterProjectView() {
 
     if (isErrorResponse || !requestData) {
       showToast({
-        description: `Upload File Failed : ${
-          requestData?.message || RES_GENERIC_ERROR_MSG
-        }`,
+        description: `Upload File Failed : ${requestData?.message || RES_GENERIC_ERROR_MSG
+          }`,
         statusToast: "error",
       });
       return false;
@@ -554,24 +553,24 @@ function FormRegisterProjectView() {
     const whereDataFilter: ListSearchByParam[] =
       divisionId.length > 0
         ? [
-            {
-              field: "parentId",
-              operator: "=",
-              value: divisionId || "",
-            },
-            {
-              field: "orgType",
-              operator: "=",
-              value: "GROUP",
-            },
-          ]
+          {
+            field: "parentId",
+            operator: "=",
+            value: divisionId || "",
+          },
+          {
+            field: "orgType",
+            operator: "=",
+            value: "GROUP",
+          },
+        ]
         : [
-            {
-              field: "orgType",
-              operator: "=",
-              value: "GROUP",
-            },
-          ];
+          {
+            field: "orgType",
+            operator: "=",
+            value: "GROUP",
+          },
+        ];
     const PayloadList: PaggingListPayload = {
       search: searchValue,
       limit: limit,
@@ -1471,7 +1470,7 @@ function FormRegisterProjectView() {
                             placeholder={`Nama Project`}
                             minLength={3}
                             maxLength={200}
-                            // isDisabled={ActionLoading}
+                          // isDisabled={ActionLoading}
                           />
                           <FormErrorMessage>
                             {formik.errors.projectName}
@@ -1502,7 +1501,7 @@ function FormRegisterProjectView() {
                             placeholder={`0000/00/BJB/XXXX/0000-A/0`}
                             minLength={25}
                             maxLength={27}
-                            // isDisabled={ActionLoading}
+                          // isDisabled={ActionLoading}
                           />
                           <FormErrorMessage>
                             {formik.errors.projectNo}
@@ -1525,9 +1524,9 @@ function FormRegisterProjectView() {
                             name="projectDesc"
                             onChange={formik.handleChange}
                             defaultValue={formik.values.projectDesc ?? ""}
-                            placeholder={`Perlihal`}
+                            placeholder={`Perihal`}
                             maxLength={300}
-                            // isDisabled={ActionLoading}
+                          // isDisabled={ActionLoading}
                           />
                           <FormErrorMessage>
                             {formik.errors.projectDesc}
@@ -1614,7 +1613,7 @@ function FormRegisterProjectView() {
                             type="date"
                             onChange={formik.handleChange}
                             value={formik.values.projectRegisterDate}
-                            // isDisabled={ActionLoading}
+                          // isDisabled={ActionLoading}
                           />
                           <FormErrorMessage>
                             {formik.errors.projectRegisterDate}
@@ -1699,9 +1698,9 @@ function FormRegisterProjectView() {
                             name="note"
                             onChange={formik.handleChange}
                             defaultValue={formik.values.note ?? ""}
-                            placeholder={`Perlihal`}
+                            placeholder={`Perihal`}
                             maxLength={300}
-                            // isDisabled={ActionLoading}
+                          // isDisabled={ActionLoading}
                           />
                           <FormErrorMessage>
                             {formik.errors.note}
@@ -2322,7 +2321,7 @@ const AdditionalInfoUpdate = ({
               </FormControl>
 
               <FormControl display="flex" alignItems="center">
-                <FormLabel mb="0">RPPB/ Non RPPB</FormLabel>
+                <FormLabel mb="0">RPPB</FormLabel>
                 <Switch
                   name="rppb"
                   isChecked={formInputs.rppb === "Y"}
