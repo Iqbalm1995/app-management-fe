@@ -961,6 +961,7 @@ function RegisterRequirementFormPage({
   };
 
   const CreateDraftRequirement = async (data: RequirementsInsertPayload) => {
+    const { backlogFeatures, ...dataWithoutBacklog } = data;
     const payload = {
       ...data,
       isDraft: true,
@@ -1056,6 +1057,7 @@ function RegisterRequirementFormPage({
     console.log("UpdateDraftRequirement - PICAssignUsers payload:", picAssignUsersPayload);
     console.log("UpdateDraftRequirement - RFC check:", data.requirementType, data.backlogFeatures?.length);
 
+    const { backlogFeatures, ...dataWithoutBacklog } = data;
     const payload = {
       requirementId: requirementId!,
       isSubmitSave: false,
