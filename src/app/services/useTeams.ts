@@ -30,6 +30,7 @@ export interface TeamsResponse {
   updatedBy?: string | null;
   orgGroupId: string;
   orgGroupCode: string;
+  memberCount: number;
   directorate: TeamOrganization;
   division: TeamOrganization;
   group: TeamOrganization;
