@@ -612,7 +612,6 @@ function TeamDetailView({ }: TeamDetailViewProps) {
 
       // Refresh team members
       await GetTeamMembers();
-      onAddModalClose();
       setSelectedUserIds([]);
       setSelectedRoleId("");
     } catch (error) {
@@ -1364,7 +1363,7 @@ function TeamDetailView({ }: TeamDetailViewProps) {
                             key={member.id}
                             p={6}
                             rounded="2xl"
-                            bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                            bg={colorMode === "light" ? "white.50" : "gray.700"}
                             border="2px"
                             borderColor={
                               colorMode === "light" ? "gray.100" : "gray.600"
@@ -1400,6 +1399,18 @@ function TeamDetailView({ }: TeamDetailViewProps) {
                                 <Text fontSize="sm" color="gray.500">
                                   {member.email || member.userId}
                                 </Text>
+                                {member.teamRole?.specName && (
+                                  <Badge
+                                    colorScheme="purple"
+                                    variant="subtle"
+                                    fontSize="xs"
+                                    px={2}
+                                    py={0.5}
+                                    rounded="md"
+                                  >
+                                    {member.teamRole.specName}
+                                  </Badge>
+                                )}
                               </VStack>
                             </HStack>
                             <HStack spacing={3}>

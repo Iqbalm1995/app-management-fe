@@ -35,7 +35,7 @@ import {
   SimpleGrid,
 } from "@chakra-ui/react";
 import { FaUsersRays } from "react-icons/fa6";
-import { FiRefreshCcw, FiSearch, FiFilter } from "react-icons/fi";
+import { FiRefreshCcw, FiSearch, FiFilter, FiUsers } from "react-icons/fi";
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
@@ -784,14 +784,33 @@ function TeamsCenterPage() {
                             {team.teamCode.substring(0, 2).toUpperCase()}
                           </Box>
                           <VStack align="start" spacing={1} flex="1">
-                            <Heading
-                              size="md"
-                              color={colorMode === "light" ? "gray.800" : "white"}
-                              noOfLines={1}
-                              fontWeight="bold"
-                            >
-                              {team.teamName}
-                            </Heading>
+                            <HStack spacing={2} align="center">
+                              <Heading
+                                size="md"
+                                color={colorMode === "light" ? "gray.800" : "white"}
+                                noOfLines={1}
+                                fontWeight="bold"
+                              >
+                                {team.teamName}
+                              </Heading>
+                              <Text
+                                fontSize="md"
+                                color="gray.400"
+                                fontWeight="medium"
+                              >
+                                |
+                              </Text>
+                              <HStack spacing={1}>
+                                <Icon as={FiUsers} color="secondary.500" boxSize={4} />
+                                <Text
+                                  fontSize="sm"
+                                  color={colorMode === "light" ? "gray.600" : "gray.400"}
+                                  fontWeight="semibold"
+                                >
+                                  {team.totalMember || 0}
+                                </Text>
+                              </HStack>
+                            </HStack>
                             <HStack spacing={2}>
                               <Text fontSize="sm" color="gray.500" fontWeight="medium">
                                 {team.teamCode}
