@@ -752,14 +752,14 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                 <Button onClick={toggleColorMode} variant={"ghost"}>
                   {colorMode === "light" ? <MoonIcon /> : <SunIcon />}
                 </Button>
-                <Link href={"/workspace"}>
+                <Link href={"/"}>
                   <Button
                     leftIcon={<FiPlay />}
                     mx={2}
                     colorScheme={"secondary"}
                     rounded={radiusStyle}
                   >
-                    My Project
+                    Landing Page
                   </Button>
                 </Link>
               </Flex>

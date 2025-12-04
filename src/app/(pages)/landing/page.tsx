@@ -93,11 +93,27 @@ const AbstractUIDesign: AbstractUIDesignProps[] = [
 function LandingPage() {
   useDocumentTitle("Login");
   const { colorMode } = useColorMode();
+  const showToast = useToastHelper();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const handleLaunchApp = () => {
+    const authData = localStorage.getItem("authData");
+    const tokenData = localStorage.getItem("tokenData");
+    
+    if (!authData || !tokenData) {
+      showToast({
+        description: "Kamu harus login",
+        statusToast: "error",
+      });
+      return;
+    }
+    
+    window.location.href = "/workspace";
+  };
 
   // Prevent hydration mismatch
   if (!mounted) {
@@ -286,9 +302,7 @@ function LandingPage() {
                         py={8}
                         fontSize="lg"
                         rounded="2xl"
-                        onClick={() => {
-                          window.location.href = "/home";
-                        }}
+                        onClick={handleLaunchApp}
                       >
                         Launch Your Project Apps
                       </Button>

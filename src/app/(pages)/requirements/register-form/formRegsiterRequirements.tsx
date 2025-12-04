@@ -748,12 +748,15 @@ function RegisterRequirementFormPage({
 
         // Load User PIC if available
         if (reqData.userPicId && reqData.userPicIdentityNumber) {
-          const picUser = await GetDataUser(reqData.userPicIdentityNumber, 1);
+          const picUser = await GetDataUser(reqData.userPicId, 1);
           if (picUser.length > 0) {
             setDataUsersPIC(picUser);
+            console.log("Loaded PIC user:", picUser, "userPicId:", reqData.userPicId);
+            setPICUser(reqData.userPicId);
+          } else {
+            console.log("PIC user not found for userPicId:", reqData.userPicId);
           }
         }
-
         // Load Sender Directorate if available
         if (reqData.senderDirectorateId) {
           const directorateData = await GetDataMasterOrg("", 1, [
@@ -779,12 +782,12 @@ function RegisterRequirementFormPage({
             });
           }
         }
-
         // Load Assigned From User if available
         if (reqData.assignedFromId) {
-          const assignedFromUser = await GetDataUser(reqData.assignedFromId, 1);
-          if (assignedFromUser.length > 0) {
-            setDataUsersAssignedFrom(assignedFromUser);
+          const assignedFromUserData = await GetDataUser(reqData.assignedFromId, 1);
+          if (assignedFromUserData.length > 0) {
+            setDataUsersAssignedFrom(assignedFromUserData);
+            setAssignedFromUser(reqData.assignedFromId);
           }
         }
 
@@ -961,21 +964,23 @@ function RegisterRequirementFormPage({
     const payload = {
       ...data,
       isDraft: true,
-      backlogFeatures: DataBackLogs.map(b => ({
-        ParentBacklogId: b.parentBacklogId,
-        BacklogName: b.backlogName,
-        BacklogDesc: b.backlogDesc,
-        Note: b.note,
-        PosOrder: b.posOrder,
-        parentBacklogId: b.parentBacklogId,
-        backlogName: b.backlogName,
-        backlogDesc: b.backlogDesc,
-        note: b.note,
-        posOrder: b.posOrder
-      })),
+      ...(data.requirementType === "RFC" ? {} : {
+        backlogFeatures: DataBackLogs.map(b => ({
+          ParentBacklogId: b.parentBacklogId,
+          BacklogName: b.backlogName,
+          BacklogDesc: b.backlogDesc,
+          Note: b.note,
+          PosOrder: b.posOrder,
+          parentBacklogId: b.parentBacklogId,
+          backlogName: b.backlogName,
+          backlogDesc: b.backlogDesc,
+          note: b.note,
+          posOrder: b.posOrder
+        }))
+      }),
       picAssignUsers: ChoosedMemberProjects.map(m => ({
         UserId: m.userId,
-        userId: m.userId // For type compatibility
+        userId: m.userId
       })),
       PICAssignUsers: ChoosedMemberProjects.map(m => ({
         UserId: m.userId
@@ -1049,39 +1054,28 @@ function RegisterRequirementFormPage({
       UserId: m.userId
     }));
     console.log("UpdateDraftRequirement - PICAssignUsers payload:", picAssignUsersPayload);
+    console.log("UpdateDraftRequirement - RFC check:", data.requirementType, data.backlogFeatures?.length);
 
     const payload = {
       requirementId: requirementId!,
       isSubmitSave: false,
       ...data,
-      backlogFeatures: (data.requirementType === "RFC" && data.backlogFeatures && data.backlogFeatures.length > 0)
-        ? data.backlogFeatures.map((b: any) => ({
-            Id: b.id || null,
-            ParentBacklogId: b.parentBacklogId,
-            BacklogName: b.backlogName,
-            BacklogDesc: b.backlogDesc,
-            Note: b.note,
-            PosOrder: b.posOrder,
-            parentBacklogId: b.parentBacklogId,
-            backlogName: b.backlogName,
-            backlogDesc: b.backlogDesc,
-            note: b.note,
-            posOrder: b.posOrder
-          }))
-        : DataBackLogs.map(b => ({
-            Id: b.backlogId || null,
-            ParentBacklogId: b.parentBacklogId,
-            BacklogName: b.backlogName,
-            BacklogDesc: b.backlogDesc,
-            Note: b.note,
-            PosOrder: b.posOrder,
-            backlogId: b.backlogId || null,
-            parentBacklogId: b.parentBacklogId,
-            backlogName: b.backlogName,
-            backlogDesc: b.backlogDesc,
-            note: b.note,
-            posOrder: b.posOrder
-          })),
+      ...(data.requirementType === "RFC" ? {} : {
+        backlogFeatures: DataBackLogs.map(b => ({
+          Id: b.backlogId || null,
+          ParentBacklogId: b.parentBacklogId,
+          BacklogName: b.backlogName,
+          BacklogDesc: b.backlogDesc,
+          Note: b.note,
+          PosOrder: b.posOrder,
+          backlogId: b.backlogId || null,
+          parentBacklogId: b.parentBacklogId,
+          backlogName: b.backlogName,
+          backlogDesc: b.backlogDesc,
+          note: b.note,
+          posOrder: b.posOrder
+        }))
+      }),
       picAssignUsers: ChoosedMemberProjects.map(m => ({
         Id: m.id || null,
         UserId: m.userId,
@@ -1120,6 +1114,7 @@ function RegisterRequirementFormPage({
 
     console.log("UpdateDraftRequirement - Payload backlogFeatures:", payload.backlogFeatures);
 
+    console.log("UpdateDraftRequirement - Full payload:", JSON.stringify(payload, null, 2));
     const requestData = await RegisterUpdate(payload, tokenData);
     const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
 
@@ -6651,6 +6646,7 @@ const Section4RFCView = ({
                 backlog: parentBacklog,
                 changes: {
                   backlogName: b.backlogName,
+                  backlogId: b.id,
                   backlogDesc: b.backlogDesc || "",
                   note: b.note || "",
                   posOrder: b.posOrder || 1,
@@ -6660,6 +6656,7 @@ const Section4RFCView = ({
             } else {
               // Update existing entry with changes
               existingEntry.changes = {
+                  backlogId: b.id,
                 backlogName: b.backlogName,
                 backlogDesc: b.backlogDesc || "",
                 note: b.note || "",
@@ -6724,10 +6721,12 @@ const Section4RFCView = ({
     }
   }, [DataBackLogs, type_req_param]);
   useEffect(() => {
+    console.log("BacklogChanges before conversion:", BacklogChanges);
     const updatedBacklogData: ReqBacklogPayload[] = BacklogChanges.map(
       (dt) => ({
         // backlogId: generateFakeId(),
         parentBacklogId: dt.backlog.id === "NEW_SCOPE" ? null : dt.backlog.id,
+        backlogId: dt.changes?.backlogId || null,
         backlogName: dt.backlog.id === "NEW_SCOPE" ? (dt.backlog.backlogName || dt.changes?.backlogName || "") : (dt.changes?.backlogName || ""),
         backlogDesc: dt.backlog.id === "NEW_SCOPE" ? (dt.backlog.backlogDesc || dt.changes?.backlogDesc || "") : (dt.changes?.backlogDesc || ""),
         note: dt.backlog.id === "NEW_SCOPE" ? (dt.backlog.note || dt.changes?.note || "") : (dt.changes?.note || ""),
@@ -6739,6 +6738,7 @@ const Section4RFCView = ({
     const sortedBacklogData = updatedBacklogData.sort(
       (a, b) => a.posOrder - b.posOrder
     );
+    console.log("Converted to formik.backlogFeatures:", sortedBacklogData);
     formik.setFieldValue("backlogFeatures", sortedBacklogData);
 
     // setBacklogData(updatedBacklogData);
