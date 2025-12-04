@@ -1396,9 +1396,6 @@ function TeamDetailView({ }: TeamDetailViewProps) {
                                 >
                                   {member.nama}
                                 </Text>
-                                <Text fontSize="sm" color="gray.500">
-                                  {member.email || member.userId}
-                                </Text>
                                 {member.teamRole?.specName && (
                                   <Badge
                                     colorScheme="purple"
