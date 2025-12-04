@@ -508,7 +508,7 @@ export default function NavigationAdminWorkspace({
                               fontWeight="semibold"
                               color={useColorModeValue("gray.800", "gray.100")}
                             >
-                              System Maintenance
+                              COMING SOON
                             </Text>
                             <Badge colorScheme="red" size="sm">
                               Important
@@ -519,8 +519,8 @@ export default function NavigationAdminWorkspace({
                             color={useColorModeValue("gray.600", "gray.300")}
                             mb={2}
                           >
-                            Scheduled maintenance on Sunday 2:00 AM - 4:00 AM.
-                            Services may be temporarily unavailable.
+                            COMING SOON
+                            Feature under development.
                           </Text>
                           <Text
                             fontSize="xs"
@@ -549,7 +549,7 @@ export default function NavigationAdminWorkspace({
                               fontWeight="semibold"
                               color={useColorModeValue("gray.800", "gray.100")}
                             >
-                              New Feature Release
+                              COMING SOON
                             </Text>
                             <Badge colorScheme="blue" size="sm">
                               Update
@@ -560,8 +560,8 @@ export default function NavigationAdminWorkspace({
                             color={useColorModeValue("gray.600", "gray.300")}
                             mb={2}
                           >
-                            MinIO object storage integration is now available
-                            for file uploads with automatic fallback.
+                            COMING SOON
+                            Feature under development.
                           </Text>
                           <Text
                             fontSize="xs"
@@ -662,7 +662,7 @@ export default function NavigationAdminWorkspace({
                               fontWeight="semibold"
                               color={useColorModeValue("gray.800", "gray.100")}
                             >
-                              New project assigned
+                              COMING SOON
                             </Text>
                             <Badge colorScheme="blue" size="sm">
                               New
@@ -673,7 +673,7 @@ export default function NavigationAdminWorkspace({
                             color={useColorModeValue("gray.600", "gray.300")}
                             mb={2}
                           >
-                            Project Alpha has been assigned to your team
+                            COMING SOON - Feature under development.
                           </Text>
                           <Text
                             fontSize="xs"
@@ -702,7 +702,7 @@ export default function NavigationAdminWorkspace({
                               fontWeight="semibold"
                               color={useColorModeValue("gray.800", "gray.100")}
                             >
-                              Task completed
+                              COMING SOON
                             </Text>
                             <Badge colorScheme="green" size="sm">
                               Done
@@ -713,7 +713,7 @@ export default function NavigationAdminWorkspace({
                             color={useColorModeValue("gray.600", "gray.300")}
                             mb={2}
                           >
-                            Backend API development has been completed
+                            COMING SOON - Feature under development.
                           </Text>
                           <Text
                             fontSize="xs"
@@ -742,7 +742,7 @@ export default function NavigationAdminWorkspace({
                               fontWeight="semibold"
                               color={useColorModeValue("gray.800", "gray.100")}
                             >
-                              Meeting reminder
+                              COMING SOON
                             </Text>
                             <Badge colorScheme="orange" size="sm">
                               Soon
@@ -753,7 +753,7 @@ export default function NavigationAdminWorkspace({
                             color={useColorModeValue("gray.600", "gray.300")}
                             mb={2}
                           >
-                            Daily standup meeting in 15 minutes
+                            COMING SOON - Feature under development.
                           </Text>
                           <Text
                             fontSize="xs"

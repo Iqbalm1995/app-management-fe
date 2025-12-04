@@ -748,12 +748,15 @@ function RegisterRequirementFormPage({
 
         // Load User PIC if available
         if (reqData.userPicId && reqData.userPicIdentityNumber) {
-          const picUser = await GetDataUser(reqData.userPicIdentityNumber, 1);
+          const picUser = await GetDataUser(reqData.userPicId, 1);
           if (picUser.length > 0) {
             setDataUsersPIC(picUser);
+            console.log("Loaded PIC user:", picUser, "userPicId:", reqData.userPicId);
+            setPICUser(reqData.userPicId);
+          } else {
+            console.log("PIC user not found for userPicId:", reqData.userPicId);
           }
         }
-
         // Load Sender Directorate if available
         if (reqData.senderDirectorateId) {
           const directorateData = await GetDataMasterOrg("", 1, [
@@ -779,12 +782,12 @@ function RegisterRequirementFormPage({
             });
           }
         }
-
         // Load Assigned From User if available
         if (reqData.assignedFromId) {
-          const assignedFromUser = await GetDataUser(reqData.assignedFromId, 1);
-          if (assignedFromUser.length > 0) {
-            setDataUsersAssignedFrom(assignedFromUser);
+          const assignedFromUserData = await GetDataUser(reqData.assignedFromId, 1);
+          if (assignedFromUserData.length > 0) {
+            setDataUsersAssignedFrom(assignedFromUserData);
+            setAssignedFromUser(reqData.assignedFromId);
           }
         }
 
@@ -893,14 +896,15 @@ function RegisterRequirementFormPage({
           const backlogs = backlogResponse.data.map((b: BacklogDataResponse, index: number) => ({
             localId: b.id, // Use database ID as localId for loaded items
             backlogId: b.id,
-            parentBacklogId: null,
+            parentBacklogId: b.reffId,
             backlogName: b.backlogName,
             backlogDesc: b.backlogDesc,
-            note: null,
-            posOrder: index + 1
+            note: b.note,
+            posOrder: b.posOrder || (index + 1)
           }));
           console.log("Loaded backlogs:", backlogs);
           setDataBackLogs(backlogs);
+
         }
 
         // Load uploaded files
@@ -957,24 +961,27 @@ function RegisterRequirementFormPage({
   };
 
   const CreateDraftRequirement = async (data: RequirementsInsertPayload) => {
+    const { backlogFeatures, ...dataWithoutBacklog } = data;
     const payload = {
       ...data,
       isDraft: true,
-      backlogFeatures: DataBackLogs.map(b => ({
-        ParentBacklogId: b.parentBacklogId,
-        BacklogName: b.backlogName,
-        BacklogDesc: b.backlogDesc,
-        Note: b.note,
-        PosOrder: b.posOrder,
-        parentBacklogId: b.parentBacklogId,
-        backlogName: b.backlogName,
-        backlogDesc: b.backlogDesc,
-        note: b.note,
-        posOrder: b.posOrder
-      })),
+      ...(data.requirementType === "RFC" ? {} : {
+        backlogFeatures: DataBackLogs.map(b => ({
+          ParentBacklogId: b.parentBacklogId,
+          BacklogName: b.backlogName,
+          BacklogDesc: b.backlogDesc,
+          Note: b.note,
+          PosOrder: b.posOrder,
+          parentBacklogId: b.parentBacklogId,
+          backlogName: b.backlogName,
+          backlogDesc: b.backlogDesc,
+          note: b.note,
+          posOrder: b.posOrder
+        }))
+      }),
       picAssignUsers: ChoosedMemberProjects.map(m => ({
         UserId: m.userId,
-        userId: m.userId // For type compatibility
+        userId: m.userId
       })),
       PICAssignUsers: ChoosedMemberProjects.map(m => ({
         UserId: m.userId
@@ -1048,25 +1055,29 @@ function RegisterRequirementFormPage({
       UserId: m.userId
     }));
     console.log("UpdateDraftRequirement - PICAssignUsers payload:", picAssignUsersPayload);
+    console.log("UpdateDraftRequirement - RFC check:", data.requirementType, data.backlogFeatures?.length);
 
+    const { backlogFeatures, ...dataWithoutBacklog } = data;
     const payload = {
       requirementId: requirementId!,
       isSubmitSave: false,
       ...data,
-      backlogFeatures: DataBackLogs.map(b => ({
-        Id: b.backlogId || null,
-        ParentBacklogId: b.parentBacklogId,
-        BacklogName: b.backlogName,
-        BacklogDesc: b.backlogDesc,
-        Note: b.note,
-        PosOrder: b.posOrder,
-        backlogId: b.backlogId || null,
-        parentBacklogId: b.parentBacklogId,
-        backlogName: b.backlogName,
-        backlogDesc: b.backlogDesc,
-        note: b.note,
-        posOrder: b.posOrder
-      })),
+      ...(data.requirementType === "RFC" ? {} : {
+        backlogFeatures: DataBackLogs.map(b => ({
+          Id: b.backlogId || null,
+          ParentBacklogId: b.parentBacklogId,
+          BacklogName: b.backlogName,
+          BacklogDesc: b.backlogDesc,
+          Note: b.note,
+          PosOrder: b.posOrder,
+          backlogId: b.backlogId || null,
+          parentBacklogId: b.parentBacklogId,
+          backlogName: b.backlogName,
+          backlogDesc: b.backlogDesc,
+          note: b.note,
+          posOrder: b.posOrder
+        }))
+      }),
       picAssignUsers: ChoosedMemberProjects.map(m => ({
         Id: m.id || null,
         UserId: m.userId,
@@ -1105,6 +1116,7 @@ function RegisterRequirementFormPage({
 
     console.log("UpdateDraftRequirement - Payload backlogFeatures:", payload.backlogFeatures);
 
+    console.log("UpdateDraftRequirement - Full payload:", JSON.stringify(payload, null, 2));
     const requestData = await RegisterUpdate(payload, tokenData);
     const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
 
@@ -1167,20 +1179,34 @@ function RegisterRequirementFormPage({
       requirementId: requirementId!,
       isSubmitSave: true,
       ...data,
-      backlogFeatures: DataBackLogs.map(b => ({
-        Id: b.backlogId || null,
-        ParentBacklogId: b.parentBacklogId,
-        BacklogName: b.backlogName,
-        BacklogDesc: b.backlogDesc,
-        Note: b.note,
-        PosOrder: b.posOrder,
-        backlogId: b.backlogId || null,
-        parentBacklogId: b.parentBacklogId,
-        backlogName: b.backlogName,
-        backlogDesc: b.backlogDesc,
-        note: b.note,
-        posOrder: b.posOrder
-      })),
+      backlogFeatures: (data.requirementType === "RFC" && data.backlogFeatures && data.backlogFeatures.length > 0)
+        ? data.backlogFeatures.map((b: any) => ({
+            Id: b.id || null,
+            ParentBacklogId: b.parentBacklogId,
+            BacklogName: b.backlogName,
+            BacklogDesc: b.backlogDesc,
+            Note: b.note,
+            PosOrder: b.posOrder,
+            parentBacklogId: b.parentBacklogId,
+            backlogName: b.backlogName,
+            backlogDesc: b.backlogDesc,
+            note: b.note,
+            posOrder: b.posOrder
+          }))
+        : DataBackLogs.map(b => ({
+            Id: b.backlogId || null,
+            ParentBacklogId: b.parentBacklogId,
+            BacklogName: b.backlogName,
+            BacklogDesc: b.backlogDesc,
+            Note: b.note,
+            PosOrder: b.posOrder,
+            backlogId: b.backlogId || null,
+            parentBacklogId: b.parentBacklogId,
+            backlogName: b.backlogName,
+            backlogDesc: b.backlogDesc,
+            note: b.note,
+            posOrder: b.posOrder
+          })),
       picAssignUsers: ChoosedMemberProjects.map(m => ({
         Id: m.id || null,
         UserId: m.userId,
@@ -6593,11 +6619,116 @@ const Section4RFCView = ({
   const [BacklogAppsOption, setBacklogAppsOption] = useState<OptionListProps[]>(
     []
   );
+
+  // Populate BacklogChanges from BacklogApps when draft is loaded
   useEffect(() => {
+    if (BacklogApps.length > 0 && BacklogChanges.length === 0) {
+      const backlogChangesData: BacklogChangesData[] = [];
+      const backlogMap = new Map<string, BacklogDataResponse>();
+      
+      // Create map of all backlogs
+      BacklogApps.forEach((b: BacklogDataResponse) => {
+        backlogMap.set(b.id, b);
+      });
+
+      // Group backlogs by parent-child relationship
+      BacklogApps.forEach((b: BacklogDataResponse) => {
+        if (b.reffId) {
+          // This is a change (child)
+          const parentBacklog = backlogMap.get(b.reffId);
+          if (parentBacklog) {
+            // Find if parent already exists in backlogChangesData
+            let existingEntry = backlogChangesData.find(
+              (entry) => entry.backlog.id === parentBacklog.id
+            );
+            
+            if (!existingEntry) {
+              // Create new entry with parent and child
+              backlogChangesData.push({
+                backlog: parentBacklog,
+                changes: {
+                  backlogName: b.backlogName,
+                  backlogId: b.id,
+                  backlogDesc: b.backlogDesc || "",
+                  note: b.note || "",
+                  posOrder: b.posOrder || 1,
+                },
+                showKondisiEksisting: true,
+              });
+            } else {
+              // Update existing entry with changes
+              existingEntry.changes = {
+                  backlogId: b.id,
+                backlogName: b.backlogName,
+                backlogDesc: b.backlogDesc || "",
+                note: b.note || "",
+                posOrder: b.posOrder || 1,
+              };
+            }
+          }
+        } else if (!BacklogApps.some((child: BacklogDataResponse) => child.reffId === b.id)) {
+          // This is a standalone backlog (no children)
+          backlogChangesData.push({
+            backlog: b,
+            changes: null,
+            showKondisiEksisting: false,
+          });
+        }
+      });
+
+      console.log("Populated BacklogChanges from BacklogApps:", backlogChangesData);
+      setBacklogChanges(backlogChangesData);
+    }
+
+  }, [BacklogApps]);
+  // Populate BacklogApps from DataBackLogs when draft is loaded (for RFC)
+  useEffect(() => {
+    if (DataBackLogs.length > 0 && BacklogApps.length === 0 && type_req_param === "RFC") {
+      // Convert DataBackLogs to BacklogDataResponse format
+      const backlogAppsData: BacklogDataResponse[] = DataBackLogs.map((b) => ({
+        id: b.backlogId || "",
+        reqId: "",
+        backlogCode: "",
+        backlogName: b.backlogName,
+        backlogDesc: b.backlogDesc || "",
+        envSide: null,
+        maintenanceCategory: null,
+        maintenanceType: null,
+        rppb: "",
+        licensing: "",
+        backogRegistered: null,
+        backlogStartdate: null,
+        backlogEnddate: null,
+        urgency: "",
+        impact: "",
+        priority: "",
+        developmentStatus: "",
+        progressionPercentage: 0,
+        backlogImplementStartdate: null,
+        backlogImplementEnddate: null,
+        reffId: b.parentBacklogId || null,
+        projectId: null,
+        note: b.note || "",
+        version: "",
+        isLive: "N",
+        appsId: "",
+        posOrder: b.posOrder || 1,
+        createdAt: new Date().toISOString(),
+        createdBy: "",
+        updatedAt: null,
+        updatedBy: "",
+      }));
+      console.log("Populated BacklogApps from DataBackLogs:", backlogAppsData);
+      setBacklogApps(backlogAppsData);
+    }
+  }, [DataBackLogs, type_req_param]);
+  useEffect(() => {
+    console.log("BacklogChanges before conversion:", BacklogChanges);
     const updatedBacklogData: ReqBacklogPayload[] = BacklogChanges.map(
       (dt) => ({
         // backlogId: generateFakeId(),
         parentBacklogId: dt.backlog.id === "NEW_SCOPE" ? null : dt.backlog.id,
+        backlogId: dt.changes?.backlogId || null,
         backlogName: dt.backlog.id === "NEW_SCOPE" ? (dt.backlog.backlogName || dt.changes?.backlogName || "") : (dt.changes?.backlogName || ""),
         backlogDesc: dt.backlog.id === "NEW_SCOPE" ? (dt.backlog.backlogDesc || dt.changes?.backlogDesc || "") : (dt.changes?.backlogDesc || ""),
         note: dt.backlog.id === "NEW_SCOPE" ? (dt.backlog.note || dt.changes?.note || "") : (dt.changes?.note || ""),
@@ -6609,6 +6740,7 @@ const Section4RFCView = ({
     const sortedBacklogData = updatedBacklogData.sort(
       (a, b) => a.posOrder - b.posOrder
     );
+    console.log("Converted to formik.backlogFeatures:", sortedBacklogData);
     formik.setFieldValue("backlogFeatures", sortedBacklogData);
 
     // setBacklogData(updatedBacklogData);
@@ -6679,6 +6811,27 @@ const Section4RFCView = ({
     useState<ApplicationMasterResponse | null>(null);
   const [SearchAppsText, setSearchAppsText] = useState<string>("");
 
+  // Sync ApplicationExistingChoosed when selectedApp is loaded
+  useEffect(() => {
+    if (selectedApp && !ApplicationExistingChoosed) {
+      setApplicationExistingChoosed(selectedApp);
+    }
+  }, [selectedApp]);
+
+
+  // Load BacklogAppsOption when ApplicationExistingChoosed is set (from draft)
+  useEffect(() => {
+    const loadBacklogOptions = async () => {
+      if (ApplicationExistingChoosed && tokenData) {
+        console.log("Loading backlog options for app:", ApplicationExistingChoosed.id);
+        const WhereParams: ListSearchByParam[] = [
+          { field: "appsId", operator: "=", value: ApplicationExistingChoosed.id },
+        ];
+        await GetListBacklog("", MAX_SIZE_TABLE, WhereParams);
+      }
+    };
+    loadBacklogOptions();
+  }, [ApplicationExistingChoosed, tokenData]);
   const GetDataApplications = async (
     searchValue: string = "",
     limit: number = 1
@@ -6735,6 +6888,7 @@ const Section4RFCView = ({
       formik.setFieldValue("appInitialName", null);
       formik.setFieldValue("appTargetUsers", "INTERNAL");
       formik.setFieldValue("appAccessFrontsiteDns", null);
+
       formik.setFieldValue("appAccessFrontsiteIp", null);
       formik.setFieldValue("appAccessBacksiteDns", null);
       formik.setFieldValue("appAccessBacksiteIp", null);
@@ -7314,7 +7468,7 @@ const Section4RFCView = ({
                             <Stack spacing={0}>
                               <Select
                                 id={`backlogExisting-${1}`}
-                                options={[{ label: "Scope yang belum ada di memo", value: "NEW_SCOPE" }, ...BacklogAppsOption.filter(
+                                options={[/* { label: "Scope yang belum ada di memo", value: "NEW_SCOPE" }, */ ...BacklogAppsOption.filter(
                                   (opt) =>
                                     !BacklogChanges.some(
                                       (b) => b.backlog.id === opt.value

@@ -62,19 +62,24 @@ interface AbstractUIDesignProps {
 
 const HighlightTextLanding: HighlightTextLandingProps[] = [
   {
-    title: "App Development",
-    desc: "Create custom project management applications",
+    title: "Team Collaboration",
+    desc: "Real-time collaboration tools and workflows that foster strong teamwork and help members work together toward shared goals.",
     color: "blue",
   },
   {
-    title: "Team Collaboration",
-    desc: "Real-time collaboration tools and workflows",
+    title: "Performance & Productivity Focus",
+    desc: "Enables the improvement of both individual and team performance through productivity-enhancing features.",
     color: "purple",
+  },
+  {
+    title: "Dynamic yet Structured",
+    desc: "Prioritizes flexibility in project management while maintaining an organized and well-structured system.",
+    color: "pink",
   },
   {
     title: "Analytics & Reports",
     desc: "Advanced insights and performance tracking",
-    color: "pink",
+    color: "green",
   },
 ];
 
@@ -88,11 +93,27 @@ const AbstractUIDesign: AbstractUIDesignProps[] = [
 function LandingPage() {
   useDocumentTitle("Login");
   const { colorMode } = useColorMode();
+  const showToast = useToastHelper();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const handleLaunchApp = () => {
+    const authData = localStorage.getItem("authData");
+    const tokenData = localStorage.getItem("tokenData");
+    
+    if (!authData || !tokenData) {
+      showToast({
+        description: "Kamu harus login",
+        statusToast: "error",
+      });
+      return;
+    }
+    
+    window.location.href = "/workspace";
+  };
 
   // Prevent hydration mismatch
   if (!mounted) {
@@ -281,21 +302,11 @@ function LandingPage() {
                         py={8}
                         fontSize="lg"
                         rounded="2xl"
-                        onClick={() => {
-                          window.location.href = "/home";
-                        }}
+                        onClick={handleLaunchApp}
                       >
                         Launch Your Project Apps
                       </Button>
                     </Box>
-
-                    <Text
-                      fontSize="md"
-                      color={colorMode === "light" ? "gray.600" : "gray.400"}
-                    >
-                      Join thousands of teams building better project management
-                      solutions
-                    </Text>
                   </VStack>
                 </VStack>
               </GridItem>

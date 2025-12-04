@@ -25,7 +25,7 @@ export function HeaderContent({ titleName, breadCrumb }: HeaderContentProps) {
 
   return (
     <>
-      <title>KOBRA | {titleName}</title>
+      <title>bjb aPPs | {titleName}</title>
       <Box
         bg={bgGradient}
         borderBottom="1px"
@@ -46,8 +46,8 @@ export function HeaderContent({ titleName, breadCrumb }: HeaderContentProps) {
           <Breadcrumb fontSize="sm" color="gray.600">
             {breadCrumb.map((item: string, index: number) => (
               <BreadcrumbItem key={item} isCurrentPage={index === breadCrumb.length - 1}>
-                <BreadcrumbLink 
-                  href="#" 
+                <BreadcrumbLink
+                  href="#"
                   fontWeight={index === breadCrumb.length - 1 ? "semibold" : "normal"}
                 >
                   {item}

@@ -27,7 +27,7 @@ const LayoutLandingEnhanced = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // Show loading on route change
     setLoading(true);
-    
+
     // Landing pages typically load faster
     const timer = setTimeout(() => setLoading(false), DELAY_MEDIUM - 200);
     return () => clearTimeout(timer);
@@ -35,7 +35,7 @@ const LayoutLandingEnhanced = ({ children }: { children: ReactNode }) => {
 
   // Get loading text based on landing page route
   const getLoadingText = (path: string) => {
-    if (path === "/" || path === "/landing") return "Loading KOBRA...";
+    if (path === "/" || path === "/landing") return "Loading bjb aPPs...";
     if (path.includes("login")) return "Loading Login...";
     if (path.includes("register")) return "Loading Registration...";
     if (path.includes("about")) return "Loading About...";
@@ -46,15 +46,15 @@ const LayoutLandingEnhanced = ({ children }: { children: ReactNode }) => {
     <>
       <Box position="relative" minHeight="90vh">
         <Head>
-          <title>KOBRA - Applications Management</title>
+          <title>bjb aPPs - Applications Management</title>
         </Head>
-        
-        <LoadingOverlayEnhanced 
-          isLoading={loading} 
+
+        <LoadingOverlayEnhanced
+          isLoading={loading}
           loadingText={getLoadingText(pathname)}
           showProgress={true}
         />
-        
+
         <Box
           opacity={loading ? 0.3 : 1}
           pointerEvents={loading ? "none" : "auto"}

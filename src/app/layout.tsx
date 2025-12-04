@@ -6,8 +6,8 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   ...defaultMetadata,
   title: {
-    default: 'KOBRA - Project Management Apps',
-    template: 'KOBRA - Project Management Apps | %s'
+    default: 'bjb aPPs - Project Management Apps',
+    template: 'bjb aPPs - Project Management Apps | %s'
   }
 }
 

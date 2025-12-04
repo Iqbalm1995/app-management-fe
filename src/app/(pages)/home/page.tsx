@@ -8,9 +8,9 @@ const HomePageView = dynamic(() => import("./HomePageView"), { ssr: false });
 
 function HomePage() {
   useEffect(() => {
-    document.title = "KOBRA - Project Management Apps | Dashboard";
+    document.title = "bjb aPPs - Project Management Apps | Dashboard";
   }, []);
-  
+
   return (
     <Suspense>
       <HomePageView />
