@@ -6634,7 +6634,7 @@ const Section4RFCView = ({
       // Group backlogs by parent-child relationship
       BacklogApps.forEach((b: BacklogDataResponse) => {
         if (b.reffId) {
-          // This is a change (child)
+          // This is a change (child) - has existing parent-child relationship
           const parentBacklog = backlogMap.get(b.reffId);
           if (parentBacklog) {
             // Find if parent already exists in backlogChangesData
@@ -6643,7 +6643,7 @@ const Section4RFCView = ({
             );
             
             if (!existingEntry) {
-              // Create new entry with parent and child
+              // Create new entry with parent in Kondisi Existing, child in Perubahan Sistem
               backlogChangesData.push({
                 backlog: parentBacklog,
                 changes: {
@@ -6666,14 +6666,9 @@ const Section4RFCView = ({
               };
             }
           }
-        } else if (!BacklogApps.some((child: BacklogDataResponse) => child.reffId === b.id)) {
-          // This is a standalone backlog (no children)
-          backlogChangesData.push({
-            backlog: b,
-            changes: null,
-            showKondisiEksisting: false,
-          });
         }
+        // DO NOT auto-populate standalone backlogs
+        // User must manually select scopes from dropdown one by one
       });
 
       console.log("Populated BacklogChanges from BacklogApps:", backlogChangesData);
