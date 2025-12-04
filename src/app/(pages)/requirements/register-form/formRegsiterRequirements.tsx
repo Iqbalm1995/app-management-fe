@@ -894,13 +894,13 @@ function RegisterRequirementFormPage({
         const backlogResponse = await ListBacklog(backlogPayload, tokenData);
         if (backlogResponse?.statusCode === RES_CODE_OK && backlogResponse.data) {
           const backlogs = backlogResponse.data.map((b: BacklogDataResponse, index: number) => ({
-            localId: b.id, // Use database ID as localId for loaded items
             backlogId: b.id,
             parentBacklogId: b.reffId,
             backlogName: b.backlogName,
             backlogDesc: b.backlogDesc,
             note: b.note,
-            posOrder: b.posOrder || (index + 1)
+            posOrder: b.posOrder || (index + 1),
+            reffData: b.reffData, // Preserve reffData for RFC
           }));
           console.log("Loaded backlogs:", backlogs);
           setDataBackLogs(backlogs);
@@ -6578,6 +6578,11 @@ const Section4RFCView = ({
   const { GetReqParentAppsByAppsId, ListBacklog, GetDetailBacklogById } =
     useRequirements();
 
+  // Generate local ID for client-side tracking (same as BRD)
+  const generateLocalId = () => {
+    return `local-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+  };
+
   const movePriority = (backlogId: string, direction: "up" | "down") => {
     const currentIndex = DataBackLogs.findIndex(
       (item) => item.backlogId === backlogId || item.localId === backlogId
@@ -6635,7 +6640,8 @@ const Section4RFCView = ({
       BacklogApps.forEach((b: BacklogDataResponse) => {
         if (b.reffId) {
           // This is a change (child) - has existing parent-child relationship
-          const parentBacklog = backlogMap.get(b.reffId);
+          // First try to get parent from reffData (from backend), then from backlogMap
+          const parentBacklog = b.reffData || backlogMap.get(b.reffId);
           if (parentBacklog) {
             // Find if parent already exists in backlogChangesData
             let existingEntry = backlogChangesData.find(
@@ -6647,8 +6653,9 @@ const Section4RFCView = ({
               backlogChangesData.push({
                 backlog: parentBacklog,
                 changes: {
+                  localId: b.id.startsWith('local-') ? b.id : undefined,
+                  backlogId: b.id.startsWith('local-') ? null : b.id,
                   backlogName: b.backlogName,
-                  backlogId: b.id,
                   backlogDesc: b.backlogDesc || "",
                   note: b.note || "",
                   posOrder: b.posOrder || 1,
@@ -6658,7 +6665,8 @@ const Section4RFCView = ({
             } else {
               // Update existing entry with changes
               existingEntry.changes = {
-                  backlogId: b.id,
+                localId: b.id.startsWith('local-') ? b.id : undefined,
+                backlogId: b.id.startsWith('local-') ? null : b.id,
                 backlogName: b.backlogName,
                 backlogDesc: b.backlogDesc || "",
                 note: b.note || "",
@@ -6666,9 +6674,53 @@ const Section4RFCView = ({
               };
             }
           }
+        } else {
+          // Standalone backlog (no parent) - user toggled OFF "Tampilkan Kondisi Eksisting"
+          backlogChangesData.push({
+            backlog: {
+              id: "NEW_SCOPE",
+              reqId: "",
+              backlogCode: "",
+              backlogName: "",
+              backlogDesc: null,
+              envSide: null,
+              maintenanceCategory: null,
+              maintenanceType: null,
+              rppb: "",
+              licensing: "",
+              backogRegistered: null,
+              backlogStartdate: null,
+              backlogEnddate: null,
+              urgency: "",
+              impact: "",
+              priority: "",
+              developmentStatus: "",
+              progressionPercentage: 0,
+              backlogImplementStartdate: null,
+              backlogImplementEnddate: null,
+              reffId: null,
+              projectId: null,
+              note: null,
+              version: "",
+              isLive: "",
+              appsId: "",
+              posOrder: 0,
+              createdAt: "",
+              createdBy: "",
+              updatedAt: null,
+              updatedBy: "",
+            },
+            changes: {
+              localId: b.id.startsWith('local-') ? b.id : undefined,
+              backlogId: b.id.startsWith('local-') ? null : b.id,
+              backlogName: b.backlogName,
+              backlogDesc: b.backlogDesc || "",
+              note: b.note || "",
+              posOrder: b.posOrder || 1,
+            },
+            showKondisiEksisting: false, // Toggle is OFF
+          });
         }
-        // DO NOT auto-populate standalone backlogs
-        // User must manually select scopes from dropdown one by one
       });
 
       console.log("Populated BacklogChanges from BacklogApps:", backlogChangesData);
@@ -6681,7 +6733,7 @@ const Section4RFCView = ({
     if (DataBackLogs.length > 0 && BacklogApps.length === 0 && type_req_param === "RFC") {
       // Convert DataBackLogs to BacklogDataResponse format
       const backlogAppsData: BacklogDataResponse[] = DataBackLogs.map((b) => ({
-        id: b.backlogId || "",
+        id: b.backlogId || b.localId || "",
         reqId: "",
         backlogCode: "",
         backlogName: b.backlogName,
@@ -6712,6 +6764,7 @@ const Section4RFCView = ({
         createdBy: "",
         updatedAt: null,
         updatedBy: "",
+        reffData: b.reffData || null,
       }));
       console.log("Populated BacklogApps from DataBackLogs:", backlogAppsData);
       setBacklogApps(backlogAppsData);
@@ -6721,9 +6774,10 @@ const Section4RFCView = ({
     console.log("BacklogChanges before conversion:", BacklogChanges);
     const updatedBacklogData: ReqBacklogPayload[] = BacklogChanges.map(
       (dt) => ({
-        // backlogId: generateFakeId(),
-        parentBacklogId: dt.backlog.id === "NEW_SCOPE" ? null : dt.backlog.id,
+        localId: dt.changes?.localId,
+        id: dt.changes?.backlogId || undefined, // Backend expects 'id' field
         backlogId: dt.changes?.backlogId || null,
+        parentBacklogId: dt.backlog.id === "NEW_SCOPE" ? null : dt.backlog.id,
         backlogName: dt.backlog.id === "NEW_SCOPE" ? (dt.backlog.backlogName || dt.changes?.backlogName || "") : (dt.changes?.backlogName || ""),
         backlogDesc: dt.backlog.id === "NEW_SCOPE" ? (dt.backlog.backlogDesc || dt.changes?.backlogDesc || "") : (dt.changes?.backlogDesc || ""),
         note: dt.backlog.id === "NEW_SCOPE" ? (dt.backlog.note || dt.changes?.note || "") : (dt.changes?.note || ""),
@@ -6736,6 +6790,7 @@ const Section4RFCView = ({
       (a, b) => a.posOrder - b.posOrder
     );
     console.log("Converted to formik.backlogFeatures:", sortedBacklogData);
+    console.log("IDs being sent:", sortedBacklogData.map(b => ({ id: b.id, backlogId: b.backlogId, localId: b.localId, name: b.backlogName })));
     formik.setFieldValue("backlogFeatures", sortedBacklogData);
 
     // setBacklogData(updatedBacklogData);
@@ -7034,6 +7089,8 @@ const Section4RFCView = ({
                 note: "",
               },
               changes: {
+                localId: item.changes?.localId || generateLocalId(),
+                backlogId: null,
                 backlogName: "",
                 posOrder: 1,
               },
@@ -7057,6 +7114,8 @@ const Section4RFCView = ({
             ...item,
             backlog: choosedFeature,
             changes: {
+              localId: item.changes?.localId || generateLocalId(),
+              backlogId: null,
               backlogName: selectedOption.label,
               posOrder: 1,
             },
@@ -7581,6 +7640,8 @@ const Section4RFCView = ({
                                 const updated = [...BacklogChanges];
                                 if (!updated[index].changes)
                                   updated[index].changes = {
+                                    localId: generateLocalId(),
+                                    backlogId: null,
                                     backlogName: "",
                                     backlogDesc: "",
                                     note: "",
@@ -7610,6 +7671,8 @@ const Section4RFCView = ({
                                 const updated = [...BacklogChanges];
                                 if (!updated[index].changes)
                                   updated[index].changes = {
+                                    localId: generateLocalId(),
+                                    backlogId: null,
                                     backlogName: "",
                                     backlogDesc: "",
                                     note: "",
@@ -7640,6 +7703,8 @@ const Section4RFCView = ({
                                 const updated = [...BacklogChanges];
                                 if (!updated[index].changes)
                                   updated[index].changes = {
+                                    localId: generateLocalId(),
+                                    backlogId: null,
                                     backlogName: "",
                                     backlogDesc: "",
                                     note: "",
@@ -7666,7 +7731,17 @@ const Section4RFCView = ({
                   onClick={() =>
                     setBacklogChanges((prev) => [
                       ...prev,
-                      EmptyBacklogChangesData,
+                      {
+                        ...EmptyBacklogChangesData,
+                        changes: {
+                          localId: generateLocalId(),
+                          backlogId: null,
+                          backlogName: "",
+                          backlogDesc: "",
+                          note: "",
+                          posOrder: prev.length + 1,
+                        },
+                      },
                     ])
                   }
                 >

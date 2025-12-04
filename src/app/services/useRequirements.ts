@@ -187,13 +187,15 @@ export interface WorkProgramsPayload {
 }
 
 export interface ReqBacklogPayload {
+  id?: string; // Backend expects 'id' field (maps to Id in C#)
   localId?: string; // For client-side operations only
-  backlogId?: string | null; // Database ID
+  backlogId?: string | null; // Database ID (same as id, kept for compatibility)
   parentBacklogId?: string | null;
   backlogName: string;
   backlogDesc?: string | null;
   note?: string | null;
   posOrder: number;
+  reffData?: BacklogDataResponse | null; // Parent backlog data for RFC
 }
 
 export interface RequirementsInsertPayload {
