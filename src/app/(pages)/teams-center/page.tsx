@@ -572,8 +572,7 @@ function TeamsCenterPage() {
                         }))
                       ]}
                       placeholder="Select Group"
-                      isClearable={false}
-                      menuPortalTarget={document.body}
+                      menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
                       chakraStyles={{
                         container: (provided) => ({
                           ...provided,
