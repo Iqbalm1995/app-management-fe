@@ -348,10 +348,7 @@ export default function ProjectManageView() {
                     <TeamTab DataProject={DataProject} />
                     <AnalyticsTab DataProject={DataProject} />
                     <TimelineTab DataProject={DataProject} />
-                    <EditTab
-                      DataProject={DataProject}
-                      onRefresh={() => setRefreshData((prev) => prev + 1)}
-                    />
+                    <EditTab DataProject={DataProject} />
                   </TabPanels>
                 </CardBody>
               </Card>
