@@ -210,6 +210,10 @@ function FormRegisterProjectView() {
   const [HeaderContentState, setHeaderContentState] =
     useState<HeaderContentProps>(HeaderDataContent);
 
+  // Selected Category and Type State (preserves across steps)
+  const [SelectedCategory, setSelectedCategory] = useState<string>("");
+  const [SelectedType, setSelectedType] = useState<string>("");
+
   // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
@@ -630,6 +634,16 @@ function FormRegisterProjectView() {
   });
 
   // end - formik
+
+  // Sync formik with state values (state is source of truth)
+  useEffect(() => {
+    if (SelectedCategory) {
+      formik.setFieldValue("projectCategory", SelectedCategory);
+    }
+    if (SelectedType) {
+      formik.setFieldValue("projectType", SelectedType);
+    }
+  }, [SelectedCategory, SelectedType]);
 
   const [ReqId, setReqId] = useState<string | null>(null);
   useEffect(() => {
@@ -1544,17 +1558,15 @@ function FormRegisterProjectView() {
                         <FormLabel>Karakteristik Project</FormLabel>
                         <Stack spacing={0} h={"full"}>
                           <SelectC
-                            value={formik.values.projectCategory}
+                            value={SelectedCategory}
                             id="projectCategory"
                             name="projectCategory"
                             onChange={(e) => {
-                              formik.setFieldValue(
-                                `projectCategory`,
-                                e.target.value
-                              );
+                              const newValue = e.target.value;
+                              setSelectedCategory(newValue);
                             }}
-                            placeholder="Select Karakteristik Project"
                           >
+                            <option value="">Select Karakteristik Project</option>
                             {PROJEC_CATEGORY_OPTIONS.map((option) => (
                               <option key={option} value={option}>
                                 {option}
@@ -1574,17 +1586,15 @@ function FormRegisterProjectView() {
                         <FormLabel>Tipe Project</FormLabel>
                         <Stack spacing={0} h={"full"}>
                           <SelectC
-                            value={formik.values.projectType}
+                            value={SelectedType}
                             id="projectType"
                             name="projectType"
                             onChange={(e) => {
-                              formik.setFieldValue(
-                                `projectType`,
-                                e.target.value
-                              );
+                              const newValue = e.target.value;
+                              setSelectedType(newValue);
                             }}
-                            placeholder="Select Tipe Project"
                           >
+                            <option value="">Select Tipe Project</option>
                             {PROJEC_TYPE_OPTIONS.map((option) => (
                               <option key={option} value={option}>
                                 {option}

@@ -3230,7 +3230,7 @@ export default function ProjectRegisterView({
                                   }
                                 }}
                                 placeholder={"Pilih Sub Karakteristik Projek"}
-                                value={OptionCharacteristicProject.find(
+                                value={OptionSubCharacteristicProject.find(
                                   (x) =>
                                     x.value ==
                                     formik.values.projectSubCharasteristicCode
@@ -6127,7 +6127,7 @@ const AdditionalInfoUpdate = ({
   // Save changes
   const handleSaveChanges = () => {
     const updatedBacklog = {
-      ...backlogDetail,
+      ...dataSource,
       ...formInputs,
     };
 

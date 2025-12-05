@@ -37,6 +37,7 @@ import {
 import { FaUsersRays } from "react-icons/fa6";
 import { FiRefreshCcw, FiSearch, FiFilter, FiUsers } from "react-icons/fi";
 import { useState, useEffect, useMemo } from "react";
+import { Select as ChakraSelect } from "chakra-react-select";
 import Link from "next/link";
 import {
   ColumnDef,
@@ -71,8 +72,7 @@ function TeamsCenterPage() {
   const [selectedDirectorate, setSelectedDirectorate] = useState<string>("all");
   const [selectedDivision, setSelectedDivision] = useState<string>("all");
   const [selectedGroup, setSelectedGroup] = useState<string>("all");
-  const [groupSearch, setGroupSearch] = useState<string>("All Groups");
-  const [showGroupOptions, setShowGroupOptions] = useState<boolean>(false); const [searchQuery, setSearchQuery] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [StatsData, setStatsData] = useState({
     totalTeams: 0,
     activeTeams: 0,
@@ -404,8 +404,8 @@ function TeamsCenterPage() {
 
                 {/* Right - Quick Stats */}
                 <SimpleGrid
-                  columns={{ base: 3, md: 3 }}
-                  spacing={3}
+                  columns={{ base: 2, md: 2 }}
+                  spacing={2}
                   minW="300px"
                 >
                   <Box
@@ -438,7 +438,7 @@ function TeamsCenterPage() {
                       Total Teams
                     </Text>
                   </Box>
-                  <Box
+                  {/* <Box
                     bg="whiteAlpha.200"
                     rounded="xl"
                     p={4}
@@ -452,7 +452,7 @@ function TeamsCenterPage() {
                     <Text fontSize="xs" opacity={0.8}>
                       Active Rate
                     </Text>
-                  </Box>
+                  </Box> */}
                 </SimpleGrid>
               </Flex>
             </VStack>
@@ -551,98 +551,46 @@ function TeamsCenterPage() {
                     ))}
                   </Select>
 
-                  {/* Group Filter - Searchable */}
-                  <Select
-                    value={selectedGroup}
-                    onChange={(e) => setSelectedGroup(e.target.value)}
-                    minW="240px"
-                    maxW="380px"
-                    bg={colorMode === "light" ? "gray.50" : "gray.700"}
-                    border="1px"
-                    borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
-                    rounded="xl"
-                    _focus={{
-                      borderColor: "secondary.500",
-                      bg: colorMode === "light" ? "white" : "gray.800",
-                    }}
-                  >
-                    <option value="all">All Groups</option>
-                    <Box position="relative" maxW="160px">
-                      <Input
-                        value={groupSearch}
-                        onChange={(e) => {
-                          setGroupSearch(e.target.value);
-                          setShowGroupOptions(true);
-                        }}
-                        onFocus={() => setShowGroupOptions(true)}
-                        onBlur={() => setTimeout(() => setShowGroupOptions(false), 200)}
-                        placeholder="Search groups..."
-                        bg={colorMode === "light" ? "gray.50" : "gray.700"}
-                        border="1px"
-                        borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
-                        rounded="xl"
-                        _focus={{
-                          borderColor: "secondary.500",
-                          bg: colorMode === "light" ? "white" : "gray.800",
-                        }}
-                      />
-
-                      {showGroupOptions && (
-                        <Box
-                          position="absolute"
-                          top="100%"
-                          left={0}
-                          right={0}
-                          zIndex={10}
-                          maxH="200px"
-                          overflowY="auto"
-                          border="1px"
-                          borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
-                          rounded="md"
-                          bg={colorMode === "light" ? "white" : "gray.800"}
-                          shadow="lg"
-                        >
-                          <Box
-                            p={2}
-                            cursor="pointer"
-                            _hover={{ bg: colorMode === "light" ? "gray.100" : "gray.700" }}
-                            onClick={() => {
-                              setSelectedGroup("all");
-                              setGroupSearch("");
-                              setShowGroupOptions(false);
-                            }}
-                          >
-                            All Groups
-                          </Box>
-                          {GroupData.filter(group => {
-                            const matchesSearch = !groupSearch ||
-                              group.orgName.toLowerCase().includes(groupSearch.toLowerCase()) ||
-                              group.orgCode.toLowerCase().includes(groupSearch.toLowerCase());
-                            return matchesSearch;
-                          }).map((org) => (
-                            <Box
-                              key={org.id}
-                              p={2}
-                              cursor="pointer"
-                              _hover={{ bg: colorMode === "light" ? "gray.100" : "gray.700" }}
-                              onClick={() => {
-                                setSelectedGroup(org.id);
-                                setGroupSearch(`${org.orgName} (${org.orgCode})`);
-                                setShowGroupOptions(false);
-                              }}
-                            >
-                              {org.orgName} ({org.orgCode})
-                            </Box>
-                          ))}
-                        </Box>
-                      )}
-                    </Box>
-                    {GroupData.map((org) => (
-                      <option key={org.id} value={org.id}>
-                        {org.orgName} ({org.orgCode})
-                      </option>
-                    ))}
-                  </Select>
+                  {/* Group Filter */}
+                  <Box minW="240px" maxW="380px">
+                    <ChakraSelect
+                      value={
+                        selectedGroup === "all"
+                          ? { label: "All Groups", value: "all" }
+                          : GroupData.find(g => g.id === selectedGroup)
+                            ? { label: `${GroupData.find(g => g.id === selectedGroup)!.orgName} (${GroupData.find(g => g.id === selectedGroup)!.orgCode})`, value: selectedGroup }
+                            : null
+                      }
+                      onChange={(option) => {
+                        setSelectedGroup(option?.value || "all");
+                      }}
+                      options={[
+                        { label: "All Groups", value: "all" },
+                        ...GroupData.map(org => ({
+                          label: `${org.orgName} (${org.orgCode})`,
+                          value: org.id
+                        }))
+                      ]}
+                      placeholder="Select Group"
+                      isClearable={false}
+                      menuPortalTarget={document.body}
+                      chakraStyles={{
+                        container: (provided) => ({
+                          ...provided,
+                          width: "100%",
+                        }),
+                        control: (provided) => ({
+                          ...provided,
+                          bg: "white",
+                        }),
+                        menu: (provided) => ({
+                          ...provided,
+                          bg: "white",
+                          zIndex: 9999,
+                        }),
+                      }}
+                    />
+                  </Box>
                 </HStack>
 
                 {/* Right - Refresh Button */}
