@@ -633,14 +633,14 @@ export const LinkItems: LinkItemProps[] = [
       },
     ],
   },
-  {
-    name: "Team Manager",
-    icon: FaChess,
-    link: "/teams",
-    role: ["admin"],
-    menuID: "1",
-    children: [],
-  },
+  // {
+  //   name: "Team Manager",
+  //   icon: FaChess,
+  //   link: "/teams",
+  //   role: ["admin"],
+  //   menuID: "1",
+  //   children: [],
+  // },
   // {
   //   name: "Server Manager",
   //   icon: CiServer,
