@@ -1713,7 +1713,7 @@ function FormRegisterProjectView() {
                               name="projectDesc"
                               onChange={formik.handleChange}
                               defaultValue={formik.values.projectDesc ?? ""}
-                              placeholder={`Perlihal`}
+                              placeholder={`Perihal`}
                               maxLength={300}
                             // isDisabled={ActionLoading}
                             />
@@ -1857,7 +1857,7 @@ function FormRegisterProjectView() {
                               name="note"
                               onChange={formik.handleChange}
                               defaultValue={formik.values.note ?? ""}
-                              placeholder={`Perlihal`}
+                              placeholder={`Perihal`}
                               maxLength={300}
                             // isDisabled={ActionLoading}
                             />
@@ -2850,7 +2850,7 @@ const AdditionalInfoUpdate = ({
               </FormControl>
 
               <FormControl display="flex" alignItems="center">
-                <FormLabel mb="0">RPPB/ Non RPPB</FormLabel>
+                <FormLabel mb="0">RPPB</FormLabel>
                 <Switch
                   name="rppb"
                   isChecked={formInputs.rppb === "Y"}

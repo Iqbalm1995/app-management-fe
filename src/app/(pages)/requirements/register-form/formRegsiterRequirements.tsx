@@ -5283,10 +5283,52 @@ const Section4BRDView = ({
   const [ApplicationExistingChoosed, setApplicationExistingChoosed] =
     useState<ApplicationMasterResponse | null>(null);
 
-  // Sync ApplicationExistingChoosed when selectedApp is loaded
+  // Sync ApplicationExistingChoosed when selectedApp is loaded and update form with latest master data
   useEffect(() => {
     if (selectedApp && !ApplicationExistingChoosed) {
       setApplicationExistingChoosed(selectedApp);
+      
+      // Update form fields with latest master application data
+      formik.setFieldValue("appInitialCode", selectedApp.appShortName);
+      formik.setFieldValue("appInitialName", selectedApp.appName);
+      formik.setFieldValue("appTargetUsers", selectedApp.appTargetUsers);
+      
+      if (selectedApp.appAccessFrontsiteDns) {
+        setMediaAksesPublic(true);
+      }
+      formik.setFieldValue("appAccessFrontsiteDns", selectedApp.appAccessFrontsiteDns);
+      formik.setFieldValue("appAccessFrontsiteIp", selectedApp.appAccessFrontsiteIp);
+      formik.setFieldValue("appAccessBacksiteDns", selectedApp.appAccessBacksiteDns);
+      
+      if (selectedApp.appAccessBacksiteIp) {
+        setMediaAksesIntranet(true);
+      }
+      formik.setFieldValue("appAccessBacksiteIp", selectedApp.appAccessBacksiteIp);
+      
+      if (selectedApp.appTypes) {
+        setSelectedAppsTypes(selectedApp.appTypes);
+      }
+      formik.setFieldValue("appTypeCustom", selectedApp.appTypeCustom);
+      formik.setFieldValue("appRelatedness", selectedApp.appRelatedness);
+      formik.setFieldValue("appRelatednessDesc", selectedApp.appRelatednessDesc);
+      formik.setFieldValue("appTransactionals", selectedApp.appTransactionals);
+      formik.setFieldValue("appOperational24hrs", selectedApp.appOperational24hrs);
+      
+      if (selectedApp.appOperationalDays) {
+        setOperationalDays(selectedApp.appOperationalDays);
+      }
+      formik.setFieldValue("appOperationalDays", selectedApp.appOperationalDays);
+      formik.setFieldValue("appOperationalHourOpen", selectedApp.appOperationalHourOpen);
+      formik.setFieldValue("appOperationalHourClosed", selectedApp.appOperationalHourClosed);
+      
+      if (selectedApp.appEnvLocations) {
+        setSelectedAppsEnvLoc(selectedApp.appEnvLocations);
+      }
+      formik.setFieldValue("appEnvLocations", selectedApp.appEnvLocations);
+      formik.setFieldValue("appEnvLocationsOthers", selectedApp.appEnvLocationsOthers);
+      formik.setFieldValue("appPrivateAuth", selectedApp.appPrivateAuth);
+      formik.setFieldValue("appHightAvailability", selectedApp.appHightAvailability);
+      formik.setFieldValue("appIntegrationOthersApps", selectedApp.appIntegrationOthersApps);
     }
   }, [selectedApp]);
 
@@ -6861,10 +6903,52 @@ const Section4RFCView = ({
     useState<ApplicationMasterResponse | null>(null);
   const [SearchAppsText, setSearchAppsText] = useState<string>("");
 
-  // Sync ApplicationExistingChoosed when selectedApp is loaded
+  // Sync ApplicationExistingChoosed when selectedApp is loaded and update form with latest master data
   useEffect(() => {
     if (selectedApp && !ApplicationExistingChoosed) {
       setApplicationExistingChoosed(selectedApp);
+      
+      // Update form fields with latest master application data
+      formik.setFieldValue("appInitialCode", selectedApp.appShortName);
+      formik.setFieldValue("appInitialName", selectedApp.appName);
+      formik.setFieldValue("appTargetUsers", selectedApp.appTargetUsers);
+      
+      if (selectedApp.appAccessFrontsiteDns) {
+        setMediaAksesPublic(true);
+      }
+      formik.setFieldValue("appAccessFrontsiteDns", selectedApp.appAccessFrontsiteDns);
+      formik.setFieldValue("appAccessFrontsiteIp", selectedApp.appAccessFrontsiteIp);
+      formik.setFieldValue("appAccessBacksiteDns", selectedApp.appAccessBacksiteDns);
+      
+      if (selectedApp.appAccessBacksiteIp) {
+        setMediaAksesIntranet(true);
+      }
+      formik.setFieldValue("appAccessBacksiteIp", selectedApp.appAccessBacksiteIp);
+      
+      if (selectedApp.appTypes) {
+        setSelectedAppsTypes(selectedApp.appTypes);
+      }
+      formik.setFieldValue("appTypeCustom", selectedApp.appTypeCustom);
+      formik.setFieldValue("appRelatedness", selectedApp.appRelatedness);
+      formik.setFieldValue("appRelatednessDesc", selectedApp.appRelatednessDesc);
+      formik.setFieldValue("appTransactionals", selectedApp.appTransactionals);
+      formik.setFieldValue("appOperational24hrs", selectedApp.appOperational24hrs);
+      
+      if (selectedApp.appOperationalDays) {
+        setOperationalDays(selectedApp.appOperationalDays);
+      }
+      formik.setFieldValue("appOperationalDays", selectedApp.appOperationalDays);
+      formik.setFieldValue("appOperationalHourOpen", selectedApp.appOperationalHourOpen);
+      formik.setFieldValue("appOperationalHourClosed", selectedApp.appOperationalHourClosed);
+      
+      if (selectedApp.appEnvLocations) {
+        setSelectedAppsEnvLoc(selectedApp.appEnvLocations);
+      }
+      formik.setFieldValue("appEnvLocations", selectedApp.appEnvLocations);
+      formik.setFieldValue("appEnvLocationsOthers", selectedApp.appEnvLocationsOthers);
+      formik.setFieldValue("appPrivateAuth", selectedApp.appPrivateAuth);
+      formik.setFieldValue("appHightAvailability", selectedApp.appHightAvailability);
+      formik.setFieldValue("appIntegrationOthersApps", selectedApp.appIntegrationOthersApps);
     }
   }, [selectedApp]);
 
