@@ -1,7 +1,7 @@
 "use client";
 
 import { ProjectDataResponse } from "@/app/services/useProjects";
-import useProjects, { ProjectUpdatePICPayload } from "@/app/services/useProjects";
+import useProjects from "@/app/services/useProjects";
 import useUsers, { UsersResponse } from "@/app/services/useUsers";
 import {
   TabPanel,
@@ -32,10 +32,17 @@ import {
   Checkbox,
   Box,
   Spinner,
+  IconButton,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
 } from "@chakra-ui/react";
 import { radiusStyle, RES_CODE_OK, RES_GENERIC_ERROR_MSG, ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC } from "@/app/constants/applicationConstants";
-import { FiUsers, FiUserPlus, FiSettings, FiSearch } from "react-icons/fi";
-import { useState, useEffect } from "react";
+import { FiUsers, FiUserPlus, FiSettings, FiSearch, FiUserMinus } from "react-icons/fi";
+import { useState, useEffect, useRef } from "react";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
@@ -47,7 +54,7 @@ interface TeamTabProps {
 const TeamTab = ({ DataProject }: TeamTabProps) => {
   const { colorMode } = useColorMode();
   const showToast = useToastHelper();
-  const { UpdatePIC } = useProjects();
+  const { AssignUnassignMembers, GetProjectMembers } = useProjects();
   const { List } = useUsers();
 
   // Auth setup
@@ -60,13 +67,26 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
     onOpen: onAddModalOpen,
     onClose: onAddModalClose,
   } = useDisclosure();
+  
+  const {
+    isOpen: isRemoveAlertOpen,
+    onOpen: onRemoveAlertOpen,
+    onClose: onRemoveAlertClose,
+  } = useDisclosure();
+  
+  const cancelRef = useRef<HTMLButtonElement>(null);
 
   // Add member state
   const [availableUsers, setAvailableUsers] = useState<UsersResponse[]>([]);
+  const [projectMembers, setProjectMembers] = useState<UsersResponse[]>([]);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [searchUser, setSearchUser] = useState("");
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const [isLoadingMembers, setIsLoadingMembers] = useState(false);
   const [isAddingMembers, setIsAddingMembers] = useState(false);
+  
+  // Remove member state
+  const [userToRemove, setUserToRemove] = useState<{ id: string; name: string } | null>(null);
 
   // Auth effect
   useEffect(() => {
@@ -82,9 +102,64 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
     if (token) setTokenData(token);
   }, [DataAuth]);
 
+  // Load project members on mount
+  useEffect(() => {
+    console.log("[TeamTab] useEffect triggered", {
+      hasProjectId: !!DataProject?.id,
+      projectId: DataProject?.id,
+      hasToken: !!tokenData,
+      tokenLength: tokenData?.length
+    });
+    
+    if (DataProject?.id && tokenData) {
+      console.log("[TeamTab] Calling loadProjectMembers");
+      loadProjectMembers();
+    } else {
+      console.log("[TeamTab] Skipping loadProjectMembers - missing requirements");
+    }
+  }, [DataProject?.id, tokenData]);
+
+  // Load project members
+  const loadProjectMembers = async () => {
+    console.log("[loadProjectMembers] Starting", {
+      projectId: DataProject?.id,
+      hasToken: !!tokenData
+    });
+    
+    if (!DataProject?.id || !tokenData) {
+      console.log("[loadProjectMembers] Aborted - missing data");
+      return;
+    }
+
+    setIsLoadingMembers(true);
+    try {
+      console.log("[loadProjectMembers] Calling API...");
+      const response = await GetProjectMembers(DataProject.id, tokenData);
+      console.log("[loadProjectMembers] API Response:", response);
+
+      if (response?.statusCode === RES_CODE_OK && response.data) {
+        console.log("[loadProjectMembers] Raw data:", response.data);
+        const members = response.data.map(assignment => assignment.userData);
+        console.log("[loadProjectMembers] Extracted members:", members);
+        setProjectMembers(members);
+        console.log("[loadProjectMembers] State updated with", members.length, "members");
+      } else {
+        console.log("[loadProjectMembers] Failed - statusCode:", response?.statusCode, "message:", response?.message);
+      }
+    } catch (error) {
+      console.error("[loadProjectMembers] Error:", error);
+    } finally {
+      setIsLoadingMembers(false);
+      console.log("[loadProjectMembers] Finished");
+    }
+  };
+
   // Load available users
   const loadAvailableUsers = async () => {
-    if (!tokenData) return;
+    if (!tokenData || searchUser.length < 3) {
+      setAvailableUsers([]);
+      return;
+    }
 
     setIsLoadingUsers(true);
     try {
@@ -101,12 +176,7 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
       );
 
       if (response?.statusCode === RES_CODE_OK && response.data) {
-        // Filter out users already in the project
-        const currentMemberIds = DataProject?.userAssignment?.map(member => member.userId) || [];
-        const filteredUsers = response.data.filter(
-          (user: any) => !currentMemberIds.includes(user.id)
-        );
-        setAvailableUsers(filteredUsers);
+        setAvailableUsers(response.data);
       }
     } catch (error) {
       console.error("Error loading users:", error);
@@ -118,42 +188,57 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
   // Open add member modal
   const handleAddMember = () => {
     setSearchUser("");
-    setSelectedUserIds([]);
+    setAvailableUsers([]);
+    const currentMemberIds = projectMembers.map(m => m.id);
+    setSelectedUserIds(currentMemberIds);
     onAddModalOpen();
-    loadAvailableUsers();
   };
 
   // Confirm add members
   const confirmAddMembers = async () => {
-    if (!DataProject || !tokenData || selectedUserIds.length === 0) return;
+    if (!DataProject || !tokenData) return;
+
+    const currentMemberIds = projectMembers.map(m => m.id);
+    const assignUsers = selectedUserIds.filter(id => !currentMemberIds.includes(id));
+    const unassignUsers = currentMemberIds.filter(id => !selectedUserIds.includes(id));
+
+    if (assignUsers.length === 0 && unassignUsers.length === 0) {
+      showToast({
+        description: "No changes to save",
+        statusToast: "info",
+      });
+      return;
+    }
 
     setIsAddingMembers(true);
     try {
-      const payload: ProjectUpdatePICPayload = {
-        projectId: DataProject.id,
-        dataUserId: selectedUserIds, // Only new members
-      };
+      const response = await AssignUnassignMembers(
+        {
+          projectId: DataProject.id,
+          assignUsers,
+          unassignUsers,
+        },
+        tokenData
+      );
 
-      const response = await UpdatePIC(payload, tokenData);
-
-      if (response?.statusCode === RES_CODE_OK) {
+      if (response?.statusCode === RES_CODE_OK && response.data) {
         showToast({
-          description: `${selectedUserIds.length} member(s) added successfully`,
+          description: `Updated: ${response.data.assigned} added, ${response.data.unassigned} removed`,
           statusToast: "success",
         });
         onAddModalClose();
-        setSelectedUserIds([]);
+        await loadProjectMembers();
         window.location.reload();
       } else {
         showToast({
-          description: response?.message || "Failed to add team members",
+          description: response?.message || "Failed to update team members",
           statusToast: "error",
         });
       }
     } catch (error) {
-      console.error("Error adding members:", error);
+      console.error("Error updating members:", error);
       showToast({
-        description: "Failed to add team members",
+        description: "Failed to update team members",
         statusToast: "error",
       });
     } finally {
@@ -172,10 +257,15 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
     );
   };
 
-  // Filter users based on search
-  const filteredUsers = availableUsers.filter((user: UsersResponse) =>
-    user.nama.toLowerCase().includes(searchUser.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchUser.toLowerCase())
+  // Filter users based on search - combine available and existing members
+  const allUsers = [...availableUsers, ...projectMembers];
+  const uniqueUsers = allUsers.filter((user, index, self) => 
+    index === self.findIndex(u => u?.id === user?.id)
+  );
+  
+  const filteredUsers = uniqueUsers.filter((user: UsersResponse) =>
+    user?.nama?.toLowerCase().includes(searchUser.toLowerCase()) ||
+    user?.email?.toLowerCase().includes(searchUser.toLowerCase())
   );
 
   return (
@@ -206,7 +296,7 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
               rounded="full"
               onClick={handleAddMember}
             >
-              Add Member
+              Update Member
             </Button>
             <Button
               size="sm"
@@ -221,10 +311,20 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
         </HStack>
 
         {/* Team Members Grid */}
-        {DataProject?.userAssignment &&
-          DataProject.userAssignment.length > 0 ? (
+        {(() => {
+          console.log("[TeamTab Render] isLoadingMembers:", isLoadingMembers);
+          console.log("[TeamTab Render] projectMembers:", projectMembers);
+          console.log("[TeamTab Render] projectMembers.length:", projectMembers?.length);
+          return null;
+        })()}
+        {isLoadingMembers ? (
+          <VStack py={8}>
+            <Spinner size="lg" color="secondary.500" />
+            <Text color="gray.500">Loading team members...</Text>
+          </VStack>
+        ) : projectMembers && projectMembers.length > 0 ? (
           <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
-            {DataProject.userAssignment.map((member, index) => (
+            {projectMembers.map((member, index) => (
               <Card
                 key={index}
                 shadow="lg"
@@ -241,19 +341,19 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
                   <VStack spacing={4}>
                     <Avatar
                       size="lg"
-                      name={member.userData?.nama || "Team Member"}
+                      name={member.nama || "Team Member"}
                       bg="blue.500"
                     />
                     <VStack spacing={1}>
                       <Text fontWeight="bold" fontSize="lg">
-                        {member.userData?.nama || "Team Member"}
+                        {member.nama || "Team Member"}
                       </Text>
                       <Badge colorScheme="blue" px={3} py={1} rounded="full">
                         Member
                       </Badge>
                     </VStack>
                     <Text fontSize="sm" color="gray.600" textAlign="center">
-                      {member.userData?.email || "No email provided"}
+                      {member.email || "No email provided"}
                     </Text>
                   </VStack>
                 </CardBody>
@@ -296,159 +396,215 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
         isOpen={isAddModalOpen}
         onClose={onAddModalClose}
         isCentered
-        size="md"
+        size="4xl"
       >
         <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(4px)" />
         <ModalContent
           mx={4}
-          rounded="2xl"
+          rounded={radiusStyle}
           shadow="2xl"
-          border="1px"
-          borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
           bg={colorMode === "light" ? "white" : "gray.800"}
         >
           <ModalHeader
             fontSize="xl"
             fontWeight="bold"
             color={colorMode === "light" ? "gray.800" : "white"}
-            pb={4}
           >
-            <HStack spacing={3}>
-              <Box w="12px" h="12px" rounded="full" bg="secondary.400" />
-              <Text>Add Team Member</Text>
-            </HStack>
+            Team Management
           </ModalHeader>
           <ModalCloseButton />
 
           <ModalBody pb={6}>
-            <VStack spacing={4} align="stretch">
-              <Text color={colorMode === "light" ? "gray.600" : "gray.300"}>
-                Select users to add to this project team:
-              </Text>
-
-              {/* Search Users */}
-              <FormControl>
-                <FormLabel
-                  fontWeight="medium"
-                  color={colorMode === "light" ? "gray.700" : "gray.300"}
-                >
-                  Search Users
-                </FormLabel>
-                <InputGroup>
-                  <InputLeftElement>
-                    <FiSearch color="gray" />
-                  </InputLeftElement>
-                  <Input
-                    value={searchUser}
-                    onChange={(e) => {
-                      setSearchUser(e.target.value);
-                      loadAvailableUsers();
-                    }}
-                    placeholder="Search by name or email..."
-                    bg={colorMode === "light" ? "white" : "gray.700"}
-                    border="2px"
-                    borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
-                    rounded="xl"
-                    _focus={{
-                      borderColor: "secondary.500",
-                    }}
-                  />
-                </InputGroup>
-              </FormControl>
-
-              {/* User List */}
-              <Box
-                maxH="300px"
-                overflowY="auto"
-                border="1px"
-                borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
-                rounded="xl"
-                p={3}
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+              {/* Left: Project Assigns */}
+              <Card
+                rounded={radiusStyle}
+                boxShadow="md"
+                bgGradient="linear(to-br, secondary.800, secondary.500)"
+                color="white"
+                minH="50vh"
               >
-                {isLoadingUsers ? (
-                  <VStack py={4}>
-                    <Spinner size="md" color="secondary.500" />
-                    <Text fontSize="sm" color="gray.500">
-                      Loading users...
+                <CardBody>
+                  <VStack align="stretch" spacing={3}>
+                    <Text pb={1} fontWeight={600}>
+                      Project Assigns ({selectedUserIds.length})
                     </Text>
-                  </VStack>
-                ) : filteredUsers.length > 0 ? (
-                  <VStack spacing={2} align="stretch">
-                    {filteredUsers.map((user) => (
-                      <HStack
-                        key={user.id}
-                        p={3}
-                        rounded="lg"
-                        _hover={{
-                          bg: colorMode === "light" ? "gray.50" : "gray.700",
-                        }}
-                        cursor="pointer"
-                        onClick={() => handleUserSelect(user.id)}
-                      >
-                        <Checkbox
-                          isChecked={selectedUserIds.includes(user.id)}
-                          onChange={() => handleUserSelect(user.id)}
-                          colorScheme="secondary"
-                        />
-                        <Avatar size="sm" name={user.nama} />
-                        <VStack align="start" spacing={0} flex={1}>
-                          <Text fontWeight="medium" fontSize="sm">
-                            {user.nama}
-                          </Text>
-                          <Text fontSize="xs" color="gray.500">
-                            {user.email}
-                          </Text>
-                        </VStack>
-                      </HStack>
-                    ))}
-                  </VStack>
-                ) : (
-                  <Text
-                    textAlign="center"
-                    color="gray.500"
-                    fontSize="sm"
-                    py={4}
-                  >
-                    No users found
-                  </Text>
-                )}
-              </Box>
+                    <Box overflowY="auto" minH="50vh" maxH="60vh">
+                      {selectedUserIds.length === 0 ? (
+                        <Text pt={5} textAlign="center">
+                          No users assigned
+                        </Text>
+                      ) : (
+                        <VStack spacing={2}>
+                          {(() => {
+                            const selectedUsers = uniqueUsers.filter(u => selectedUserIds.includes(u?.id || ''));
+                            const grouped = selectedUsers.reduce((acc, member) => {
+                              const groupCode = member?.team?.organization?.group?.orgCode || "UNREGISTERED";
+                              const groupName = member?.team?.organization?.group?.orgName || "UNREGISTERED MEMBER GROUP";
+                              if (!acc[groupCode]) {
+                                acc[groupCode] = { groupName, members: [] };
+                              }
+                              acc[groupCode].members.push(member);
+                              return acc;
+                            }, {} as Record<string, { groupName: string; members: typeof selectedUsers }>);
 
-              {selectedUserIds.length > 0 && (
-                <Text fontSize="sm" color="secondary.500" fontWeight="medium">
-                  {selectedUserIds.length} user(s) selected
-                </Text>
-              )}
-            </VStack>
+                            return Object.entries(grouped).map(([groupCode, { groupName, members }]) => (
+                              <Box key={groupCode} w="full" mb={4}>
+                                <Text pb={1} fontWeight={600} fontSize="lg" color="white">
+                                  {groupName} ({members.length})
+                                </Text>
+                                <VStack spacing={2}>
+                                  {members.map((dt) => (
+                                    <HStack
+                                      key={dt?.id}
+                                      bg={colorMode === "light" ? "white" : "gray.800"}
+                                      w="full"
+                                      py={4}
+                                      px={5}
+                                      rounded={radiusStyle}
+                                      boxShadow="md"
+                                      spacing={5}
+                                    >
+                                      <Avatar name={dt?.nama} size="sm" />
+                                      <VStack align="start" spacing={0} flex={1}>
+                                        <Text
+                                          color={colorMode === "light" ? "gray.900" : "gray.100"}
+                                          fontWeight={600}
+                                          fontSize="sm"
+                                        >
+                                          {dt?.nama}
+                                        </Text>
+                                        <Text
+                                          fontWeight={500}
+                                          fontSize="xs"
+                                          color={colorMode === "light" ? "secondary.800" : "secondary.200"}
+                                        >
+                                          {dt?.team?.teamName || dt?.jabatan}
+                                        </Text>
+                                      </VStack>
+                                      <IconButton
+                                        aria-label="Remove user"
+                                        icon={<FiUserMinus />}
+                                        colorScheme="red"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleUserSelect(dt?.id || '')}
+                                      />
+                                    </HStack>
+                                  ))}
+                                </VStack>
+                              </Box>
+                            ));
+                          })()}
+                        </VStack>
+                      )}
+                    </Box>
+                  </VStack>
+                </CardBody>
+              </Card>
+
+              {/* Right: Assign New User */}
+              <VStack align="stretch" spacing={4}>
+                <Card rounded={radiusStyle} boxShadow="md">
+                  <CardBody>
+                    <VStack align="stretch" spacing={4}>
+                      <Text fontWeight={600} fontSize="lg">
+                        Assign New User
+                      </Text>
+                      
+                      <FormControl>
+                        <FormLabel fontSize="sm">Search Users (min 3 characters)</FormLabel>
+                        <Input
+                          value={searchUser}
+                          onChange={(e) => {
+                            setSearchUser(e.target.value);
+                            if (e.target.value.length >= 3) {
+                              loadAvailableUsers();
+                            } else {
+                              setAvailableUsers([]);
+                            }
+                          }}
+                          placeholder="Search by ID or Name"
+                        />
+                      </FormControl>
+
+                      <Box overflowY="auto" minH="50vh" maxH="60vh">
+                        {searchUser.length < 3 ? (
+                          <Text textAlign="center" color="gray.500" py={4} fontSize="sm">
+                            Type at least 3 characters to search
+                          </Text>
+                        ) : isLoadingUsers ? (
+                          <VStack py={4}>
+                            <Spinner size="md" color="secondary.500" />
+                            <Text fontSize="sm" color="gray.500">
+                              Loading users...
+                            </Text>
+                          </VStack>
+                        ) : filteredUsers.length > 0 ? (
+                          <VStack spacing={2}>
+                            {filteredUsers.map((dt) => {
+                              const isSelected = selectedUserIds.includes(dt?.id || '');
+                              return (
+                                <HStack
+                                  key={dt?.id}
+                                  bg={colorMode === "light" ? "gray.100" : "gray.700"}
+                                  w="full"
+                                  py={3}
+                                  px={4}
+                                  rounded={radiusStyle}
+                                  boxShadow="md"
+                                  spacing={4}
+                                >
+                                  <Avatar name={dt?.nama} size="sm" />
+                                  <VStack align="start" spacing={0} flex={1}>
+                                    <Text color="gray.900" fontWeight={600} fontSize="sm">
+                                      {dt?.nama}
+                                    </Text>
+                                    <Text fontWeight={500} fontSize="xs" color="gray.700">
+                                      {dt?.team?.teamName || dt?.jabatan}
+                                    </Text>
+                                  </VStack>
+                                  <Button
+                                    rounded={radiusStyle}
+                                    colorScheme="green"
+                                    size="sm"
+                                    isDisabled={isSelected}
+                                    onClick={() => handleUserSelect(dt?.id || '')}
+                                  >
+                                    <FiUserPlus />
+                                  </Button>
+                                </HStack>
+                              );
+                            })}
+                          </VStack>
+                        ) : (
+                          <Text textAlign="center" color="gray.500" py={4} fontSize="sm">
+                            No users found
+                          </Text>
+                        )}
+                      </Box>
+                    </VStack>
+                  </CardBody>
+                </Card>
+              </VStack>
+            </SimpleGrid>
           </ModalBody>
 
-          <ModalFooter
-            pt={4}
-            borderTop="1px"
-            borderColor={colorMode === "light" ? "gray.100" : "gray.700"}
-          >
-            <HStack spacing={3} w="full" justify="flex-end">
-              <Button
-                variant="outline"
-                colorScheme="gray"
-                rounded="xl"
-                px={6}
-                onClick={onAddModalClose}
-              >
-                Cancel
-              </Button>
-              <Button
-                colorScheme="secondary"
-                rounded="xl"
-                px={6}
-                onClick={confirmAddMembers}
-                isLoading={isAddingMembers}
-                loadingText="Adding..."
-                isDisabled={selectedUserIds.length === 0}
-              >
-                Add {selectedUserIds.length > 0 ? `${selectedUserIds.length} ` : ""}Member{selectedUserIds.length !== 1 ? "s" : ""}
-              </Button>
-            </HStack>
+          <ModalFooter>
+            <Button
+              colorScheme="gray"
+              mr={3}
+              onClick={onAddModalClose}
+            >
+              Cancel
+            </Button>
+            <Button
+              colorScheme="green"
+              onClick={confirmAddMembers}
+              isLoading={isAddingMembers}
+            >
+              Update Member{selectedUserIds.length !== 1 ? "s" : ""}
+            </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>

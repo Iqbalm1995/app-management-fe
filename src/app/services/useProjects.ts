@@ -377,6 +377,18 @@ export interface ProjectUpdatePICPayload {
   dataUserId: string[];
 }
 
+export interface ProjectMemberAssignmentPayload {
+  projectId: string;
+  assignUsers: string[];
+  unassignUsers: string[];
+}
+
+export interface ProjectMemberAssignmentResult {
+  assigned: number;
+  unassigned: number;
+  failed: string[];
+}
+
 export interface ProjectCountResponse {
   countAllProjects: number;
 }
@@ -668,6 +680,14 @@ interface useProjectsServices {
     payload: ProjectUpdatePICPayload,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
+  AssignUnassignMembers: (
+    payload: ProjectMemberAssignmentPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<ProjectMemberAssignmentResult | null> | null>;
+  GetProjectMembers: (
+    projectId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<ProjectUserAssignmentResponse[] | null> | null>;
   // APPS
   ListApps: (
     payload: PaggingListPayload,
@@ -1270,6 +1290,90 @@ const useProjects = (): useProjectsServices => {
         const errorResponse = handleAxiosError(err);
         setError(
           err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const AssignUnassignMembers = async (
+    payload: ProjectMemberAssignmentPayload,
+    token: string
+  ): Promise<ApiGenericResponse<ProjectMemberAssignmentResult | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/Projects/member/assignment";
+
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<ProjectMemberAssignmentResult | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const GetProjectMembers = async (
+    projectId: string,
+    token: string
+  ): Promise<ApiGenericResponse<ProjectUserAssignmentResponse[] | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Projects/${projectId}/members`;
+
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<ProjectUserAssignmentResponse[] | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred."
         );
         return errorResponse;
       } else {
@@ -3067,6 +3171,8 @@ const useProjects = (): useProjectsServices => {
     DeleteProjects,
     ListPIC,
     UpdatePIC,
+    AssignUnassignMembers,
+    GetProjectMembers,
     ListApps,
     GetDetailAppsById,
     GetDetailAppsByProjectId,
