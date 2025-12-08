@@ -377,6 +377,8 @@ export interface BacklogUpdatePayload {
   backlogImplementEnddate?: string | null;
   reffId?: string | null;
   posOrder: number;
+  version: string;
+  isLive: string;
 }
 
 export interface BacklogUpdateOrderPayload {
@@ -405,6 +407,8 @@ export function mapBacklogArrayToUpdatePayload(
     developmentStatus: data.developmentStatus,
     reffId: data.reffId,
     posOrder: data.posOrder,
+    version: data.version,
+    isLive: data.isLive,
   }));
 }
 

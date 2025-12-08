@@ -458,6 +458,8 @@ const FeatureBacklogsView = ({
       backlogImplementEnddate: values.backlogImplementEnddate || null,
       reffId: selectedBacklog.reffId,
       posOrder: selectedBacklog.posOrder,
+      version: selectedBacklog.version,
+      isLive: selectedBacklog.isLive,
     };
 
     const requestData = await UpdateBacklog(payload, tokenData);
@@ -649,30 +651,31 @@ const FeatureBacklogsView = ({
         accessorFn: (row) => row.id,
         id: "id",
         cell: (info) => (
-          <Flex w={"full"} justifyContent={"center"} as={Wrap}>
-            <Button
-              size={"xs"}
-              colorScheme={"blue"}
-              leftIcon={<FiEdit />}
-              onClick={() => handleEditBacklog(info.row.original)}
-            >
-              Edit
-            </Button>
-            <Button
-              size={"xs"}
-              colorScheme={"purple"}
-              leftIcon={<FiEye />}
-              onClick={() => handlePreviewBacklog(info.row.original)}
-            >
-              Preview
-            </Button>
-            <Link
-              href={`/kanban?projectId=${DataProject?.id}&backlogId=${info.row.original.id}&from=projects-procurements`}
-            >
-              <Button size={"xs"} colorScheme={"gray"} leftIcon={<BsKanban />}>
-                Go To Kanban
-              </Button>
-            </Link>
+          <Flex w={"full"} justifyContent={"center"}>
+            <Menu>
+              <MenuButton
+                as={IconButton}
+                icon={<FiMoreVertical />}
+                size={"xs"}
+                variant={"ghost"}
+                aria-label="Actions"
+              />
+              <MenuList>
+                <MenuItem icon={<FiEdit />} onClick={() => handleEditBacklog(info.row.original)}>
+                  Edit
+                </MenuItem>
+                <MenuItem icon={<FiEye />} onClick={() => handlePreviewBacklog(info.row.original)}>
+                  Preview
+                </MenuItem>
+                <MenuItem
+                  icon={<BsKanban />}
+                  as={Link}
+                  href={`/kanban?projectId=${DataProject?.id}&backlogId=${info.row.original.id}&from=projects-procurements`}
+                >
+                  Go To Kanban
+                </MenuItem>
+              </MenuList>
+            </Menu>
           </Flex>
         ),
         header: () => <Flex justifyContent={"start"}>Action</Flex>,
@@ -2836,19 +2839,21 @@ const WorkflowBacklogTable = ({
       envSide: selectedBacklog.envSide || null,
       maintenanceCategory: selectedBacklog.maintenanceCategory || null,
       maintenanceType: selectedBacklog.maintenanceType || null,
-      rppb: selectedBacklog.rppb || "",
-      licensing: selectedBacklog.licensing || "",
+      rppb: selectedBacklog.rppb,
+      licensing: selectedBacklog.licensing,
       backogRegistered: values.backogRegistered,
-      backlogStartdate: values.backlogStartdate,
-      backlogEnddate: values.backlogEnddate,
+      backlogStartdate: values.backlogStartdate || null,
+      backlogEnddate: values.backlogEnddate || null,
       urgency: values.urgency,
       impact: values.impact,
       priority: values.priority,
-      developmentStatus: selectedBacklog.developmentStatus || "",
+      developmentStatus: selectedBacklog.developmentStatus,
       backlogImplementStartdate: values.backlogImplementStartdate || null,
       backlogImplementEnddate: values.backlogImplementEnddate || null,
-      reffId: selectedBacklog.reffId || null,
-      posOrder: selectedBacklog.posOrder || 0,
+      reffId: selectedBacklog.reffId,
+      posOrder: selectedBacklog.posOrder,
+      version: selectedBacklog.version,
+      isLive: selectedBacklog.isLive,
     };
 
     const result = await UpdateBacklog(payload, tokenData);

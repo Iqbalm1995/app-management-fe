@@ -426,6 +426,8 @@ const FeatureBacklogsView = ({
       backlogImplementEnddate: values.backlogImplementEnddate || null,
       reffId: selectedBacklog.reffId,
       posOrder: selectedBacklog.posOrder,
+      version: selectedBacklog.version,
+      isLive: selectedBacklog.isLive,
     };
 
     const requestData = await UpdateBacklog(payload, tokenData);
@@ -1528,19 +1530,21 @@ const WorkflowBacklogTable = ({
       envSide: selectedBacklog.envSide || null,
       maintenanceCategory: selectedBacklog.maintenanceCategory || null,
       maintenanceType: selectedBacklog.maintenanceType || null,
-      rppb: selectedBacklog.rppb || "",
-      licensing: selectedBacklog.licensing || "",
+      rppb: selectedBacklog.rppb,
+      licensing: selectedBacklog.licensing,
       backogRegistered: values.backogRegistered,
-      backlogStartdate: values.backlogStartdate,
-      backlogEnddate: values.backlogEnddate,
+      backlogStartdate: values.backlogStartdate || null,
+      backlogEnddate: values.backlogEnddate || null,
       urgency: values.urgency,
       impact: values.impact,
       priority: values.priority,
-      developmentStatus: selectedBacklog.developmentStatus || "",
+      developmentStatus: selectedBacklog.developmentStatus,
       backlogImplementStartdate: values.backlogImplementStartdate || null,
       backlogImplementEnddate: values.backlogImplementEnddate || null,
-      reffId: selectedBacklog.reffId || null,
-      posOrder: selectedBacklog.posOrder || 0,
+      reffId: selectedBacklog.reffId,
+      posOrder: selectedBacklog.posOrder,
+      version: selectedBacklog.version,
+      isLive: selectedBacklog.isLive,
     };
 
     const result = await UpdateBacklog(payload, tokenData);
