@@ -41,7 +41,7 @@ import {
   AlertDialogOverlay,
 } from "@chakra-ui/react";
 import { radiusStyle, RES_CODE_OK, RES_GENERIC_ERROR_MSG, ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC } from "@/app/constants/applicationConstants";
-import { FiUsers, FiUserPlus, FiSettings, FiSearch, FiUserMinus } from "react-icons/fi";
+import { FiUsers, FiUserPlus, FiRefreshCw, FiSearch, FiUserMinus } from "react-icons/fi";
 import { useState, useEffect, useRef } from "react";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
@@ -167,7 +167,7 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
         {
           search: searchUser,
           limit: 50,
-          page: 1,
+          page: 0,
           filterWhere: [],
           fieldOrder: ["nama"],
           orderDir: "asc",
@@ -228,7 +228,6 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
         });
         onAddModalClose();
         await loadProjectMembers();
-        window.location.reload();
       } else {
         showToast({
           description: response?.message || "Failed to update team members",
@@ -301,11 +300,13 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
             <Button
               size="sm"
               variant="outline"
-              leftIcon={<FiSettings />}
+              leftIcon={<FiRefreshCw />}
               colorScheme="gray"
               rounded="full"
+              onClick={loadProjectMembers}
+              isLoading={isLoadingMembers}
             >
-              Settings
+              Refresh
             </Button>
           </HStack>
         </HStack>
