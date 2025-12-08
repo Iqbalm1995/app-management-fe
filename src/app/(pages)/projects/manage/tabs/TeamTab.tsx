@@ -316,86 +316,131 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
             <Text color="gray.500">Loading team members...</Text>
           </VStack>
         ) : projectMembers && projectMembers.length > 0 ? (
-          <VStack spacing={6} align="stretch">
+          <VStack spacing={8} align="stretch">
             {(() => {
-              const grouped = projectMembers.reduce((acc, assignment) => {
-                const member = assignment.userData;
-                const groupCode = member?.team?.organization?.group?.orgCode || "UNREGISTERED";
-                const groupName = member?.team?.organization?.group?.orgName || "UNREGISTERED MEMBER GROUP";
-                if (!acc[groupCode]) {
-                  acc[groupCode] = { groupName, members: [] };
+              // First level: Group by status
+              const statusGroups = projectMembers.reduce((acc, assignment) => {
+                const status = assignment.userAssignStatus || "ACTIVE";
+                if (!acc[status]) {
+                  acc[status] = [];
                 }
-                acc[groupCode].members.push(assignment);
+                acc[status].push(assignment);
                 return acc;
-              }, {} as Record<string, { groupName: string; members: typeof projectMembers }>);
+              }, {} as Record<string, typeof projectMembers>);
 
-              return Object.entries(grouped).map(([groupCode, { groupName, members }]) => (
-                <Box key={groupCode}>
-                  <HStack mb={3} spacing={3}>
-                    <Text
-                      fontSize="lg"
-                      fontWeight="bold"
+              // Sort to show ACTIVE first
+              const sortedStatuses = Object.entries(statusGroups).sort(([a], [b]) => {
+                if (a === "ACTIVE") return -1;
+                if (b === "ACTIVE") return 1;
+                return 0;
+              });
+
+              return sortedStatuses.map(([status, statusMembers]) => (
+                <Box key={status}>
+                  {/* Status Header */}
+                  <HStack mb={4} spacing={3}>
+                    <Heading
+                      size="md"
                       color={colorMode === "light" ? "gray.800" : "white"}
                     >
-                      {groupName}
-                    </Text>
-                    <Badge colorScheme="blue" fontSize="sm" px={2} py={1} rounded="full">
-                      {members.length}
+                      {status} MEMBERS
+                    </Heading>
+                    <Badge 
+                      colorScheme={status === "ACTIVE" ? "green" : "red"} 
+                      fontSize="md" 
+                      px={3} 
+                      py={1} 
+                      rounded="full"
+                    >
+                      {statusMembers.length}
                     </Badge>
                   </HStack>
-                  <VStack spacing={3} align="stretch">
-                    {members.map((assignment, index) => {
-                      const member = assignment.userData;
-                      return (
-                      <Card
-                        key={index}
-                        shadow="md"
-                        rounded={radiusStyle}
-                        border="1px"
-                        borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-                        bg={colorMode === "light" ? "white" : "gray.800"}
-                        _hover={{
-                          shadow: "lg",
-                          borderColor: "blue.400",
-                        }}
-                        transition="all 0.2s"
-                      >
-                        <CardBody p={4}>
-                          <HStack spacing={4}>
-                            <Avatar
-                              size="md"
-                              name={member.nama || "Team Member"}
-                              bg="blue.500"
-                            />
-                            <VStack align="start" spacing={1} flex={1}>
-                              <Text fontWeight="bold" fontSize="md" color={colorMode === "light" ? "gray.800" : "white"}>
-                                {member.nama || "Team Member"}
-                              </Text>
-                              <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"}>
-                                {member.team?.teamName || member.jabatan || "No team"}
-                              </Text>
-                              <Text fontSize="xs" color={colorMode === "light" ? "gray.500" : "gray.500"}>
-                                {member.email || "No email"}
-                              </Text>
-                            </VStack>
-                            <VStack align="end" spacing={1}>
-                              <Text fontSize="xs" color="gray.500">
-                                User Assign Status
-                              </Text>
-                              <Badge 
-                                colorScheme={assignment.userAssignStatus === "ACTIVE" ? "green" : "red"} 
-                                px={3} 
-                                py={1} 
-                                rounded="full"
-                              >
-                                {assignment.userAssignStatus}
-                              </Badge>
-                            </VStack>
+
+                  {/* Second level: Group by organization */}
+                  <VStack spacing={6} align="stretch" pl={4}>
+                    {(() => {
+                      const orgGroups = statusMembers.reduce((acc, assignment) => {
+                        const member = assignment.userData;
+                        const groupCode = member?.team?.organization?.group?.orgCode || "UNREGISTERED";
+                        const groupName = member?.team?.organization?.group?.orgName || "UNREGISTERED MEMBER GROUP";
+                        if (!acc[groupCode]) {
+                          acc[groupCode] = { groupName, members: [] };
+                        }
+                        acc[groupCode].members.push(assignment);
+                        return acc;
+                      }, {} as Record<string, { groupName: string; members: typeof statusMembers }>);
+
+                      return Object.entries(orgGroups).map(([groupCode, { groupName, members }]) => (
+                        <Box key={groupCode}>
+                          <HStack mb={3} spacing={3}>
+                            <Text
+                              fontSize="lg"
+                              fontWeight="bold"
+                              color={colorMode === "light" ? "gray.700" : "gray.300"}
+                            >
+                              {groupName}
+                            </Text>
+                            <Badge colorScheme="blue" fontSize="sm" px={2} py={1} rounded="full">
+                              {members.length}
+                            </Badge>
                           </HStack>
-                        </CardBody>
-                      </Card>
-                      );
-                    })}
+                          <VStack spacing={3} align="stretch">
+                            {members.map((assignment, index) => {
+                              const member = assignment.userData;
+                              return (
+                                <Card
+                                  key={index}
+                                  shadow="md"
+                                  rounded={radiusStyle}
+                                  border="1px"
+                                  borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                                  bg={colorMode === "light" ? "white" : "gray.800"}
+                                  _hover={{
+                                    shadow: "lg",
+                                    borderColor: "blue.400",
+                                  }}
+                                  transition="all 0.2s"
+                                >
+                                  <CardBody p={4}>
+                                    <HStack spacing={4}>
+                                      <Avatar
+                                        size="md"
+                                        name={member.nama || "Team Member"}
+                                        bg="blue.500"
+                                      />
+                                      <VStack align="start" spacing={1} flex={1}>
+                                        <Text fontWeight="bold" fontSize="md" color={colorMode === "light" ? "gray.800" : "white"}>
+                                          {member.nama || "Team Member"}
+                                        </Text>
+                                        <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"}>
+                                          {member.team?.teamName || member.jabatan || "No team"}
+                                        </Text>
+                                        <Text fontSize="xs" color={colorMode === "light" ? "gray.500" : "gray.500"}>
+                                          {member.email || "No email"}
+                                        </Text>
+                                      </VStack>
+                                      <VStack align="end" spacing={1}>
+                                        <Text fontSize="xs" color="gray.500">
+                                          User Assign Status
+                                        </Text>
+                                        <Badge 
+                                          colorScheme={assignment.userAssignStatus === "ACTIVE" ? "green" : "red"} 
+                                          px={3} 
+                                          py={1} 
+                                          rounded="full"
+                                        >
+                                          {assignment.userAssignStatus}
+                                        </Badge>
+                                      </VStack>
+                                    </HStack>
+                                  </CardBody>
+                                </Card>
+                              );
+                            })}
+                          </VStack>
+                        </Box>
+                      ));
+                    })()}
                   </VStack>
                 </Box>
               ));
