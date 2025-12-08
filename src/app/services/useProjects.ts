@@ -684,6 +684,10 @@ interface useProjectsServices {
     payload: ProjectMemberAssignmentPayload,
     token: string
   ) => Promise<ApiGenericResponse<ProjectMemberAssignmentResult | null> | null>;
+  RemoveProjectMember: (
+    payload: { projectId: string; userId: string },
+    token: string
+  ) => Promise<ApiGenericResponse<object | null> | null>;
   GetProjectMembers: (
     projectId: string,
     token: string
@@ -1362,6 +1366,48 @@ const useProjects = (): useProjectsServices => {
       const response = await axiosInstance.get<
         ApiGenericResponse<ProjectUserAssignmentResponse[] | null>
       >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const RemoveProjectMember = async (
+    payload: { projectId: string; userId: string },
+    token: string
+  ): Promise<ApiGenericResponse<object | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/Projects/member/remove";
+
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<object | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -3172,6 +3218,7 @@ const useProjects = (): useProjectsServices => {
     ListPIC,
     UpdatePIC,
     AssignUnassignMembers,
+    RemoveProjectMember,
     GetProjectMembers,
     ListApps,
     GetDetailAppsById,

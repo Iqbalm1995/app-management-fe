@@ -39,13 +39,18 @@ import {
   AlertDialogHeader,
   AlertDialogContent,
   AlertDialogOverlay,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
 } from "@chakra-ui/react";
 import { radiusStyle, RES_CODE_OK, RES_GENERIC_ERROR_MSG, ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC } from "@/app/constants/applicationConstants";
-import { FiUsers, FiUserPlus, FiRefreshCw, FiSearch, FiUserMinus } from "react-icons/fi";
+import { FiUsers, FiUserPlus, FiRefreshCw, FiSearch, FiUserMinus, FiMoreVertical } from "react-icons/fi";
 import { useState, useEffect, useRef } from "react";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
+import { ConfirmationDialog } from "@/app/components/confirmationDialog";
 
 interface TeamTabProps {
   DataProject: ProjectDataResponse | null;
@@ -54,7 +59,7 @@ interface TeamTabProps {
 const TeamTab = ({ DataProject }: TeamTabProps) => {
   const { colorMode } = useColorMode();
   const showToast = useToastHelper();
-  const { AssignUnassignMembers, GetProjectMembers } = useProjects();
+  const { AssignUnassignMembers, GetProjectMembers, RemoveProjectMember } = useProjects();
   const { List } = useUsers();
 
   // Auth setup
@@ -84,6 +89,13 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
   const [isAddingMembers, setIsAddingMembers] = useState(false);
+  const [togglingUserId, setTogglingUserId] = useState<string | null>(null);
+  
+  // Confirmation dialog states
+  const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<(() => void) | null>(null);
+  const [confirmMessage, setConfirmMessage] = useState("");
+  const [confirmCaption, setConfirmCaption] = useState("");
   
   // Remove member state
   const [userToRemove, setUserToRemove] = useState<{ id: string; name: string } | null>(null);
@@ -252,6 +264,99 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
         ? prev.filter(id => id !== userId)
         : [...prev, userId]
     );
+  };
+
+  // Toggle user status (ACTIVE <-> INACTIVE)
+  const toggleUserStatus = async (userGuid: string, userName: string, currentStatus: string) => {
+    if (!DataProject || !tokenData) return;
+
+    setTogglingUserId(userGuid);
+    try {
+      const response = await AssignUnassignMembers(
+        {
+          projectId: DataProject.id,
+          assignUsers: currentStatus === "INACTIVE" ? [userGuid] : [],
+          unassignUsers: currentStatus === "ACTIVE" ? [userGuid] : []
+        },
+        tokenData
+      );
+
+      if (response?.statusCode === RES_CODE_OK) {
+        showToast({
+          description: `User status changed to ${currentStatus === "ACTIVE" ? "INACTIVE" : "ACTIVE"}`,
+          statusToast: "success",
+        });
+        await loadProjectMembers();
+      } else {
+        showToast({
+          description: response?.message || "Failed to update status",
+          statusToast: "error",
+        });
+      }
+    } catch (error) {
+      console.error("Error toggling status:", error);
+      showToast({
+        description: "Failed to update status",
+        statusToast: "error",
+      });
+    } finally {
+      setTogglingUserId(null);
+    }
+  };
+
+  // Remove user (soft delete)
+  const removeUser = async (userGuid: string, userName: string) => {
+    if (!DataProject || !tokenData) return;
+
+    setTogglingUserId(userGuid);
+    try {
+      const response = await RemoveProjectMember(
+        {
+          projectId: DataProject.id,
+          userId: userGuid
+        },
+        tokenData
+      );
+
+      if (response?.statusCode === RES_CODE_OK) {
+        showToast({
+          description: "User removed from project",
+          statusToast: "success",
+        });
+        await loadProjectMembers();
+      } else {
+        showToast({
+          description: response?.message || "Failed to remove user",
+          statusToast: "error",
+        });
+      }
+    } catch (error) {
+      console.error("Error removing user:", error);
+      showToast({
+        description: "Failed to remove user",
+        statusToast: "error",
+      });
+    } finally {
+      setTogglingUserId(null);
+    }
+  };
+
+  // Show confirmation dialog
+  const showConfirmation = (caption: string, message: string, action: () => void) => {
+    setConfirmCaption(caption);
+    setConfirmMessage(message);
+    setConfirmAction(() => action);
+    setOpenConfirmDialog(true);
+  };
+
+  const handleDialogTrigger = () => {
+    setOpenConfirmDialog(!openConfirmDialog);
+  };
+
+  const handleConfirmedAction = () => {
+    if (confirmAction) {
+      confirmAction();
+    }
   };
 
   // Filter users based on search - combine available and existing members
@@ -423,14 +528,62 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
                                         <Text fontSize="xs" color="gray.500">
                                           User Assign Status
                                         </Text>
-                                        <Badge 
-                                          colorScheme={assignment.userAssignStatus === "ACTIVE" ? "green" : "red"} 
-                                          px={3} 
-                                          py={1} 
-                                          rounded="full"
-                                        >
-                                          {assignment.userAssignStatus}
-                                        </Badge>
+                                        <HStack spacing={2}>
+                                          <Badge 
+                                            colorScheme={assignment.userAssignStatus === "ACTIVE" ? "green" : "red"} 
+                                            px={3} 
+                                            py={1} 
+                                            rounded="full"
+                                          >
+                                            {assignment.userAssignStatus}
+                                          </Badge>
+                                          <Menu>
+                                            <MenuButton
+                                              as={IconButton}
+                                              icon={<FiMoreVertical />}
+                                              size="xs"
+                                              variant="ghost"
+                                              isLoading={togglingUserId === member.id}
+                                            />
+                                            <MenuList>
+                                              {assignment.userAssignStatus === "ACTIVE" ? (
+                                                <MenuItem
+                                                  onClick={() => showConfirmation(
+                                                    "Deactivate User",
+                                                    `Are you sure you want to deactivate "${member.nama}" from this project?`,
+                                                    () => toggleUserStatus(member.id, member.nama, assignment.userAssignStatus)
+                                                  )}
+                                                  color="orange.500"
+                                                >
+                                                  Deactivate
+                                                </MenuItem>
+                                              ) : (
+                                                <>
+                                                  <MenuItem
+                                                    onClick={() => showConfirmation(
+                                                      "Activate User",
+                                                      `Are you sure you want to activate "${member.nama}" for this project?`,
+                                                      () => toggleUserStatus(member.id, member.nama, assignment.userAssignStatus)
+                                                    )}
+                                                    color="green.500"
+                                                  >
+                                                    Activate
+                                                  </MenuItem>
+                                                  <MenuItem
+                                                    onClick={() => showConfirmation(
+                                                      "Remove User",
+                                                      `Are you sure you want to permanently remove "${member.nama}" from this project? This action cannot be undone.`,
+                                                      () => removeUser(member.id, member.nama)
+                                                    )}
+                                                    color="red.500"
+                                                  >
+                                                    Remove
+                                                  </MenuItem>
+                                                </>
+                                              )}
+                                            </MenuList>
+                                          </Menu>
+                                        </HStack>
                                       </VStack>
                                     </HStack>
                                   </CardBody>
@@ -701,6 +854,15 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpenTrigger={openConfirmDialog}
+        action={handleConfirmedAction}
+        trigger={handleDialogTrigger}
+        questionMsg={confirmMessage}
+        captionMsg={confirmCaption}
+      />
     </TabPanel>
   );
 };
