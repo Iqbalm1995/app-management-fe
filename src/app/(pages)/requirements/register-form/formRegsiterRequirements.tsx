@@ -612,7 +612,7 @@ function RegisterRequirementFormPage({
 
       setActionLoading(false);
       RefreshAction();
-      redirect(`/requirements/${type_req_param.toLocaleLowerCase()}/`);
+      redirect(`/requirements/brd-rfc`);
       return;
     }
   };
@@ -668,7 +668,7 @@ function RegisterRequirementFormPage({
             statusToast: "warning",
           });
           const reqType = reqData.requirementType?.toLowerCase() || "brd";
-          router.push(`/requirements/${reqType}`);
+          router.push(`/requirements/brd-rfc`);
           return;
         }
 
@@ -1264,7 +1264,7 @@ function RegisterRequirementFormPage({
 
     setActionLoading(false);
     RefreshAction();
-    redirect(`/requirements/${type_req_param.toLocaleLowerCase()}/`);
+    redirect(`/requirements/brd-rfc`);
   };
 
   const formik = useFormik<RequirementsInsertPayload>({
@@ -2026,7 +2026,7 @@ function RegisterRequirementFormPage({
               justifyContent={"start"}
             >
               <Link
-                href={`/requirements/${type_req_param.toLocaleLowerCase()}/`}
+                href="/requirements/brd-rfc"
               >
                 <Button size={"lg"} leftIcon={<FiArrowLeft />}>
                   Back

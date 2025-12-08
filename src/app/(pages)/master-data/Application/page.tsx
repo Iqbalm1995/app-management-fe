@@ -83,6 +83,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { FiFilter, FiGrid, FiList, FiPlusSquare, FiRefreshCcw, FiSearch, FiX, FiSettings, FiBarChart, FiZap, FiActivity, FiTarget, FiBriefcase, FiUsers, FiCode } from "react-icons/fi";
 import { HiOutlineDesktopComputer } from "react-icons/hi";
+import { Select as ChakraSelect } from "chakra-react-select";
 
 // Import table components
 import {
@@ -137,7 +138,7 @@ function MasterDataAplikasiPage() {
   const [globalFilter, setGlobalFilter] = useState<string>("");
   const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
     pageIndex: 0,
-    pageSize: 9,
+    pageSize: 5,
   });
 
   const [ParamFilter, setParamFilter] = useState<ListSearchByParamProps[]>([]);
@@ -196,7 +197,7 @@ function MasterDataAplikasiPage() {
         List(PayloadTotal as any, tokenData),
         List(PayloadActive as any, tokenData),
       ]);
-      
+
       if (totalResponse?.statusCode === RES_CODE_OK && activeResponse?.statusCode === RES_CODE_OK) {
         setStatsData({
           total: totalResponse.countTotal || 0,
@@ -217,9 +218,9 @@ function MasterDataAplikasiPage() {
 
     try {
       setIsLoadingProcess(true);
-      
+
       console.log("Making API call with token:", tokenData.substring(0, 20) + "...");
-      
+
       const PayloadList: PaggingListPayloadCustom = {
         search: globalFilter,
         limit: pageSize,
@@ -230,9 +231,9 @@ function MasterDataAplikasiPage() {
       };
 
       const requestData = await List(PayloadList as any, tokenData);
-      
+
       console.log("API Response:", requestData);
-      
+
       const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
 
       if (isErrorResponse || !requestData) {
@@ -255,7 +256,7 @@ function MasterDataAplikasiPage() {
 
       const data = requestData.data as ApplicationMasterResponse[];
       setDataAplikasi(data);
-      
+
       // Use API pagination data
       const totalData = requestData.countTotal || 0;
       const totalPages = totalData > 0 ? Math.ceil(totalData / pageSize) : 0;
@@ -284,7 +285,7 @@ function MasterDataAplikasiPage() {
 
     try {
       setActionLoading(true);
-      
+
       const payload = {
 
         appName: formData.appName,
@@ -301,7 +302,7 @@ function MasterDataAplikasiPage() {
 
       // Simulate API call for now
       const requestData = await InsertData(payload, tokenData);
-      
+
       if (!requestData || requestData.statusCode !== RES_CODE_OK) {
         showToast({
           description: requestData?.message || RES_GENERIC_ERROR_MSG,
@@ -309,7 +310,7 @@ function MasterDataAplikasiPage() {
         });
         return;
       }
-      
+
       showToast({
         description: "Application added successfully",
         statusToast: "success",
@@ -411,7 +412,7 @@ function MasterDataAplikasiPage() {
             }
           }}
         />
-        
+
         <CardBody p={6}>
           <Flex justify="space-between" align="center" wrap="wrap" gap={6}>
             {/* Left Content with Gradient */}
@@ -439,8 +440,8 @@ function MasterDataAplikasiPage() {
                 <Icon as={HiOutlineDesktopComputer} boxSize={6} color="white" />
               </Box>
               <VStack align="start" spacing={1}>
-                <Heading 
-                  size="lg" 
+                <Heading
+                  size="lg"
                   bgGradient="linear(to-r, secondary.600, blue.600)"
                   bgClip="text"
                   fontWeight="bold"
@@ -461,18 +462,18 @@ function MasterDataAplikasiPage() {
                 </Text>
                 <Text fontSize="xs" color="gray.500" fontWeight="medium">Total</Text>
               </VStack>
-              
+
               <VStack spacing={1} align="center">
                 <Text fontSize="2xl" fontWeight="bold" color="green.600">
                   {StatsData.active}
                 </Text>
                 <Text fontSize="xs" color="gray.500" fontWeight="medium">Active</Text>
               </VStack>
-              
-              <VStack spacing={1} align="center">
+
+              {/* <VStack spacing={1} align="center">
                 <Text fontSize="2xl" fontWeight="bold" color="orange.600">98%</Text>
                 <Text fontSize="xs" color="gray.500" fontWeight="medium">Health</Text>
-              </VStack>
+              </VStack> */}
             </HStack>
 
             {/* Right - Action Buttons */}
@@ -580,23 +581,45 @@ function MasterDataAplikasiPage() {
                 </InputGroup>
 
                 {/* Category Filter */}
-                <Select
-                  value={selectedKategori}
-                  maxW="180px"
-                  bg={colorMode === "light" ? "gray.50" : "gray.700"}
-                  border="1px"
-                  borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
-                  rounded="xl"
-                  _focus={{
-                    borderColor: "secondary.500",
-                    bg: colorMode === "light" ? "white" : "gray.800",
-                  }}
-                >
-                  <option value="all">All Categories</option>
-                  <option value="enterprise">Enterprise</option>
-                  <option value="web">Web Application</option>
-                  <option value="mobile">Mobile Application</option>
-                </Select>
+                <Box minW="180px" maxW="240px">
+                  <ChakraSelect
+                    value={
+                      selectedKategori === "all"
+                        ? { label: "All Categories", value: "all" }
+                        : selectedKategori === "enterprise"
+                          ? { label: "Enterprise", value: "enterprise" }
+                          : selectedKategori === "web"
+                            ? { label: "Web Application", value: "web" }
+                            : { label: "Mobile Application", value: "mobile" }
+                    }
+                    onChange={(option) => {
+                      setSelectedKategori(option?.value || "all");
+                    }}
+                    options={[
+                      { label: "All Categories", value: "all" },
+                      { label: "Enterprise", value: "enterprise" },
+                      { label: "Web Application", value: "web" },
+                      { label: "Mobile Application", value: "mobile" },
+                    ]}
+                    placeholder="Select Category"
+                    menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
+                    chakraStyles={{
+                      container: (provided) => ({
+                        ...provided,
+                        width: "100%",
+                      }),
+                      control: (provided) => ({
+                        ...provided,
+                        bg: "white",
+                      }),
+                      menu: (provided) => ({
+                        ...provided,
+                        bg: "white",
+                        zIndex: 9999,
+                      }),
+                    }}
+                  />
+                </Box>
 
                 {/* View Toggle */}
                 <HStack
@@ -636,344 +659,190 @@ function MasterDataAplikasiPage() {
             {/* Applications Content */}
             <Box w="full" minH="400px">
               {IsLoadingProcess ? (
-                    <VStack
-                      spacing={{ base: 4, md: 6 }}
-                      py={{ base: 12, md: 16 }}
-                    >
-                      <LoadingMiniSignature />
-                      <VStack spacing={2}>
-                        <Text
-                          color="gray.500"
-                          fontSize={{ base: "md", md: "lg" }}
-                          fontWeight="medium"
-                          textAlign="center"
-                        >
-                          Loading Applications
-                        </Text>
-                        <Text
-                          color="gray.400"
-                          fontSize={{ base: "xs", md: "sm" }}
-                          textAlign="center"
-                          px={{ base: 4, md: 0 }}
-                        >
-                          Please wait while we fetch your applications...
-                        </Text>
-                      </VStack>
-                    </VStack>
-                  ) : DataAplikasi.length === 0 ? (
-                    <VStack
-                      spacing={{ base: 6, md: 8 }}
-                      py={{ base: 16, md: 20 }}
+                <VStack
+                  spacing={{ base: 4, md: 6 }}
+                  py={{ base: 12, md: 16 }}
+                >
+                  <LoadingMiniSignature />
+                  <VStack spacing={2}>
+                    <Text
+                      color="gray.500"
+                      fontSize={{ base: "md", md: "lg" }}
+                      fontWeight="medium"
                       textAlign="center"
                     >
-                      <Box
-                        w={{ base: 16, md: 24 }}
-                        h={{ base: 16, md: 24 }}
-                        bg={colorMode === "light" ? "gray.100" : "gray.700"}
-                        rounded="full"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                        fontSize={{ base: "2xl", md: "4xl" }}
+                      Loading Applications
+                    </Text>
+                    <Text
+                      color="gray.400"
+                      fontSize={{ base: "xs", md: "sm" }}
+                      textAlign="center"
+                      px={{ base: 4, md: 0 }}
+                    >
+                      Please wait while we fetch your applications...
+                    </Text>
+                  </VStack>
+                </VStack>
+              ) : DataAplikasi.length === 0 ? (
+                <VStack
+                  spacing={{ base: 6, md: 8 }}
+                  py={{ base: 16, md: 20 }}
+                  textAlign="center"
+                >
+                  <Box
+                    w={{ base: 16, md: 24 }}
+                    h={{ base: 16, md: 24 }}
+                    bg={colorMode === "light" ? "gray.100" : "gray.700"}
+                    rounded="full"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                    fontSize={{ base: "2xl", md: "4xl" }}
+                  >
+                    <Icon
+                      as={HiOutlineDesktopComputer}
+                      boxSize={{ base: 8, md: 12 }}
+                      color={
+                        colorMode === "light" ? "gray.400" : "gray.500"
+                      }
+                    />
+                  </Box>
+                  <VStack spacing={{ base: 2, md: 3 }}>
+                    <Heading
+                      size={{ base: "md", md: "lg" }}
+                      color={
+                        colorMode === "light" ? "gray.600" : "gray.400"
+                      }
+                      textAlign="center"
+                    >
+                      {globalFilter
+                        ? "No Applications Found"
+                        : "No Applications"}
+                    </Heading>
+                    <Text
+                      color="gray.500"
+                      maxW={{ base: "300px", md: "500px" }}
+                      lineHeight="1.6"
+                      fontSize={{ base: "sm", md: "md" }}
+                      px={{ base: 4, md: 0 }}
+                      textAlign="center"
+                    >
+                      {globalFilter
+                        ? `No applications match your search "${globalFilter}". Try adjusting your search terms.`
+                        : "No applications have been configured yet. Applications will appear here once they are added to the system."}
+                    </Text>
+                  </VStack>
+                  {globalFilter && (
+                    <Button
+                      variant="outline"
+                      colorScheme="gray"
+                      onClick={() => setGlobalFilter("")}
+                      rounded="lg"
+                      size={{ base: "sm", md: "md" }}
+                      fontSize={{ base: "sm", md: "md" }}
+                    >
+                      Clear Search
+                    </Button>
+                  )}
+                </VStack>
+              ) : (
+                <>
+                  {/* Grid View */}
+                  <Box display={viewMode === "grid" ? "block" : "none"}>
+                    <Box
+                      maxH="calc(100vh - 400px)"
+                      overflowY="auto"
+                      pr={2}
+                      css={{
+                        '&::-webkit-scrollbar': { width: '8px' },
+                        '&::-webkit-scrollbar-track': { background: colorMode === 'light' ? '#f1f1f1' : '#2D3748', borderRadius: '10px' },
+                        '&::-webkit-scrollbar-thumb': { background: colorMode === 'light' ? '#CBD5E0' : '#4A5568', borderRadius: '10px' },
+                        '&::-webkit-scrollbar-thumb:hover': { background: colorMode === 'light' ? '#A0AEC0' : '#718096' },
+                      }}
+                    >
+                      <Grid
+                        templateColumns={{
+                          base: "1fr",
+                          md: "repeat(2, 1fr)",
+                          lg: "repeat(3, 1fr)",
+                        }}
+                        gap={6}
+                        w="full"
                       >
-                        <Icon
-                          as={HiOutlineDesktopComputer}
-                          boxSize={{ base: 8, md: 12 }}
-                          color={
-                            colorMode === "light" ? "gray.400" : "gray.500"
-                          }
-                        />
-                      </Box>
-                      <VStack spacing={{ base: 2, md: 3 }}>
-                        <Heading
-                          size={{ base: "md", md: "lg" }}
-                          color={
-                            colorMode === "light" ? "gray.600" : "gray.400"
-                          }
-                          textAlign="center"
-                        >
-                          {globalFilter
-                            ? "No Applications Found"
-                            : "No Applications"}
-                        </Heading>
-                        <Text
-                          color="gray.500"
-                          maxW={{ base: "300px", md: "500px" }}
-                          lineHeight="1.6"
-                          fontSize={{ base: "sm", md: "md" }}
-                          px={{ base: 4, md: 0 }}
-                          textAlign="center"
-                        >
-                          {globalFilter
-                            ? `No applications match your search "${globalFilter}". Try adjusting your search terms.`
-                            : "No applications have been configured yet. Applications will appear here once they are added to the system."}
-                        </Text>
-                      </VStack>
-                      {globalFilter && (
-                        <Button
-                          variant="outline"
-                          colorScheme="gray"
-                          onClick={() => setGlobalFilter("")}
-                          rounded="lg"
-                          size={{ base: "sm", md: "md" }}
-                          fontSize={{ base: "sm", md: "md" }}
-                        >
-                          Clear Search
-                        </Button>
-                      )}
-                    </VStack>
-                  ) : (
-                    <>
-                      {/* Grid View */}
-                      <Box display={viewMode === "grid" ? "block" : "none"}>
-                        <Grid
-                          templateColumns={{
-                            base: "1fr",
-                            md: "repeat(2, 1fr)",
-                            lg: "repeat(3, 1fr)",
-                          }}
-                          gap={6}
-                          w="full"
-                        >
-                          {DataAplikasi.map((app, idx) => {
+                        {DataAplikasi.map((app, idx) => {
 
-                            return (
-                              <Card
-                                key={app.id}
-                                w="full"
-                                h="240px"
-                                minH="240px"
-                                maxH="240px"
-                                bg={
-                                  colorMode === "light" ? "white" : "gray.800"
-                                }
-                                border="1px"
-                                borderColor={
+                          return (
+                            <Card
+                              key={app.id}
+                              w="full"
+                              h="240px"
+                              minH="240px"
+                              maxH="240px"
+                              bg={
+                                colorMode === "light" ? "white" : "gray.800"
+                              }
+                              border="1px"
+                              borderColor={
+                                colorMode === "light"
+                                  ? "gray.200"
+                                  : "gray.700"
+                              }
+                              rounded={radiusStyle}
+                              shadow="lg"
+                              transition="all 0.3s ease"
+                              _hover={{
+                                cursor: "pointer",
+                                shadow: "2xl",
+                                transform: "translateY(-4px)",
+                                borderColor:
                                   colorMode === "light"
-                                    ? "gray.200"
-                                    : "gray.700"
-                                }
-                                rounded={radiusStyle}
-                                shadow="lg"
-                                transition="all 0.3s ease"
-                                _hover={{
-                                  cursor: "pointer",
-                                  shadow: "2xl",
-                                  transform: "translateY(-4px)",
-                                  borderColor:
-                                    colorMode === "light"
-                                      ? "secondary.300"
-                                      : "secondary.600",
-                                }}
-                                overflow="hidden"
-                                position="relative"
+                                    ? "secondary.300"
+                                    : "secondary.600",
+                              }}
+                              overflow="hidden"
+                              position="relative"
+                              display="flex"
+                              flexDirection="column"
+                            >
+                              {/* Card Body */}
+                              <CardBody
+                                p={2}
+                                flex="1"
                                 display="flex"
                                 flexDirection="column"
                               >
-                                {/* Card Body */}
-                                <CardBody
-                                  p={2}
-                                  flex="1"
-                                  display="flex"
-                                  flexDirection="column"
-                                >
-                                  <VStack spacing={4} align="stretch" flex="1">
-                                    {/* Header with App Icon */}
-                                    <Flex
-                                      p={0}
-                                      position="relative"
-                                      bgGradient={
-                                        "linear(to-br, secondary.700, secondary.400)"
-                                      }
-                                      rounded={radiusStyle}
-                                      color="white"
-                                      h="140px"
-                                      display="flex"
-                                      alignItems="center"
-                                      justifyContent="center"
-                                    >
-                                      <VStack
-                                        spacing={3}
-                                        position="relative"
-                                        zIndex={1}
-                                      >
-                                        <Box
-                                          w={"70px"}
-                                          h={"70px"}
-                                          bg="whiteAlpha.200"
-                                          rounded="xl"
-                                          display="flex"
-                                          alignItems="center"
-                                          justifyContent="center"
-                                          fontSize="xl"
-                                          fontWeight="bold"
-                                          border="2px"
-                                          borderColor="whiteAlpha.300"
-                                        >
-                                          {(
-                                            app.appShortName ||
-                                            app.appName ||
-                                            "APP"
-                                          ).length > 5
-                                            ? (
-                                                app.appShortName ||
-                                                app.appName ||
-                                                "A"
-                                              )
-                                                .charAt(0)
-                                                .toUpperCase()
-                                            : app.appShortName ||
-                                              app.appName ||
-                                              "APP"}
-                                        </Box>
-                                        <VStack spacing={0} align="center">
-                                          <Text
-                                            fontSize="sm"
-                                            fontWeight="bold"
-                                            opacity="0.9"
-                                            textAlign="center"
-                                            noOfLines={1}
-                                          >
-                                            {app.appName}
-                                          </Text>
-                                          <Text
-                                            fontSize="xs"
-                                            fontWeight="medium"
-                                            opacity="0.8"
-                                            textAlign="center"
-                                          >
-                                            #{app.appCode}
-                                          </Text>
-                                        </VStack>
-                                      </VStack>
-                                    </Flex>
-
-                                    {/* Status and Actions - Always at bottom */}
-                                    <Box mt="auto">
-                                      <VStack spacing={3}>
-                                        <HStack
-                                          justify="space-between"
-                                          w="full"
-                                        >
-                                          <Text
-                                            fontSize="xs"
-                                            color="gray.500"
-                                            fontWeight="medium"
-                                          >
-                                            Status
-                                          </Text>
-                                          <StatusBadge
-                                            status={app.appsStatus}
-                                            px={2}
-                                            py={1}
-                                            rounded="full"
-                                            fontSize="xs"
-                                            fontWeight="bold"
-                                          />
-                                        </HStack>
-
-                                        <Button
-                                          size="sm"
-                                          colorScheme="secondary"
-                                          w="full"
-                                          rounded="lg"
-                                          _hover={{
-                                            transform: "translateY(-1px)",
-                                            shadow: "lg",
-                                          }}
-                                          transition="all 0.2s"
-                                          fontWeight="bold"
-                                          as={Link}
-                                          href={`/master-data/Application/detail?id=${app.id}`}
-                                        >
-                                          View Details
-                                        </Button>
-                                      </VStack>
-                                    </Box>
-                                  </VStack>
-                                </CardBody>
-                              </Card>
-                            );
-                          })}
-                        </Grid>
-
-                        {/* Enhanced Pagination Controls for Grid View */}
-                        <Box
-                          mt={8}
-                          p={6}
-                          bg={colorMode === "light" ? "gray.50" : "gray.900"}
-                          rounded="xl"
-                          border="1px"
-                          borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-                        >
-                          <ControlTable table={table} />
-                        </Box>
-                      </Box>
-                      {/* List View */}
-                      <Box display={viewMode === "list" ? "block" : "none"}>
-                        <VStack spacing={4} align="stretch">
-                          {DataAplikasi.map((app, idx) => {
-
-                            return (
-                              <Card
-                                key={app.id}
-                                rounded="xl"
-                                shadow="lg"
-                                border="1px"
-                                borderColor={
-                                  colorMode === "light"
-                                    ? "gray.200"
-                                    : "gray.700"
-                                }
-                                bg={
-                                  colorMode === "light" ? "white" : "gray.800"
-                                }
-                                _hover={{
-                                  shadow: "2xl",
-                                  borderColor:
-                                    colorMode === "light"
-                                      ? "secondary.300"
-                                      : "secondary.600",
-                                  transform: "translateY(-2px)",
-                                }}
-                                transition="all 0.3s ease"
-                                overflow="hidden"
-                                position="relative"
-                              >
-                                {/* Status Color Bar */}
-                                <Box
-                                  position="absolute"
-                                  top={0}
-                                  left={0}
-                                  right={0}
-                                  h="4px"
-                                  bgGradient={`linear(to-r, secondary.400, secondary.600)`}
-                                />
-
-                                <CardBody p={6}>
-                                  <Grid
-                                    templateColumns={{
-                                      base: "1fr",
-                                      md: "auto 1fr auto auto auto",
-                                    }}
-                                    gap={6}
+                                <VStack spacing={4} align="stretch" flex="1">
+                                  {/* Header with App Icon */}
+                                  <Flex
+                                    p={0}
+                                    position="relative"
+                                    bgGradient={
+                                      "linear(to-br, secondary.700, secondary.400)"
+                                    }
+                                    rounded={radiusStyle}
+                                    color="white"
+                                    h="140px"
+                                    display="flex"
                                     alignItems="center"
+                                    justifyContent="center"
                                   >
-                                    {/* Modern App Avatar */}
-                                    <GridItem>
+                                    <VStack
+                                      spacing={3}
+                                      position="relative"
+                                      zIndex={1}
+                                    >
                                       <Box
-                                        w={24}
-                                        h={24}
-                                        bgGradient="linear(135deg, secondary.500, secondary.600, secondary.700)"
-                                        rounded="2xl"
+                                        w={"70px"}
+                                        h={"70px"}
+                                        bg="whiteAlpha.200"
+                                        rounded="xl"
                                         display="flex"
                                         alignItems="center"
                                         justifyContent="center"
-                                        color="white"
-                                        fontSize="lg"
+                                        fontSize="xl"
                                         fontWeight="bold"
-                                        flexShrink={0}
-                                        shadow="lg"
+                                        border="2px"
+                                        borderColor="whiteAlpha.300"
                                       >
                                         {(
                                           app.appShortName ||
@@ -981,115 +850,329 @@ function MasterDataAplikasiPage() {
                                           "APP"
                                         ).length > 5
                                           ? (
-                                              app.appShortName ||
-                                              app.appName ||
-                                              "A"
-                                            )
-                                              .charAt(0)
-                                              .toUpperCase()
-                                          : app.appShortName ||
+                                            app.appShortName ||
                                             app.appName ||
-                                            "APP"}
+                                            "A"
+                                          )
+                                            .charAt(0)
+                                            .toUpperCase()
+                                          : app.appShortName ||
+                                          app.appName ||
+                                          "APP"}
                                       </Box>
-                                    </GridItem>
-
-                                    {/* Enhanced App Details */}
-                                    <GridItem>
-                                      <VStack align="start" spacing={3}>
-                                        <VStack align="start" spacing={1}>
-                                          <HStack spacing={2} align="center">
-                                            <Heading
-                                              size="md"
-                                              color={
-                                                colorMode === "light"
-                                                  ? "gray.800"
-                                                  : "white"
-                                              }
-                                              fontWeight="bold"
-                                            >
-                                              {app.appName}
-                                            </Heading>
-                                            <StatusBadge
-                                              status={app.appsStatus}
-                                              px={3}
-                                              py={1}
-                                              rounded="full"
-                                              fontSize="xs"
-                                              fontWeight="bold"
-                                              textTransform="uppercase"
-                                            />
-                                          </HStack>
-
-                                          <Text
-                                            fontSize="sm"
-                                            color={
-                                              colorMode === "light"
-                                                ? "gray.600"
-                                                : "gray.400"
-                                            }
-                                            fontWeight="medium"
-                                          >
-                                            #{app.appCode}
-                                          </Text>
-
-                                          <Text
-                                            fontSize="sm"
-                                            color={
-                                              colorMode === "light"
-                                                ? "gray.500"
-                                                : "gray.500"
-                                            }
-                                            noOfLines={2}
-                                            lineHeight="1.4"
-                                          >
-                                            {app.appsDesc}
-                                          </Text>
-                                        </VStack>
-
-                                        <HStack spacing={3} flexWrap="wrap">
-                                          <Badge
-                                            colorScheme="blue"
-                                            variant="subtle"
-                                            px={3}
-                                            py={1}
-                                            rounded="full"
-                                            fontSize="xs"
-                                            fontWeight="medium"
-                                          >
-                                            <Icon
-                                              as={HiOutlineDesktopComputer}
-                                              w={3}
-                                              h={3}
-                                              mr={1}
-                                            />
-                                            System Application
-                                          </Badge>
-                                          <Badge
-                                            colorScheme="purple"
-                                            variant="subtle"
-                                            px={3}
-                                            py={1}
-                                            rounded="full"
-                                            fontSize="xs"
-                                            fontWeight="medium"
-                                          >
-                                            <Icon
-                                              as={FiSettings}
-                                              w={3}
-                                              h={3}
-                                              mr={1}
-                                            />
-                                            Configurable
-                                          </Badge>
-                                        </HStack>
+                                      <VStack spacing={0} align="center">
+                                        <Text
+                                          fontSize="sm"
+                                          fontWeight="bold"
+                                          opacity="0.9"
+                                          textAlign="center"
+                                          noOfLines={1}
+                                        >
+                                          {app.appName}
+                                        </Text>
+                                        <Text
+                                          fontSize="xs"
+                                          fontWeight="medium"
+                                          opacity="0.8"
+                                          textAlign="center"
+                                        >
+                                          #{app.appCode}
+                                        </Text>
                                       </VStack>
-                                    </GridItem>
+                                    </VStack>
+                                  </Flex>
 
-                                    {/* App Type */}
-                                    <GridItem
-                                      display={{ base: "none", lg: "block" }}
+                                  {/* Status and Actions - Always at bottom */}
+                                  <Box mt="auto">
+                                    <VStack spacing={3}>
+                                      <HStack
+                                        justify="space-between"
+                                        w="full"
+                                      >
+                                        <Text
+                                          fontSize="xs"
+                                          color="gray.500"
+                                          fontWeight="medium"
+                                        >
+                                          Status
+                                        </Text>
+                                        <StatusBadge
+                                          status={app.appsStatus}
+                                          px={2}
+                                          py={1}
+                                          rounded="full"
+                                          fontSize="xs"
+                                          fontWeight="bold"
+                                        />
+                                      </HStack>
+
+                                      <Button
+                                        size="sm"
+                                        colorScheme="secondary"
+                                        w="full"
+                                        rounded="lg"
+                                        _hover={{
+                                          transform: "translateY(-1px)",
+                                          shadow: "lg",
+                                        }}
+                                        transition="all 0.2s"
+                                        fontWeight="bold"
+                                        as={Link}
+                                        href={`/master-data/Application/detail?id=${app.id}`}
+                                      >
+                                        View Details
+                                      </Button>
+                                    </VStack>
+                                  </Box>
+                                </VStack>
+                              </CardBody>
+                            </Card>
+                          );
+                        })}
+                      </Grid>
+                    </Box>
+
+                    {/* Enhanced Pagination Controls for Grid View */}
+                    <Box
+                      mt={8}
+                      p={6}
+                      bg={colorMode === "light" ? "gray.50" : "gray.900"}
+                      rounded="xl"
+                      border="1px"
+                      borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                    >
+                      <ControlTable table={table} />
+                    </Box>
+                  </Box>
+                  {/* List View */}
+                  <Box display={viewMode === "list" ? "block" : "none"}>
+                    <Box
+                      maxH="calc(100vh - 400px)"
+                      overflowY="auto"
+                      pr={2}
+                      css={{
+                        '&::-webkit-scrollbar': { width: '8px' },
+                        '&::-webkit-scrollbar-track': { background: colorMode === 'light' ? '#f1f1f1' : '#2D3748', borderRadius: '10px' },
+                        '&::-webkit-scrollbar-thumb': { background: colorMode === 'light' ? '#CBD5E0' : '#4A5568', borderRadius: '10px' },
+                        '&::-webkit-scrollbar-thumb:hover': { background: colorMode === 'light' ? '#A0AEC0' : '#718096' },
+                      }}
+                    >
+                      <VStack spacing={4} align="stretch">
+                        {DataAplikasi.map((app, idx) => {
+
+                          return (
+                            <Card
+                              key={app.id}
+                              rounded="xl"
+                              shadow="lg"
+                              border="1px"
+                              borderColor={
+                                colorMode === "light"
+                                  ? "gray.200"
+                                  : "gray.700"
+                              }
+                              bg={
+                                colorMode === "light" ? "white" : "gray.800"
+                              }
+                              _hover={{
+                                shadow: "2xl",
+                                borderColor:
+                                  colorMode === "light"
+                                    ? "secondary.300"
+                                    : "secondary.600",
+                                transform: "translateY(-2px)",
+                              }}
+                              transition="all 0.3s ease"
+                              overflow="hidden"
+                              position="relative"
+                            >
+                              {/* Status Color Bar */}
+                              <Box
+                                position="absolute"
+                                top={0}
+                                left={0}
+                                right={0}
+                                h="4px"
+                                bgGradient={`linear(to-r, secondary.400, secondary.600)`}
+                              />
+
+                              <CardBody p={6}>
+                                <Grid
+                                  templateColumns={{
+                                    base: "1fr",
+                                    md: "auto 1fr auto auto auto",
+                                  }}
+                                  gap={6}
+                                  alignItems="center"
+                                >
+                                  {/* Modern App Avatar */}
+                                  <GridItem>
+                                    <Box
+                                      w={24}
+                                      h={24}
+                                      bgGradient="linear(135deg, secondary.500, secondary.600, secondary.700)"
+                                      rounded="2xl"
+                                      display="flex"
+                                      alignItems="center"
+                                      justifyContent="center"
+                                      color="white"
+                                      fontSize="lg"
+                                      fontWeight="bold"
+                                      flexShrink={0}
+                                      shadow="lg"
                                     >
-                                      <VStack spacing={2} align="center">
+                                      {(
+                                        app.appShortName ||
+                                        app.appName ||
+                                        "APP"
+                                      ).length > 5
+                                        ? (
+                                          app.appShortName ||
+                                          app.appName ||
+                                          "A"
+                                        )
+                                          .charAt(0)
+                                          .toUpperCase()
+                                        : app.appShortName ||
+                                        app.appName ||
+                                        "APP"}
+                                    </Box>
+                                  </GridItem>
+
+                                  {/* Enhanced App Details */}
+                                  <GridItem>
+                                    <VStack align="start" spacing={3}>
+                                      <VStack align="start" spacing={1}>
+                                        <HStack spacing={2} align="center">
+                                          <Heading
+                                            size="md"
+                                            color={
+                                              colorMode === "light"
+                                                ? "gray.800"
+                                                : "white"
+                                            }
+                                            fontWeight="bold"
+                                          >
+                                            {app.appName}
+                                          </Heading>
+                                          <StatusBadge
+                                            status={app.appsStatus}
+                                            px={3}
+                                            py={1}
+                                            rounded="full"
+                                            fontSize="xs"
+                                            fontWeight="bold"
+                                            textTransform="uppercase"
+                                          />
+                                        </HStack>
+
+                                        <Text
+                                          fontSize="sm"
+                                          color={
+                                            colorMode === "light"
+                                              ? "gray.600"
+                                              : "gray.400"
+                                          }
+                                          fontWeight="medium"
+                                        >
+                                          #{app.appCode}
+                                        </Text>
+
+                                        <Text
+                                          fontSize="sm"
+                                          color={
+                                            colorMode === "light"
+                                              ? "gray.500"
+                                              : "gray.500"
+                                          }
+                                          noOfLines={2}
+                                          lineHeight="1.4"
+                                        >
+                                          {app.appsDesc}
+                                        </Text>
+                                      </VStack>
+
+                                      <HStack spacing={3} flexWrap="wrap">
+                                        <Badge
+                                          colorScheme="blue"
+                                          variant="subtle"
+                                          px={3}
+                                          py={1}
+                                          rounded="full"
+                                          fontSize="xs"
+                                          fontWeight="medium"
+                                        >
+                                          <Icon
+                                            as={HiOutlineDesktopComputer}
+                                            w={3}
+                                            h={3}
+                                            mr={1}
+                                          />
+                                          System Application
+                                        </Badge>
+                                        <Badge
+                                          colorScheme="purple"
+                                          variant="subtle"
+                                          px={3}
+                                          py={1}
+                                          rounded="full"
+                                          fontSize="xs"
+                                          fontWeight="medium"
+                                        >
+                                          <Icon
+                                            as={FiSettings}
+                                            w={3}
+                                            h={3}
+                                            mr={1}
+                                          />
+                                          Configurable
+                                        </Badge>
+                                      </HStack>
+                                    </VStack>
+                                  </GridItem>
+
+                                  {/* App Type */}
+                                  <GridItem
+                                    display={{ base: "none", lg: "block" }}
+                                  >
+                                    <VStack spacing={2} align="center">
+                                      <Text
+                                        fontSize="xs"
+                                        color={
+                                          colorMode === "light"
+                                            ? "gray.500"
+                                            : "gray.400"
+                                        }
+                                        fontWeight="medium"
+                                        textTransform="uppercase"
+                                        letterSpacing="wide"
+                                      >
+                                        Type
+                                      </Text>
+                                      <Badge
+                                        colorScheme="orange"
+                                        variant="subtle"
+                                        px={3}
+                                        py={1}
+                                        rounded="full"
+                                        fontSize="xs"
+                                        fontWeight="medium"
+                                      >
+                                        Enterprise
+                                      </Badge>
+                                    </VStack>
+                                  </GridItem>
+
+                                  {/* Health Status */}
+                                  <GridItem
+                                    display={{ base: "none", md: "block" }}
+                                  >
+                                    <VStack
+                                      spacing={3}
+                                      align="center"
+                                      minW="120px"
+                                    >
+                                      <VStack spacing={1} align="center">
                                         <Text
                                           fontSize="xs"
                                           color={
@@ -1101,63 +1184,131 @@ function MasterDataAplikasiPage() {
                                           textTransform="uppercase"
                                           letterSpacing="wide"
                                         >
-                                          Type
+                                          Health
                                         </Text>
-                                        <Badge
-                                          colorScheme="orange"
-                                          variant="subtle"
-                                          px={3}
-                                          py={1}
-                                          rounded="full"
-                                          fontSize="xs"
-                                          fontWeight="medium"
+                                        <Text
+                                          fontSize="lg"
+                                          fontWeight="bold"
+                                          color={
+                                            app.appsStatus === "ACTIVE"
+                                              ? "green.500"
+                                              : "red.500"
+                                          }
                                         >
-                                          Enterprise
-                                        </Badge>
+                                          {app.appsStatus === "ACTIVE"
+                                            ? "98%"
+                                            : "0%"}
+                                        </Text>
                                       </VStack>
-                                    </GridItem>
-
-                                    {/* Health Status */}
-                                    <GridItem
-                                      display={{ base: "none", md: "block" }}
-                                    >
-                                      <VStack
-                                        spacing={3}
-                                        align="center"
-                                        minW="120px"
-                                      >
-                                        <VStack spacing={1} align="center">
-                                          <Text
-                                            fontSize="xs"
-                                            color={
-                                              colorMode === "light"
-                                                ? "gray.500"
-                                                : "gray.400"
-                                            }
-                                            fontWeight="medium"
-                                            textTransform="uppercase"
-                                            letterSpacing="wide"
-                                          >
-                                            Health
-                                          </Text>
-                                          <Text
-                                            fontSize="lg"
-                                            fontWeight="bold"
-                                            color={
+                                      <Box w="80px" position="relative">
+                                        <Box
+                                          w="full"
+                                          h="8px"
+                                          bg={
+                                            colorMode === "light"
+                                              ? "gray.100"
+                                              : "gray.700"
+                                          }
+                                          rounded="full"
+                                          overflow="hidden"
+                                        >
+                                          <Box
+                                            h="full"
+                                            bgGradient={
                                               app.appsStatus === "ACTIVE"
-                                                ? "green.500"
-                                                : "red.500"
+                                                ? "linear(to-r, green.400, green.600)"
+                                                : "linear(to-r, red.400, red.600)"
                                             }
-                                          >
-                                            {app.appsStatus === "ACTIVE"
-                                              ? "98%"
-                                              : "0%"}
-                                          </Text>
-                                        </VStack>
-                                        <Box w="80px" position="relative">
+                                            rounded="full"
+                                            w={
+                                              app.appsStatus === "ACTIVE"
+                                                ? "98%"
+                                                : "0%"
+                                            }
+                                            transition="all 0.3s ease"
+                                          />
+                                        </Box>
+                                      </Box>
+                                    </VStack>
+                                  </GridItem>
+
+                                  {/* Enhanced Action Buttons */}
+                                  <GridItem>
+                                    <VStack spacing={2}>
+                                      <Button
+                                        size="sm"
+                                        colorScheme="secondary"
+                                        leftIcon={
+                                          <Icon as={FiSettings} boxSize={3} />
+                                        }
+                                        rounded="lg"
+                                        _hover={{
+                                          transform: "translateY(-1px)",
+                                          shadow: "lg",
+                                        }}
+                                        transition="all 0.2s"
+                                        fontWeight="bold"
+                                        px={4}
+                                        bgGradient="linear(to-r, secondary.500, secondary.600)"
+                                        _active={{
+                                          bgGradient:
+                                            "linear(to-r, secondary.600, secondary.700)",
+                                        }}
+                                        as={Link}
+                                        href={`/master-data/Application/detail?id=${app.id}`}
+                                      >
+                                        Configure
+                                      </Button>
+                                    </VStack>
+                                  </GridItem>
+                                </Grid>
+
+                                {/* Mobile Enhanced Layout */}
+                                <Box
+                                  display={{ base: "block", md: "none" }}
+                                  mt={4}
+                                  pt={4}
+                                  borderTop="1px"
+                                  borderColor={
+                                    colorMode === "light"
+                                      ? "gray.200"
+                                      : "gray.700"
+                                  }
+                                >
+                                  <Grid templateColumns="1fr 1fr" gap={4}>
+                                    {/* Mobile Health */}
+                                    <VStack spacing={2} align="start">
+                                      <Text
+                                        fontSize="xs"
+                                        color={
+                                          colorMode === "light"
+                                            ? "gray.500"
+                                            : "gray.400"
+                                        }
+                                        fontWeight="medium"
+                                        textTransform="uppercase"
+                                        letterSpacing="wide"
+                                      >
+                                        Health
+                                      </Text>
+                                      <HStack spacing={3}>
+                                        <Text
+                                          fontSize="md"
+                                          fontWeight="bold"
+                                          color={
+                                            app.appsStatus === "ACTIVE"
+                                              ? "green.500"
+                                              : "red.500"
+                                          }
+                                        >
+                                          {app.appsStatus === "ACTIVE"
+                                            ? "98%"
+                                            : "0%"}
+                                        </Text>
+                                        <Box flex={1} maxW="60px">
                                           <Box
                                             w="full"
-                                            h="8px"
+                                            h="6px"
                                             bg={
                                               colorMode === "light"
                                                 ? "gray.100"
@@ -1179,204 +1330,100 @@ function MasterDataAplikasiPage() {
                                                   ? "98%"
                                                   : "0%"
                                               }
-                                              transition="all 0.3s ease"
                                             />
                                           </Box>
                                         </Box>
-                                      </VStack>
-                                    </GridItem>
+                                      </HStack>
+                                    </VStack>
 
-                                    {/* Enhanced Action Buttons */}
-                                    <GridItem>
-                                      <VStack spacing={2}>
-                                        <Button
-                                          size="sm"
-                                          colorScheme="secondary"
-                                          leftIcon={
-                                            <Icon as={FiSettings} boxSize={3} />
-                                          }
-                                          rounded="lg"
-                                          _hover={{
-                                            transform: "translateY(-1px)",
-                                            shadow: "lg",
-                                          }}
-                                          transition="all 0.2s"
-                                          fontWeight="bold"
-                                          px={4}
-                                          bgGradient="linear(to-r, secondary.500, secondary.600)"
-                                          _active={{
-                                            bgGradient:
-                                              "linear(to-r, secondary.600, secondary.700)",
-                                          }}
-                                          as={Link}
-                                          href={`/master-data/Application/detail?id=${app.id}`}
-                                        >
-                                          Configure
-                                        </Button>
-                                      </VStack>
-                                    </GridItem>
+                                    {/* Mobile Type */}
+                                    <VStack spacing={2} align="start">
+                                      <Text
+                                        fontSize="xs"
+                                        color={
+                                          colorMode === "light"
+                                            ? "gray.500"
+                                            : "gray.400"
+                                        }
+                                        fontWeight="medium"
+                                        textTransform="uppercase"
+                                        letterSpacing="wide"
+                                      >
+                                        Type
+                                      </Text>
+                                      <Badge
+                                        colorScheme="orange"
+                                        variant="subtle"
+                                        px={2}
+                                        py={1}
+                                        rounded="full"
+                                        fontSize="xs"
+                                        fontWeight="medium"
+                                      >
+                                        Enterprise
+                                      </Badge>
+                                    </VStack>
                                   </Grid>
 
-                                  {/* Mobile Enhanced Layout */}
-                                  <Box
-                                    display={{ base: "block", md: "none" }}
+                                  {/* Mobile Action Buttons */}
+                                  <HStack
+                                    spacing={3}
                                     mt={4}
-                                    pt={4}
-                                    borderTop="1px"
-                                    borderColor={
-                                      colorMode === "light"
-                                        ? "gray.200"
-                                        : "gray.700"
-                                    }
+                                    justify="stretch"
                                   >
-                                    <Grid templateColumns="1fr 1fr" gap={4}>
-                                      {/* Mobile Health */}
-                                      <VStack spacing={2} align="start">
-                                        <Text
-                                          fontSize="xs"
-                                          color={
-                                            colorMode === "light"
-                                              ? "gray.500"
-                                              : "gray.400"
-                                          }
-                                          fontWeight="medium"
-                                          textTransform="uppercase"
-                                          letterSpacing="wide"
-                                        >
-                                          Health
-                                        </Text>
-                                        <HStack spacing={3}>
-                                          <Text
-                                            fontSize="md"
-                                            fontWeight="bold"
-                                            color={
-                                              app.appsStatus === "ACTIVE"
-                                                ? "green.500"
-                                                : "red.500"
-                                            }
-                                          >
-                                            {app.appsStatus === "ACTIVE"
-                                              ? "98%"
-                                              : "0%"}
-                                          </Text>
-                                          <Box flex={1} maxW="60px">
-                                            <Box
-                                              w="full"
-                                              h="6px"
-                                              bg={
-                                                colorMode === "light"
-                                                  ? "gray.100"
-                                                  : "gray.700"
-                                              }
-                                              rounded="full"
-                                              overflow="hidden"
-                                            >
-                                              <Box
-                                                h="full"
-                                                bgGradient={
-                                                  app.appsStatus === "ACTIVE"
-                                                    ? "linear(to-r, green.400, green.600)"
-                                                    : "linear(to-r, red.400, red.600)"
-                                                }
-                                                rounded="full"
-                                                w={
-                                                  app.appsStatus === "ACTIVE"
-                                                    ? "98%"
-                                                    : "0%"
-                                                }
-                                              />
-                                            </Box>
-                                          </Box>
-                                        </HStack>
-                                      </VStack>
-
-                                      {/* Mobile Type */}
-                                      <VStack spacing={2} align="start">
-                                        <Text
-                                          fontSize="xs"
-                                          color={
-                                            colorMode === "light"
-                                              ? "gray.500"
-                                              : "gray.400"
-                                          }
-                                          fontWeight="medium"
-                                          textTransform="uppercase"
-                                          letterSpacing="wide"
-                                        >
-                                          Type
-                                        </Text>
-                                        <Badge
-                                          colorScheme="orange"
-                                          variant="subtle"
-                                          px={2}
-                                          py={1}
-                                          rounded="full"
-                                          fontSize="xs"
-                                          fontWeight="medium"
-                                        >
-                                          Enterprise
-                                        </Badge>
-                                      </VStack>
-                                    </Grid>
-
-                                    {/* Mobile Action Buttons */}
-                                    <HStack
-                                      spacing={3}
-                                      mt={4}
-                                      justify="stretch"
+                                    <Button
+                                      size="sm"
+                                      colorScheme="secondary"
+                                      leftIcon={
+                                        <Icon as={FiSettings} boxSize={3} />
+                                      }
+                                      rounded="lg"
+                                      flex={1}
+                                      fontWeight="bold"
+                                      bgGradient="linear(to-r, secondary.500, secondary.600)"
+                                      as={Link}
+                                      href={`/master-data/Application/detail?id=${app.id}`}
                                     >
-                                      <Button
-                                        size="sm"
-                                        colorScheme="secondary"
-                                        leftIcon={
-                                          <Icon as={FiSettings} boxSize={3} />
-                                        }
-                                        rounded="lg"
-                                        flex={1}
-                                        fontWeight="bold"
-                                        bgGradient="linear(to-r, secondary.500, secondary.600)"
-                                        as={Link}
-                                        href={`/master-data/Application/detail?id=${app.id}`}
-                                      >
-                                        Configure
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        colorScheme="secondary"
-                                        leftIcon={
-                                          <Icon as={FiCode} boxSize={3} />
-                                        }
-                                        rounded="lg"
-                                        flex={1}
-                                        fontWeight="medium"
-                                        as={Link}
-                                        href={`/master-data/Application/detail?id=${app.id}`}
-                                      >
-                                        Details
-                                      </Button>
-                                    </HStack>
-                                  </Box>
-                                </CardBody>
-                              </Card>
-                            );
-                          })}
-                        </VStack>
+                                      Configure
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      colorScheme="secondary"
+                                      leftIcon={
+                                        <Icon as={FiCode} boxSize={3} />
+                                      }
+                                      rounded="lg"
+                                      flex={1}
+                                      fontWeight="medium"
+                                      as={Link}
+                                      href={`/master-data/Application/detail?id=${app.id}`}
+                                    >
+                                      Details
+                                    </Button>
+                                  </HStack>
+                                </Box>
+                              </CardBody>
+                            </Card>
+                          );
+                        })}
+                      </VStack>
+                    </Box>
 
-                        {/* Enhanced Pagination Controls */}
-                        <Box
-                          mt={8}
-                          p={6}
-                          bg={colorMode === "light" ? "gray.50" : "gray.900"}
-                          rounded="xl"
-                          border="1px"
-                          borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-                        >
-                          <ControlTable table={table} />
-                        </Box>
-                      </Box>
-                    </>
-                  )}
+                    {/* Enhanced Pagination Controls */}
+                    <Box
+                      mt={8}
+                      p={6}
+                      bg={colorMode === "light" ? "gray.50" : "gray.900"}
+                      rounded="xl"
+                      border="1px"
+                      borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                    >
+                      <ControlTable table={table} />
+                    </Box>
+                  </Box>
+                </>
+              )}
             </Box>
           </VStack>
         </CardBody>
@@ -1420,7 +1467,7 @@ function MasterDataAplikasiPage() {
               </VStack>
             </HStack>
           </ModalHeader>
-          
+
           <ModalCloseButton
             top={6}
             right={6}
@@ -1430,7 +1477,7 @@ function MasterDataAplikasiPage() {
               bg: colorMode === "light" ? "gray.200" : "gray.500",
             }}
           />
-          
+
           <ModalBody p={8}>
             <Grid templateColumns="300px 1fr" gap={8} alignItems="start">
               {/* Left Side - Avatar Preview */}
@@ -1452,7 +1499,7 @@ function MasterDataAplikasiPage() {
                     >
                       Application Preview
                     </Text>
-                    
+
                     <Box position="relative">
                       {formData.iconApps ? (
                         <Box
@@ -1527,7 +1574,7 @@ function MasterDataAplikasiPage() {
                     >
                       {formData.iconApps ? "Change Icon" : "Upload Icon"}
                     </Button>
-                    
+
                     {formData.iconApps && (
                       <Button
                         size="sm"

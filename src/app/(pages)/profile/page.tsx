@@ -264,8 +264,16 @@ export default function ProfilePage() {
         const response = await ListMembers(payload, tokenData);
         console.log("Response:", response);
         if (response?.statusCode === RES_CODE_OK && response.data) {
-          console.log("Members loaded:", response.data.length);
-          setTeamMembers(response.data as UsersResponse[]);
+          // Sort members: PROJECT MANAGER first, then others
+          const sortedMembers = (response.data as UsersResponse[]).sort((a, b) => {
+            const aIsProjectManager = a.teamRole?.specName?.toUpperCase().includes("PROJECT MANAGER");
+            const bIsProjectManager = b.teamRole?.specName?.toUpperCase().includes("PROJECT MANAGER");
+            
+            if (aIsProjectManager && !bIsProjectManager) return -1;
+            if (!aIsProjectManager && bIsProjectManager) return 1;
+            return 0;
+          });
+          setTeamMembers(sortedMembers);
         }
       }
     };
@@ -958,7 +966,7 @@ export default function ProfilePage() {
                       </Text>
                       <VStack spacing={3} align="stretch">
                         {TeamMembers.length > 0 ? (
-                          TeamMembers.map((member) => (
+                          TeamMembers.map((member, index) => (
                             <Flex
                               key={member.id}
                               p={3}
@@ -967,6 +975,14 @@ export default function ProfilePage() {
                               align="center"
                               gap={3}
                             >
+                              <Text
+                                fontSize="sm"
+                                fontWeight="bold"
+                                color={colorMode === "light" ? "gray.500" : "gray.400"}
+                                minW={6}
+                              >
+                                {index + 1}.
+                              </Text>
                               <Avatar
                                 size="sm"
                                 name={member.nama}

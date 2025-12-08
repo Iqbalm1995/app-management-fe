@@ -585,7 +585,7 @@ function RequirementDetailView() {
 
       <Grid templateColumns="repeat(2, 1fr)" gap={5} w={"full"} pb={2}>
         <GridItem colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }} w={"full"}>
-          <Link href={`/requirements/${reqType.toLowerCase()}`}>
+          <Link href="/requirements/brd-rfc">
             <Button leftIcon={<FiArrowLeft />} size={"md"}>
               Back
             </Button>

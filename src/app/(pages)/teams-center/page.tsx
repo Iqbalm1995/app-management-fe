@@ -87,7 +87,7 @@ function TeamsCenterPage() {
   const [totalPages, setTotalPageData] = useState<number>(0);
   const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
     pageIndex: 0,
-    pageSize: 9,
+    pageSize: 5,
   });
 
   // Refresh state management (following other pages pattern)
@@ -308,7 +308,11 @@ function TeamsCenterPage() {
       }
 
       const data = requestData.data as TeamsResponse[];
+      const totalData: number = requestData.countTotal as number;
+      const totalPages: number = totalData > 0 ? Math.ceil(totalData / pageSize) : 0;
+
       setTeamsData(data);
+      setTotalPageData(totalPages);
 
     } catch (error) {
       console.error("Error fetching teams:", error);
@@ -348,13 +352,13 @@ function TeamsCenterPage() {
   const table = useReactTable({
     data: TeamsData,
     columns: [], // Empty columns since we're using custom cards
-    pageCount: Math.ceil(TeamsData.length / pageSize),
+    pageCount: totalPages,
     state: {
       pagination,
     },
     onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
-    manualPagination: false,
+    manualPagination: true,
   });
 
   return (
@@ -403,7 +407,7 @@ function TeamsCenterPage() {
                 </VStack>
 
                 {/* Right - Quick Stats */}
-                <SimpleGrid
+                {/* <SimpleGrid
                   columns={{ base: 2, md: 2 }}
                   spacing={2}
                   minW="300px"
@@ -438,7 +442,7 @@ function TeamsCenterPage() {
                       Total Teams
                     </Text>
                   </Box>
-                  {/* <Box
+                  <Box
                     bg="whiteAlpha.200"
                     rounded="xl"
                     p={4}
@@ -452,8 +456,8 @@ function TeamsCenterPage() {
                     <Text fontSize="xs" opacity={0.8}>
                       Active Rate
                     </Text>
-                  </Box> */}
-                </SimpleGrid>
+                  </Box>
+                </SimpleGrid> */}
               </Flex>
             </VStack>
           </Box>
@@ -695,6 +699,9 @@ function TeamsCenterPage() {
                     bg={colorMode === "light" ? "white" : "gray.800"}
                     overflow="hidden"
                     position="relative"
+                    display="flex"
+                    flexDirection="column"
+                    h="full"
                     _hover={{
                       shadow: "2xl",
                       transform: "translateY(-4px)",
@@ -711,8 +718,8 @@ function TeamsCenterPage() {
                       bg: team.isActive === "ACTIVE" ? "green.400" : "red.400",
                     }}
                   >
-                    <CardBody p={6}>
-                      <VStack spacing={5} align="start">
+                    <CardBody p={6} display="flex" flexDirection="column">
+                      <VStack spacing={5} align="start" flex="1">
                         {/* Team Header */}
                         <HStack spacing={4} w="full">
                           <Box
@@ -795,7 +802,7 @@ function TeamsCenterPage() {
                           >
                             Organization
                           </Text>
-                          <HStack spacing={4} w="full" wrap="wrap">
+                          <VStack spacing={2} w="full" align="start">
                             <HStack spacing={2}>
                               <Box w="3px" h="16px" bg="orange.400" rounded="full" />
                               <Text fontSize="sm" color="orange.600" fontWeight="medium" noOfLines={1}>
@@ -814,31 +821,31 @@ function TeamsCenterPage() {
                                 {team.group?.orgName || "N/A"}
                               </Text>
                             </HStack>
-                          </HStack>
+                          </VStack>
                         </Box>
 
-                        {/* Actions */}
-                        <VStack spacing={3} w="full" pt={2}>
-                          <Button
-                            size="md"
-                            bgGradient="linear(to-r, secondary.500, secondary.600)"
-                            color="white"
-                            rounded="xl"
-                            w="full"
-                            _hover={{
-                              bgGradient: "linear(to-r, secondary.600, secondary.700)",
-                              transform: "translateY(-1px)",
-                              shadow: "lg",
-                            }}
-                            transition="all 0.2s"
-                            fontWeight="semibold"
-                            as={Link}
-                            href={`/teams-center/detail?id=${team.id}`}
-                          >
-                            Details
-                          </Button>
-                        </VStack>
                       </VStack>
+
+                      {/* Actions - Always at bottom */}
+                      <Button
+                        size="md"
+                        bgGradient="linear(to-r, secondary.500, secondary.600)"
+                        color="white"
+                        rounded="xl"
+                        w="full"
+                        mt={4}
+                        _hover={{
+                          bgGradient: "linear(to-r, secondary.600, secondary.700)",
+                          transform: "translateY(-1px)",
+                          shadow: "lg",
+                        }}
+                        transition="all 0.2s"
+                        fontWeight="semibold"
+                        as={Link}
+                        href={`/teams-center/detail?id=${team.id}`}
+                      >
+                        Details
+                      </Button>
                     </CardBody>
                   </Card>
                 ))}

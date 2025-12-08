@@ -232,7 +232,7 @@ function AddTeamViewPage() {
       .min(3, "Team name must be at least 3 characters")
       .max(100, "Team name must not exceed 100 characters"),
     teamCode: Yup.string()
-      .required("Team code is required")
+      .required("Initial Team is required")
       .min(2, "Team code must be at least 2 characters")
       .max(10, "Team code must not exceed 10 characters")
       .matches(
@@ -474,7 +474,7 @@ function AddTeamViewPage() {
                               <Input
                                 name="teamName"
                                 value={formik.values.teamName}
-                                onChange={formik.handleChange}
+                                onChange={(e) => formik.setFieldValue("teamName", e.target.value.toUpperCase())}
                                 onBlur={formik.handleBlur}
                                 placeholder="Enter team name"
                                 size="lg"
@@ -487,6 +487,7 @@ function AddTeamViewPage() {
                                   bg: colorMode === "light" ? "white" : "gray.800",
                                   shadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
                                 }}
+                                maxLength={100}
                               />
                               <FormErrorMessage>{formik.errors.teamName}</FormErrorMessage>
                             </FormControl>
@@ -513,7 +514,6 @@ function AddTeamViewPage() {
                                   bg: colorMode === "light" ? "white" : "gray.800",
                                   shadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
                                 }}
-                                textTransform="uppercase"
                                 maxLength={10}
                               />
                               <FormErrorMessage>{formik.errors.teamCode}</FormErrorMessage>
@@ -566,7 +566,7 @@ function AddTeamViewPage() {
 
                             {/* Directorate Selection */}
                             <FormControl>
-                              <FormLabel fontWeight="semibold">Directorate (Auto)</FormLabel>
+                              <FormLabel fontWeight="semibold">Directorate</FormLabel>
                               <Select
                                 id="directorateId"
                                 options={DirectorateOptions}
