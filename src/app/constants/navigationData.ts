@@ -24,10 +24,10 @@ export const NAV_ITEMS_LANDING: Array<NavItem> = [
   // },
   {
     label: "Tentang Kami",
-    href: "https://www.bankbjb.co.id/page/tentang-bank-bjb",
+    href: "/tentang-kami",
   },
   {
     label: "Hubungi Kami",
-    href: "https://bjbwbs.bankbjb.co.id/",
+    href: "/hubungi-kami",
   },
 ];
