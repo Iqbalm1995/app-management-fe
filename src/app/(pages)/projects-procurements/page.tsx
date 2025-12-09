@@ -752,7 +752,7 @@ const ProjectManagerPage = () => {
                                 transition="all 0.2s"
                                 cursor="pointer"
                                 onClick={() =>
-                                  (window.location.href = `project-development/development?projectId=${project.id}`)
+                                  (window.location.href = `/projects/manage?projectId=${project.id}`)
                                 }
                               >
                                 {/* Project Number */}
@@ -1173,7 +1173,7 @@ const ProjectManagerPage = () => {
                                         {/* Action Button */}
                                         <GridItem>
                                           <Link
-                                            href={`projects-procurements/manage?projectId=${project.id}`}
+                                            href={`/projects/manage?projectId=${project.id}`}
                                           >
                                             <Button
                                               size="sm"

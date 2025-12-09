@@ -82,22 +82,21 @@ const CardProject = memo(
       switch (variant) {
         case "deployment":
           return {
-            linkPath: "/projects-deployments/detail",
+            linkPath: "/projects/manage",
             actionLabel: "Manage Deployment",
             actionIcon: FiServer,
             colorScheme: "green",
           };
         case "procurement":
           return {
-            linkPath: "/projects-procurements/detail",
+            linkPath: "/projects/manage",
             actionLabel: "Manage Procurement",
             actionIcon: FiTarget,
             colorScheme: "yellow",
           };
         case "manager":
           return {
-            linkPath:
-              linkPath || `projects-manager/detail?projectId=${data.id}`,
+            linkPath: linkPath || `projects/manage?projectId=${data.id}`,
             actionLabel: actionLabel || "Manage Project",
             actionIcon: actionIcon || FiSettings,
             colorScheme: "blue",
