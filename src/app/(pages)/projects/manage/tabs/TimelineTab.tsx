@@ -25,11 +25,7 @@ const TimelineTab = ({ DataProject }: TimelineTabProps) => {
   const { colorMode } = useColorMode();
 
   return (
-    <TabPanel
-      p={8}
-      bg={colorMode === "light" ? "gray.50" : "gray.900"}
-      roundedBottom={radiusStyle}
-    >
+    <TabPanel>
       <VStack spacing={8} align="stretch">
         {/* Header Section */}
         <HStack justify="space-between" align="center">

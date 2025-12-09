@@ -15,11 +15,7 @@ const FeaturesTab = ({ DataProject }: FeaturesTabProps) => {
   const { colorMode } = useColorMode();
 
   return (
-    <TabPanel
-      p={8}
-      bg={colorMode === "light" ? "gray.50" : "gray.900"}
-      roundedBottom={radiusStyle}
-    >
+    <TabPanel>
       <Suspense fallback={<LoadingMiniSignature />}>
         <ProjectFeatureView DataProject={DataProject} viewType="backlogs" />
       </Suspense>

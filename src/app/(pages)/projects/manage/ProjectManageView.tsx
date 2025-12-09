@@ -84,14 +84,18 @@ export default function ProjectManageView() {
   const [isInitialized, setIsInitialized] = useState(false);
   const tabsRef = useRef<HTMLDivElement>(null);
 
-  const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+  const delay = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
   const { GetDetailById, GetDetailAppsByProjectId } = useProjects();
 
-  const [HeaderContentState, setHeaderContentState] = useState<HeaderContentProps>(HeaderDataContent);
+  const [HeaderContentState, setHeaderContentState] =
+    useState<HeaderContentProps>(HeaderDataContent);
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
   const [projectId, setProjectId] = useState<string | null>(null);
-  const [DataProject, setDataProject] = useState<ProjectDataResponse | null>(null);
+  const [DataProject, setDataProject] = useState<ProjectDataResponse | null>(
+    null
+  );
   const [DataApps, setDataApps] = useState<AppsResponse | null>(null);
   const [RefreshData, setRefreshData] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
@@ -112,7 +116,8 @@ export default function ProjectManageView() {
 
     if (DataAuth == null && storedData) {
       const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
-      const UserData: AuthDataResponse = StorageAuth.dataLogin as AuthDataResponse;
+      const UserData: AuthDataResponse =
+        StorageAuth.dataLogin as AuthDataResponse;
       setDataAuth(UserData);
     }
 
@@ -163,7 +168,8 @@ export default function ProjectManageView() {
           return;
         }
 
-        const itemsData: ProjectDataResponse = requestData.data as ProjectDataResponse;
+        const itemsData: ProjectDataResponse =
+          requestData.data as ProjectDataResponse;
         setDataProject(itemsData);
         setHeaderContentState({
           titleName: `Project Detail`,
@@ -178,7 +184,10 @@ export default function ProjectManageView() {
   useEffect(() => {
     if (DataAuth && DataProject && !DataApps && isInitialized) {
       const GetAppData = async () => {
-        const requestData = await GetDetailAppsByProjectId(DataProject.id, tokenData);
+        const requestData = await GetDetailAppsByProjectId(
+          DataProject.id,
+          tokenData
+        );
         if (requestData?.statusCode === RES_CODE_OK && requestData.data) {
           setDataApps(requestData.data as AppsResponse);
         }
@@ -188,7 +197,8 @@ export default function ProjectManageView() {
   }, [DataAuth, DataProject, DataApps, isInitialized]);
 
   // Conditional rendering logic
-  const isInternalDev = DataProject?.projectType === PROJECT_TYPE_INTERNAL_DEVELOPMENT;
+  const isInternalDev =
+    DataProject?.projectType === PROJECT_TYPE_INTERNAL_DEVELOPMENT;
   const isProcurement = DataProject?.projectType === PROJECT_TYPE_PROCUREMENT;
   const hasRequirement = DataProject?.reqParentId !== null;
   const showFeaturesTab = isInternalDev || (isProcurement && hasRequirement);
@@ -197,14 +207,26 @@ export default function ProjectManageView() {
   if (!isInitialized) {
     return (
       <LayoutAdmin>
-        <Box display="flex" alignItems="center" justifyContent="center" minH="80vh">
+        <Box
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          minH="80vh"
+        >
           <VStack spacing={6}>
             <LoadingMiniSquare />
             <VStack spacing={2}>
-              <Text fontSize="lg" fontWeight="semibold" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+              <Text
+                fontSize="lg"
+                fontWeight="semibold"
+                color={colorMode === "light" ? "gray.700" : "gray.300"}
+              >
                 Initializing Project Manager
               </Text>
-              <Text fontSize="sm" color={colorMode === "light" ? "gray.500" : "gray.500"}>
+              <Text
+                fontSize="sm"
+                color={colorMode === "light" ? "gray.500" : "gray.500"}
+              >
                 Please wait while we prepare your project details...
               </Text>
             </VStack>
@@ -308,7 +330,9 @@ export default function ProjectManageView() {
                       onClick={() => scrollTabs("left")}
                       bg={colorMode === "light" ? "white" : "gray.700"}
                       shadow="md"
-                      _hover={{ bg: colorMode === "light" ? "gray.100" : "gray.600" }}
+                      _hover={{
+                        bg: colorMode === "light" ? "gray.100" : "gray.600",
+                      }}
                     >
                       <FiChevronLeft />
                     </Button>
@@ -317,7 +341,9 @@ export default function ProjectManageView() {
                       onClick={() => scrollTabs("right")}
                       bg={colorMode === "light" ? "white" : "gray.700"}
                       shadow="md"
-                      _hover={{ bg: colorMode === "light" ? "gray.100" : "gray.600" }}
+                      _hover={{
+                        bg: colorMode === "light" ? "gray.100" : "gray.600",
+                      }}
                     >
                       <FiChevronRight />
                     </Button>
@@ -342,8 +368,12 @@ export default function ProjectManageView() {
                   <TabPanels minH="600px">
                     <OverviewTab DataProject={DataProject} />
                     <DetailsTab DataProject={DataProject} />
-                    {showFeaturesTab && <FeaturesTab DataProject={DataProject} />}
-                    {showWorkstageTab && <WorkstageProcurementTab DataProject={DataProject} />}
+                    {showFeaturesTab && (
+                      <FeaturesTab DataProject={DataProject} />
+                    )}
+                    {showWorkstageTab && (
+                      <WorkstageProcurementTab DataProject={DataProject} />
+                    )}
                     <DocumentationTab DataProject={DataProject} />
                     <TeamTab DataProject={DataProject} />
                     <AnalyticsTab DataProject={DataProject} />
@@ -414,7 +444,11 @@ export default function ProjectManageView() {
                       rounded="sm"
                       animation="spin 10s linear infinite"
                     />
-                    <CardBody p={{ base: 6, md: 8 }} position="relative" zIndex={1}>
+                    <CardBody
+                      p={{ base: 6, md: 8 }}
+                      position="relative"
+                      zIndex={1}
+                    >
                       <VStack spacing={{ base: 4, md: 6 }} align="center">
                         <Box position="relative">
                           <Box
@@ -462,7 +496,8 @@ export default function ProjectManageView() {
                               />
                             ) : (
                               <Text color="white" fontSize="2xl">
-                                {DataProject.appsProject.appName?.charAt(0) || "A"}
+                                {DataProject.appsProject.appName?.charAt(0) ||
+                                  "A"}
                               </Text>
                             )}
                           </Box>
@@ -475,9 +510,11 @@ export default function ProjectManageView() {
                             bg={
                               DataProject.appsProject.appsStatus === "ACTIVE"
                                 ? "green.400"
-                                : DataProject.appsProject.appsStatus === "DEVELOPMENT"
+                                : DataProject.appsProject.appsStatus ===
+                                  "DEVELOPMENT"
                                 ? "blue.400"
-                                : DataProject.appsProject.appsStatus === "TESTING"
+                                : DataProject.appsProject.appsStatus ===
+                                  "TESTING"
                                 ? "orange.400"
                                 : "red.400"
                             }
@@ -513,18 +550,28 @@ export default function ProjectManageView() {
                             {DataProject.appsProject.appShortName}
                           </Badge>
                         </VStack>
-                        <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={4} w="full">
+                        <SimpleGrid
+                          columns={{ base: 1, sm: 2 }}
+                          spacing={4}
+                          w="full"
+                        >
                           <VStack spacing={1} align="center">
-                            <Text fontSize="xs" color="whiteAlpha.700" fontWeight="medium">
+                            <Text
+                              fontSize="xs"
+                              color="whiteAlpha.700"
+                              fontWeight="medium"
+                            >
                               STATUS
                             </Text>
                             <Badge
                               colorScheme={
                                 DataProject.appsProject.appsStatus === "ACTIVE"
                                   ? "green"
-                                  : DataProject.appsProject.appsStatus === "DEVELOPMENT"
+                                  : DataProject.appsProject.appsStatus ===
+                                    "DEVELOPMENT"
                                   ? "blue"
-                                  : DataProject.appsProject.appsStatus === "TESTING"
+                                  : DataProject.appsProject.appsStatus ===
+                                    "TESTING"
                                   ? "orange"
                                   : "red"
                               }
@@ -539,10 +586,19 @@ export default function ProjectManageView() {
                             </Badge>
                           </VStack>
                           <VStack spacing={1} align="center">
-                            <Text fontSize="xs" color="whiteAlpha.700" fontWeight="medium">
+                            <Text
+                              fontSize="xs"
+                              color="whiteAlpha.700"
+                              fontWeight="medium"
+                            >
                               CODE
                             </Text>
-                            <Text fontSize="sm" fontWeight="bold" color="white" fontFamily="mono">
+                            <Text
+                              fontSize="sm"
+                              fontWeight="bold"
+                              color="white"
+                              fontFamily="mono"
+                            >
                               {DataProject.appsProject.appCode}
                             </Text>
                           </VStack>
@@ -558,15 +614,27 @@ export default function ProjectManageView() {
                         >
                           <VStack spacing={2}>
                             <HStack justify="space-between" w="full">
-                              <Text fontSize="xs" color="whiteAlpha.700" fontWeight="medium">
+                              <Text
+                                fontSize="xs"
+                                color="whiteAlpha.700"
+                                fontWeight="medium"
+                              >
                                 PROJECT
                               </Text>
-                              <Text fontSize="xs" fontWeight="bold" color="white">
+                              <Text
+                                fontSize="xs"
+                                fontWeight="bold"
+                                color="white"
+                              >
                                 {DataProject.projectName}
                               </Text>
                             </HStack>
                             <HStack justify="space-between" w="full">
-                              <Text fontSize="xs" color="whiteAlpha.700" fontWeight="medium">
+                              <Text
+                                fontSize="xs"
+                                color="whiteAlpha.700"
+                                fontWeight="medium"
+                              >
                                 CATEGORY
                               </Text>
                               <Badge
@@ -583,7 +651,11 @@ export default function ProjectManageView() {
                             </HStack>
                           </VStack>
                         </Box>
-                        <Stack direction={{ base: "column", sm: "row" }} spacing={3} w="full">
+                        <Stack
+                          direction={{ base: "column", sm: "row" }}
+                          spacing={3}
+                          w="full"
+                        >
                           <Button
                             size="sm"
                             bg="whiteAlpha.200"
@@ -629,7 +701,9 @@ export default function ProjectManageView() {
                     bg={colorMode === "light" ? "blue.50" : "gray.800"}
                     roundedTop={radiusStyle}
                     borderBottom="1px"
-                    borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                    borderColor={
+                      colorMode === "light" ? "gray.200" : "gray.600"
+                    }
                   >
                     <HStack spacing={3}>
                       <Box
@@ -728,7 +802,9 @@ export default function ProjectManageView() {
                     bg={colorMode === "light" ? "green.50" : "gray.800"}
                     roundedTop={radiusStyle}
                     borderBottom="1px"
-                    borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                    borderColor={
+                      colorMode === "light" ? "gray.200" : "gray.600"
+                    }
                   >
                     <HStack spacing={3}>
                       <Box

@@ -1,6 +1,9 @@
 "use client";
 
-import { ProjectDataResponse, ProjectUserAssignmentResponse } from "@/app/services/useProjects";
+import {
+  ProjectDataResponse,
+  ProjectUserAssignmentResponse,
+} from "@/app/services/useProjects";
 import useProjects from "@/app/services/useProjects";
 import useUsers, { UsersResponse } from "@/app/services/useUsers";
 import {
@@ -44,8 +47,21 @@ import {
   MenuList,
   MenuItem,
 } from "@chakra-ui/react";
-import { radiusStyle, RES_CODE_OK, RES_GENERIC_ERROR_MSG, ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC } from "@/app/constants/applicationConstants";
-import { FiUsers, FiUserPlus, FiRefreshCw, FiSearch, FiUserMinus, FiMoreVertical } from "react-icons/fi";
+import {
+  radiusStyle,
+  RES_CODE_OK,
+  RES_GENERIC_ERROR_MSG,
+  ENDPOINT_API_BASEURL,
+  ENDPOINT_PORT_BASIC,
+} from "@/app/constants/applicationConstants";
+import {
+  FiUsers,
+  FiUserPlus,
+  FiRefreshCw,
+  FiSearch,
+  FiUserMinus,
+  FiMoreVertical,
+} from "react-icons/fi";
 import { useState, useEffect, useRef } from "react";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
@@ -59,7 +75,8 @@ interface TeamTabProps {
 const TeamTab = ({ DataProject }: TeamTabProps) => {
   const { colorMode } = useColorMode();
   const showToast = useToastHelper();
-  const { AssignUnassignMembers, GetProjectMembers, RemoveProjectMember } = useProjects();
+  const { AssignUnassignMembers, GetProjectMembers, RemoveProjectMember } =
+    useProjects();
   const { List } = useUsers();
 
   // Auth setup
@@ -72,33 +89,38 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
     onOpen: onAddModalOpen,
     onClose: onAddModalClose,
   } = useDisclosure();
-  
+
   const {
     isOpen: isRemoveAlertOpen,
     onOpen: onRemoveAlertOpen,
     onClose: onRemoveAlertClose,
   } = useDisclosure();
-  
+
   const cancelRef = useRef<HTMLButtonElement>(null);
 
   // Add member state
   const [availableUsers, setAvailableUsers] = useState<UsersResponse[]>([]);
-  const [projectMembers, setProjectMembers] = useState<ProjectUserAssignmentResponse[]>([]);
+  const [projectMembers, setProjectMembers] = useState<
+    ProjectUserAssignmentResponse[]
+  >([]);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [searchUser, setSearchUser] = useState("");
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
   const [isAddingMembers, setIsAddingMembers] = useState(false);
   const [togglingUserId, setTogglingUserId] = useState<string | null>(null);
-  
+
   // Confirmation dialog states
   const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
   const [confirmAction, setConfirmAction] = useState<(() => void) | null>(null);
   const [confirmMessage, setConfirmMessage] = useState("");
   const [confirmCaption, setConfirmCaption] = useState("");
-  
+
   // Remove member state
-  const [userToRemove, setUserToRemove] = useState<{ id: string; name: string } | null>(null);
+  const [userToRemove, setUserToRemove] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   // Auth effect
   useEffect(() => {
@@ -107,7 +129,8 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
 
     if (DataAuth == null && storedData) {
       const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
-      const UserData: AuthDataResponse = StorageAuth.dataLogin as AuthDataResponse;
+      const UserData: AuthDataResponse =
+        StorageAuth.dataLogin as AuthDataResponse;
       setDataAuth(UserData);
     }
 
@@ -120,14 +143,16 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
       hasProjectId: !!DataProject?.id,
       projectId: DataProject?.id,
       hasToken: !!tokenData,
-      tokenLength: tokenData?.length
+      tokenLength: tokenData?.length,
     });
-    
+
     if (DataProject?.id && tokenData) {
       console.log("[TeamTab] Calling loadProjectMembers");
       loadProjectMembers();
     } else {
-      console.log("[TeamTab] Skipping loadProjectMembers - missing requirements");
+      console.log(
+        "[TeamTab] Skipping loadProjectMembers - missing requirements"
+      );
     }
   }, [DataProject?.id, tokenData]);
 
@@ -135,9 +160,9 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
   const loadProjectMembers = async () => {
     console.log("[loadProjectMembers] Starting", {
       projectId: DataProject?.id,
-      hasToken: !!tokenData
+      hasToken: !!tokenData,
     });
-    
+
     if (!DataProject?.id || !tokenData) {
       console.log("[loadProjectMembers] Aborted - missing data");
       return;
@@ -152,9 +177,18 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
       if (response?.statusCode === RES_CODE_OK && response.data) {
         console.log("[loadProjectMembers] Raw data:", response.data);
         setProjectMembers(response.data);
-        console.log("[loadProjectMembers] State updated with", response.data.length, "members");
+        console.log(
+          "[loadProjectMembers] State updated with",
+          response.data.length,
+          "members"
+        );
       } else {
-        console.log("[loadProjectMembers] Failed - statusCode:", response?.statusCode, "message:", response?.message);
+        console.log(
+          "[loadProjectMembers] Failed - statusCode:",
+          response?.statusCode,
+          "message:",
+          response?.message
+        );
       }
     } catch (error) {
       console.error("[loadProjectMembers] Error:", error);
@@ -199,7 +233,7 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
   const handleAddMember = () => {
     setSearchUser("");
     setAvailableUsers([]);
-    const currentMemberIds = projectMembers.map(m => m.userData.id);
+    const currentMemberIds = projectMembers.map((m) => m.userData.id);
     setSelectedUserIds(currentMemberIds);
     onAddModalOpen();
   };
@@ -208,9 +242,13 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
   const confirmAddMembers = async () => {
     if (!DataProject || !tokenData) return;
 
-    const currentMemberIds = projectMembers.map(m => m.userData.id);
-    const assignUsers = selectedUserIds.filter(id => !currentMemberIds.includes(id));
-    const unassignUsers = currentMemberIds.filter(id => !selectedUserIds.includes(id));
+    const currentMemberIds = projectMembers.map((m) => m.userData.id);
+    const assignUsers = selectedUserIds.filter(
+      (id) => !currentMemberIds.includes(id)
+    );
+    const unassignUsers = currentMemberIds.filter(
+      (id) => !selectedUserIds.includes(id)
+    );
 
     if (assignUsers.length === 0 && unassignUsers.length === 0) {
       showToast({
@@ -259,15 +297,19 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
 
   // Handle user selection
   const handleUserSelect = (userId: string) => {
-    setSelectedUserIds(prev =>
+    setSelectedUserIds((prev) =>
       prev.includes(userId)
-        ? prev.filter(id => id !== userId)
+        ? prev.filter((id) => id !== userId)
         : [...prev, userId]
     );
   };
 
   // Toggle user status (ACTIVE <-> INACTIVE)
-  const toggleUserStatus = async (userGuid: string, userName: string, currentStatus: string) => {
+  const toggleUserStatus = async (
+    userGuid: string,
+    userName: string,
+    currentStatus: string
+  ) => {
     if (!DataProject || !tokenData) return;
 
     setTogglingUserId(userGuid);
@@ -276,14 +318,16 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
         {
           projectId: DataProject.id,
           assignUsers: currentStatus === "INACTIVE" ? [userGuid] : [],
-          unassignUsers: currentStatus === "ACTIVE" ? [userGuid] : []
+          unassignUsers: currentStatus === "ACTIVE" ? [userGuid] : [],
         },
         tokenData
       );
 
       if (response?.statusCode === RES_CODE_OK) {
         showToast({
-          description: `User status changed to ${currentStatus === "ACTIVE" ? "INACTIVE" : "ACTIVE"}`,
+          description: `User status changed to ${
+            currentStatus === "ACTIVE" ? "INACTIVE" : "ACTIVE"
+          }`,
           statusToast: "success",
         });
         await loadProjectMembers();
@@ -313,7 +357,7 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
       const response = await RemoveProjectMember(
         {
           projectId: DataProject.id,
-          userId: userGuid
+          userId: userGuid,
         },
         tokenData
       );
@@ -342,7 +386,11 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
   };
 
   // Show confirmation dialog
-  const showConfirmation = (caption: string, message: string, action: () => void) => {
+  const showConfirmation = (
+    caption: string,
+    message: string,
+    action: () => void
+  ) => {
     setConfirmCaption(caption);
     setConfirmMessage(message);
     setConfirmAction(() => action);
@@ -360,22 +408,22 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
   };
 
   // Filter users based on search - combine available and existing members
-  const allUsers = [...availableUsers, ...projectMembers.map(m => m.userData)];
-  const uniqueUsers = allUsers.filter((user, index, self) => 
-    index === self.findIndex(u => u?.id === user?.id)
+  const allUsers = [
+    ...availableUsers,
+    ...projectMembers.map((m) => m.userData),
+  ];
+  const uniqueUsers = allUsers.filter(
+    (user, index, self) => index === self.findIndex((u) => u?.id === user?.id)
   );
-  
-  const filteredUsers = uniqueUsers.filter(user =>
-    user?.nama?.toLowerCase().includes(searchUser.toLowerCase()) ||
-    user?.email?.toLowerCase().includes(searchUser.toLowerCase())
+
+  const filteredUsers = uniqueUsers.filter(
+    (user) =>
+      user?.nama?.toLowerCase().includes(searchUser.toLowerCase()) ||
+      user?.email?.toLowerCase().includes(searchUser.toLowerCase())
   );
 
   return (
-    <TabPanel
-      p={8}
-      bg={colorMode === "light" ? "gray.50" : "gray.900"}
-      roundedBottom={radiusStyle}
-    >
+    <TabPanel>
       <VStack spacing={8} align="stretch">
         {/* Header Section */}
         <HStack justify="space-between" align="center">
@@ -434,11 +482,13 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
               }, {} as Record<string, typeof projectMembers>);
 
               // Sort to show ACTIVE first
-              const sortedStatuses = Object.entries(statusGroups).sort(([a], [b]) => {
-                if (a === "ACTIVE") return -1;
-                if (b === "ACTIVE") return 1;
-                return 0;
-              });
+              const sortedStatuses = Object.entries(statusGroups).sort(
+                ([a], [b]) => {
+                  if (a === "ACTIVE") return -1;
+                  if (b === "ACTIVE") return 1;
+                  return 0;
+                }
+              );
 
               return sortedStatuses.map(([status, statusMembers]) => (
                 <Box key={status}>
@@ -450,11 +500,11 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
                     >
                       {status} MEMBERS
                     </Heading>
-                    <Badge 
-                      colorScheme={status === "ACTIVE" ? "green" : "red"} 
-                      fontSize="md" 
-                      px={3} 
-                      py={1} 
+                    <Badge
+                      colorScheme={status === "ACTIVE" ? "green" : "red"}
+                      fontSize="md"
+                      px={3}
+                      py={1}
                       rounded="full"
                     >
                       {statusMembers.length}
@@ -464,135 +514,221 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
                   {/* Second level: Group by organization */}
                   <VStack spacing={6} align="stretch" pl={4}>
                     {(() => {
-                      const orgGroups = statusMembers.reduce((acc, assignment) => {
-                        const member = assignment.userData;
-                        const groupCode = member?.team?.organization?.group?.orgCode || "UNREGISTERED";
-                        const groupName = member?.team?.organization?.group?.orgName || "UNREGISTERED MEMBER GROUP";
-                        if (!acc[groupCode]) {
-                          acc[groupCode] = { groupName, members: [] };
-                        }
-                        acc[groupCode].members.push(assignment);
-                        return acc;
-                      }, {} as Record<string, { groupName: string; members: typeof statusMembers }>);
+                      const orgGroups = statusMembers.reduce(
+                        (acc, assignment) => {
+                          const member = assignment.userData;
+                          const groupCode =
+                            member?.team?.organization?.group?.orgCode ||
+                            "UNREGISTERED";
+                          const groupName =
+                            member?.team?.organization?.group?.orgName ||
+                            "UNREGISTERED MEMBER GROUP";
+                          if (!acc[groupCode]) {
+                            acc[groupCode] = { groupName, members: [] };
+                          }
+                          acc[groupCode].members.push(assignment);
+                          return acc;
+                        },
+                        {} as Record<
+                          string,
+                          { groupName: string; members: typeof statusMembers }
+                        >
+                      );
 
-                      return Object.entries(orgGroups).map(([groupCode, { groupName, members }]) => (
-                        <Box key={groupCode}>
-                          <HStack mb={3} spacing={3}>
-                            <Text
-                              fontSize="lg"
-                              fontWeight="bold"
-                              color={colorMode === "light" ? "gray.700" : "gray.300"}
-                            >
-                              {groupName}
-                            </Text>
-                            <Badge colorScheme="blue" fontSize="sm" px={2} py={1} rounded="full">
-                              {members.length}
-                            </Badge>
-                          </HStack>
-                          <VStack spacing={3} align="stretch">
-                            {members.map((assignment, index) => {
-                              const member = assignment.userData;
-                              return (
-                                <Card
-                                  key={index}
-                                  shadow="md"
-                                  rounded={radiusStyle}
-                                  border="1px"
-                                  borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-                                  bg={colorMode === "light" ? "white" : "gray.800"}
-                                  _hover={{
-                                    shadow: "lg",
-                                    borderColor: "blue.400",
-                                  }}
-                                  transition="all 0.2s"
-                                >
-                                  <CardBody p={4}>
-                                    <HStack spacing={4}>
-                                      <Avatar
-                                        size="md"
-                                        name={member.nama || "Team Member"}
-                                        bg="blue.500"
-                                      />
-                                      <VStack align="start" spacing={1} flex={1}>
-                                        <Text fontWeight="bold" fontSize="md" color={colorMode === "light" ? "gray.800" : "white"}>
-                                          {member.nama || "Team Member"}
-                                        </Text>
-                                        <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"}>
-                                          {member.team?.teamName || member.jabatan || "No team"}
-                                        </Text>
-                                        <Text fontSize="xs" color={colorMode === "light" ? "gray.500" : "gray.500"}>
-                                          {member.email || "No email"}
-                                        </Text>
-                                      </VStack>
-                                      <VStack align="end" spacing={1}>
-                                        <Text fontSize="xs" color="gray.500">
-                                          User Assign Status
-                                        </Text>
-                                        <HStack spacing={2}>
-                                          <Badge 
-                                            colorScheme={assignment.userAssignStatus === "ACTIVE" ? "green" : "red"} 
-                                            px={3} 
-                                            py={1} 
-                                            rounded="full"
+                      return Object.entries(orgGroups).map(
+                        ([groupCode, { groupName, members }]) => (
+                          <Box key={groupCode}>
+                            <HStack mb={3} spacing={3}>
+                              <Text
+                                fontSize="lg"
+                                fontWeight="bold"
+                                color={
+                                  colorMode === "light"
+                                    ? "gray.700"
+                                    : "gray.300"
+                                }
+                              >
+                                {groupName}
+                              </Text>
+                              <Badge
+                                colorScheme="blue"
+                                fontSize="sm"
+                                px={2}
+                                py={1}
+                                rounded="full"
+                              >
+                                {members.length}
+                              </Badge>
+                            </HStack>
+                            <VStack spacing={3} align="stretch">
+                              {members.map((assignment, index) => {
+                                const member = assignment.userData;
+                                return (
+                                  <Card
+                                    key={index}
+                                    shadow="md"
+                                    rounded={radiusStyle}
+                                    border="1px"
+                                    borderColor={
+                                      colorMode === "light"
+                                        ? "gray.200"
+                                        : "gray.700"
+                                    }
+                                    bg={
+                                      colorMode === "light"
+                                        ? "white"
+                                        : "gray.800"
+                                    }
+                                    _hover={{
+                                      shadow: "lg",
+                                      borderColor: "blue.400",
+                                    }}
+                                    transition="all 0.2s"
+                                  >
+                                    <CardBody p={4}>
+                                      <HStack spacing={4}>
+                                        <Avatar
+                                          size="md"
+                                          name={member.nama || "Team Member"}
+                                          bg="blue.500"
+                                        />
+                                        <VStack
+                                          align="start"
+                                          spacing={1}
+                                          flex={1}
+                                        >
+                                          <Text
+                                            fontWeight="bold"
+                                            fontSize="md"
+                                            color={
+                                              colorMode === "light"
+                                                ? "gray.800"
+                                                : "white"
+                                            }
                                           >
-                                            {assignment.userAssignStatus}
-                                          </Badge>
-                                          <Menu>
-                                            <MenuButton
-                                              as={IconButton}
-                                              icon={<FiMoreVertical />}
-                                              size="xs"
-                                              variant="ghost"
-                                              isLoading={togglingUserId === member.id}
-                                            />
-                                            <MenuList>
-                                              {assignment.userAssignStatus === "ACTIVE" ? (
-                                                <MenuItem
-                                                  onClick={() => showConfirmation(
-                                                    "Deactivate User",
-                                                    `Are you sure you want to deactivate "${member.nama}" from this project?`,
-                                                    () => toggleUserStatus(member.id, member.nama, assignment.userAssignStatus)
-                                                  )}
-                                                  color="orange.500"
-                                                >
-                                                  Deactivate
-                                                </MenuItem>
-                                              ) : (
-                                                <>
+                                            {member.nama || "Team Member"}
+                                          </Text>
+                                          <Text
+                                            fontSize="sm"
+                                            color={
+                                              colorMode === "light"
+                                                ? "gray.600"
+                                                : "gray.400"
+                                            }
+                                          >
+                                            {member.team?.teamName ||
+                                              member.jabatan ||
+                                              "No team"}
+                                          </Text>
+                                          <Text
+                                            fontSize="xs"
+                                            color={
+                                              colorMode === "light"
+                                                ? "gray.500"
+                                                : "gray.500"
+                                            }
+                                          >
+                                            {member.email || "No email"}
+                                          </Text>
+                                        </VStack>
+                                        <VStack align="end" spacing={1}>
+                                          <Text fontSize="xs" color="gray.500">
+                                            User Assign Status
+                                          </Text>
+                                          <HStack spacing={2}>
+                                            <Badge
+                                              colorScheme={
+                                                assignment.userAssignStatus ===
+                                                "ACTIVE"
+                                                  ? "green"
+                                                  : "red"
+                                              }
+                                              px={3}
+                                              py={1}
+                                              rounded="full"
+                                            >
+                                              {assignment.userAssignStatus}
+                                            </Badge>
+                                            <Menu>
+                                              <MenuButton
+                                                as={IconButton}
+                                                icon={<FiMoreVertical />}
+                                                size="xs"
+                                                variant="ghost"
+                                                isLoading={
+                                                  togglingUserId === member.id
+                                                }
+                                              />
+                                              <MenuList>
+                                                {assignment.userAssignStatus ===
+                                                "ACTIVE" ? (
                                                   <MenuItem
-                                                    onClick={() => showConfirmation(
-                                                      "Activate User",
-                                                      `Are you sure you want to activate "${member.nama}" for this project?`,
-                                                      () => toggleUserStatus(member.id, member.nama, assignment.userAssignStatus)
-                                                    )}
-                                                    color="green.500"
+                                                    onClick={() =>
+                                                      showConfirmation(
+                                                        "Deactivate User",
+                                                        `Are you sure you want to deactivate "${member.nama}" from this project?`,
+                                                        () =>
+                                                          toggleUserStatus(
+                                                            member.id,
+                                                            member.nama,
+                                                            assignment.userAssignStatus
+                                                          )
+                                                      )
+                                                    }
+                                                    color="orange.500"
                                                   >
-                                                    Activate
+                                                    Deactivate
                                                   </MenuItem>
-                                                  <MenuItem
-                                                    onClick={() => showConfirmation(
-                                                      "Remove User",
-                                                      `Are you sure you want to permanently remove "${member.nama}" from this project? This action cannot be undone.`,
-                                                      () => removeUser(member.id, member.nama)
-                                                    )}
-                                                    color="red.500"
-                                                  >
-                                                    Remove
-                                                  </MenuItem>
-                                                </>
-                                              )}
-                                            </MenuList>
-                                          </Menu>
-                                        </HStack>
-                                      </VStack>
-                                    </HStack>
-                                  </CardBody>
-                                </Card>
-                              );
-                            })}
-                          </VStack>
-                        </Box>
-                      ));
+                                                ) : (
+                                                  <>
+                                                    <MenuItem
+                                                      onClick={() =>
+                                                        showConfirmation(
+                                                          "Activate User",
+                                                          `Are you sure you want to activate "${member.nama}" for this project?`,
+                                                          () =>
+                                                            toggleUserStatus(
+                                                              member.id,
+                                                              member.nama,
+                                                              assignment.userAssignStatus
+                                                            )
+                                                        )
+                                                      }
+                                                      color="green.500"
+                                                    >
+                                                      Activate
+                                                    </MenuItem>
+                                                    <MenuItem
+                                                      onClick={() =>
+                                                        showConfirmation(
+                                                          "Remove User",
+                                                          `Are you sure you want to permanently remove "${member.nama}" from this project? This action cannot be undone.`,
+                                                          () =>
+                                                            removeUser(
+                                                              member.id,
+                                                              member.nama
+                                                            )
+                                                        )
+                                                      }
+                                                      color="red.500"
+                                                    >
+                                                      Remove
+                                                    </MenuItem>
+                                                  </>
+                                                )}
+                                              </MenuList>
+                                            </Menu>
+                                          </HStack>
+                                        </VStack>
+                                      </HStack>
+                                    </CardBody>
+                                  </Card>
+                                );
+                              })}
+                            </VStack>
+                          </Box>
+                        )
+                      );
                     })()}
                   </VStack>
                 </Box>
@@ -676,71 +812,112 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
                       ) : (
                         <VStack spacing={4} align="stretch">
                           {(() => {
-                            const selectedUsers = uniqueUsers.filter(u => selectedUserIds.includes(u?.id || ''));
-                            const grouped = selectedUsers.reduce((acc, member) => {
-                              const groupCode = member?.team?.organization?.group?.orgCode || "UNREGISTERED";
-                              const groupName = member?.team?.organization?.group?.orgName || "UNREGISTERED MEMBER GROUP";
-                              if (!acc[groupCode]) {
-                                acc[groupCode] = { groupName, members: [] };
-                              }
-                              acc[groupCode].members.push(member);
-                              return acc;
-                            }, {} as Record<string, { groupName: string; members: typeof selectedUsers }>);
+                            const selectedUsers = uniqueUsers.filter((u) =>
+                              selectedUserIds.includes(u?.id || "")
+                            );
+                            const grouped = selectedUsers.reduce(
+                              (acc, member) => {
+                                const groupCode =
+                                  member?.team?.organization?.group?.orgCode ||
+                                  "UNREGISTERED";
+                                const groupName =
+                                  member?.team?.organization?.group?.orgName ||
+                                  "UNREGISTERED MEMBER GROUP";
+                                if (!acc[groupCode]) {
+                                  acc[groupCode] = { groupName, members: [] };
+                                }
+                                acc[groupCode].members.push(member);
+                                return acc;
+                              },
+                              {} as Record<
+                                string,
+                                {
+                                  groupName: string;
+                                  members: typeof selectedUsers;
+                                }
+                              >
+                            );
 
-                            return Object.entries(grouped).map(([groupCode, { groupName, members }]) => (
-                              <Box key={groupCode} w="full">
-                                <Text pb={2} fontWeight={700} fontSize="md" color="white">
-                                  {groupName} ({members.length})
-                                </Text>
-                                <SimpleGrid columns={1} spacing={2}>
-                                  {members.map((dt) => (
-                                    <Card
-                                      key={dt?.id}
-                                      shadow="md"
-                                      rounded="lg"
-                                      border="1px"
-                                      borderColor="gray.200"
-                                      bg={colorMode === "light" ? "white" : "gray.800"}
-                                      _hover={{
-                                        transform: "translateY(-1px)",
-                                        shadow: "lg",
-                                      }}
-                                      transition="all 0.2s"
-                                    >
-                                      <CardBody p={3}>
-                                        <HStack spacing={3}>
-                                          <Avatar name={dt?.nama} size="sm" />
-                                          <VStack align="start" spacing={0} flex={1}>
-                                            <Text
-                                              color={colorMode === "light" ? "gray.900" : "gray.100"}
-                                              fontWeight={600}
-                                              fontSize="sm"
+                            return Object.entries(grouped).map(
+                              ([groupCode, { groupName, members }]) => (
+                                <Box key={groupCode} w="full">
+                                  <Text
+                                    pb={2}
+                                    fontWeight={700}
+                                    fontSize="md"
+                                    color="white"
+                                  >
+                                    {groupName} ({members.length})
+                                  </Text>
+                                  <SimpleGrid columns={1} spacing={2}>
+                                    {members.map((dt) => (
+                                      <Card
+                                        key={dt?.id}
+                                        shadow="md"
+                                        rounded="lg"
+                                        border="1px"
+                                        borderColor="gray.200"
+                                        bg={
+                                          colorMode === "light"
+                                            ? "white"
+                                            : "gray.800"
+                                        }
+                                        _hover={{
+                                          transform: "translateY(-1px)",
+                                          shadow: "lg",
+                                        }}
+                                        transition="all 0.2s"
+                                      >
+                                        <CardBody p={3}>
+                                          <HStack spacing={3}>
+                                            <Avatar name={dt?.nama} size="sm" />
+                                            <VStack
+                                              align="start"
+                                              spacing={0}
+                                              flex={1}
                                             >
-                                              {dt?.nama}
-                                            </Text>
-                                            <Text
-                                              fontWeight={500}
-                                              fontSize="xs"
-                                              color={colorMode === "light" ? "secondary.800" : "secondary.200"}
-                                            >
-                                              {dt?.team?.teamName || dt?.jabatan}
-                                            </Text>
-                                          </VStack>
-                                          <IconButton
-                                            aria-label="Remove user"
-                                            icon={<FiUserMinus />}
-                                            colorScheme="red"
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => handleUserSelect(dt?.id || '')}
-                                          />
-                                        </HStack>
-                                      </CardBody>
-                                    </Card>
-                                  ))}
-                                </SimpleGrid>
-                              </Box>
-                            ));
+                                              <Text
+                                                color={
+                                                  colorMode === "light"
+                                                    ? "gray.900"
+                                                    : "gray.100"
+                                                }
+                                                fontWeight={600}
+                                                fontSize="sm"
+                                              >
+                                                {dt?.nama}
+                                              </Text>
+                                              <Text
+                                                fontWeight={500}
+                                                fontSize="xs"
+                                                color={
+                                                  colorMode === "light"
+                                                    ? "secondary.800"
+                                                    : "secondary.200"
+                                                }
+                                              >
+                                                {dt?.team?.teamName ||
+                                                  dt?.jabatan}
+                                              </Text>
+                                            </VStack>
+                                            <IconButton
+                                              aria-label="Remove user"
+                                              icon={<FiUserMinus />}
+                                              colorScheme="red"
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={() =>
+                                                handleUserSelect(dt?.id || "")
+                                              }
+                                            />
+                                          </HStack>
+                                        </CardBody>
+                                      </Card>
+                                    ))}
+                                  </SimpleGrid>
+                                </Box>
+                              )
+                            );
                           })()}
                         </VStack>
                       )}
@@ -757,9 +934,11 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
                       <Text fontWeight={600} fontSize="lg">
                         Assign New User
                       </Text>
-                      
+
                       <FormControl>
-                        <FormLabel fontSize="sm">Search Users (min 3 characters)</FormLabel>
+                        <FormLabel fontSize="sm">
+                          Search Users (min 3 characters)
+                        </FormLabel>
                         <Input
                           value={searchUser}
                           onChange={(e) => {
@@ -776,7 +955,12 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
 
                       <Box overflowY="auto" minH="50vh" maxH="60vh">
                         {searchUser.length < 3 ? (
-                          <Text textAlign="center" color="gray.500" py={4} fontSize="sm">
+                          <Text
+                            textAlign="center"
+                            color="gray.500"
+                            py={4}
+                            fontSize="sm"
+                          >
                             Type at least 3 characters to search
                           </Text>
                         ) : isLoadingUsers ? (
@@ -789,11 +973,17 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
                         ) : filteredUsers.length > 0 ? (
                           <VStack spacing={2}>
                             {filteredUsers.map((dt) => {
-                              const isSelected = selectedUserIds.includes(dt?.id || '');
+                              const isSelected = selectedUserIds.includes(
+                                dt?.id || ""
+                              );
                               return (
                                 <HStack
                                   key={dt?.id}
-                                  bg={colorMode === "light" ? "gray.100" : "gray.700"}
+                                  bg={
+                                    colorMode === "light"
+                                      ? "gray.100"
+                                      : "gray.700"
+                                  }
                                   w="full"
                                   py={3}
                                   px={4}
@@ -803,10 +993,18 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
                                 >
                                   <Avatar name={dt?.nama} size="sm" />
                                   <VStack align="start" spacing={0} flex={1}>
-                                    <Text color="gray.900" fontWeight={600} fontSize="sm">
+                                    <Text
+                                      color="gray.900"
+                                      fontWeight={600}
+                                      fontSize="sm"
+                                    >
                                       {dt?.nama}
                                     </Text>
-                                    <Text fontWeight={500} fontSize="xs" color="gray.700">
+                                    <Text
+                                      fontWeight={500}
+                                      fontSize="xs"
+                                      color="gray.700"
+                                    >
                                       {dt?.team?.teamName || dt?.jabatan}
                                     </Text>
                                   </VStack>
@@ -815,7 +1013,9 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
                                     colorScheme="green"
                                     size="sm"
                                     isDisabled={isSelected}
-                                    onClick={() => handleUserSelect(dt?.id || '')}
+                                    onClick={() =>
+                                      handleUserSelect(dt?.id || "")
+                                    }
                                   >
                                     <FiUserPlus />
                                   </Button>
@@ -824,7 +1024,12 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
                             })}
                           </VStack>
                         ) : (
-                          <Text textAlign="center" color="gray.500" py={4} fontSize="sm">
+                          <Text
+                            textAlign="center"
+                            color="gray.500"
+                            py={4}
+                            fontSize="sm"
+                          >
                             No users found
                           </Text>
                         )}
@@ -837,11 +1042,7 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
           </ModalBody>
 
           <ModalFooter>
-            <Button
-              colorScheme="gray"
-              mr={3}
-              onClick={onAddModalClose}
-            >
+            <Button colorScheme="gray" mr={3} onClick={onAddModalClose}>
               Cancel
             </Button>
             <Button
