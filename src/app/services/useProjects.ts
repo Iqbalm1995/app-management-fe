@@ -365,6 +365,11 @@ export interface ProjectUpdatePayload {
   projectType: string;
   projectRegisterDate: string | null;
   projectClosedDate: string | null;
+  projectAcquisitionCode: string | null;
+  projectCharasteristicCode: string | null;
+  projectSubCharasteristicCode: string | null;
+  proOwnerDirectorateId: string | null;
+  proManageByDirectorateId: string | null;
   proOwnerDivisionId: string | null;
   proOwnerGroupId: string | null;
   proManageByDivisionId: string | null;
