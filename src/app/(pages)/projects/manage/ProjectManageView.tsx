@@ -70,7 +70,7 @@ import {
   TimelineTab,
   EditTab,
 } from "./tabs";
-import { EnhancedHeader } from "./components/EnhancedHeader";
+import { ProjectDetailHeader } from "./components/ProjectDetailHeader";
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Project Detail",
@@ -238,8 +238,10 @@ export default function ProjectManageView() {
 
   return (
     <LayoutAdmin>
-      <EnhancedHeader
+      <ProjectDetailHeader
         DataProject={DataProject}
+        DataApps={DataApps}
+        projectId={projectId}
         IsLoadingProcess={IsLoadingProcess}
         onRefresh={() => setRefreshData((prev) => prev + 1)}
       />

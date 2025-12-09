@@ -193,7 +193,7 @@ export const EnhancedHeader = ({
                   </Badge>
                   <HStack spacing={2}>
                     <Text fontSize="sm" color="whiteAlpha.800" fontWeight="500">
-                      Project ID:
+                      Project Number:
                     </Text>
                     <Text fontSize="sm" color="white" fontWeight="600">
                       {DataProject.projectNo}
@@ -202,44 +202,6 @@ export const EnhancedHeader = ({
                 </HStack>
               </VStack>
 
-              {/* Stats Cards */}
-              <VStack spacing={3} align="end">
-                <Box
-                  bg="whiteAlpha.200"
-                  backdropFilter="blur(10px)"
-                  border="1px"
-                  borderColor="whiteAlpha.300"
-                  rounded="xl"
-                  p={4}
-                  textAlign="center"
-                  minW="120px"
-                >
-                  <Text fontSize="2xl" fontWeight="bold" color="white">
-                    {Math.round(DataProject.projectStatusPercentage)}%
-                  </Text>
-                  <Text fontSize="sm" color="whiteAlpha.800">
-                    Progress
-                  </Text>
-                </Box>
-
-                <Box
-                  bg="whiteAlpha.200"
-                  backdropFilter="blur(10px)"
-                  border="1px"
-                  borderColor="whiteAlpha.300"
-                  rounded="xl"
-                  p={4}
-                  textAlign="center"
-                  minW="120px"
-                >
-                  <Text fontSize="lg" fontWeight="bold" color="white">
-                    {DataProject.userAssignment?.length || 0}
-                  </Text>
-                  <Text fontSize="sm" color="whiteAlpha.800">
-                    Team Members
-                  </Text>
-                </Box>
-              </VStack>
             </Grid>
           ) : (
             <Box textAlign="center" py={8}>
