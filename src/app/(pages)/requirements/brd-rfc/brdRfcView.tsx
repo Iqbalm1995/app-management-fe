@@ -80,6 +80,7 @@ import {
   Badge,
   Box,
   Button,
+  ButtonGroup,
   Card,
   CardBody,
   CardHeader,
@@ -1008,30 +1009,22 @@ export default function BRDRFCView() {
                   <pre>{JSON.stringify(ParamFilter, null, 2)}</pre>
                 </Box> */}
                 {/* View Mode Switch */}
-                <HStack
-                  spacing={1}
-                  bg={colorMode === "light" ? "gray.100" : "gray.700"}
-                  rounded="lg"
-                  p={1}
-                  w="fit-content"
-                >
+                <ButtonGroup size="sm" isAttached variant="outline">
                   <Button
-                    size="md"
-                    variant={viewMode === "BRD" ? "solid" : "ghost"}
                     colorScheme={viewMode === "BRD" ? "blue" : "gray"}
+                    variant={viewMode === "BRD" ? "solid" : "outline"}
                     onClick={() => setViewMode("BRD")}
                   >
                     BRD
                   </Button>
                   <Button
-                    size="md"
-                    variant={viewMode === "RFC" ? "solid" : "ghost"}
-                    colorScheme={viewMode === "RFC" ? "secondary" : "gray"}
+                    colorScheme={viewMode === "RFC" ? "blue" : "gray"}
+                    variant={viewMode === "RFC" ? "solid" : "outline"}
                     onClick={() => setViewMode("RFC")}
                   >
                     RFC
                   </Button>
-                </HStack>
+                </ButtonGroup>
 
                 {/* FILTER DATA */}
                 <Grid templateColumns="repeat(2, 1fr)" gap={5} w={"full"}>
