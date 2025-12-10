@@ -18,22 +18,19 @@ export const KANBAN_SOURCES = {
 export const kanbanRouteConfigs: Record<string, KanbanRouteConfig> = {
   [KANBAN_SOURCES.PROJECTS_MANAGER]: {
     source: KANBAN_SOURCES.PROJECTS_MANAGER,
-    backUrl: (projectId: string) =>
-      `/projects-manager/detail?projectId=${projectId}`,
+    backUrl: (projectId: string) => `/projects/manage?projectId=${projectId}`,
     label: "Back to Project Manager",
   },
 
   [KANBAN_SOURCES.PROJECTS_PROCUREMENTS]: {
     source: KANBAN_SOURCES.PROJECTS_PROCUREMENTS,
-    backUrl: (projectId: string) =>
-      `/projects-procurements/manage?projectId=${projectId}`,
+    backUrl: (projectId: string) => `/projects/manage?projectId=${projectId}`,
     label: "Back to Procurement",
   },
 
   [KANBAN_SOURCES.PROJECT_DEVELOPMENT]: {
     source: KANBAN_SOURCES.PROJECT_DEVELOPMENT,
-    backUrl: (projectId: string) =>
-      `/project-development/development?projectId=${projectId}`,
+    backUrl: (projectId: string) => `/project/manage?projectId=${projectId}`,
     label: "Back to Development",
   },
 };

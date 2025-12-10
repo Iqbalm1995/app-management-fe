@@ -34,7 +34,10 @@ import {
 } from "@/app/helper/MasterHelper";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
-import { getKanbanBackUrl, getKanbanBackLabel } from "@/app/config/kanbanRoutes";
+import {
+  getKanbanBackUrl,
+  getKanbanBackLabel,
+} from "@/app/config/kanbanRoutes";
 
 import useProjects, { ProjectDataResponse } from "@/app/services/useProjects";
 import useRequirements, {
@@ -432,7 +435,13 @@ const TaskItemRow: React.FC<TaskItemRowProps> = ({
       ) : (
         <Text
           as={item.isDone === "Y" ? "s" : "span"}
-          color={item.isDone === "Y" ? (colorMode === "light" ? "gray.500" : "gray.400") : "inherit"}
+          color={
+            item.isDone === "Y"
+              ? colorMode === "light"
+                ? "gray.500"
+                : "gray.400"
+              : "inherit"
+          }
           flex="1"
           onClick={handleEditStart}
           cursor="pointer"
@@ -577,11 +586,17 @@ const ImagePreview = ({ name, alt, src }: AttachmentProps) => {
           rounded={radiusStyle}
           maxW="90vw"
           maxH="90vh"
-          bg={colorMode === "light" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.3)"}
+          bg={
+            colorMode === "light"
+              ? "rgba(255, 255, 255, 0.1)"
+              : "rgba(0, 0, 0, 0.3)"
+          }
           backdropFilter="blur(10px)"
           boxShadow="lg"
         >
-          <ModalCloseButton color={colorMode === "light" ? "white" : "gray.300"} />
+          <ModalCloseButton
+            color={colorMode === "light" ? "white" : "gray.300"}
+          />
           <ModalBody p={0}>
             <Box
               w="full"
@@ -603,7 +618,7 @@ const ImagePreview = ({ name, alt, src }: AttachmentProps) => {
 const ImageAddMore = () => {
   const AddImageModalDisc = useDisclosure();
   const { colorMode } = useColorMode();
-  
+
   return (
     <Box
       rounded={radiusStyle}
@@ -661,7 +676,11 @@ const ImageAddMore = () => {
         size="2xl"
       >
         <ModalOverlay />
-        <ModalContent rounded={radiusStyle} boxShadow="lg" bg={colorMode === "light" ? "white" : "gray.800"}>
+        <ModalContent
+          rounded={radiusStyle}
+          boxShadow="lg"
+          bg={colorMode === "light" ? "white" : "gray.800"}
+        >
           <ModalCloseButton />
           <ModalHeader>Upload Files</ModalHeader>
           <ModalBody p={4}>
@@ -750,7 +769,11 @@ const TaskComment = ({
             <Text fontWeight={600} fontSize={15}>
               {dataComments.userCreated.nama}
             </Text>
-            <Text fontSize={12} color={colorMode === "light" ? "gray.500" : "gray.400"} alignSelf="center">
+            <Text
+              fontSize={12}
+              color={colorMode === "light" ? "gray.500" : "gray.400"}
+              alignSelf="center"
+            >
               {convertToCustomDateFormat(dataComments.createdAt)}
             </Text>
           </Flex>
@@ -5551,7 +5574,7 @@ function KanbanBacklogPage() {
       };
 
       const response = await ListTasksPaged(PayloadGetArchivedTasks, tokenData);
-      
+
       if (response?.statusCode === RES_CODE_OK && response.data) {
         setArchivedTasks(response.data);
       } else {
