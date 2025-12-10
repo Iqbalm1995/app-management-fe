@@ -265,7 +265,7 @@ export const ProjectDetailHeader = ({
           <Stack
             direction={{ base: "column", md: "row" }}
             spacing={{ base: 4, md: 6 }}
-            align={{ base: "center", md: "start" }}
+            align="center"
           >
             {/* Compact Application Avatar */}
             <VStack spacing={3} align="center">
@@ -323,23 +323,16 @@ export const ProjectDetailHeader = ({
 
                 <HStack spacing={3} wrap="wrap">
                   <Badge
-                    colorScheme={
-                      DataProject.projectStatus === "ACTIVE"
-                        ? "green"
-                        : DataProject.projectStatus === "ONHOLD"
-                          ? "orange"
-                          : DataProject.projectStatus === "COMPLETED"
-                            ? "blue"
-                            : "gray"
-                    }
+                    colorScheme="blue"
+                    variant="solid"
                     px={2}
                     rounded="full"
                     fontSize="small"
                     fontWeight="semibold"
                     shadow="md"
-                    size={"sm"}
+                    size={"md"}
                   >
-                    {DataProject.projectStatus}
+                    {DataProject.projectNo}
                   </Badge>
                   <Badge
                     colorScheme="purple"
@@ -349,7 +342,7 @@ export const ProjectDetailHeader = ({
                     fontSize="small"
                     fontWeight="semibold"
                     shadow="md"
-                    size={"sm"}
+                    size={"md"}
                   >
                     {DataProject.projectType}
                   </Badge>
@@ -377,7 +370,7 @@ export const ProjectDetailHeader = ({
             <VStack spacing={3} align="center" minW="120px">
               {DataProject.userAssignment &&
                 DataProject.userAssignment.length > 0 && (
-                  <AvatarGroup size={"sm"} max={4} spacing="-0.5rem">
+                  <AvatarGroup size={"md"} max={4} spacing="-0.5rem">
                     {DataProject.userAssignment
                       .slice(0, 5)
                       .map((assignment, index) => (

@@ -615,7 +615,15 @@ const ProjectManagerPage = () => {
                     </Box>
                     {/* Last Working Projects Section */}
                     {DataProjects.length > 0 && !IsLoadingProcess && (
-                      <Box w="full">
+                      <Card
+                        rounded={radiusStyle}
+                        shadow="lg"
+                        border="1px"
+                        borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                        bg={colorMode === "light" ? "white" : "gray.800"}
+                        w="full"
+                      >
+                        <CardBody p={{ base: 4, md: 6 }}>
                         <VStack spacing={4} align="stretch">
                           {/* Section Header */}
                           <HStack spacing={3} align="center">
@@ -746,9 +754,10 @@ const ProjectManagerPage = () => {
                                 </HStack>
                               </HStack>
                             ))}
-                          </VStack>
                         </VStack>
-                      </Box>
+                        </VStack>
+                        </CardBody>
+                      </Card>
                     )}
 
                     {/* Projects Header */}
@@ -1273,6 +1282,7 @@ const ProjectManagerPage = () => {
             <ModalRegisterProject />
           </ModalBody>
         </ModalContent>
+}
       </Modal>
 
     </LayoutAdmin>

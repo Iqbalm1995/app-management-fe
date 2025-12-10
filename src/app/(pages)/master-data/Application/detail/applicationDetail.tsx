@@ -562,32 +562,32 @@ function ApplicationDetail() {
       setDataApplication((prev) =>
         prev
           ? {
-              ...prev,
-              appName: formData.appName,
-              appShortName: formData.appShortName,
-              appsDesc: formData.appsDesc,
-              note: formData.note,
-              appTargetUsers: formData.appTargetUsers,
-              appAccessFrontsiteDns: formData.appAccessFrontsiteDns,
-              appAccessFrontsiteIp: formData.appAccessFrontsiteIp,
-              appAccessBacksiteDns: formData.appAccessBacksiteDns,
-              appAccessBacksiteIp: formData.appAccessBacksiteIp,
-              appAccessMedia: formData.appAccessMedia,
-              appTypes: formData.appTypes,
-              appTypeCustom: formData.appTypeCustom,
-              appRelatedness: formData.appRelatedness,
-              appRelatednessDesc: formData.appRelatednessDesc,
-              appTransactionals: formData.appTransactionals,
-              appOperational24hrs: formData.appOperational24hrs,
-              appOperationalDays: formData.appOperationalDays,
-              appOperationalHourOpen: formData.appOperationalHourOpen,
-              appOperationalHourClosed: formData.appOperationalHourClosed,
-              appEnvLocations: formData.appEnvLocations,
-              appEnvLocationsOthers: formData.appEnvLocationsOthers,
-              appPrivateAuth: formData.appPrivateAuth,
-              appHightAvailability: formData.appHightAvailability,
-              appIntegrationOthersApps: formData.appIntegrationOthersApps,
-            }
+            ...prev,
+            appName: formData.appName,
+            appShortName: formData.appShortName,
+            appsDesc: formData.appsDesc,
+            note: formData.note,
+            appTargetUsers: formData.appTargetUsers,
+            appAccessFrontsiteDns: formData.appAccessFrontsiteDns,
+            appAccessFrontsiteIp: formData.appAccessFrontsiteIp,
+            appAccessBacksiteDns: formData.appAccessBacksiteDns,
+            appAccessBacksiteIp: formData.appAccessBacksiteIp,
+            appAccessMedia: formData.appAccessMedia,
+            appTypes: formData.appTypes,
+            appTypeCustom: formData.appTypeCustom,
+            appRelatedness: formData.appRelatedness,
+            appRelatednessDesc: formData.appRelatednessDesc,
+            appTransactionals: formData.appTransactionals,
+            appOperational24hrs: formData.appOperational24hrs,
+            appOperationalDays: formData.appOperationalDays,
+            appOperationalHourOpen: formData.appOperationalHourOpen,
+            appOperationalHourClosed: formData.appOperationalHourClosed,
+            appEnvLocations: formData.appEnvLocations,
+            appEnvLocationsOthers: formData.appEnvLocationsOthers,
+            appPrivateAuth: formData.appPrivateAuth,
+            appHightAvailability: formData.appHightAvailability,
+            appIntegrationOthersApps: formData.appIntegrationOthersApps,
+          }
           : null
       );
 
@@ -1448,7 +1448,7 @@ function ApplicationDetail() {
                                 <Badge
                                   colorScheme={
                                     DataApplication?.appHightAvailability ===
-                                    "Y"
+                                      "Y"
                                       ? "green"
                                       : "red"
                                   }
@@ -1808,8 +1808,8 @@ function ApplicationDetail() {
                                         ? "white"
                                         : "gray.700"
                                       : colorMode === "light"
-                                      ? "gray.50"
-                                      : "gray.600"
+                                        ? "gray.50"
+                                        : "gray.600"
                                   }
                                   border="2px"
                                   borderColor={
@@ -1855,8 +1855,8 @@ function ApplicationDetail() {
                                         ? "white"
                                         : "gray.700"
                                       : colorMode === "light"
-                                      ? "gray.50"
-                                      : "gray.600"
+                                        ? "gray.50"
+                                        : "gray.600"
                                   }
                                   border="2px"
                                   borderColor={
@@ -1921,8 +1921,8 @@ function ApplicationDetail() {
                                         ? "white"
                                         : "gray.700"
                                       : colorMode === "light"
-                                      ? "gray.50"
-                                      : "gray.600"
+                                        ? "gray.50"
+                                        : "gray.600"
                                   }
                                   border="2px"
                                   borderColor={
@@ -1970,8 +1970,8 @@ function ApplicationDetail() {
                                         ? "white"
                                         : "gray.700"
                                       : colorMode === "light"
-                                      ? "gray.50"
-                                      : "gray.600"
+                                        ? "gray.50"
+                                        : "gray.600"
                                   }
                                   border="2px"
                                   borderColor={
@@ -2112,8 +2112,8 @@ function ApplicationDetail() {
                                             ? "white"
                                             : "gray.700"
                                           : colorMode === "light"
-                                          ? "gray.50"
-                                          : "gray.600"
+                                            ? "gray.50"
+                                            : "gray.600"
                                       }
                                       border="2px"
                                       borderColor={
@@ -2166,8 +2166,8 @@ function ApplicationDetail() {
                                             ? "white"
                                             : "gray.700"
                                           : colorMode === "light"
-                                          ? "gray.50"
-                                          : "gray.600"
+                                            ? "gray.50"
+                                            : "gray.600"
                                       }
                                       border="2px"
                                       borderColor={
@@ -2418,111 +2418,111 @@ function ApplicationDetail() {
 
                             {formData.appOperational24hrs ===
                               APP_OPERATIONAL_OPTIONS[1] && (
-                              <VStack spacing={4} align="stretch">
-                                <FormControl>
-                                  <FormLabel
-                                    fontSize="sm"
-                                    fontWeight="semibold"
-                                    color="secondary.500"
-                                  >
-                                    Pilih Hari
-                                  </FormLabel>
-                                  <Box
-                                    pointerEvents={IsEditMode ? "auto" : "none"}
-                                    opacity={IsEditMode ? 1 : 0.6}
-                                  >
-                                    <WeekdaySelector
-                                      value={OperationalDays}
-                                      onChange={setOperationalDays}
-                                    />
-                                  </Box>
-                                </FormControl>
-                                <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+                                <VStack spacing={4} align="stretch">
                                   <FormControl>
                                     <FormLabel
                                       fontSize="sm"
                                       fontWeight="semibold"
                                       color="secondary.500"
                                     >
-                                      Operasional Mulai
+                                      Pilih Hari
                                     </FormLabel>
-                                    <Input
-                                      type="time"
-                                      value={formData.appOperationalHourOpen}
-                                      onChange={(e) =>
-                                        setFormData({
-                                          ...formData,
-                                          appOperationalHourOpen:
-                                            e.target.value,
-                                        })
-                                      }
-                                      isReadOnly={!IsEditMode}
-                                      bg={
-                                        IsEditMode
-                                          ? colorMode === "light"
-                                            ? "white"
-                                            : "gray.700"
-                                          : colorMode === "light"
-                                          ? "gray.50"
-                                          : "gray.600"
-                                      }
-                                      border="2px"
-                                      borderColor={
-                                        colorMode === "light"
-                                          ? "gray.200"
-                                          : "gray.600"
-                                      }
-                                      rounded="xl"
-                                      cursor={
-                                        IsEditMode ? "text" : "not-allowed"
-                                      }
+                                    <Box
+                                      pointerEvents={IsEditMode ? "auto" : "none"}
                                       opacity={IsEditMode ? 1 : 0.6}
-                                    />
-                                  </FormControl>
-                                  <FormControl>
-                                    <FormLabel
-                                      fontSize="sm"
-                                      fontWeight="semibold"
-                                      color="secondary.500"
                                     >
-                                      Operasional Selesai
-                                    </FormLabel>
-                                    <Input
-                                      type="time"
-                                      value={formData.appOperationalHourClosed}
-                                      onChange={(e) =>
-                                        setFormData({
-                                          ...formData,
-                                          appOperationalHourClosed:
-                                            e.target.value,
-                                        })
-                                      }
-                                      isReadOnly={!IsEditMode}
-                                      bg={
-                                        IsEditMode
-                                          ? colorMode === "light"
-                                            ? "white"
-                                            : "gray.700"
-                                          : colorMode === "light"
-                                          ? "gray.50"
-                                          : "gray.600"
-                                      }
-                                      border="2px"
-                                      borderColor={
-                                        colorMode === "light"
-                                          ? "gray.200"
-                                          : "gray.600"
-                                      }
-                                      rounded="xl"
-                                      cursor={
-                                        IsEditMode ? "text" : "not-allowed"
-                                      }
-                                      opacity={IsEditMode ? 1 : 0.6}
-                                    />
+                                      <WeekdaySelector
+                                        value={OperationalDays}
+                                        onChange={setOperationalDays}
+                                      />
+                                    </Box>
                                   </FormControl>
-                                </Grid>
-                              </VStack>
-                            )}
+                                  <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+                                    <FormControl>
+                                      <FormLabel
+                                        fontSize="sm"
+                                        fontWeight="semibold"
+                                        color="secondary.500"
+                                      >
+                                        Operasional Mulai
+                                      </FormLabel>
+                                      <Input
+                                        type="time"
+                                        value={formData.appOperationalHourOpen}
+                                        onChange={(e) =>
+                                          setFormData({
+                                            ...formData,
+                                            appOperationalHourOpen:
+                                              e.target.value,
+                                          })
+                                        }
+                                        isReadOnly={!IsEditMode}
+                                        bg={
+                                          IsEditMode
+                                            ? colorMode === "light"
+                                              ? "white"
+                                              : "gray.700"
+                                            : colorMode === "light"
+                                              ? "gray.50"
+                                              : "gray.600"
+                                        }
+                                        border="2px"
+                                        borderColor={
+                                          colorMode === "light"
+                                            ? "gray.200"
+                                            : "gray.600"
+                                        }
+                                        rounded="xl"
+                                        cursor={
+                                          IsEditMode ? "text" : "not-allowed"
+                                        }
+                                        opacity={IsEditMode ? 1 : 0.6}
+                                      />
+                                    </FormControl>
+                                    <FormControl>
+                                      <FormLabel
+                                        fontSize="sm"
+                                        fontWeight="semibold"
+                                        color="secondary.500"
+                                      >
+                                        Operasional Selesai
+                                      </FormLabel>
+                                      <Input
+                                        type="time"
+                                        value={formData.appOperationalHourClosed}
+                                        onChange={(e) =>
+                                          setFormData({
+                                            ...formData,
+                                            appOperationalHourClosed:
+                                              e.target.value,
+                                          })
+                                        }
+                                        isReadOnly={!IsEditMode}
+                                        bg={
+                                          IsEditMode
+                                            ? colorMode === "light"
+                                              ? "white"
+                                              : "gray.700"
+                                            : colorMode === "light"
+                                              ? "gray.50"
+                                              : "gray.600"
+                                        }
+                                        border="2px"
+                                        borderColor={
+                                          colorMode === "light"
+                                            ? "gray.200"
+                                            : "gray.600"
+                                        }
+                                        rounded="xl"
+                                        cursor={
+                                          IsEditMode ? "text" : "not-allowed"
+                                        }
+                                        opacity={IsEditMode ? 1 : 0.6}
+                                      />
+                                    </FormControl>
+                                  </Grid>
+                                </VStack>
+                              )}
                           </Box>
 
                           <Divider />
@@ -2790,9 +2790,9 @@ function ApplicationDetail() {
                                       value={
                                         formData.appCriticalLevel
                                           ? {
-                                              label: formData.appCriticalLevel,
-                                              value: formData.appCriticalLevel,
-                                            }
+                                            label: formData.appCriticalLevel,
+                                            value: formData.appCriticalLevel,
+                                          }
                                           : null
                                       }
                                       onChange={(e) =>
@@ -2863,9 +2863,9 @@ function ApplicationDetail() {
                                     value={
                                       formData.appInitaiteYear
                                         ? {
-                                            label: formData.appInitaiteYear,
-                                            value: formData.appInitaiteYear,
-                                          }
+                                          label: formData.appInitaiteYear,
+                                          value: formData.appInitaiteYear,
+                                        }
                                         : null
                                     }
                                     onChange={(e) =>
@@ -2889,11 +2889,11 @@ function ApplicationDetail() {
                                     value={
                                       formData.appDevelopmentMethod
                                         ? {
-                                            label:
-                                              formData.appDevelopmentMethod,
-                                            value:
-                                              formData.appDevelopmentMethod,
-                                          }
+                                          label:
+                                            formData.appDevelopmentMethod,
+                                          value:
+                                            formData.appDevelopmentMethod,
+                                        }
                                         : null
                                     }
                                     onChange={(e) =>
@@ -3154,7 +3154,7 @@ function ApplicationDetail() {
                                       value={OrganizationData.filter(
                                         (f) =>
                                           f.orgType ==
-                                            ORG_CATEGORY_KEY_DIVISION &&
+                                          ORG_CATEGORY_KEY_DIVISION &&
                                           f.id == formData.appOwnerDivisionId
                                       ).map((d) => ({
                                         label: `${d.orgName} | ${d.orgType}`,
@@ -3169,7 +3169,7 @@ function ApplicationDetail() {
                                         (f) =>
                                           f.orgType == ORG_CATEGORY_KEY_GROUP &&
                                           f.parentId ==
-                                            formData.appOwnerDivisionId
+                                          formData.appOwnerDivisionId
                                       ).map((d) => ({
                                         label: `${d.orgName} | ${d.orgType}`,
                                         value: d.id,
@@ -3246,7 +3246,7 @@ function ApplicationDetail() {
                                       value={OrganizationData.filter(
                                         (f) =>
                                           f.orgType ==
-                                            ORG_CATEGORY_KEY_DIVISION &&
+                                          ORG_CATEGORY_KEY_DIVISION &&
                                           f.id == formData.appManageByDivisionId
                                       ).map((d) => ({
                                         label: `${d.orgName} | ${d.orgType}`,
@@ -3261,7 +3261,7 @@ function ApplicationDetail() {
                                         (f) =>
                                           f.orgType == ORG_CATEGORY_KEY_GROUP &&
                                           f.parentId ==
-                                            formData.appManageByDivisionId
+                                          formData.appManageByDivisionId
                                       ).map((d) => ({
                                         label: `${d.orgName} | ${d.orgType}`,
                                         value: d.id,
@@ -3338,9 +3338,9 @@ function ApplicationDetail() {
                                       value={OrganizationData.filter(
                                         (f) =>
                                           f.orgType ==
-                                            ORG_CATEGORY_KEY_DIVISION &&
+                                          ORG_CATEGORY_KEY_DIVISION &&
                                           f.id ==
-                                            formData.appBusinessOwnerDivisionId
+                                          formData.appBusinessOwnerDivisionId
                                       ).map((d) => ({
                                         label: `${d.orgName} | ${d.orgType}`,
                                         value: d.id,
@@ -3354,7 +3354,7 @@ function ApplicationDetail() {
                                         (f) =>
                                           f.orgType == ORG_CATEGORY_KEY_GROUP &&
                                           f.parentId ==
-                                            formData.appBusinessOwnerDivisionId
+                                          formData.appBusinessOwnerDivisionId
                                       ).map((d) => ({
                                         label: `${d.orgName} | ${d.orgType}`,
                                         value: d.id,
@@ -3379,7 +3379,7 @@ function ApplicationDetail() {
                                         (f) =>
                                           f.orgType == ORG_CATEGORY_KEY_GROUP &&
                                           f.id ==
-                                            formData.appBusinessOwnerGroupId
+                                          formData.appBusinessOwnerGroupId
                                       ).map((d) => ({
                                         label: `${d.orgName} | ${d.orgType}`,
                                         value: d.id,
@@ -3452,7 +3452,7 @@ function ApplicationDetail() {
                                           IsEditMode
                                             ? OwnerPICSearch
                                             : formData.appOwnerPicName ||
-                                              formData.appOwnerPicUserId
+                                            formData.appOwnerPicUserId
                                         }
                                         placeholder="Cari dengan ID Personel / Nama Personel"
                                         isReadOnly={!IsEditMode}
@@ -3584,7 +3584,7 @@ function ApplicationDetail() {
                                           IsEditMode
                                             ? ManagerPICSearch
                                             : formData.appManagePicName ||
-                                              formData.appManagePicUserId
+                                            formData.appManagePicUserId
                                         }
                                         placeholder="Cari dengan ID Personel / Nama Personel"
                                         isReadOnly={!IsEditMode}
@@ -3716,7 +3716,7 @@ function ApplicationDetail() {
                                           IsEditMode
                                             ? BusinessOwnerPICSearch
                                             : formData.appBusinessOwnerPicName ||
-                                              formData.appBusinessOwnerPicUserId
+                                            formData.appBusinessOwnerPicUserId
                                         }
                                         placeholder="Cari dengan ID Personel / Nama Personel"
                                         isReadOnly={!IsEditMode}
@@ -4219,8 +4219,8 @@ function ApplicationDetail() {
                         >
                           {DataApplication?.createdAt
                             ? new Date(
-                                DataApplication.createdAt
-                              ).toLocaleDateString()
+                              DataApplication.createdAt
+                            ).toLocaleDateString()
                             : "-"}
                         </Text>
                       </HStack>
@@ -4241,8 +4241,8 @@ function ApplicationDetail() {
                         >
                           {DataApplication?.updatedAt
                             ? new Date(
-                                DataApplication.updatedAt
-                              ).toLocaleDateString()
+                              DataApplication.updatedAt
+                            ).toLocaleDateString()
                             : "-"}
                         </Text>
                       </HStack>

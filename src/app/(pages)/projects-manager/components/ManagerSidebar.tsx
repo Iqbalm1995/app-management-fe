@@ -114,9 +114,9 @@ const ManagerSidebar = ({
   const avgProgress =
     totalProjects > 0
       ? Math.round(
-          DataProjects.reduce((acc, p) => acc + p.projectStatusPercentage, 0) /
-            totalProjects
-        )
+        DataProjects.reduce((acc, p) => acc + p.projectStatusPercentage, 0) /
+        totalProjects
+      )
       : 0;
 
   return (
@@ -208,7 +208,10 @@ const ManagerSidebar = ({
               <Text fontSize="sm" fontWeight="bold" color="gray.700" mb={1}>
                 Quick Actions
               </Text>
-              <Button
+              <Text fontSize="sm" color="gray.500" textAlign="center" py={4}>
+                Coming Soon
+              </Text>
+              {/* <Button
                 size="sm"
                 colorScheme="blue"
                 variant="ghost"
@@ -234,7 +237,7 @@ const ManagerSidebar = ({
                 justifyContent="flex-start"
               >
                 Project Reports
-              </Button>
+              </Button> */}
             </VStack>
           </VStack>
         </CardBody>
@@ -527,6 +530,10 @@ const ManagerSidebar = ({
             </HStack>
 
             <VStack spacing={2} align="stretch">
+              <Text fontSize="sm" color="gray.500" textAlign="center" py={4}>
+                Coming Soon
+              </Text>
+              {/*
               <Button
                 size="sm"
                 colorScheme="blue"
@@ -556,7 +563,7 @@ const ManagerSidebar = ({
                 rounded="xl"
               >
                 Performance Analysis
-              </Button>
+              </Button> */}
             </VStack>
           </VStack>
         </CardBody>

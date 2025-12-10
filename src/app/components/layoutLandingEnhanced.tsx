@@ -8,6 +8,7 @@ import {
   Flex,
   HStack,
   Image,
+  Link,
   Spacer,
   Stack,
   Text,
@@ -96,14 +97,24 @@ export const FooterAdminPanel = () => {
             </Box>
             <Box>
               <Text fontSize={"small"}>
-                bank bjb Berizin dan Diawasi oleh OJK | bank bjb merupakan
-                peserta penjamin LPS
+                bank bjb Berizin dan Diawasi oleh Otoritas Jasa Keuangan dan
+                Bank Indonesia. bank bjb merupakan peserta penjamin LPS.
+                Maksimal nilai simpanan dijamin LPS per Nasabah bank adalah
+                Rp.2 miliar. Untuk mengetahui Tingkat Bunga Penjamin LPS
+                silahkan akses{" "}
+                <Link
+                  href="https://apps.lps.go.id/BankPesertaLPSRate"
+                  isExternal
+                  color="cyan.400"
+                  textDecoration="underline"
+                >
+                  disini
+                </Link>
+                .
               </Text>
             </Box>
             <Spacer />
-            <Box>
-              <Text fontSize={"small"}>Copyright © 2025 bank bjb</Text>
-            </Box>
+            <Box><Text fontSize={"small"}>Copyright © 2025 bank bjb</Text></Box>
           </HStack>
         </Box>
       </Container>

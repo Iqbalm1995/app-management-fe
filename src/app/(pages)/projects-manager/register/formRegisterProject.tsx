@@ -2849,18 +2849,23 @@ const AdditionalInfoUpdate = ({
                 </RadioGroup>
               </FormControl>
 
-              <FormControl display="flex" alignItems="center">
-                <FormLabel mb="0">RPPB</FormLabel>
-                <Switch
+              <FormControl >
+                <FormLabel >RPPB</FormLabel>
+                <RadioGroup
                   name="rppb"
-                  isChecked={formInputs.rppb === "Y"}
-                  onChange={(e) => {
+                  value={formInputs.rppb}
+                  onChange={(value) => {
                     setFormInputs({
                       ...formInputs,
-                      rppb: e.target.checked ? "Y" : "N",
+                      rppb: value,
                     });
                   }}
-                />
+                >
+                  <HStack spacing={6}>
+                    <Radio value="Y">Ya</Radio>
+                    <Radio value="N">Tidak</Radio>
+                  </HStack>
+                </RadioGroup>
               </FormControl>
 
               <Box

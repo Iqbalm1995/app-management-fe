@@ -393,26 +393,62 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                   <CardBody p={6}>
                     <VStack spacing={4} align="stretch">
                       <HStack justify="space-between">
-                        <Text
-                          fontSize="sm"
-                          color="gray.600"
-                          fontWeight="medium"
-                        >
-                          Register Date:
+                        <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                          Tanggal Memo:
                         </Text>
                         <Text fontSize="sm" fontWeight="bold" color="gray.800">
-                          {DataProject.projectRegisterDate
-                            ? new Date(
-                              DataProject.projectRegisterDate
-                            ).toLocaleDateString()
-                            : "N/A"}
+                          {RequirementData?.reqInititateDate ? new Date(RequirementData.reqInititateDate).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : "-"}
+                        </Text>
+                      </HStack>
+                      <Divider />
+                      <HStack justify="space-between">
+                        <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                          Tanggal Memo Diterima:
+                        </Text>
+                        <Text fontSize="sm" fontWeight="bold" color="gray.800">
+                          {RequirementData?.reqAcceptedDate ? new Date(RequirementData.reqAcceptedDate).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : "-"}
+                        </Text>
+                      </HStack>
+                      <Divider />
+                      <HStack justify="space-between">
+                        <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                          Durasi Memo:
+                        </Text>
+                        <Text fontSize="sm" fontWeight="bold" color="gray.800">
+                          {RequirementData?.reqDurationDay ? `${RequirementData.reqDurationDay} hari` : "-"}
+                        </Text>
+                      </HStack>
+                      <Divider />
+                      <HStack justify="space-between">
+                        <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                          Tanggal Register Project:
+                        </Text>
+                        <Text fontSize="sm" fontWeight="bold" color="gray.800">
+                          {DataProject.projectRegisterDate ? new Date(DataProject.projectRegisterDate).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : "-"}
+                        </Text>
+                      </HStack>
+                      <Divider />
+                      <HStack justify="space-between">
+                        <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                          Tanggal Closed Project:
+                        </Text>
+                        <Text fontSize="sm" fontWeight="bold" color="gray.800">
+                          {DataProject.projectClosedDate ? new Date(DataProject.projectClosedDate).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : "-"}
+                        </Text>
+                      </HStack>
+                      <Divider />
+                      <HStack justify="space-between">
+                        <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                          Durasi Project:
+                        </Text>
+                        <Text fontSize="sm" fontWeight="bold" color="gray.800">
+                          {DataProject.projectDurationDays ? `${DataProject.projectDurationDays} hari` : "-"}
                         </Text>
                       </HStack>
                     </VStack>
                   </CardBody>
-                </Card>
 
-                {/* Description Card */}
+                </Card>
                 <Card
                   shadow="lg"
                   rounded="xl"

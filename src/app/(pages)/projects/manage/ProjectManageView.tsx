@@ -39,7 +39,9 @@ import {
   SimpleGrid,
   Stack,
   Progress,
+  Tooltip,
 } from "@chakra-ui/react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import {
@@ -56,8 +58,10 @@ import {
   FiChevronRight,
   FiExternalLink,
   FiActivity,
+
   FiZap,
 } from "react-icons/fi";
+import { BsGlobe } from "react-icons/bs";
 import { TabButtonCustomStyle } from "@/app/components/TabsCustom";
 import {
   OverviewTab,
@@ -552,9 +556,8 @@ export default function ProjectManageView() {
                             {DataProject.appsProject.appShortName}
                           </Badge>
                         </VStack>
-                        <SimpleGrid
-                          columns={{ base: 1, sm: 2 }}
-                          spacing={4}
+                        <Flex
+                          justify="center"
                           w="full"
                         >
                           <VStack spacing={1} align="center">
@@ -587,7 +590,7 @@ export default function ProjectManageView() {
                               {DataProject.appsProject.appsStatus}
                             </Badge>
                           </VStack>
-                          <VStack spacing={1} align="center">
+                          {/* <VStack spacing={1} align="center">
                             <Text
                               fontSize="xs"
                               color="whiteAlpha.700"
@@ -603,8 +606,8 @@ export default function ProjectManageView() {
                             >
                               {DataProject.appsProject.appCode}
                             </Text>
-                          </VStack>
-                        </SimpleGrid>
+                          </VStack> */}
+                        </Flex>
                         <Box
                           bg="whiteAlpha.100"
                           backdropFilter="blur(10px)"
@@ -621,15 +624,39 @@ export default function ProjectManageView() {
                                 color="whiteAlpha.700"
                                 fontWeight="medium"
                               >
-                                PROJECT
+                                DIVISION OWNER
                               </Text>
+                              <Tooltip label={DataProject.proOwnerDivisionName} placement="top">
                               <Text
                                 fontSize="xs"
                                 fontWeight="bold"
                                 color="white"
+                                maxW="200px"
+                                isTruncated
                               >
-                                {DataProject.projectName}
+                                {DataProject.proOwnerDivisionName}
                               </Text>
+                              </Tooltip>
+                            </HStack>
+                            <HStack justify="space-between" w="full">
+                              <Text
+                                fontSize="xs"
+                                color="whiteAlpha.700"
+                                fontWeight="medium"
+                              >
+                                GROUP OWNER
+                              </Text>
+                              <Tooltip label={DataProject.proOwnerGroupName} placement="top">
+                                <Text
+                                  fontSize="xs"
+                                  fontWeight="bold"
+                                  color="white"
+                                  maxW="200px"
+                                  isTruncated
+                                >
+                                  {DataProject.proOwnerGroupName}
+                                </Text>
+                              </Tooltip>
                             </HStack>
                             <HStack justify="space-between" w="full">
                               <Text
@@ -658,28 +685,34 @@ export default function ProjectManageView() {
                           spacing={3}
                           w="full"
                         >
-                          <Button
-                            size="sm"
-                            bg="whiteAlpha.200"
-                            color="white"
-                            _hover={{ bg: "whiteAlpha.300" }}
-                            rounded="full"
-                            leftIcon={<FiExternalLink />}
-                            flex={1}
-                          >
-                            Launch
-                          </Button>
-                          <Button
-                            size="sm"
-                            bg="whiteAlpha.200"
-                            color="white"
-                            _hover={{ bg: "whiteAlpha.300" }}
-                            rounded="full"
-                            leftIcon={<FiSettings />}
-                            flex={1}
-                          >
-                            Environment
-                          </Button>
+                          <Link style={{ flex: 1 }} href={`/master-data/Application/detail?id=${DataProject.appsProject.id}`}>
+                            <Button
+                              size="sm"
+                              bg="whiteAlpha.200"
+                              color="white"
+                              _hover={{ bg: "whiteAlpha.300" }}
+                              rounded="full"
+                              leftIcon={<FiExternalLink />}
+                              flex={1}
+                              w="full"
+                            >
+                              Launch
+                            </Button>
+                          </Link>
+                          <Link style={{ flex: 1 }} href={`/master-data/Application/detail?id=${DataProject.appsProject.id}#environment`}>
+                            <Button
+                              size="sm"
+                              bg="whiteAlpha.200"
+                              color="white"
+                              _hover={{ bg: "whiteAlpha.300" }}
+                              rounded="full"
+                              leftIcon={<BsGlobe />}
+                              flex={1}
+                              w="full"
+                            >
+                              Environment
+                            </Button>
+                          </Link>
                         </Stack>
                       </VStack>
                     </CardBody>
@@ -874,7 +907,8 @@ export default function ProjectManageView() {
                                                 transition="all 0.2s"
                                               >
                                                 Reports
-                    </VStack>  */}
+                    </VStack>
+  */}
                     <Text textAlign="center" color="gray.400" fontSize="md" fontWeight="semibold" fontStyle="italic" py={4}>Coming Soon</Text>
                   </CardBody>
                 </Card>
