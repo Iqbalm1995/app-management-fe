@@ -87,7 +87,8 @@ import { AuthDataModelInterface, useAuth } from "@/app/context/AuthContext";
 import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
-import useProjects, { ProjectDataResponse } from "@/app/services/useProjects";
+import useWorkspace from "@/app/services/useWorkspace";
+import { ProjectDataResponse } from "@/app/services/useProjects";
 
 // Constants and Types
 import {
@@ -121,7 +122,7 @@ const ProjectManagerPage = () => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
   const { isAuthenticated, authData, goLogout } = useAuth();
-  const { List } = useProjects();
+  const { GetAssignedProjects } = useWorkspace();
 
   // Auth state
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -215,7 +216,7 @@ const ProjectManagerPage = () => {
       setIsLoadingProcess(true);
       const GetDataList = async () => {
         try {
-          const requestData = await List(PayloadList, tokenData);
+          const requestData = await GetAssignedProjects(PayloadList, tokenData);
           const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
 
           if (isErrorResponse || !requestData) {
