@@ -434,7 +434,7 @@ export default function ProjectRegisterView({
 
       // Template Mapping
       // const mapOptionData: OptionListProps[] = itemsData.map((d) => ({
-      //   label: `${d.orgName} | ${d.orgType}`,
+      //   label: d.orgName,
       //   value: d.id,
       // }));
 
@@ -1595,7 +1595,7 @@ export default function ProjectRegisterView({
             </Flex>
           </Flex>
         ),
-        header: () => <span>Nama Fitur</span>,
+        header: () => <span>Nama Scope</span>,
         footer: (props) => props.column.id,
         // Custom variable
         meta: {
@@ -1619,7 +1619,7 @@ export default function ProjectRegisterView({
             </Flex>
           </Flex>
         ),
-        header: () => <span>Deskripsi Fitur</span>,
+        header: () => <span>Deskripsi Scope</span>,
         footer: (props) => props.column.id,
         // Custom variable
         meta: {
@@ -2055,7 +2055,7 @@ export default function ProjectRegisterView({
 
         if (DeadlineUnfilledDataBacklog > 0) {
           showToast({
-            description: `(${DeadlineUnfilledDataBacklog}) Data Deadline fitur belum diisi.`,
+            description: `(${DeadlineUnfilledDataBacklog}) Data Deadline Scope belum diisi.`,
             statusToast: "warning",
           });
           errorSum++;
@@ -2926,7 +2926,7 @@ export default function ProjectRegisterView({
                                           f.orgType ==
                                           ORG_CATEGORY_KEY_DIRECTORATE
                                       ).map((d) => ({
-                                        label: `${d.orgName} | ${d.orgType}`,
+                                        label: d.orgName,
                                         value: d.id,
                                       }))}
                                       isSearchable={true}
@@ -2955,7 +2955,7 @@ export default function ProjectRegisterView({
                                           f.id ==
                                           formik.values.proOwnerDirectorateId
                                       ).map((d) => ({
-                                        label: `${d.orgName} | ${d.orgType}`,
+                                        label: d.orgName,
                                         value: d.id,
                                       }))}
                                     />
@@ -3004,7 +3004,7 @@ export default function ProjectRegisterView({
                                           );
                                         const mapOptionData: OptionListProps[] =
                                           dataDivision.map((d) => ({
-                                            label: `${d.orgName} | ${d.orgType}`,
+                                            label: d.orgName,
                                             value: d.id,
                                           }));
                                         setOptionDivision(mapOptionData);
@@ -3096,7 +3096,7 @@ export default function ProjectRegisterView({
                                           f.parentId ==
                                           formik.values.proOwnerDivisionId
                                       ).map((d) => ({
-                                        label: `${d.orgName} | ${d.orgType}`,
+                                        label: d.orgName,
                                         value: d.id,
                                       }))}
                                       isSearchable={true}
@@ -3125,7 +3125,7 @@ export default function ProjectRegisterView({
                                           f.orgType == ORG_CATEGORY_KEY_GROUP &&
                                           f.id == formik.values.proOwnerGroupId
                                       ).map((d) => ({
-                                        label: `${d.orgName} | ${d.orgType}`,
+                                        label: d.orgName,
                                         value: d.id,
                                       }))}
                                     />
@@ -3454,7 +3454,7 @@ export default function ProjectRegisterView({
                                                       f.orgType ==
                                                       ORG_CATEGORY_KEY_DIRECTORATE
                                                   ).map((d) => ({
-                                                    label: `${d.orgName} | ${d.orgType}`,
+                                                    label: d.orgName,
                                                     value: d.id,
                                                   }))}
                                                   isSearchable={true}
@@ -3488,7 +3488,7 @@ export default function ProjectRegisterView({
                                                         .workPrograms[index]
                                                         .directorateId
                                                   ).map((d) => ({
-                                                    label: `${d.orgName} | ${d.orgType}`,
+                                                    label: d.orgName,
                                                     value: d.id,
                                                   }))}
                                                 />
@@ -3545,7 +3545,7 @@ export default function ProjectRegisterView({
                                                       .workPrograms[index]
                                                       .directorateId
                                                 ).map((d) => ({
-                                                  label: `${d.orgName} | ${d.orgType}`,
+                                                  label: d.orgName,
                                                   value: d.id,
                                                 }))}
                                                 isSearchable={true}
@@ -3576,7 +3576,7 @@ export default function ProjectRegisterView({
                                                       .workPrograms[index]
                                                       .divisionId
                                                 ).map((d) => ({
-                                                  label: `${d.orgName} | ${d.orgType}`,
+                                                  label: d.orgName,
                                                   value: d.id,
                                                 }))}
                                               />
@@ -3631,7 +3631,7 @@ export default function ProjectRegisterView({
                                                       .workPrograms[index]
                                                       .divisionId
                                                 ).map((d) => ({
-                                                  label: `${d.orgName} | ${d.orgType}`,
+                                                  label: d.orgName,
                                                   value: d.id,
                                                 }))}
                                                 isSearchable={true}
@@ -3665,7 +3665,7 @@ export default function ProjectRegisterView({
                                                       .workPrograms[index]
                                                       .groupId
                                                 ).map((d) => ({
-                                                  label: `${d.orgName} | ${d.orgType}`,
+                                                  label: d.orgName,
                                                   value: d.id,
                                                 }))}
                                               />
@@ -4183,7 +4183,7 @@ export default function ProjectRegisterView({
                                                     f.orgType ==
                                                     ORG_CATEGORY_KEY_DIRECTORATE
                                                 ).map((d) => ({
-                                                  label: `${d.orgName} | ${d.orgType}`,
+                                                  label: d.orgName,
                                                   value: d.id,
                                                 }))}
                                                 isDisabled={true}
@@ -4200,7 +4200,7 @@ export default function ProjectRegisterView({
                                                       .workPrograms[index]
                                                       .directorateId
                                                 ).map((d) => ({
-                                                  label: `${d.orgName} | ${d.orgType}`,
+                                                  label: d.orgName,
                                                   value: d.id,
                                                 }))}
                                               />
@@ -4253,7 +4253,7 @@ export default function ProjectRegisterView({
                                                       .workPrograms[index]
                                                       .directorateId
                                                 ).map((d) => ({
-                                                  label: `${d.orgName} | ${d.orgType}`,
+                                                  label: d.orgName,
                                                   value: d.id,
                                                 }))}
                                                 isSearchable={true}
@@ -4269,7 +4269,7 @@ export default function ProjectRegisterView({
                                                       .workPrograms[index]
                                                       .divisionId
                                                 ).map((d) => ({
-                                                  label: `${d.orgName} | ${d.orgType}`,
+                                                  label: d.orgName,
                                                   value: d.id,
                                                 }))}
                                               />
@@ -4321,7 +4321,7 @@ export default function ProjectRegisterView({
                                                       .workPrograms[index]
                                                       .divisionId
                                                 ).map((d) => ({
-                                                  label: `${d.orgName} | ${d.orgType}`,
+                                                  label: d.orgName,
                                                   value: d.id,
                                                 }))}
                                                 isSearchable={true}
@@ -4357,7 +4357,7 @@ export default function ProjectRegisterView({
                                                       .workPrograms[index]
                                                       .groupId
                                                 ).map((d) => ({
-                                                  label: `${d.orgName} | ${d.orgType}`,
+                                                  label: d.orgName,
                                                   value: d.id,
                                                 }))}
                                               />
@@ -5069,9 +5069,10 @@ export default function ProjectRegisterView({
                                                 f.orgType ==
                                                 ORG_CATEGORY_KEY_DIRECTORATE
                                             ).map((d) => ({
-                                              label: `${d.orgName} | ${d.orgType}`,
+                                              label: d.orgName,
                                               value: d.id,
                                             }))}
+                                            isDisabled={true}
                                             isSearchable={true}
                                             onChange={(e) => {
                                               if (e) {
@@ -5100,7 +5101,7 @@ export default function ProjectRegisterView({
                                                 formik.values
                                                   .proManageByDirectorateId
                                             ).map((d) => ({
-                                              label: `${d.orgName} | ${d.orgType}`,
+                                              label: d.orgName,
                                               value: d.id,
                                             }))}
                                           />
@@ -5138,17 +5139,13 @@ export default function ProjectRegisterView({
                                             id={`proManageByDivisionId`}
                                             options={OrganizationData.filter(
                                               (f) =>
-                                                f.orgType ==
-                                                ORG_CATEGORY_KEY_DIVISION &&
-                                                f.parentId ==
-                                                formik.values
-                                                  .proManageByDirectorateId
+                                                f.orgType == ORG_CATEGORY_KEY_DIVISION
                                             ).map((d) => ({
-                                              label: `${d.orgName} | ${d.orgType}`,
+                                              label: d.orgName,
                                               value: d.id,
                                             }))}
                                             isSearchable={true}
-                                            onChange={(e) => {
+                                            onChange={async (e) => {
                                               if (e) {
                                                 const selected = {
                                                   label: e.label,
@@ -5158,12 +5155,32 @@ export default function ProjectRegisterView({
                                                   selected,
                                                   "proManageByDivisionId"
                                                 );
-                                                //   setSelectedDivisionPIC(selected);
+                                                
+                                                // Auto-fill direktorat from division's parentId
+                                                const whereParam: ListSearchByParam[] = [
+                                                  {
+                                                    field: "id",
+                                                    operator: "=",
+                                                    value: e.value,
+                                                  },
+                                                ];
+                                                const divisionData = await GetDataMasterOrg("", 1, whereParam);
+                                                console.log("Division selected:", e.value);
+                                                console.log("Division data fetched:", divisionData);
+                                                if (divisionData.length > 0 && divisionData[0].parentId) {
+                                                  console.log("Setting direktorat to:", divisionData[0].parentId);
+                                                  formik.setFieldValue(
+                                                    "proManageByDirectorateId",
+                                                    divisionData[0].parentId
+                                                  );
+                                                }
                                               } else {
                                                 handleUnSelectedCustom(
                                                   "proManageByDivisionId"
                                                 );
-                                                //   setSelectedDivisionPIC(null);
+                                                handleUnSelectedCustom(
+                                                  "proManageByDirectorateId"
+                                                );
                                               }
                                             }}
                                             placeholder={"Pilih Divisi"}
@@ -5176,7 +5193,7 @@ export default function ProjectRegisterView({
                                                 formik.values
                                                   .proManageByDivisionId
                                             ).map((d) => ({
-                                              label: `${d.orgName} | ${d.orgType}`,
+                                              label: d.orgName,
                                               value: d.id,
                                             }))}
                                           />
@@ -5221,7 +5238,7 @@ export default function ProjectRegisterView({
                                                 formik.values
                                                   .proManageByDivisionId
                                             ).map((d) => ({
-                                              label: `${d.orgName} | ${d.orgType}`,
+                                              label: d.orgName,
                                               value: d.id,
                                             }))}
                                             isSearchable={true}
@@ -5253,7 +5270,7 @@ export default function ProjectRegisterView({
                                                 formik.values
                                                   .proManageByGroupId
                                             ).map((d) => ({
-                                              label: `${d.orgName} | ${d.orgType}`,
+                                              label: d.orgName,
                                               value: d.id,
                                             }))}
                                           />
