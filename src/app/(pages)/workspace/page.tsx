@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Badge,
   Box,
@@ -93,6 +93,7 @@ const WorkspaceProject = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [taskLimit, setTaskLimit] = useState(4);
   const [projectLimit, setProjectLimit] = useState(4);
+  const isInitialMount = useRef(true);
   const [selectedProject, setSelectedProject] =
     useState<ProjectDetailResponse | null>(null);
 
@@ -230,9 +231,15 @@ const WorkspaceProject = () => {
 
   // Search effect
   useEffect(() => {
+    // Skip on initial mount to avoid duplicate call
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    
     const timeoutId = setTimeout(() => {
-      setCurrentPage(1);
-      fetchProjects(searchTerm, 4, 1, false);
+      setCurrentPage(0);
+      fetchProjects(searchTerm, 4, 0, false);
     }, 300); // Debounce search
 
     return () => clearTimeout(timeoutId);
