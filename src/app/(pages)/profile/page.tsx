@@ -153,7 +153,7 @@ export default function ProfilePage() {
         try {
           const payload: PaggingListPayload = {
             search: "",
-            page: 1,
+            page: 0,
             limit: 5,
             filterWhere: [
               { field: "userIdUim", operator: "=", value: userIdToUse },

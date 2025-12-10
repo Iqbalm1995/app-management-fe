@@ -216,7 +216,7 @@ export default function ProjectApplicationImportPage() {
       const payload: PaggingListPayload = {
         search: "",
         limit: MAX_SIZE_TABLE,
-        page: 1,
+        page: 0,
         filterWhere: [],
         fieldOrder: ["nama"],
         orderDir: "asc"
@@ -279,7 +279,7 @@ export default function ProjectApplicationImportPage() {
       const payload: PaggingListPayload = {
         search: "",
         limit: MAX_SIZE_TABLE,
-        page: 1,
+        page: 0,
         filterWhere: [],
         fieldOrder: ["orgName"],
         orderDir: "asc"
