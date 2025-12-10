@@ -115,7 +115,7 @@ const WorkspaceProject = () => {
   const [projects, setProjects] = useState<ProjectDataResponse[]>([]);
   const [totalProjectsCount, setTotalProjectsCount] = useState(0);
   const [projectDetailLoading, setProjectDetailLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(0);
   const [projectsLoading, setProjectsLoading] = useState(false);
 
   // Fetch workspace stats on component mount
@@ -123,7 +123,7 @@ const WorkspaceProject = () => {
   const fetchProjects = async (
     search: string = "",
     limit: number = 4,
-    page: number = 1,
+    page: number = 0,
     append: boolean = false
   ) => {
     const token = localStorage.getItem("tokenData");
@@ -134,9 +134,9 @@ const WorkspaceProject = () => {
           search: search,
           limit: limit,
           page: page,
-          FilterWhere: [],
-          FieldOrder: ["projectName"],
-          OrderDir: "asc",
+          filterWhere: [],
+          fieldOrder: ["createdAt"],
+          orderDir: "desc",
         };
         const response = await GetAssignedProjects(payload, token);
         if (response?.statusCode === 200 && response.data) {
