@@ -18,6 +18,7 @@ import {
   Badge,
 } from "@chakra-ui/react";
 import { FiTarget, FiEye, FiUsers, FiCode, FiLayout, FiCheckCircle } from "react-icons/fi";
+import { GiNinjaHeroicStance, GiWizardStaff, GiRobotGolem } from "react-icons/gi";
 import LayoutLanding from "@/app/components/layoutLanding";
 import { radiusStyle } from "@/app/constants/applicationConstants";
 
@@ -25,9 +26,9 @@ export default function TentangKami() {
   const { colorMode } = useColorMode();
 
   const teamMembers = [
-    { name: "Eka Haruman RG", role: "Project Manager", icon: FiTarget, color: "green" },
-    { name: "Mohammad Iqbal M", role: "Senior Frontend & Backend Developer", icon: FiCode, color: "blue" },
-    { name: "Refanza Pradiptha", role: "Junior Frontend Developer", icon: FiLayout, color: "purple" },
+    { name: "Eka Haruman RG", role: "Manager Scrum Master", icon: GiNinjaHeroicStance, color: "green" },
+    { name: "Mohammad Iqbal M", role: "Senior Frontend & Backend Developer", icon: GiWizardStaff, color: "blue" },
+    { name: "Refanza Pradiptha", role: "Junior Frontend Developer", icon: GiRobotGolem, color: "purple" },
   ];
 
   return (
@@ -66,9 +67,9 @@ export default function TentangKami() {
             >
               {/* Left Content */}
               <VStack align={{ base: "center", md: "start" }} spacing={6} flex={1} textAlign={{ base: "center", md: "left" }}>
-                <Badge colorScheme="whiteAlpha" fontSize="md" px={4} py={2} rounded="full">
+                {/* <Badge colorScheme="whiteAlpha" fontSize="md" px={4} py={2} rounded="full">
                   Tentang Kami
-                </Badge>
+                </Badge> */}
                 <Heading
                   size="2xl"
                   fontWeight="bold"
@@ -78,7 +79,7 @@ export default function TentangKami() {
                   bjb aPPs
                 </Heading>
                 <Text fontSize="xl" color="whiteAlpha.900" maxW="xl">
-                  Sistem Manajemen Proyek & Aplikasi Bank BJB
+                  Make it easier to manage your Projects
                 </Text>
               </VStack>
 

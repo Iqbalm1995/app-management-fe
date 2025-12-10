@@ -1713,7 +1713,7 @@ function FormRegisterProjectView() {
                               name="projectDesc"
                               onChange={formik.handleChange}
                               defaultValue={formik.values.projectDesc ?? ""}
-                              placeholder={`Perihal`}
+                              placeholder={`Deskripsi`}
                               maxLength={300}
                             // isDisabled={ActionLoading}
                             />
