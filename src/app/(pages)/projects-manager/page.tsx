@@ -1282,7 +1282,6 @@ const ProjectManagerPage = () => {
             <ModalRegisterProject />
           </ModalBody>
         </ModalContent>
-}
       </Modal>
 
     </LayoutAdmin>

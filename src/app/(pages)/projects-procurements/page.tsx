@@ -1279,7 +1279,6 @@ const ProjectManagerPage = () => {
           </GridItem>
         </Grid>
       </Box>
-}
     </LayoutAdmin>
   );
 };
