@@ -17,7 +17,7 @@ import {
   Flex,
   Badge,
 } from "@chakra-ui/react";
-import { FiTarget, FiEye, FiUsers, FiCode, FiLayout, FiCheckCircle, FiUser } from "react-icons/fi";
+import { FiTarget, FiEye, FiUsers, FiCode, FiLayout, FiCheckCircle } from "react-icons/fi";
 import LayoutLanding from "@/app/components/layoutLanding";
 import { radiusStyle } from "@/app/constants/applicationConstants";
 
@@ -487,7 +487,7 @@ export default function TentangKami() {
                           justifyContent="center"
                           overflow="hidden"
                         >
-                          <Icon as={FiUser} boxSize={16} color="white" />
+                          <Icon as={member.icon} boxSize={16} color="white" />
                         </Box>
 
                         {/* Info Section */}

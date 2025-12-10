@@ -40,11 +40,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     statusLogin: STATUS_LOGIN_OFF,
   });
   const [loading, setLoading] = useState(true); // Add loading state
+
+  // Public routes that don't require authentication
+  const publicRoutes = ['/tentang-kami', '/hubungi-kami'];
+  const isPublicRoute = publicRoutes.includes(pathname);
   const isFirstRender = useRef(true);
 
   useEffect(() => {
     if (isFirstRender.current) {
+      // Skip auth check for public routes
+      if (isPublicRoute) {
+        setLoading(false);
+        isFirstRender.current = false;
+        return;
+      }
+
       const storedData = localStorage.getItem("authData");
+
       if (storedData) {
         const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
         setAuthData(StorageAuth);
@@ -61,7 +73,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(false); // Set loading to false once data is checked
       isFirstRender.current = false;
     }
-  }, [authData, pathname]);
+  }, [authData, pathname, isPublicRoute]);
 
   const handleLogin = async (data: object, dataAuth: loginReturn) => {
     // const DataLogin: loginReturn = data as loginReturn;
