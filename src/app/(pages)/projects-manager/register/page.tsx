@@ -1,7 +1,6 @@
 "use client";
 
 import { Suspense } from "react";
-import FormRegisterProjectView from "./formRegisterProject";
 import ProjectRegisterView from "../../projects/register/ProjectRegsiterView";
 import { PROJECT_TYPE_INTERNAL_DEVELOPMENT } from "@/app/constants/applicationConstants";
 
