@@ -209,7 +209,7 @@ const ProjectManagerPage = () => {
         page: pageIndex,
         filterWhere: filterWhere,
         fieldOrder: ["createdAt"],
-        orderDir: "asc",
+        orderDir: "desc",
       };
 
       setIsLoadingProcess(true);

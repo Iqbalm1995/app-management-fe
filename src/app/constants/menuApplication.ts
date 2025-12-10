@@ -235,6 +235,7 @@ export const LinkItems: LinkItemProps[] = [
         icon: BsCloudUpload,
         link: "/projects-deployments",
         role: ["admin"],
+        isPro: true,
         menuID: "1",
         children: [],
       },
