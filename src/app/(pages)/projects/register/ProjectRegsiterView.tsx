@@ -2386,7 +2386,7 @@ export default function ProjectRegisterView({
       {IsLoadingProcess ? (
         <LoadingMiniSignature />
       ) : (
-        <Grid templateColumns="repeat(12, 1fr)" gap={4} w={"full"}>
+        <Grid templateColumns="repeat(12, 1fr)" gap={6} w={"full"}>
           <GridItem colSpan={{ base: 12, sm: 12, md: 8, lg: 8 }} w={"full"}>
             <Flex
               w={"full"}
@@ -2427,7 +2427,7 @@ export default function ProjectRegisterView({
 
           {/* Requirement Information */}
           <GridItem
-            colSpan={{ base: 12, sm: 12, md: 8, lg: 8 }}
+            colSpan={{ base: 12, sm: 12, md: 9, lg: 9 }}
             w={"full"}
             display={
               projectTypeRegister == PROJECT_TYPE_PROCUREMENT &&
@@ -2495,7 +2495,7 @@ export default function ProjectRegisterView({
                         <WrapItem>
                           <Badge
                             colorScheme="blue"
-                            fontSize="xs"
+                            fontSize="md"
                             px={4}
                             rounded={radiusStyle}
                           >
@@ -2503,19 +2503,19 @@ export default function ProjectRegisterView({
                           </Badge>
                         </WrapItem>
                       </Wrap>
-                      <Text fontSize="sm" color="secondary.200">
-                        {DataRequirement
-                          ? DataRequirement.reqNarative ||
-                          "No description available"
-                          : "-"}
-                      </Text>
-                      <HStack spacing={4}>
-                        <Text fontSize="xs" color="gray.300">
-                          Requirement ID:{" "}
-                          {DataRequirement ? DataRequirement.id : "-"}
+                      <HStack spacing={4} pt={3}>
+                        <Text fontSize="sm" color="gray.300">
+                          Tanggal Memo Diterima:{" "}
+                          {DataRequirement && DataRequirement.reqAcceptedDate
+                            ? new Date(DataRequirement.reqAcceptedDate).toLocaleDateString('id-ID', {
+                              day: '2-digit',
+                              month: 'long',
+                              year: 'numeric'
+                            })
+                            : "-"}
                         </Text>
-                        <Text fontSize="xs" color="gray.300">
-                          Status:{" "}
+                        <Text fontSize="sm" color="gray.300">
+                          Status Memo:{" "}
                           {DataRequirement ? DataRequirement.reqStatus : "-"}
                         </Text>
                       </HStack>
@@ -2528,7 +2528,7 @@ export default function ProjectRegisterView({
 
           {/* Application Information */}
           <GridItem
-            colSpan={{ base: 12, sm: 12, md: 4, lg: 4 }}
+            colSpan={{ base: 12, sm: 12, md: 3, lg: 3 }}
             w={"full"}
             display={ApplicationData != null ? "box" : "none"}
           >
@@ -2542,7 +2542,7 @@ export default function ProjectRegisterView({
               <CardBody>
                 <Flex
                   as={Stack}
-                  spacing={2}
+                  spacing={4}
                   justifyContent={"center"}
                   alignItems={"center"}
                 >
@@ -2588,7 +2588,7 @@ export default function ProjectRegisterView({
                   </Link>
                   <Link href={`#`}>
                     <Text
-                      fontSize="sm"
+                      fontSize="lg"
                       fontWeight="bold"
                       textAlign={"center"}
                       lineHeight={1}
@@ -2601,14 +2601,14 @@ export default function ProjectRegisterView({
                         : "NO APP REFERENCE"}
                     </Text>
                   </Link>
-                  <Badge
+                  {/* <Badge
                     colorScheme="blue"
                     fontSize="xs"
                     px={4}
                     rounded={radiusStyle}
                   >
                     {ApplicationData ? "#" + ApplicationData.appCode : "-"}
-                  </Badge>
+                  </Badge> */}
                 </Flex>
               </CardBody>
             </Card>
@@ -5155,7 +5155,7 @@ export default function ProjectRegisterView({
                                                   selected,
                                                   "proManageByDivisionId"
                                                 );
-                                                
+
                                                 // Auto-fill direktorat from division's parentId
                                                 const whereParam: ListSearchByParam[] = [
                                                   {

@@ -514,11 +514,11 @@ export default function ProjectManageView() {
                                 ? "green.400"
                                 : DataProject.appsProject.appsStatus ===
                                   "DEVELOPMENT"
-                                ? "blue.400"
-                                : DataProject.appsProject.appsStatus ===
-                                  "TESTING"
-                                ? "orange.400"
-                                : "red.400"
+                                  ? "blue.400"
+                                  : DataProject.appsProject.appsStatus ===
+                                    "TESTING"
+                                    ? "orange.400"
+                                    : "red.400"
                             }
                             rounded="full"
                             border="2px solid white"
@@ -571,11 +571,11 @@ export default function ProjectManageView() {
                                   ? "green"
                                   : DataProject.appsProject.appsStatus ===
                                     "DEVELOPMENT"
-                                  ? "blue"
-                                  : DataProject.appsProject.appsStatus ===
-                                    "TESTING"
-                                  ? "orange"
-                                  : "red"
+                                    ? "blue"
+                                    : DataProject.appsProject.appsStatus ===
+                                      "TESTING"
+                                      ? "orange"
+                                      : "red"
                               }
                               size="sm"
                               px={2}
@@ -678,7 +678,7 @@ export default function ProjectManageView() {
                             leftIcon={<FiSettings />}
                             flex={1}
                           >
-                            Settings
+                            Environment
                           </Button>
                         </Stack>
                       </VStack>
@@ -725,60 +725,60 @@ export default function ProjectManageView() {
                     </HStack>
                   </CardHeader>
                   <CardBody p={6}>
-                    <VStack spacing={3} align="stretch">
+                    <VStack spacing={4} align="stretch">
                       {DataProject ? (
                         <>
-                          <HStack justify="space-between">
+                          <VStack align="start" spacing={1}>
                             <Text fontSize="sm" color="gray.600">
-                              Code:
+                              Nomor Project:
                             </Text>
-                            <Text fontSize="sm" fontWeight="medium">
-                              {DataProject.projectCode}
+                            <Text fontSize="sm" fontWeight="bold">
+                              {DataProject.projectNo}
                             </Text>
-                          </HStack>
-                          <HStack justify="space-between">
+                          </VStack>
+                          <VStack align="start" spacing={1}>
                             <Text fontSize="sm" color="gray.600">
-                              Type:
+                              Nama Project:
                             </Text>
-                            <Text fontSize="sm" fontWeight="medium">
-                              {DataProject.projectType}
+                            <Text fontSize="sm" fontWeight="bold">
+                              {DataProject.projectName}
                             </Text>
-                          </HStack>
-                          <HStack justify="space-between">
+                          </VStack>
+                          <VStack align="start" spacing={1}>
                             <Text fontSize="sm" color="gray.600">
-                              Status:
+                              Karakteristik Project:
+                            </Text>
+                            <Text fontSize="sm" fontWeight="bold">
+                              {DataProject.projectCharasteristicName || "-"}
+                            </Text>
+                          </VStack>
+                          <VStack align="start" spacing={1}>
+                            <Text fontSize="sm" color="gray.600">
+                              Sub Karakteristik Project:
+                            </Text>
+                            <Text fontSize="sm" fontWeight="bold">
+                              {DataProject.projectSubCharasteristicName || "-"}
+                            </Text>
+                          </VStack>
+                          <VStack align="start" spacing={1}>
+                            <Text fontSize="sm" color="gray.600">
+                              Status Project:
                             </Text>
                             <Badge
-                              size="sm"
+                              size="xs"
                               colorScheme={
                                 DataProject.projectStatus === "ACTIVE"
                                   ? "green"
                                   : DataProject.projectStatus === "ONHOLD"
-                                  ? "orange"
-                                  : DataProject.projectStatus === "COMPLETED"
-                                  ? "blue"
-                                  : "gray"
+                                    ? "orange"
+                                    : DataProject.projectStatus === "COMPLETED"
+                                      ? "blue"
+                                      : "gray"
                               }
                             >
                               {DataProject.projectStatus}
                             </Badge>
-                          </HStack>
-                          <HStack justify="space-between">
-                            <Text fontSize="sm" color="gray.600">
-                              Progress:
-                            </Text>
-                            <Text fontSize="sm" fontWeight="medium">
-                              {DataProject.projectStatusPercentage || 0}%
-                            </Text>
-                          </HStack>
-                          <Box>
-                            <Progress
-                              value={DataProject.projectStatusPercentage || 0}
-                              colorScheme="blue"
-                              size="sm"
-                              rounded="md"
-                            />
-                          </Box>
+                          </VStack>
                         </>
                       ) : (
                         <LoadingMiniSignature />
@@ -826,56 +826,56 @@ export default function ProjectManageView() {
                     </HStack>
                   </CardHeader>
                   <CardBody p={6}>
-                    <VStack spacing={3}>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        w="full"
-                        justifyContent="flex-start"
-                        leftIcon={<FiActivity />}
-                        rounded={radiusStyle}
-                        _hover={{
-                          bg: "blue.50",
-                          color: "blue.600",
-                          transform: "translateX(4px)",
-                        }}
-                        transition="all 0.2s"
-                      >
-                        View Activity
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        w="full"
-                        justifyContent="flex-start"
-                        leftIcon={<FiSettings />}
-                        rounded={radiusStyle}
-                        _hover={{
-                          bg: "orange.50",
-                          color: "orange.600",
-                          transform: "translateX(4px)",
-                        }}
-                        transition="all 0.2s"
-                      >
-                        Settings
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        w="full"
-                        justifyContent="flex-start"
-                        leftIcon={<FiBarChart />}
-                        rounded={radiusStyle}
-                        _hover={{
-                          bg: "purple.50",
-                          color: "purple.600",
-                          transform: "translateX(4px)",
-                        }}
-                        transition="all 0.2s"
-                      >
-                        Reports
-                      </Button>
-                    </VStack>
+                    {/*                     <VStack spacing={3}>
+                                          <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                w="full"
+                                                justifyContent="flex-start"
+                                                leftIcon={<FiActivity />}
+                                                rounded={radiusStyle}
+                                                _hover={{
+                                                  bg: "blue.50",
+                                                  color: "blue.600",
+                                                  transform: "translateX(4px)",
+                                                }}
+                                                transition="all 0.2s"
+                                              >
+                                                View Activity
+                                              </Button>
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                w="full"
+                                                justifyContent="flex-start"
+                                                leftIcon={<FiSettings />}
+                                                rounded={radiusStyle}
+                                                _hover={{
+                                                  bg: "orange.50",
+                                                  color: "orange.600",
+                                                  transform: "translateX(4px)",
+                                                }}
+                                                transition="all 0.2s"
+                                              >
+                                                Settings
+                                              </Button>
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                w="full"
+                                                justifyContent="flex-start"
+                                                leftIcon={<FiBarChart />}
+                                                rounded={radiusStyle}
+                                                _hover={{
+                                                  bg: "purple.50",
+                                                  color: "purple.600",
+                                                  transform: "translateX(4px)",
+                                                }}
+                                                transition="all 0.2s"
+                                              >
+                                                Reports
+                    </VStack>  */}
+                    <Text textAlign="center" color="gray.400" fontSize="md" fontWeight="semibold" fontStyle="italic" py={4}>Coming Soon</Text>
                   </CardBody>
                 </Card>
               </VStack>

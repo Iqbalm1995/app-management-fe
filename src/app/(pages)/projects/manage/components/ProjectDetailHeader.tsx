@@ -167,7 +167,7 @@ export const ProjectDetailHeader = ({
               </Button>
             </Link>
 
-            {showDevView && devViewUrl && (
+            {/* {showDevView && devViewUrl && (
               <Link href={devViewUrl}>
                 <Button
                   leftIcon={<FiCode />}
@@ -190,7 +190,7 @@ export const ProjectDetailHeader = ({
                   Dev View
                 </Button>
               </Link>
-            )}
+            )} */}
           </HStack>
 
           <HStack spacing={2}>
@@ -327,10 +327,10 @@ export const ProjectDetailHeader = ({
                       DataProject.projectStatus === "ACTIVE"
                         ? "green"
                         : DataProject.projectStatus === "ONHOLD"
-                        ? "orange"
-                        : DataProject.projectStatus === "COMPLETED"
-                        ? "blue"
-                        : "gray"
+                          ? "orange"
+                          : DataProject.projectStatus === "COMPLETED"
+                            ? "blue"
+                            : "gray"
                     }
                     px={2}
                     rounded="full"
@@ -354,37 +354,21 @@ export const ProjectDetailHeader = ({
                     {DataProject.projectType}
                   </Badge>
                 </HStack>
-
-                <HStack spacing={6} fontSize="sm" opacity={0.95}>
-                  <VStack spacing={0} align="center">
-                    <Text fontSize="lg" fontWeight="bold" color="green.200">
-                      {DataProject.projectStatusPercentage || 0}%
-                    </Text>
-                    <Text fontSize="xs" opacity={0.8}>
-                      Progress
-                    </Text>
-                  </VStack>
-                  <VStack spacing={0} align="center">
-                    <Text fontSize="lg" fontWeight="bold" color="blue.200">
-                      {DataProject.userAssignment?.length || 0}
-                    </Text>
-                    <Text fontSize="xs" opacity={0.8}>
-                      Team
-                    </Text>
-                  </VStack>
-                  <VStack spacing={0} align="center">
-                    <Text fontSize="lg" fontWeight="bold" color="orange.200">
-                      {DataProject.projectRegisterDate
-                        ? calculateDurationInDays(
-                            DataProject.projectRegisterDate,
-                            new Date().toISOString()
-                          )
-                        : 0}
-                    </Text>
-                    <Text fontSize="xs" opacity={0.8}>
-                      Days
-                    </Text>
-                  </VStack>
+                <HStack spacing={4} fontSize="sm" opacity={0.95}>
+                  <Progress
+                    value={DataProject.projectStatusPercentage || 0}
+                    size="md"
+                    colorScheme="whiteAlpha"
+                    bg="whiteAlpha.200"
+                    rounded="full"
+                    shadow="inner"
+                    flex="1"
+                    w="480px"
+                    minW="80px"
+                  />
+                  <Text fontSize="md" fontWeight="bold" opacity={0.9}>
+                    {DataProject.projectStatusPercentage || 0}%
+                  </Text>
                 </HStack>
               </VStack>
             </Box>
@@ -414,18 +398,7 @@ export const ProjectDetailHeader = ({
                 )}
 
               <VStack spacing={2} align="center">
-                <Progress
-                  value={DataProject.projectStatusPercentage || 0}
-                  size="md"
-                  colorScheme="whiteAlpha"
-                  bg="whiteAlpha.200"
-                  rounded="full"
-                  w="80px"
-                  shadow="inner"
-                />
-                <Text fontSize="sm" fontWeight="bold" opacity={0.9}>
-                  {DataProject.projectStatusPercentage || 0}%
-                </Text>
+
               </VStack>
             </VStack>
           </Stack>
