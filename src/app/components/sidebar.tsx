@@ -6,6 +6,7 @@ import React, {
   useContext,
   useEffect,
   useState,
+  useRef,
 } from "react";
 import {
   IconButton,
@@ -1001,7 +1002,7 @@ const SidebarContent = ({
 
         <Flex pt={5} pb={2} mx={3}>
           <VStack w={"full"} h={"65vh"} align={"start"} overflowX="auto">
-            <HStack w="full" justify="space-between" align="center" pl={2}>
+            {/* <HStack w="full" justify="space-between" align="center" pl={2}>
               <Tooltip label="Hide menu pro" placement="top" hasArrow>
 
                 <FormControl display="flex" alignItems="center">
@@ -1017,7 +1018,7 @@ const SidebarContent = ({
                 </FormControl>
 
               </Tooltip >
-            </HStack >
+            </HStack > */}
             <Box w={"full"} overflowY={"auto"}>
               {LinkItems.filter((link) => !hideProMenus || !link.isPro).map(
                 (link) => (
@@ -1035,8 +1036,9 @@ const SidebarContent = ({
   );
 };
 
-const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
+const NavItem = ({ data, mode, depth = 0 }: { data: LinkItemProps; mode: boolean; depth?: number }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const navItemRef = useRef<HTMLDivElement>(null);
   const hasChildren = data.children && data.children.length > 0;
   const [isHovered, setIsHovered] = useState(false);
   const pathname = usePathname();
@@ -1044,6 +1046,7 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
   const showToast = useToastHelper();
   const router = useRouter();
   const [isNavigating, setIsNavigating] = useState(false);
+  const isChild = depth > 0;
 
   const handleToggle = () => {
     setIsOpen(!isOpen);
@@ -1055,14 +1058,21 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
   useEffect(() => {
     const currentPath = pathname;
 
+    // Special case: Don't mark items as active if they link to /coming-soon
+    const isComingSoonPage = pathname === "/coming-soon";
+    const itemLinksToComingSoon = data.link === "/coming-soon";
     // Check if current item is active
     const isCurrentActive =
-      currentPath === data.link && data.children.length <= 0;
+      currentPath === data.link &&
+      data.children.length <= 0 &&
+      !(isComingSoonPage && itemLinksToComingSoon);
     setIsActiveNav(isCurrentActive);
 
     // Check if any child is active
     const checkActiveChild = (children: LinkItemProps[]): boolean => {
       return children.some((child) => {
+        // Skip /coming-soon links when on coming-soon page
+        if (isComingSoonPage && child.link === "/coming-soon") return false;
         if (currentPath === child.link) return true;
         if (child.children && child.children.length > 0) {
           return checkActiveChild(child.children);
@@ -1077,6 +1087,14 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
     // Auto-expand if current item is active or has active child
     if (isCurrentActive || childActive) {
       setIsOpen(true);
+      // Scroll active item into view
+      if (navItemRef.current) {
+        navItemRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+          inline: "nearest"
+        });
+      }
     } else {
       // Only close if no active children and not manually opened
       const firstSegment = pathname.split("/")[1];
@@ -1114,7 +1132,7 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
     }
   };
   return (
-    <Box w={"full"}>
+    <Box w={"full"} ref={navItemRef}>
       <Box cursor="pointer">
         <Tooltip
           label={data.name}
@@ -1126,12 +1144,14 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
             onMouseLeave={() => setIsHovered(false)}
             align="center"
             px="3"
-            py="3"
-            my="1"
+            py={isChild ? "1.5" : "3"}
+            my={isChild ? "2" : "1"}
             rounded={radiusStyle}
+            borderLeft={isChild && IsActiveNav ? "3px solid" : "none"}
+            borderLeftColor={isChild && IsActiveNav ? "secondary.300" : "transparent"}
             role="group"
             cursor="pointer"
-            boxShadow={IsActiveNav ? "md" : hasActiveChild ? "sm" : "none"}
+            boxShadow={IsActiveNav ? (isChild ? "sm" : "md") : hasActiveChild ? "sm" : "none"}
             fontWeight={IsActiveNav ? "bold" : "normal"}
             _hover={{
               color: "secondary.800",
@@ -1142,11 +1162,14 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
             }}
             // bg={IsActiveNav ? "secondary.500" : "transparent"}
             bgGradient={
-              IsActiveNav
-                ? "linear(to-r, secondary.500, secondary.600)"
-                : hasActiveChild
+              isChild && IsActiveNav
+                ? "linear(to-r, secondary.300, secondary.400)"
+                :
+                IsActiveNav
                   ? "linear(to-r, secondary.500, secondary.600)"
-                  : "linear(to-r, transparent, transparent)"
+                  : hasActiveChild
+                    ? "linear(to-r, secondary.500, secondary.600)"
+                    : "linear(to-r, transparent, transparent)"
             }
             color={
               IsActiveNav
@@ -1176,7 +1199,7 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
               {data.icon && (
                 <Icon
                   mr={mode ? "0" : data.isPro ? "2" : "4"}
-                  fontSize={mode ? "25" : "20"}
+                  fontSize={mode ? "25" : isChild ? "20" : "22"}
                   _groupHover={{
                     color: "secondary.800",
                   }}
@@ -1198,7 +1221,7 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
                 as={HStack}
               >
                 {data.isPro && <Badge colorScheme="secondary">Pro</Badge>}
-                <Text>{data.name}</Text>
+                <Text fontSize={isChild ? "sm" : "md"}>{data.name}</Text>
                 {hasChildren && (
                   <Icon
                     ml="auto"
@@ -1227,7 +1250,7 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
           overflow="hidden"
         >
           {data.children.map((child) => (
-            <NavItem key={child.name} data={child} mode={mode} />
+            <NavItem key={child.name} data={child} mode={mode} depth={depth + 1} />
           ))}
         </MotionBox>
       )}

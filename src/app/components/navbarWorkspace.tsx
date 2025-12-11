@@ -1047,7 +1047,7 @@ const SidebarContent = ({
   );
 };
 
-const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
+const NavItem = ({ data, mode, depth = 0 }: { data: LinkItemProps; mode: boolean; depth?: number }) => {
   const [isOpen, setIsOpen] = useState(false);
   const hasChildren = data.children && data.children.length > 0;
   const [isHovered, setIsHovered] = useState(false);
@@ -1057,6 +1057,7 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
   const router = useRouter();
   const [isNavigating, setIsNavigating] = useState(false);
 
+  const isChild = depth > 0;
   const handleToggle = () => {
     setIsOpen(!isOpen);
   };
@@ -1154,12 +1155,16 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
             }}
             // bg={IsActiveNav ? "secondary.500" : "transparent"}
             bgGradient={
-              IsActiveNav
+              isChild && IsActiveNav
+                ? "linear(to-r, secondary.300, secondary.400)"
+                : IsActiveNav
                 ? "linear(to-r, secondary.500, secondary.600)"
                 : hasActiveChild
                 ? "linear(to-r, secondary.500, secondary.600)"
                 : "linear(to-r, transparent, transparent)"
             }
+            borderLeft={isChild && IsActiveNav ? "3px solid" : "none"}
+            borderLeftColor={isChild && IsActiveNav ? "secondary.300" : "transparent"}
             color={
               IsActiveNav
                 ? "white" // When the navigation item is active, set color to white
@@ -1188,7 +1193,7 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
               {data.icon && (
                 <Icon
                   mr={mode ? "0" : data.isPro ? "2" : "4"}
-                  fontSize={mode ? "25" : "20"}
+                  fontSize={mode ? "25" : isChild ? "16" : "20"}
                   _groupHover={{
                     color: "secondary.800",
                   }}
@@ -1210,7 +1215,7 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
                 as={HStack}
               >
                 {data.isPro && <Badge colorScheme="secondary">Pro</Badge>}
-                <Text>{data.name}</Text>
+                <Text fontSize={isChild ? "sm" : "md"}>{data.name}</Text>
                 {hasChildren && (
                   <Icon
                     ml="auto"
@@ -1239,7 +1244,7 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
           overflow="hidden"
         >
           {data.children.map((child) => (
-            <NavItem key={child.name} data={child} mode={mode} />
+            <NavItem key={child.name} data={child} mode={mode} depth={depth + 1} />
           ))}
         </MotionBox>
       )}
