@@ -653,6 +653,79 @@ export interface ProjectQuickStatsResponse {
   backlogsNearDeadline: number;
 }
 
+export interface ProjectBacklogStatsResponse {
+  progressionPercentage: number;
+  totalBacklogs: number;
+  completedBacklogs: number;
+  backlogsByPriority: {
+    high: number;
+    medium: number;
+    low: number;
+  };
+  taskCounts: {
+    total: number;
+    toDo: number;
+    inProgress: number;
+    inReview: number;
+    done: number;
+  };
+}
+
+export interface ProjectDocumentationStatsResponse {
+  progressionPercentage: number;
+  totalDocumentations: number;
+  completedDocumentations: number;
+  totalParentWorkflows: number;
+  completedParentWorkflows: number;
+}
+
+export interface ProjectProcurementStatsResponse {
+  progressionPercentage: number;
+  totalProcurementStages: number;
+  completedProcurementStages: number;
+  totalParentWorkflows: number;
+  completedParentWorkflows: number;
+}
+
+export interface ProjectMemberTaskStatsResponse {
+  members: Array<{
+    userId: string;
+    userName: string;
+    userEmail: string;
+    totalTasksOwned: number;
+    tasksCompleted: number;
+    completionPercentage: number;
+  }>;
+}
+
+export interface ProjectDeadlineStatsResponse {
+  topBacklogsNearDeadline: Array<{
+    id: string;
+    backlogName: string;
+    backlogEnddate: string | null;
+    daysUntilDeadline: number;
+    priority: string;
+    progressionPercentage: number;
+  }>;
+  topTasksNearDeadline: Array<{
+    id: string;
+    taskName: string;
+    taskPriority: string;
+    boardName: string;
+    boardCode: string;
+    endDate: string | null;
+    daysUntilDeadline: number;
+    taskItemsCompleted: number;
+    taskItemsTotal: number;
+    assignedUsers: Array<{
+      userId: string;
+      userName: string;
+      userEmail: string;
+    }>;
+  }>;
+  additionalDeadlineTasksCount: number;
+}
+
 export interface ProjectWorkflowBacklogInitializePayload {
   projectWorkflowId: string;
 }
@@ -674,6 +747,26 @@ interface useProjectsServices {
     projectId: string,
     token: string
   ) => Promise<ApiGenericResponse<ProjectQuickStatsResponse | null> | null>;
+  GetProjectBacklogStats: (
+    projectId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<ProjectBacklogStatsResponse | null> | null>;
+  GetProjectDocumentationStats: (
+    projectId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<ProjectDocumentationStatsResponse | null> | null>;
+  GetProjectProcurementStats: (
+    projectId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<ProjectProcurementStatsResponse | null> | null>;
+  GetProjectMemberTaskStats: (
+    projectId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<ProjectMemberTaskStatsResponse | null> | null>;
+  GetProjectDeadlineStats: (
+    projectId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<ProjectDeadlineStatsResponse | null> | null>;
   GetProjectCount: (
     token: string
   ) => Promise<ApiGenericResponse<ProjectCountResponse | null> | null>;
@@ -1053,6 +1146,211 @@ const useProjects = (): useProjectsServices => {
     try {
       const response = await axiosInstance.get<
         ApiGenericResponse<ProjectQuickStatsResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during request."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const GetProjectBacklogStats = async (
+    projectId: string,
+    token: string
+  ): Promise<ApiGenericResponse<ProjectBacklogStatsResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Projects/${projectId}/backlog-stats`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<ProjectBacklogStatsResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during request."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const GetProjectDocumentationStats = async (
+    projectId: string,
+    token: string
+  ): Promise<ApiGenericResponse<ProjectDocumentationStatsResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Projects/${projectId}/documentation-stats`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<ProjectDocumentationStatsResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during request."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const GetProjectProcurementStats = async (
+    projectId: string,
+    token: string
+  ): Promise<ApiGenericResponse<ProjectProcurementStatsResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Projects/${projectId}/procurement-stats`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<ProjectProcurementStatsResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during request."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const GetProjectMemberTaskStats = async (
+    projectId: string,
+    token: string
+  ): Promise<ApiGenericResponse<ProjectMemberTaskStatsResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Projects/${projectId}/member-task-stats`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<ProjectMemberTaskStatsResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during request."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const GetProjectDeadlineStats = async (
+    projectId: string,
+    token: string
+  ): Promise<ApiGenericResponse<ProjectDeadlineStatsResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Projects/${projectId}/deadline-stats`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<ProjectDeadlineStatsResponse>
       >(`${UrlEndpoint}${PathEndpoint}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -3273,6 +3571,11 @@ const useProjects = (): useProjectsServices => {
     GetDetailById,
     GetProjectDetail,
     GetProjectQuickStats,
+    GetProjectBacklogStats,
+    GetProjectDocumentationStats,
+    GetProjectProcurementStats,
+    GetProjectMemberTaskStats,
+    GetProjectDeadlineStats,
     GetProjectCount,
     InsertProjects,
     RegisterProjectNew,
