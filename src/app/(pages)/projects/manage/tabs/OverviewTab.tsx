@@ -1,6 +1,10 @@
 "use client";
 
-import { ProjectDataResponse } from "@/app/services/useProjects";
+import { useEffect, useState } from "react";
+import useProjects, {
+  ProjectDataResponse,
+  ProjectQuickStatsResponse,
+} from "@/app/services/useProjects";
 import {
   TabPanel,
   useColorMode,
@@ -11,30 +15,32 @@ import {
   SimpleGrid,
   Card,
   CardBody,
-  CardHeader,
   Box,
   Text,
-  Button,
+  Icon,
+  Progress,
+  Stat,
+  StatLabel,
+  StatNumber,
+  StatHelpText,
 } from "@chakra-ui/react";
-import { radiusStyle } from "@/app/constants/applicationConstants";
 import {
-  FiTrendingUp,
+  radiusStyle,
+  RES_CODE_OK,
+  RES_GENERIC_ERROR_MSG,
+  PROJECT_TYPE_PROCUREMENT,
+} from "@/app/constants/applicationConstants";
+import {
   FiUsers,
-  FiClock,
-  FiActivity,
-  FiBarChart,
-  FiTarget,
-  FiZap,
+  FiAlertCircle,
   FiFileText,
-  FiCpu,
-  FiSettings,
+  FiShoppingCart,
+  FiLayers,
 } from "react-icons/fi";
-import { calculateDurationInDays } from "@/app/helper/MasterHelper";
 import LoadingMiniSignature from "@/app/components/loadingMini";
-import dynamic from "next/dynamic";
-
-// Dynamic import for ApexCharts (client-side only)
-const Chart = dynamic(() => import("react-apexcharts"), { ssr: false }) as any;
+import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
+import { AuthDataModelInterface } from "@/app/context/AuthContext";
+import { AuthDataResponse } from "@/app/services/useAuthentications";
 
 interface OverviewTabProps {
   DataProject: ProjectDataResponse | null;
@@ -42,6 +48,70 @@ interface OverviewTabProps {
 
 const OverviewTab = ({ DataProject }: OverviewTabProps) => {
   const { colorMode } = useColorMode();
+  const showToast = useToastHelper();
+  const { GetProjectQuickStats } = useProjects();
+
+  // Auth Setup
+  const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
+  const [tokenData, setTokenData] = useState<string>("");
+
+  useEffect(() => {
+    const storedData = localStorage.getItem("authData");
+    const token: string = localStorage.getItem("tokenData") as string;
+
+    if (DataAuth == null && storedData) {
+      const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
+      const UserData: AuthDataResponse =
+        StorageAuth.dataLogin as AuthDataResponse;
+      setDataAuth(UserData);
+    }
+
+    if (token) {
+      setTokenData(token);
+    }
+  }, [DataAuth]);
+
+  // Quick Stats State
+  const [QuickStats, setQuickStats] =
+    useState<ProjectQuickStatsResponse | null>(null);
+  const [IsLoadingStats, setIsLoadingStats] = useState(false);
+
+  // Fetch Quick Stats
+  useEffect(() => {
+    if (DataAuth && DataProject && tokenData) {
+      setIsLoadingStats(true);
+      const FetchQuickStats = async () => {
+        try {
+          const response = await GetProjectQuickStats(
+            DataProject.id,
+            tokenData
+          );
+
+          if (response?.statusCode === RES_CODE_OK && response.data) {
+            setQuickStats(response.data);
+          } else {
+            showToast({
+              description: response?.message || RES_GENERIC_ERROR_MSG,
+              statusToast: "error",
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching quick stats:", error);
+          showToast({
+            description: "Failed to load quick stats",
+            statusToast: "error",
+          });
+        } finally {
+          setIsLoadingStats(false);
+        }
+      };
+
+      FetchQuickStats();
+    }
+  }, [DataAuth, DataProject, tokenData]);
+
+  // Check if project is procurement type
+  const isProcurement = DataProject?.projectType === PROJECT_TYPE_PROCUREMENT;
 
   return (
     <TabPanel>
@@ -58,563 +128,221 @@ const OverviewTab = ({ DataProject }: OverviewTabProps) => {
           </Badge>
         </HStack>
 
-        {DataProject ? (
-          <>
-            {/* Enhanced Quick Stats Cards */}
-            <SimpleGrid columns={{ base: 2, md: 4 }} spacing={6}>
-              {/* Progress Card */}
+        {/* Quick Stats Section */}
+        <Box>
+          <Heading
+            size="md"
+            mb={4}
+            color={colorMode === "light" ? "gray.700" : "gray.200"}
+          >
+            Quick Stats
+          </Heading>
+
+          {IsLoadingStats ? (
+            <Box textAlign="center" py={12}>
+              <LoadingMiniSignature />
+              <Text mt={4} color="gray.500">
+                Loading quick stats...
+              </Text>
+            </Box>
+          ) : QuickStats ? (
+            <SimpleGrid columns={{ base: 1, md: 2, lg: isProcurement ? 5 : 4 }} spacing={4}>
+              {/* Total Backlogs */}
               <Card
-                bg="blue.50"
-                textAlign="center"
-                shadow="lg"
-                rounded="xl"
-                border="2px"
-                borderColor="blue.200"
-                _hover={{
-                  transform: "translateY(-2px)",
-                  shadow: "xl",
-                }}
+                rounded={radiusStyle}
+                shadow="md"
+                bg={colorMode === "light" ? "white" : "gray.800"}
+                borderWidth="1px"
+                borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                _hover={{ shadow: "lg", transform: "translateY(-2px)" }}
                 transition="all 0.2s"
               >
-                <CardBody py={6}>
-                  <Box
-                    w={12}
-                    h={12}
-                    bgGradient="linear(135deg, blue.400, blue.600)"
-                    rounded="xl"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                    mx="auto"
-                    mb={3}
-                  >
-                    <FiTrendingUp size={24} color="white" />
-                  </Box>
-                  <Text fontSize="3xl" fontWeight="bold" color="blue.600">
-                    {DataProject.projectStatusPercentage || 0}%
-                  </Text>
-                  <Text fontSize="sm" color="gray.600" fontWeight="medium">
-                    Progress
-                  </Text>
+                <CardBody>
+                  <Stat>
+                    <HStack justify="space-between" mb={2}>
+                      <Icon
+                        as={FiLayers}
+                        boxSize={6}
+                        color="blue.500"
+                      />
+                    </HStack>
+                    <StatNumber fontSize="3xl" fontWeight="bold" color="blue.500">
+                      {QuickStats.totalBacklogs}
+                    </StatNumber>
+                    <StatLabel fontSize="sm" color="gray.500">
+                      Total Backlogs
+                    </StatLabel>
+                  </Stat>
                 </CardBody>
               </Card>
 
-              {/* Team Card */}
+              {/* Documentation Progress */}
               <Card
-                bg="green.50"
-                textAlign="center"
-                shadow="lg"
-                rounded="xl"
-                border="2px"
-                borderColor="green.200"
-                _hover={{
-                  transform: "translateY(-2px)",
-                  shadow: "xl",
-                }}
+                rounded={radiusStyle}
+                shadow="md"
+                bg={colorMode === "light" ? "white" : "gray.800"}
+                borderWidth="1px"
+                borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                _hover={{ shadow: "lg", transform: "translateY(-2px)" }}
                 transition="all 0.2s"
               >
-                <CardBody py={6}>
-                  <Box
-                    w={12}
-                    h={12}
-                    bgGradient="linear(135deg, green.400, green.600)"
-                    rounded="xl"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                    mx="auto"
-                    mb={3}
-                  >
-                    <FiUsers size={24} color="white" />
-                  </Box>
-                  <Text fontSize="3xl" fontWeight="bold" color="green.600">
-                    {DataProject.userAssignment?.length || 0}
-                  </Text>
-                  <Text fontSize="sm" color="gray.600" fontWeight="medium">
-                    Team Members
-                  </Text>
-                </CardBody>
-              </Card>
-
-              {/* Duration Card */}
-              <Card
-                bg="orange.50"
-                textAlign="center"
-                shadow="lg"
-                rounded="xl"
-                border="2px"
-                borderColor="orange.200"
-                _hover={{
-                  transform: "translateY(-2px)",
-                  shadow: "xl",
-                }}
-                transition="all 0.2s"
-              >
-                <CardBody py={6}>
-                  <Box
-                    w={12}
-                    h={12}
-                    bgGradient="linear(135deg, orange.400, orange.600)"
-                    rounded="xl"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                    mx="auto"
-                    mb={3}
-                  >
-                    <FiClock size={24} color="white" />
-                  </Box>
-                  <Text fontSize="3xl" fontWeight="bold" color="orange.600">
-                    {DataProject.projectRegisterDate
-                      ? calculateDurationInDays(
-                          DataProject.projectRegisterDate,
-                          new Date().toISOString()
-                        )
-                      : 0}
-                  </Text>
-                  <Text fontSize="sm" color="gray.600" fontWeight="medium">
-                    Days Active
-                  </Text>
-                </CardBody>
-              </Card>
-
-              {/* Status Card */}
-              <Card
-                bg="purple.50"
-                textAlign="center"
-                shadow="lg"
-                rounded="xl"
-                border="2px"
-                borderColor="purple.200"
-                _hover={{
-                  transform: "translateY(-2px)",
-                  shadow: "xl",
-                }}
-                transition="all 0.2s"
-              >
-                <CardBody py={6}>
-                  <Box
-                    w={12}
-                    h={12}
-                    bgGradient="linear(135deg, purple.400, purple.600)"
-                    rounded="xl"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                    mx="auto"
-                    mb={3}
-                  >
-                    <FiActivity size={24} color="white" />
-                  </Box>
-                  <Text fontSize="3xl" fontWeight="bold" color="purple.600">
-                    {DataProject.projectStatus === "ACTIVE"
-                      ? "Active"
-                      : "Inactive"}
-                  </Text>
-                  <Text fontSize="sm" color="gray.600" fontWeight="medium">
-                    Status
-                  </Text>
-                </CardBody>
-              </Card>
-            </SimpleGrid>
-
-            {/* Charts Section */}
-            <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6}>
-              {/* Progress Chart */}
-              <Card
-                shadow="lg"
-                rounded="xl"
-                border="1px"
-                borderColor="gray.100"
-              >
-                <CardHeader bg="blue.50" roundedTop="xl">
-                  <HStack spacing={3}>
-                    <Box
-                      w={10}
-                      h={10}
-                      bgGradient="linear(135deg, blue.400, blue.600)"
-                      rounded="xl"
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
-                    >
-                      <FiBarChart size={20} color="white" />
-                    </Box>
-                    <Heading size="md" color="blue.700">
-                      Project Progress
-                    </Heading>
-                  </HStack>
-                </CardHeader>
-                <CardBody p={6}>
-                  <Box h="300px">
-                    <Chart
-                      type="radialBar"
-                      height="100%"
-                      options={{
-                        chart: {
-                          type: "radialBar",
-                          toolbar: { show: false },
-                        },
-                        plotOptions: {
-                          radialBar: {
-                            startAngle: -90,
-                            endAngle: 90,
-                            hollow: {
-                              margin: 15,
-                              size: "70%",
-                            },
-                            dataLabels: {
-                              name: {
-                                offsetY: -10,
-                                show: true,
-                                color: "#888",
-                                fontSize: "17px",
-                              },
-                              value: {
-                                offsetY: 16,
-                                color: "#111",
-                                fontSize: "36px",
-                                show: true,
-                              },
-                            },
-                          },
-                        },
-                        fill: {
-                          type: "gradient",
-                          gradient: {
-                            shade: "light",
-                            shadeIntensity: 0.4,
-                            inverseColors: false,
-                            opacityFrom: 1,
-                            opacityTo: 1,
-                            stops: [0, 50, 53, 91],
-                          },
-                        },
-                        labels: ["Progress"],
-                        colors: ["#3182CE"],
-                      }}
-                      series={[
-                        Number(DataProject?.projectStatusPercentage || 0),
-                      ]}
+                <CardBody>
+                  <Stat>
+                    <HStack justify="space-between" mb={2}>
+                      <Icon
+                        as={FiFileText}
+                        boxSize={6}
+                        color="purple.500"
+                      />
+                    </HStack>
+                    <StatNumber fontSize="3xl" fontWeight="bold" color="purple.500">
+                      {QuickStats.documentationProgressPercentage}%
+                    </StatNumber>
+                    <StatLabel fontSize="sm" color="gray.500">
+                      Documentation
+                    </StatLabel>
+                    <StatHelpText fontSize="xs" color="gray.400">
+                      {QuickStats.completedDocumentations}/{QuickStats.totalDocumentations} completed
+                    </StatHelpText>
+                    <Progress
+                      value={QuickStats.documentationProgressPercentage}
+                      size="sm"
+                      colorScheme="purple"
+                      rounded="full"
+                      mt={2}
                     />
-                  </Box>
+                  </Stat>
                 </CardBody>
               </Card>
 
-              {/* Task Distribution Chart (Dummy Data) */}
+              {/* Procurement Progress - Only show for procurement projects */}
+              {isProcurement && (
+                <Card
+                  rounded={radiusStyle}
+                  shadow="md"
+                  bg={colorMode === "light" ? "white" : "gray.800"}
+                  borderWidth="1px"
+                  borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                  _hover={{ shadow: "lg", transform: "translateY(-2px)" }}
+                  transition="all 0.2s"
+                >
+                  <CardBody>
+                    <Stat>
+                      <HStack justify="space-between" mb={2}>
+                        <Icon
+                          as={FiShoppingCart}
+                          boxSize={6}
+                          color="green.500"
+                        />
+                      </HStack>
+                      <StatNumber fontSize="3xl" fontWeight="bold" color="green.500">
+                        {QuickStats.procurementProgressPercentage}%
+                      </StatNumber>
+                      <StatLabel fontSize="sm" color="gray.500">
+                        Procurement
+                      </StatLabel>
+                      <StatHelpText fontSize="xs" color="gray.400">
+                        {QuickStats.completedProcurementStages}/{QuickStats.totalProcurementStages} stages
+                      </StatHelpText>
+                      <Progress
+                        value={QuickStats.procurementProgressPercentage}
+                        size="sm"
+                        colorScheme="green"
+                        rounded="full"
+                        mt={2}
+                      />
+                    </Stat>
+                  </CardBody>
+                </Card>
+              )}
+
+              {/* Active Members */}
               <Card
-                shadow="lg"
-                rounded="xl"
-                border="1px"
-                borderColor="gray.100"
+                rounded={radiusStyle}
+                shadow="md"
+                bg={colorMode === "light" ? "white" : "gray.800"}
+                borderWidth="1px"
+                borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                _hover={{ shadow: "lg", transform: "translateY(-2px)" }}
+                transition="all 0.2s"
               >
-                <CardHeader bg="green.50" roundedTop="xl">
-                  <HStack spacing={3}>
-                    <Box
-                      w={10}
-                      h={10}
-                      bgGradient="linear(135deg, green.400, green.600)"
-                      rounded="xl"
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
+                <CardBody>
+                  <Stat>
+                    <HStack justify="space-between" mb={2}>
+                      <Icon
+                        as={FiUsers}
+                        boxSize={6}
+                        color="cyan.500"
+                      />
+                    </HStack>
+                    <StatNumber fontSize="3xl" fontWeight="bold" color="cyan.500">
+                      {QuickStats.activeMembers}
+                    </StatNumber>
+                    <StatLabel fontSize="sm" color="gray.500">
+                      Active Members
+                    </StatLabel>
+                  </Stat>
+                </CardBody>
+              </Card>
+
+              {/* Near Deadline */}
+              <Card
+                rounded={radiusStyle}
+                shadow="md"
+                bg={colorMode === "light" ? "white" : "gray.800"}
+                borderWidth="1px"
+                borderColor={
+                  QuickStats.backlogsNearDeadline > 0
+                    ? "orange.300"
+                    : colorMode === "light"
+                    ? "gray.200"
+                    : "gray.700"
+                }
+                _hover={{ shadow: "lg", transform: "translateY(-2px)" }}
+                transition="all 0.2s"
+              >
+                <CardBody>
+                  <Stat>
+                    <HStack justify="space-between" mb={2}>
+                      <Icon
+                        as={FiAlertCircle}
+                        boxSize={6}
+                        color={
+                          QuickStats.backlogsNearDeadline > 0
+                            ? "orange.500"
+                            : "gray.400"
+                        }
+                      />
+                    </HStack>
+                    <StatNumber
+                      fontSize="3xl"
+                      fontWeight="bold"
+                      color={
+                        QuickStats.backlogsNearDeadline > 0
+                          ? "orange.500"
+                          : "gray.400"
+                      }
                     >
-                      <FiTarget size={20} color="white" />
-                    </Box>
-                    <Heading size="md" color="green.700">
-                      Task Distribution
-                    </Heading>
-                  </HStack>
-                </CardHeader>
-                <CardBody p={6}>
-                  <Box h="300px">
-                    <Chart
-                      type="donut"
-                      height="100%"
-                      options={{
-                        chart: {
-                          type: "donut",
-                          toolbar: { show: false },
-                        },
-                        labels: [
-                          "Completed",
-                          "In Progress",
-                          "Pending",
-                          "On Hold",
-                        ],
-                        colors: ["#38A169", "#3182CE", "#ED8936", "#E53E3E"],
-                        legend: {
-                          position: "bottom",
-                          horizontalAlign: "center",
-                        },
-                        plotOptions: {
-                          pie: {
-                            donut: {
-                              size: "65%",
-                            },
-                          },
-                        },
-                        dataLabels: {
-                          enabled: true,
-                          formatter: function (val: number) {
-                            return Math.round(val) + "%";
-                          },
-                        },
-                        responsive: [
-                          {
-                            breakpoint: 480,
-                            options: {
-                              chart: {
-                                width: 200,
-                              },
-                              legend: {
-                                position: "bottom",
-                              },
-                            },
-                          },
-                        ],
-                      }}
-                      series={[45, 30, 15, 10]} // Dummy data
-                    />
-                  </Box>
+                      {QuickStats.backlogsNearDeadline}
+                    </StatNumber>
+                    <StatLabel fontSize="sm" color="gray.500">
+                      Near Deadline
+                    </StatLabel>
+                    {QuickStats.backlogsNearDeadline > 0 && (
+                      <StatHelpText fontSize="xs" color="orange.500">
+                        Requires attention
+                      </StatHelpText>
+                    )}
+                  </Stat>
                 </CardBody>
               </Card>
             </SimpleGrid>
-
-            {/* Additional Information Cards */}
-            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
-              {/* Recent Activity Card */}
-              <Card
-                shadow="lg"
-                rounded="xl"
-                border="1px"
-                borderColor="gray.100"
-              >
-                <CardHeader bg="orange.50" roundedTop="xl">
-                  <HStack spacing={3}>
-                    <Box
-                      w={8}
-                      h={8}
-                      bgGradient="linear(135deg, orange.400, orange.600)"
-                      rounded="lg"
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
-                    >
-                      <FiActivity size={16} color="white" />
-                    </Box>
-                    <Heading size="sm" color="orange.700">
-                      Recent Activity
-                    </Heading>
-                  </HStack>
-                </CardHeader>
-                <CardBody p={4}>
-                  <VStack spacing={3} align="stretch">
-                    <HStack spacing={3}>
-                      <Box w={2} h={2} bg="green.400" rounded="full" />
-                      <Text fontSize="sm" color="gray.600">
-                        Task completed
-                      </Text>
-                    </HStack>
-                    <HStack spacing={3}>
-                      <Box w={2} h={2} bg="blue.400" rounded="full" />
-                      <Text fontSize="sm" color="gray.600">
-                        Team member added
-                      </Text>
-                    </HStack>
-                    <HStack spacing={3}>
-                      <Box w={2} h={2} bg="orange.400" rounded="full" />
-                      <Text fontSize="sm" color="gray.600">
-                        Status updated
-                      </Text>
-                    </HStack>
-                    <HStack spacing={3}>
-                      <Box w={2} h={2} bg="purple.400" rounded="full" />
-                      <Text fontSize="sm" color="gray.600">
-                        Feature deployed
-                      </Text>
-                    </HStack>
-                  </VStack>
-                </CardBody>
-              </Card>
-
-              {/* Milestones Card */}
-              <Card
-                shadow="lg"
-                rounded="xl"
-                border="1px"
-                borderColor="gray.100"
-              >
-                <CardHeader bg="purple.50" roundedTop="xl">
-                  <HStack spacing={3}>
-                    <Box
-                      w={8}
-                      h={8}
-                      bgGradient="linear(135deg, purple.400, purple.600)"
-                      rounded="lg"
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
-                    >
-                      <FiTarget size={16} color="white" />
-                    </Box>
-                    <Heading size="sm" color="purple.700">
-                      Milestones
-                    </Heading>
-                  </HStack>
-                </CardHeader>
-                <CardBody p={4}>
-                  <VStack spacing={3} align="stretch">
-                    <HStack justify="space-between">
-                      <Text fontSize="sm" color="gray.600">
-                        Planning
-                      </Text>
-                      <Badge colorScheme="green" size="sm">
-                        Done
-                      </Badge>
-                    </HStack>
-                    <HStack justify="space-between">
-                      <Text fontSize="sm" color="gray.600">
-                        Development
-                      </Text>
-                      <Badge colorScheme="blue" size="sm">
-                        Active
-                      </Badge>
-                    </HStack>
-                    <HStack justify="space-between">
-                      <Text fontSize="sm" color="gray.600">
-                        Testing
-                      </Text>
-                      <Badge colorScheme="orange" size="sm">
-                        Pending
-                      </Badge>
-                    </HStack>
-                    <HStack justify="space-between">
-                      <Text fontSize="sm" color="gray.600">
-                        Deployment
-                      </Text>
-                      <Badge colorScheme="gray" size="sm">
-                        Waiting
-                      </Badge>
-                    </HStack>
-                  </VStack>
-                </CardBody>
-              </Card>
-
-              {/* Quick Actions Card */}
-              <Card
-                shadow="lg"
-                rounded="xl"
-                border="1px"
-                borderColor="gray.100"
-              >
-                <CardHeader bg="blue.50" roundedTop="xl">
-                  <HStack spacing={3}>
-                    <Box
-                      w={8}
-                      h={8}
-                      bgGradient="linear(135deg, blue.400, blue.600)"
-                      rounded="lg"
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
-                    >
-                      <FiZap size={16} color="white" />
-                    </Box>
-                    <Heading size="sm" color="blue.700">
-                      Quick Actions
-                    </Heading>
-                  </HStack>
-                </CardHeader>
-                <CardBody p={4}>
-                  <VStack spacing={2}>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      w="full"
-                      justifyContent="flex-start"
-                      leftIcon={<FiUsers />}
-                    >
-                      Add Team Member
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      w="full"
-                      justifyContent="flex-start"
-                      leftIcon={<FiCpu />}
-                    >
-                      Create Feature
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      w="full"
-                      justifyContent="flex-start"
-                      leftIcon={<FiBarChart />}
-                    >
-                      View Reports
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      w="full"
-                      justifyContent="flex-start"
-                      leftIcon={<FiSettings />}
-                    >
-                      Project Settings
-                    </Button>
-                  </VStack>
-                </CardBody>
-              </Card>
-            </SimpleGrid>
-
-            {/* Project Description - Enhanced */}
-            <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
-              <CardHeader bg="gray.50" roundedTop="xl">
-                <HStack spacing={3}>
-                  <Box
-                    w={10}
-                    h={10}
-                    bgGradient="linear(135deg, gray.400, gray.600)"
-                    rounded="xl"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                  >
-                    <FiFileText size={20} color="white" />
-                  </Box>
-                  <Heading size="md" color="gray.700">
-                    Project Description
-                  </Heading>
-                </HStack>
-              </CardHeader>
-              <CardBody p={6}>
-                <Text color="gray.600" lineHeight="tall" fontSize="md">
-                  {DataProject.projectDesc ||
-                    "No description available for this project. Consider adding a detailed description to help team members understand the project goals and objectives."}
-                </Text>
-                {DataProject.projectDesc && (
-                  <HStack mt={4} spacing={4}>
-                    <Badge colorScheme="blue" px={3} py={1} rounded="full">
-                      {DataProject.projectCategory}
-                    </Badge>
-                    <Badge colorScheme="purple" px={3} py={1} rounded="full">
-                      {DataProject.projectType}
-                    </Badge>
-                  </HStack>
-                )}
-              </CardBody>
-            </Card>
-          </>
-        ) : (
-          <Box textAlign="center" py={12}>
-            <LoadingMiniSignature />
-            <Text mt={4} color="gray.500">
-              Loading project overview...
-            </Text>
-          </Box>
-        )}
+          ) : (
+            <Box textAlign="center" py={12}>
+              <Text color="gray.500">No stats available</Text>
+            </Box>
+          )}
+        </Box>
       </VStack>
     </TabPanel>
   );

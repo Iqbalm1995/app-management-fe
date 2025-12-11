@@ -641,6 +641,18 @@ export interface ProjectBacklogProgressionResponse {
   progressionBacklog: number;
 }
 
+export interface ProjectQuickStatsResponse {
+  totalBacklogs: number;
+  completedDocumentations: number;
+  totalDocumentations: number;
+  documentationProgressPercentage: number;
+  completedProcurementStages: number;
+  totalProcurementStages: number;
+  procurementProgressPercentage: number;
+  activeMembers: number;
+  backlogsNearDeadline: number;
+}
+
 export interface ProjectWorkflowBacklogInitializePayload {
   projectWorkflowId: string;
 }
@@ -658,6 +670,10 @@ interface useProjectsServices {
     projectId: string,
     token: string
   ) => Promise<ApiGenericResponse<ProjectDetailResponse | null> | null>;
+  GetProjectQuickStats: (
+    projectId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<ProjectQuickStatsResponse | null> | null>;
   GetProjectCount: (
     token: string
   ) => Promise<ApiGenericResponse<ProjectCountResponse | null> | null>;
@@ -996,6 +1012,47 @@ const useProjects = (): useProjectsServices => {
     try {
       const response = await axiosInstance.get<
         ApiGenericResponse<ProjectDetailResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during request."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const GetProjectQuickStats = async (
+    projectId: string,
+    token: string
+  ): Promise<ApiGenericResponse<ProjectQuickStatsResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Projects/${projectId}/quick-stats`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<ProjectQuickStatsResponse>
       >(`${UrlEndpoint}${PathEndpoint}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -3215,6 +3272,7 @@ const useProjects = (): useProjectsServices => {
     List,
     GetDetailById,
     GetProjectDetail,
+    GetProjectQuickStats,
     GetProjectCount,
     InsertProjects,
     RegisterProjectNew,

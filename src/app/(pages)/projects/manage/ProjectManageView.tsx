@@ -58,7 +58,6 @@ import {
   FiChevronRight,
   FiExternalLink,
   FiActivity,
-
   FiZap,
 } from "react-icons/fi";
 import { BsGlobe } from "react-icons/bs";
@@ -329,27 +328,43 @@ export default function ProjectManageView() {
                   </TabButtonCustomStyle>
                 </TabList>
 
-                <Flex justify="flex-end" mt={2}>
+                <Flex justify="flex-end">
                   <HStack spacing={1}>
                     <Button
                       size="xs"
                       onClick={() => scrollTabs("left")}
-                      bg={colorMode === "light" ? "white" : "gray.700"}
+                      bg={
+                        colorMode === "light"
+                          ? "secondary.500"
+                          : "secondary.700"
+                      }
                       shadow="md"
                       _hover={{
-                        bg: colorMode === "light" ? "gray.100" : "gray.600",
+                        bg:
+                          colorMode === "light"
+                            ? "secondary.400"
+                            : "secondary.600",
                       }}
+                      color={"white"}
                     >
                       <FiChevronLeft />
                     </Button>
                     <Button
                       size="xs"
                       onClick={() => scrollTabs("right")}
-                      bg={colorMode === "light" ? "white" : "gray.700"}
+                      bg={
+                        colorMode === "light"
+                          ? "secondary.500"
+                          : "secondary.700"
+                      }
                       shadow="md"
                       _hover={{
-                        bg: colorMode === "light" ? "gray.100" : "gray.600",
+                        bg:
+                          colorMode === "light"
+                            ? "secondary.400"
+                            : "secondary.600",
                       }}
+                      color={"white"}
                     >
                       <FiChevronRight />
                     </Button>
@@ -518,11 +533,11 @@ export default function ProjectManageView() {
                                 ? "green.400"
                                 : DataProject.appsProject.appsStatus ===
                                   "DEVELOPMENT"
-                                  ? "blue.400"
-                                  : DataProject.appsProject.appsStatus ===
-                                    "TESTING"
-                                    ? "orange.400"
-                                    : "red.400"
+                                ? "blue.400"
+                                : DataProject.appsProject.appsStatus ===
+                                  "TESTING"
+                                ? "orange.400"
+                                : "red.400"
                             }
                             rounded="full"
                             border="2px solid white"
@@ -556,10 +571,7 @@ export default function ProjectManageView() {
                             {DataProject.appsProject.appShortName}
                           </Badge>
                         </VStack>
-                        <Flex
-                          justify="center"
-                          w="full"
-                        >
+                        <Flex justify="center" w="full">
                           <VStack spacing={1} align="center">
                             <Text
                               fontSize="xs"
@@ -574,11 +586,11 @@ export default function ProjectManageView() {
                                   ? "green"
                                   : DataProject.appsProject.appsStatus ===
                                     "DEVELOPMENT"
-                                    ? "blue"
-                                    : DataProject.appsProject.appsStatus ===
-                                      "TESTING"
-                                      ? "orange"
-                                      : "red"
+                                  ? "blue"
+                                  : DataProject.appsProject.appsStatus ===
+                                    "TESTING"
+                                  ? "orange"
+                                  : "red"
                               }
                               size="sm"
                               px={2}
@@ -626,16 +638,19 @@ export default function ProjectManageView() {
                               >
                                 DIVISION OWNER
                               </Text>
-                              <Tooltip label={DataProject.proOwnerDivisionName} placement="top">
-                              <Text
-                                fontSize="xs"
-                                fontWeight="bold"
-                                color="white"
-                                maxW="200px"
-                                isTruncated
+                              <Tooltip
+                                label={DataProject.proOwnerDivisionName}
+                                placement="top"
                               >
-                                {DataProject.proOwnerDivisionName}
-                              </Text>
+                                <Text
+                                  fontSize="xs"
+                                  fontWeight="bold"
+                                  color="white"
+                                  maxW="200px"
+                                  isTruncated
+                                >
+                                  {DataProject.proOwnerDivisionName}
+                                </Text>
                               </Tooltip>
                             </HStack>
                             <HStack justify="space-between" w="full">
@@ -646,7 +661,10 @@ export default function ProjectManageView() {
                               >
                                 GROUP OWNER
                               </Text>
-                              <Tooltip label={DataProject.proOwnerGroupName} placement="top">
+                              <Tooltip
+                                label={DataProject.proOwnerGroupName}
+                                placement="top"
+                              >
                                 <Text
                                   fontSize="xs"
                                   fontWeight="bold"
@@ -685,7 +703,10 @@ export default function ProjectManageView() {
                           spacing={3}
                           w="full"
                         >
-                          <Link style={{ flex: 1 }} href={`/master-data/Application/detail?id=${DataProject.appsProject.id}`}>
+                          <Link
+                            style={{ flex: 1 }}
+                            href={`/master-data/Application/detail?id=${DataProject.appsProject.id}`}
+                          >
                             <Button
                               size="sm"
                               bg="whiteAlpha.200"
@@ -699,7 +720,10 @@ export default function ProjectManageView() {
                               Launch
                             </Button>
                           </Link>
-                          <Link style={{ flex: 1 }} href={`/master-data/Application/detail?id=${DataProject.appsProject.id}#environment`}>
+                          <Link
+                            style={{ flex: 1 }}
+                            href={`/master-data/Application/detail?id=${DataProject.appsProject.id}#environment`}
+                          >
                             <Button
                               size="sm"
                               bg="whiteAlpha.200"
@@ -803,10 +827,10 @@ export default function ProjectManageView() {
                                 DataProject.projectStatus === "ACTIVE"
                                   ? "green"
                                   : DataProject.projectStatus === "ONHOLD"
-                                    ? "orange"
-                                    : DataProject.projectStatus === "COMPLETED"
-                                      ? "blue"
-                                      : "gray"
+                                  ? "orange"
+                                  : DataProject.projectStatus === "COMPLETED"
+                                  ? "blue"
+                                  : "gray"
                               }
                             >
                               {DataProject.projectStatus}
@@ -909,7 +933,16 @@ export default function ProjectManageView() {
                                                 Reports
                     </VStack>
   */}
-                    <Text textAlign="center" color="gray.400" fontSize="md" fontWeight="semibold" fontStyle="italic" py={4}>Coming Soon</Text>
+                    <Text
+                      textAlign="center"
+                      color="gray.400"
+                      fontSize="md"
+                      fontWeight="semibold"
+                      fontStyle="italic"
+                      py={4}
+                    >
+                      Coming Soon
+                    </Text>
                   </CardBody>
                 </Card>
               </VStack>

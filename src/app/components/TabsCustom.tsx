@@ -65,7 +65,7 @@ export const TabButtonCustomStyle = ({ children }: { children: ReactNode }) => {
   return (
     <Tab
       px={8}
-      py={4}
+      py={2}
       // bgColor={"secondary.100"}
       bgGradient={
         colorMode == "light"
