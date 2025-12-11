@@ -767,6 +767,10 @@ interface useProjectsServices {
     projectId: string,
     token: string
   ) => Promise<ApiGenericResponse<ProjectDeadlineStatsResponse | null> | null>;
+  UpdateProjectProgressionAndStatus: (
+    projectId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
   GetProjectCount: (
     token: string
   ) => Promise<ApiGenericResponse<ProjectCountResponse | null> | null>;
@@ -1378,7 +1382,50 @@ const useProjects = (): useProjectsServices => {
     }
   };
 
-  const GetProjectCount = async (
+  const UpdateProjectProgressionAndStatus = async (
+    projectId: string,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Projects/update/progression-status`;
+    try {
+      const response = await axiosInstance.post<ApiGenericResponse<string>>(
+        `${UrlEndpoint}${PathEndpoint}`,
+        { projectId },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during request."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const GetProjectCount = async(
     token: string
   ): Promise<ApiGenericResponse<ProjectCountResponse | null> | null> => {
     setIsLoading(true);
@@ -3576,6 +3623,7 @@ const useProjects = (): useProjectsServices => {
     GetProjectProcurementStats,
     GetProjectMemberTaskStats,
     GetProjectDeadlineStats,
+    UpdateProjectProgressionAndStatus,
     GetProjectCount,
     InsertProjects,
     RegisterProjectNew,

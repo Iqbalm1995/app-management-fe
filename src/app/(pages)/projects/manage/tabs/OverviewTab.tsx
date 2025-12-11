@@ -28,6 +28,7 @@ import {
   StatLabel,
   StatNumber,
   StatHelpText,
+  Button,
   Avatar,
   AvatarGroup,
   Divider,
@@ -47,6 +48,7 @@ import {
   FiLayers,
   FiCheckCircle,
   FiClock,
+  FiRefreshCw,
 } from "react-icons/fi";
 import LoadingMiniSignature from "@/app/components/loadingMini";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
@@ -58,9 +60,10 @@ const Chart = dynamic(() => import("react-apexcharts"), { ssr: false }) as any;
 
 interface OverviewTabProps {
   DataProject: ProjectDataResponse | null;
+  onRefreshProject: () => void;
 }
 
-const OverviewTab = ({ DataProject }: OverviewTabProps) => {
+const OverviewTab = ({ DataProject, onRefreshProject }: OverviewTabProps) => {
   const { colorMode } = useColorMode();
   const showToast = useToastHelper();
   const {
@@ -70,6 +73,7 @@ const OverviewTab = ({ DataProject }: OverviewTabProps) => {
     GetProjectProcurementStats,
     GetProjectMemberTaskStats,
     GetProjectDeadlineStats,
+    UpdateProjectProgressionAndStatus,
   } = useProjects();
 
   // Auth Setup
@@ -100,45 +104,78 @@ const OverviewTab = ({ DataProject }: OverviewTabProps) => {
   const [MemberStats, setMemberStats] = useState<ProjectMemberTaskStatsResponse | null>(null);
   const [DeadlineStats, setDeadlineStats] = useState<ProjectDeadlineStatsResponse | null>(null);
   const [IsLoadingStats, setIsLoadingStats] = useState(false);
+  const [IsUpdatingProgression, setIsUpdatingProgression] = useState(false);
 
   // Check if project is procurement type
   const isProcurement = DataProject?.projectType === PROJECT_TYPE_PROCUREMENT;
 
-  // Fetch All Stats
+  // Fetch All Stats Function
+  const fetchAllStats = async () => {
+    if (!DataAuth || !DataProject || !tokenData) return;
+
+    setIsLoadingStats(true);
+    try {
+      const [quick, backlog, documentation, procurement, member, deadline] = await Promise.all([
+        GetProjectQuickStats(DataProject.id, tokenData),
+        GetProjectBacklogStats(DataProject.id, tokenData),
+        GetProjectDocumentationStats(DataProject.id, tokenData),
+        GetProjectProcurementStats(DataProject.id, tokenData),
+        GetProjectMemberTaskStats(DataProject.id, tokenData),
+        GetProjectDeadlineStats(DataProject.id, tokenData),
+      ]);
+
+      if (quick?.statusCode === RES_CODE_OK && quick.data) setQuickStats(quick.data);
+      if (backlog?.statusCode === RES_CODE_OK && backlog.data) setBacklogStats(backlog.data);
+      if (documentation?.statusCode === RES_CODE_OK && documentation.data) setDocumentationStats(documentation.data);
+      if (procurement?.statusCode === RES_CODE_OK && procurement.data) setProcurementStats(procurement.data);
+      if (member?.statusCode === RES_CODE_OK && member.data) setMemberStats(member.data);
+      if (deadline?.statusCode === RES_CODE_OK && deadline.data) setDeadlineStats(deadline.data);
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+      showToast({
+        description: "Failed to load statistics",
+        statusToast: "error",
+      });
+    } finally {
+      setIsLoadingStats(false);
+    }
+  };
+
+  // Fetch All Stats on mount
   useEffect(() => {
     if (DataAuth && DataProject && tokenData) {
-      setIsLoadingStats(true);
-      const FetchAllStats = async () => {
-        try {
-          const [quick, backlog, documentation, procurement, member, deadline] = await Promise.all([
-            GetProjectQuickStats(DataProject.id, tokenData),
-            GetProjectBacklogStats(DataProject.id, tokenData),
-            GetProjectDocumentationStats(DataProject.id, tokenData),
-            GetProjectProcurementStats(DataProject.id, tokenData),
-            GetProjectMemberTaskStats(DataProject.id, tokenData),
-            GetProjectDeadlineStats(DataProject.id, tokenData),
-          ]);
-
-          if (quick?.statusCode === RES_CODE_OK && quick.data) setQuickStats(quick.data);
-          if (backlog?.statusCode === RES_CODE_OK && backlog.data) setBacklogStats(backlog.data);
-          if (documentation?.statusCode === RES_CODE_OK && documentation.data) setDocumentationStats(documentation.data);
-          if (procurement?.statusCode === RES_CODE_OK && procurement.data) setProcurementStats(procurement.data);
-          if (member?.statusCode === RES_CODE_OK && member.data) setMemberStats(member.data);
-          if (deadline?.statusCode === RES_CODE_OK && deadline.data) setDeadlineStats(deadline.data);
-        } catch (error) {
-          console.error("Error fetching stats:", error);
-          showToast({
-            description: "Failed to load statistics",
-            statusToast: "error",
-          });
-        } finally {
-          setIsLoadingStats(false);
-        }
-      };
-
-      FetchAllStats();
+      fetchAllStats();
     }
   }, [DataAuth, DataProject, tokenData]);
+  const handleUpdateProgression = async () => {
+    if (!DataProject || !tokenData) return;
+
+    setIsUpdatingProgression(true);
+    try {
+      const response = await UpdateProjectProgressionAndStatus(DataProject.id, tokenData);
+      
+      if (response?.statusCode === RES_CODE_OK) {
+        showToast({
+          description: response.data || "Project progression updated successfully",
+          statusToast: "success",
+        });
+        onRefreshProject();
+        fetchAllStats();
+      } else {
+        showToast({
+          description: response?.message || RES_GENERIC_ERROR_MSG,
+          statusToast: "error",
+        });
+      }
+    } catch (error) {
+      showToast({
+        description: RES_GENERIC_ERROR_MSG,
+        statusToast: "error",
+      });
+    } finally {
+      setIsUpdatingProgression(false);
+    }
+  };
 
   // Chart Options
   const priorityChartOptions = {
@@ -185,9 +222,30 @@ const OverviewTab = ({ DataProject }: OverviewTabProps) => {
           <Heading size="lg" color={colorMode === "light" ? "gray.800" : "white"}>
             Project Overview
           </Heading>
-          <Badge colorScheme="blue" px={4} py={2} rounded="full" fontSize="md">
-            Dashboard
-          </Badge>
+          <HStack spacing={2}>
+            <Button
+              size="sm"
+              colorScheme="blue"
+              leftIcon={<Icon as={FiRefreshCw} />}
+              rounded="full"
+              onClick={handleUpdateProgression}
+              isLoading={IsUpdatingProgression}
+              loadingText="Updating..."
+            >
+              Update Progression
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              leftIcon={<Icon as={FiRefreshCw} />}
+              colorScheme="gray"
+              rounded="full"
+              onClick={fetchAllStats}
+              isLoading={IsLoadingStats}
+            >
+              Refresh
+            </Button>
+          </HStack>
         </HStack>
 
         {IsLoadingStats ? (

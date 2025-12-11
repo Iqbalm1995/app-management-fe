@@ -184,6 +184,10 @@ export default function ProjectManageView() {
     }
   }, [DataAuth, RefreshData, projectId, isInitialized]);
 
+  const refreshProjectDetail = () => {
+    setRefreshData((prev) => prev + 1);
+  };
+
   useEffect(() => {
     if (DataAuth && DataProject && !DataApps && isInitialized) {
       const GetAppData = async () => {
@@ -387,7 +391,7 @@ export default function ProjectManageView() {
               >
                 <CardBody>
                   <TabPanels minH="600px">
-                    <OverviewTab DataProject={DataProject} />
+                    <OverviewTab DataProject={DataProject} onRefreshProject={refreshProjectDetail} />
                     <DetailsTab DataProject={DataProject} />
                     {showFeaturesTab && (
                       <FeaturesTab DataProject={DataProject} />
