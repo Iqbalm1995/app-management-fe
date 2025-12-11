@@ -1036,7 +1036,7 @@ const SidebarContent = ({
   );
 };
 
-const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
+const NavItem = ({ data, mode, depth = 0 }: { data: LinkItemProps; mode: boolean; depth?: number }) => {
   const [isOpen, setIsOpen] = useState(false);
   const navItemRef = useRef<HTMLDivElement>(null);
   const hasChildren = data.children && data.children.length > 0;
@@ -1046,6 +1046,7 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
   const showToast = useToastHelper();
   const router = useRouter();
   const [isNavigating, setIsNavigating] = useState(false);
+  const isChild = depth > 0;
 
   const handleToggle = () => {
     setIsOpen(!isOpen);
@@ -1143,12 +1144,14 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
             onMouseLeave={() => setIsHovered(false)}
             align="center"
             px="3"
-            py="3"
-            my="1"
+            py={isChild ? "1.5" : "3"}
+            my={isChild ? "2" : "1"}
             rounded={radiusStyle}
+            borderLeft={isChild && IsActiveNav ? "3px solid" : "none"}
+            borderLeftColor={isChild && IsActiveNav ? "secondary.300" : "transparent"}
             role="group"
             cursor="pointer"
-            boxShadow={IsActiveNav ? "md" : hasActiveChild ? "sm" : "none"}
+            boxShadow={IsActiveNav ? (isChild ? "sm" : "md") : hasActiveChild ? "sm" : "none"}
             fontWeight={IsActiveNav ? "bold" : "normal"}
             _hover={{
               color: "secondary.800",
@@ -1159,11 +1162,14 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
             }}
             // bg={IsActiveNav ? "secondary.500" : "transparent"}
             bgGradient={
-              IsActiveNav
-                ? "linear(to-r, secondary.500, secondary.600)"
-                : hasActiveChild
+              isChild && IsActiveNav
+                ? "linear(to-r, secondary.300, secondary.400)"
+                :
+                IsActiveNav
                   ? "linear(to-r, secondary.500, secondary.600)"
-                  : "linear(to-r, transparent, transparent)"
+                  : hasActiveChild
+                    ? "linear(to-r, secondary.500, secondary.600)"
+                    : "linear(to-r, transparent, transparent)"
             }
             color={
               IsActiveNav
@@ -1193,7 +1199,7 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
               {data.icon && (
                 <Icon
                   mr={mode ? "0" : data.isPro ? "2" : "4"}
-                  fontSize={mode ? "25" : "20"}
+                  fontSize={mode ? "25" : isChild ? "20" : "22"}
                   _groupHover={{
                     color: "secondary.800",
                   }}
@@ -1215,7 +1221,7 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
                 as={HStack}
               >
                 {data.isPro && <Badge colorScheme="secondary">Pro</Badge>}
-                <Text>{data.name}</Text>
+                <Text fontSize={isChild ? "sm" : "md"}>{data.name}</Text>
                 {hasChildren && (
                   <Icon
                     ml="auto"
@@ -1244,7 +1250,7 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
           overflow="hidden"
         >
           {data.children.map((child) => (
-            <NavItem key={child.name} data={child} mode={mode} />
+            <NavItem key={child.name} data={child} mode={mode} depth={depth + 1} />
           ))}
         </MotionBox>
       )}
