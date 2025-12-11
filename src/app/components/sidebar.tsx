@@ -6,6 +6,7 @@ import React, {
   useContext,
   useEffect,
   useState,
+  useRef,
 } from "react";
 import {
   IconButton,
@@ -1001,7 +1002,7 @@ const SidebarContent = ({
 
         <Flex pt={5} pb={2} mx={3}>
           <VStack w={"full"} h={"65vh"} align={"start"} overflowX="auto">
-            <HStack w="full" justify="space-between" align="center" pl={2}>
+            {/* <HStack w="full" justify="space-between" align="center" pl={2}>
               <Tooltip label="Hide menu pro" placement="top" hasArrow>
 
                 <FormControl display="flex" alignItems="center">
@@ -1017,7 +1018,7 @@ const SidebarContent = ({
                 </FormControl>
 
               </Tooltip >
-            </HStack >
+            </HStack > */}
             <Box w={"full"} overflowY={"auto"}>
               {LinkItems.filter((link) => !hideProMenus || !link.isPro).map(
                 (link) => (
@@ -1037,6 +1038,7 @@ const SidebarContent = ({
 
 const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const navItemRef = useRef<HTMLDivElement>(null);
   const hasChildren = data.children && data.children.length > 0;
   const [isHovered, setIsHovered] = useState(false);
   const pathname = usePathname();
@@ -1055,14 +1057,21 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
   useEffect(() => {
     const currentPath = pathname;
 
+    // Special case: Don't mark items as active if they link to /coming-soon
+    const isComingSoonPage = pathname === "/coming-soon";
+    const itemLinksToComingSoon = data.link === "/coming-soon";
     // Check if current item is active
     const isCurrentActive =
-      currentPath === data.link && data.children.length <= 0;
+      currentPath === data.link &&
+      data.children.length <= 0 &&
+      !(isComingSoonPage && itemLinksToComingSoon);
     setIsActiveNav(isCurrentActive);
 
     // Check if any child is active
     const checkActiveChild = (children: LinkItemProps[]): boolean => {
       return children.some((child) => {
+        // Skip /coming-soon links when on coming-soon page
+        if (isComingSoonPage && child.link === "/coming-soon") return false;
         if (currentPath === child.link) return true;
         if (child.children && child.children.length > 0) {
           return checkActiveChild(child.children);
@@ -1077,6 +1086,14 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
     // Auto-expand if current item is active or has active child
     if (isCurrentActive || childActive) {
       setIsOpen(true);
+      // Scroll active item into view
+      if (navItemRef.current) {
+        navItemRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+          inline: "nearest"
+        });
+      }
     } else {
       // Only close if no active children and not manually opened
       const firstSegment = pathname.split("/")[1];
@@ -1114,7 +1131,7 @@ const NavItem = ({ data, mode }: { data: LinkItemProps; mode: boolean }) => {
     }
   };
   return (
-    <Box w={"full"}>
+    <Box w={"full"} ref={navItemRef}>
       <Box cursor="pointer">
         <Tooltip
           label={data.name}
