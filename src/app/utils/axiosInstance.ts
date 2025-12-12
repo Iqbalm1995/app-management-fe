@@ -9,7 +9,7 @@ const UrlEndpoint: string = buildUrlPort(BASE_URL_MAIN, BASE_PORT_MAIN);
 
 const axiosInstance = axios.create({
   // baseURL: process.env.NEXT_PUBLIC_API_BASE_URL, // Base URL from environment variables
-  timeout: 10000, // Optional: set a timeout
+  timeout: 120000, // 2 minutes timeout
   headers: {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": `${UrlEndpoint}`,

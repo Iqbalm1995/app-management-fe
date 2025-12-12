@@ -434,6 +434,7 @@ const useApps = (): useAppsServices => {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
+        timeout: 300000, // 5 minutes for file uploads
       });
       setIsLoading(false);
       return response.data;
