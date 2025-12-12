@@ -183,7 +183,7 @@ import {
   ChevronDownIcon,
   DeleteIcon,
 } from "@chakra-ui/icons";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { FaCheckCircle } from "react-icons/fa";
 
@@ -3149,6 +3149,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
 function ProjectWorkspaceView() {
   const showToast = useToastHelper();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { colorMode } = useColorMode();
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
@@ -3317,6 +3318,11 @@ function ProjectWorkspaceView() {
           setIsLoadingProcess(true);
           const response = await GetProjectDetail(projectId, tokenData);
 
+          if (response?.statusCode === 404) {
+            router.push('/not-found');
+            return;
+          }
+          
           if (response?.statusCode === RES_CODE_OK) {
             setDataProject(response.data as ProjectDataResponse);
           } else {
@@ -4042,8 +4048,8 @@ function ProjectWorkspaceView() {
 
                       <HStack spacing={3} fontSize="sm" color="gray.600">
                         <HStack spacing={1}>
-                          <FiHash size={14} />
-                          <Text>{DataProject?.projectCode}</Text>
+                          
+                          <Text>No. {DataProject?.projectNo}</Text>
                         </HStack>
                         {DataProject?.proManageByDivisionName && (
                           <HStack spacing={1}>
