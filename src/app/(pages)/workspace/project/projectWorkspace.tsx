@@ -380,8 +380,6 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
   const handleAddUserAssign = (data: UsersResponse) => {
     setChoosedMemberProjects([...ChoosedMemberProjects, data]);
-    setDataUsers([]);
-    setSearchUserInput("");
   };
 
   const handleRemoveUserAssign = (id: string) => {
@@ -438,7 +436,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
       teamRole: null,
     };
 
-    handleAddUserAssign(currentUserAsUsersResponse);
+    setChoosedMemberProjects([...ChoosedMemberProjects, currentUserAsUsersResponse]);
   };
 
   // Handle saving assigned users
@@ -1806,6 +1804,35 @@ const TaskCard: React.FC<TaskCardProps> = ({
                           </AlertDescription>
                         </Alert>
                       )}
+
+                      {/* Alert for no assigned users */}
+                      {ChoosedMemberProjects.length === 0 && (
+                        <Alert
+                          status="warning"
+                          variant="left-accent"
+                          rounded={radiusStyle}
+                        >
+                          <AlertIcon />
+                          <AlertDescription>
+                            Task belum memiliki user yang ditugaskan. Silakan assign user untuk task ini.
+                          </AlertDescription>
+                        </Alert>
+                      )}
+
+                      {/* Alert for no due date */}
+                      {!detailedTask.endDate && (
+                        <Alert
+                          status="warning"
+                          variant="left-accent"
+                          rounded={radiusStyle}
+                        >
+                          <AlertIcon />
+                          <AlertDescription>
+                            Task belum memiliki due date. Silakan set tanggal deadline untuk task ini.
+                          </AlertDescription>
+                        </Alert>
+                      )}
+
                     <Flex
                       w="full"
                       as={HStack}
@@ -1842,18 +1869,31 @@ const TaskCard: React.FC<TaskCardProps> = ({
                           )}
                         </Box>
                       ) : (
-                        <Text
-                          fontWeight={600}
-                          fontSize={23}
+                        <HStack
+                          spacing={2}
                           onClick={handleEditName}
                           cursor="pointer"
                           _hover={{ bg: "gray.50" }}
                           p={1}
                           borderRadius="md"
                           transition="all 0.2s"
+                          role="group"
+                          flex={1}
                         >
-                          {detailedTask.taskName}
-                        </Text>
+                          <Text
+                            fontWeight={600}
+                            fontSize={23}
+                          >
+                            {detailedTask.taskName}
+                          </Text>
+                          <Icon
+                            as={FaEdit}
+                            color="gray.400"
+                            opacity={0}
+                            _groupHover={{ opacity: 1 }}
+                            transition="opacity 0.2s"
+                          />
+                        </HStack>
                       )}
                     </Flex>
                     {/* Date Range Picker and Assign Task */}
@@ -1957,7 +1997,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                           onAssignModalOpen();
                         }}
                       >
-                        Assign Task
+                        Assign Task{ChoosedMemberProjects.length > 0 && ` (${ChoosedMemberProjects.length})`}
                       </Button>
                     </HStack>
                     {/* Editable Task Description */}
@@ -1997,6 +2037,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
                         borderRadius="md"
                         transition="all 0.2s"
                         minH="60px"
+                        position="relative"
+                        role="group"
                       >
                         {detailedTask.taskDesc ? (
                           <Text>{detailedTask.taskDesc}</Text>
@@ -2005,6 +2047,16 @@ const TaskCard: React.FC<TaskCardProps> = ({
                             Add a more detailed description...
                           </Text>
                         )}
+                        <Icon
+                          as={FaEdit}
+                          color="gray.400"
+                          position="absolute"
+                          top={2}
+                          right={2}
+                          opacity={0}
+                          _groupHover={{ opacity: 1 }}
+                          transition="opacity 0.2s"
+                        />
                       </Box>
                     )}
                     {/* Task Items (Checklist) */}
