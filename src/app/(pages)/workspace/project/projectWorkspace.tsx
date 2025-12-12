@@ -712,6 +712,16 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
   // Handle saving task name
   const handleSaveName = async () => {
+    // Validate empty name
+    if (!editedName.trim()) {
+      showToast({
+        description: "Task name cannot be empty",
+        statusToast: "warning",
+      });
+      setEditedName(detailedTask?.taskName || "");
+      return;
+    }
+
     if (!detailedTask || editedName.trim() === detailedTask.taskName) {
       setIsEditingName(false);
       return;
@@ -3957,14 +3967,18 @@ function ProjectWorkspaceView() {
   // Get project statistics
   const getProjectStats = () => {
     const totalTasks = DataTasks.length;
+    
+    // Count by actual board names (with spaces and uppercase)
     const completedTasks = DataTasks.filter(
-      (task) => task.percentageStatus === 100
+      (task) => task.boardName?.toUpperCase() === "DONE"
     ).length;
+    
     const inProgressTasks = DataTasks.filter(
-      (task) => task.percentageStatus > 0 && task.percentageStatus < 100
+      (task) => task.boardName?.toUpperCase() === "IN PROGRESS"
     ).length;
+    
     const todoTasks = DataTasks.filter(
-      (task) => task.percentageStatus === 0
+      (task) => task.boardName?.toUpperCase() === "TO DO"
     ).length;
 
     const completionPercentage =
@@ -4186,8 +4200,8 @@ function ProjectWorkspaceView() {
           >
             <HStack spacing={3} justify="space-between" align="center">
               <HStack spacing={3} flex={1}>
-                <InputGroup maxW="300px">
-                  <InputLeftElement>
+                <InputGroup maxW="300px" >
+                  <InputLeftElement mt={-1} pr={2}>
                     <FiSearch />
                   </InputLeftElement>
                   <Input
