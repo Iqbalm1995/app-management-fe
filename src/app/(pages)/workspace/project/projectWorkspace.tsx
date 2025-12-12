@@ -404,6 +404,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
   const [isAddingTaskItem, setIsAddingTaskItem] = useState(false);
   const [taskItems, setTaskItems] = useState<TaskItemResponse[]>([]);
   const [isLoadingTaskItems, setIsLoadingTaskItems] = useState(false);
+  const [togglingItemId, setTogglingItemId] = useState<string | null>(null);
 
   // States for inline editing
   const [isEditingName, setIsEditingName] = useState(false);
@@ -967,6 +968,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
   const handleToggleTaskItem = async (itemId: string, newStatus: string) => {
     if (!detailedTask) return;
 
+    setTogglingItemId(itemId);
     try {
       const taskItem = taskItems.find((item) => item.id === itemId);
       if (!taskItem) return;
@@ -980,14 +982,16 @@ const TaskCard: React.FC<TaskCardProps> = ({
       const response = await UpdateTaskItem(updatePayload, getToken());
 
       if (response?.statusCode === RES_CODE_OK) {
-        setTaskItems((prevItems) => {
-          const updatedItems = prevItems.map((item) =>
-            item.id === itemId ? { ...item, isDone: newStatus } : item
-          );
-          updateTaskProgress(updatedItems);
-          return updatedItems;
-        });
-        onRefreshTasks(); // Refresh tasks data
+        const updatedItems = taskItems.map((item) =>
+          item.id === itemId ? { ...item, isDone: newStatus } : item
+        );
+        setTaskItems(updatedItems);
+
+        const completedCount = updatedItems.filter(item => item.isDone === "Y").length;
+        const percentage = updatedItems.length > 0 ? Math.round((completedCount / updatedItems.length) * 100) : 0;
+
+        setDetailedTask(prev => prev ? { ...prev, percentageStatus: percentage } : null);
+        onUpdateTask(detailedTask.id, { percentageStatus: percentage });
       } else {
         showToast({
           description: response?.message || "Failed to update task item",
@@ -1000,6 +1004,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
         description: "An error occurred while updating task item",
         statusToast: "error",
       });
+    } finally {
+      setTogglingItemId(null);
     }
   };
 
@@ -2069,20 +2075,26 @@ const TaskCard: React.FC<TaskCardProps> = ({
                               px={1}
                               borderRadius="md"
                               _hover={{ bg: "gray.50" }}
+                              opacity={togglingItemId ? 0.6 : 1}
                             >
-                              <Checkbox
-                                isChecked={item.isDone === "Y"}
-                                onChange={() =>
-                                  handleToggleTaskItem(
-                                    item.id,
-                                    item.isDone === "Y" ? "N" : "Y"
-                                  )
-                                }
-                                colorScheme={
-                                  item.isDone === "Y" ? "green" : "blue"
-                                }
-                                mr={2}
-                              />
+                              {togglingItemId === item.id ? (
+                                <Spinner size="sm" mr={2} />
+                              ) : (
+                                <Checkbox
+                                  isChecked={item.isDone === "Y"}
+                                  onChange={() =>
+                                    handleToggleTaskItem(
+                                      item.id,
+                                      item.isDone === "Y" ? "N" : "Y"
+                                    )
+                                  }
+                                  colorScheme={
+                                    item.isDone === "Y" ? "green" : "blue"
+                                  }
+                                  isDisabled={togglingItemId !== null}
+                                  mr={2}
+                                />
+                              )}
                               <Text
                                 as={item.isDone === "Y" ? "s" : "span"}
                                 color={
