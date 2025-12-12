@@ -54,6 +54,7 @@ import {
   PaggingListPayloadCustom,
   ListSearchByParam,
 } from "@/app/types/masterTypes";
+import { DateTimeInput, DateTimeRangeInput } from "@/app/components/dateInputs";
 import {
   Avatar,
   AvatarGroup,
@@ -203,129 +204,6 @@ const HeaderDataContent: HeaderContentProps = {
   breadCrumb: ["Home", "Workspace", "Project"],
 };
 
-// DateRangePicker component for selecting start and end dates
-interface DateRangePickerProps {
-  taskId: string;
-  initialStartDate: string | null | undefined;
-  initialEndDate: string | null | undefined;
-  onSave: (startDate: string | null, endDate: string | null) => void;
-}
-
-const DateRangePicker: React.FC<DateRangePickerProps> = ({
-  taskId,
-  initialStartDate,
-  initialEndDate,
-  onSave,
-}) => {
-  const [startDate, setStartDate] = useState<string | null>(
-    initialStartDate || null
-  );
-  const [endDate, setEndDate] = useState<string | null>(initialEndDate || null);
-  const [isSaving, setIsSaving] = useState(false);
-
-  useEffect(() => {
-    setStartDate(initialStartDate || null);
-    setEndDate(initialEndDate || null);
-  }, [initialStartDate, initialEndDate, taskId]);
-
-  const handleSave = () => {
-    setIsSaving(true);
-    onSave(startDate, endDate);
-    setIsSaving(false);
-    document.body.click();
-  };
-
-  const formatDateForInput = (date: string | null) => {
-    if (!date) return "";
-    return new Date(date).toISOString().slice(0, 16);
-  };
-
-  return (
-    <VStack spacing={4} align="stretch">
-      <FormControl>
-        <HStack justify="space-between" align="center">
-          <FormLabel fontSize="sm" mb={0}>
-            Start Date
-          </FormLabel>
-          {startDate && (
-            <Button
-              size="xs"
-              variant="ghost"
-              colorScheme="red"
-              onClick={() => setStartDate(null)}
-            >
-              Clear
-            </Button>
-          )}
-        </HStack>
-        <Input
-          type="datetime-local"
-          size="sm"
-          value={formatDateForInput(startDate)}
-          onChange={(e) => {
-            const newDate = e.target.value
-              ? new Date(e.target.value).toISOString()
-              : null;
-            setStartDate(newDate);
-          }}
-          mt={1}
-        />
-      </FormControl>
-
-      <FormControl>
-        <HStack justify="space-between" align="center">
-          <FormLabel fontSize="sm" mb={0}>
-            Due Date
-          </FormLabel>
-          {endDate && (
-            <Button
-              size="xs"
-              variant="ghost"
-              colorScheme="red"
-              onClick={() => setEndDate(null)}
-            >
-              Clear
-            </Button>
-          )}
-        </HStack>
-        <Input
-          type="datetime-local"
-          size="sm"
-          value={formatDateForInput(endDate)}
-          onChange={(e) => {
-            const newDate = e.target.value
-              ? new Date(e.target.value).toISOString()
-              : null;
-            setEndDate(newDate);
-          }}
-          mt={1}
-        />
-      </FormControl>
-
-      <HStack justify="space-between">
-        <Button
-          size="sm"
-          variant="ghost"
-          colorScheme="red"
-          onClick={() => {
-            setStartDate(null);
-            setEndDate(null);
-          }}
-        >
-          Clear All
-        </Button>
-        <Button
-          size="sm"
-          colorScheme={isSaving ? "yellow" : "blue"}
-          onClick={handleSave}
-          isLoading={isSaving}
-        >
-          Save
-        </Button>
-      </HStack>
-    </VStack>
-  );
-};
 const ItemTypes = {
   TASK: "task",
 };
@@ -481,13 +359,22 @@ const TaskCard: React.FC<TaskCardProps> = ({
   };
 
   const handleSearchUserAssign = async (textSearch: string) => {
-    setDataUsers([]);
     setSearchUserInput(textSearch);
-    if (textSearch.length >= 2) {
-      const ListUserData: UsersResponse[] = await GetDataUser(textSearch, 3);
-      setDataUsers(ListUserData);
-    } else if (textSearch.length <= 0) {
-      setDataUsers([]);
+
+    const projectMembers =
+      DataProject?.userAssignment?.map((assignment) => assignment.userData) ||
+      [];
+
+    if (textSearch.length > 0) {
+      const filtered = projectMembers.filter(
+        (user) =>
+          user.nama.toLowerCase().includes(textSearch.toLowerCase()) ||
+          user.nip?.toLowerCase().includes(textSearch.toLowerCase()) ||
+          user.email.toLowerCase().includes(textSearch.toLowerCase())
+      );
+      setDataUsers(filtered);
+    } else {
+      setDataUsers(projectMembers);
     }
   };
 
@@ -502,6 +389,56 @@ const TaskCard: React.FC<TaskCardProps> = ({
       (project) => project.id !== id
     );
     setChoosedMemberProjects(updatedProjects);
+  };
+
+  const handleAssignMe = () => {
+    if (!DataAuth) return;
+
+    const isAlreadyAssigned = ChoosedMemberProjects.find(
+      (user) => user.id === DataAuth.id
+    );
+
+    if (isAlreadyAssigned) return;
+
+    const currentUserAsUsersResponse: UsersResponse = {
+      id: DataAuth.id,
+      nrp: DataAuth.nrp || "",
+      nama: DataAuth.nama,
+      nip: DataAuth.nip || "",
+      userId: DataAuth.userId,
+      kodeCabang: DataAuth.kodeCabang,
+      namaCabang: DataAuth.namaCabang,
+      kodeInduk: DataAuth.kodeInduk,
+      namaInduk: DataAuth.namaInduk,
+      kodeKanwil: DataAuth.kodeKanwil,
+      namaKanwil: DataAuth.namaKanwil,
+      jabatan: DataAuth.jabatan,
+      email: DataAuth.email,
+      idFungsi: DataAuth.idFungsi,
+      namaFungsi: DataAuth.namaFungsi,
+      kodePenempatan: DataAuth.kodePenempatan,
+      namaPenempatan: DataAuth.namaPenempatan,
+      idUim: DataAuth.idUim,
+      costCentre: DataAuth.costCentre,
+      isApproval: DataAuth.isApproval,
+      kodeUnitKerja: DataAuth.kodeUnitKerja,
+      namaUnitKerja: DataAuth.namaUnitKerja,
+      kodeJabatan: DataAuth.kodeJabatan,
+      phoneNumber: DataAuth.userPhoneNumber,
+      userStatus: DataAuth.isActive,
+      profilePict: DataAuth.profilePict,
+      kodeGroupKerja: null,
+      namaGroupKerja: null,
+      lastSync: null,
+      createdAt: new Date().toISOString(),
+      createdBy: DataAuth.userId,
+      updatedAt: null,
+      updatedBy: null,
+      team: null,
+      teamRole: null,
+    };
+
+    handleAddUserAssign(currentUserAsUsersResponse);
   };
 
   // Handle saving assigned users
@@ -581,13 +518,6 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
     const normalizedStartDate = startDate === undefined ? null : startDate;
     const normalizedEndDate = endDate === undefined ? null : endDate;
-
-    if (
-      normalizedStartDate === detailedTask.startDate &&
-      normalizedEndDate === detailedTask.endDate
-    ) {
-      return;
-    }
 
     setIsLoadingDetails(true);
     try {
@@ -987,10 +917,17 @@ const TaskCard: React.FC<TaskCardProps> = ({
         );
         setTaskItems(updatedItems);
 
-        const completedCount = updatedItems.filter(item => item.isDone === "Y").length;
-        const percentage = updatedItems.length > 0 ? Math.round((completedCount / updatedItems.length) * 100) : 0;
+        const completedCount = updatedItems.filter(
+          (item) => item.isDone === "Y"
+        ).length;
+        const percentage =
+          updatedItems.length > 0
+            ? Math.round((completedCount / updatedItems.length) * 100)
+            : 0;
 
-        setDetailedTask(prev => prev ? { ...prev, percentageStatus: percentage } : null);
+        setDetailedTask((prev) =>
+          prev ? { ...prev, percentageStatus: percentage } : null
+        );
         onUpdateTask(detailedTask.id, { percentageStatus: percentage });
       } else {
         showToast({
@@ -1442,7 +1379,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
       if (response?.statusCode === RES_CODE_OK) {
         const isArchived = detailedTask?.isArchived === "Y";
         showToast({
-          description: isArchived ? "Task restored successfully" : "Task archived successfully",
+          description: isArchived
+            ? "Task restored successfully"
+            : "Task archived successfully",
           statusToast: "success",
         });
 
@@ -1955,14 +1894,50 @@ const TaskCard: React.FC<TaskCardProps> = ({
                             Set Task Dates
                           </PopoverHeader>
                           <PopoverBody>
-                            <DateRangePicker
-                              taskId={detailedTask.id}
-                              initialStartDate={detailedTask.startDate}
-                              initialEndDate={detailedTask.endDate}
-                              onSave={(startDate, endDate) => {
-                                updateTaskDates(startDate, endDate);
-                              }}
-                            />
+                            <VStack spacing={3} align="stretch">
+                              <DateTimeRangeInput
+                                startValue={detailedTask.startDate ?? null}
+                                endValue={detailedTask.endDate ?? null}
+                                onStartChange={(value) => {
+                                  if (detailedTask) {
+                                    setDetailedTask({
+                                      ...detailedTask,
+                                      startDate: value ?? undefined,
+                                    });
+                                  }
+                                }}
+                                onEndChange={(value) => {
+                                  if (detailedTask) {
+                                    setDetailedTask({
+                                      ...detailedTask,
+                                      endDate: value ?? undefined,
+                                    });
+                                  }
+                                }}
+                                placeholder="Select task schedule"
+                                size="sm"
+                              />
+                              <Button
+                                size="sm"
+                                colorScheme="blue"
+                                w="full"
+                                onClick={async (e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  
+                                  const startDate = detailedTask.startDate ?? null;
+                                  const endDate = detailedTask.endDate ?? null;
+                                  
+                                  await updateTaskDates(startDate, endDate);
+                                  onRefreshTasks();
+                                  
+                                  // Close popover
+                                  document.body.click();
+                                }}
+                              >
+                                Save
+                              </Button>
+                            </VStack>
                           </PopoverBody>
                         </PopoverContent>
                       </Popover>
@@ -1974,7 +1949,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
                         leftIcon={<FaUsers />}
                         onClick={() => {
                           setSearchUserInput("");
-                          setDataUsers([]);
+                          const projectMembers =
+                            DataProject?.userAssignment?.map(
+                              (assignment) => assignment.userData
+                            ) || [];
+                          setDataUsers(projectMembers);
                           onAssignModalOpen();
                         }}
                       >
@@ -2130,7 +2109,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                       {/* Add new task item */}
                       <Box px={4} w="full" my={4}>
                         <form onSubmit={handleAddTaskItem}>
-                          <Flex as={HStack} >
+                          <Flex as={HStack}>
                             <Input
                               placeholder="Add a new subtask..."
                               value={newTaskItemName}
@@ -2705,25 +2684,50 @@ const TaskCard: React.FC<TaskCardProps> = ({
               </Badge>
             </HStack>
           </ModalHeader>
-          <ModalBody>
+          <ModalBody overflow="visible">
             <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"}>
               <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }} w={"full"}>
                 <VStack spacing={4} align="stretch">
                   <Box>
                     <Text fontWeight="semibold" mb={2}>
-                      Search Users
+                      Project Members
                     </Text>
                     <Input
-                      placeholder="Search by name or ID..."
+                      placeholder="Search by name, NIP, or email..."
                       value={SearchUserInput}
                       onChange={(e) => handleSearchUserAssign(e.target.value)}
                     />
                   </Box>
 
                   {/* Search Results */}
-                  <Box>
-                    {DataUsers.length > 0 && (
-                      <VStack spacing={2} align="stretch">
+                  <Box 
+                    h="40vh" 
+                    overflowY="auto"
+                    overflowX="hidden"
+                    css={{
+                      '&::-webkit-scrollbar': {
+                        width: '8px',
+                      },
+                      '&::-webkit-scrollbar-track': {
+                        background: '#f1f1f1',
+                        borderRadius: '10px',
+                      },
+                      '&::-webkit-scrollbar-thumb': {
+                        background: '#888',
+                        borderRadius: '10px',
+                      },
+                      '&::-webkit-scrollbar-thumb:hover': {
+                        background: '#555',
+                      },
+                    }}
+                  >
+                    {DataUsers.length > 0 ? (
+                      <VStack
+                        spacing={2}
+                        w="full"
+                        align="stretch"
+                        pb={2}
+                      >
                         {DataUsers.map((user) => {
                           const isAlreadyAssigned = ChoosedMemberProjects.find(
                             (assignedUser) => assignedUser.id === user.id
@@ -2770,6 +2774,10 @@ const TaskCard: React.FC<TaskCardProps> = ({
                           );
                         })}
                       </VStack>
+                    ) : (
+                      <Text color="gray.500" textAlign="center" py={4}>
+                        No members found
+                      </Text>
                     )}
                   </Box>
                 </VStack>
@@ -2778,9 +2786,26 @@ const TaskCard: React.FC<TaskCardProps> = ({
               <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }} w={"full"}>
                 <VStack spacing={4} align="stretch">
                   <Box>
-                    <Text fontWeight="semibold" mb={2}>
-                      Selected Users ({ChoosedMemberProjects.length})
-                    </Text>
+                    <HStack justify="space-between" mb={2}>
+                      <Text fontWeight="semibold">
+                        Selected Users ({ChoosedMemberProjects.length})
+                      </Text>
+                      <Button
+                        size="xs"
+                        colorScheme="blue"
+                        variant="outline"
+                        leftIcon={<FaUsers />}
+                        onClick={handleAssignMe}
+                        isDisabled={
+                          !DataAuth ||
+                          ChoosedMemberProjects.some(
+                            (user) => user.id === DataAuth?.id
+                          )
+                        }
+                      >
+                        Assign Me
+                      </Button>
+                    </HStack>
                     {ChoosedMemberProjects.length > 0 ? (
                       <VStack spacing={2} align="stretch">
                         {ChoosedMemberProjects.map((user) => (
@@ -2996,7 +3021,6 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
                 </HStack>
               </VStack>
             </HStack>
-
           </VStack>
         </CardHeader>
 
@@ -3209,7 +3233,7 @@ function ProjectWorkspaceView() {
       };
 
       const response = await ListTasksPaged(PayloadGetArchivedTasks, tokenData);
-      
+
       if (response?.statusCode === RES_CODE_OK && response.data) {
         setArchivedTasks(response.data);
       } else {
@@ -3393,12 +3417,12 @@ function ProjectWorkspaceView() {
     if (!DataAuth || !projectId || !tokenData) return;
 
     let pollInterval: NodeJS.Timeout;
-    
+
     const startPolling = () => {
       pollInterval = setInterval(() => {
         // Only poll when tab is visible and not currently loading
         if (!document.hidden && !IsLoadingProcess) {
-          setRefreshData(prev => prev + 1);
+          setRefreshData((prev) => prev + 1);
         }
       }, 5000); // 5 seconds interval
     };
@@ -3418,17 +3442,17 @@ function ProjectWorkspaceView() {
     // Handle window focus (immediate refresh when user returns)
     const handleFocus = () => {
       if (!IsLoadingProcess) {
-        setRefreshData(prev => prev + 1);
+        setRefreshData((prev) => prev + 1);
       }
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleFocus);
 
     return () => {
       clearInterval(pollInterval);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
     };
   }, [DataAuth, projectId, tokenData, IsLoadingProcess]);
 
@@ -3552,7 +3576,9 @@ function ProjectWorkspaceView() {
 
   // Handle Add Task
   const handleAddTask = (boardName: string) => {
-    const targetBoard = DataBoard.find((board) => board.boardName === boardName);
+    const targetBoard = DataBoard.find(
+      (board) => board.boardName === boardName
+    );
 
     setSelectedTask(null);
     setSelectedBoardId("");
@@ -3708,9 +3734,12 @@ function ProjectWorkspaceView() {
 
         // Try to get boardId from existing tasks first
         const tasksInBoard = DataTasks.filter(
-          task => task.boardName === taskForm.boardName && task.backlogId === taskForm.backlogId
+          (task) =>
+            task.boardName === taskForm.boardName &&
+            task.backlogId === taskForm.backlogId
         );
-        let actualBoardId = tasksInBoard.length > 0 ? tasksInBoard[0].boardId : "";
+        let actualBoardId =
+          tasksInBoard.length > 0 ? tasksInBoard[0].boardId : "";
 
         // If no boardId found from tasks, fetch boards for this backlog
         if (!actualBoardId && projectId && tokenData) {
@@ -3721,25 +3750,35 @@ function ProjectWorkspaceView() {
             filterWhere: [
               { field: "projectId", value: projectId, operator: "=" },
               { field: "backlogId", value: taskForm.backlogId, operator: "=" },
-              { field: "boardName", value: taskForm.boardName, operator: "=" }
+              { field: "boardName", value: taskForm.boardName, operator: "=" },
             ],
             fieldOrder: ["indexStage"],
             orderDir: "asc",
           };
 
-          const boardResponse = await ListTasksBoardPaged(boardPayload, tokenData);
-          
-          if (boardResponse?.statusCode === RES_CODE_OK && boardResponse.data && boardResponse.data.length > 0) {
+          const boardResponse = await ListTasksBoardPaged(
+            boardPayload,
+            tokenData
+          );
+
+          if (
+            boardResponse?.statusCode === RES_CODE_OK &&
+            boardResponse.data &&
+            boardResponse.data.length > 0
+          ) {
             // Board exists, use it
             actualBoardId = boardResponse.data[0].id;
           } else {
             // Board doesn't exist, generate it
             const genPayload: GenerateTaskBoardPayload = {
               backlogId: taskForm.backlogId,
-              projectId
+              projectId,
             };
-            const genResponse = await GenerateKanbanBoard(genPayload, tokenData);
-            
+            const genResponse = await GenerateKanbanBoard(
+              genPayload,
+              tokenData
+            );
+
             if (genResponse?.statusCode !== RES_CODE_OK) {
               showToast({
                 description: genResponse?.message || "Failed to generate board",
@@ -3750,9 +3789,16 @@ function ProjectWorkspaceView() {
             }
 
             // Fetch the newly created board
-            await new Promise(resolve => setTimeout(resolve, 500));
-            const newBoardResponse = await ListTasksBoardPaged(boardPayload, tokenData);
-            if (newBoardResponse?.statusCode === RES_CODE_OK && newBoardResponse.data && newBoardResponse.data.length > 0) {
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            const newBoardResponse = await ListTasksBoardPaged(
+              boardPayload,
+              tokenData
+            );
+            if (
+              newBoardResponse?.statusCode === RES_CODE_OK &&
+              newBoardResponse.data &&
+              newBoardResponse.data.length > 0
+            ) {
               actualBoardId = newBoardResponse.data[0].id;
             }
           }
@@ -4351,57 +4397,25 @@ function ProjectWorkspaceView() {
                     </Box>
                   )}
 
-                  <HStack spacing={4} w="full">
-                    <Box flex={1}>
-                      <Text
-                        mb={2}
-                        fontSize="sm"
-                        fontWeight="medium"
-                        color={colorMode === "light" ? "gray.700" : "gray.300"}
-                      >
-                        Start Date
-                      </Text>
-                      <Input
-                        type="datetime-local"
-                        value={taskForm.taskStartDate}
-                        onChange={(e) =>
-                          setTaskForm((prev) => ({
-                            ...prev,
-                            taskStartDate: e.target.value,
-                          }))
-                        }
-                        bg={colorMode === "light" ? "white" : "gray.700"}
-                        borderColor={
-                          colorMode === "light" ? "gray.300" : "gray.600"
-                        }
-                      />
-                    </Box>
-
-                    <Box flex={1}>
-                      <Text
-                        mb={2}
-                        fontSize="sm"
-                        fontWeight="medium"
-                        color={colorMode === "light" ? "gray.700" : "gray.300"}
-                      >
-                        Due Date
-                      </Text>
-                      <Input
-                        type="datetime-local"
-                        value={taskForm.taskEndDate}
-                        onChange={(e) =>
-                          setTaskForm((prev) => ({
-                            ...prev,
-                            taskEndDate: e.target.value,
-                          }))
-                        }
-                        bg={colorMode === "light" ? "white" : "gray.700"}
-                        borderColor={
-                          colorMode === "light" ? "gray.300" : "gray.600"
-                        }
-                      />
-                    </Box>
-                  </HStack>
+                  <DateTimeRangeInput
+                    startValue={taskForm.taskStartDate || null}
+                    endValue={taskForm.taskEndDate || null}
+                    onStartChange={(value) =>
+                      setTaskForm((prev) => ({
+                        ...prev,
+                        taskStartDate: value || "",
+                      }))
+                    }
+                    onEndChange={(value) =>
+                      setTaskForm((prev) => ({
+                        ...prev,
+                        taskEndDate: value || "",
+                      }))
+                    }
+                    label="Task Schedule"
+                    placeholder="Select start and end date & time"
+                    size="md"
+                  />
                 </VStack>
               </ModalBody>
 
