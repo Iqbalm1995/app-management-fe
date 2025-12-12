@@ -127,15 +127,15 @@ export const LinkItems: LinkItemProps[] = [
         isPro: false,
         children: [],
       },
-      {
-        name: "Development",
-        icon: MdOutlineCode,
-        link: "/workspace/development",
-        role: ["admin"],
-        menuID: "1",
-        isPro: false,
-        children: [],
-      },
+      // {
+      //   name: "Development",
+      //   icon: MdOutlineCode,
+      //   link: "/workspace/development",
+      //   role: ["admin"],
+      //   menuID: "1",
+      //   isPro: false,
+      //   children: [],
+      // },
     ],
   },
   // {
@@ -144,7 +144,7 @@ export const LinkItems: LinkItemProps[] = [
   //   link: "/workspace",
   //   role: ["admin"],
   //   menuID: "1",
-  //   
+  //
   //   children: [
   //     {
   //       name: "My Project",
@@ -152,7 +152,7 @@ export const LinkItems: LinkItemProps[] = [
   //       link: "/project-development",
   //       role: ["admin"],
   //       menuID: "1",
-  //       
+  //
   //       children: [],
   //     },
   //   ],
@@ -285,7 +285,7 @@ export const LinkItems: LinkItemProps[] = [
 
         menuID: "1",
         children: [],
-      }
+      },
     ],
   },
   {
@@ -341,7 +341,7 @@ export const LinkItems: LinkItemProps[] = [
 
         menuID: "1",
         children: [],
-      }
+      },
     ],
   },
 
@@ -403,7 +403,7 @@ export const LinkItems: LinkItemProps[] = [
       //   icon: RiApps2AiLine,
       //   link: "/coming-soon",
       //   role: ["admin"],
-      //   
+      //
       //   menuID: "1",
       //   children: [],
       // },
@@ -413,7 +413,7 @@ export const LinkItems: LinkItemProps[] = [
       //   icon: TbUsersGroup,
       //   link: "/coming-soon",
       //   role: ["admin"],
-      //   
+      //
       //   menuID: "1",
       //   children: [],
       // },
@@ -422,7 +422,7 @@ export const LinkItems: LinkItemProps[] = [
       //   icon: ImUserTie,
       //   link: "/coming-soon",
       //   role: ["admin"],
-      //   
+      //
       //   menuID: "1",
       //   children: [],
       // },
@@ -441,7 +441,7 @@ export const LinkItems: LinkItemProps[] = [
       //     icon: MdWebAsset,
       //     link: "/coming-soon",
       //     role: ["admin"],
-      //     
+      //
       //     menuID: "1",
       //     children: [],
       //   }
@@ -450,7 +450,7 @@ export const LinkItems: LinkItemProps[] = [
       //   icon: LuServer,
       //   link: "/coming-soon",
       //   role: ["admin"],
-      //   
+      //
       //   menuID: "1",
       //   children: [],
       // },
@@ -459,11 +459,11 @@ export const LinkItems: LinkItemProps[] = [
       //   icon: IoKeyOutline,
       //   link: "/coming-soon",
       //   role: ["admin"],
-      //   
+      //
       //   menuID: "1",
       //   children: [],
       // },
-    ]
+    ],
   },
   {
     name: "DevOps",
@@ -487,7 +487,7 @@ export const LinkItems: LinkItemProps[] = [
       //   icon: IoIosCodeDownload,
       //   link: "/coming-soon",
       //   role: ["admin"],
-      //   
+      //
       //   menuID: "1",
       //   children: [],
       // },
@@ -496,7 +496,7 @@ export const LinkItems: LinkItemProps[] = [
       //   icon: RiCodeBlock,
       //   link: "/coming-soon",
       //   role: ["admin"],
-      //   
+      //
       //   menuID: "1",
       //   children: [],
       // },
@@ -505,7 +505,7 @@ export const LinkItems: LinkItemProps[] = [
       //   icon: HiOutlineDocumentReport,
       //   link: "/coming-soon",
       //   role: ["admin"],
-      //   
+      //
       //   menuID: "1",
       //   children: [],
       // },
@@ -514,7 +514,7 @@ export const LinkItems: LinkItemProps[] = [
       //   icon: BiAnalyse,
       //   link: "/coming-soon",
       //   role: ["admin"],
-      //   
+      //
       //   menuID: "1",
       //   children: [],
       // },
@@ -534,7 +534,7 @@ export const LinkItems: LinkItemProps[] = [
   //   icon: TbShare,
   //   link: "/coming-soon",
   //   role: ["admin"],
-  //   
+  //
   //   menuID: "1",
   //   children: [
   //     {
@@ -542,7 +542,7 @@ export const LinkItems: LinkItemProps[] = [
   //       icon: TbBellShare,
   //       link: "/coming-soon",
   //       role: ["admin"],
-  //       
+  //
   //       menuID: "1",
   //       children: [],
   //     },
@@ -551,7 +551,7 @@ export const LinkItems: LinkItemProps[] = [
   //       icon: TbMoodShare,
   //       link: "/coming-soon",
   //       role: ["admin"],
-  //       
+  //
   //       menuID: "1",
   //       children: [],
   //     },
@@ -560,7 +560,7 @@ export const LinkItems: LinkItemProps[] = [
   //       icon: TbNavigationShare,
   //       link: "/coming-soon",
   //       role: ["admin"],
-  //       
+  //
   //       menuID: "1",
   //       children: [],
   //     },
@@ -569,7 +569,7 @@ export const LinkItems: LinkItemProps[] = [
   //       icon: IoChatbubblesOutline,
   //       link: "/coming-soon",
   //       role: ["admin"],
-  //       
+  //
   //       menuID: "1",
   //       children: [],
   //     },
@@ -688,7 +688,7 @@ export const LinkItems: LinkItemProps[] = [
       //   name: "Master Organization Structure",
       //   icon: RiOrganizationChart,
       //   link: "/coming-soon",
-      //   
+      //
       //   role: ["admin"],
       //   menuID: "1",
       //   children: [],
@@ -697,7 +697,7 @@ export const LinkItems: LinkItemProps[] = [
       //   name: "Master Certifications",
       //   icon: PiCertificate,
       //   link: "/coming-soon",
-      //   
+      //
       //   role: ["admin"],
       //   menuID: "1",
       //   children: [],
@@ -706,7 +706,7 @@ export const LinkItems: LinkItemProps[] = [
       //   name: "Master Programming Language",
       //   icon: MdOutlineCode,
       //   link: "/coming-soon",
-      //   
+      //
       //   role: ["admin"],
       //   menuID: "1",
       //   children: [],
@@ -715,7 +715,7 @@ export const LinkItems: LinkItemProps[] = [
       //   name: "Master Specializations",
       //   icon: TbBolt,
       //   link: "/coming-soon",
-      //   
+      //
       //   role: ["admin"],
       //   menuID: "1",
       //   children: [],
@@ -760,7 +760,7 @@ export const LinkItems: LinkItemProps[] = [
       //   name: "BRD & RFC Status",
       //   icon: TbListDetails,
       //   link: "/coming-soon",
-      //   
+      //
       //   role: ["admin"],
       //   menuID: "1",
       //   children: [],
@@ -769,7 +769,7 @@ export const LinkItems: LinkItemProps[] = [
       //   name: "Deployment Status",
       //   icon: TbArrowsExchange,
       //   link: "/coming-soon",
-      //   
+      //
       //   role: ["admin"],
       //   menuID: "1",
       //   children: [],
@@ -778,7 +778,7 @@ export const LinkItems: LinkItemProps[] = [
       //   name: "Project Status",
       //   icon: TbProgressCheck,
       //   link: "/coming-soon",
-      //   
+      //
       //   role: ["admin"],
       //   menuID: "1",
       //   children: [],
@@ -787,7 +787,7 @@ export const LinkItems: LinkItemProps[] = [
       //   name: "Project Indicators",
       //   icon: TbChartInfographic,
       //   link: "/coming-soon",
-      //   
+      //
       //   role: ["admin"],
       //   menuID: "1",
       //   children: [],
@@ -796,7 +796,7 @@ export const LinkItems: LinkItemProps[] = [
       //   name: "Project Types",
       //   icon: TbFolders,
       //   link: "/coming-soon",
-      //   
+      //
       //   role: ["admin"],
       //   menuID: "1",
       //   children: [],
@@ -805,7 +805,7 @@ export const LinkItems: LinkItemProps[] = [
       //   name: "Project Characteristics",
       //   icon: TbCategory,
       //   link: "/coming-soon",
-      //   
+      //
       //   role: ["admin"],
       //   menuID: "1",
       //   children: [],
@@ -814,7 +814,7 @@ export const LinkItems: LinkItemProps[] = [
       //   name: "Development Status",
       //   icon: TbServerCog,
       //   link: "/coming-soon",
-      //   
+      //
       //   role: ["admin"],
       //   menuID: "1",
       //   children: [],
@@ -823,7 +823,7 @@ export const LinkItems: LinkItemProps[] = [
       //   name: "Deliverables Status",
       //   icon: TbClipboardList,
       //   link: "/coming-soon",
-      //   
+      //
       //   role: ["admin"],
       //   menuID: "1",
       //   children: [],
@@ -832,7 +832,7 @@ export const LinkItems: LinkItemProps[] = [
       //   name: "Maintenance Types & Categories",
       //   icon: TbAdjustmentsCog,
       //   link: "/coming-soon",
-      //   
+      //
       //   role: ["admin"],
       //   menuID: "1",
       //   children: [],
@@ -916,7 +916,7 @@ export const LinkItems: LinkItemProps[] = [
   //   name: "Advanced",
   //   icon: TbBolt,
   //   link: "/advanced",
-  //   
+  //
   //   role: ["admin"],
   //   menuID: "1",
   //   children: [
@@ -924,7 +924,7 @@ export const LinkItems: LinkItemProps[] = [
   //       name: "Pro Dashboard",
   //       icon: TbLayoutDashboardFilled,
   //       link: "/advanced/pro-dashboard",
-  //       
+  //
   //       role: ["admin"],
   //       menuID: "1",
   //       children: [],
@@ -935,7 +935,7 @@ export const LinkItems: LinkItemProps[] = [
   //   name: "About",
   //   icon: HiOutlineInformationCircle,
   //   link: "/coming-soon",
-  //   
+  //
   //   role: ["admin"],
   //   menuID: "1",
   //   children: [
@@ -943,7 +943,7 @@ export const LinkItems: LinkItemProps[] = [
   //       name: "Bjb Apps Web",
   //       icon: FaRegHeart,
   //       link: "/coming-soon",
-  //       
+  //
   //       role: ["admin"],
   //       menuID: "1",
   //       children: [],
@@ -952,7 +952,7 @@ export const LinkItems: LinkItemProps[] = [
   //       name: "Bjb Apps Mobile",
   //       icon: CiMobile2,
   //       link: "/coming-soon",
-  //       
+  //
   //       role: ["admin"],
   //       menuID: "1",
   //       children: [],
@@ -961,7 +961,7 @@ export const LinkItems: LinkItemProps[] = [
   //       name: "Hybrid Methodologies",
   //       icon: FaVial,
   //       link: "/coming-soon",
-  //       
+  //
   //       role: ["admin"],
   //       menuID: "1",
   //       children: [],
@@ -972,7 +972,7 @@ export const LinkItems: LinkItemProps[] = [
   //   name: "Add-Ons",
   //   icon: FaO,
   //   link: "/coming-soon",
-  //   
+  //
   //   role: ["admin"],
   //   menuID: "1",
   //   children: [
@@ -980,7 +980,7 @@ export const LinkItems: LinkItemProps[] = [
   //       name: "System Integrations",
   //       icon: MdOutlineSystemUpdateAlt,
   //       link: "/coming-soon",
-  //       
+  //
   //       role: ["admin"],
   //       menuID: "1",
   //       children: [],
@@ -989,7 +989,7 @@ export const LinkItems: LinkItemProps[] = [
   //       name: "Bjb Apps Mobile",
   //       icon: CiMobile2,
   //       link: "/coming-soon",
-  //       
+  //
   //       role: ["admin"],
   //       menuID: "1",
   //       children: [],
@@ -1045,7 +1045,7 @@ export const LinkItems: LinkItemProps[] = [
     role: ["admin"],
     menuID: "1",
     children: [],
-  }
+  },
 
   // {
   //   name: "Profile",

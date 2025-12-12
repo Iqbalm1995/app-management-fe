@@ -3151,11 +3151,13 @@ function ProjectWorkspaceView() {
   const { ListBacklog } = useRequirements();
   const {
     ListTasksBoard,
+    ListTasksBoardPaged,
     ListTasksPaged,
     CreateSimpleTask,
     CreateTask,
     MoveTask,
     UpdateTask,
+    GenerateKanbanBoard,
   } = useTasks();
   const { List: ListUsers } = useUsers();
 
@@ -3538,23 +3540,10 @@ function ProjectWorkspaceView() {
 
   // Handle Add Task
   const handleAddTask = (boardName: string) => {
-    // Find tasks in this board to get the actual boardId (TaskBoard ID, not MasterBoardTask ID)
-    const tasksInBoard = DataTasks.filter(task => task.boardName === boardName);
-    const actualBoardId = tasksInBoard.length > 0 ? tasksInBoard[0].boardId : "";
-
-    // Find the master board for display
     const targetBoard = DataBoard.find((board) => board.boardName === boardName);
 
-    if (!actualBoardId) {
-      showToast({
-        description: "No tasks found in this board. Cannot determine board ID. Please create a task board first or add a task to another column.",
-        statusToast: "warning",
-      });
-      return;
-    }
-
     setSelectedTask(null);
-    setSelectedBoardId(actualBoardId);
+    setSelectedBoardId("");
     setTaskForm({
       taskName: "",
       taskDesc: "",
@@ -3696,12 +3685,77 @@ function ProjectWorkspaceView() {
         }
       } else {
         // Create new task
-        const tasksInBoard = DataTasks.filter(task => task.boardName === taskForm.boardName);
-        const actualBoardId = tasksInBoard.length > 0 ? tasksInBoard[0].boardId : selectedBoardId;
+        if (!taskForm.backlogId) {
+          showToast({
+            description: "Please select a backlog",
+            statusToast: "warning",
+          });
+          setIsLoadingProcess(false);
+          return;
+        }
 
-        // Generate task code (simple timestamp-based)
+        // Try to get boardId from existing tasks first
+        const tasksInBoard = DataTasks.filter(
+          task => task.boardName === taskForm.boardName && task.backlogId === taskForm.backlogId
+        );
+        let actualBoardId = tasksInBoard.length > 0 ? tasksInBoard[0].boardId : "";
+
+        // If no boardId found from tasks, fetch boards for this backlog
+        if (!actualBoardId && projectId && tokenData) {
+          const boardPayload: PaggingListPayloadCustom = {
+            search: "",
+            limit: 100,
+            page: 0,
+            filterWhere: [
+              { field: "projectId", value: projectId, operator: "=" },
+              { field: "backlogId", value: taskForm.backlogId, operator: "=" },
+              { field: "boardName", value: taskForm.boardName, operator: "=" }
+            ],
+            fieldOrder: ["indexStage"],
+            orderDir: "asc",
+          };
+
+          const boardResponse = await ListTasksBoardPaged(boardPayload, tokenData);
+          
+          if (boardResponse?.statusCode === RES_CODE_OK && boardResponse.data && boardResponse.data.length > 0) {
+            // Board exists, use it
+            actualBoardId = boardResponse.data[0].id;
+          } else {
+            // Board doesn't exist, generate it
+            const genPayload: GenerateTaskBoardPayload = {
+              backlogId: taskForm.backlogId,
+              projectId
+            };
+            const genResponse = await GenerateKanbanBoard(genPayload, tokenData);
+            
+            if (genResponse?.statusCode !== RES_CODE_OK) {
+              showToast({
+                description: genResponse?.message || "Failed to generate board",
+                statusToast: "error",
+              });
+              setIsLoadingProcess(false);
+              return;
+            }
+
+            // Fetch the newly created board
+            await new Promise(resolve => setTimeout(resolve, 500));
+            const newBoardResponse = await ListTasksBoardPaged(boardPayload, tokenData);
+            if (newBoardResponse?.statusCode === RES_CODE_OK && newBoardResponse.data && newBoardResponse.data.length > 0) {
+              actualBoardId = newBoardResponse.data[0].id;
+            }
+          }
+        }
+
+        if (!actualBoardId) {
+          showToast({
+            description: "Failed to initialize board",
+            statusToast: "error",
+          });
+          setIsLoadingProcess(false);
+          return;
+        }
+
         const taskCode = `TASK-${Date.now()}`;
-
         const payload: TaskCreatePayload = {
           taskName: taskForm.taskName,
           taskCode: taskCode,
@@ -3713,8 +3767,6 @@ function ProjectWorkspaceView() {
           startDate: taskForm.taskStartDate || undefined,
           endDate: taskForm.taskEndDate || undefined,
         };
-
-        console.log("Create Task Payload:", payload);
 
         const response = await CreateTask(payload, tokenData);
 
