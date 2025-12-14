@@ -93,6 +93,9 @@ export interface TaskViewModel {
   assignUsers: UserShortResponse[];
   userCreated: UserShortResponse | null;
   taskItems: TaskItemResponse[];
+  projectNo?: string | null;
+  projectName?: string | null;
+  backlogName?: string | null;
 }
 
 export interface CreateSimpleTaskPayload {
@@ -164,6 +167,11 @@ export interface AssignUsersTaskPayload {
 export interface GenerateTaskBoardPayload {
   backlogId: string;
   projectId: string;
+}
+
+export interface TaskRelatedPayload {
+  taskParentId: string;
+  tasksRelatedId: string[];
 }
 
 export interface TasksCountResponse {
@@ -278,6 +286,16 @@ interface useTasks {
   ) => Promise<ApiGenericResponse<string | null> | null>;
   AssignUsersTask: (
     payload: AssignUsersTaskPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+
+  // RELATED TASKS
+  ListRelatedTasks: (
+    taskParentId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<TaskViewModel[] | null> | null>;
+  AssignRelatedTasks: (
+    payload: TaskRelatedPayload,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
 
@@ -1324,6 +1342,88 @@ const useTasks = (): useTasks => {
     }
   };
 
+  const ListRelatedTasks = async (
+    taskParentId: string,
+    token: string
+  ): Promise<ApiGenericResponse<TaskViewModel[] | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Task/list-task-related?taskParentId=${taskParentId}`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<TaskViewModel[]>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred while fetching related tasks."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const AssignRelatedTasks = async (
+    payload: TaskRelatedPayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Task/assign-task-related`;
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred while assigning related tasks."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
   return {
     ListTasksBoardPaged,
     ListTasksBoard,
@@ -1350,6 +1450,8 @@ const useTasks = (): useTasks => {
     ArchiveTask,
     MoveTask,
     AssignUsersTask,
+    ListRelatedTasks,
+    AssignRelatedTasks,
     isLoading,
     error,
   };

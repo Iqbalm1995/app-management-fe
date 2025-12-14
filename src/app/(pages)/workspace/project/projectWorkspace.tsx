@@ -48,6 +48,7 @@ import useTasks, {
   TaskCommentUpdatePayload,
   AssignUsersTaskPayload,
   GenerateTaskBoardPayload,
+  TaskRelatedPayload,
 } from "@/app/services/useTasks";
 import {
   PaggingListPayload,
@@ -132,7 +133,7 @@ import {
   FaUsers,
   FaTrash,
 } from "react-icons/fa6";
-import { FaSync, FaEdit, FaArchive, FaCog } from "react-icons/fa";
+import { FaSync, FaEdit, FaArchive, FaCog, FaPills } from "react-icons/fa";
 import {
   FiAlertCircle,
   FiArchive,
@@ -676,12 +677,164 @@ const TaskCard: React.FC<TaskCardProps> = ({
     AssignUsersTask,
     MoveTask,
     ListTasksBoard,
+    ListRelatedTasks,
+    AssignRelatedTasks,
+    ListTasksPaged,
   } = useTasks();
+
+  // Related tasks state
+  const [relatedTasks, setRelatedTasks] = useState<TaskViewModel[]>([]);
+  const [searchTasksResults, setSearchTasksResults] = useState<TaskViewModel[]>([]);
+  const [searchTaskTerm, setSearchTaskTerm] = useState("");
+  const [isLoadingRelatedTasks, setIsLoadingRelatedTasks] = useState(false);
+  const {
+    isOpen: isTaskPickerOpen,
+    onOpen: onTaskPickerOpen,
+    onClose: onTaskPickerClose,
+  } = useDisclosure();
 
   // Helper functions for current user
   const getCurrentUser = () => DataAuth;
   const getCurrentUserName = () => DataAuth?.nama || "User";
   const getCurrentUserAvatar = () => DataAuth?.profilePict || "";
+
+  // Fetch related tasks
+  const fetchRelatedTasks = async (taskId: string) => {
+    const token = getToken();
+    if (!token) return;
+    
+    setIsLoadingRelatedTasks(true);
+    try {
+      const response = await ListRelatedTasks(taskId, token);
+      if (response?.statusCode === RES_CODE_OK && response.data) {
+        setRelatedTasks(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching related tasks:", error);
+    } finally {
+      setIsLoadingRelatedTasks(false);
+    }
+  };
+
+  // Search tasks for picker
+  const handleSearchTasks = async () => {
+    const token = getToken();
+    if (!token || !searchTaskTerm || searchTaskTerm.length < 3) {
+      setSearchTasksResults([]);
+      return;
+    }
+
+    try {
+      const payload: PaggingListPayload = {
+        search: searchTaskTerm,
+        limit: 5,
+        page: 0,
+        filterWhere: [],
+        fieldOrder: ["createdAt"],
+        orderDir: "desc",
+      };
+
+      const response = await ListTasksPaged(payload, token);
+      if (response?.statusCode === RES_CODE_OK && response.data) {
+        setSearchTasksResults(response.data);
+      }
+    } catch (error) {
+      console.error("Error searching tasks:", error);
+    }
+  };
+
+  // Auto-search when typing > 2 chars
+  useEffect(() => {
+    if (searchTaskTerm.length > 2) {
+      const debounceTimer = setTimeout(() => {
+        handleSearchTasks();
+      }, 500);
+      return () => clearTimeout(debounceTimer);
+    } else {
+      setSearchTasksResults([]);
+    }
+  }, [searchTaskTerm]);
+
+  // Add related task
+  const handleAddRelatedTask = async (relatedTaskId: string) => {
+    const token = getToken();
+    if (!detailedTask || !token) return;
+
+    try {
+      const currentRelatedIds = relatedTasks.map((t) => t.id);
+      const payload: TaskRelatedPayload = {
+        taskParentId: detailedTask.id,
+        tasksRelatedId: [...currentRelatedIds, relatedTaskId],
+      };
+
+      const response = await AssignRelatedTasks(payload, token);
+      if (response?.statusCode === RES_CODE_OK) {
+        showToast({
+          description: "Related task added successfully",
+          statusToast: "success",
+        });
+        fetchRelatedTasks(detailedTask.id);
+        onTaskPickerClose();
+        setSearchTaskTerm("");
+        setSearchTasksResults([]);
+      } else {
+        showToast({
+          description: response?.message || "Failed to add related task",
+          statusToast: "error",
+        });
+      }
+    } catch (error) {
+      console.error("Error adding related task:", error);
+      showToast({
+        description: "An error occurred while adding related task",
+        statusToast: "error",
+      });
+    }
+  };
+
+  // Remove related task
+  const handleRemoveRelatedTask = async (relatedTaskId: string) => {
+    const token = getToken();
+    if (!detailedTask || !token) return;
+
+    try {
+      const updatedRelatedIds = relatedTasks
+        .filter((t) => t.id !== relatedTaskId)
+        .map((t) => t.id);
+
+      const payload: TaskRelatedPayload = {
+        taskParentId: detailedTask.id,
+        tasksRelatedId: updatedRelatedIds,
+      };
+
+      const response = await AssignRelatedTasks(payload, token);
+      if (response?.statusCode === RES_CODE_OK) {
+        showToast({
+          description: "Related task removed successfully",
+          statusToast: "success",
+        });
+        fetchRelatedTasks(detailedTask.id);
+      } else {
+        showToast({
+          description: response?.message || "Failed to remove related task",
+          statusToast: "error",
+        });
+      }
+    } catch (error) {
+      console.error("Error removing related task:", error);
+      showToast({
+        description: "An error occurred while removing related task",
+        statusToast: "error",
+      });
+    }
+  };
+
+  // Fetch related tasks when task detail opens
+  useEffect(() => {
+    if (detailedTask && isOpen) {
+      fetchRelatedTasks(detailedTask.id);
+    }
+  }, [detailedTask?.id, isOpen]);
 
   // Handle starting to edit task name
   const handleEditName = () => {
@@ -1815,33 +1968,35 @@ const TaskCard: React.FC<TaskCardProps> = ({
                         </Alert>
                       )}
 
-                      {/* Alert for no assigned users */}
-                      {ChoosedMemberProjects.length === 0 && (
-                        <Alert
-                          status="warning"
-                          variant="left-accent"
-                          rounded={radiusStyle}
-                        >
-                          <AlertIcon />
-                          <AlertDescription>
-                            Task belum memiliki user yang ditugaskan. Silakan assign user untuk task ini.
-                          </AlertDescription>
-                        </Alert>
-                      )}
+                    {/* Alert for no assigned users */}
+                    {ChoosedMemberProjects.length === 0 && (
+                      <Alert
+                        status="warning"
+                        variant="left-accent"
+                        rounded={radiusStyle}
+                      >
+                        <AlertIcon />
+                        <AlertDescription>
+                          Task belum memiliki user yang ditugaskan. Silakan
+                          assign user untuk task ini.
+                        </AlertDescription>
+                      </Alert>
+                    )}
 
-                      {/* Alert for no due date */}
-                      {!detailedTask.endDate && (
-                        <Alert
-                          status="warning"
-                          variant="left-accent"
-                          rounded={radiusStyle}
-                        >
-                          <AlertIcon />
-                          <AlertDescription>
-                            Task belum memiliki due date. Silakan set tanggal deadline untuk task ini.
-                          </AlertDescription>
-                        </Alert>
-                      )}
+                    {/* Alert for no due date */}
+                    {!detailedTask.endDate && (
+                      <Alert
+                        status="warning"
+                        variant="left-accent"
+                        rounded={radiusStyle}
+                      >
+                        <AlertIcon />
+                        <AlertDescription>
+                          Task belum memiliki due date. Silakan set tanggal
+                          deadline untuk task ini.
+                        </AlertDescription>
+                      </Alert>
+                    )}
 
                     <Flex
                       w="full"
@@ -1890,10 +2045,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                           role="group"
                           flex={1}
                         >
-                          <Text
-                            fontWeight={600}
-                            fontSize={23}
-                          >
+                          <Text fontWeight={600} fontSize={23}>
                             {detailedTask.taskName}
                           </Text>
                           <Icon
@@ -1974,13 +2126,14 @@ const TaskCard: React.FC<TaskCardProps> = ({
                                 onClick={async (e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  
-                                  const startDate = detailedTask.startDate ?? null;
+
+                                  const startDate =
+                                    detailedTask.startDate ?? null;
                                   const endDate = detailedTask.endDate ?? null;
-                                  
+
                                   await updateTaskDates(startDate, endDate);
                                   onRefreshTasks();
-                                  
+
                                   // Close popover
                                   document.body.click();
                                 }}
@@ -2007,7 +2160,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
                           onAssignModalOpen();
                         }}
                       >
-                        Assign Task{ChoosedMemberProjects.length > 0 && ` (${ChoosedMemberProjects.length})`}
+                        Assign Task
+                        {ChoosedMemberProjects.length > 0 &&
+                          ` (${ChoosedMemberProjects.length})`}
                       </Button>
                     </HStack>
                     {/* Editable Task Description */}
@@ -2551,7 +2706,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                           bg="secondary.50"
                           border="1px solid"
                           borderColor="secondary.200"
-                          rounded="md"
+                          rounded={radiusStyle}
                         >
                           <Text
                             fontSize="sm"
@@ -2567,6 +2722,170 @@ const TaskCard: React.FC<TaskCardProps> = ({
                       ) : (
                         <Text fontSize="sm" color="gray.400">
                           No backlog assigned
+                        </Text>
+                      )}
+                    </Box>
+
+                    {/* Related Tasks */}
+                    <Box w="full">
+                      <HStack justify="space-between" mb={2}>
+                        <Text fontSize="sm" color="gray.500">
+                          Related Tasks
+                        </Text>
+                        <Button
+                          size="xs"
+                          colorScheme="blue"
+                          variant="ghost"
+                          onClick={onTaskPickerOpen}
+                          leftIcon={<FaPlus />}
+                        >
+                          Add
+                        </Button>
+                      </HStack>
+                      {isLoadingRelatedTasks ? (
+                        <Text fontSize="sm" color="gray.400">
+                          Loading...
+                        </Text>
+                      ) : relatedTasks.length > 0 ? (
+                        <VStack align="stretch" spacing={2} w={"full"}>
+                          {relatedTasks.map((relTask) => (
+                            <Box
+                              key={relTask.id}
+                              p={3}
+                              bg={
+                                colorMode === "light" ? "gray.50" : "gray.700"
+                              }
+                              border="1px solid"
+                              borderColor={
+                                colorMode === "light" ? "gray.200" : "gray.600"
+                              }
+                              rounded={radiusStyle}
+                              w={"full"}
+                            >
+                              <HStack justify="space-between" align="start" spacing={2}>
+                                <VStack align="start" spacing={1} flex={1} minW={0}>
+                                  <HStack spacing={2}>
+                                    <Badge
+                                      size="sm"
+                                      colorScheme={
+                                        relTask.taskPriority === "HIGH"
+                                          ? "red"
+                                          : relTask.taskPriority === "MEDIUM"
+                                          ? "orange"
+                                          : "green"
+                                      }
+                                    >
+                                      {relTask.taskPriority}
+                                    </Badge>
+                                  </HStack>
+                                  <Text fontSize="sm" fontWeight="bold">
+                                    {relTask.taskName}
+                                  </Text>
+                                  <VStack
+                                    align="start"
+                                    spacing={0}
+                                    fontSize="xs"
+                                    color="gray.600"
+                                  >
+                                    {relTask.projectId && (
+                                      <HStack spacing={1}>
+                                        <Text fontWeight="medium">
+                                          Project:
+                                        </Text>
+                                        {relTask.projectNo &&
+                                        relTask.projectName ? (
+                                          <Tooltip
+                                            label={`${relTask.projectNo} - ${relTask.projectName}`}
+                                            placement="top"
+                                          >
+                                            <Text isTruncated maxW="200px">
+                                              {relTask.projectNo} -{" "}
+                                              {relTask.projectName}
+                                            </Text>
+                                          </Tooltip>
+                                        ) : DataProject?.id ===
+                                          relTask.projectId ? (
+                                          <Tooltip
+                                            label={`${DataProject.projectNo} - ${DataProject.projectName}`}
+                                            placement="top"
+                                          >
+                                            <Text isTruncated maxW="200px">
+                                              {DataProject.projectNo} -{" "}
+                                              {DataProject.projectName}
+                                            </Text>
+                                          </Tooltip>
+                                        ) : (
+                                          <Text
+                                            color="orange.600"
+                                            fontWeight="medium"
+                                          >
+                                            {relTask.projectId} (Other Project)
+                                          </Text>
+                                        )}
+                                      </HStack>
+                                    )}
+                                    {relTask.backlogId && (
+                                      <HStack spacing={1}>
+                                        <Text fontWeight="medium">
+                                          Backlog:
+                                        </Text>
+                                        <Text>
+                                          {relTask.backlogName ||
+                                            DataBacklogs.find(
+                                              (b) => b.id === relTask.backlogId
+                                            )?.backlogName ||
+                                            relTask.backlogId}
+                                        </Text>
+                                      </HStack>
+                                    )}
+                                    {relTask.boardName && (
+                                      <HStack spacing={1}>
+                                        <Text fontWeight="medium">Status:</Text>
+                                        <Text>{relTask.boardName}</Text>
+                                      </HStack>
+                                    )}
+                                  </VStack>
+                                  {relTask.assignUsers &&
+                                    relTask.assignUsers.length > 0 && (
+                                      <HStack spacing={2} mt={1}>
+                                        <Text
+                                          fontSize="xs"
+                                          color="gray.500"
+                                          fontWeight="medium"
+                                        >
+                                          Assigned:
+                                        </Text>
+                                        <AvatarGroup size="xs" max={3}>
+                                          {relTask.assignUsers.map((user) => (
+                                            <Avatar
+                                              key={user.id}
+                                              name={user.nama}
+                                              src={
+                                                user.profilePict || undefined
+                                              }
+                                            />
+                                          ))}
+                                        </AvatarGroup>
+                                      </HStack>
+                                    )}
+                                </VStack>
+                                <IconButton
+                                  aria-label="Remove related task"
+                                  icon={<DeleteIcon />}
+                                  size="xs"
+                                  colorScheme="red"
+                                  variant="ghost"
+                                  onClick={() =>
+                                    handleRemoveRelatedTask(relTask.id)
+                                  }
+                                />
+                              </HStack>
+                            </Box>
+                          ))}
+                        </VStack>
+                      ) : (
+                        <Text fontSize="sm" color="gray.400">
+                          No related tasks
                         </Text>
                       )}
                     </Box>
@@ -2762,34 +3081,29 @@ const TaskCard: React.FC<TaskCardProps> = ({
                   </Box>
 
                   {/* Search Results */}
-                  <Box 
-                    h="40vh" 
+                  <Box
+                    h="40vh"
                     overflowY="auto"
                     overflowX="hidden"
                     css={{
-                      '&::-webkit-scrollbar': {
-                        width: '8px',
+                      "&::-webkit-scrollbar": {
+                        width: "8px",
                       },
-                      '&::-webkit-scrollbar-track': {
-                        background: '#f1f1f1',
-                        borderRadius: '10px',
+                      "&::-webkit-scrollbar-track": {
+                        background: "#f1f1f1",
+                        borderRadius: "10px",
                       },
-                      '&::-webkit-scrollbar-thumb': {
-                        background: '#888',
-                        borderRadius: '10px',
+                      "&::-webkit-scrollbar-thumb": {
+                        background: "#888",
+                        borderRadius: "10px",
                       },
-                      '&::-webkit-scrollbar-thumb:hover': {
-                        background: '#555',
+                      "&::-webkit-scrollbar-thumb:hover": {
+                        background: "#555",
                       },
                     }}
                   >
                     {DataUsers.length > 0 ? (
-                      <VStack
-                        spacing={2}
-                        w="full"
-                        align="stretch"
-                        pb={2}
-                      >
+                      <VStack spacing={2} w="full" align="stretch" pb={2}>
                         {DataUsers.map((user) => {
                           const isAlreadyAssigned = ChoosedMemberProjects.find(
                             (assignedUser) => assignedUser.id === user.id
@@ -2937,6 +3251,186 @@ const TaskCard: React.FC<TaskCardProps> = ({
               Save Assignment
             </Button>
           </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Task Picker Modal for Related Tasks */}
+      <Modal
+        isOpen={isTaskPickerOpen}
+        onClose={() => {
+          onTaskPickerClose();
+          setSearchTaskTerm("");
+          setSearchTasksResults([]);
+        }}
+        size="2xl"
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Add Related Task</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <VStack spacing={4} align="stretch">
+              <Input
+                placeholder="Type at least 3 characters to search tasks..."
+                value={searchTaskTerm}
+                onChange={(e) => setSearchTaskTerm(e.target.value)}
+              />
+
+              {searchTasksResults.length > 0 ? (
+                <VStack
+                  align="stretch"
+                  spacing={3}
+                  maxH="500px"
+                  overflowY="auto"
+                >
+                  {searchTasksResults
+                    .filter((task) => task.id !== detailedTask?.id)
+                    .filter(
+                      (task) => !relatedTasks.some((rt) => rt.id === task.id)
+                    )
+                    .map((task) => (
+                      <Box
+                        key={task.id}
+                        p={4}
+                        border="1px solid"
+                        borderColor={
+                          colorMode === "light" ? "gray.200" : "gray.600"
+                        }
+                        rounded="md"
+                        _hover={{
+                          bg: colorMode === "light" ? "gray.50" : "gray.700",
+                        }}
+                      >
+                        <HStack justify="space-between" align="start">
+                          <VStack align="start" spacing={2} flex={1}>
+                            <HStack spacing={2}>
+                              <Text
+                                fontSize="xs"
+                                color="gray.500"
+                                fontWeight="medium"
+                              >
+                                {task.taskCode}
+                              </Text>
+                              <Badge
+                                colorScheme={
+                                  task.taskPriority === "HIGH"
+                                    ? "red"
+                                    : task.taskPriority === "MEDIUM"
+                                    ? "orange"
+                                    : "green"
+                                }
+                              >
+                                {task.taskPriority}
+                              </Badge>
+                            </HStack>
+                            <Text fontSize="sm" fontWeight="semibold">
+                              {task.taskName}
+                            </Text>
+                            <VStack
+                              align="start"
+                              spacing={1}
+                              fontSize="xs"
+                              color="gray.600"
+                            >
+                              {task.projectId && (
+                                <HStack spacing={1}>
+                                  <Text fontWeight="medium">Project:</Text>
+                                  {task.projectNo && task.projectName ? (
+                                    <Tooltip
+                                      label={`${task.projectNo} - ${task.projectName}`}
+                                      placement="top"
+                                    >
+                                      <Text isTruncated maxW="300px">
+                                        {task.projectNo} - {task.projectName}
+                                      </Text>
+                                    </Tooltip>
+                                  ) : DataProject?.id === task.projectId ? (
+                                    <Tooltip
+                                      label={`${DataProject.projectNo} - ${DataProject.projectName}`}
+                                      placement="top"
+                                    >
+                                      <Text isTruncated maxW="300px">
+                                        {DataProject.projectNo} -{" "}
+                                        {DataProject.projectName}
+                                      </Text>
+                                    </Tooltip>
+                                  ) : (
+                                    <Text
+                                      color="orange.600"
+                                      fontWeight="medium"
+                                    >
+                                      {task.projectId} (Other Project)
+                                    </Text>
+                                  )}
+                                </HStack>
+                              )}
+                              {task.backlogId && (
+                                <HStack spacing={1}>
+                                  <Text fontWeight="medium">Backlog:</Text>
+                                  <Text>
+                                    {task.backlogName ||
+                                      DataBacklogs.find(
+                                        (b) => b.id === task.backlogId
+                                      )?.backlogName ||
+                                      task.backlogId}
+                                  </Text>
+                                </HStack>
+                              )}
+                              {task.boardName && (
+                                <HStack spacing={1}>
+                                  <Text fontWeight="medium">Status:</Text>
+                                  <Text>{task.boardName}</Text>
+                                </HStack>
+                              )}
+                            </VStack>
+                            {task.assignUsers &&
+                              task.assignUsers.length > 0 && (
+                                <HStack spacing={2}>
+                                  <Text
+                                    fontSize="xs"
+                                    color="gray.500"
+                                    fontWeight="medium"
+                                  >
+                                    Assigned:
+                                  </Text>
+                                  <AvatarGroup size="xs" max={3}>
+                                    {task.assignUsers.map((user) => (
+                                      <Avatar
+                                        key={user.id}
+                                        name={user.nama}
+                                        src={user.profilePict || undefined}
+                                      />
+                                    ))}
+                                  </AvatarGroup>
+                                </HStack>
+                              )}
+                          </VStack>
+                          <Button
+                            size="sm"
+                            colorScheme="blue"
+                            onClick={() => handleAddRelatedTask(task.id)}
+                          >
+                            Add
+                          </Button>
+                        </HStack>
+                      </Box>
+                    ))}
+                </VStack>
+              ) : searchTaskTerm.length > 0 && searchTaskTerm.length < 3 ? (
+                <Text color="gray.500" textAlign="center" py={4}>
+                  Type at least 3 characters to search
+                </Text>
+              ) : searchTaskTerm.length >= 3 ? (
+                <Text color="gray.500" textAlign="center" py={4}>
+                  No tasks found. Try a different search term.
+                </Text>
+              ) : (
+                <Text color="gray.500" textAlign="center" py={4}>
+                  Enter at least 3 characters to search for tasks
+                </Text>
+              )}
+            </VStack>
+          </ModalBody>
         </ModalContent>
       </Modal>
     </>
@@ -3146,7 +3640,12 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
 };
 
 // Main Project Workspace Component with comprehensive features
-function ProjectWorkspaceView() {
+interface ProjectWorkspaceViewProps {
+  isLocked?: boolean;
+  backUrl?: string;
+}
+
+function ProjectWorkspaceView({ isLocked = false, backUrl = "/workspace" }: ProjectWorkspaceViewProps) {
   const showToast = useToastHelper();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -3175,13 +3674,20 @@ function ProjectWorkspaceView() {
     if (token) setTokenData(token);
   }, [DataAuth]);
 
-  // Project ID from URL (no backlogId needed)
+  // Project ID and Backlog ID from URL
   const [projectId, setProjectId] = useState<string | null>(null);
+  const [backlogIdFromUrl, setBacklogIdFromUrl] = useState<string | null>(null);
+  const lockBacklog = isLocked; // Use prop instead of URL parameter
 
   useEffect(() => {
     const projId = searchParams.get("projectId");
+    const backlogId = searchParams.get("backlogId");
+    
     if (projId) {
       setProjectId(projId);
+    }
+    if (backlogId) {
+      setBacklogIdFromUrl(backlogId);
     }
   }, [searchParams]);
 
@@ -3263,6 +3769,22 @@ function ProjectWorkspaceView() {
   // Users data for assignment
   const [DataUsers, setDataUsers] = useState<UsersResponse[]>([]);
   const [DataBacklogs, setDataBacklogs] = useState<BacklogDataResponse[]>([]);
+
+  // Handle backlog filter change and update URL
+  const handleBacklogFilterChange = (backlogId: string) => {
+    setFilterBacklog(backlogId);
+    
+    if (projectId) {
+      const params = new URLSearchParams();
+      params.set("projectId", projectId);
+      
+      if (backlogId) {
+        params.set("backlogId", backlogId);
+      }
+      
+      router.push(`?${params.toString()}`);
+    }
+  };
 
   // Handle task creation - refresh data after task is created
   const handleTaskCreated = () => {
@@ -3425,6 +3947,21 @@ function ProjectWorkspaceView() {
       fetchBacklogs();
     }
   }, [DataAuth, DataProject, tokenData]);
+
+  // Validate backlogId from URL and auto-select if valid
+  useEffect(() => {
+    if (projectId && backlogIdFromUrl && DataBacklogs.length > 0) {
+      const backlogExists = DataBacklogs.some(
+        (backlog) => backlog.id === backlogIdFromUrl
+      );
+
+      if (backlogExists) {
+        setFilterBacklog(backlogIdFromUrl);
+      } else {
+        router.push('/not-found');
+      }
+    }
+  }, [DataBacklogs, projectId, backlogIdFromUrl, router]);
 
   // Fetch Project Tasks (by projectId only)
   useEffect(() => {
@@ -3657,7 +4194,7 @@ function ProjectWorkspaceView() {
       taskStartDate: "",
       taskEndDate: "",
       boardName: targetBoard?.boardName || boardName,
-      backlogId: "",
+      backlogId: lockBacklog && filterBacklog ? filterBacklog : "",
     });
     onTaskModalOpen();
   };
@@ -4033,14 +4570,13 @@ function ProjectWorkspaceView() {
                 {/* Top Row: Back Button + Project Info + Actions */}
                 <HStack justify="space-between" align="center">
                   <HStack spacing={4}>
-                    <Link href="/workspace">
-                      <IconButton
-                        aria-label="Back"
-                        icon={<FiArrowLeft />}
-                        size="sm"
-                        variant="ghost"
-                      />
-                    </Link>
+                    <IconButton
+                      aria-label="Back"
+                      icon={<FiArrowLeft />}
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => router.push(backUrl)}
+                    />
                     <VStack align="start" spacing={2}>
                       <Heading size="md">
                         {DataProject?.projectName || "Project Workspace"}
@@ -4235,7 +4771,8 @@ function ProjectWorkspaceView() {
                 <Select
                   placeholder="Backlog"
                   value={filterBacklog}
-                  onChange={(e) => setFilterBacklog(e.target.value)}
+                  onChange={(e) => handleBacklogFilterChange(e.target.value)}
+                  isDisabled={lockBacklog}
                   maxW="180px"
                   size="sm"
                   rounded={radiusStyle}
@@ -4454,6 +4991,7 @@ function ProjectWorkspaceView() {
                             backlogId: e.target.value,
                           }))
                         }
+                        isDisabled={lockBacklog}
                         bg={colorMode === "light" ? "white" : "gray.700"}
                         borderColor={
                           colorMode === "light" ? "gray.300" : "gray.600"

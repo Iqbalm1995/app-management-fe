@@ -4,7 +4,7 @@ import ProjectWorkspaceView from "./projectWorkspace";
 export default function ProjectWorkspacePage() {
   return (
     <Suspense>
-      <ProjectWorkspaceView />
+      <ProjectWorkspaceView isLocked={false} backUrl="/workspace" />
     </Suspense>
   );
 }

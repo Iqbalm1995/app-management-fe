@@ -670,7 +670,7 @@ const FeatureBacklogsView = ({
                 <MenuItem
                   icon={<BsKanban />}
                   as={Link}
-                  href={`/kanban?projectId=${DataProject?.id}&backlogId=${info.row.original.id}&from=projects-procurements`}
+                  href={`/workspace/project/from-manage?projectId=${DataProject?.id}&backlogId=${info.row.original.id}`}
                 >
                   Go To Kanban
                 </MenuItem>
@@ -2198,7 +2198,7 @@ const FeatureBacklogsView = ({
           >
             <HStack spacing={3} w="full" justify="space-between">
               <Link
-                href={`/kanban?projectId=${DataProject?.id}&backlogId=${selectedBacklogPreview?.id}&from=projects-manage`}
+                href={`/workspace/project/from-manage?projectId=${DataProject?.id}&backlogId=${selectedBacklogPreview?.id}`}
               >
                 <Button
                   colorScheme="blue"
@@ -3071,7 +3071,7 @@ const WorkflowBacklogTable = ({
                       Edit
                     </Button>
                     <Link
-                      href={`/kanban?projectId=${DataProject?.id}&backlogId=${workflow.workflowBacklog.id}&from=projects-procurements`}
+                      href={`/workspace/project/from-manage?projectId=${DataProject?.id}&backlogId=${workflow.workflowBacklog.id}`}
                     >
                       <Button
                         size="xs"
