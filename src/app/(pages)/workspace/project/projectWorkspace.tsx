@@ -147,6 +147,7 @@ import {
   FiFilter,
   FiHash,
   FiInbox,
+  FiLink,
   FiList,
   FiLoader,
   FiMessageSquare,
@@ -1731,6 +1732,15 @@ const TaskCard: React.FC<TaskCardProps> = ({
                       </Text>
                     </HStack>
                   )}
+
+                  {task.countRelatedTask > 0 && (
+                    <HStack spacing={1}>
+                      <Icon as={FiLink} color="gray.500" boxSize={3} />
+                      <Text fontSize="xs" color="gray.600" fontWeight="medium">
+                        {task.countRelatedTask}
+                      </Text>
+                    </HStack>
+                  )}
                 </HStack>
 
                 {/* Right side - Assignees */}
@@ -1997,6 +2007,57 @@ const TaskCard: React.FC<TaskCardProps> = ({
                         </AlertDescription>
                       </Alert>
                     )}
+
+                    {/* Alert for overdue or approaching deadline */}
+                    {detailedTask.endDate && detailedTask.boardName !== TASK_BOARD_STATUS_NAME_DONE && (() => {
+                      const now = new Date();
+                      now.setHours(0, 0, 0, 0);
+                      const endDate = new Date(detailedTask.endDate);
+                      endDate.setHours(0, 0, 0, 0);
+                      const diffTime = endDate.getTime() - now.getTime();
+                      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+                      if (diffDays < 0) {
+                        return (
+                          <Alert
+                            status="error"
+                            variant="left-accent"
+                            rounded={radiusStyle}
+                          >
+                            <AlertIcon />
+                            <AlertDescription>
+                              Task sudah melewati deadline {Math.abs(diffDays)} hari yang lalu!
+                            </AlertDescription>
+                          </Alert>
+                        );
+                      } else if (diffDays <= 3) {
+                        return (
+                          <Alert
+                            status="warning"
+                            variant="left-accent"
+                            rounded={radiusStyle}
+                          >
+                            <AlertIcon />
+                            <AlertDescription>
+                              Task akan jatuh tempo dalam {diffDays} hari!
+                            </AlertDescription>
+                          </Alert>
+                        );
+                      } else {
+                        return (
+                          <Alert
+                            status="info"
+                            variant="left-accent"
+                            rounded={radiusStyle}
+                          >
+                            <AlertIcon />
+                            <AlertDescription>
+                              Task memiliki deadline pada {new Date(detailedTask.endDate).toLocaleDateString()}.
+                            </AlertDescription>
+                          </Alert>
+                        );
+                      }
+                    })()}
 
                     <Flex
                       w="full"

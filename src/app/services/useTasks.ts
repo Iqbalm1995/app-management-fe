@@ -86,6 +86,7 @@ export interface TaskViewModel {
   countTaskItem: number;
   countTaskItemDone: number;
   countTaskAttachment: number;
+  countRelatedTask: number;
   createdAt: string;
   createdBy: string;
   updatedAt?: string | null;
