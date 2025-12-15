@@ -105,6 +105,13 @@ export interface ProjectStatusViewModel {
   closedPercentage: number;
 }
 
+export interface ProjectTypeCountsViewModel {
+  all: number;
+  internalDev: number;
+  procurement: number;
+  deployment: number;
+}
+
 export interface WorkspaceProjectViewModel {
   id: string;
   name: string;
@@ -382,6 +389,28 @@ const useWorkspace = () => {
     }
   };
 
+  const GetProjectTypeCounts = async (tokenData: string) => {
+    setLoading(true);
+    try {
+      const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+      
+      const response = await axiosInstance.get(
+        `${UrlEndpoint}/v1/Workspace/project-type-counts`,
+        {
+          headers: {
+            Authorization: `Bearer ${tokenData}`,
+          },
+        }
+      );
+
+      setLoading(false);
+      return response.data;
+    } catch (error: any) {
+      setLoading(false);
+      return handleAxiosError(error);
+    }
+  };
+
   return {
     // Methods
     GetWorkspaceStats,
@@ -395,6 +424,7 @@ const useWorkspace = () => {
     GetProjectDetail,
     GetQuarterProgress,
     GetProjectStatus,
+    GetProjectTypeCounts,
     
     // Loading states
     loading,
