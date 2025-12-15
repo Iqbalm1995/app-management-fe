@@ -148,8 +148,8 @@ import {
   FiHash,
   FiInbox,
   FiLink,
-  FiList,
   FiLoader,
+  FiList,
   FiMessageSquare,
   FiNavigation,
   FiPaperclip,
@@ -3763,6 +3763,11 @@ function ProjectWorkspaceView({ isLocked = false, backUrl = "/workspace" }: Proj
   const [isAutoSaving, setIsAutoSaving] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
+  // Loading steps for initialization
+  type LoadingStep = 'init' | 'project' | 'boards' | 'backlogs' | 'tasks' | 'ready';
+  const [loadingStep, setLoadingStep] = useState<LoadingStep>('init');
+  const [isInitializing, setIsInitializing] = useState(true);
+
   // Track recently moved task for visual feedback
   const [recentlyMovedTaskId, setRecentlyMovedTaskId] = useState<string | null>(
     null
@@ -3893,90 +3898,127 @@ function ProjectWorkspaceView({ isLocked = false, backUrl = "/workspace" }: Proj
     }
   };
 
-  // Fetch Project Data
-  useEffect(() => {
-    if (DataAuth && projectId && tokenData) {
-      const fetchProjectData = async () => {
-        try {
-          setIsLoadingProcess(true);
-          const response = await GetProjectDetail(projectId, tokenData);
+  // Consolidated initialization function
+  const initializeKanban = async () => {
+    if (!DataAuth || !projectId || !tokenData) return;
 
-          if (response?.statusCode === 404) {
-            router.push('/not-found');
-            return;
-          }
-          
-          if (response?.statusCode === RES_CODE_OK) {
-            setDataProject(response.data as ProjectDataResponse);
-          } else {
-            showToast({
-              description: response?.message || "Failed to load project",
-              statusToast: "error",
-            });
-          }
-        } catch (error) {
-          console.error("Error fetching project:", error);
-          showToast({
-            description: "An error occurred while loading project",
-            statusToast: "error",
-          });
-        } finally {
-          setIsLoadingProcess(false);
-        }
+    try {
+      setIsInitializing(true);
+      setLoadingStep('init');
+      await delay(300);
+
+      // Step 1: Load project details
+      setLoadingStep('project');
+      const projectResponse = await GetProjectDetail(projectId, tokenData);
+      
+      if (projectResponse?.statusCode === 404) {
+        router.push('/not-found');
+        return;
+      }
+      
+      if (projectResponse?.statusCode === RES_CODE_OK) {
+        setDataProject(projectResponse.data as ProjectDataResponse);
+      } else {
+        throw new Error(projectResponse?.message || "Failed to load project");
+      }
+
+      await delay(200);
+
+      // Step 2: Load board configuration
+      setLoadingStep('boards');
+      const boardPayload: PaggingListPayloadCustom = {
+        search: "",
+        limit: 100,
+        page: 0,
+        filterWhere: [{ field: "isDisplay", operator: "=", value: "Y" }],
+        fieldOrder: ["indexStage"],
+        orderDir: "asc",
       };
+      
+      const boardResponse = await GetMasterBoardTasks(boardPayload, tokenData);
+      
+      if (boardResponse?.statusCode === RES_CODE_OK) {
+        setDataBoard(boardResponse.data as MasterBoardTaskResponse[]);
+      } else {
+        throw new Error(boardResponse?.message || "Failed to load board configuration");
+      }
 
-      fetchProjectData();
+      await delay(200);
+
+      // Step 3: Load backlogs
+      setLoadingStep('backlogs');
+      if (projectResponse.data?.reqParentId) {
+        const backlogPayload: PaggingListPayload = {
+          search: "",
+          limit: 100,
+          page: 0,
+          filterWhere: [
+            { field: "reqId", operator: "=", value: projectResponse.data.reqParentId },
+            { field: "isDisplay", operator: "=", value: "Y" },
+          ],
+          fieldOrder: [],
+          orderDir: "asc",
+        };
+        
+        const backlogResponse = await ListBacklog(backlogPayload, tokenData);
+        
+        if (backlogResponse?.statusCode === RES_CODE_OK) {
+          setDataBacklogs(backlogResponse.data as BacklogDataResponse[]);
+        }
+      }
+
+      await delay(200);
+
+      // Step 4: Load tasks
+      setLoadingStep('tasks');
+      const taskPayload: PaggingListPayloadCustom = {
+        search: "",
+        limit: 1000,
+        page: 0,
+        filterWhere: [
+          { field: "projectId", operator: "=", value: projectId },
+          { field: "isArchived", operator: "=", value: "N" },
+        ],
+        fieldOrder: ["indexTask"],
+        orderDir: "asc",
+      };
+      
+      const taskResponse = await ListTasksPaged(taskPayload, tokenData);
+      
+      if (taskResponse?.statusCode === RES_CODE_OK) {
+        setDataTasks(taskResponse.data as TaskViewModel[]);
+        setLastUpdated(new Date());
+      } else {
+        throw new Error(taskResponse?.message || "Failed to load tasks");
+      }
+
+      await delay(300);
+
+      // Step 5: Ready
+      setLoadingStep('ready');
+      await delay(500);
+      
+    } catch (error: any) {
+      console.error("Error initializing kanban:", error);
+      showToast({
+        description: error.message || "An error occurred while loading workspace",
+        statusToast: "error",
+      });
+    } finally {
+      setIsInitializing(false);
+    }
+  };
+
+  // Initialize on mount
+  useEffect(() => {
+    if (DataAuth && projectId && tokenData && isInitializing && loadingStep === 'init') {
+      initializeKanban();
     }
   }, [DataAuth, projectId, tokenData]);
 
-  // Fetch Master Board Tasks (for board configuration)
+  // Fetch Backlogs for filtering (after initialization)
   useEffect(() => {
-    if (DataAuth && tokenData) {
-      const fetchMasterBoards = async () => {
-        try {
-          const PayloadList: PaggingListPayloadCustom = {
-            search: "",
-            limit: 100,
-            page: 0,
-            filterWhere: [
-              {
-                field: "isDisplay",
-                operator: "=",
-                value: "Y",
-              },
-            ],
-            fieldOrder: ["indexStage"],
-            orderDir: "asc",
-          };
-
-          const response = await GetMasterBoardTasks(PayloadList, tokenData);
-
-          if (response?.statusCode === RES_CODE_OK) {
-            const boards = response.data as MasterBoardTaskResponse[];
-            setDataBoard(boards);
-          } else {
-            showToast({
-              description:
-                response?.message || "Failed to load board configuration",
-              statusToast: "error",
-            });
-          }
-        } catch (error) {
-          console.error("Error fetching master boards:", error);
-          showToast({
-            description: "An error occurred while loading board configuration",
-            statusToast: "error",
-          });
-        }
-      };
-
-      fetchMasterBoards();
-    }
-  }, [DataAuth, tokenData]);
-
-  // Fetch Backlogs for filtering
-  useEffect(() => {
-    if (DataAuth && DataProject?.reqParentId && tokenData) {
+    if (DataAuth && DataProject?.reqParentId && tokenData && !isInitializing) {
       const fetchBacklogs = async () => {
         try {
           const PayloadList: PaggingListPayload = {
@@ -4024,9 +4066,9 @@ function ProjectWorkspaceView({ isLocked = false, backUrl = "/workspace" }: Proj
     }
   }, [DataBacklogs, projectId, backlogIdFromUrl, router]);
 
-  // Fetch Project Tasks (by projectId only)
+  // Refresh Project Tasks (triggered by RefreshData changes after initialization)
   useEffect(() => {
-    if (DataAuth && projectId && tokenData) {
+    if (DataAuth && projectId && tokenData && !isInitializing && RefreshData > 0) {
       const fetchProjectTasks = async () => {
         try {
           setIsLoadingProcess(true);
@@ -4076,7 +4118,7 @@ function ProjectWorkspaceView({ isLocked = false, backUrl = "/workspace" }: Proj
 
       fetchProjectTasks();
     }
-  }, [DataAuth, projectId, tokenData, RefreshData]);
+  }, [RefreshData]);
 
   // Smart Polling for Real-time Updates (Multi-device sync)
   useEffect(() => {
@@ -4614,9 +4656,196 @@ function ProjectWorkspaceView({ isLocked = false, backUrl = "/workspace" }: Proj
   }
 
   return (
-    <LayoutAdminWorkspace>
+    <>
+      {/* Loading Overlay */}
+      {isInitializing && (
+        <Box
+          position="fixed"
+          top={0}
+          left={0}
+          right={0}
+          bottom={0}
+          bg={colorMode === "light" ? "white" : "gray.900"}
+          zIndex={9999}
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          animation="fadeIn 0.3s ease-in"
+          sx={{
+            '@keyframes fadeIn': {
+              from: { opacity: 0 },
+              to: { opacity: 1 },
+            },
+          }}
+        >
+          <VStack 
+            spacing={8} 
+            maxW="400px" 
+            w="full" 
+            px={6}
+            animation="slideUp 0.5s ease-out"
+            sx={{
+              '@keyframes slideUp': {
+                from: { 
+                  opacity: 0,
+                  transform: 'translateY(20px)',
+                },
+                to: { 
+                  opacity: 1,
+                  transform: 'translateY(0)',
+                },
+              },
+            }}
+          >
+            {/* Logo */}
+            <Box>
+              <Image
+                src="/img/logo-bjb.png"
+                alt="Logo"
+                boxSize="64px"
+                objectFit="contain"
+              />
+            </Box>
+
+            {/* Title */}
+            <Heading size="md" color={colorMode === "light" ? "gray.700" : "gray.200"}>
+              Preparing Your Workspace
+            </Heading>
+
+            {/* Loading Steps */}
+            <VStack spacing={3} w="full" align="stretch">
+              {/* Step 1: Initializing */}
+              <HStack spacing={3}>
+                {loadingStep === 'init' ? (
+                  <Spinner size="sm" color="blue.500" />
+                ) : (
+                  <Icon as={FiCheckCircle} color="green.500" boxSize={5} />
+                )}
+                <Text fontSize="sm" color={loadingStep === 'init' ? "blue.500" : "gray.500"}>
+                  Initializing workspace
+                </Text>
+              </HStack>
+
+              {/* Step 2: Project */}
+              <HStack spacing={3}>
+                {loadingStep === 'project' ? (
+                  <Spinner size="sm" color="blue.500" />
+                ) : loadingStep === 'init' ? (
+                  <Icon as={FiCircle} color="gray.300" boxSize={5} />
+                ) : (
+                  <Icon as={FiCheckCircle} color="green.500" boxSize={5} />
+                )}
+                <Text fontSize="sm" color={loadingStep === 'project' ? "blue.500" : loadingStep === 'init' ? "gray.400" : "gray.500"}>
+                  Loading project details
+                </Text>
+              </HStack>
+
+              {/* Step 3: Boards */}
+              <HStack spacing={3}>
+                {loadingStep === 'boards' ? (
+                  <Spinner size="sm" color="blue.500" />
+                ) : ['init', 'project'].includes(loadingStep) ? (
+                  <Icon as={FiCircle} color="gray.300" boxSize={5} />
+                ) : (
+                  <Icon as={FiCheckCircle} color="green.500" boxSize={5} />
+                )}
+                <Text fontSize="sm" color={loadingStep === 'boards' ? "blue.500" : ['init', 'project'].includes(loadingStep) ? "gray.400" : "gray.500"}>
+                  Loading board configuration
+                </Text>
+              </HStack>
+
+              {/* Step 4: Backlogs */}
+              <HStack spacing={3}>
+                {loadingStep === 'backlogs' ? (
+                  <Spinner size="sm" color="blue.500" />
+                ) : ['init', 'project', 'boards'].includes(loadingStep) ? (
+                  <Icon as={FiCircle} color="gray.300" boxSize={5} />
+                ) : (
+                  <Icon as={FiCheckCircle} color="green.500" boxSize={5} />
+                )}
+                <Text fontSize="sm" color={loadingStep === 'backlogs' ? "blue.500" : ['init', 'project', 'boards'].includes(loadingStep) ? "gray.400" : "gray.500"}>
+                  Loading backlogs
+                </Text>
+              </HStack>
+
+              {/* Step 5: Tasks */}
+              <HStack spacing={3}>
+                {loadingStep === 'tasks' ? (
+                  <Spinner size="sm" color="blue.500" />
+                ) : ['init', 'project', 'boards', 'backlogs'].includes(loadingStep) ? (
+                  <Icon as={FiCircle} color="gray.300" boxSize={5} />
+                ) : (
+                  <Icon as={FiCheckCircle} color="green.500" boxSize={5} />
+                )}
+                <Text fontSize="sm" color={loadingStep === 'tasks' ? "blue.500" : ['init', 'project', 'boards', 'backlogs'].includes(loadingStep) ? "gray.400" : "gray.500"}>
+                  Loading tasks
+                </Text>
+              </HStack>
+
+              {/* Step 6: Ready */}
+              <HStack spacing={3}>
+                {loadingStep === 'ready' ? (
+                  <Spinner size="sm" color="blue.500" />
+                ) : (
+                  <Icon as={FiCircle} color="gray.300" boxSize={5} />
+                )}
+                <Text fontSize="sm" color={loadingStep === 'ready' ? "blue.500" : "gray.400"}>
+                  Preparing kanban board
+                </Text>
+              </HStack>
+            </VStack>
+
+            {/* Progress Bar */}
+            <Box w="full">
+              <Box
+                h="6px"
+                bg={colorMode === "light" ? "gray.200" : "gray.700"}
+                rounded="full"
+                overflow="hidden"
+              >
+                <Box
+                  h="full"
+                  bg="blue.500"
+                  rounded="full"
+                  transition="all 0.5s ease-out"
+                  w={
+                    loadingStep === 'init' ? '16%' :
+                    loadingStep === 'project' ? '33%' :
+                    loadingStep === 'boards' ? '50%' :
+                    loadingStep === 'backlogs' ? '66%' :
+                    loadingStep === 'tasks' ? '83%' :
+                    '100%'
+                  }
+                />
+              </Box>
+              <Text fontSize="xs" color="gray.500" textAlign="center" mt={2}>
+                {
+                  loadingStep === 'init' ? '16%' :
+                  loadingStep === 'project' ? '33%' :
+                  loadingStep === 'boards' ? '50%' :
+                  loadingStep === 'backlogs' ? '66%' :
+                  loadingStep === 'tasks' ? '83%' :
+                  '100%'
+                }
+              </Text>
+            </Box>
+          </VStack>
+        </Box>
+      )}
+
+      {/* Main Content */}
+      <LayoutAdminWorkspace>
       <DndProvider backend={HTML5Backend}>
-        <Box p={4}>
+        <Box 
+          p={4}
+          animation={!isInitializing ? "fadeIn 0.5s ease-in" : undefined}
+          sx={{
+            '@keyframes fadeIn': {
+              from: { opacity: 0 },
+              to: { opacity: 1 },
+            },
+          }}
+        >
           {/* Simple Clean Header */}
           <Card
             shadow="sm"
@@ -5160,6 +5389,7 @@ function ProjectWorkspaceView({ isLocked = false, backUrl = "/workspace" }: Proj
         </DrawerContent>
       </Drawer>
     </LayoutAdminWorkspace>
+    </>
   );
 }
 
