@@ -3992,9 +3992,8 @@ function ProjectWorkspaceView({
               operator: "=",
               value: projectResponse.data.reqParentId,
             },
-            { field: "isDisplay", operator: "=", value: "Y" },
           ],
-          fieldOrder: [],
+          fieldOrder: ["backlogName"],
           orderDir: "asc",
         };
 
@@ -4059,41 +4058,6 @@ function ProjectWorkspaceView({
       initializeKanban();
     }
   }, [DataAuth, projectId, tokenData]);
-
-  // Fetch Backlogs for filtering (after initialization)
-  useEffect(() => {
-    if (DataAuth && DataProject?.reqParentId && tokenData && !isInitializing) {
-      const fetchBacklogs = async () => {
-        try {
-          const PayloadList: PaggingListPayload = {
-            search: "",
-            limit: 100,
-            page: 0,
-            filterWhere: [
-              {
-                field: "reqId",
-                value: DataProject.reqParentId!,
-                operator: "=",
-              },
-            ],
-            fieldOrder: ["backlogName"],
-            orderDir: "asc",
-          };
-
-          const response = await ListBacklog(PayloadList, tokenData);
-
-          if (response?.statusCode === RES_CODE_OK) {
-            const backlogs = response.data as BacklogDataResponse[];
-            setDataBacklogs(backlogs);
-          }
-        } catch (error) {
-          console.error("Error fetching backlogs:", error);
-        }
-      };
-
-      fetchBacklogs();
-    }
-  }, [DataAuth, DataProject, tokenData]);
 
   // Validate backlogId from URL and auto-select if valid
   useEffect(() => {

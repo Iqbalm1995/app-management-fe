@@ -54,6 +54,7 @@ import {
   FiCalendar,
   FiPlus,
   FiArrowRightCircle,
+  FiRefreshCw,
 } from "react-icons/fi";
 import { Search2Icon } from "@chakra-ui/icons";
 
@@ -1062,6 +1063,40 @@ const WorkspaceProject = () => {
                         borderRadius="lg"
                       >
                         <Icon as={FiList} />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={async () => {
+                          const token = localStorage.getItem("tokenData");
+                          if (token) {
+                            setProjectsLoading(true);
+                            setStatsLoading(true);
+                            try {
+                              await Promise.all([
+                                GetWorkspaceStats(token).then((res) => {
+                                  if (res?.statusCode === 200 && res.data) {
+                                    setStats(res.data);
+                                  }
+                                }),
+                                GetProjectTypeCounts(token).then((res) => {
+                                  if (res?.statusCode === 200 && res.data) {
+                                    setProjectTypeCounts(res.data);
+                                  }
+                                }),
+                                fetchProjects(searchTerm, 9, 0, false, selectedProjectType),
+                              ]);
+                            } finally {
+                              setProjectsLoading(false);
+                              setStatsLoading(false);
+                            }
+                          }
+                        }}
+                        colorScheme="blue"
+                        borderRadius="lg"
+                        isLoading={projectsLoading || statsLoading}
+                      >
+                        <Icon as={FiRefreshCw} />
                       </Button>
                     </HStack>
                   </HStack>
