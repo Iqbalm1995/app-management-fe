@@ -24,7 +24,8 @@ interface ProjectStatusCardProps {
 }
 
 const ProjectStatusCard: React.FC<ProjectStatusCardProps> = ({ tokenData }) => {
-  const [projectStatus, setProjectStatus] = useState<ProjectStatusViewModel | null>(null);
+  const [projectStatus, setProjectStatus] =
+    useState<ProjectStatusViewModel | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { GetProjectStatus } = useWorkspace();
 
@@ -108,20 +109,23 @@ const ProjectStatusCard: React.FC<ProjectStatusCardProps> = ({ tokenData }) => {
       <CardBody p={0}>
         {/* Header with gradient */}
         <Box
-          bgGradient="linear(to-r, pink.400, pink.500)"
-          color="white"
+          // bgGradient="linear(to-br, secondary.400, secondary.800)"
+          // color="white"
           p={4}
           position="relative"
         >
           <HStack justify="space-between" mb={3}>
             <VStack align="start" spacing={0}>
-              <Heading size="sm">Project Status</Heading>
+              <Heading size="sm" color={"secondary.500"}>
+                Project Status
+              </Heading>
               <Text fontSize="xs" opacity={0.9}>
-                {projectStatus.activeProjects} active / {projectStatus.closedProjects} closed
+                {projectStatus.activeProjects} active /{" "}
+                {projectStatus.closedProjects} closed
               </Text>
             </VStack>
             <Box bg="whiteAlpha.200" p={2} borderRadius="lg">
-              <Icon as={FiFolder} boxSize={5} />
+              <Icon color={"secondary.500"} as={FiFolder} boxSize={5} />
             </Box>
           </HStack>
 
@@ -132,17 +136,17 @@ const ProjectStatusCard: React.FC<ProjectStatusCardProps> = ({ tokenData }) => {
                 value={projectStatus.activePercentage}
                 size="lg"
                 colorScheme="purple"
-                bg="whiteAlpha.300"
+                bg="blackAlpha.300"
                 borderRadius="full"
                 sx={{
                   "& > div": {
-                    background: "linear-gradient(90deg, #9F7AEA, #ED64A6)",
+                    background: "linear-gradient(90deg, #0077fe, #0051ad)",
                   },
                 }}
               />
               <Box
                 position="absolute"
-                top="50%"
+                top="65%"
                 left="50%"
                 transform="translate(-50%, -50%)"
                 textAlign="center"
@@ -158,16 +162,28 @@ const ProjectStatusCard: React.FC<ProjectStatusCardProps> = ({ tokenData }) => {
 
             <VStack align="start" spacing={2} flex="1">
               <HStack w="full" justify="space-between">
-                <Text fontSize="xs" opacity={0.9}>Active</Text>
-                <Text fontSize="xs" fontWeight="bold">{projectStatus.activeProjects}</Text>
+                <Text fontSize="xs" opacity={0.9}>
+                  Active
+                </Text>
+                <Text fontSize="xs" fontWeight="bold">
+                  {projectStatus.activeProjects}
+                </Text>
               </HStack>
               <HStack w="full" justify="space-between">
-                <Text fontSize="xs" opacity={0.9}>Closed</Text>
-                <Text fontSize="xs" fontWeight="bold">{projectStatus.closedProjects}</Text>
+                <Text fontSize="xs" opacity={0.9}>
+                  Closed
+                </Text>
+                <Text fontSize="xs" fontWeight="bold">
+                  {projectStatus.closedProjects}
+                </Text>
               </HStack>
               <HStack w="full" justify="space-between">
-                <Text fontSize="xs" opacity={0.9}>Total</Text>
-                <Text fontSize="xs" fontWeight="bold">{projectStatus.totalProjects}</Text>
+                <Text fontSize="xs" opacity={0.9}>
+                  Total
+                </Text>
+                <Text fontSize="xs" fontWeight="bold">
+                  {projectStatus.totalProjects}
+                </Text>
               </HStack>
             </VStack>
           </HStack>
@@ -175,8 +191,12 @@ const ProjectStatusCard: React.FC<ProjectStatusCardProps> = ({ tokenData }) => {
           {/* Project Status Distribution Bar */}
           <Box mt={4}>
             <HStack justify="space-between" mb={2}>
-              <Text fontSize="xs" opacity={0.9}>Project Distribution</Text>
-              <Text fontSize="xs" opacity={0.9}>{projectStatus.totalProjects} projects</Text>
+              <Text fontSize="xs" opacity={0.9}>
+                Project Distribution
+              </Text>
+              <Text fontSize="xs" opacity={0.9}>
+                {projectStatus.totalProjects} projects
+              </Text>
             </HStack>
             <Box
               position="relative"
@@ -189,7 +209,7 @@ const ProjectStatusCard: React.FC<ProjectStatusCardProps> = ({ tokenData }) => {
                 <Box
                   w={`${projectStatus.activePercentage}%`}
                   h="full"
-                  bg="purple.400"
+                  bg="secondary.600"
                 />
                 <Box
                   w={`${projectStatus.closedPercentage}%`}
@@ -200,18 +220,20 @@ const ProjectStatusCard: React.FC<ProjectStatusCardProps> = ({ tokenData }) => {
             </Box>
             <HStack justify="space-between" mt={2} fontSize="xs">
               <HStack spacing={1}>
-                <Box w="8px" h="8px" bg="purple.400" borderRadius="full" />
-                <Text opacity={0.9}>{projectStatus.activePercentage}% Active</Text>
+                <Box w="8px" h="8px" bg="secondary.600" borderRadius="full" />
+                <Text opacity={0.9}>
+                  {projectStatus.activePercentage}% Active
+                </Text>
               </HStack>
               <HStack spacing={1}>
                 <Box w="8px" h="8px" bg="gray.400" borderRadius="full" />
-                <Text opacity={0.9}>{projectStatus.closedPercentage}% Closed</Text>
+                <Text opacity={0.9}>
+                  {projectStatus.closedPercentage}% Closed
+                </Text>
               </HStack>
             </HStack>
           </Box>
         </Box>
-
-        
       </CardBody>
     </Card>
   );

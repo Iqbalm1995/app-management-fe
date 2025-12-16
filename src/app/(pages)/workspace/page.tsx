@@ -138,7 +138,7 @@ const WorkspaceProject = () => {
   // Fetch projects function
   const fetchProjects = async (
     search: string = "",
-    limit: number = 4,
+    limit: number = 9,
     page: number = 0,
     append: boolean = false,
     projectType: string = "All"
@@ -281,7 +281,7 @@ const WorkspaceProject = () => {
 
     const timeoutId = setTimeout(() => {
       setCurrentPage(0);
-      fetchProjects(searchTerm, 4, 0, false, selectedProjectType);
+      fetchProjects(searchTerm, 9, 0, false, selectedProjectType);
     }, 300); // Debounce search
 
     return () => clearTimeout(timeoutId);
@@ -313,7 +313,7 @@ const WorkspaceProject = () => {
   const accentColor = useColorModeValue("blue.500", "blue.400");
   const cardHoverBg = useColorModeValue("gray.50", "gray.700");
   const gradientBg = useColorModeValue(
-    "linear(to-r, secondary.400, secondary.600)",
+    "linear(to-r, secondary.500, secondary.800)",
     "linear(to-r, secondary.600, secondary.800)"
   );
 
@@ -1129,7 +1129,7 @@ const WorkspaceProject = () => {
                   <Grid
                     templateColumns={
                       viewMode === "grid"
-                        ? { base: "1fr", md: "repeat(2, 1fr)" }
+                        ? { base: "1fr", md: "repeat(3, 1fr)" }
                         : "1fr"
                     }
                     gap={4}
@@ -1160,10 +1160,10 @@ const WorkspaceProject = () => {
                           }}
                           transition="all 0.2s"
                           cursor="pointer"
-                          borderLeft="3px solid"
-                          borderLeftColor={
-                            getStatusColor(project.projectStatus) + ".500"
-                          }
+                          // borderLeft="3px solid"
+                          // borderLeftColor={
+                          //   getStatusColor(project.projectStatus) + ".500"
+                          // }
                           onClick={() => handleProjectClick(project)}
                         >
                           <CardBody p={4}>
@@ -1171,11 +1171,14 @@ const WorkspaceProject = () => {
                               {/* Header: Project No + Status */}
                               <HStack justify="space-between" w="full">
                                 <Text
-                                  fontSize="xs"
-                                  color={accentColor}
+                                  fontSize="2xs"
+                                  color={useColorModeValue(
+                                    "secondary.700",
+                                    "secondary.200"
+                                  )}
                                   fontWeight="bold"
                                 >
-                                  #{project.projectNo}
+                                  No. {project.projectNo}
                                 </Text>
                                 <Badge
                                   colorScheme={getStatusColor(
@@ -1189,13 +1192,15 @@ const WorkspaceProject = () => {
                               </HStack>
 
                               {/* Project Name */}
-                              <Heading
-                                size="sm"
-                                color={accentColor}
-                                noOfLines={2}
-                              >
-                                {project.projectName}
-                              </Heading>
+                              <Box h={"40px"}>
+                                <Heading
+                                  size="sm"
+                                  color={accentColor}
+                                  noOfLines={2}
+                                >
+                                  {project.projectName}
+                                </Heading>
+                              </Box>
 
                               {/* Progress Bar */}
                               <Box w="full">
@@ -1235,7 +1240,7 @@ const WorkspaceProject = () => {
                                   ))}
                                 </AvatarGroup>
                                 <Badge
-                                  colorScheme="purple"
+                                  colorScheme="secondary"
                                   variant="subtle"
                                   fontSize="xs"
                                 >
@@ -1451,7 +1456,7 @@ const WorkspaceProject = () => {
                             />
                             <Box
                               position="absolute"
-                              top="50%"
+                              top="65%"
                               left="50%"
                               transform="translate(-50%, -50%)"
                               textAlign="center"
