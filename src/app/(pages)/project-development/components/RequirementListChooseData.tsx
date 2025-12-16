@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo, memo, useCallback } from "react";
 import {
   Box,
   Button,
+  ButtonGroup,
   Divider,
   Flex,
   FormControl,
@@ -12,6 +13,10 @@ import {
   GridItem,
   HStack,
   Input,
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuList,
   Popover,
   PopoverBody,
   PopoverContent,
@@ -20,6 +25,7 @@ import {
   Radio,
   RadioGroup,
   Stack,
+  Switch,
   Text,
   useColorMode,
 } from "@chakra-ui/react";
@@ -33,6 +39,7 @@ import {
   PaginationState,
   useReactTable,
 } from "@tanstack/react-table";
+import { ChevronDownIcon } from "@chakra-ui/icons";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useRequirements, {
@@ -121,6 +128,7 @@ const RequirementListChooseData = memo(
       []
     );
     const [SelectedTypeReq, setSelectedTypeReq] = useState<string>("BRD");
+    const [HasRequirementMemo, setHasRequirementMemo] = useState<string>("Y");
 
     const delay = useCallback(
       (ms: number) => new Promise((resolve) => setTimeout(resolve, ms)),
@@ -343,8 +351,8 @@ const RequirementListChooseData = memo(
                 <Text fontWeight={600}>
                   {info.row.original.reqInititateDate
                     ? stringToDateFormatedReverse(
-                        info.row.original.reqInititateDate
-                      )
+                      info.row.original.reqInititateDate
+                    )
                     : "-"}
                 </Text>
               </Flex>
@@ -353,8 +361,8 @@ const RequirementListChooseData = memo(
                 <Text fontWeight={600}>
                   {info.row.original.reqAcceptedDate
                     ? stringToDateFormatedReverse(
-                        info.row.original.reqAcceptedDate
-                      )
+                      info.row.original.reqAcceptedDate
+                    )
                     : "-"}
                 </Text>
               </Flex>
@@ -396,7 +404,7 @@ const RequirementListChooseData = memo(
               <Flex fontSize={"small"} as={Stack} spacing={0}>
                 <Text>Ditugaskan Ke :</Text>
                 {Array.isArray(info.row.original.approvalDatas) &&
-                info.row.original.approvalDatas.length > 0 ? (
+                  info.row.original.approvalDatas.length > 0 ? (
                   info.row.original.approvalDatas.map((x, idx) => (
                     <Text fontWeight={600} key={idx} fontSize="smaller">
                       {idx + 1}. {x.approverUserFirstName ?? "-"}{" "}
@@ -654,6 +662,23 @@ const RequirementListChooseData = memo(
       setParamFilter(updatedFilters);
     }, [SelectedTypeReq]);
 
+
+    useEffect(() => {
+      const hasMemoFilter: ListSearchByParamProps[] = [
+        {
+          field: "isHaveMemo",
+          operator: "=",
+          value: HasRequirementMemo,
+          filterLabel: "Terdapat Memo",
+        },
+      ];
+
+      const updatedFilters = hasMemoFilter.reduce(
+        (acc, filter) => addParamFilterUpdate(acc, filter),
+        ParamFilter
+      );
+      setParamFilter(updatedFilters);
+    }, [HasRequirementMemo]);
     useEffect(() => {
       const brdStatusApproveStatic: ListSearchByParamProps = {
         field: "reqStatus",
@@ -740,109 +765,104 @@ const RequirementListChooseData = memo(
     });
 
     return (
-      <Flex as={Stack} w={"full"} pt={4}>
+      <Flex as={Stack} w={"full"} pt={0}>
         <FormControl>
+
           <Grid templateColumns="repeat(2, 1fr)" gap={1} w={"full"}>
-
-            <GridItem
-              colSpan={{
-                base: 2,
-                sm: 2,
-                md: 1,
-                lg: 1,
-              }}
-              w={"full"}
-            >
-              <FormLabel h={"full"}>Tipe Requirement</FormLabel>
-            </GridItem>
-
-            <GridItem
-              colSpan={{
-                base: 2,
-                sm: 2,
-                md: 1,
-                lg: 1,
-              }}
-              w={"full"}
-            >
-              <FormControl>
-                <RadioGroup
-                  id={"FilterReqType"}
-                  onChange={(val) => {
-                    setSelectedTypeReq(val);
-                  }}
-                  value={SelectedTypeReq}
-                >
-                  <Flex w={"full"} as={HStack} justifyContent={"end"}>
-                    <Radio value={"BRD"}>BRD</Radio>
-                    <Radio value={"RFC"}>RFC</Radio>
-                  </Flex>
-                </RadioGroup>
-              </FormControl>
-            </GridItem>
-
             <GridItem colSpan={2} w={"full"}>
-              <Popover closeOnBlur={false} placement={"bottom"}>
-                <PopoverTrigger>
-                  <Button size={"sm"} leftIcon={<FiFilter />}>
-                    Filter{" "}
-                    <Flex
-                      as={"span"}
-                      pl={1}
-                      display={ParamFilter.length > 0 ? "flex" : "none"}
-                      color={"secondary.500"}
-                      fontWeight={600}
-                    >
-                      ({ParamFilter.length})
-                    </Flex>
+              <Flex w={"full"} justifyContent={"space-between"} flexDirection={"row-reverse"} alignItems={"center"}>
+                <ButtonGroup size="sm" isAttached variant="outline">
+                <Menu>
+                  <Box mr={3}>
+                  <MenuButton as={Button} size="sm" rightIcon={<ChevronDownIcon />}>
+                    {HasRequirementMemo === "Y" ? "Memiliki Memo" : "Tidak Memiliki Memo"}
+                  </MenuButton>
+                  <MenuList>
+                    <MenuItem onClick={() => setHasRequirementMemo("Y")}>
+                      Memiliki Memo
+                    </MenuItem>
+                    <MenuItem onClick={() => setHasRequirementMemo("N")}>
+                      Tidak Memiliki Memo
+                    </MenuItem>
+                  </MenuList>
+                  </Box>
+                </Menu>
+                  <Button
+                    colorScheme={SelectedTypeReq === "BRD" ? "blue" : "gray"}
+                    variant={SelectedTypeReq === "BRD" ? "solid" : "outline"}
+                    onClick={() => setSelectedTypeReq("BRD")}
+                  >
+                    BRD
                   </Button>
-                </PopoverTrigger>
-                <Portal>
-                  <PopoverContent width="auto" minW="xs">
-                    <PopoverBody>
-                      <Flex as={Stack} w={"full"}>
-                        <Text fontWeight={600}>Filter Data</Text>
-                        <Divider />
+                  <Button
+                    colorScheme={SelectedTypeReq === "RFC" ? "blue" : "gray"}
+                    variant={SelectedTypeReq === "RFC" ? "solid" : "outline"}
+                    onClick={() => setSelectedTypeReq("RFC")}
+                  >
+                    RFC
+                  </Button>
+                </ButtonGroup>
+                <Popover closeOnBlur={false} placement={"bottom"}>
+                  <PopoverTrigger>
+                    <Button size={"sm"} leftIcon={<FiFilter />}>
+                      Filter{" "}
+                      <Flex
+                        as={"span"}
+                        pl={1}
+                        display={ParamFilter.length > 0 ? "flex" : "none"}
+                        color={"secondary.500"}
+                        fontWeight={600}
+                      >
+                        ({ParamFilter.length})
+                      </Flex>
+                    </Button>
+                  </PopoverTrigger>
+                  <Portal>
+                    <PopoverContent width="auto" minW="xs">
+                      <PopoverBody>
+                        <Flex as={Stack} w={"full"}>
+                          <Text fontWeight={600}>Filter Data</Text>
+                          <Divider />
 
-                        <Stack spacing={2}>
-                          {ParamFilter.map((dt, idx) => (
-                            <Flex
-                              key={idx}
-                              w={"full"}
-                              alignItems="center"
-                              as={HStack}
-                              spacing={2}
-                            >
-                              <Text>
-                                {dt.filterLabel} :{" "}
-                                <Text as={"span"} fontWeight={600}>
-                                  {" "}
-                                  {dt.field === "senderDivisionId"
-                                    ? OptionDivision.find(
+                          <Stack spacing={2}>
+                            {ParamFilter.map((dt, idx) => (
+                              <Flex
+                                key={idx}
+                                w={"full"}
+                                alignItems="center"
+                                as={HStack}
+                                spacing={2}
+                              >
+                                <Text>
+                                  {dt.filterLabel} :{" "}
+                                  <Text as={"span"} fontWeight={600}>
+                                    {" "}
+                                    {dt.field === "senderDivisionId"
+                                      ? OptionDivision.find(
                                         (opt) => opt.value === dt.value
                                       )?.label || dt.value
-                                    : dt.value}
+                                      : dt.value}
+                                  </Text>
                                 </Text>
-                              </Text>
-                              <Button
-                                size={"xs"}
-                                colorScheme={"red"}
-                                justifyContent={"center"}
-                                variant={"ghost"}
-                                onClick={() => removeFilterData(dt)}
-                              >
-                                <FiX />
-                              </Button>
-                            </Flex>
-                          ))}
-                        </Stack>
-                      </Flex>
-                    </PopoverBody>
-                  </PopoverContent>
-                </Portal>
-              </Popover>
+                                <Button
+                                  size={"xs"}
+                                  colorScheme={"red"}
+                                  justifyContent={"center"}
+                                  variant={"ghost"}
+                                  onClick={() => removeFilterData(dt)}
+                                >
+                                  <FiX />
+                                </Button>
+                              </Flex>
+                            ))}
+                          </Stack>
+                        </Flex>
+                      </PopoverBody>
+                    </PopoverContent>
+                  </Portal>
+                </Popover>
+              </Flex>
             </GridItem>
-          </Grid>
 
           <GridItem colSpan={2} w={"full"}>
             {IsLoadingProcess ? (
@@ -856,6 +876,7 @@ const RequirementListChooseData = memo(
               </Box>
             )}
           </GridItem>
+          </Grid>
         </FormControl>
       </Flex>
     );

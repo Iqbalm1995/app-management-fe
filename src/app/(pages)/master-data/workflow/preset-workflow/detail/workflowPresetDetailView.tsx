@@ -118,7 +118,7 @@ function WorkflowPresetDetailView() {
     if (!workflow.workflowChild || workflow.workflowChild.length === 0) return true;
     return workflow.workflowChild.every((child) => {
       const childSelected = selectedSet.has(child.id);
-      const grandChildrenSelected = !child.workflowChild || child.workflowChild.length === 0 || 
+      const grandChildrenSelected = !child.workflowChild || child.workflowChild.length === 0 ||
         child.workflowChild.every((gc) => selectedSet.has(gc.id));
       return childSelected && grandChildrenSelected;
     });
@@ -139,7 +139,7 @@ function WorkflowPresetDetailView() {
   const handleCheckboxChange = (itemId: string, checked: boolean) => {
     setSelectedItems((prev) => {
       const newSet = new Set(prev);
-      
+
       // Find the item in the workflow tree
       let targetItem: WorkflowGroupResponse | null = null;
       let parentItem: WorkflowGroupResponse | null = null;
@@ -171,24 +171,24 @@ function WorkflowPresetDetailView() {
       if (checked) {
         // Add the item
         newSet.add(itemId);
-        
+
         // Add all descendants
         const descendantIds = getAllDescendantIds(targetItem);
         descendantIds.forEach((id) => newSet.add(id));
 
-        // Check if parent should be checked
-        if (parentItem && areAllChildrenSelected(parentItem, newSet)) {
+        // Always check parent when a child/grandchild is checked
+        if (parentItem) {
           newSet.add(parentItem.id);
-          
-          // Check if grandparent should be checked
-          if (grandParentItem && areAllChildrenSelected(grandParentItem, newSet)) {
+
+          // Always check grandparent when a grandchild is checked
+          if (grandParentItem) {
             newSet.add(grandParentItem.id);
           }
         }
       } else {
         // Remove the item
         newSet.delete(itemId);
-        
+
         // Remove all descendants
         const descendantIds = getAllDescendantIds(targetItem);
         descendantIds.forEach((id) => newSet.delete(id));
@@ -196,7 +196,7 @@ function WorkflowPresetDetailView() {
         // Check if parent should be unchecked (only if NO children remain selected)
         if (parentItem && !hasAnyChildSelected(parentItem, newSet)) {
           newSet.delete(parentItem.id);
-          
+
           // Check if grandparent should be unchecked (only if NO children remain selected)
           if (grandParentItem && !hasAnyChildSelected(grandParentItem, newSet)) {
             newSet.delete(grandParentItem.id);
@@ -377,7 +377,7 @@ function WorkflowPresetDetailView() {
                   {DataPreset?.wfPresetName} Configuration
                 </Heading>
                 <HStack spacing={4}>
-                  <Badge colorScheme="blue">{DataPreset?.wfCategoryCode}</Badge>
+                  {/* <Badge colorScheme="blue">{DataPreset?.wfCategoryCode}</Badge> */}
                   <Text fontSize="sm" color="gray.500">
                     {DataPreset?.wfPresetDesc}
                   </Text>
