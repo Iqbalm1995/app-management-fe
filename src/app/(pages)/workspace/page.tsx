@@ -33,6 +33,7 @@ import {
   ModalBody,
   ModalCloseButton,
   useDisclosure,
+  useColorMode,
 } from "@chakra-ui/react";
 import {
   FiSearch,
@@ -80,6 +81,7 @@ import {
   formatDateTimeBE,
 } from "@/app/helper/MasterHelper";
 import Link from "next/link";
+import LayoutAdminWorkspace from "@/app/components/layoutAdminWorkspace";
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Workspace",
@@ -96,6 +98,8 @@ const WorkspaceProject = () => {
   const isInitialMount = useRef(true);
   const [selectedProject, setSelectedProject] =
     useState<ProjectDetailResponse | null>(null);
+
+  const { colorMode } = useColorMode();
 
   const {
     isOpen: isProjectModalOpen,
@@ -147,22 +151,12 @@ const WorkspaceProject = () => {
     if (token) {
       setProjectsLoading(true);
       try {
-        const filterWhere: any[] = [];
-
-        // Add project type filter if not "All"
-        if (projectType !== "All") {
-          filterWhere.push({
-            field: "projectType",
-            operator: "=",
-            value: projectType,
-          });
-        }
-
         const payload = {
           search: search,
           limit: limit,
           page: page,
-          filterWhere: filterWhere,
+          projectType: projectType !== "All" ? projectType : null,
+          filterWhere: [],
           fieldOrder: ["createdAt"],
           orderDir: "desc",
         };
@@ -890,7 +884,7 @@ const WorkspaceProject = () => {
   };
 
   return (
-    <LayoutAdmin>
+    <LayoutAdminWorkspace>
       <HeaderContent {...HeaderDataContent} />
 
       <Box p={6}>
@@ -1165,8 +1159,50 @@ const WorkspaceProject = () => {
                           //   getStatusColor(project.projectStatus) + ".500"
                           // }
                           onClick={() => handleProjectClick(project)}
+                          position="relative"
+                          overflow="hidden"
                         >
-                          <CardBody p={4}>
+                          {/* Static Wave Background */}
+                          <Box
+                            position="absolute"
+                            bottom={0}
+                            left={0}
+                            right={0}
+                            height="180px"
+                            pointerEvents="none"
+                          >
+                            <svg
+                              viewBox="0 0 1200 200"
+                              preserveAspectRatio="none"
+                              style={{ width: "100%", height: "100%" }}
+                            >
+                              {/* Diagonal wave layer 1 */}
+                              <path
+                                d="M0,100 C300,20 500,140 800,80 L1200,40 L1200,200 L0,200 Z"
+                                fill={
+                                  colorMode === "dark" ? "#0051ad" : "#f2f8ff"
+                                }
+                                opacity={0.3}
+                              />
+                              {/* Diagonal wave layer 2 */}
+                              <path
+                                d="M0,140 C400,80 600,160 900,100 L1200,70 L1200,200 L0,200 Z"
+                                fill={
+                                  colorMode === "dark" ? "#004593" : "#cae3ff"
+                                }
+                                opacity={0.4}
+                              />
+                              {/* Abstract curved shape */}
+                              <path
+                                d="M0,180 C200,120 600,180 1200,120 L1200,200 L0,200 Z"
+                                fill={
+                                  colorMode === "dark" ? "#00326b" : "#9acaff"
+                                }
+                                opacity={0.5}
+                              />
+                            </svg>
+                          </Box>
+                          <CardBody p={4} zIndex={2}>
                             <VStack align="start" spacing={3} w="full">
                               {/* Header: Project No + Status */}
                               <HStack justify="space-between" w="full">
@@ -1257,8 +1293,8 @@ const WorkspaceProject = () => {
                   {!projectsLoading && projects.length > 0 && (
                     <HStack justify="space-between" mt={6} flexWrap="wrap">
                       <Text fontSize="sm" color={textColor}>
-                        Showing {currentPage * 4 + 1} to{" "}
-                        {Math.min((currentPage + 1) * 4, totalProjectsCount)} of{" "}
+                        Showing {currentPage * 9 + 1} to{" "}
+                        {Math.min((currentPage + 1) * 9, totalProjectsCount)} of{" "}
                         {totalProjectsCount} projects
                       </Text>
                       <HStack spacing={2}>
@@ -1267,9 +1303,10 @@ const WorkspaceProject = () => {
                           variant="outline"
                           onClick={() => {
                             const newPage = currentPage - 1;
+                            setCurrentPage(newPage);
                             fetchProjects(
                               searchTerm,
-                              4,
+                              9,
                               newPage,
                               false,
                               selectedProjectType
@@ -1282,12 +1319,12 @@ const WorkspaceProject = () => {
                         </Button>
                         <HStack spacing={1}>
                           {Array.from(
-                            { length: Math.ceil(totalProjectsCount / 4) },
+                            { length: Math.ceil(totalProjectsCount / 9) },
                             (_, i) => i
                           )
                             .filter((page) => {
                               const totalPages = Math.ceil(
-                                totalProjectsCount / 4
+                                totalProjectsCount / 9
                               );
                               if (totalPages <= 5) return true;
                               if (page === 0 || page === totalPages - 1)
@@ -1314,9 +1351,10 @@ const WorkspaceProject = () => {
                                     }
                                     colorScheme="blue"
                                     onClick={() => {
+                                      setCurrentPage(page);
                                       fetchProjects(
                                         searchTerm,
-                                        4,
+                                        9,
                                         page,
                                         false,
                                         selectedProjectType
@@ -1336,16 +1374,17 @@ const WorkspaceProject = () => {
                           variant="outline"
                           onClick={() => {
                             const newPage = currentPage + 1;
+                            setCurrentPage(newPage);
                             fetchProjects(
                               searchTerm,
-                              4,
+                              9,
                               newPage,
                               false,
                               selectedProjectType
                             );
                           }}
                           isDisabled={
-                            currentPage >= Math.ceil(totalProjectsCount / 4) - 1
+                            currentPage >= Math.ceil(totalProjectsCount / 9) - 1
                           }
                           borderRadius="lg"
                         >
@@ -2211,7 +2250,7 @@ const WorkspaceProject = () => {
           </ModalFooter>
         </ModalContent>
       </Modal>
-    </LayoutAdmin>
+    </LayoutAdminWorkspace>
   );
 };
 
