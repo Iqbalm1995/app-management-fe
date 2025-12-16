@@ -178,11 +178,11 @@ function WorkflowPresetDetailView() {
 
         // Always check parent when a child/grandchild is checked
         if (parentItem) {
-          newSet.add(parentItem.id);
+          newSet.add((parentItem as WorkflowGroupResponse).id);
 
           // Always check grandparent when a grandchild is checked
           if (grandParentItem) {
-            newSet.add(grandParentItem.id);
+            newSet.add((grandParentItem as WorkflowGroupResponse).id);
           }
         }
       } else {
@@ -195,11 +195,11 @@ function WorkflowPresetDetailView() {
 
         // Check if parent should be unchecked (only if NO children remain selected)
         if (parentItem && !hasAnyChildSelected(parentItem, newSet)) {
-          newSet.delete(parentItem.id);
+          newSet.delete((parentItem as WorkflowGroupResponse).id);
 
           // Check if grandparent should be unchecked (only if NO children remain selected)
           if (grandParentItem && !hasAnyChildSelected(grandParentItem, newSet)) {
-            newSet.delete(grandParentItem.id);
+            newSet.delete((grandParentItem as WorkflowGroupResponse).id);
           }
         }
       }
