@@ -513,6 +513,16 @@ export default function BRDRFCView() {
                   : "-"}
               </Text>
             </Flex>
+            <Flex fontSize={"small"} as={Stack} spacing={0}>
+              <Text>Ditugaskan Pada :</Text>
+              <Text fontWeight={600}>
+                {info.row.original.assignedToDate
+                  ? stringToDateFormatedReverse(
+                    info.row.original.assignedToDate
+                  )
+                  : "-"}
+              </Text>
+            </Flex>
           </Flex>
         ),
         header: () => <span>Tanggal</span>,
@@ -534,6 +544,20 @@ export default function BRDRFCView() {
               value: "",
               filterType: "date",
               filterLabel: "Tgl. Akhir Memo Dibuat",
+            },
+            {
+              field: "assignedToDate",
+              operator: ">=",
+              value: "",
+              filterType: "date",
+              filterLabel: "Tgl. Awal Ditugaskan",
+            },
+            {
+              field: "assignedToDate",
+              operator: "<=",
+              value: "",
+              filterType: "date",
+              filterLabel: "Tgl. Akhir Ditugaskan",
             },
           ],
         } as ColumnMetaCustom,

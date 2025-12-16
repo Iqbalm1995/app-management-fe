@@ -35,6 +35,7 @@ import {
   VStack,
   useColorMode,
   Select as SelectC,
+  SimpleGrid,
 } from "@chakra-ui/react";
 import { flexRender } from "@tanstack/react-table";
 import {
@@ -718,11 +719,12 @@ const FilterColumnTable = ({
                         setFieldValue,
                       }) => (
                         <form onSubmit={handleSubmit}>
+                          <Flex gap={4} wrap="wrap" direction="column" maxH="350px">
                           {metaCustom.filterData?.map((ft, idx) => {
                             const inputKey = `${ft.field}_${ft.operator}`;
                             if (ft.filterType === "text") {
                               return (
-                                <FormControl key={idx}>
+                                <FormControl key={idx} flex="0 0 auto">
                                   <FormLabel>{ft.filterLabel} :</FormLabel>
                                   <Input
                                     id={inputKey}
@@ -737,7 +739,7 @@ const FilterColumnTable = ({
 
                             if (ft.filterType === "date") {
                               return (
-                                <FormControl key={idx}>
+                                <FormControl key={idx} flex="0 0 auto">
                                   <FormLabel>{ft.filterLabel} :</FormLabel>
                                   <Input
                                     id={inputKey}
@@ -752,7 +754,7 @@ const FilterColumnTable = ({
 
                             if (ft.filterType === "select") {
                               return (
-                                <FormControl key={idx}>
+                                <FormControl key={idx} flex="0 0 auto">
                                   <FormLabel>{ft.filterLabel} :</FormLabel>
                                   <Select
                                     id={inputKey}
@@ -779,6 +781,7 @@ const FilterColumnTable = ({
 
                             return null;
                           })}
+                          </Flex>
 
                           <Flex
                             as={HStack}
