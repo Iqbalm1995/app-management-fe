@@ -1152,7 +1152,7 @@ const NavItem = ({ data, mode, depth = 0 }: { data: LinkItemProps; mode: boolean
             role="group"
             cursor="pointer"
             boxShadow={IsActiveNav ? (isChild ? "sm" : "md") : hasActiveChild ? "sm" : "none"}
-            fontWeight={IsActiveNav ? "bold" : "normal"}
+            fontWeight={IsActiveNav ? "bold" : isChild ? "normal" : "semibold"}
             _hover={{
               color: "secondary.800",
               // bg: "secondary.500",
