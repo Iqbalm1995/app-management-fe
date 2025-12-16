@@ -1181,32 +1181,32 @@ function RegisterRequirementFormPage({
       ...data,
       backlogFeatures: (data.requirementType === "RFC" && data.backlogFeatures && data.backlogFeatures.length > 0)
         ? data.backlogFeatures.map((b: any) => ({
-            Id: b.id || null,
-            ParentBacklogId: b.parentBacklogId,
-            BacklogName: b.backlogName,
-            BacklogDesc: b.backlogDesc,
-            Note: b.note,
-            PosOrder: b.posOrder,
-            parentBacklogId: b.parentBacklogId,
-            backlogName: b.backlogName,
-            backlogDesc: b.backlogDesc,
-            note: b.note,
-            posOrder: b.posOrder
-          }))
+          Id: b.id || null,
+          ParentBacklogId: b.parentBacklogId,
+          BacklogName: b.backlogName,
+          BacklogDesc: b.backlogDesc,
+          Note: b.note,
+          PosOrder: b.posOrder,
+          parentBacklogId: b.parentBacklogId,
+          backlogName: b.backlogName,
+          backlogDesc: b.backlogDesc,
+          note: b.note,
+          posOrder: b.posOrder
+        }))
         : DataBackLogs.map(b => ({
-            Id: b.backlogId || null,
-            ParentBacklogId: b.parentBacklogId,
-            BacklogName: b.backlogName,
-            BacklogDesc: b.backlogDesc,
-            Note: b.note,
-            PosOrder: b.posOrder,
-            backlogId: b.backlogId || null,
-            parentBacklogId: b.parentBacklogId,
-            backlogName: b.backlogName,
-            backlogDesc: b.backlogDesc,
-            note: b.note,
-            posOrder: b.posOrder
-          })),
+          Id: b.backlogId || null,
+          ParentBacklogId: b.parentBacklogId,
+          BacklogName: b.backlogName,
+          BacklogDesc: b.backlogDesc,
+          Note: b.note,
+          PosOrder: b.posOrder,
+          backlogId: b.backlogId || null,
+          parentBacklogId: b.parentBacklogId,
+          backlogName: b.backlogName,
+          backlogDesc: b.backlogDesc,
+          note: b.note,
+          posOrder: b.posOrder
+        })),
       picAssignUsers: ChoosedMemberProjects.map(m => ({
         Id: m.id || null,
         UserId: m.userId,
@@ -2185,10 +2185,6 @@ function RegisterRequirementFormPage({
                                         );
                                         formik.setFieldValue("reqNumber", "-");
                                         formik.setFieldValue(
-                                          "reqNarative",
-                                          "-"
-                                        );
-                                        formik.setFieldValue(
                                           "reqInititateDate",
                                           null
                                         );
@@ -2221,6 +2217,36 @@ function RegisterRequirementFormPage({
                               </InputLayout>
                             </FormControl>
                           </Flex>
+
+                          {formik.values.isHaveMemo == "N" && (
+                            <FormControl
+                              id="reqNarative"
+                              isInvalid={
+                                formik.errors.reqNarative ? true : false
+                              }
+                              isRequired={formik.values.isHaveMemo == "N"}
+                            >
+                              <InputLayout>
+                                <FormLabel h={"full"} mt={2}>
+                                  Perihal Sementara
+                                </FormLabel>
+                                <Stack spacing={0} h={"full"}>
+                                  <Textarea
+                                    id="reqNarative"
+                                    name="reqNarative"
+                                    onChange={(e) => { e.target.value = e.target.value.toUpperCase(); formik.handleChange(e); }}
+                                    value={formik.values.reqNarative ?? ""}
+                                    placeholder={`Perihal Sementara`}
+                                    maxLength={300}
+                                    isDisabled={ActionLoading}
+                                  />
+                                  <FormErrorMessage>
+                                    {formik.errors.reqNarative}
+                                  </FormErrorMessage>
+                                </Stack>
+                              </InputLayout>
+                            </FormControl>
+                          )}
                         </InputGroupPanel>
                       </Flex>
                     )}
@@ -5262,7 +5288,7 @@ const Section4BRDView = ({
         localId: currentItem?.localId,
         backlogName: TextBackLogName.trim(),
         backlogDesc: TextBackLogDesc?.trim() || null,
-        posOrder: currentItem?.posOrder || 1, // Preserve existing posOrder
+        posOrder: currentItem?.posOrder || 1, // 1rve existing posOrder
       });
     }
 
@@ -5322,24 +5348,24 @@ const Section4BRDView = ({
   useEffect(() => {
     if (selectedApp && !ApplicationExistingChoosed) {
       setApplicationExistingChoosed(selectedApp);
-      
+
       // Update form fields with latest master application data
       formik.setFieldValue("appInitialCode", selectedApp.appShortName);
       formik.setFieldValue("appInitialName", selectedApp.appName);
       formik.setFieldValue("appTargetUsers", selectedApp.appTargetUsers);
-      
+
       if (selectedApp.appAccessFrontsiteDns) {
         setMediaAksesPublic(true);
       }
       formik.setFieldValue("appAccessFrontsiteDns", selectedApp.appAccessFrontsiteDns);
       formik.setFieldValue("appAccessFrontsiteIp", selectedApp.appAccessFrontsiteIp);
       formik.setFieldValue("appAccessBacksiteDns", selectedApp.appAccessBacksiteDns);
-      
+
       if (selectedApp.appAccessBacksiteIp) {
         setMediaAksesIntranet(true);
       }
       formik.setFieldValue("appAccessBacksiteIp", selectedApp.appAccessBacksiteIp);
-      
+
       if (selectedApp.appTypes) {
         setSelectedAppsTypes(selectedApp.appTypes);
       }
@@ -5348,14 +5374,14 @@ const Section4BRDView = ({
       formik.setFieldValue("appRelatednessDesc", selectedApp.appRelatednessDesc);
       formik.setFieldValue("appTransactionals", selectedApp.appTransactionals);
       formik.setFieldValue("appOperational24hrs", selectedApp.appOperational24hrs);
-      
+
       if (selectedApp.appOperationalDays) {
         setOperationalDays(selectedApp.appOperationalDays);
       }
       formik.setFieldValue("appOperationalDays", selectedApp.appOperationalDays);
       formik.setFieldValue("appOperationalHourOpen", selectedApp.appOperationalHourOpen);
       formik.setFieldValue("appOperationalHourClosed", selectedApp.appOperationalHourClosed);
-      
+
       if (selectedApp.appEnvLocations) {
         setSelectedAppsEnvLoc(selectedApp.appEnvLocations);
       }
@@ -6710,7 +6736,7 @@ const Section4RFCView = ({
     if (BacklogApps.length > 0 && BacklogChanges.length === 0) {
       const backlogChangesData: BacklogChangesData[] = [];
       const backlogMap = new Map<string, BacklogDataResponse>();
-      
+
       // Create map of all backlogs
       BacklogApps.forEach((b: BacklogDataResponse) => {
         backlogMap.set(b.id, b);
@@ -6727,7 +6753,7 @@ const Section4RFCView = ({
             let existingEntry = backlogChangesData.find(
               (entry) => entry.backlog.id === parentBacklog.id
             );
-            
+
             if (!existingEntry) {
               // Create new entry with parent in Kondisi Existing, child in Perubahan Sistem
               backlogChangesData.push({
@@ -6945,24 +6971,24 @@ const Section4RFCView = ({
   useEffect(() => {
     if (selectedApp && !ApplicationExistingChoosed) {
       setApplicationExistingChoosed(selectedApp);
-      
+
       // Update form fields with latest master application data
       formik.setFieldValue("appInitialCode", selectedApp.appShortName);
       formik.setFieldValue("appInitialName", selectedApp.appName);
       formik.setFieldValue("appTargetUsers", selectedApp.appTargetUsers);
-      
+
       if (selectedApp.appAccessFrontsiteDns) {
         setMediaAksesPublic(true);
       }
       formik.setFieldValue("appAccessFrontsiteDns", selectedApp.appAccessFrontsiteDns);
       formik.setFieldValue("appAccessFrontsiteIp", selectedApp.appAccessFrontsiteIp);
       formik.setFieldValue("appAccessBacksiteDns", selectedApp.appAccessBacksiteDns);
-      
+
       if (selectedApp.appAccessBacksiteIp) {
         setMediaAksesIntranet(true);
       }
       formik.setFieldValue("appAccessBacksiteIp", selectedApp.appAccessBacksiteIp);
-      
+
       if (selectedApp.appTypes) {
         setSelectedAppsTypes(selectedApp.appTypes);
       }
@@ -6971,14 +6997,14 @@ const Section4RFCView = ({
       formik.setFieldValue("appRelatednessDesc", selectedApp.appRelatednessDesc);
       formik.setFieldValue("appTransactionals", selectedApp.appTransactionals);
       formik.setFieldValue("appOperational24hrs", selectedApp.appOperational24hrs);
-      
+
       if (selectedApp.appOperationalDays) {
         setOperationalDays(selectedApp.appOperationalDays);
       }
       formik.setFieldValue("appOperationalDays", selectedApp.appOperationalDays);
       formik.setFieldValue("appOperationalHourOpen", selectedApp.appOperationalHourOpen);
       formik.setFieldValue("appOperationalHourClosed", selectedApp.appOperationalHourClosed);
-      
+
       if (selectedApp.appEnvLocations) {
         setSelectedAppsEnvLoc(selectedApp.appEnvLocations);
       }
@@ -7084,109 +7110,109 @@ const Section4RFCView = ({
       formik.setFieldValue("appHightAvailability", "Y");
       formik.setFieldValue("appIntegrationOthersApps", "");
     }
-      // if (data.requirementData == null) {
-      //   setApplicationExistingChoosed(null);
-      //   setBacklogAppsOption([]);
-      //   setBacklogChanges([]);
-      //   setSelectedAppsTypes("");
-      //   setOperationalDays("");
-      //   setSelectedAppsEnvLoc("");
-      //   setMediaAksesPublic(false);
-      //   setMediaAksesIntranet(false);
-      //   formik.setFieldValue("appInitialCode", null);
-      //   formik.setFieldValue("appInitialName", null);
-      //   showToast({
-      //     description: "Aplikasi belum mempunyai BRD",
-      //     statusToast: "warning",
-      //   });
-      //   return;
-      // }
+    // if (data.requirementData == null) {
+    //   setApplicationExistingChoosed(null);
+    //   setBacklogAppsOption([]);
+    //   setBacklogChanges([]);
+    //   setSelectedAppsTypes("");
+    //   setOperationalDays("");
+    //   setSelectedAppsEnvLoc("");
+    //   setMediaAksesPublic(false);
+    //   setMediaAksesIntranet(false);
+    //   formik.setFieldValue("appInitialCode", null);
+    //   formik.setFieldValue("appInitialName", null);
+    //   showToast({
+    //     description: "Aplikasi belum mempunyai BRD",
+    //     statusToast: "warning",
+    //   });
+    //   return;
+    // }
 
-      // if (data.countProjectAll == 0 || data.countProjectOnGoing > 0) {
-      //   setApplicationExistingChoosed(null);
-      //   setBacklogAppsOption([]);
-      //   setBacklogChanges([]);
-      //   setSelectedAppsTypes("");
-      //   setOperationalDays("");
-      //   setSelectedAppsEnvLoc("");
-      //   setMediaAksesPublic(false);
-      //   setMediaAksesIntranet(false);
-      //   formik.setFieldValue("appInitialCode", null);
-      //   formik.setFieldValue("appInitialName", null);
-      //   showToast({
-      //     description: `Aplikasi masih memiliki ${data.countProjectOnGoing} project berjalan`,
-      //     statusToast: "warning",
-      //   });
-      //   return;
-      // }
+    // if (data.countProjectAll == 0 || data.countProjectOnGoing > 0) {
+    //   setApplicationExistingChoosed(null);
+    //   setBacklogAppsOption([]);
+    //   setBacklogChanges([]);
+    //   setSelectedAppsTypes("");
+    //   setOperationalDays("");
+    //   setSelectedAppsEnvLoc("");
+    //   setMediaAksesPublic(false);
+    //   setMediaAksesIntranet(false);
+    //   formik.setFieldValue("appInitialCode", null);
+    //   formik.setFieldValue("appInitialName", null);
+    //   showToast({
+    //     description: `Aplikasi masih memiliki ${data.countProjectOnGoing} project berjalan`,
+    //     statusToast: "warning",
+    //   });
+    //   return;
+    // }
 
-      setApplicationExistingChoosed(data);
-      formik.setFieldValue("appInitialCode", data.appShortName);
-      formik.setFieldValue("appInitialName", data.appName);
+    setApplicationExistingChoosed(data);
+    formik.setFieldValue("appInitialCode", data.appShortName);
+    formik.setFieldValue("appInitialName", data.appName);
 
-      formik.setFieldValue("appTargetUsers", data.appTargetUsers);
-      if (data.appAccessFrontsiteDns) {
-        setMediaAksesPublic(true);
-      }
-      formik.setFieldValue("appAccessFrontsiteDns", data.appAccessFrontsiteDns);
-      formik.setFieldValue("appAccessFrontsiteIp", data.appAccessFrontsiteIp);
-      formik.setFieldValue("appAccessBacksiteDns", data.appAccessBacksiteDns);
-      if (data.appAccessBacksiteIp) {
-        setMediaAksesIntranet(true);
-      }
-      formik.setFieldValue("appAccessBacksiteIp", data.appAccessBacksiteIp);
+    formik.setFieldValue("appTargetUsers", data.appTargetUsers);
+    if (data.appAccessFrontsiteDns) {
+      setMediaAksesPublic(true);
+    }
+    formik.setFieldValue("appAccessFrontsiteDns", data.appAccessFrontsiteDns);
+    formik.setFieldValue("appAccessFrontsiteIp", data.appAccessFrontsiteIp);
+    formik.setFieldValue("appAccessBacksiteDns", data.appAccessBacksiteDns);
+    if (data.appAccessBacksiteIp) {
+      setMediaAksesIntranet(true);
+    }
+    formik.setFieldValue("appAccessBacksiteIp", data.appAccessBacksiteIp);
 
-      formik.setFieldValue("backlogChange", null);
-      formik.setFieldValue("appAccessMedia", data.appAccessMedia);
-      formik.setFieldValue("appTypes", data.appTypes);
-      formik.setFieldValue("appTypeCustom", data.appTypeCustom);
-      formik.setFieldValue("appRelatedness", data.appRelatedness);
-      formik.setFieldValue("appRelatednessDesc", data.appRelatednessDesc);
-      formik.setFieldValue("appTransactionals", data.appTransactionals);
-      formik.setFieldValue("appOperational24hrs", data.appOperational24hrs);
-      formik.setFieldValue("appOperationalDays", data.appOperationalDays);
-      formik.setFieldValue(
-        "appOperationalHourOpen",
-        data.appOperationalHourOpen
-      );
-      formik.setFieldValue(
-        "appOperationalHourClosed",
-        data.appOperationalHourClosed
-      );
-      formik.setFieldValue("appLiveTargetDate", null);
+    formik.setFieldValue("backlogChange", null);
+    formik.setFieldValue("appAccessMedia", data.appAccessMedia);
+    formik.setFieldValue("appTypes", data.appTypes);
+    formik.setFieldValue("appTypeCustom", data.appTypeCustom);
+    formik.setFieldValue("appRelatedness", data.appRelatedness);
+    formik.setFieldValue("appRelatednessDesc", data.appRelatednessDesc);
+    formik.setFieldValue("appTransactionals", data.appTransactionals);
+    formik.setFieldValue("appOperational24hrs", data.appOperational24hrs);
+    formik.setFieldValue("appOperationalDays", data.appOperationalDays);
+    formik.setFieldValue(
+      "appOperationalHourOpen",
+      data.appOperationalHourOpen
+    );
+    formik.setFieldValue(
+      "appOperationalHourClosed",
+      data.appOperationalHourClosed
+    );
+    formik.setFieldValue("appLiveTargetDate", null);
 
-      formik.setFieldValue("appEnvLocations", data.appEnvLocations);
-      formik.setFieldValue("appEnvLocationsOthers", data.appEnvLocationsOthers);
-      formik.setFieldValue("appPrivateAuth", data.appPrivateAuth);
-      formik.setFieldValue("appHightAvailability", data.appHightAvailability);
-      formik.setFieldValue(
-        "appIntegrationOthersApps",
-        data.appIntegrationOthersApps
-      );
+    formik.setFieldValue("appEnvLocations", data.appEnvLocations);
+    formik.setFieldValue("appEnvLocationsOthers", data.appEnvLocationsOthers);
+    formik.setFieldValue("appPrivateAuth", data.appPrivateAuth);
+    formik.setFieldValue("appHightAvailability", data.appHightAvailability);
+    formik.setFieldValue(
+      "appIntegrationOthersApps",
+      data.appIntegrationOthersApps
+    );
 
-      setSelectedAppsTypes(data.appTypes || "");
-      setOperationalDays(data.appOperationalDays || "");
-      setSelectedAppsEnvLoc(data.appEnvLocations || "");
+    setSelectedAppsTypes(data.appTypes || "");
+    setOperationalDays(data.appOperationalDays || "");
+    setSelectedAppsEnvLoc(data.appEnvLocations || "");
 
-      const WhereParams: ListSearchByParam[] = [
-        {
-          field: "appsId",
-          operator: "=",
-          value: data.id,
-        },
-        //         {
-        //           field: "isLive",
-        //           operator: "=",
-        //           value: "Y",
-        //         },
-        //         {
-        //           field: "developmentStatus",
-        //           operator: "=",
-        //           value: "DONE",
-        //         },
-      ];
+    const WhereParams: ListSearchByParam[] = [
+      {
+        field: "appsId",
+        operator: "=",
+        value: data.id,
+      },
+      //         {
+      //           field: "isLive",
+      //           operator: "=",
+      //           value: "Y",
+      //         },
+      //         {
+      //           field: "developmentStatus",
+      //           operator: "=",
+      //           value: "DONE",
+      //         },
+    ];
 
-      await GetListBacklog("", MAX_SIZE_TABLE, WhereParams);
+    await GetListBacklog("", MAX_SIZE_TABLE, WhereParams);
   };
 
   const handleBacklogChange = (
