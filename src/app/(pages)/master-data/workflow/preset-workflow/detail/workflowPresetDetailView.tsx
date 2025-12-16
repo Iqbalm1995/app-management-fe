@@ -97,19 +97,116 @@ function WorkflowPresetDetailView() {
     }
   }, [searchParams]);
 
-  // Checkbox handler
-  const handleCheckboxChange = (itemId: string, checked: boolean) => {
-    setSelectedItems((prev) => {
-      const newSet = new Set(prev);
-      if (checked) {
-        newSet.add(itemId);
-      } else {
-        newSet.delete(itemId);
-      }
-      return newSet;
+  // Get all descendant IDs (children and grandchildren)
+  const getAllDescendantIds = (workflow: WorkflowGroupResponse): string[] => {
+    const ids: string[] = [];
+    if (workflow.workflowChild && workflow.workflowChild.length > 0) {
+      workflow.workflowChild.forEach((child) => {
+        ids.push(child.id);
+        if (child.workflowChild && child.workflowChild.length > 0) {
+          child.workflowChild.forEach((grandChild) => {
+            ids.push(grandChild.id);
+          });
+        }
+      });
+    }
+    return ids;
+  };
+
+  // Check if all children are selected
+  const areAllChildrenSelected = (workflow: WorkflowGroupResponse, selectedSet: Set<string>): boolean => {
+    if (!workflow.workflowChild || workflow.workflowChild.length === 0) return true;
+    return workflow.workflowChild.every((child) => {
+      const childSelected = selectedSet.has(child.id);
+      const grandChildrenSelected = !child.workflowChild || child.workflowChild.length === 0 ||
+        child.workflowChild.every((gc) => selectedSet.has(gc.id));
+      return childSelected && grandChildrenSelected;
     });
   };
 
+
+  // Check if any children are selected
+  const hasAnyChildSelected = (workflow: WorkflowGroupResponse, selectedSet: Set<string>): boolean => {
+    if (!workflow.workflowChild || workflow.workflowChild.length === 0) return false;
+    return workflow.workflowChild.some((child) => {
+      const childSelected = selectedSet.has(child.id);
+      const hasGrandChildSelected = child.workflowChild && child.workflowChild.length > 0 &&
+        child.workflowChild.some((gc) => selectedSet.has(gc.id));
+      return childSelected || hasGrandChildSelected;
+    });
+  };
+  // Checkbox handler with parent-child relationship
+  const handleCheckboxChange = (itemId: string, checked: boolean) => {
+    setSelectedItems((prev) => {
+      const newSet = new Set(prev);
+
+      // Find the item in the workflow tree
+      let targetItem: WorkflowGroupResponse | null = null;
+      let parentItem: WorkflowGroupResponse | null = null;
+      let grandParentItem: WorkflowGroupResponse | null = null;
+
+      DataWorkflowGroups?.forEach((group) => {
+        if (group.id === itemId) {
+          targetItem = group;
+        } else if (group.workflowChild) {
+          group.workflowChild.forEach((child) => {
+            if (child.id === itemId) {
+              targetItem = child;
+              parentItem = group;
+            } else if (child.workflowChild) {
+              child.workflowChild.forEach((grandChild) => {
+                if (grandChild.id === itemId) {
+                  targetItem = grandChild;
+                  parentItem = child;
+                  grandParentItem = group;
+                }
+              });
+            }
+          });
+        }
+      });
+
+      if (!targetItem) return newSet;
+
+      if (checked) {
+        // Add the item
+        newSet.add(itemId);
+
+        // Add all descendants
+        const descendantIds = getAllDescendantIds(targetItem);
+        descendantIds.forEach((id) => newSet.add(id));
+
+        // Always check parent when a child/grandchild is checked
+        if (parentItem) {
+          newSet.add(parentItem.id);
+
+          // Always check grandparent when a grandchild is checked
+          if (grandParentItem) {
+            newSet.add(grandParentItem.id);
+          }
+        }
+      } else {
+        // Remove the item
+        newSet.delete(itemId);
+
+        // Remove all descendants
+        const descendantIds = getAllDescendantIds(targetItem);
+        descendantIds.forEach((id) => newSet.delete(id));
+
+        // Check if parent should be unchecked (only if NO children remain selected)
+        if (parentItem && !hasAnyChildSelected(parentItem, newSet)) {
+          newSet.delete(parentItem.id);
+
+          // Check if grandparent should be unchecked (only if NO children remain selected)
+          if (grandParentItem && !hasAnyChildSelected(grandParentItem, newSet)) {
+            newSet.delete(grandParentItem.id);
+          }
+        }
+      }
+
+      return newSet;
+    });
+  };
   // Get all workflow IDs from tree (recursive)
   const getAllWorkflowIds = (workflows: WorkflowGroupResponse[]): string[] => {
     const ids: string[] = [];
@@ -280,7 +377,7 @@ function WorkflowPresetDetailView() {
                   {DataPreset?.wfPresetName} Configuration
                 </Heading>
                 <HStack spacing={4}>
-                  <Badge colorScheme="blue">{DataPreset?.wfCategoryCode}</Badge>
+                  {/* <Badge colorScheme="blue">{DataPreset?.wfCategoryCode}</Badge> */}
                   <Text fontSize="sm" color="gray.500">
                     {DataPreset?.wfPresetDesc}
                   </Text>

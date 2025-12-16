@@ -720,7 +720,7 @@ export default function BRDRFCView() {
         accessorFn: (row) => row.id,
         id: "actions",
         cell: (info) => {
-          const canEdit = info.row.original.reqStatus && REQ_STATUS_CAN_EDIT.includes(info.row.original.reqStatus);
+          const canEdit = (info.row.original.reqStatus && REQ_STATUS_CAN_EDIT.includes(info.row.original.reqStatus)) || info.row.original.isHaveMemo === "N";
           return (
             <Flex w={"full"} justifyContent={"center"}>
               <VStack spacing={1} w="full">
