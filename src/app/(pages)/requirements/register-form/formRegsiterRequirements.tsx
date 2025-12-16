@@ -1499,15 +1499,15 @@ function RegisterRequirementFormPage({
     if (user) {
       formik.setFieldValue("userPicId", user.userId);
       formik.setFieldValue("userPicName", user.nama);
-      formik.setFieldValue("userPicIdentityNumber", user.nip);
-      formik.setFieldValue("userPicEmail", user.email);
+      // formik.setFieldValue("userPicIdentityNumber", user.nip);
+      // formik.setFieldValue("userPicEmail", user.email);
       //userPicIdentityNumber
       handleSearchUser(user.userId, "searchPICUser");
     } else {
       formik.setFieldValue("userPicId", null);
       formik.setFieldValue("userPicName", null);
-      formik.setFieldValue("userPicIdentityNumber", null);
-      formik.setFieldValue("userPicEmail", null);
+      // formik.setFieldValue("userPicIdentityNumber", null);
+      // formik.setFieldValue("userPicEmail", null);
       handleSearchUser("", "searchPICUser");
     }
   };
@@ -2485,7 +2485,16 @@ function RegisterRequirementFormPage({
                                     id="reqInititateDate"
                                     name="reqInititateDate"
                                     type="date"
+                                    max="9999-12-31"
+                                    pattern="\d{4}-\d{2}-\d{2}"
                                     onChange={formik.handleChange}
+                                    onInput={(e: React.FormEvent<HTMLInputElement>) => {
+                                      const input = e.currentTarget;
+                                      const value = input.value;
+                                      if (value && value.length > 10) {
+                                        input.value = value.slice(0, 10);
+                                      }
+                                    }}
                                     value={formik.values.reqInititateDate ?? ""}
                                     isDisabled={
                                       ActionLoading ||
@@ -2515,7 +2524,16 @@ function RegisterRequirementFormPage({
                                     id="reqAcceptedDate"
                                     name="reqAcceptedDate"
                                     type="date"
+                                    max="9999-12-31"
+                                    pattern="\d{4}-\d{2}-\d{2}"
                                     onChange={formik.handleChange}
+                                    onInput={(e: React.FormEvent<HTMLInputElement>) => {
+                                      const input = e.currentTarget;
+                                      const value = input.value;
+                                      if (value && value.length > 10) {
+                                        input.value = value.slice(0, 10);
+                                      }
+                                    }}
                                     value={formik.values.reqAcceptedDate ?? ""}
                                     isDisabled={
                                       ActionLoading ||
@@ -2645,7 +2663,16 @@ function RegisterRequirementFormPage({
                                   id="assignedToDate"
                                   name="assignedToDate"
                                   type="date"
+                                  max="9999-12-31"
+                                  pattern="\d{4}-\d{2}-\d{2}"
                                   onChange={formik.handleChange}
+                                  onInput={(e: React.FormEvent<HTMLInputElement>) => {
+                                    const input = e.currentTarget;
+                                    const value = input.value;
+                                    if (value && value.length > 10) {
+                                      input.value = value.slice(0, 10);
+                                    }
+                                  }}
                                   value={formik.values.assignedToDate ?? ""}
                                   isDisabled={ActionLoading}
                                 />
@@ -5124,6 +5151,14 @@ const Section4BRDView = ({
   const [TextBackLogId, setTextBackLogId] = useState<string | null>(null);
   const [TextBackLogName, setTextBackLogName] = useState<string>("");
   const [TextBackLogDesc, setTextBackLogDesc] = useState<string>("");
+  const backlogNameInputRef = useRef<HTMLInputElement>(null);
+  const cursorPosRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (backlogNameInputRef.current && cursorPosRef.current !== null) {
+      backlogNameInputRef.current.setSelectionRange(cursorPosRef.current, cursorPosRef.current);
+    }
+  }, [TextBackLogName]);
 
   const handleOpenForm = () => {
     ModalForm.onOpen();
@@ -5616,11 +5651,14 @@ const Section4BRDView = ({
               <FormControl>
                 <FormLabel>Nama Scope of Work</FormLabel>
                 <Input
+                  ref={backlogNameInputRef}
                   id="backlogFeatureName"
                   name="backlogFeatureName"
                   type="text"
                   onChange={(e) => {
-                    const upper = e.target.value.toUpperCase();
+                    const input = e.target as HTMLInputElement;
+                    cursorPosRef.current = input.selectionStart;
+                    const upper = input.value.toUpperCase();
                     setTextBackLogName(upper);
                   }}
                   value={TextBackLogName}

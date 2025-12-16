@@ -659,14 +659,14 @@ export const LinkItems: LinkItemProps[] = [
         menuID: "1",
         children: [],
       },
-      // {
-      //   name: "Master Workflow",
-      //   icon: PiFlowArrow,
-      //   link: "/master-data/workflow",
-      //   role: ["admin"],
-      //   menuID: "1",
-      //   children: [],
-      // },
+      {
+        name: "Master Workflow",
+        icon: PiFlowArrow,
+        link: "/master-data/workflow",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
       {
         name: "Master Users",
         icon: FiUsers,
