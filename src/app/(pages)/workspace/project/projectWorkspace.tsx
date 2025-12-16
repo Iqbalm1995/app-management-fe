@@ -438,7 +438,10 @@ const TaskCard: React.FC<TaskCardProps> = ({
       teamRole: null,
     };
 
-    setChoosedMemberProjects([...ChoosedMemberProjects, currentUserAsUsersResponse]);
+    setChoosedMemberProjects([
+      ...ChoosedMemberProjects,
+      currentUserAsUsersResponse,
+    ]);
   };
 
   // Handle saving assigned users
@@ -685,7 +688,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
   // Related tasks state
   const [relatedTasks, setRelatedTasks] = useState<TaskViewModel[]>([]);
-  const [searchTasksResults, setSearchTasksResults] = useState<TaskViewModel[]>([]);
+  const [searchTasksResults, setSearchTasksResults] = useState<TaskViewModel[]>(
+    []
+  );
   const [searchTaskTerm, setSearchTaskTerm] = useState("");
   const [isLoadingRelatedTasks, setIsLoadingRelatedTasks] = useState(false);
   const {
@@ -703,7 +708,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
   const fetchRelatedTasks = async (taskId: string) => {
     const token = getToken();
     if (!token) return;
-    
+
     setIsLoadingRelatedTasks(true);
     try {
       const response = await ListRelatedTasks(taskId, token);
@@ -2009,55 +2014,64 @@ const TaskCard: React.FC<TaskCardProps> = ({
                     )}
 
                     {/* Alert for overdue or approaching deadline */}
-                    {detailedTask.endDate && detailedTask.boardName !== TASK_BOARD_STATUS_NAME_DONE && (() => {
-                      const now = new Date();
-                      now.setHours(0, 0, 0, 0);
-                      const endDate = new Date(detailedTask.endDate);
-                      endDate.setHours(0, 0, 0, 0);
-                      const diffTime = endDate.getTime() - now.getTime();
-                      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                    {detailedTask.endDate &&
+                      detailedTask.boardName !== TASK_BOARD_STATUS_NAME_DONE &&
+                      (() => {
+                        const now = new Date();
+                        now.setHours(0, 0, 0, 0);
+                        const endDate = new Date(detailedTask.endDate);
+                        endDate.setHours(0, 0, 0, 0);
+                        const diffTime = endDate.getTime() - now.getTime();
+                        const diffDays = Math.floor(
+                          diffTime / (1000 * 60 * 60 * 24)
+                        );
 
-                      if (diffDays < 0) {
-                        return (
-                          <Alert
-                            status="error"
-                            variant="left-accent"
-                            rounded={radiusStyle}
-                          >
-                            <AlertIcon />
-                            <AlertDescription>
-                              Task sudah melewati deadline {Math.abs(diffDays)} hari yang lalu!
-                            </AlertDescription>
-                          </Alert>
-                        );
-                      } else if (diffDays <= 3) {
-                        return (
-                          <Alert
-                            status="warning"
-                            variant="left-accent"
-                            rounded={radiusStyle}
-                          >
-                            <AlertIcon />
-                            <AlertDescription>
-                              Task akan jatuh tempo dalam {diffDays} hari!
-                            </AlertDescription>
-                          </Alert>
-                        );
-                      } else {
-                        return (
-                          <Alert
-                            status="info"
-                            variant="left-accent"
-                            rounded={radiusStyle}
-                          >
-                            <AlertIcon />
-                            <AlertDescription>
-                              Task memiliki deadline pada {new Date(detailedTask.endDate).toLocaleDateString()}.
-                            </AlertDescription>
-                          </Alert>
-                        );
-                      }
-                    })()}
+                        if (diffDays < 0) {
+                          return (
+                            <Alert
+                              status="error"
+                              variant="left-accent"
+                              rounded={radiusStyle}
+                            >
+                              <AlertIcon />
+                              <AlertDescription>
+                                Task sudah melewati deadline{" "}
+                                {Math.abs(diffDays)} hari yang lalu!
+                              </AlertDescription>
+                            </Alert>
+                          );
+                        } else if (diffDays <= 3) {
+                          return (
+                            <Alert
+                              status="warning"
+                              variant="left-accent"
+                              rounded={radiusStyle}
+                            >
+                              <AlertIcon />
+                              <AlertDescription>
+                                Task akan jatuh tempo dalam {diffDays} hari!
+                              </AlertDescription>
+                            </Alert>
+                          );
+                        } else {
+                          return (
+                            <Alert
+                              status="info"
+                              variant="left-accent"
+                              rounded={radiusStyle}
+                            >
+                              <AlertIcon />
+                              <AlertDescription>
+                                Task memiliki deadline pada{" "}
+                                {new Date(
+                                  detailedTask.endDate
+                                ).toLocaleDateString()}
+                                .
+                              </AlertDescription>
+                            </Alert>
+                          );
+                        }
+                      })()}
 
                     <Flex
                       w="full"
@@ -2823,8 +2837,17 @@ const TaskCard: React.FC<TaskCardProps> = ({
                               rounded={radiusStyle}
                               w={"full"}
                             >
-                              <HStack justify="space-between" align="start" spacing={2}>
-                                <VStack align="start" spacing={1} flex={1} minW={0}>
+                              <HStack
+                                justify="space-between"
+                                align="start"
+                                spacing={2}
+                              >
+                                <VStack
+                                  align="start"
+                                  spacing={1}
+                                  flex={1}
+                                  minW={0}
+                                >
                                   <HStack spacing={2}>
                                     <Badge
                                       size="sm"
@@ -3706,7 +3729,10 @@ interface ProjectWorkspaceViewProps {
   backUrl?: string;
 }
 
-function ProjectWorkspaceView({ isLocked = false, backUrl = "/workspace" }: ProjectWorkspaceViewProps) {
+function ProjectWorkspaceView({
+  isLocked = false,
+  backUrl = "/workspace",
+}: ProjectWorkspaceViewProps) {
   const showToast = useToastHelper();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -3743,7 +3769,7 @@ function ProjectWorkspaceView({ isLocked = false, backUrl = "/workspace" }: Proj
   useEffect(() => {
     const projId = searchParams.get("projectId");
     const backlogId = searchParams.get("backlogId");
-    
+
     if (projId) {
       setProjectId(projId);
     }
@@ -3764,8 +3790,14 @@ function ProjectWorkspaceView({ isLocked = false, backUrl = "/workspace" }: Proj
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   // Loading steps for initialization
-  type LoadingStep = 'init' | 'project' | 'boards' | 'backlogs' | 'tasks' | 'ready';
-  const [loadingStep, setLoadingStep] = useState<LoadingStep>('init');
+  type LoadingStep =
+    | "init"
+    | "project"
+    | "boards"
+    | "backlogs"
+    | "tasks"
+    | "ready";
+  const [loadingStep, setLoadingStep] = useState<LoadingStep>("init");
   const [isInitializing, setIsInitializing] = useState(true);
 
   // Track recently moved task for visual feedback
@@ -3839,15 +3871,15 @@ function ProjectWorkspaceView({ isLocked = false, backUrl = "/workspace" }: Proj
   // Handle backlog filter change and update URL
   const handleBacklogFilterChange = (backlogId: string) => {
     setFilterBacklog(backlogId);
-    
+
     if (projectId) {
       const params = new URLSearchParams();
       params.set("projectId", projectId);
-      
+
       if (backlogId) {
         params.set("backlogId", backlogId);
       }
-      
+
       router.push(`?${params.toString()}`);
     }
   };
@@ -3904,18 +3936,18 @@ function ProjectWorkspaceView({ isLocked = false, backUrl = "/workspace" }: Proj
 
     try {
       setIsInitializing(true);
-      setLoadingStep('init');
+      setLoadingStep("init");
       await delay(300);
 
       // Step 1: Load project details
-      setLoadingStep('project');
+      setLoadingStep("project");
       const projectResponse = await GetProjectDetail(projectId, tokenData);
-      
+
       if (projectResponse?.statusCode === 404) {
-        router.push('/not-found');
+        router.push("/not-found");
         return;
       }
-      
+
       if (projectResponse?.statusCode === RES_CODE_OK) {
         setDataProject(projectResponse.data as ProjectDataResponse);
       } else {
@@ -3925,7 +3957,7 @@ function ProjectWorkspaceView({ isLocked = false, backUrl = "/workspace" }: Proj
       await delay(200);
 
       // Step 2: Load board configuration
-      setLoadingStep('boards');
+      setLoadingStep("boards");
       const boardPayload: PaggingListPayloadCustom = {
         search: "",
         limit: 100,
@@ -3934,34 +3966,40 @@ function ProjectWorkspaceView({ isLocked = false, backUrl = "/workspace" }: Proj
         fieldOrder: ["indexStage"],
         orderDir: "asc",
       };
-      
+
       const boardResponse = await GetMasterBoardTasks(boardPayload, tokenData);
-      
+
       if (boardResponse?.statusCode === RES_CODE_OK) {
         setDataBoard(boardResponse.data as MasterBoardTaskResponse[]);
       } else {
-        throw new Error(boardResponse?.message || "Failed to load board configuration");
+        throw new Error(
+          boardResponse?.message || "Failed to load board configuration"
+        );
       }
 
       await delay(200);
 
       // Step 3: Load backlogs
-      setLoadingStep('backlogs');
+      setLoadingStep("backlogs");
       if (projectResponse.data?.reqParentId) {
         const backlogPayload: PaggingListPayload = {
           search: "",
           limit: 100,
           page: 0,
           filterWhere: [
-            { field: "reqId", operator: "=", value: projectResponse.data.reqParentId },
+            {
+              field: "reqId",
+              operator: "=",
+              value: projectResponse.data.reqParentId,
+            },
             { field: "isDisplay", operator: "=", value: "Y" },
           ],
           fieldOrder: [],
           orderDir: "asc",
         };
-        
+
         const backlogResponse = await ListBacklog(backlogPayload, tokenData);
-        
+
         if (backlogResponse?.statusCode === RES_CODE_OK) {
           setDataBacklogs(backlogResponse.data as BacklogDataResponse[]);
         }
@@ -3970,7 +4008,7 @@ function ProjectWorkspaceView({ isLocked = false, backUrl = "/workspace" }: Proj
       await delay(200);
 
       // Step 4: Load tasks
-      setLoadingStep('tasks');
+      setLoadingStep("tasks");
       const taskPayload: PaggingListPayloadCustom = {
         search: "",
         limit: 1000,
@@ -3982,9 +4020,9 @@ function ProjectWorkspaceView({ isLocked = false, backUrl = "/workspace" }: Proj
         fieldOrder: ["indexTask"],
         orderDir: "asc",
       };
-      
+
       const taskResponse = await ListTasksPaged(taskPayload, tokenData);
-      
+
       if (taskResponse?.statusCode === RES_CODE_OK) {
         setDataTasks(taskResponse.data as TaskViewModel[]);
         setLastUpdated(new Date());
@@ -3995,13 +4033,13 @@ function ProjectWorkspaceView({ isLocked = false, backUrl = "/workspace" }: Proj
       await delay(300);
 
       // Step 5: Ready
-      setLoadingStep('ready');
+      setLoadingStep("ready");
       await delay(500);
-      
     } catch (error: any) {
       console.error("Error initializing kanban:", error);
       showToast({
-        description: error.message || "An error occurred while loading workspace",
+        description:
+          error.message || "An error occurred while loading workspace",
         statusToast: "error",
       });
     } finally {
@@ -4011,7 +4049,13 @@ function ProjectWorkspaceView({ isLocked = false, backUrl = "/workspace" }: Proj
 
   // Initialize on mount
   useEffect(() => {
-    if (DataAuth && projectId && tokenData && isInitializing && loadingStep === 'init') {
+    if (
+      DataAuth &&
+      projectId &&
+      tokenData &&
+      isInitializing &&
+      loadingStep === "init"
+    ) {
       initializeKanban();
     }
   }, [DataAuth, projectId, tokenData]);
@@ -4061,14 +4105,20 @@ function ProjectWorkspaceView({ isLocked = false, backUrl = "/workspace" }: Proj
       if (backlogExists) {
         setFilterBacklog(backlogIdFromUrl);
       } else {
-        router.push('/not-found');
+        router.push("/not-found");
       }
     }
   }, [DataBacklogs, projectId, backlogIdFromUrl, router]);
 
   // Refresh Project Tasks (triggered by RefreshData changes after initialization)
   useEffect(() => {
-    if (DataAuth && projectId && tokenData && !isInitializing && RefreshData > 0) {
+    if (
+      DataAuth &&
+      projectId &&
+      tokenData &&
+      !isInitializing &&
+      RefreshData > 0
+    ) {
       const fetchProjectTasks = async () => {
         try {
           setIsLoadingProcess(true);
@@ -4613,16 +4663,16 @@ function ProjectWorkspaceView({ isLocked = false, backUrl = "/workspace" }: Proj
   // Get project statistics
   const getProjectStats = () => {
     const totalTasks = DataTasks.length;
-    
+
     // Count by actual board names (with spaces and uppercase)
     const completedTasks = DataTasks.filter(
       (task) => task.boardName?.toUpperCase() === "DONE"
     ).length;
-    
+
     const inProgressTasks = DataTasks.filter(
       (task) => task.boardName?.toUpperCase() === "IN PROGRESS"
     ).length;
-    
+
     const todoTasks = DataTasks.filter(
       (task) => task.boardName?.toUpperCase() === "TO DO"
     ).length;
@@ -4670,29 +4720,118 @@ function ProjectWorkspaceView({ isLocked = false, backUrl = "/workspace" }: Proj
           display="flex"
           alignItems="center"
           justifyContent="center"
-          animation="fadeIn 0.3s ease-in"
+          overflow="hidden"
           sx={{
-            '@keyframes fadeIn': {
+            "@keyframes fadeIn": {
               from: { opacity: 0 },
               to: { opacity: 1 },
             },
+            "@keyframes wave1": {
+              "0%": { transform: "translateX(0) translateZ(0) scaleY(1)" },
+              "50%": {
+                transform: "translateX(-25%) translateZ(0) scaleY(0.55)",
+              },
+              "100%": { transform: "translateX(-50%) translateZ(0) scaleY(1)" },
+            },
+            "@keyframes wave2": {
+              "0%": { transform: "translateX(0) translateZ(0) scaleY(1)" },
+              "50%": {
+                transform: "translateX(-15%) translateZ(0) scaleY(0.65)",
+              },
+              "100%": { transform: "translateX(-30%) translateZ(0) scaleY(1)" },
+            },
+            animation: "fadeIn 0.3s ease-in",
           }}
         >
-          <VStack 
-            spacing={8} 
-            maxW="400px" 
-            w="full" 
+          {/* Wave Background - Layer 1 */}
+          <Box
+            position="absolute"
+            bottom={0}
+            left={0}
+            width="200%"
+            height="250px"
+            sx={{
+              animation:
+                "wave1 10s cubic-bezier(0.36, 0.45, 0.63, 0.53) infinite",
+            }}
+          >
+            <svg
+              viewBox="0 0 1200 120"
+              preserveAspectRatio="none"
+              style={{ width: "100%", height: "100%" }}
+            >
+              <path
+                d="M0,0 C150,100 350,0 600,50 C850,100 1050,0 1200,50 L1200,120 L0,120 Z"
+                fill={colorMode === "light" ? "#004593" : "#0065d7"}
+              />
+            </svg>
+          </Box>
+
+          {/* Wave Background - Layer 2 */}
+          <Box
+            position="absolute"
+            bottom={0}
+            left={0}
+            width="200%"
+            height="220px"
+            sx={{
+              animation:
+                "wave2 7s cubic-bezier(0.36, 0.45, 0.63, 0.53) infinite",
+            }}
+          >
+            <svg
+              viewBox="0 0 1200 120"
+              preserveAspectRatio="none"
+              style={{ width: "100%", height: "100%" }}
+            >
+              <path
+                d="M0,50 C200,0 400,100 600,50 C800,0 1000,100 1200,50 L1200,120 L0,120 Z"
+                fill={colorMode === "light" ? "#0051ad" : "#0077fe"}
+              />
+            </svg>
+          </Box>
+
+          {/* Wave Background - Layer 3 */}
+          <Box
+            position="absolute"
+            bottom={0}
+            left={0}
+            width="200%"
+            height="190px"
+            sx={{
+              animation:
+                "wave1 13s cubic-bezier(0.36, 0.45, 0.63, 0.53) infinite",
+            }}
+          >
+            <svg
+              viewBox="0 0 1200 120"
+              preserveAspectRatio="none"
+              style={{ width: "100%", height: "100%" }}
+            >
+              <path
+                d="M0,30 C300,80 500,20 600,40 C700,60 900,10 1200,40 L1200,120 L0,120 Z"
+                fill={colorMode === "light" ? "#00326b" : "#004593"}
+              />
+            </svg>
+          </Box>
+
+          <VStack
+            spacing={8}
+            maxW="400px"
+            w="full"
             px={6}
+            zIndex={1}
+            position="relative"
             animation="slideUp 0.5s ease-out"
             sx={{
-              '@keyframes slideUp': {
-                from: { 
+              "@keyframes slideUp": {
+                from: {
                   opacity: 0,
-                  transform: 'translateY(20px)',
+                  transform: "translateY(20px)",
                 },
-                to: { 
+                to: {
                   opacity: 1,
-                  transform: 'translateY(0)',
+                  transform: "translateY(0)",
                 },
               },
             }}
@@ -4708,7 +4847,10 @@ function ProjectWorkspaceView({ isLocked = false, backUrl = "/workspace" }: Proj
             </Box>
 
             {/* Title */}
-            <Heading size="md" color={colorMode === "light" ? "gray.700" : "gray.200"}>
+            <Heading
+              size="md"
+              color={colorMode === "light" ? "gray.700" : "gray.200"}
+            >
               Preparing Your Workspace
             </Heading>
 
@@ -4716,80 +4858,126 @@ function ProjectWorkspaceView({ isLocked = false, backUrl = "/workspace" }: Proj
             <VStack spacing={3} w="full" align="stretch">
               {/* Step 1: Initializing */}
               <HStack spacing={3}>
-                {loadingStep === 'init' ? (
+                {loadingStep === "init" ? (
                   <Spinner size="sm" color="blue.500" />
                 ) : (
                   <Icon as={FiCheckCircle} color="green.500" boxSize={5} />
                 )}
-                <Text fontSize="sm" color={loadingStep === 'init' ? "blue.500" : "gray.500"}>
+                <Text
+                  fontSize="sm"
+                  color={loadingStep === "init" ? "blue.500" : "gray.500"}
+                >
                   Initializing workspace
                 </Text>
               </HStack>
 
               {/* Step 2: Project */}
               <HStack spacing={3}>
-                {loadingStep === 'project' ? (
+                {loadingStep === "project" ? (
                   <Spinner size="sm" color="blue.500" />
-                ) : loadingStep === 'init' ? (
+                ) : loadingStep === "init" ? (
                   <Icon as={FiCircle} color="gray.300" boxSize={5} />
                 ) : (
                   <Icon as={FiCheckCircle} color="green.500" boxSize={5} />
                 )}
-                <Text fontSize="sm" color={loadingStep === 'project' ? "blue.500" : loadingStep === 'init' ? "gray.400" : "gray.500"}>
+                <Text
+                  fontSize="sm"
+                  color={
+                    loadingStep === "project"
+                      ? "blue.500"
+                      : loadingStep === "init"
+                      ? "gray.400"
+                      : "gray.500"
+                  }
+                >
                   Loading project details
                 </Text>
               </HStack>
 
               {/* Step 3: Boards */}
               <HStack spacing={3}>
-                {loadingStep === 'boards' ? (
+                {loadingStep === "boards" ? (
                   <Spinner size="sm" color="blue.500" />
-                ) : ['init', 'project'].includes(loadingStep) ? (
+                ) : ["init", "project"].includes(loadingStep) ? (
                   <Icon as={FiCircle} color="gray.300" boxSize={5} />
                 ) : (
                   <Icon as={FiCheckCircle} color="green.500" boxSize={5} />
                 )}
-                <Text fontSize="sm" color={loadingStep === 'boards' ? "blue.500" : ['init', 'project'].includes(loadingStep) ? "gray.400" : "gray.500"}>
+                <Text
+                  fontSize="sm"
+                  color={
+                    loadingStep === "boards"
+                      ? "blue.500"
+                      : ["init", "project"].includes(loadingStep)
+                      ? "gray.400"
+                      : "gray.500"
+                  }
+                >
                   Loading board configuration
                 </Text>
               </HStack>
 
               {/* Step 4: Backlogs */}
               <HStack spacing={3}>
-                {loadingStep === 'backlogs' ? (
+                {loadingStep === "backlogs" ? (
                   <Spinner size="sm" color="blue.500" />
-                ) : ['init', 'project', 'boards'].includes(loadingStep) ? (
+                ) : ["init", "project", "boards"].includes(loadingStep) ? (
                   <Icon as={FiCircle} color="gray.300" boxSize={5} />
                 ) : (
                   <Icon as={FiCheckCircle} color="green.500" boxSize={5} />
                 )}
-                <Text fontSize="sm" color={loadingStep === 'backlogs' ? "blue.500" : ['init', 'project', 'boards'].includes(loadingStep) ? "gray.400" : "gray.500"}>
+                <Text
+                  fontSize="sm"
+                  color={
+                    loadingStep === "backlogs"
+                      ? "blue.500"
+                      : ["init", "project", "boards"].includes(loadingStep)
+                      ? "gray.400"
+                      : "gray.500"
+                  }
+                >
                   Loading backlogs
                 </Text>
               </HStack>
 
               {/* Step 5: Tasks */}
               <HStack spacing={3}>
-                {loadingStep === 'tasks' ? (
+                {loadingStep === "tasks" ? (
                   <Spinner size="sm" color="blue.500" />
-                ) : ['init', 'project', 'boards', 'backlogs'].includes(loadingStep) ? (
+                ) : ["init", "project", "boards", "backlogs"].includes(
+                    loadingStep
+                  ) ? (
                   <Icon as={FiCircle} color="gray.300" boxSize={5} />
                 ) : (
                   <Icon as={FiCheckCircle} color="green.500" boxSize={5} />
                 )}
-                <Text fontSize="sm" color={loadingStep === 'tasks' ? "blue.500" : ['init', 'project', 'boards', 'backlogs'].includes(loadingStep) ? "gray.400" : "gray.500"}>
+                <Text
+                  fontSize="sm"
+                  color={
+                    loadingStep === "tasks"
+                      ? "blue.500"
+                      : ["init", "project", "boards", "backlogs"].includes(
+                          loadingStep
+                        )
+                      ? "gray.400"
+                      : "gray.500"
+                  }
+                >
                   Loading tasks
                 </Text>
               </HStack>
 
               {/* Step 6: Ready */}
               <HStack spacing={3}>
-                {loadingStep === 'ready' ? (
+                {loadingStep === "ready" ? (
                   <Spinner size="sm" color="blue.500" />
                 ) : (
                   <Icon as={FiCircle} color="gray.300" boxSize={5} />
                 )}
-                <Text fontSize="sm" color={loadingStep === 'ready' ? "blue.500" : "gray.400"}>
+                <Text
+                  fontSize="sm"
+                  color={loadingStep === "ready" ? "blue.500" : "gray.400"}
+                >
                   Preparing kanban board
                 </Text>
               </HStack>
@@ -4809,24 +4997,32 @@ function ProjectWorkspaceView({ isLocked = false, backUrl = "/workspace" }: Proj
                   rounded="full"
                   transition="all 0.5s ease-out"
                   w={
-                    loadingStep === 'init' ? '16%' :
-                    loadingStep === 'project' ? '33%' :
-                    loadingStep === 'boards' ? '50%' :
-                    loadingStep === 'backlogs' ? '66%' :
-                    loadingStep === 'tasks' ? '83%' :
-                    '100%'
+                    loadingStep === "init"
+                      ? "16%"
+                      : loadingStep === "project"
+                      ? "33%"
+                      : loadingStep === "boards"
+                      ? "50%"
+                      : loadingStep === "backlogs"
+                      ? "66%"
+                      : loadingStep === "tasks"
+                      ? "83%"
+                      : "100%"
                   }
                 />
               </Box>
               <Text fontSize="xs" color="gray.500" textAlign="center" mt={2}>
-                {
-                  loadingStep === 'init' ? '16%' :
-                  loadingStep === 'project' ? '33%' :
-                  loadingStep === 'boards' ? '50%' :
-                  loadingStep === 'backlogs' ? '66%' :
-                  loadingStep === 'tasks' ? '83%' :
-                  '100%'
-                }
+                {loadingStep === "init"
+                  ? "16%"
+                  : loadingStep === "project"
+                  ? "33%"
+                  : loadingStep === "boards"
+                  ? "50%"
+                  : loadingStep === "backlogs"
+                  ? "66%"
+                  : loadingStep === "tasks"
+                  ? "83%"
+                  : "100%"}
               </Text>
             </Box>
           </VStack>
@@ -4835,435 +5031,400 @@ function ProjectWorkspaceView({ isLocked = false, backUrl = "/workspace" }: Proj
 
       {/* Main Content */}
       <LayoutAdminWorkspace>
-      <DndProvider backend={HTML5Backend}>
-        <Box 
-          p={4}
-          animation={!isInitializing ? "fadeIn 0.5s ease-in" : undefined}
-          sx={{
-            '@keyframes fadeIn': {
-              from: { opacity: 0 },
-              to: { opacity: 1 },
-            },
-          }}
-        >
-          {/* Simple Clean Header */}
-          <Card
-            shadow="sm"
-            rounded={radiusStyle}
-            bg={colorMode === "light" ? "white" : "gray.800"}
-            mb={4}
-            borderWidth="1px"
-            borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+        <DndProvider backend={HTML5Backend}>
+          <Box
+            p={4}
+            animation={!isInitializing ? "fadeIn 0.5s ease-in" : undefined}
+            sx={{
+              "@keyframes fadeIn": {
+                from: { opacity: 0 },
+                to: { opacity: 1 },
+              },
+            }}
           >
-            <CardBody p={4}>
-              <VStack spacing={4} align="stretch">
-                {/* Top Row: Back Button + Project Info + Actions */}
-                <HStack justify="space-between" align="center">
-                  <HStack spacing={4}>
-                    <IconButton
-                      aria-label="Back"
-                      icon={<FiArrowLeft />}
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => router.push(backUrl)}
-                    />
-                    <VStack align="start" spacing={2}>
-                      <Heading size="md">
-                        {DataProject?.projectName || "Project Workspace"}
-                      </Heading>
+            {/* Simple Clean Header */}
+            <Card
+              shadow="sm"
+              rounded={radiusStyle}
+              bg={colorMode === "light" ? "white" : "gray.800"}
+              mb={4}
+              borderWidth="1px"
+              borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+              position="relative"
+              overflow="hidden"
+            >
+              {/* Static Wave Background */}
+              <Box
+                position="absolute"
+                bottom={0}
+                left={0}
+                right={0}
+                height="180px"
+                pointerEvents="none"
+              >
+                <svg
+                  viewBox="0 0 1200 200"
+                  preserveAspectRatio="none"
+                  style={{ width: "100%", height: "100%" }}
+                >
+                  {/* Diagonal wave layer 1 */}
+                  <path
+                    d="M0,100 C300,20 500,140 800,80 L1200,40 L1200,200 L0,200 Z"
+                    fill={colorMode === "dark" ? "#004593" : "#9acaff"}
+                  />
+                  {/* Diagonal wave layer 2 */}
+                  <path
+                    d="M0,140 C400,80 600,160 900,100 L1200,70 L1200,200 L0,200 Z"
+                    fill={colorMode === "dark" ? "#0051ad" : "#0077fe"}
+                  />
+                  {/* Abstract curved shape */}
+                  <path
+                    d="M0,180 C200,120 600,180 1200,120 L1200,200 L0,200 Z"
+                    fill={colorMode === "dark" ? "#00326b" : "#004593"}
+                  />
+                </svg>
+              </Box>
 
-                      <HStack spacing={3} fontSize="sm" color="gray.600">
-                        <HStack spacing={1}>
-                          
-                          <Text>No. {DataProject?.projectNo}</Text>
+              <CardBody p={4} position="relative" zIndex={1}>
+                <VStack spacing={4} align="stretch">
+                  {/* Top Row: Back Button + Project Info + Actions */}
+                  <HStack justify="space-between" align="center">
+                    <HStack spacing={4}>
+                      <IconButton
+                        aria-label="Back"
+                        icon={<FiArrowLeft />}
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => router.push(backUrl)}
+                      />
+                      <VStack align="start" spacing={2}>
+                        <Heading size="md">
+                          {DataProject?.projectName || "Project Workspace"}
+                        </Heading>
+
+                        <HStack spacing={3} fontSize="sm" color="gray.600">
+                          <HStack spacing={1}>
+                            <Text>No. {DataProject?.projectNo}</Text>
+                          </HStack>
+                          {DataProject?.proManageByDivisionName && (
+                            <HStack spacing={1}>
+                              <FiUser size={14} />
+                              <Text>{DataProject.proManageByDivisionName}</Text>
+                            </HStack>
+                          )}
+                          {DataProject?.projectRegisterDate && (
+                            <HStack spacing={1}>
+                              <FiCalendar size={14} />
+                              <Text>
+                                {new Date(
+                                  DataProject.projectRegisterDate
+                                ).toLocaleDateString()}
+                              </Text>
+                            </HStack>
+                          )}
                         </HStack>
-                        {DataProject?.proManageByDivisionName && (
-                          <HStack spacing={1}>
-                            <FiUser size={14} />
-                            <Text>{DataProject.proManageByDivisionName}</Text>
-                          </HStack>
-                        )}
-                        {DataProject?.projectRegisterDate && (
-                          <HStack spacing={1}>
-                            <FiCalendar size={14} />
-                            <Text>
-                              {new Date(
-                                DataProject.projectRegisterDate
-                              ).toLocaleDateString()}
-                            </Text>
-                          </HStack>
-                        )}
-                      </HStack>
 
-                      {/* Application Info - Prominent Display */}
-                      {DataProject?.appsProject && (
-                        <HStack
-                          spacing={3}
-                          bg="linear-gradient(135deg, #0077ffff 0%, #764ba2 100%)"
-                          px={3}
-                          py={2}
-                          rounded={radiusStyle}
-                          shadow="md"
-                        >
-                          <Box
-                            bg="white"
-                            w="40px"
-                            h="40px"
+                        {/* Application Info - Prominent Display */}
+                        {DataProject?.appsProject && (
+                          <HStack
+                            spacing={3}
+                            bg="linear-gradient(135deg, #0077fe 0%, #00326b 100%)"
+                            px={3}
+                            py={2}
                             rounded={radiusStyle}
-                            display="flex"
-                            alignItems="center"
-                            justifyContent="center"
-                            fontWeight="bold"
-                            fontSize="lg"
-                            color="purple.600"
-                            shadow="sm"
+                            shadow="md"
                           >
-                            {DataProject.appsProject.appCode
-                              ?.substring(0, 2)
-                              .toUpperCase() ||
-                              DataProject.appsProject.appName
+                            <Box
+                              bg="white"
+                              w="40px"
+                              h="40px"
+                              rounded={radiusStyle}
+                              display="flex"
+                              alignItems="center"
+                              justifyContent="center"
+                              fontWeight="bold"
+                              fontSize="lg"
+                              color="purple.600"
+                              shadow="sm"
+                            >
+                              {DataProject.appsProject.appCode
                                 ?.substring(0, 2)
                                 .toUpperCase() ||
-                              "AP"}
-                          </Box>
-                          <VStack align="start" spacing={0}>
-                            <Text
-                              fontSize="xs"
-                              color="whiteAlpha.800"
-                              fontWeight="medium"
-                            >
-                              Application
-                            </Text>
-                            <Text fontSize="sm" color="white" fontWeight="bold">
-                              {DataProject.appsProject.appName}
-                            </Text>
-                          </VStack>
-                        </HStack>
-                      )}
-                    </VStack>
+                                DataProject.appsProject.appName
+                                  ?.substring(0, 2)
+                                  .toUpperCase() ||
+                                "AP"}
+                            </Box>
+                            <VStack align="start" spacing={0}>
+                              <Text
+                                fontSize="xs"
+                                color="whiteAlpha.800"
+                                fontWeight="medium"
+                              >
+                                Application
+                              </Text>
+                              <Text
+                                fontSize="sm"
+                                color="white"
+                                fontWeight="bold"
+                              >
+                                {DataProject.appsProject.appName}
+                              </Text>
+                            </VStack>
+                          </HStack>
+                        )}
+                      </VStack>
+                    </HStack>
+
+                    <HStack spacing={2}>
+                      <Button
+                        leftIcon={<FiInbox />}
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setIsArchivedDrawerOpen(true);
+                          loadArchivedTasks();
+                        }}
+                      >
+                        Archived
+                      </Button>
+                      <Button
+                        leftIcon={<FiRefreshCcw />}
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setRefreshData((prev) => prev + 1)}
+                        isLoading={IsLoadingProcess}
+                      >
+                        Refresh
+                      </Button>
+                    </HStack>
                   </HStack>
 
-                  <HStack spacing={2}>
-                    <Button
-                      leftIcon={<FiInbox />}
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        setIsArchivedDrawerOpen(true);
-                        loadArchivedTasks();
-                      }}
-                    >
-                      Archived
-                    </Button>
-                    <Button
-                      leftIcon={<FiRefreshCcw />}
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setRefreshData((prev) => prev + 1)}
-                      isLoading={IsLoadingProcess}
-                    >
-                      Refresh
-                    </Button>
-                  </HStack>
-                </HStack>
-
-                {/* Stats Row */}
-                <HStack
-                  spacing={6}
-                  p={3}
-                  bg={colorMode === "light" ? "gray.50" : "gray.700"}
-                  rounded={radiusStyle}
-                >
-                  <HStack spacing={2}>
-                    <Icon as={FiList} color="blue.500" />
-                    <Text fontSize="sm" fontWeight="medium">
-                      {projectStats.totalTasks} Total
-                    </Text>
-                  </HStack>
-                  <HStack spacing={2}>
-                    <Icon as={FiCheckCircle} color="green.500" />
-                    <Text fontSize="sm" fontWeight="medium">
-                      {projectStats.completedTasks} Done
-                    </Text>
-                  </HStack>
-                  <HStack spacing={2}>
-                    <Icon as={FiLoader} color="orange.500" />
-                    <Text fontSize="sm" fontWeight="medium">
-                      {projectStats.inProgressTasks} In Progress
-                    </Text>
-                  </HStack>
-                  <HStack spacing={2}>
-                    <Icon as={FiClock} color="gray.500" />
-                    <Text fontSize="sm" fontWeight="medium">
-                      {projectStats.todoTasks} To Do
-                    </Text>
-                  </HStack>
-                  <Divider orientation="vertical" h="20px" />
-                  <HStack spacing={2}>
-                    <Text fontSize="sm" fontWeight="bold" color="blue.600">
-                      {projectStats.completionPercentage}%
-                    </Text>
-                    <Text fontSize="sm" color="gray.600">
-                      Complete
-                    </Text>
-                  </HStack>
-                  {lastUpdated && (
-                    <>
-                      <Divider orientation="vertical" h="20px" />
-                      <Text fontSize="xs" color="gray.500">
-                        Updated: {lastUpdated.toLocaleTimeString()}
-                      </Text>
-                    </>
-                  )}
-                </HStack>
-              </VStack>
-            </CardBody>
-          </Card>
-
-          {/* Filters Section - Separate Panel */}
-          <Box
-            bg={colorMode === "light" ? "white" : "gray.800"}
-            p={3}
-            rounded={radiusStyle}
-            shadow="sm"
-            borderWidth="1px"
-            borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-            mb={4}
-          >
-            <HStack spacing={3} justify="space-between" align="center">
-              <HStack spacing={3} flex={1}>
-                <InputGroup maxW="300px" >
-                  <InputLeftElement mt={-1} pr={2}>
-                    <FiSearch />
-                  </InputLeftElement>
-                  <Input
-                    placeholder="Search tasks..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    size="sm"
+                  {/* Stats Row */}
+                  <HStack
+                    spacing={6}
+                    p={3}
+                    bg={colorMode === "light" ? "gray.50" : "gray.700"}
                     rounded={radiusStyle}
-                  />
-                </InputGroup>
+                  >
+                    <HStack spacing={2}>
+                      <Icon as={FiList} color="blue.500" />
+                      <Text fontSize="sm" fontWeight="medium">
+                        {projectStats.totalTasks} Total
+                      </Text>
+                    </HStack>
+                    <HStack spacing={2}>
+                      <Icon as={FiCheckCircle} color="green.500" />
+                      <Text fontSize="sm" fontWeight="medium">
+                        {projectStats.completedTasks} Done
+                      </Text>
+                    </HStack>
+                    <HStack spacing={2}>
+                      <Icon as={FiLoader} color="orange.500" />
+                      <Text fontSize="sm" fontWeight="medium">
+                        {projectStats.inProgressTasks} In Progress
+                      </Text>
+                    </HStack>
+                    <HStack spacing={2}>
+                      <Icon as={FiClock} color="gray.500" />
+                      <Text fontSize="sm" fontWeight="medium">
+                        {projectStats.todoTasks} To Do
+                      </Text>
+                    </HStack>
+                    <Divider orientation="vertical" h="20px" />
+                    <HStack spacing={2}>
+                      <Text fontSize="sm" fontWeight="bold" color="blue.600">
+                        {projectStats.completionPercentage}%
+                      </Text>
+                      <Text fontSize="sm" color="gray.600">
+                        Complete
+                      </Text>
+                    </HStack>
+                    {lastUpdated && (
+                      <>
+                        <Divider orientation="vertical" h="20px" />
+                        <Text fontSize="xs" color="gray.500">
+                          Updated: {lastUpdated.toLocaleTimeString()}
+                        </Text>
+                      </>
+                    )}
+                  </HStack>
+                </VStack>
+              </CardBody>
+            </Card>
 
-                <Select
-                  placeholder="Priority"
-                  value={filterPriority}
-                  onChange={(e) => setFilterPriority(e.target.value)}
-                  maxW="140px"
-                  size="sm"
-                  rounded={radiusStyle}
-                >
-                  <option value="HIGH">High</option>
-                  <option value="MEDIUM">Medium</option>
-                  <option value="LOW">Low</option>
-                </Select>
-
-                <Select
-                  placeholder="Backlog"
-                  value={filterBacklog}
-                  onChange={(e) => handleBacklogFilterChange(e.target.value)}
-                  isDisabled={lockBacklog}
-                  maxW="180px"
-                  size="sm"
-                  rounded={radiusStyle}
-                >
-                  {DataBacklogs.map((backlog) => (
-                    <option key={backlog.id} value={backlog.id}>
-                      {backlog.backlogName}
-                    </option>
-                  ))}
-                </Select>
-
-                <Checkbox
-                  isChecked={showCompletedTasks}
-                  onChange={(e) => setShowCompletedTasks(e.target.checked)}
-                  colorScheme="secondary"
-                  size="sm"
-                >
-                  <Text fontSize="sm">Show completed</Text>
-                </Checkbox>
-              </HStack>
-
-              <Button
-                leftIcon={<FiPlusCircle />}
-                colorScheme="blue"
-                size="sm"
-                onClick={() => handleAddTask(DataBoard[0]?.boardName || "")}
-                isDisabled={DataBoard.length === 0}
-                rounded={radiusStyle}
-              >
-                Add Task
-              </Button>
-            </HStack>
-          </Box>
-
-          {/* Auto-saving indicator */}
-          {isAutoSaving && (
-            <Box
-              position="fixed"
-              top="20px"
-              right="20px"
-              bg="blue.500"
-              color="white"
-              px={4}
-              py={2}
-              rounded="md"
-              shadow="lg"
-              zIndex="1000"
-            >
-              <HStack spacing={2}>
-                <Spinner size="sm" />
-                <Text fontSize="sm">Auto-saving...</Text>
-              </HStack>
-            </Box>
-          )}
-
-          {/* Kanban Board */}
-          {IsLoadingProcess && DataBoard.length === 0 ? (
-            <Box textAlign="center" py={12}>
-              <Spinner size="xl" color="blue.500" />
-              <Text
-                mt={4}
-                color={colorMode === "light" ? "gray.500" : "gray.400"}
-              >
-                Loading kanban board...
-              </Text>
-            </Box>
-          ) : DataBoard.length > 0 ? (
+            {/* Filters Section - Separate Panel */}
             <Box
               bg={colorMode === "light" ? "white" : "gray.800"}
+              p={3}
               rounded={radiusStyle}
-              p={4}
               shadow="sm"
               borderWidth="1px"
               borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+              mb={4}
             >
-              <Grid
-                templateColumns={`repeat(${DataBoard.length}, 1fr)`}
-                gap={8}
-                minH="700px"
-                w="full"
-              >
-                {DataBoard.map((board) => (
-                  <GridItem key={board.id}>
-                    <KanbanColumn
-                      board={board}
-                      tasks={getTasksForBoard(board.boardName)}
-                      onTaskDrop={handleTaskDrop}
-                      onAddTask={handleAddTask}
-                      onEditTask={handleEditTask}
-                      onDeleteTask={handleDeleteTask}
-                      onUpdateTask={handleUpdateTask}
-                      onRefreshTasks={() => setRefreshData((prev) => prev + 1)}
-                      recentlyMovedTaskId={recentlyMovedTaskId}
-                      DataProject={DataProject}
-                      DataBacklogs={DataBacklogs}
-                    />
-                  </GridItem>
-                ))}
-              </Grid>
-            </Box>
-          ) : (
-            <Alert status="info" rounded={radiusStyle}>
-              <AlertIcon />
-              <AlertTitle>No Kanban Board Configuration Found!</AlertTitle>
-              <AlertDescription>
-                Please configure the master board tasks in the system settings
-                to use the kanban board.
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Comprehensive Task Modal */}
-          <Modal isOpen={isTaskModalOpen} onClose={onTaskModalClose} size="lg">
-            <ModalOverlay />
-            <ModalContent bg={colorMode === "light" ? "white" : "gray.800"}>
-              <ModalHeader color={colorMode === "light" ? "gray.800" : "white"}>
-                {selectedTask ? "Edit Task" : "Create New Task"}
-              </ModalHeader>
-              <ModalCloseButton />
-              <ModalBody>
-                <VStack spacing={4}>
-                  <Box w="full">
-                    <Text
-                      mb={2}
-                      fontSize="sm"
-                      fontWeight="medium"
-                      color={colorMode === "light" ? "gray.700" : "gray.300"}
-                    >
-                      Task Name *
-                    </Text>
+              <HStack spacing={3} justify="space-between" align="center">
+                <HStack spacing={3} flex={1}>
+                  <InputGroup maxW="300px">
+                    <InputLeftElement mt={-1} pr={2}>
+                      <FiSearch />
+                    </InputLeftElement>
                     <Input
-                      value={taskForm.taskName}
-                      onChange={(e) =>
-                        setTaskForm((prev) => ({
-                          ...prev,
-                          taskName: e.target.value,
-                        }))
-                      }
-                      placeholder="Enter task name"
-                      bg={colorMode === "light" ? "white" : "gray.700"}
-                      borderColor={
-                        colorMode === "light" ? "gray.300" : "gray.600"
-                      }
+                      placeholder="Search tasks..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      size="sm"
+                      rounded={radiusStyle}
                     />
-                  </Box>
+                  </InputGroup>
 
-                  <Box w="full">
-                    <Text
-                      mb={2}
-                      fontSize="sm"
-                      fontWeight="medium"
-                      color={colorMode === "light" ? "gray.700" : "gray.300"}
-                    >
-                      Description
-                    </Text>
-                    <Textarea
-                      value={taskForm.taskDesc}
-                      onChange={(e) =>
-                        setTaskForm((prev) => ({
-                          ...prev,
-                          taskDesc: e.target.value,
-                        }))
-                      }
-                      placeholder="Enter task description"
-                      rows={3}
-                      bg={colorMode === "light" ? "white" : "gray.700"}
-                      borderColor={
-                        colorMode === "light" ? "gray.300" : "gray.600"
-                      }
-                    />
-                  </Box>
+                  <Select
+                    placeholder="Priority"
+                    value={filterPriority}
+                    onChange={(e) => setFilterPriority(e.target.value)}
+                    maxW="140px"
+                    size="sm"
+                    rounded={radiusStyle}
+                  >
+                    <option value="HIGH">High</option>
+                    <option value="MEDIUM">Medium</option>
+                    <option value="LOW">Low</option>
+                  </Select>
 
-                  <Box w="full">
-                    <Text
-                      mb={2}
-                      fontSize="sm"
-                      fontWeight="medium"
-                      color={colorMode === "light" ? "gray.700" : "gray.300"}
-                    >
-                      Priority
-                    </Text>
-                    <Select
-                      value={taskForm.taskPriority}
-                      onChange={(e) =>
-                        setTaskForm((prev) => ({
-                          ...prev,
-                          taskPriority: e.target.value,
-                        }))
-                      }
-                      bg={colorMode === "light" ? "white" : "gray.700"}
-                      borderColor={
-                        colorMode === "light" ? "gray.300" : "gray.600"
-                      }
-                    >
-                      <option value="LOW">Low Priority</option>
-                      <option value="MEDIUM">Medium Priority</option>
-                      <option value="HIGH">High Priority</option>
-                    </Select>
-                  </Box>
+                  <Select
+                    placeholder="Backlog"
+                    value={filterBacklog}
+                    onChange={(e) => handleBacklogFilterChange(e.target.value)}
+                    isDisabled={lockBacklog}
+                    maxW="180px"
+                    size="sm"
+                    rounded={radiusStyle}
+                  >
+                    {DataBacklogs.map((backlog) => (
+                      <option key={backlog.id} value={backlog.id}>
+                        {backlog.backlogName}
+                      </option>
+                    ))}
+                  </Select>
 
-                  {!selectedTask && (
+                  <Checkbox
+                    isChecked={showCompletedTasks}
+                    onChange={(e) => setShowCompletedTasks(e.target.checked)}
+                    colorScheme="secondary"
+                    size="sm"
+                  >
+                    <Text fontSize="sm">Show completed</Text>
+                  </Checkbox>
+                </HStack>
+
+                <Button
+                  leftIcon={<FiPlusCircle />}
+                  colorScheme="blue"
+                  size="sm"
+                  onClick={() => handleAddTask(DataBoard[0]?.boardName || "")}
+                  isDisabled={DataBoard.length === 0}
+                  rounded={radiusStyle}
+                >
+                  Add Task
+                </Button>
+              </HStack>
+            </Box>
+
+            {/* Auto-saving indicator */}
+            {isAutoSaving && (
+              <Box
+                position="fixed"
+                top="20px"
+                right="20px"
+                bg="blue.500"
+                color="white"
+                px={4}
+                py={2}
+                rounded="md"
+                shadow="lg"
+                zIndex="1000"
+              >
+                <HStack spacing={2}>
+                  <Spinner size="sm" />
+                  <Text fontSize="sm">Auto-saving...</Text>
+                </HStack>
+              </Box>
+            )}
+
+            {/* Kanban Board */}
+            {IsLoadingProcess && DataBoard.length === 0 ? (
+              <Box textAlign="center" py={12}>
+                <Spinner size="xl" color="blue.500" />
+                <Text
+                  mt={4}
+                  color={colorMode === "light" ? "gray.500" : "gray.400"}
+                >
+                  Loading kanban board...
+                </Text>
+              </Box>
+            ) : DataBoard.length > 0 ? (
+              <Box
+                bg={colorMode === "light" ? "white" : "gray.800"}
+                rounded={radiusStyle}
+                p={4}
+                shadow="sm"
+                borderWidth="1px"
+                borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+              >
+                <Grid
+                  templateColumns={`repeat(${DataBoard.length}, 1fr)`}
+                  gap={8}
+                  minH="700px"
+                  w="full"
+                >
+                  {DataBoard.map((board) => (
+                    <GridItem key={board.id}>
+                      <KanbanColumn
+                        board={board}
+                        tasks={getTasksForBoard(board.boardName)}
+                        onTaskDrop={handleTaskDrop}
+                        onAddTask={handleAddTask}
+                        onEditTask={handleEditTask}
+                        onDeleteTask={handleDeleteTask}
+                        onUpdateTask={handleUpdateTask}
+                        onRefreshTasks={() =>
+                          setRefreshData((prev) => prev + 1)
+                        }
+                        recentlyMovedTaskId={recentlyMovedTaskId}
+                        DataProject={DataProject}
+                        DataBacklogs={DataBacklogs}
+                      />
+                    </GridItem>
+                  ))}
+                </Grid>
+              </Box>
+            ) : (
+              <Alert status="info" rounded={radiusStyle}>
+                <AlertIcon />
+                <AlertTitle>No Kanban Board Configuration Found!</AlertTitle>
+                <AlertDescription>
+                  Please configure the master board tasks in the system settings
+                  to use the kanban board.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Comprehensive Task Modal */}
+            <Modal
+              isOpen={isTaskModalOpen}
+              onClose={onTaskModalClose}
+              size="lg"
+            >
+              <ModalOverlay />
+              <ModalContent bg={colorMode === "light" ? "white" : "gray.800"}>
+                <ModalHeader
+                  color={colorMode === "light" ? "gray.800" : "white"}
+                >
+                  {selectedTask ? "Edit Task" : "Create New Task"}
+                </ModalHeader>
+                <ModalCloseButton />
+                <ModalBody>
+                  <VStack spacing={4}>
                     <Box w="full">
                       <Text
                         mb={2}
@@ -5271,124 +5432,206 @@ function ProjectWorkspaceView({ isLocked = false, backUrl = "/workspace" }: Proj
                         fontWeight="medium"
                         color={colorMode === "light" ? "gray.700" : "gray.300"}
                       >
-                        Backlog *
+                        Task Name *
                       </Text>
-                      <Select
-                        value={taskForm.backlogId}
+                      <Input
+                        value={taskForm.taskName}
                         onChange={(e) =>
                           setTaskForm((prev) => ({
                             ...prev,
-                            backlogId: e.target.value,
+                            taskName: e.target.value,
                           }))
                         }
-                        isDisabled={lockBacklog}
+                        placeholder="Enter task name"
                         bg={colorMode === "light" ? "white" : "gray.700"}
                         borderColor={
                           colorMode === "light" ? "gray.300" : "gray.600"
                         }
-                        placeholder="Select backlog"
+                      />
+                    </Box>
+
+                    <Box w="full">
+                      <Text
+                        mb={2}
+                        fontSize="sm"
+                        fontWeight="medium"
+                        color={colorMode === "light" ? "gray.700" : "gray.300"}
                       >
-                        {DataBacklogs.map((backlog) => (
-                          <option key={backlog.id} value={backlog.id}>
-                            {backlog.backlogName}
-                          </option>
-                        ))}
+                        Description
+                      </Text>
+                      <Textarea
+                        value={taskForm.taskDesc}
+                        onChange={(e) =>
+                          setTaskForm((prev) => ({
+                            ...prev,
+                            taskDesc: e.target.value,
+                          }))
+                        }
+                        placeholder="Enter task description"
+                        rows={3}
+                        bg={colorMode === "light" ? "white" : "gray.700"}
+                        borderColor={
+                          colorMode === "light" ? "gray.300" : "gray.600"
+                        }
+                      />
+                    </Box>
+
+                    <Box w="full">
+                      <Text
+                        mb={2}
+                        fontSize="sm"
+                        fontWeight="medium"
+                        color={colorMode === "light" ? "gray.700" : "gray.300"}
+                      >
+                        Priority
+                      </Text>
+                      <Select
+                        value={taskForm.taskPriority}
+                        onChange={(e) =>
+                          setTaskForm((prev) => ({
+                            ...prev,
+                            taskPriority: e.target.value,
+                          }))
+                        }
+                        bg={colorMode === "light" ? "white" : "gray.700"}
+                        borderColor={
+                          colorMode === "light" ? "gray.300" : "gray.600"
+                        }
+                      >
+                        <option value="LOW">Low Priority</option>
+                        <option value="MEDIUM">Medium Priority</option>
+                        <option value="HIGH">High Priority</option>
                       </Select>
                     </Box>
-                  )}
 
-                  <DateTimeRangeInput
-                    startValue={taskForm.taskStartDate || null}
-                    endValue={taskForm.taskEndDate || null}
-                    onStartChange={(value) =>
-                      setTaskForm((prev) => ({
-                        ...prev,
-                        taskStartDate: value || "",
-                      }))
-                    }
-                    onEndChange={(value) =>
-                      setTaskForm((prev) => ({
-                        ...prev,
-                        taskEndDate: value || "",
-                      }))
-                    }
-                    label="Task Schedule"
-                    placeholder="Select start and end date & time"
-                    size="md"
-                  />
+                    {!selectedTask && (
+                      <Box w="full">
+                        <Text
+                          mb={2}
+                          fontSize="sm"
+                          fontWeight="medium"
+                          color={
+                            colorMode === "light" ? "gray.700" : "gray.300"
+                          }
+                        >
+                          Backlog *
+                        </Text>
+                        <Select
+                          value={taskForm.backlogId}
+                          onChange={(e) =>
+                            setTaskForm((prev) => ({
+                              ...prev,
+                              backlogId: e.target.value,
+                            }))
+                          }
+                          isDisabled={lockBacklog}
+                          bg={colorMode === "light" ? "white" : "gray.700"}
+                          borderColor={
+                            colorMode === "light" ? "gray.300" : "gray.600"
+                          }
+                          placeholder="Select backlog"
+                        >
+                          {DataBacklogs.map((backlog) => (
+                            <option key={backlog.id} value={backlog.id}>
+                              {backlog.backlogName}
+                            </option>
+                          ))}
+                        </Select>
+                      </Box>
+                    )}
+
+                    <DateTimeRangeInput
+                      startValue={taskForm.taskStartDate || null}
+                      endValue={taskForm.taskEndDate || null}
+                      onStartChange={(value) =>
+                        setTaskForm((prev) => ({
+                          ...prev,
+                          taskStartDate: value || "",
+                        }))
+                      }
+                      onEndChange={(value) =>
+                        setTaskForm((prev) => ({
+                          ...prev,
+                          taskEndDate: value || "",
+                        }))
+                      }
+                      label="Task Schedule"
+                      placeholder="Select start and end date & time"
+                      size="md"
+                    />
+                  </VStack>
+                </ModalBody>
+
+                <ModalFooter>
+                  <Button variant="ghost" mr={3} onClick={onTaskModalClose}>
+                    Cancel
+                  </Button>
+                  <Button
+                    colorScheme="blue"
+                    onClick={handleSaveTask}
+                    isLoading={IsLoadingProcess}
+                  >
+                    {selectedTask ? "Update" : "Create"} Task
+                  </Button>
+                </ModalFooter>
+              </ModalContent>
+            </Modal>
+          </Box>
+        </DndProvider>
+
+        {/* Archived Tasks Drawer */}
+        <Drawer
+          isOpen={isArchivedDrawerOpen}
+          placement="right"
+          onClose={() => setIsArchivedDrawerOpen(false)}
+          size="md"
+        >
+          <DrawerOverlay />
+          <DrawerContent>
+            <DrawerCloseButton />
+            <DrawerHeader>
+              <HStack>
+                <Icon as={FaArchive} />
+                <Text>Archived Tasks</Text>
+              </HStack>
+            </DrawerHeader>
+            <DrawerBody>
+              {isLoadingArchived ? (
+                <Flex justify="center" align="center" h="200px">
+                  <Spinner size="lg" />
+                </Flex>
+              ) : archivedTasks.length > 0 ? (
+                <VStack spacing={3} align="stretch">
+                  {archivedTasks.map((task) => (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      onEdit={() => {}}
+                      onDelete={() => {}}
+                      onUpdateTask={() => {}}
+                      onRefreshTasks={() => {}}
+                      isRecentlyMoved={false}
+                      DataProject={DataProject}
+                      DataBacklogs={DataBacklogs}
+                    />
+                  ))}
                 </VStack>
-              </ModalBody>
-
-              <ModalFooter>
-                <Button variant="ghost" mr={3} onClick={onTaskModalClose}>
-                  Cancel
-                </Button>
-                <Button
-                  colorScheme="blue"
-                  onClick={handleSaveTask}
-                  isLoading={IsLoadingProcess}
+              ) : (
+                <Flex
+                  justify="center"
+                  align="center"
+                  h="200px"
+                  direction="column"
+                  color="gray.500"
                 >
-                  {selectedTask ? "Update" : "Create"} Task
-                </Button>
-              </ModalFooter>
-            </ModalContent>
-          </Modal>
-        </Box>
-      </DndProvider>
-
-      {/* Archived Tasks Drawer */}
-      <Drawer
-        isOpen={isArchivedDrawerOpen}
-        placement="right"
-        onClose={() => setIsArchivedDrawerOpen(false)}
-        size="md"
-      >
-        <DrawerOverlay />
-        <DrawerContent>
-          <DrawerCloseButton />
-          <DrawerHeader>
-            <HStack>
-              <Icon as={FaArchive} />
-              <Text>Archived Tasks</Text>
-            </HStack>
-          </DrawerHeader>
-          <DrawerBody>
-            {isLoadingArchived ? (
-              <Flex justify="center" align="center" h="200px">
-                <Spinner size="lg" />
-              </Flex>
-            ) : archivedTasks.length > 0 ? (
-              <VStack spacing={3} align="stretch">
-                {archivedTasks.map((task) => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    onEdit={() => {}}
-                    onDelete={() => {}}
-                    onUpdateTask={() => {}}
-                    onRefreshTasks={() => {}}
-                    isRecentlyMoved={false}
-                    DataProject={DataProject}
-                    DataBacklogs={DataBacklogs}
-                  />
-                ))}
-              </VStack>
-            ) : (
-              <Flex
-                justify="center"
-                align="center"
-                h="200px"
-                direction="column"
-                color="gray.500"
-              >
-                <Icon as={FaArchive} boxSize={8} mb={2} />
-                <Text>No archived tasks</Text>
-              </Flex>
-            )}
-          </DrawerBody>
-        </DrawerContent>
-      </Drawer>
-    </LayoutAdminWorkspace>
+                  <Icon as={FaArchive} boxSize={8} mb={2} />
+                  <Text>No archived tasks</Text>
+                </Flex>
+              )}
+            </DrawerBody>
+          </DrawerContent>
+        </Drawer>
+      </LayoutAdminWorkspace>
     </>
   );
 }
