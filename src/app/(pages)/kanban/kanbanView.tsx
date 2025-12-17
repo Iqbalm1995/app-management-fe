@@ -5225,7 +5225,7 @@ function KanbanBacklogPage() {
             requestData.data as BacklogDataResponse;
 
           setHeaderContentState({
-            titleName: `KANBAN | ${itemsData.backlogName}`,
+            titleName: `${itemsData.backlogName}`,
             breadCrumb: ["Home", "Kanban", `Feature ${itemsData.backlogName}`],
           });
 
@@ -5600,83 +5600,6 @@ function KanbanBacklogPage() {
         breadCrumb={HeaderContentState.breadCrumb}
       />
 
-      {/* DEBUG: API Payload Preview - Data Ready to Send */}
-      <Box
-        w={"full"}
-        overflowY={"auto"}
-        overflowX={"auto"}
-        maxH={"350px"}
-        p={4}
-        bgColor={"blue.50"}
-        rounded={radiusStyle}
-        display={"none"}
-        mb={4}
-        border="2px solid"
-        borderColor="blue.300"
-      >
-        <Text fontWeight={600} mb={2} color="blue.700">
-          📤 API Payload Preview - Ready to Send ({pendingTaskChanges.length}{" "}
-          changes)
-        </Text>
-        <Text fontSize="sm" color="gray.600" mb={3}>
-          This data will be sent to the API when batch processing is triggered
-        </Text>
-        <pre
-          style={{
-            fontSize: "12px",
-            lineHeight: "1.4",
-            backgroundColor: colorMode === "light" ? "white" : "#2D3748",
-            padding: "12px",
-            borderRadius: "6px",
-            border: "1px solid #e2e8f0",
-          }}
-        >
-          {pendingTaskChanges.length > 0
-            ? JSON.stringify(
-                {
-                  endpoint: "/api/tasks/batch-move",
-                  method: "POST",
-                  payload: {
-                    changes: pendingTaskChanges,
-                    timestamp: new Date().toISOString(),
-                    totalChanges: pendingTaskChanges.length,
-                  },
-                },
-                null,
-                2
-              )
-            : JSON.stringify(
-                {
-                  status: "No pending changes",
-                  message: "Drag and drop tasks to see API payload data here",
-                  endpoint: "/api/tasks/batch-move",
-                  method: "POST",
-                },
-                null,
-                2
-              )}
-        </pre>
-
-        {pendingTaskChanges.length > 0 && (
-          <Box
-            mt={3}
-            p={3}
-            bg="green.50"
-            rounded="md"
-            border="1px solid"
-            borderColor="green.200"
-          >
-            <Text fontSize="sm" fontWeight={600} color="green.700" mb={1}>
-              ✅ Ready for API Integration
-            </Text>
-            <Text fontSize="xs" color="green.600">
-              • {pendingTaskChanges.length} task Batch processing will send all
-              changes in one request • Each change contains: taskId, boardId,
-              indexTask, indexStage
-            </Text>
-          </Box>
-        )}
-      </Box>
       {IsLoadingProcess && (
         <Flex
           position="fixed"
@@ -5722,10 +5645,7 @@ function KanbanBacklogPage() {
                   console.log("💾 Manual save button clicked");
                   try {
                     const saveResult = await sendPendingChangesToAPI();
-                    console.log("💾 Manual save result:", saveResult);
-                  } catch (error) {
-                    console.error("❌ Manual save error:", error);
-                  }
+                  } catch (error) {}
                 }}
                 ml={3}
                 isDisabled={isAutoSaving}
@@ -5778,25 +5698,6 @@ function KanbanBacklogPage() {
                 >
                   Board
                 </Flex>
-                <Flex
-                  as={Button}
-                  px={3}
-                  py={2}
-                  cursor={"pointer"}
-                  _hover={{
-                    bgColor: "secondary.200",
-                    color: "secondary.500",
-                  }}
-                  _active={{
-                    color: "secondary.500",
-                    bgColor: "transparent",
-                  }}
-                  isActive={false}
-                  leftIcon={<FiList />}
-                  disabled
-                >
-                  List
-                </Flex>
               </ButtonGroup>
 
               <Box>
@@ -5818,46 +5719,6 @@ function KanbanBacklogPage() {
               </Box>
             </Flex>
             <Flex as={HStack}>
-              <Flex
-                as={Button}
-                variant="outline"
-                px={3}
-                py={2}
-                cursor={"pointer"}
-                _hover={{
-                  bgColor: "secondary.200",
-                  color: "secondary.500",
-                }}
-                _active={{
-                  color: "secondary.500",
-                  bgColor: "transparent",
-                }}
-                isActive={false}
-                leftIcon={<GoFilter />}
-                disabled
-              >
-                Filter
-              </Flex>
-              <Flex
-                as={Button}
-                variant="outline"
-                px={3}
-                py={2}
-                cursor={"pointer"}
-                _hover={{
-                  bgColor: "secondary.200",
-                  color: "secondary.500",
-                }}
-                _active={{
-                  color: "secondary.500",
-                  bgColor: "transparent",
-                }}
-                isActive={false}
-                leftIcon={<MdOutlineSort />}
-                disabled
-              >
-                Sort By
-              </Flex>
               <Flex
                 as={Button}
                 variant="outline"
@@ -5966,7 +5827,7 @@ function KanbanBacklogPage() {
                     <VStack
                       spacing={3}
                       align="stretch"
-                      minH="200px"
+                      minH="500px"
                       maxH="calc(75vh - 100px)"
                       overflowY="auto"
                       w="full"

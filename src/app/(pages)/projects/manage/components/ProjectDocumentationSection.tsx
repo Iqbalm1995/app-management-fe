@@ -79,13 +79,16 @@ const ProjectDocumentationSection = ({
   };
 
   // Count all leaf nodes (nodes without children) recursively
-  const countLeafNodes = (workflows: ProjectWorkflowResponse[]): { total: number; completed: number } => {
+  const countLeafNodes = (
+    workflows: ProjectWorkflowResponse[]
+  ): { total: number; completed: number } => {
     let totalLeaf = 0;
     let completedLeaf = 0;
-    
+
     workflows.forEach((workflow) => {
-      const hasChildren = workflow.workflowChild && workflow.workflowChild.length > 0;
-      
+      const hasChildren =
+        workflow.workflowChild && workflow.workflowChild.length > 0;
+
       if (!hasChildren) {
         // This is a leaf node - count it
         totalLeaf++;
@@ -99,7 +102,7 @@ const ProjectDocumentationSection = ({
         completedLeaf += childCounts.completed;
       }
     });
-    
+
     return { total: totalLeaf, completed: completedLeaf };
   };
 

@@ -661,16 +661,22 @@ const FeatureBacklogsView = ({
                 aria-label="Actions"
               />
               <MenuList>
-                <MenuItem icon={<FiEdit />} onClick={() => handleEditBacklog(info.row.original)}>
+                <MenuItem
+                  icon={<FiEdit />}
+                  onClick={() => handleEditBacklog(info.row.original)}
+                >
                   Edit
                 </MenuItem>
-                <MenuItem icon={<FiEye />} onClick={() => handlePreviewBacklog(info.row.original)}>
+                <MenuItem
+                  icon={<FiEye />}
+                  onClick={() => handlePreviewBacklog(info.row.original)}
+                >
                   Preview
                 </MenuItem>
                 <MenuItem
                   icon={<BsKanban />}
                   as={Link}
-                  href={`/workspace/project/from-manage?projectId=${DataProject?.id}&backlogId=${info.row.original.id}`}
+                  href={`/kanban?projectId=${DataProject?.id}&backlogId=${info.row.original.id}`}
                 >
                   Go To Kanban
                 </MenuItem>
@@ -833,7 +839,8 @@ const FeatureBacklogsView = ({
       >
         <HStack divider={<StackDivider borderColor="gray.200" />} w="full">
           <Text fontSize="sm" fontWeight={600}>
-            Overall Progression - {ProjectBacklogProgression.progressionBacklog}%
+            Overall Progression - {ProjectBacklogProgression.progressionBacklog}
+            %
           </Text>
           <Text fontSize="sm" fontWeight={500}>
             {ProjectBacklogProgression.totalBacklogsDone}
@@ -951,7 +958,7 @@ const FeatureBacklogsView = ({
                 </Box>
 
                 {/* Tabs for Edit and History */}
-                <Tabs variant="soft-rounded" colorScheme="blue" >
+                <Tabs variant="soft-rounded" colorScheme="blue">
                   <TabList bg="gray.100" p={1} rounded={radiusStyle}>
                     <Tab
                       rounded={radiusStyle}
@@ -1047,9 +1054,10 @@ const FeatureBacklogsView = ({
                       colorScheme={
                         selectedBacklogPreview?.developmentStatus === "DONE"
                           ? "green"
-                          : selectedBacklogPreview?.developmentStatus === "IN PROGRESS"
-                            ? "blue"
-                            : "orange"
+                          : selectedBacklogPreview?.developmentStatus ===
+                            "IN PROGRESS"
+                          ? "blue"
+                          : "orange"
                       }
                       fontSize="xs"
                       px={3}
@@ -1104,14 +1112,24 @@ const FeatureBacklogsView = ({
               </Box>
             </VStack>
           </Box>
-          <ModalBody pb={6} overflowY="auto" bg={colorMode === "light" ? "gray.50" : "gray.900"}>
+          <ModalBody
+            pb={6}
+            overflowY="auto"
+            bg={colorMode === "light" ? "gray.50" : "gray.900"}
+          >
             {selectedBacklogPreview && (
               <VStack spacing={6} align="stretch" p={6}>
                 {/* Task Statistics - Hero Section */}
                 <Box>
                   <HStack mb={4}>
-                    <FiActivity size={20} color={colorMode === "light" ? "#3182CE" : "#63B3ED"} />
-                    <Heading size="md" color={colorMode === "light" ? "gray.700" : "white"}>
+                    <FiActivity
+                      size={20}
+                      color={colorMode === "light" ? "#3182CE" : "#63B3ED"}
+                    />
+                    <Heading
+                      size="md"
+                      color={colorMode === "light" ? "gray.700" : "white"}
+                    >
                       Task Statistics
                     </Heading>
                   </HStack>
@@ -1131,7 +1149,14 @@ const FeatureBacklogsView = ({
                     <VStack spacing={6} align="stretch">
                       {(() => {
                         // Fallback for when taskStats is null
-                        const stats = taskStats || { all: 0, toDo: 0, inProgress: 0, inReview: 0, done: 0, archived: 0 };
+                        const stats = taskStats || {
+                          all: 0,
+                          toDo: 0,
+                          inProgress: 0,
+                          inReview: 0,
+                          done: 0,
+                          archived: 0,
+                        };
 
                         return (
                           <>
@@ -1143,36 +1168,55 @@ const FeatureBacklogsView = ({
                             >
                               <CardBody p={6}>
                                 <VStack spacing={3} align="stretch">
-                                  <Text fontSize="sm" fontWeight="bold" color="gray.600">
+                                  <Text
+                                    fontSize="sm"
+                                    fontWeight="bold"
+                                    color="gray.600"
+                                  >
                                     OVERALL BACKLOG PROGRESSION
                                   </Text>
                                   <HStack justify="space-between">
-                                    <Text fontSize="3xl" fontWeight="bold" color="blue.500">
-                                      {selectedBacklogPreview?.progressionPercentage || 0}%
+                                    <Text
+                                      fontSize="3xl"
+                                      fontWeight="bold"
+                                      color="blue.500"
+                                    >
+                                      {selectedBacklogPreview?.progressionPercentage ||
+                                        0}
+                                      %
                                     </Text>
                                     <Badge
                                       colorScheme={
-                                        selectedBacklogPreview?.developmentStatus === "DONE"
+                                        selectedBacklogPreview?.developmentStatus ===
+                                        "DONE"
                                           ? "green"
-                                          : selectedBacklogPreview?.developmentStatus === "IN PROGRESS"
-                                            ? "blue"
-                                            : "orange"
+                                          : selectedBacklogPreview?.developmentStatus ===
+                                            "IN PROGRESS"
+                                          ? "blue"
+                                          : "orange"
                                       }
                                       fontSize="sm"
                                       px={3}
                                       py={1}
                                     >
-                                      {selectedBacklogPreview?.developmentStatus}
+                                      {
+                                        selectedBacklogPreview?.developmentStatus
+                                      }
                                     </Badge>
                                   </HStack>
                                   <Progress
-                                    value={selectedBacklogPreview?.progressionPercentage || 0}
+                                    value={
+                                      selectedBacklogPreview?.progressionPercentage ||
+                                      0
+                                    }
                                     colorScheme={
-                                      (selectedBacklogPreview?.progressionPercentage || 0) > 70
+                                      (selectedBacklogPreview?.progressionPercentage ||
+                                        0) > 70
                                         ? "green"
-                                        : (selectedBacklogPreview?.progressionPercentage || 0) > 30
-                                          ? "orange"
-                                          : "red"
+                                        : (selectedBacklogPreview?.progressionPercentage ||
+                                            0) > 30
+                                        ? "orange"
+                                        : "red"
                                     }
                                     size="lg"
                                     rounded="full"
@@ -1188,9 +1232,15 @@ const FeatureBacklogsView = ({
                               rounded="xl"
                             >
                               <CardHeader
-                                bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                                bg={
+                                  colorMode === "light" ? "gray.50" : "gray.700"
+                                }
                                 borderBottom="1px"
-                                borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                                borderColor={
+                                  colorMode === "light"
+                                    ? "gray.200"
+                                    : "gray.600"
+                                }
                               >
                                 <Heading size="sm">TASK METRICS</Heading>
                               </CardHeader>
@@ -1212,60 +1262,83 @@ const FeatureBacklogsView = ({
                                       </Td>
                                       <Td>
                                         {(() => {
-                                          const start = selectedBacklogPreview?.backlogStartdate;
-                                          const end = selectedBacklogPreview?.backlogEnddate;
+                                          const start =
+                                            selectedBacklogPreview?.backlogStartdate;
+                                          const end =
+                                            selectedBacklogPreview?.backlogEnddate;
                                           if (!start || !end) return "8-12";
                                           const duration = Math.ceil(
-                                            (new Date(end).getTime() - new Date(start).getTime()) /
-                                            (1000 * 60 * 60 * 24)
+                                            (new Date(end).getTime() -
+                                              new Date(start).getTime()) /
+                                              (1000 * 60 * 60 * 24)
                                           );
                                           const multiplier =
-                                            selectedBacklogPreview?.priority === "HIGH"
+                                            selectedBacklogPreview?.priority ===
+                                            "HIGH"
                                               ? 1.5
-                                              : selectedBacklogPreview?.priority === "MEDIUM"
-                                                ? 1.0
-                                                : 0.7;
+                                              : selectedBacklogPreview?.priority ===
+                                                "MEDIUM"
+                                              ? 1.0
+                                              : 0.7;
                                           const base = Math.ceil(duration / 3);
-                                          const min = Math.floor(base * multiplier);
+                                          const min = Math.floor(
+                                            base * multiplier
+                                          );
                                           const max = Math.ceil(min * 1.5);
                                           return `${min}-${max}`;
                                         })()}
                                       </Td>
                                       <Td>
                                         {stats.all === 0 ? (
-                                          <Badge colorScheme="orange" fontSize="xs">
+                                          <Badge
+                                            colorScheme="orange"
+                                            fontSize="xs"
+                                          >
                                             ⚠️ Not Started
                                           </Badge>
                                         ) : (
-                                          <Badge colorScheme="green" fontSize="xs">
+                                          <Badge
+                                            colorScheme="green"
+                                            fontSize="xs"
+                                          >
                                             ✓ Active
                                           </Badge>
                                         )}
                                       </Td>
                                     </Tr>
                                     <Tr>
-                                      <Td fontWeight="medium">Completed Tasks</Td>
+                                      <Td fontWeight="medium">
+                                        Completed Tasks
+                                      </Td>
                                       <Td isNumeric fontWeight="bold">
                                         {stats.done}
                                       </Td>
                                       <Td>-</Td>
                                       <Td>
                                         {stats.done > 0 && (
-                                          <Badge colorScheme="green" fontSize="xs">
+                                          <Badge
+                                            colorScheme="green"
+                                            fontSize="xs"
+                                          >
                                             {stats.done} done
                                           </Badge>
                                         )}
                                       </Td>
                                     </Tr>
                                     <Tr>
-                                      <Td fontWeight="medium">In Progress Tasks</Td>
+                                      <Td fontWeight="medium">
+                                        In Progress Tasks
+                                      </Td>
                                       <Td isNumeric fontWeight="bold">
                                         {stats.inProgress}
                                       </Td>
                                       <Td>-</Td>
                                       <Td>
                                         {stats.inProgress > 0 && (
-                                          <Badge colorScheme="blue" fontSize="xs">
+                                          <Badge
+                                            colorScheme="blue"
+                                            fontSize="xs"
+                                          >
                                             {stats.inProgress} active
                                           </Badge>
                                         )}
@@ -1279,42 +1352,54 @@ const FeatureBacklogsView = ({
                                       <Td>-</Td>
                                       <Td>
                                         {stats.toDo > 0 && (
-                                          <Badge colorScheme="gray" fontSize="xs">
+                                          <Badge
+                                            colorScheme="gray"
+                                            fontSize="xs"
+                                          >
                                             {stats.toDo} pending
                                           </Badge>
                                         )}
                                       </Td>
                                     </Tr>
                                     <Tr>
-                                      <Td fontWeight="medium">Task Completion %</Td>
+                                      <Td fontWeight="medium">
+                                        Task Completion %
+                                      </Td>
                                       <Td isNumeric fontWeight="bold">
                                         {stats.all > 0
-                                          ? Math.round((stats.done / stats.all) * 100)
+                                          ? Math.round(
+                                              (stats.done / stats.all) * 100
+                                            )
                                           : 0}
                                         %
                                       </Td>
                                       <Td>100%</Td>
                                       <Td>
                                         {stats.all === 0 ? (
-                                          <Badge colorScheme="orange" fontSize="xs">
+                                          <Badge
+                                            colorScheme="orange"
+                                            fontSize="xs"
+                                          >
                                             ⚠️ No tasks
                                           </Badge>
                                         ) : (
                                           <Badge
                                             colorScheme={
-                                              stats.all > 0 && stats.done === stats.all
+                                              stats.all > 0 &&
+                                              stats.done === stats.all
                                                 ? "green"
                                                 : stats.done > 0
-                                                  ? "blue"
-                                                  : "gray"
+                                                ? "blue"
+                                                : "gray"
                                             }
                                             fontSize="xs"
                                           >
-                                            {stats.all > 0 && stats.done === stats.all
+                                            {stats.all > 0 &&
+                                            stats.done === stats.all
                                               ? "✓ Complete"
                                               : stats.done > 0
-                                                ? "In Progress"
-                                                : "Not Started"}
+                                              ? "In Progress"
+                                              : "Not Started"}
                                           </Badge>
                                         )}
                                       </Td>
@@ -1331,9 +1416,15 @@ const FeatureBacklogsView = ({
                               rounded="xl"
                             >
                               <CardHeader
-                                bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                                bg={
+                                  colorMode === "light" ? "gray.50" : "gray.700"
+                                }
                                 borderBottom="1px"
-                                borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                                borderColor={
+                                  colorMode === "light"
+                                    ? "gray.200"
+                                    : "gray.600"
+                                }
                               >
                                 <Heading size="sm">BACKLOG DETAILS</Heading>
                               </CardHeader>
@@ -1343,13 +1434,25 @@ const FeatureBacklogsView = ({
                                   <Box>
                                     <HStack mb={3}>
                                       <FiInfo size={16} color="#3182CE" />
-                                      <Text fontSize="sm" fontWeight="bold" color="blue.600">
+                                      <Text
+                                        fontSize="sm"
+                                        fontWeight="bold"
+                                        color="blue.600"
+                                      >
                                         Basic Information
                                       </Text>
                                     </HStack>
-                                    <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3} pl={6}>
+                                    <SimpleGrid
+                                      columns={{ base: 1, md: 2 }}
+                                      spacing={3}
+                                      pl={6}
+                                    >
                                       <Box>
-                                        <Text fontSize="xs" color="gray.500" mb={1}>
+                                        <Text
+                                          fontSize="xs"
+                                          color="gray.500"
+                                          mb={1}
+                                        >
                                           Code
                                         </Text>
                                         <Text fontSize="sm" fontWeight="medium">
@@ -1357,7 +1460,11 @@ const FeatureBacklogsView = ({
                                         </Text>
                                       </Box>
                                       <Box>
-                                        <Text fontSize="xs" color="gray.500" mb={1}>
+                                        <Text
+                                          fontSize="xs"
+                                          color="gray.500"
+                                          mb={1}
+                                        >
                                           Name
                                         </Text>
                                         <Text fontSize="sm" fontWeight="medium">
@@ -1365,11 +1472,22 @@ const FeatureBacklogsView = ({
                                         </Text>
                                       </Box>
                                       {selectedBacklogPreview?.backlogDesc && (
-                                        <Box gridColumn={{ base: "1", md: "1 / -1" }}>
-                                          <Text fontSize="xs" color="gray.500" mb={1}>
+                                        <Box
+                                          gridColumn={{
+                                            base: "1",
+                                            md: "1 / -1",
+                                          }}
+                                        >
+                                          <Text
+                                            fontSize="xs"
+                                            color="gray.500"
+                                            mb={1}
+                                          >
                                             Description
                                           </Text>
-                                          <Text fontSize="sm">{selectedBacklogPreview.backlogDesc}</Text>
+                                          <Text fontSize="sm">
+                                            {selectedBacklogPreview.backlogDesc}
+                                          </Text>
                                         </Box>
                                       )}
                                     </SimpleGrid>
@@ -1381,61 +1499,91 @@ const FeatureBacklogsView = ({
                                   <Box>
                                     <HStack mb={3}>
                                       <FiActivity size={16} color="#805AD5" />
-                                      <Text fontSize="sm" fontWeight="bold" color="purple.600">
+                                      <Text
+                                        fontSize="sm"
+                                        fontWeight="bold"
+                                        color="purple.600"
+                                      >
                                         Priority Matrix
                                       </Text>
                                     </HStack>
-                                    <SimpleGrid columns={{ base: 2, md: 4 }} spacing={3} pl={6}>
+                                    <SimpleGrid
+                                      columns={{ base: 2, md: 4 }}
+                                      spacing={3}
+                                      pl={6}
+                                    >
                                       <Box>
-                                        <Text fontSize="xs" color="gray.500" mb={1}>
+                                        <Text
+                                          fontSize="xs"
+                                          color="gray.500"
+                                          mb={1}
+                                        >
                                           Priority
                                         </Text>
                                         <Badge
                                           colorScheme={
-                                            selectedBacklogPreview?.priority === "HIGH"
+                                            selectedBacklogPreview?.priority ===
+                                            "HIGH"
                                               ? "red"
-                                              : selectedBacklogPreview?.priority === "MEDIUM"
-                                                ? "orange"
-                                                : "gray"
+                                              : selectedBacklogPreview?.priority ===
+                                                "MEDIUM"
+                                              ? "orange"
+                                              : "gray"
                                           }
                                         >
                                           {selectedBacklogPreview?.priority}
                                         </Badge>
                                       </Box>
                                       <Box>
-                                        <Text fontSize="xs" color="gray.500" mb={1}>
+                                        <Text
+                                          fontSize="xs"
+                                          color="gray.500"
+                                          mb={1}
+                                        >
                                           Urgency
                                         </Text>
                                         <Badge
                                           colorScheme={
-                                            selectedBacklogPreview?.urgency === "HIGH"
+                                            selectedBacklogPreview?.urgency ===
+                                            "HIGH"
                                               ? "red"
-                                              : selectedBacklogPreview?.urgency === "MEDIUM"
-                                                ? "orange"
-                                                : "gray"
+                                              : selectedBacklogPreview?.urgency ===
+                                                "MEDIUM"
+                                              ? "orange"
+                                              : "gray"
                                           }
                                         >
                                           {selectedBacklogPreview?.urgency}
                                         </Badge>
                                       </Box>
                                       <Box>
-                                        <Text fontSize="xs" color="gray.500" mb={1}>
+                                        <Text
+                                          fontSize="xs"
+                                          color="gray.500"
+                                          mb={1}
+                                        >
                                           Impact
                                         </Text>
                                         <Badge
                                           colorScheme={
-                                            selectedBacklogPreview?.impact === "HIGH"
+                                            selectedBacklogPreview?.impact ===
+                                            "HIGH"
                                               ? "red"
-                                              : selectedBacklogPreview?.impact === "MEDIUM"
-                                                ? "orange"
-                                                : "gray"
+                                              : selectedBacklogPreview?.impact ===
+                                                "MEDIUM"
+                                              ? "orange"
+                                              : "gray"
                                           }
                                         >
                                           {selectedBacklogPreview?.impact}
                                         </Badge>
                                       </Box>
                                       <Box>
-                                        <Text fontSize="xs" color="gray.500" mb={1}>
+                                        <Text
+                                          fontSize="xs"
+                                          color="gray.500"
+                                          mb={1}
+                                        >
                                           Risk Level
                                         </Text>
                                         <Badge
@@ -1446,10 +1594,20 @@ const FeatureBacklogsView = ({
                                               LOW: 1,
                                             };
                                             const total =
-                                              (score[selectedBacklogPreview?.priority as keyof typeof score] || 0) +
-                                              (score[selectedBacklogPreview?.urgency as keyof typeof score] || 0) +
-                                              (score[selectedBacklogPreview?.impact as keyof typeof score] || 0);
-                                            return total >= 8 ? "red" : total >= 6 ? "orange" : "green";
+                                              (score[
+                                                selectedBacklogPreview?.priority as keyof typeof score
+                                              ] || 0) +
+                                              (score[
+                                                selectedBacklogPreview?.urgency as keyof typeof score
+                                              ] || 0) +
+                                              (score[
+                                                selectedBacklogPreview?.impact as keyof typeof score
+                                              ] || 0);
+                                            return total >= 8
+                                              ? "red"
+                                              : total >= 6
+                                              ? "orange"
+                                              : "green";
                                           })()}
                                         >
                                           {(() => {
@@ -1459,16 +1617,22 @@ const FeatureBacklogsView = ({
                                               LOW: 1,
                                             };
                                             const total =
-                                              (score[selectedBacklogPreview?.priority as keyof typeof score] || 0) +
-                                              (score[selectedBacklogPreview?.urgency as keyof typeof score] || 0) +
-                                              (score[selectedBacklogPreview?.impact as keyof typeof score] || 0);
+                                              (score[
+                                                selectedBacklogPreview?.priority as keyof typeof score
+                                              ] || 0) +
+                                              (score[
+                                                selectedBacklogPreview?.urgency as keyof typeof score
+                                              ] || 0) +
+                                              (score[
+                                                selectedBacklogPreview?.impact as keyof typeof score
+                                              ] || 0);
                                             return total >= 8
                                               ? "CRITICAL"
                                               : total >= 6
-                                                ? "HIGH"
-                                                : total >= 4
-                                                  ? "MEDIUM"
-                                                  : "LOW";
+                                              ? "HIGH"
+                                              : total >= 4
+                                              ? "MEDIUM"
+                                              : "LOW";
                                           })()}
                                         </Badge>
                                       </Box>
@@ -1481,119 +1645,183 @@ const FeatureBacklogsView = ({
                                   <Box>
                                     <HStack mb={3}>
                                       <FiClock size={16} color="#3182CE" />
-                                      <Text fontSize="sm" fontWeight="bold" color="blue.600">
+                                      <Text
+                                        fontSize="sm"
+                                        fontWeight="bold"
+                                        color="blue.600"
+                                      >
                                         Timeline
                                       </Text>
                                     </HStack>
-                                    <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3} pl={6}>
+                                    <SimpleGrid
+                                      columns={{ base: 1, md: 2 }}
+                                      spacing={3}
+                                      pl={6}
+                                    >
                                       <Box>
-                                        <Text fontSize="xs" color="gray.500" mb={1}>
+                                        <Text
+                                          fontSize="xs"
+                                          color="gray.500"
+                                          mb={1}
+                                        >
                                           Start Date
                                         </Text>
                                         <Text fontSize="sm" fontWeight="medium">
                                           {selectedBacklogPreview?.backlogStartdate
-                                            ? new Date(selectedBacklogPreview.backlogStartdate).toLocaleDateString(
-                                              "en-US",
-                                              { month: "short", day: "numeric", year: "numeric" }
-                                            )
+                                            ? new Date(
+                                                selectedBacklogPreview.backlogStartdate
+                                              ).toLocaleDateString("en-US", {
+                                                month: "short",
+                                                day: "numeric",
+                                                year: "numeric",
+                                              })
                                             : "-"}
                                         </Text>
                                       </Box>
                                       <Box>
-                                        <Text fontSize="xs" color="gray.500" mb={1}>
+                                        <Text
+                                          fontSize="xs"
+                                          color="gray.500"
+                                          mb={1}
+                                        >
                                           End Date
                                         </Text>
                                         <Text fontSize="sm" fontWeight="medium">
                                           {selectedBacklogPreview?.backlogEnddate
-                                            ? new Date(selectedBacklogPreview.backlogEnddate).toLocaleDateString(
-                                              "en-US",
-                                              { month: "short", day: "numeric", year: "numeric" }
-                                            )
+                                            ? new Date(
+                                                selectedBacklogPreview.backlogEnddate
+                                              ).toLocaleDateString("en-US", {
+                                                month: "short",
+                                                day: "numeric",
+                                                year: "numeric",
+                                              })
                                             : "-"}
                                         </Text>
                                       </Box>
                                       <Box>
-                                        <Text fontSize="xs" color="gray.500" mb={1}>
+                                        <Text
+                                          fontSize="xs"
+                                          color="gray.500"
+                                          mb={1}
+                                        >
                                           Duration
                                         </Text>
                                         <Text fontSize="sm" fontWeight="medium">
                                           {selectedBacklogPreview?.backlogStartdate &&
-                                            selectedBacklogPreview?.backlogEnddate
+                                          selectedBacklogPreview?.backlogEnddate
                                             ? `${Math.ceil(
-                                              (new Date(selectedBacklogPreview.backlogEnddate).getTime() -
-                                                new Date(selectedBacklogPreview.backlogStartdate).getTime()) /
-                                              (1000 * 60 * 60 * 24)
-                                            )} days`
+                                                (new Date(
+                                                  selectedBacklogPreview.backlogEnddate
+                                                ).getTime() -
+                                                  new Date(
+                                                    selectedBacklogPreview.backlogStartdate
+                                                  ).getTime()) /
+                                                  (1000 * 60 * 60 * 24)
+                                              )} days`
                                             : "-"}
                                         </Text>
                                       </Box>
                                       <Box>
-                                        <Text fontSize="xs" color="gray.500" mb={1}>
+                                        <Text
+                                          fontSize="xs"
+                                          color="gray.500"
+                                          mb={1}
+                                        >
                                           Days Elapsed
                                         </Text>
                                         <Text fontSize="sm" fontWeight="medium">
                                           {selectedBacklogPreview?.backlogStartdate
                                             ? `${Math.max(
-                                              0,
-                                              Math.ceil(
-                                                (new Date().getTime() -
-                                                  new Date(selectedBacklogPreview.backlogStartdate).getTime()) /
-                                                (1000 * 60 * 60 * 24)
-                                              )
-                                            )} days`
+                                                0,
+                                                Math.ceil(
+                                                  (new Date().getTime() -
+                                                    new Date(
+                                                      selectedBacklogPreview.backlogStartdate
+                                                    ).getTime()) /
+                                                    (1000 * 60 * 60 * 24)
+                                                )
+                                              )} days`
                                             : "-"}
                                         </Text>
                                       </Box>
                                       <Box>
-                                        <Text fontSize="xs" color="gray.500" mb={1}>
+                                        <Text
+                                          fontSize="xs"
+                                          color="gray.500"
+                                          mb={1}
+                                        >
                                           Days Remaining
                                         </Text>
                                         <Text fontSize="sm" fontWeight="medium">
                                           {selectedBacklogPreview?.backlogEnddate
                                             ? `${Math.max(
-                                              0,
-                                              Math.ceil(
-                                                (new Date(selectedBacklogPreview.backlogEnddate).getTime() -
-                                                  new Date().getTime()) /
-                                                (1000 * 60 * 60 * 24)
-                                              )
-                                            )} days`
+                                                0,
+                                                Math.ceil(
+                                                  (new Date(
+                                                    selectedBacklogPreview.backlogEnddate
+                                                  ).getTime() -
+                                                    new Date().getTime()) /
+                                                    (1000 * 60 * 60 * 24)
+                                                )
+                                              )} days`
                                             : "-"}
                                         </Text>
                                       </Box>
                                       <Box>
-                                        <Text fontSize="xs" color="gray.500" mb={1}>
+                                        <Text
+                                          fontSize="xs"
+                                          color="gray.500"
+                                          mb={1}
+                                        >
                                           Timeline Status
                                         </Text>
                                         {selectedBacklogPreview?.backlogStartdate &&
-                                          selectedBacklogPreview?.backlogEnddate ? (
+                                        selectedBacklogPreview?.backlogEnddate ? (
                                           (() => {
                                             const duration = Math.ceil(
-                                              (new Date(selectedBacklogPreview.backlogEnddate).getTime() -
-                                                new Date(selectedBacklogPreview.backlogStartdate).getTime()) /
-                                              (1000 * 60 * 60 * 24)
+                                              (new Date(
+                                                selectedBacklogPreview.backlogEnddate
+                                              ).getTime() -
+                                                new Date(
+                                                  selectedBacklogPreview.backlogStartdate
+                                                ).getTime()) /
+                                                (1000 * 60 * 60 * 24)
                                             );
                                             const elapsed = Math.max(
                                               0,
                                               Math.ceil(
                                                 (new Date().getTime() -
-                                                  new Date(selectedBacklogPreview.backlogStartdate).getTime()) /
-                                                (1000 * 60 * 60 * 24)
+                                                  new Date(
+                                                    selectedBacklogPreview.backlogStartdate
+                                                  ).getTime()) /
+                                                  (1000 * 60 * 60 * 24)
                                               )
                                             );
-                                            const expectedProgress = (elapsed / duration) * 100;
-                                            const actualProgress = selectedBacklogPreview.progressionPercentage || 0;
-                                            const diff = actualProgress - expectedProgress;
+                                            const expectedProgress =
+                                              (elapsed / duration) * 100;
+                                            const actualProgress =
+                                              selectedBacklogPreview.progressionPercentage ||
+                                              0;
+                                            const diff =
+                                              actualProgress - expectedProgress;
                                             return (
                                               <Badge
-                                                colorScheme={diff >= 0 ? "green" : diff > -10 ? "orange" : "red"}
+                                                colorScheme={
+                                                  diff >= 0
+                                                    ? "green"
+                                                    : diff > -10
+                                                    ? "orange"
+                                                    : "red"
+                                                }
                                                 fontSize="xs"
                                               >
                                                 {diff >= 0
                                                   ? "🟢 On Track"
                                                   : diff > -10
-                                                    ? "🟡 Slightly Behind"
-                                                    : `🔴 Behind (${Math.abs(Math.round(diff))}%)`}
+                                                  ? "🟡 Slightly Behind"
+                                                  : `🔴 Behind (${Math.abs(
+                                                      Math.round(diff)
+                                                    )}%)`}
                                               </Badge>
                                             );
                                           })()
@@ -1607,71 +1835,106 @@ const FeatureBacklogsView = ({
                                   {/* Implementation Dates */}
                                   {(selectedBacklogPreview?.backlogImplementStartdate ||
                                     selectedBacklogPreview?.backlogImplementEnddate) && (
-                                      <>
-                                        <Divider />
-                                        <Box>
-                                          <HStack mb={3}>
-                                            <FiClock size={16} color="#805AD5" />
-                                            <Text fontSize="sm" fontWeight="bold" color="purple.600">
-                                              Implementation Dates
+                                    <>
+                                      <Divider />
+                                      <Box>
+                                        <HStack mb={3}>
+                                          <FiClock size={16} color="#805AD5" />
+                                          <Text
+                                            fontSize="sm"
+                                            fontWeight="bold"
+                                            color="purple.600"
+                                          >
+                                            Implementation Dates
+                                          </Text>
+                                        </HStack>
+                                        <SimpleGrid
+                                          columns={{ base: 1, md: 3 }}
+                                          spacing={3}
+                                          pl={6}
+                                        >
+                                          <Box>
+                                            <Text
+                                              fontSize="xs"
+                                              color="gray.500"
+                                              mb={1}
+                                            >
+                                              Impl. Start
                                             </Text>
-                                          </HStack>
-                                          <SimpleGrid columns={{ base: 1, md: 3 }} spacing={3} pl={6}>
-                                            <Box>
-                                              <Text fontSize="xs" color="gray.500" mb={1}>
-                                                Impl. Start
-                                              </Text>
-                                              <Text fontSize="sm" fontWeight="medium">
-                                                {selectedBacklogPreview?.backlogImplementStartdate
-                                                  ? new Date(
+                                            <Text
+                                              fontSize="sm"
+                                              fontWeight="medium"
+                                            >
+                                              {selectedBacklogPreview?.backlogImplementStartdate
+                                                ? new Date(
                                                     selectedBacklogPreview.backlogImplementStartdate
-                                                  ).toLocaleDateString("en-US", {
-                                                    month: "short",
-                                                    day: "numeric",
-                                                    year: "numeric",
-                                                  })
-                                                  : "-"}
-                                              </Text>
-                                            </Box>
-                                            <Box>
-                                              <Text fontSize="xs" color="gray.500" mb={1}>
-                                                Impl. End
-                                              </Text>
-                                              <Text fontSize="sm" fontWeight="medium">
-                                                {selectedBacklogPreview?.backlogImplementEnddate
-                                                  ? new Date(
+                                                  ).toLocaleDateString(
+                                                    "en-US",
+                                                    {
+                                                      month: "short",
+                                                      day: "numeric",
+                                                      year: "numeric",
+                                                    }
+                                                  )
+                                                : "-"}
+                                            </Text>
+                                          </Box>
+                                          <Box>
+                                            <Text
+                                              fontSize="xs"
+                                              color="gray.500"
+                                              mb={1}
+                                            >
+                                              Impl. End
+                                            </Text>
+                                            <Text
+                                              fontSize="sm"
+                                              fontWeight="medium"
+                                            >
+                                              {selectedBacklogPreview?.backlogImplementEnddate
+                                                ? new Date(
                                                     selectedBacklogPreview.backlogImplementEnddate
-                                                  ).toLocaleDateString("en-US", {
-                                                    month: "short",
-                                                    day: "numeric",
-                                                    year: "numeric",
-                                                  })
-                                                  : "-"}
-                                              </Text>
-                                            </Box>
-                                            <Box>
-                                              <Text fontSize="xs" color="gray.500" mb={1}>
-                                                Impl. Duration
-                                              </Text>
-                                              <Text fontSize="sm" fontWeight="medium">
-                                                {selectedBacklogPreview?.backlogImplementStartdate &&
-                                                  selectedBacklogPreview?.backlogImplementEnddate
-                                                  ? `${Math.ceil(
+                                                  ).toLocaleDateString(
+                                                    "en-US",
+                                                    {
+                                                      month: "short",
+                                                      day: "numeric",
+                                                      year: "numeric",
+                                                    }
+                                                  )
+                                                : "-"}
+                                            </Text>
+                                          </Box>
+                                          <Box>
+                                            <Text
+                                              fontSize="xs"
+                                              color="gray.500"
+                                              mb={1}
+                                            >
+                                              Impl. Duration
+                                            </Text>
+                                            <Text
+                                              fontSize="sm"
+                                              fontWeight="medium"
+                                            >
+                                              {selectedBacklogPreview?.backlogImplementStartdate &&
+                                              selectedBacklogPreview?.backlogImplementEnddate
+                                                ? `${Math.ceil(
                                                     (new Date(
                                                       selectedBacklogPreview.backlogImplementEnddate
                                                     ).getTime() -
                                                       new Date(
                                                         selectedBacklogPreview.backlogImplementStartdate
                                                       ).getTime()) /
-                                                    (1000 * 60 * 60 * 24)
+                                                      (1000 * 60 * 60 * 24)
                                                   )} days`
-                                                  : "-"}
-                                              </Text>
-                                            </Box>
-                                          </SimpleGrid>
-                                        </Box>
-                                      </>
-                                    )}
+                                                : "-"}
+                                            </Text>
+                                          </Box>
+                                        </SimpleGrid>
+                                      </Box>
+                                    </>
+                                  )}
 
                                   <Divider />
 
@@ -1679,43 +1942,80 @@ const FeatureBacklogsView = ({
                                   <Box>
                                     <HStack mb={3}>
                                       <FiSettings size={16} color="#3182CE" />
-                                      <Text fontSize="sm" fontWeight="bold" color="blue.600">
+                                      <Text
+                                        fontSize="sm"
+                                        fontWeight="bold"
+                                        color="blue.600"
+                                      >
                                         Technical Information
                                       </Text>
                                     </HStack>
-                                    <SimpleGrid columns={{ base: 2, md: 4 }} spacing={3} pl={6}>
+                                    <SimpleGrid
+                                      columns={{ base: 2, md: 4 }}
+                                      spacing={3}
+                                      pl={6}
+                                    >
                                       {selectedBacklogPreview?.envSide && (
                                         <Box>
-                                          <Text fontSize="xs" color="gray.500" mb={1}>
+                                          <Text
+                                            fontSize="xs"
+                                            color="gray.500"
+                                            mb={1}
+                                          >
                                             Environment
                                           </Text>
-                                          <Text fontSize="sm" fontWeight="medium">
+                                          <Text
+                                            fontSize="sm"
+                                            fontWeight="medium"
+                                          >
                                             {selectedBacklogPreview.envSide}
                                           </Text>
                                         </Box>
                                       )}
                                       {selectedBacklogPreview?.maintenanceCategory && (
                                         <Box>
-                                          <Text fontSize="xs" color="gray.500" mb={1}>
+                                          <Text
+                                            fontSize="xs"
+                                            color="gray.500"
+                                            mb={1}
+                                          >
                                             Maintenance Category
                                           </Text>
-                                          <Text fontSize="sm" fontWeight="medium">
-                                            {selectedBacklogPreview.maintenanceCategory}
+                                          <Text
+                                            fontSize="sm"
+                                            fontWeight="medium"
+                                          >
+                                            {
+                                              selectedBacklogPreview.maintenanceCategory
+                                            }
                                           </Text>
                                         </Box>
                                       )}
                                       {selectedBacklogPreview?.maintenanceType && (
                                         <Box>
-                                          <Text fontSize="xs" color="gray.500" mb={1}>
+                                          <Text
+                                            fontSize="xs"
+                                            color="gray.500"
+                                            mb={1}
+                                          >
                                             Maintenance Type
                                           </Text>
-                                          <Text fontSize="sm" fontWeight="medium">
-                                            {selectedBacklogPreview.maintenanceType}
+                                          <Text
+                                            fontSize="sm"
+                                            fontWeight="medium"
+                                          >
+                                            {
+                                              selectedBacklogPreview.maintenanceType
+                                            }
                                           </Text>
                                         </Box>
                                       )}
                                       <Box>
-                                        <Text fontSize="xs" color="gray.500" mb={1}>
+                                        <Text
+                                          fontSize="xs"
+                                          color="gray.500"
+                                          mb={1}
+                                        >
                                           RPPB
                                         </Text>
                                         <Text fontSize="sm" fontWeight="medium">
@@ -1723,7 +2023,11 @@ const FeatureBacklogsView = ({
                                         </Text>
                                       </Box>
                                       <Box>
-                                        <Text fontSize="xs" color="gray.500" mb={1}>
+                                        <Text
+                                          fontSize="xs"
+                                          color="gray.500"
+                                          mb={1}
+                                        >
                                           Licensing
                                         </Text>
                                         <Text fontSize="sm" fontWeight="medium">
@@ -1731,7 +2035,11 @@ const FeatureBacklogsView = ({
                                         </Text>
                                       </Box>
                                       <Box>
-                                        <Text fontSize="xs" color="gray.500" mb={1}>
+                                        <Text
+                                          fontSize="xs"
+                                          color="gray.500"
+                                          mb={1}
+                                        >
                                           Version
                                         </Text>
                                         <Text fontSize="sm" fontWeight="medium">
@@ -1739,13 +2047,25 @@ const FeatureBacklogsView = ({
                                         </Text>
                                       </Box>
                                       <Box>
-                                        <Text fontSize="xs" color="gray.500" mb={1}>
+                                        <Text
+                                          fontSize="xs"
+                                          color="gray.500"
+                                          mb={1}
+                                        >
                                           Live Status
                                         </Text>
                                         <Badge
-                                          colorScheme={selectedBacklogPreview?.isLive === "YES" ? "green" : "gray"}
+                                          colorScheme={
+                                            selectedBacklogPreview?.isLive ===
+                                            "YES"
+                                              ? "green"
+                                              : "gray"
+                                          }
                                         >
-                                          {selectedBacklogPreview?.isLive === "YES" ? "LIVE" : "NOT LIVE"}
+                                          {selectedBacklogPreview?.isLive ===
+                                          "YES"
+                                            ? "LIVE"
+                                            : "NOT LIVE"}
                                         </Badge>
                                       </Box>
                                     </SimpleGrid>
@@ -1756,22 +2076,43 @@ const FeatureBacklogsView = ({
                                   {/* Project Context */}
                                   <Box>
                                     <HStack mb={3}>
-                                      <FiMoreVertical size={16} color="#805AD5" />
-                                      <Text fontSize="sm" fontWeight="bold" color="purple.600">
+                                      <FiMoreVertical
+                                        size={16}
+                                        color="#805AD5"
+                                      />
+                                      <Text
+                                        fontSize="sm"
+                                        fontWeight="bold"
+                                        color="purple.600"
+                                      >
                                         Project Context
                                       </Text>
                                     </HStack>
-                                    <SimpleGrid columns={{ base: 1, md: 3 }} spacing={3} pl={6}>
+                                    <SimpleGrid
+                                      columns={{ base: 1, md: 3 }}
+                                      spacing={3}
+                                      pl={6}
+                                    >
                                       <Box>
-                                        <Text fontSize="xs" color="gray.500" mb={1}>
+                                        <Text
+                                          fontSize="xs"
+                                          color="gray.500"
+                                          mb={1}
+                                        >
                                           Project
                                         </Text>
                                         <Text fontSize="sm" fontWeight="medium">
-                                          {DataProject?.projectName || selectedBacklogPreview?.projectId || "-"}
+                                          {DataProject?.projectName ||
+                                            selectedBacklogPreview?.projectId ||
+                                            "-"}
                                         </Text>
                                       </Box>
                                       <Box>
-                                        <Text fontSize="xs" color="gray.500" mb={1}>
+                                        <Text
+                                          fontSize="xs"
+                                          color="gray.500"
+                                          mb={1}
+                                        >
                                           Requirement
                                         </Text>
                                         <Text fontSize="sm" fontWeight="medium">
@@ -1779,11 +2120,17 @@ const FeatureBacklogsView = ({
                                         </Text>
                                       </Box>
                                       <Box>
-                                        <Text fontSize="xs" color="gray.500" mb={1}>
+                                        <Text
+                                          fontSize="xs"
+                                          color="gray.500"
+                                          mb={1}
+                                        >
                                           Application
                                         </Text>
                                         <Text fontSize="sm" fontWeight="medium">
-                                          {DataProject?.appsProject?.appName || selectedBacklogPreview?.appsId || "-"}
+                                          {DataProject?.appsProject?.appName ||
+                                            selectedBacklogPreview?.appsId ||
+                                            "-"}
                                         </Text>
                                       </Box>
                                     </SimpleGrid>
@@ -1795,13 +2142,25 @@ const FeatureBacklogsView = ({
                                   <Box>
                                     <HStack mb={3}>
                                       <FiUsers size={16} color="#3182CE" />
-                                      <Text fontSize="sm" fontWeight="bold" color="blue.600">
+                                      <Text
+                                        fontSize="sm"
+                                        fontWeight="bold"
+                                        color="blue.600"
+                                      >
                                         Team & Assignment
                                       </Text>
                                     </HStack>
-                                    <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3} pl={6}>
+                                    <SimpleGrid
+                                      columns={{ base: 1, md: 2 }}
+                                      spacing={3}
+                                      pl={6}
+                                    >
                                       <Box>
-                                        <Text fontSize="xs" color="gray.500" mb={1}>
+                                        <Text
+                                          fontSize="xs"
+                                          color="gray.500"
+                                          mb={1}
+                                        >
                                           Created By
                                         </Text>
                                         <Text fontSize="sm" fontWeight="medium">
@@ -1809,17 +2168,27 @@ const FeatureBacklogsView = ({
                                         </Text>
                                       </Box>
                                       <Box>
-                                        <Text fontSize="xs" color="gray.500" mb={1}>
+                                        <Text
+                                          fontSize="xs"
+                                          color="gray.500"
+                                          mb={1}
+                                        >
                                           Created At
                                         </Text>
                                         <Text fontSize="sm" fontWeight="medium">
                                           {selectedBacklogPreview?.createdAt
-                                            ? new Date(selectedBacklogPreview.createdAt).toLocaleString()
+                                            ? new Date(
+                                                selectedBacklogPreview.createdAt
+                                              ).toLocaleString()
                                             : "-"}
                                         </Text>
                                       </Box>
                                       <Box>
-                                        <Text fontSize="xs" color="gray.500" mb={1}>
+                                        <Text
+                                          fontSize="xs"
+                                          color="gray.500"
+                                          mb={1}
+                                        >
                                           Updated By
                                         </Text>
                                         <Text fontSize="sm" fontWeight="medium">
@@ -1827,20 +2196,36 @@ const FeatureBacklogsView = ({
                                         </Text>
                                       </Box>
                                       <Box>
-                                        <Text fontSize="xs" color="gray.500" mb={1}>
+                                        <Text
+                                          fontSize="xs"
+                                          color="gray.500"
+                                          mb={1}
+                                        >
                                           Updated At
                                         </Text>
                                         <Text fontSize="sm" fontWeight="medium">
                                           {selectedBacklogPreview?.updatedAt
-                                            ? new Date(selectedBacklogPreview.updatedAt).toLocaleString()
+                                            ? new Date(
+                                                selectedBacklogPreview.updatedAt
+                                              ).toLocaleString()
                                             : "-"}
                                         </Text>
                                       </Box>
-                                      <Box gridColumn={{ base: "1", md: "1 / -1" }}>
-                                        <Text fontSize="xs" color="gray.500" mb={1}>
+                                      <Box
+                                        gridColumn={{ base: "1", md: "1 / -1" }}
+                                      >
+                                        <Text
+                                          fontSize="xs"
+                                          color="gray.500"
+                                          mb={1}
+                                        >
                                           Assigned Team
                                         </Text>
-                                        <Text fontSize="sm" fontStyle="italic" color="gray.500">
+                                        <Text
+                                          fontSize="sm"
+                                          fontStyle="italic"
+                                          color="gray.500"
+                                        >
                                           No tasks created yet
                                         </Text>
                                       </Box>
@@ -1851,48 +2236,84 @@ const FeatureBacklogsView = ({
                                   {(selectedBacklogPreview?.reffId ||
                                     selectedBacklogPreview?.note ||
                                     selectedBacklogPreview?.posOrder) && (
-                                      <>
-                                        <Divider />
-                                        <Box>
-                                          <HStack mb={3}>
-                                            <FiEdit size={16} color="#805AD5" />
-                                            <Text fontSize="sm" fontWeight="bold" color="purple.600">
-                                              Additional Notes
-                                            </Text>
-                                          </HStack>
-                                          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3} pl={6}>
-                                            {selectedBacklogPreview?.reffId && (
-                                              <Box>
-                                                <Text fontSize="xs" color="gray.500" mb={1}>
-                                                  Reference
-                                                </Text>
-                                                <Text fontSize="sm" fontWeight="medium">
-                                                  {selectedBacklogPreview.reffId}
-                                                </Text>
-                                              </Box>
-                                            )}
-                                            {selectedBacklogPreview?.posOrder !== undefined && (
-                                              <Box>
-                                                <Text fontSize="xs" color="gray.500" mb={1}>
-                                                  Position Order
-                                                </Text>
-                                                <Text fontSize="sm" fontWeight="medium">
-                                                  {selectedBacklogPreview.posOrder}
-                                                </Text>
-                                              </Box>
-                                            )}
-                                            {selectedBacklogPreview?.note && (
-                                              <Box gridColumn={{ base: "1", md: "1 / -1" }}>
-                                                <Text fontSize="xs" color="gray.500" mb={1}>
-                                                  Notes
-                                                </Text>
-                                                <Text fontSize="sm">{selectedBacklogPreview.note}</Text>
-                                              </Box>
-                                            )}
-                                          </SimpleGrid>
-                                        </Box>
-                                      </>
-                                    )}
+                                    <>
+                                      <Divider />
+                                      <Box>
+                                        <HStack mb={3}>
+                                          <FiEdit size={16} color="#805AD5" />
+                                          <Text
+                                            fontSize="sm"
+                                            fontWeight="bold"
+                                            color="purple.600"
+                                          >
+                                            Additional Notes
+                                          </Text>
+                                        </HStack>
+                                        <SimpleGrid
+                                          columns={{ base: 1, md: 2 }}
+                                          spacing={3}
+                                          pl={6}
+                                        >
+                                          {selectedBacklogPreview?.reffId && (
+                                            <Box>
+                                              <Text
+                                                fontSize="xs"
+                                                color="gray.500"
+                                                mb={1}
+                                              >
+                                                Reference
+                                              </Text>
+                                              <Text
+                                                fontSize="sm"
+                                                fontWeight="medium"
+                                              >
+                                                {selectedBacklogPreview.reffId}
+                                              </Text>
+                                            </Box>
+                                          )}
+                                          {selectedBacklogPreview?.posOrder !==
+                                            undefined && (
+                                            <Box>
+                                              <Text
+                                                fontSize="xs"
+                                                color="gray.500"
+                                                mb={1}
+                                              >
+                                                Position Order
+                                              </Text>
+                                              <Text
+                                                fontSize="sm"
+                                                fontWeight="medium"
+                                              >
+                                                {
+                                                  selectedBacklogPreview.posOrder
+                                                }
+                                              </Text>
+                                            </Box>
+                                          )}
+                                          {selectedBacklogPreview?.note && (
+                                            <Box
+                                              gridColumn={{
+                                                base: "1",
+                                                md: "1 / -1",
+                                              }}
+                                            >
+                                              <Text
+                                                fontSize="xs"
+                                                color="gray.500"
+                                                mb={1}
+                                              >
+                                                Notes
+                                              </Text>
+                                              <Text fontSize="sm">
+                                                {selectedBacklogPreview.note}
+                                              </Text>
+                                            </Box>
+                                          )}
+                                        </SimpleGrid>
+                                      </Box>
+                                    </>
+                                  )}
                                 </VStack>
                               </CardBody>
                             </Card>
@@ -1913,8 +2334,14 @@ const FeatureBacklogsView = ({
                   >
                     <CardBody p={6}>
                       <HStack mb={4}>
-                        <FiClock size={18} color={colorMode === "light" ? "#3182CE" : "#63B3ED"} />
-                        <Heading size="sm" color={colorMode === "light" ? "gray.700" : "white"}>
+                        <FiClock
+                          size={18}
+                          color={colorMode === "light" ? "#3182CE" : "#63B3ED"}
+                        />
+                        <Heading
+                          size="sm"
+                          color={colorMode === "light" ? "gray.700" : "white"}
+                        >
                           Timeline
                         </Heading>
                       </HStack>
@@ -1925,48 +2352,72 @@ const FeatureBacklogsView = ({
                             p={3}
                             rounded="lg"
                           >
-                            <FiClock color={colorMode === "light" ? "#3182CE" : "#63B3ED"} />
+                            <FiClock
+                              color={
+                                colorMode === "light" ? "#3182CE" : "#63B3ED"
+                              }
+                            />
                           </Box>
                           <VStack align="start" spacing={0} flex={1}>
-                            <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                            <Text
+                              fontSize="xs"
+                              color="gray.500"
+                              fontWeight="medium"
+                            >
                               START DATE
                             </Text>
                             <Text fontSize="sm" fontWeight="bold">
                               {selectedBacklogPreview.backlogStartdate
-                                ? new Date(selectedBacklogPreview.backlogStartdate).toLocaleDateString("en-US", {
-                                  month: "short",
-                                  day: "numeric",
-                                  year: "numeric",
-                                })
+                                ? new Date(
+                                    selectedBacklogPreview.backlogStartdate
+                                  ).toLocaleDateString("en-US", {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                  })
                                 : "Not set"}
                             </Text>
                           </VStack>
                         </HStack>
                         <HStack>
                           <Box
-                            bg={colorMode === "light" ? "purple.50" : "purple.900"}
+                            bg={
+                              colorMode === "light" ? "purple.50" : "purple.900"
+                            }
                             p={3}
                             rounded="lg"
                           >
-                            <FiClock color={colorMode === "light" ? "#805AD5" : "#B794F4"} />
+                            <FiClock
+                              color={
+                                colorMode === "light" ? "#805AD5" : "#B794F4"
+                              }
+                            />
                           </Box>
                           <VStack align="start" spacing={0} flex={1}>
-                            <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                            <Text
+                              fontSize="xs"
+                              color="gray.500"
+                              fontWeight="medium"
+                            >
                               END DATE
                             </Text>
                             <HStack>
                               <Text fontSize="sm" fontWeight="bold">
                                 {selectedBacklogPreview.backlogEnddate
-                                  ? new Date(selectedBacklogPreview.backlogEnddate).toLocaleDateString("en-US", {
-                                    month: "short",
-                                    day: "numeric",
-                                    year: "numeric",
-                                  })
+                                  ? new Date(
+                                      selectedBacklogPreview.backlogEnddate
+                                    ).toLocaleDateString("en-US", {
+                                      month: "short",
+                                      day: "numeric",
+                                      year: "numeric",
+                                    })
                                   : "Not set"}
                               </Text>
                               {selectedBacklogPreview.backlogEnddate && (
                                 <DeadlineStatusTag
-                                  deadline={selectedBacklogPreview.backlogEnddate}
+                                  deadline={
+                                    selectedBacklogPreview.backlogEnddate
+                                  }
                                   remindBeforeDays={10}
                                 />
                               )}
@@ -1985,8 +2436,14 @@ const FeatureBacklogsView = ({
                   >
                     <CardBody p={6}>
                       <HStack mb={4}>
-                        <FiActivity size={18} color={colorMode === "light" ? "#805AD5" : "#B794F4"} />
-                        <Heading size="sm" color={colorMode === "light" ? "gray.700" : "white"}>
+                        <FiActivity
+                          size={18}
+                          color={colorMode === "light" ? "#805AD5" : "#B794F4"}
+                        />
+                        <Heading
+                          size="sm"
+                          color={colorMode === "light" ? "gray.700" : "white"}
+                        >
                           Priority & Impact
                         </Heading>
                       </HStack>
@@ -1999,8 +2456,8 @@ const FeatureBacklogsView = ({
                                 ? "red.50"
                                 : "red.900"
                               : colorMode === "light"
-                                ? "gray.50"
-                                : "gray.700"
+                              ? "gray.50"
+                              : "gray.700"
                           }
                           rounded="lg"
                           textAlign="center"
@@ -2013,8 +2470,8 @@ const FeatureBacklogsView = ({
                               selectedBacklogPreview.priority === "HIGH"
                                 ? "red"
                                 : selectedBacklogPreview.priority === "MEDIUM"
-                                  ? "orange"
-                                  : "gray"
+                                ? "orange"
+                                : "gray"
                             }
                             fontSize="sm"
                             px={3}
@@ -2031,8 +2488,8 @@ const FeatureBacklogsView = ({
                                 ? "red.50"
                                 : "red.900"
                               : colorMode === "light"
-                                ? "gray.50"
-                                : "gray.700"
+                              ? "gray.50"
+                              : "gray.700"
                           }
                           rounded="lg"
                           textAlign="center"
@@ -2045,8 +2502,8 @@ const FeatureBacklogsView = ({
                               selectedBacklogPreview.impact === "HIGH"
                                 ? "red"
                                 : selectedBacklogPreview.impact === "MEDIUM"
-                                  ? "orange"
-                                  : "gray"
+                                ? "orange"
+                                : "gray"
                             }
                             fontSize="sm"
                             px={3}
@@ -2063,8 +2520,8 @@ const FeatureBacklogsView = ({
                                 ? "orange.50"
                                 : "orange.900"
                               : colorMode === "light"
-                                ? "gray.50"
-                                : "gray.700"
+                              ? "gray.50"
+                              : "gray.700"
                           }
                           rounded="lg"
                           textAlign="center"
@@ -2093,8 +2550,8 @@ const FeatureBacklogsView = ({
                                 ? "green.50"
                                 : "green.900"
                               : colorMode === "light"
-                                ? "gray.50"
-                                : "gray.700"
+                              ? "gray.50"
+                              : "gray.700"
                           }
                           rounded="lg"
                           textAlign="center"
@@ -2103,12 +2560,18 @@ const FeatureBacklogsView = ({
                             STATUS
                           </Text>
                           <Badge
-                            colorScheme={selectedBacklogPreview.isLive === "YES" ? "green" : "gray"}
+                            colorScheme={
+                              selectedBacklogPreview.isLive === "YES"
+                                ? "green"
+                                : "gray"
+                            }
                             fontSize="sm"
                             px={3}
                             py={1}
                           >
-                            {selectedBacklogPreview.isLive === "YES" ? "LIVE" : "NOT LIVE"}
+                            {selectedBacklogPreview.isLive === "YES"
+                              ? "LIVE"
+                              : "NOT LIVE"}
                           </Badge>
                         </Box>
                       </SimpleGrid>
@@ -2124,15 +2587,26 @@ const FeatureBacklogsView = ({
                 >
                   <CardBody p={6}>
                     <HStack mb={4}>
-                      <FiMoreVertical size={18} color={colorMode === "light" ? "#3182CE" : "#63B3ED"} />
-                      <Heading size="sm" color={colorMode === "light" ? "gray.700" : "white"}>
+                      <FiMoreVertical
+                        size={18}
+                        color={colorMode === "light" ? "#3182CE" : "#63B3ED"}
+                      />
+                      <Heading
+                        size="sm"
+                        color={colorMode === "light" ? "gray.700" : "white"}
+                      >
                         Additional Information
                       </Heading>
                     </HStack>
                     <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
                       {selectedBacklogPreview.envSide && (
                         <Box>
-                          <Text fontSize="xs" color="gray.500" mb={1} fontWeight="medium">
+                          <Text
+                            fontSize="xs"
+                            color="gray.500"
+                            mb={1}
+                            fontWeight="medium"
+                          >
                             ENVIRONMENT
                           </Text>
                           <Text fontSize="sm" fontWeight="bold">
@@ -2142,7 +2616,12 @@ const FeatureBacklogsView = ({
                       )}
                       {selectedBacklogPreview.maintenanceCategory && (
                         <Box>
-                          <Text fontSize="xs" color="gray.500" mb={1} fontWeight="medium">
+                          <Text
+                            fontSize="xs"
+                            color="gray.500"
+                            mb={1}
+                            fontWeight="medium"
+                          >
                             MAINTENANCE CATEGORY
                           </Text>
                           <Text fontSize="sm" fontWeight="bold">
@@ -2152,7 +2631,12 @@ const FeatureBacklogsView = ({
                       )}
                       {selectedBacklogPreview.maintenanceType && (
                         <Box>
-                          <Text fontSize="xs" color="gray.500" mb={1} fontWeight="medium">
+                          <Text
+                            fontSize="xs"
+                            color="gray.500"
+                            mb={1}
+                            fontWeight="medium"
+                          >
                             MAINTENANCE TYPE
                           </Text>
                           <Text fontSize="sm" fontWeight="bold">
@@ -2161,7 +2645,12 @@ const FeatureBacklogsView = ({
                         </Box>
                       )}
                       <Box>
-                        <Text fontSize="xs" color="gray.500" mb={1} fontWeight="medium">
+                        <Text
+                          fontSize="xs"
+                          color="gray.500"
+                          mb={1}
+                          fontWeight="medium"
+                        >
                           RPPB
                         </Text>
                         <Text fontSize="sm" fontWeight="bold">
@@ -2169,7 +2658,12 @@ const FeatureBacklogsView = ({
                         </Text>
                       </Box>
                       <Box>
-                        <Text fontSize="xs" color="gray.500" mb={1} fontWeight="medium">
+                        <Text
+                          fontSize="xs"
+                          color="gray.500"
+                          mb={1}
+                          fontWeight="medium"
+                        >
                           LICENSING
                         </Text>
                         <Text fontSize="sm" fontWeight="bold">
@@ -2177,7 +2671,12 @@ const FeatureBacklogsView = ({
                         </Text>
                       </Box>
                       <Box>
-                        <Text fontSize="xs" color="gray.500" mb={1} fontWeight="medium">
+                        <Text
+                          fontSize="xs"
+                          color="gray.500"
+                          mb={1}
+                          fontWeight="medium"
+                        >
                           VERSION
                         </Text>
                         <Text fontSize="sm" fontWeight="bold">
@@ -2198,7 +2697,7 @@ const FeatureBacklogsView = ({
           >
             <HStack spacing={3} w="full" justify="space-between">
               <Link
-                href={`/workspace/project/from-manage?projectId=${DataProject?.id}&backlogId=${selectedBacklogPreview?.id}`}
+                href={`/kanban?projectId=${DataProject?.id}&backlogId=${selectedBacklogPreview?.id}`}
               >
                 <Button
                   colorScheme="blue"
@@ -2682,7 +3181,7 @@ const WorkflowBacklogBox = ({
       );
       return Math.round(
         childProgresses.reduce((sum, progress) => sum + progress, 0) /
-        childProgresses.length
+          childProgresses.length
       );
     }
 
@@ -2804,7 +3303,8 @@ const WorkflowBacklogTable = ({
 
   // Edit modal state
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [selectedBacklog, setSelectedBacklog] = useState<BacklogDataResponse | null>(null);
+  const [selectedBacklog, setSelectedBacklog] =
+    useState<BacklogDataResponse | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("tokenData") as string;
@@ -3009,8 +3509,8 @@ const WorkflowBacklogTable = ({
                   <Text fontSize="sm">
                     {workflow.workflowBacklog.backlogStartdate
                       ? new Date(
-                        workflow.workflowBacklog.backlogStartdate
-                      ).toLocaleDateString()
+                          workflow.workflowBacklog.backlogStartdate
+                        ).toLocaleDateString()
                       : "-"}
                   </Text>
                 </Td>
@@ -3018,8 +3518,8 @@ const WorkflowBacklogTable = ({
                   <Text fontSize="sm">
                     {workflow.workflowBacklog.backlogEnddate
                       ? new Date(
-                        workflow.workflowBacklog.backlogEnddate
-                      ).toLocaleDateString()
+                          workflow.workflowBacklog.backlogEnddate
+                        ).toLocaleDateString()
                       : "-"}
                   </Text>
                 </Td>
@@ -3066,12 +3566,14 @@ const WorkflowBacklogTable = ({
                       size="xs"
                       colorScheme="blue"
                       leftIcon={<FiEdit />}
-                      onClick={() => handleEditBacklog(workflow.workflowBacklog!)}
+                      onClick={() =>
+                        handleEditBacklog(workflow.workflowBacklog!)
+                      }
                     >
                       Edit
                     </Button>
                     <Link
-                      href={`/workspace/project/from-manage?projectId=${DataProject?.id}&backlogId=${workflow.workflowBacklog.id}`}
+                      href={`/kanban?projectId=${DataProject?.id}&backlogId=${workflow.workflowBacklog.id}`}
                     >
                       <Button
                         size="xs"
@@ -3090,11 +3592,7 @@ const WorkflowBacklogTable = ({
       </Box>
 
       {/* Edit Backlog Modal */}
-      <Modal
-        isOpen={isOpen}
-        onClose={onClose}
-        size="4xl"
-      >
+      <Modal isOpen={isOpen} onClose={onClose} size="4xl">
         <ModalOverlay />
         <ModalContent maxH="90vh">
           <ModalHeader>Edit Backlog</ModalHeader>
@@ -3127,7 +3625,7 @@ const WorkflowBacklogTable = ({
                 </Box>
 
                 {/* Tabs for Edit and History */}
-                <Tabs variant="soft-rounded" colorScheme="blue" >
+                <Tabs variant="soft-rounded" colorScheme="blue">
                   <TabList bg="gray.100" p={1} rounded={radiusStyle}>
                     <Tab
                       rounded={radiusStyle}
