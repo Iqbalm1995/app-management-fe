@@ -351,6 +351,8 @@ function RegisterRequirementFormPage({
   const { colorMode } = useColorMode();
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
+  const perihalSementaraRef = useRef<HTMLTextAreaElement>(null);
+  const perihalCursorPosRef = useRef<number | null>(null);
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
   const { InsertReq, RegisterDraft, RegisterUpdate, ListReqMedia, GetDetailById, ListBacklog } = useRequirements();
@@ -439,6 +441,7 @@ function RegisterRequirementFormPage({
       },
     ],
   };
+
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
@@ -1299,6 +1302,12 @@ function RegisterRequirementFormPage({
     },
   });
 
+
+  useEffect(() => {
+    if (perihalSementaraRef.current && perihalCursorPosRef.current !== null) {
+      perihalSementaraRef.current.setSelectionRange(perihalCursorPosRef.current, perihalCursorPosRef.current);
+    }
+  }, [formik.values.reqNarative]);
   // BACKLOG DATA
   const [DataBackLogs, setDataBackLogs] = useState<ReqBacklogPayload[]>([]);
 
@@ -2232,9 +2241,15 @@ function RegisterRequirementFormPage({
                                 </FormLabel>
                                 <Stack spacing={0} h={"full"}>
                                   <Textarea
+                                    ref={perihalSementaraRef}
                                     id="reqNarative"
                                     name="reqNarative"
-                                    onChange={(e) => { e.target.value = e.target.value.toUpperCase(); formik.handleChange(e); }}
+                                    onChange={(e) => {
+                                      const textarea = e.target as HTMLTextAreaElement;
+                                      perihalCursorPosRef.current = textarea.selectionStart;
+                                      e.target.value = e.target.value.toUpperCase();
+                                      formik.handleChange(e);
+                                    }}
                                     value={formik.values.reqNarative ?? ""}
                                     placeholder={`Perihal Sementara`}
                                     maxLength={300}
@@ -5186,7 +5201,9 @@ const Section4BRDView = ({
     }
   }, [TextBackLogName]);
 
+
   const handleOpenForm = () => {
+
     ModalForm.onOpen();
   };
 
