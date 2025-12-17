@@ -547,17 +547,10 @@ export default function BRDRFCView() {
             },
             {
               field: "assignedToDate",
-              operator: ">=",
+              operator: "=",
               value: "",
               filterType: "date",
-              filterLabel: "Tgl. Awal Ditugaskan",
-            },
-            {
-              field: "assignedToDate",
-              operator: "<=",
-              value: "",
-              filterType: "date",
-              filterLabel: "Tgl. Akhir Ditugaskan",
+              filterLabel: "Tgl. Ditugaskan",
             },
           ],
         } as ColumnMetaCustom,
@@ -624,7 +617,7 @@ export default function BRDRFCView() {
             <Flex as={Stack} spacing={2}>
               <Flex as={Stack} spacing={0}>
                 {info?.row?.original?.appInitialCode &&
-                info.row.original.appInitialCode.trim() !== "" ? (
+                  info.row.original.appInitialCode.trim() !== "" ? (
                   <>
                     <Text fontWeight={600}>
                       ({info.row.original.appInitialCode})
