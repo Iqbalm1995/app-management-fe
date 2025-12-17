@@ -2966,10 +2966,14 @@ const WorkFlowBacklogsView = ({
 
   // Overall Progression State
   const [OverallProgress, setOverallProgress] = useState<number>(0);
+  const [ProgressionProgress, setProgressionProgress] = useState<number>(0);
+  const [DocumentationProgress, setDocumentationProgress] = useState<number>(0);
   const [TotalLeafNodes, setTotalLeafNodes] = useState<number>(0);
   const [CompletedLeafNodes, setCompletedLeafNodes] = useState<number>(0);
+  const [TotalDocNodes, setTotalDocNodes] = useState<number>(0);
+  const [CompletedDocNodes, setCompletedDocNodes] = useState<number>(0);
 
-  // Count all leaf nodes (nodes without children) recursively
+  // Count progression leaf nodes (based on workflowBacklog)
   const countLeafNodes = (
     workflows: ProjectWorkflowResponse[]
   ): { total: number; completed: number } => {
@@ -2981,7 +2985,6 @@ const WorkFlowBacklogsView = ({
         workflow.workflowChild && workflow.workflowChild.length > 0;
 
       if (!hasChildren) {
-        // This is a leaf node - count it
         totalLeaf++;
         if (
           workflow.workflowBacklog &&
@@ -2991,8 +2994,33 @@ const WorkFlowBacklogsView = ({
           completedLeaf++;
         }
       } else {
-        // Recursively count children
         const childCounts = countLeafNodes(workflow.workflowChild!);
+        totalLeaf += childCounts.total;
+        completedLeaf += childCounts.completed;
+      }
+    });
+
+    return { total: totalLeaf, completed: completedLeaf };
+  };
+
+  // Count documentation leaf nodes (based on workflowValues)
+  const countDocumentationNodes = (
+    workflows: ProjectWorkflowResponse[]
+  ): { total: number; completed: number } => {
+    let totalLeaf = 0;
+    let completedLeaf = 0;
+
+    workflows.forEach((workflow) => {
+      const hasChildren =
+        workflow.workflowChild && workflow.workflowChild.length > 0;
+
+      if (!hasChildren) {
+        totalLeaf++;
+        if (workflow.workflowValues && workflow.workflowValues.length > 0) {
+          completedLeaf++;
+        }
+      } else {
+        const childCounts = countDocumentationNodes(workflow.workflowChild!);
         totalLeaf += childCounts.total;
         completedLeaf += childCounts.completed;
       }
@@ -3031,16 +3059,32 @@ const WorkFlowBacklogsView = ({
           const workflowData: ProjectWorkflowResponse[] =
             requestData.data as ProjectWorkflowResponse[];
 
-          // Calculate overall progression using dynamic leaf nodes
+          // Calculate progression (backlog-based)
           const leafCounts = countLeafNodes(workflowData);
-          const progressPercentage =
+          const progressionPercentage =
             leafCounts.total > 0
               ? Math.round((leafCounts.completed / leafCounts.total) * 100)
               : 0;
 
+          // Calculate documentation (values-based)
+          const docCounts = countDocumentationNodes(workflowData);
+          const documentationPercentage =
+            docCounts.total > 0
+              ? Math.round((docCounts.completed / docCounts.total) * 100)
+              : 0;
+
+          // Calculate overall average
+          const overallPercentage = Math.round(
+            (progressionPercentage + documentationPercentage) / 2
+          );
+
           setTotalLeafNodes(leafCounts.total);
           setCompletedLeafNodes(leafCounts.completed);
-          setOverallProgress(progressPercentage);
+          setProgressionProgress(progressionPercentage);
+          setTotalDocNodes(docCounts.total);
+          setCompletedDocNodes(docCounts.completed);
+          setDocumentationProgress(documentationPercentage);
+          setOverallProgress(overallPercentage);
           setDataWorkflow(workflowData);
           setIsLoadingProcess(false);
         }
@@ -3088,26 +3132,70 @@ const WorkFlowBacklogsView = ({
           rounded="lg"
           border="1px"
           borderColor={colorMode === "light" ? "blue.200" : "blue.700"}
-          spacing={3}
+          spacing={4}
         >
-          <HStack divider={<StackDivider borderColor="gray.200" />} w="full">
-            <Text fontSize="sm" fontWeight={600}>
-              Overall Progression - {OverallProgress}%
-            </Text>
-            <Text fontSize="sm" fontWeight={500}>
-              {CompletedLeafNodes}
-              <Text as="span" fontWeight={600} ml={1}>
-                / {TotalLeafNodes} Completed
+          {/* Overall Average */}
+          <VStack w="full" spacing={2}>
+            <HStack divider={<StackDivider borderColor="gray.200" />} w="full">
+              <Text fontSize="sm" fontWeight={700}>
+                Overall Progression - {OverallProgress}%
               </Text>
-            </Text>
-          </HStack>
-          <Progress
-            colorScheme={colorProgression(OverallProgress)}
-            hasStripe
-            value={OverallProgress}
-            w="full"
-            rounded={radiusStyle}
-          />
+              <Text fontSize="xs" color="gray.500">
+                Average of Progression & Documentation
+              </Text>
+            </HStack>
+            <Progress
+              colorScheme={colorProgression(OverallProgress)}
+              hasStripe
+              value={OverallProgress}
+              w="full"
+              rounded={radiusStyle}
+            />
+          </VStack>
+
+          {/* Progression Tab Progress */}
+          <VStack w="full" spacing={2}>
+            <HStack divider={<StackDivider borderColor="gray.200" />} w="full">
+              <Text fontSize="sm" fontWeight={600}>
+                Progression - {ProgressionProgress}%
+              </Text>
+              <Text fontSize="sm" fontWeight={500}>
+                {CompletedLeafNodes}
+                <Text as="span" fontWeight={600} ml={1}>
+                  / {TotalLeafNodes} Completed
+                </Text>
+              </Text>
+            </HStack>
+            <Progress
+              colorScheme={colorProgression(ProgressionProgress)}
+              hasStripe
+              value={ProgressionProgress}
+              w="full"
+              rounded={radiusStyle}
+            />
+          </VStack>
+
+          {/* Documentation Tab Progress */}
+          <VStack w="full" spacing={2}>
+            <HStack divider={<StackDivider borderColor="gray.200" />} w="full">
+              <Text fontSize="sm" fontWeight={600}>
+                Documentation - {DocumentationProgress}%
+              </Text>
+              <Text fontSize="sm" fontWeight={500}>
+                {CompletedDocNodes}
+                <Text as="span" fontWeight={600} ml={1}>
+                  / {TotalDocNodes} Uploaded
+                </Text>
+              </Text>
+            </HStack>
+            <Progress
+              colorScheme={colorProgression(DocumentationProgress)}
+              hasStripe
+              value={DocumentationProgress}
+              w="full"
+              rounded={radiusStyle}
+            />
+          </VStack>
         </VStack>
       )}
 
