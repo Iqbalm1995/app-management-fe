@@ -82,7 +82,7 @@ import {
   FiHeart,
   FiPenTool,
   FiBox,
-  FiPlay,
+  FiTarget,
   FiSettings,
   FiPlayCircle,
   FiCode,
@@ -251,6 +251,14 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
   const [hideProMenus, setHideProMenus] = useState<boolean>(false);
+  const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setMousePos({ x, y });
+  };
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
@@ -753,14 +761,47 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                 <Button onClick={toggleColorMode} variant={"ghost"}>
                   {colorMode === "light" ? <MoonIcon /> : <SunIcon />}
                 </Button>
-                <Link href={"/"}>
+                <Link href={"/workspace"}>
                   <Button
-                    leftIcon={<FiPlay />}
+                    leftIcon={<FaCode />}
                     mx={2}
-                    colorScheme={"secondary"}
-                    rounded={radiusStyle}
+                    variant="outline"
+                    bg="whiteAlpha"
+                    borderWidth="0"
+                    borderColor="gray.300"
+                    color={colorMode === "light" ? "blue.600" : "blue.300"}
+                    position="relative"
+                    rounded="full"
+                    px={4}
+                    py={2}
+                    overflow="hidden"
+                    transition="all 0.3s ease"
+                    onMouseMove={handleMouseMove}
+                    _hover={{
+                      _before: {
+                        opacity: 1,
+                      },
+                    }}
+                    _before={{
+                      content: '""',
+                      position: "absolute",
+                      inset: "-6px",
+                      background: `radial-gradient(circle at ${mousePos.x}% ${mousePos.y}%, #4285f4, #ea4335, #fbbc04, #34a853)`,
+                      borderRadius: "full",
+                      opacity: 0,
+                      transition: "opacity 0.3s ease",
+                      zIndex: -2,
+                    }}
+                    _after={{
+                      content: '""',
+                      position: "absolute",
+                      inset: "2px",
+                      bg: colorMode === "light" ? "gray.100" : "gray.900",
+                      borderRadius: "full",
+                      zIndex: -1,
+                    }}
                   >
-                    Landing Page
+                    My Workspace
                   </Button>
                 </Link>
               </Flex>

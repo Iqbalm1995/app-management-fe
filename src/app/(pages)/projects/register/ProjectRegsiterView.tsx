@@ -5591,36 +5591,46 @@ export default function ProjectRegisterView({
                                                 px={4}
                                                 py={3}
                                               >
-                                                <Flex
-                                                  justifyContent={"start"}
-                                                  as={HStack}
-                                                  spacing={4}
-                                                  alignItems={"center"}
+                                                <VStack
+                                                  align={"start"}
+                                                  spacing={1}
+                                                  flex={1}
                                                 >
-                                                  <Icon
-                                                    as={FaCircle}
-                                                    color={"secondary.500"}
-                                                    boxSize={2}
-                                                  />
-                                                  <Text
-                                                    fontWeight={
-                                                      selectedPresetProcurement?.id ===
-                                                        preset.id
-                                                        ? 600
-                                                        : 500
-                                                    }
-                                                    color={
-                                                      selectedPresetProcurement?.id ===
-                                                        preset.id
-                                                        ? "gray.900"
-                                                        : colorMode == "light"
+                                                  <HStack spacing={2}>
+                                                    <Icon
+                                                      as={FaCircle}
+                                                      color={"secondary.500"}
+                                                      boxSize={2}
+                                                    />
+                                                    <Text
+                                                      fontWeight={
+                                                        selectedPresetProcurement?.id ===
+                                                          preset.id
+                                                          ? 600
+                                                          : 500
+                                                      }
+                                                      color={
+                                                        selectedPresetProcurement?.id ===
+                                                          preset.id
                                                           ? "gray.900"
-                                                          : "white"
-                                                    }
-                                                  >
-                                                    {preset.wfPresetName}
-                                                  </Text>
-                                                </Flex>
+                                                          : colorMode == "light"
+                                                            ? "gray.900"
+                                                            : "white"
+                                                      }
+                                                    >
+                                                      {preset.wfPresetName}
+                                                    </Text>
+                                                  </HStack>
+                                                  {preset.wfPresetDesc && (
+                                                    <Text
+                                                      fontSize="xs"
+                                                      color="gray.500"
+                                                      pl={4}
+                                                    >
+                                                      {preset.wfPresetDesc}
+                                                    </Text>
+                                                  )}
+                                                </VStack>
                                                 <Button
                                                   variant={"solid"}
                                                   colorScheme={
@@ -5801,36 +5811,46 @@ export default function ProjectRegisterView({
                                               px={4}
                                               py={3}
                                             >
-                                              <Flex
-                                                justifyContent={"start"}
-                                                as={HStack}
-                                                spacing={4}
-                                                alignItems={"center"}
+                                              <VStack
+                                                align={"start"}
+                                                spacing={1}
+                                                flex={1}
                                               >
-                                                <Icon
-                                                  as={FaCircle}
-                                                  color={"secondary.500"}
-                                                  boxSize={2}
-                                                />
-                                                <Text
-                                                  fontWeight={
-                                                    selectedPreset?.id ===
-                                                      preset.id
-                                                      ? 600
-                                                      : 500
-                                                  }
-                                                  color={
-                                                    selectedPreset?.id ===
-                                                      preset.id
-                                                      ? "gray.900"
-                                                      : colorMode == "light"
+                                                <HStack spacing={2}>
+                                                  <Icon
+                                                    as={FaCircle}
+                                                    color={"secondary.500"}
+                                                    boxSize={2}
+                                                  />
+                                                  <Text
+                                                    fontWeight={
+                                                      selectedPreset?.id ===
+                                                        preset.id
+                                                        ? 600
+                                                        : 500
+                                                    }
+                                                    color={
+                                                      selectedPreset?.id ===
+                                                        preset.id
                                                         ? "gray.900"
-                                                        : "white"
-                                                  }
-                                                >
-                                                  {preset.wfPresetName}
-                                                </Text>
-                                              </Flex>
+                                                        : colorMode == "light"
+                                                          ? "gray.900"
+                                                          : "white"
+                                                    }
+                                                  >
+                                                    {preset.wfPresetName}
+                                                  </Text>
+                                                </HStack>
+                                                {preset.wfPresetDesc && (
+                                                  <Text
+                                                    fontSize="xs"
+                                                    color="gray.500"
+                                                    pl={4}
+                                                  >
+                                                    {preset.wfPresetDesc}
+                                                  </Text>
+                                                )}
+                                              </VStack>
                                               <Flex
                                                 justifyContent={"end"}
                                                 alignItems={"center"}
