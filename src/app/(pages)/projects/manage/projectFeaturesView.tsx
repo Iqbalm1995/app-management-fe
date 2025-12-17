@@ -158,6 +158,8 @@ import { TableComponentWithFilterCTX } from "@/app/components/tableComponentV2";
 import { HamburgerIcon } from "@chakra-ui/icons";
 import { BsKanban } from "react-icons/bs";
 import Link from "next/link";
+import WorkflowProgressionContent from "./components/WorkflowProgressionContent";
+import WorkflowDocumentationContent from "./components/WorkflowDocumentationContent";
 
 interface ProjectFeatureViewProps {
   DataProject: ProjectDataResponse | null;
@@ -3109,40 +3111,31 @@ const WorkFlowBacklogsView = ({
         </VStack>
       )}
 
-      {/* Workflow Content */}
-      {IsLoadingProcess ? (
-        <Box textAlign="center" py={12}>
-          <LoadingMiniSignature />
-          <Text mt={4} color="gray.500">
-            Loading workflow documentation...
-          </Text>
-        </Box>
-      ) : DataWorkflow && DataWorkflow.length > 0 ? (
-        <VStack spacing={4} align="stretch">
-          {DataWorkflow.map((workflow: ProjectWorkflowResponse) => (
-            <WorkflowBacklogBox
-              key={workflow.id}
-              workflow={workflow}
-              onRefresh={onRefresh}
-              level={1}
+      {/* Tabs Section */}
+      <Tabs colorScheme="secondary" w="full">
+        <TabList>
+          <Tab>Progression</Tab>
+          <Tab>Documentations</Tab>
+        </TabList>
+
+        <TabPanels>
+          {/* Progression Tab */}
+          <TabPanel px={0}>
+            <WorkflowProgressionContent
               DataProject={DataProject}
+              refreshTrigger={refreshTrigger}
             />
-          ))}
-        </VStack>
-      ) : (
-        <Box
-          p={8}
-          textAlign="center"
-          bg={colorMode === "light" ? "gray.50" : "gray.800"}
-          rounded="lg"
-          border="2px dashed"
-          borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
-        >
-          <Text color="gray.500" fontSize="sm">
-            No workflow documentation available
-          </Text>
-        </Box>
-      )}
+          </TabPanel>
+
+          {/* Documentations Tab */}
+          <TabPanel px={0}>
+            <WorkflowDocumentationContent
+              DataProject={DataProject}
+              refreshTrigger={refreshTrigger}
+            />
+          </TabPanel>
+        </TabPanels>
+      </Tabs>
     </VStack>
   );
 };
@@ -4047,3 +4040,4 @@ const BacklogHistoryList = ({ histories }: BacklogHistoryListProps) => {
 };
 
 export default ProjectFeatureView;
+export { WorkflowBacklogBox };
