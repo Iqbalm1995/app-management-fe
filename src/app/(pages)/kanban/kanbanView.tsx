@@ -58,6 +58,7 @@ import useTasks, {
   TaskCommentUpdatePayload,
   AssignUsersTaskPayload,
   GenerateTaskBoardPayload,
+  TaskRelatedPayload,
 } from "@/app/services/useTasks";
 import { PaggingListPayload, ListSearchByParam } from "@/app/types/masterTypes";
 import {
@@ -160,12 +161,14 @@ import {
   FiAlertCircle,
   FiArchive,
   FiArrowLeft,
+  FiCalendar,
   FiCheckCircle,
   FiCheckSquare,
   FiCircle,
   FiCornerDownLeft,
   FiFilter,
   FiInbox,
+  FiLink,
   FiList,
   FiLoader,
   FiMessageSquare,
@@ -173,6 +176,7 @@ import {
   FiPaperclip,
   FiPlusCircle,
   FiRefreshCcw,
+  FiRefreshCw,
   FiRotateCcw,
   FiSave,
   FiSearch,
@@ -188,6 +192,7 @@ import useUsers, {
 } from "@/app/services/useUsers";
 import { GoFilter } from "react-icons/go";
 import { MdOutlineSort } from "react-icons/md";
+import { DateTimeInput, DateTimeRangeInput } from "@/app/components/dateInputs";
 
 // Complete auth data structure interfaces
 interface AuthTokenResponse {
@@ -224,142 +229,13 @@ declare global {
   }
 }
 
-// DateRangePicker component for selecting start and end dates
-interface DateRangePickerProps {
-  taskId: string;
-  initialStartDate: string | null | undefined;
-  initialEndDate: string | null | undefined;
-  onSave: (startDate: string | null, endDate: string | null) => void;
-}
-
-const DateRangePicker: React.FC<DateRangePickerProps> = ({
-  taskId,
-  initialStartDate,
-  initialEndDate,
-  onSave,
-}) => {
-  // Local state for dates (not saved until user clicks Save)
-  const [startDate, setStartDate] = useState<string | null>(
-    initialStartDate || null
-  );
-  const [endDate, setEndDate] = useState<string | null>(initialEndDate || null);
-  const [isSaving, setIsSaving] = useState(false);
-
-  // Reset local state when initialDates change (e.g., when task changes)
-  useEffect(() => {
-    setStartDate(initialStartDate || null);
-    setEndDate(initialEndDate || null);
-  }, [initialStartDate, initialEndDate, taskId]);
-
-  // Handle saving dates
-  const handleSave = () => {
-    setIsSaving(true);
-    onSave(startDate, endDate);
-    setIsSaving(false);
-
-    // Close the popover
-    document.body.click();
-  };
-
-  // Format date for input
-  const formatDateForInput = (date: string | null) => {
-    if (!date) return "";
-    return new Date(date).toISOString().slice(0, 16);
-  };
-
-  return (
-    <VStack spacing={4} align="stretch">
-      <FormControl>
-        <HStack justify="space-between" align="center">
-          <FormLabel fontSize="sm" mb={0}>
-            Start Date
-          </FormLabel>
-          {startDate && (
-            <Button
-              size="xs"
-              variant="ghost"
-              colorScheme="red"
-              onClick={() => setStartDate(null)}
-            >
-              Clear
-            </Button>
-          )}
-        </HStack>
-        <Input
-          type="datetime-local"
-          size="sm"
-          value={formatDateForInput(startDate)}
-          onChange={(e) => {
-            const newDate = e.target.value
-              ? new Date(e.target.value).toISOString()
-              : null;
-            setStartDate(newDate);
-          }}
-          mt={1}
-        />
-      </FormControl>
-
-      <FormControl>
-        <HStack justify="space-between" align="center">
-          <FormLabel fontSize="sm" mb={0}>
-            Due Date
-          </FormLabel>
-          {endDate && (
-            <Button
-              size="xs"
-              variant="ghost"
-              colorScheme="red"
-              onClick={() => setEndDate(null)}
-            >
-              Clear
-            </Button>
-          )}
-        </HStack>
-        <Input
-          type="datetime-local"
-          size="sm"
-          value={formatDateForInput(endDate)}
-          onChange={(e) => {
-            const newDate = e.target.value
-              ? new Date(e.target.value).toISOString()
-              : null;
-            setEndDate(newDate);
-          }}
-          mt={1}
-        />
-      </FormControl>
-
-      <HStack justify="space-between">
-        <Button
-          size="sm"
-          variant="ghost"
-          colorScheme="red"
-          onClick={() => {
-            setStartDate(null);
-            setEndDate(null);
-          }}
-        >
-          Clear All
-        </Button>
-        <Button
-          size="sm"
-          colorScheme={isSaving ? "yellow" : "blue"}
-          onClick={handleSave}
-          isLoading={isSaving}
-        >
-          Save
-        </Button>
-      </HStack>
-    </VStack>
-  );
-};
-
 // TaskItemRow component for displaying and editing task items
 interface TaskItemRowProps {
   item: TaskItemResponse;
   onToggle: (id: string, isDone: string) => void;
   onEdit: (id: string, newName: string) => void;
   onDelete: (id: string) => void;
+  togglingItemId?: string | null;
 }
 
 const TaskItemRow: React.FC<TaskItemRowProps> = ({
@@ -367,6 +243,7 @@ const TaskItemRow: React.FC<TaskItemRowProps> = ({
   onToggle,
   onEdit,
   onDelete,
+  togglingItemId,
 }) => {
   const { colorMode } = useColorMode();
   const [isEditing, setIsEditing] = useState(false);
@@ -413,13 +290,19 @@ const TaskItemRow: React.FC<TaskItemRowProps> = ({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       position="relative"
+      opacity={togglingItemId ? 0.6 : 1}
     >
-      <Checkbox
-        isChecked={item.isDone === "Y"}
-        onChange={() => onToggle(item.id, item.isDone === "Y" ? "N" : "Y")}
-        colorScheme={item.isDone === "Y" ? "green" : "blue"}
-        mr={2}
-      />
+      {togglingItemId === item.id ? (
+        <Spinner size="sm" mr={2} />
+      ) : (
+        <Checkbox
+          isChecked={item.isDone === "Y"}
+          onChange={() => onToggle(item.id, item.isDone === "Y" ? "N" : "Y")}
+          colorScheme={item.isDone === "Y" ? "green" : "blue"}
+          isDisabled={togglingItemId !== null}
+          mr={2}
+        />
+      )}
 
       {isEditing ? (
         <Input
@@ -482,6 +365,7 @@ interface DraggableTaskCardProps {
   isRecentlyMoved?: boolean;
   localTaskIndices?: Map<string, number>;
   DataProject?: ProjectDataResponse | null;
+  DataBacklog?: BacklogDataResponse | null;
   onMoveUp?: (taskId: string) => void;
   onMoveDown?: (taskId: string) => void;
   isDragDisabled?: boolean;
@@ -1063,6 +947,7 @@ function DraggableTaskCard({
   onMoveTask,
   isRecentlyMoved = false,
   DataProject,
+  DataBacklog,
   getEffectiveIndex,
   localTaskIndices,
   onMoveUp,
@@ -1306,6 +1191,18 @@ function DraggableTaskCard({
 
   const [detailedTask, setDetailedTask] = useState<TaskViewModel | null>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  
+  // Related tasks state
+  const [relatedTasks, setRelatedTasks] = useState<TaskViewModel[]>([]);
+  const [searchTasksResults, setSearchTasksResults] = useState<TaskViewModel[]>([]);
+  const [searchTaskTerm, setSearchTaskTerm] = useState("");
+  const [isLoadingRelatedTasks, setIsLoadingRelatedTasks] = useState(false);
+  const {
+    isOpen: isTaskPickerOpen,
+    onOpen: onTaskPickerOpen,
+    onClose: onTaskPickerClose,
+  } = useDisclosure();
+  
   const [newTaskItemName, setNewTaskItemName] = useState("");
   const [isAddingTaskItem, setIsAddingTaskItem] = useState(false);
   const [taskItems, setTaskItems] = useState<TaskItemResponse[]>([]);
@@ -1325,6 +1222,9 @@ function DraggableTaskCard({
     DeleteTaskComment,
     AssignUsersTask,
     MoveTask,
+    ListRelatedTasks,
+    AssignRelatedTasks,
+    ListTasksPaged,
   } = useTasks();
 
   // States for inline editing
@@ -1334,6 +1234,7 @@ function DraggableTaskCard({
   const [editedDesc, setEditedDesc] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
+  const [togglingItemId, setTogglingItemId] = useState<string | null>(null);
 
   // Comments state management
   const [taskComments, setTaskComments] = useState<TaskCommentResponse[]>([]);
@@ -1681,6 +1582,7 @@ function DraggableTaskCard({
   const handleToggleTaskItem = async (itemId: string, newStatus: string) => {
     if (!detailedTask) return;
 
+    setTogglingItemId(itemId);
     try {
       // Find the task item to update
       const taskItem = taskItems.find((item) => item.id === itemId);
@@ -1724,6 +1626,8 @@ function DraggableTaskCard({
         description: "An error occurred while updating task item",
         statusToast: "error",
       });
+    } finally {
+      setTogglingItemId(null);
     }
   };
 
@@ -1882,14 +1786,6 @@ function DraggableTaskCard({
     const normalizedStartDate = startDate === undefined ? null : startDate;
     const normalizedEndDate = endDate === undefined ? null : endDate;
 
-    // If dates are the same as current, no need to update
-    if (
-      normalizedStartDate === detailedTask.startDate &&
-      normalizedEndDate === detailedTask.endDate
-    ) {
-      return;
-    }
-
     setIsLoadingDetails(true);
     try {
       // Create update payload
@@ -1901,11 +1797,9 @@ function DraggableTaskCard({
         taskPriority: detailedTask.taskPriority,
         indexTask: detailedTask.indexTask,
         taskPoint: detailedTask.taskPoint,
+        startDate: normalizedStartDate || undefined,
+        endDate: normalizedEndDate || undefined,
       };
-
-      // Add dates to payload only if they are not null
-      if (normalizedStartDate) updatePayload.startDate = normalizedStartDate;
-      if (normalizedEndDate) updatePayload.endDate = normalizedEndDate;
 
       const response = await UpdateTask(updatePayload, getToken());
 
@@ -1913,8 +1807,8 @@ function DraggableTaskCard({
         // Update local state
         setDetailedTask({
           ...detailedTask,
-          startDate: normalizedStartDate,
-          endDate: normalizedEndDate,
+          startDate: normalizedStartDate ?? undefined,
+          endDate: normalizedEndDate ?? undefined,
         });
 
         // Refresh the kanban board
@@ -1996,6 +1890,135 @@ function DraggableTaskCard({
       setIsArchiving(false);
     }
   };
+
+  // Fetch related tasks
+  const fetchRelatedTasks = async (taskId: string) => {
+    const token = getToken();
+    if (!token) return;
+
+    setIsLoadingRelatedTasks(true);
+    try {
+      const response = await ListRelatedTasks(taskId, token);
+      if (response?.data) {
+        setRelatedTasks(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching related tasks:", error);
+    } finally {
+      setIsLoadingRelatedTasks(false);
+    }
+  };
+
+  // Add related task
+  const handleAddRelatedTask = async (relatedTaskId: string) => {
+    if (!detailedTask) return;
+
+    try {
+      const currentRelatedIds = relatedTasks.map((t) => t.id);
+      const payload: TaskRelatedPayload = {
+        taskParentId: detailedTask.id,
+        tasksRelatedId: [...currentRelatedIds, relatedTaskId],
+      };
+
+      const response = await AssignRelatedTasks(payload, getToken());
+
+      if (response?.statusCode === RES_CODE_OK) {
+        showToast({
+          description: "Related task added successfully",
+          statusToast: "success",
+        });
+        fetchRelatedTasks(detailedTask.id);
+        onTaskPickerClose();
+      } else {
+        showToast({
+          description: response?.message || "Failed to add related task",
+          statusToast: "error",
+        });
+      }
+    } catch (error) {
+      console.error("Error adding related task:", error);
+      showToast({
+        description: "An error occurred while adding the related task",
+        statusToast: "error",
+      });
+    }
+  };
+
+  // Remove related task
+  const handleRemoveRelatedTask = async (relatedTaskId: string) => {
+    if (!detailedTask) return;
+
+    try {
+      const updatedRelatedIds = relatedTasks
+        .filter((t) => t.id !== relatedTaskId)
+        .map((t) => t.id);
+
+      const payload: TaskRelatedPayload = {
+        taskParentId: detailedTask.id,
+        tasksRelatedId: updatedRelatedIds,
+      };
+
+      const response = await AssignRelatedTasks(payload, getToken());
+
+      if (response?.statusCode === RES_CODE_OK) {
+        showToast({
+          description: "Related task removed successfully",
+          statusToast: "success",
+        });
+        fetchRelatedTasks(detailedTask.id);
+      } else {
+        showToast({
+          description: response?.message || "Failed to remove related task",
+          statusToast: "error",
+        });
+      }
+    } catch (error) {
+      console.error("Error removing related task:", error);
+      showToast({
+        description: "An error occurred while removing the related task",
+        statusToast: "error",
+      });
+    }
+  };
+
+  // Search tasks for picker
+  const handleSearchTasks = async () => {
+    const token = getToken();
+    if (!token || !searchTaskTerm || searchTaskTerm.length < 3) {
+      setSearchTasksResults([]);
+      return;
+    }
+
+    try {
+      const payload: PaggingListPayload = {
+        search: searchTaskTerm,
+        limit: 5,
+        page: 0,
+        filterWhere: [],
+        fieldOrder: ["createdAt"],
+        orderDir: "desc",
+      };
+
+      const response = await ListTasksPaged(payload, token);
+      if (response?.statusCode === RES_CODE_OK && response.data) {
+        setSearchTasksResults(response.data);
+      }
+    } catch (error) {
+      console.error("Error searching tasks:", error);
+    }
+  };
+
+  // Auto-search when typing > 2 chars
+  useEffect(() => {
+    if (searchTaskTerm.length > 2) {
+      const debounceTimer = setTimeout(() => {
+        handleSearchTasks();
+      }, 500);
+      return () => clearTimeout(debounceTimer);
+    } else {
+      setSearchTasksResults([]);
+    }
+  }, [searchTaskTerm]);
 
   // Load task comments with pagination
   const loadTaskComments = async (
@@ -2425,6 +2448,9 @@ function DraggableTaskCard({
           // Reset and load comments
           resetCommentsState();
           loadTaskComments(task.id);
+          
+          // Fetch related tasks
+          fetchRelatedTasks(task.id);
         } else {
           // If API call fails, use the current task data
           setDetailedTask(task);
@@ -2504,212 +2530,199 @@ function DraggableTaskCard({
           borderColor={isRecentlyMoved ? "blue.300" : undefined}
           transition="all 0.3s ease"
           rounded={radiusStyle}
+          overflow="hidden"
         >
-          {/* <Flex w={"full"} bg={"orange.300"} h={"10px"}></Flex> */}
-          <CardBody px={3}>
-            <VStack align="start" spacing={2}>
-              {/* Task metadata */}
-              <HStack w="full" justify="space-between">
+          {/* Priority Color Bar */}
+          <Box
+            h="3px"
+            bg={
+              task.taskPriority === "HIGH" || task.taskPriority === "CRITICAL"
+                ? "red.400"
+                : task.taskPriority === "MEDIUM"
+                ? "orange.400"
+                : "green.400"
+            }
+          />
+
+          <CardBody px={4} py={3}>
+            <VStack align="start" spacing={3}>
+              {/* Header with Priority and Task ID */}
+              <HStack w="full" justify="space-between" align="start">
                 <Badge
-                  rounded={"md"}
-                  px={2}
+                  size="sm"
+                  rounded="full"
+                  px={3}
+                  py={1}
                   colorScheme={
-                    task.taskPriority === "HIGH"
+                    task.taskPriority === "HIGH" ||
+                    task.taskPriority === "CRITICAL"
                       ? "red"
                       : task.taskPriority === "MEDIUM"
                       ? "orange"
-                      : task.taskPriority === "CRITICAL"
-                      ? "purple"
                       : "green"
                   }
+                  variant="subtle"
                 >
                   {task.taskPriority}
                 </Badge>
-                {/* Index Display - API vs Local */}
-                <HStack spacing={1}>
-                  <Badge
-                    rounded={"md"}
-                    px={2}
-                    fontSize="xs"
-                    colorScheme="gray"
-                    variant="outline"
-                    display={"none"}
-                  >
-                    API: {task.indexTask}
-                  </Badge>
-                  {getEffectiveIndex && localTaskIndices && (
-                    <HStack spacing={1}>
-                      <Badge
-                        display={"none"}
-                        rounded={"md"}
-                        px={2}
-                        fontSize="xs"
-                        colorScheme={
-                          localTaskIndices.has(task.id) ? "blue" : "gray"
-                        }
-                        variant={
-                          localTaskIndices.has(task.id) ? "solid" : "outline"
-                        }
-                      >
-                        Local: {getEffectiveIndex(task)}
-                      </Badge>
 
-                      {/* Up/Down Arrow Buttons */}
-                      <VStack spacing={0}>
-                        <IconButton
-                          aria-label="Move task up"
-                          icon={<ChevronUpIcon />}
-                          size="xs"
-                          variant="ghost"
-                          colorScheme="blue"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onMoveUp?.(task.id);
-                          }}
-                          _hover={{ bg: "blue.100" }}
-                          h="12px"
-                          minH="12px"
-                          w="16px"
-                          minW="16px"
-                        />
-                        <IconButton
-                          aria-label="Move task down"
-                          icon={<ChevronDownIcon />}
-                          size="xs"
-                          variant="ghost"
-                          colorScheme="blue"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onMoveDown?.(task.id);
-                          }}
-                          _hover={{ bg: "blue.100" }}
-                          h="12px"
-                          minH="12px"
-                          w="16px"
-                          minW="16px"
-                        />
-                      </VStack>
-                    </HStack>
-                  )}
-                </HStack>{" "}
+                {/* Task ID */}
+                <Text fontSize="xs" color="gray.500" fontFamily="mono">
+                  #{task.id.slice(-6)}
+                </Text>
               </HStack>
-              <Text fontWeight={600} fontSize={"medium"}>
+
+              {/* Task Title */}
+              <Text
+                fontWeight="600"
+                fontSize="md"
+                lineHeight="1.3"
+                color={colorMode === "light" ? "gray.800" : "white"}
+                noOfLines={2}
+              >
                 {task.taskName}
               </Text>
-              {/* Project Information */}
-              {DataProject && (
+
+              {/* Backlog Info */}
+              {task.backlogId && DataBacklog && (
+                <HStack spacing={2}>
+                  <Icon as={FiList} color="secondary.500" boxSize={3} />
+                  <Text fontSize="xs" color="secondary.600" fontWeight="medium">
+                    {DataBacklog.backlogName || "Unknown"}
+                  </Text>
+                </HStack>
+              )}
+
+              {/* Description */}
+              {task.taskDesc && (
                 <Text
-                  fontSize={"xs"}
-                  color={"blue.600"}
-                  fontWeight={500}
-                  bg={"blue.50"}
-                  px={2}
-                  py={1}
-                  rounded={"md"}
-                  border={"1px solid"}
-                  borderColor={"blue.200"}
-                  display={"none"}
+                  fontSize="sm"
+                  color="gray.600"
+                  lineHeight="1.4"
+                  noOfLines={2}
                 >
-                  {DataProject.projectName}
+                  {task.taskDesc}
                 </Text>
               )}
-              <Text
-                fontSize={"smaller"}
-                lineHeight={1.3}
-                color={"gray"}
-                fontWeight={600}
-              >
-                Last Update
-                <Text fontWeight={500}>
-                  {task.updatedAt == null
-                    ? convertToCustomDateFormat(task.createdAt)
-                    : convertToCustomDateFormat(task.updatedAt)}
-                </Text>
-              </Text>
 
-              <Text fontSize={"small"} color={"gray"} as={"p"}>
-                {truncateText(task.taskDesc, 100)}
-              </Text>
-
-              {/* Task progress */}
+              {/* Progress Bar */}
               {task.percentageStatus > 0 && (
-                <Box w="full" h="4px" bg="gray.100" borderRadius="full">
+                <Box w="full">
+                  <HStack justify="space-between" mb={1}>
+                    <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                      Progress
+                    </Text>
+                    <Text fontSize="xs" color="gray.600" fontWeight="bold">
+                      {task.percentageStatus}%
+                    </Text>
+                  </HStack>
                   <Box
-                    h="100%"
-                    w={`${task.percentageStatus}%`}
-                    bg="blue.400"
+                    w="full"
+                    h="6px"
+                    bg="gray.100"
                     borderRadius="full"
-                  />
+                    overflow="hidden"
+                  >
+                    <Box
+                      h="100%"
+                      w={`${task.percentageStatus}%`}
+                      bg={
+                        task.percentageStatus === 100
+                          ? "green.400"
+                          : "secondary.400"
+                      }
+                      borderRadius="full"
+                      transition="width 0.3s ease"
+                    />
+                  </Box>
                 </Box>
               )}
 
-              <Flex
-                as={HStack}
-                w={"full"}
-                justifyContent={"space-between"}
-                mt={2}
-              >
-                <Flex as={HStack} w={"full"} justifyContent={"start"}>
+              {/* Metadata Row */}
+              <HStack w="full" justify="space-between" align="center" pt={1}>
+                {/* Left side - Counts */}
+                <HStack spacing={3}>
                   {task.countCommnetTask > 0 && (
-                    <HStack spacing={1} alignItems="center">
-                      <Icon as={FiMessageSquare} color="gray.600" boxSize={4} />
-                      <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                    <HStack spacing={1}>
+                      <Icon as={FiMessageSquare} color="gray.500" boxSize={3} />
+                      <Text fontSize="xs" color="gray.600" fontWeight="medium">
                         {task.countCommnetTask}
                       </Text>
                     </HStack>
                   )}
-                  {/* Task item count (if available) */}
+
                   {task.countTaskItem > 0 && (
-                    <HStack spacing={1} alignItems="center">
-                      <Icon as={FiCheckSquare} color="gray.600" boxSize={4} />
-                      <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                    <HStack spacing={1}>
+                      <Icon as={FiCheckSquare} color="gray.500" boxSize={3} />
+                      <Text fontSize="xs" color="gray.600" fontWeight="medium">
                         {task.countTaskItemDone}/{task.countTaskItem}
                       </Text>
-                      {/* <Text fontSize="sm" color="gray.600" fontWeight="medium">
-                        {
-                          task.taskItems.filter((item) => item.isDone === "Y")
-                            .length
-                        }
-                        /{task.taskItems.length}
-                      </Text> */}
                     </HStack>
                   )}
-                  {/* Share task */}
-                  {/* <Icon as={FiShare2} color="gray.600" boxSize={4} /> */}
-                </Flex>
-                <Flex as={HStack} w={"full"} justifyContent={"end"} spacing={1}>
-                  {/* Task assignees (if available) */}
-                  {task.assignUsers && task.assignUsers.length > 0 && (
-                    <Tooltip
-                      hasArrow
-                      label={
-                        <Box>
-                          {task.assignUsers.map(
-                            (user: UserShortResponse, index: number) => (
-                              <Text key={index} fontSize="x-small">
-                                {user.nama}
-                              </Text>
-                            )
-                          )}
-                        </Box>
-                      }
-                      bg="secondary.500"
-                      color="white"
-                      borderRadius={"md"}
-                    >
-                      <AvatarGroup size="sm" max={4}>
-                        {task.assignUsers.map((user: UserShortResponse) => (
-                          <Avatar
-                            key={user.id}
-                            name={user.nama}
-                            src={user.profilePict || undefined}
-                          />
-                        ))}
-                      </AvatarGroup>
-                    </Tooltip>
+
+                  {task.countRelatedTask > 0 && (
+                    <HStack spacing={1}>
+                      <Icon as={FiLink} color="gray.500" boxSize={3} />
+                      <Text fontSize="xs" color="gray.600" fontWeight="medium">
+                        {task.countRelatedTask}
+                      </Text>
+                    </HStack>
                   )}
-                </Flex>
-              </Flex>
+                </HStack>
+
+                {/* Right side - Assignees */}
+                {task.assignUsers && task.assignUsers.length > 0 && (
+                  <Tooltip
+                    hasArrow
+                    label={
+                      <VStack spacing={1} align="start">
+                        {task.assignUsers.map(
+                          (user: UserShortResponse, index: number) => (
+                            <Text key={index} fontSize="xs">
+                              {user.nama}
+                            </Text>
+                          )
+                        )}
+                      </VStack>
+                    }
+                    bg="gray.700"
+                    color="white"
+                    borderRadius="md"
+                    placement="top"
+                  >
+                    <AvatarGroup size="xs" max={3} spacing="-0.5">
+                      {task.assignUsers.map((user: UserShortResponse) => (
+                        <Avatar
+                          key={user.id}
+                          name={user.nama}
+                          src={user.profilePict || undefined}
+                          border="2px solid white"
+                        />
+                      ))}
+                    </AvatarGroup>
+                  </Tooltip>
+                )}
+              </HStack>
+
+              {/* Due Date */}
+              {task.endDate && (
+                <HStack spacing={2} w="full">
+                  <Icon as={FiNavigation} color="orange.500" boxSize={3} />
+                  <Text fontSize="xs" color="orange.600" fontWeight="medium">
+                    Due {new Date(task.endDate).toLocaleDateString()}
+                  </Text>
+                </HStack>
+              )}
+
+              {/* Last Updated */}
+              <HStack spacing={2} w="full">
+                <Icon as={FiRefreshCcw} color="gray.400" boxSize={3} />
+                <Text fontSize="xs" color="gray.500">
+                  {task.updatedAt
+                    ? `Updated ${convertToCustomDateFormat(task.updatedAt)}`
+                    : `Created ${convertToCustomDateFormat(task.createdAt)}`}
+                </Text>
+              </HStack>
             </VStack>
           </CardBody>
           {task.percentageStatus < 100 &&
@@ -2959,7 +2972,6 @@ function DraggableTaskCard({
                           alignItems={"center"}
                           justifyContent={"center"}
                           textAlign={"center"}
-                          // height={"180px"}
                           rounded={radiusStyle}
                           py={5}
                         >
@@ -2971,6 +2983,97 @@ function DraggableTaskCard({
                           </AlertDescription>
                         </Alert>
                       )}
+
+                    {/* Alert for no assigned users */}
+                    {ChoosedMemberProjects.length === 0 && (
+                      <Alert
+                        status="warning"
+                        variant="left-accent"
+                        rounded={radiusStyle}
+                      >
+                        <AlertIcon />
+                        <AlertDescription>
+                          Task belum memiliki user yang ditugaskan. Silakan
+                          assign user untuk task ini.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
+                    {/* Alert for no due date */}
+                    {!detailedTask.endDate && (
+                      <Alert
+                        status="warning"
+                        variant="left-accent"
+                        rounded={radiusStyle}
+                      >
+                        <AlertIcon />
+                        <AlertDescription>
+                          Task belum memiliki due date. Silakan set tanggal
+                          deadline untuk task ini.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
+                    {/* Alert for overdue or approaching deadline */}
+                    {detailedTask.endDate &&
+                      detailedTask.boardName !== TASK_BOARD_STATUS_NAME_DONE &&
+                      (() => {
+                        const now = new Date();
+                        now.setHours(0, 0, 0, 0);
+                        const endDate = new Date(detailedTask.endDate);
+                        endDate.setHours(0, 0, 0, 0);
+                        const diffTime = endDate.getTime() - now.getTime();
+                        const diffDays = Math.floor(
+                          diffTime / (1000 * 60 * 60 * 24)
+                        );
+
+                        if (diffDays < 0) {
+                          return (
+                            <Alert
+                              status="error"
+                              variant="left-accent"
+                              rounded={radiusStyle}
+                            >
+                              <AlertIcon />
+                              <AlertDescription>
+                                Task sudah melewati deadline{" "}
+                                {Math.abs(diffDays)} hari yang lalu!
+                              </AlertDescription>
+                            </Alert>
+                          );
+                        } else if (diffDays <= 3) {
+                          return (
+                            <Alert
+                              status="warning"
+                              variant="left-accent"
+                              rounded={radiusStyle}
+                            >
+                              <AlertIcon />
+                              <AlertDescription>
+                                Task akan jatuh tempo dalam {diffDays} hari!
+                              </AlertDescription>
+                            </Alert>
+                          );
+                        } else {
+                          return (
+                            <Alert
+                              status="info"
+                              variant="left-accent"
+                              rounded={radiusStyle}
+                            >
+                              <AlertIcon />
+                              <AlertDescription>
+                                Task memiliki deadline pada{" "}
+                                {new Date(
+                                  detailedTask.endDate
+                                ).toLocaleDateString()}
+                                .
+                              </AlertDescription>
+                            </Alert>
+                          );
+                        }
+                      })()}
+
                     <Flex
                       w="full"
                       as={HStack}
@@ -3059,14 +3162,50 @@ function DraggableTaskCard({
                             Set Task Dates
                           </PopoverHeader>
                           <PopoverBody>
-                            <DateRangePicker
-                              taskId={detailedTask.id}
-                              initialStartDate={detailedTask.startDate}
-                              initialEndDate={detailedTask.endDate}
-                              onSave={(startDate, endDate) => {
-                                updateTaskDates(startDate, endDate);
-                              }}
-                            />
+                            <VStack spacing={3} align="stretch">
+                              <DateTimeRangeInput
+                                startValue={detailedTask.startDate ?? null}
+                                endValue={detailedTask.endDate ?? null}
+                                onStartChange={(value) => {
+                                  if (detailedTask) {
+                                    setDetailedTask({
+                                      ...detailedTask,
+                                      startDate: value ?? undefined,
+                                    });
+                                  }
+                                }}
+                                onEndChange={(value) => {
+                                  if (detailedTask) {
+                                    setDetailedTask({
+                                      ...detailedTask,
+                                      endDate: value ?? undefined,
+                                    });
+                                  }
+                                }}
+                                placeholder="Select task schedule"
+                                size="sm"
+                              />
+                              <Button
+                                size="sm"
+                                colorScheme="blue"
+                                w="full"
+                                onClick={async (e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+
+                                  const startDate =
+                                    detailedTask.startDate ?? null;
+                                  const endDate = detailedTask.endDate ?? null;
+
+                                  await updateTaskDates(startDate, endDate);
+
+                                  // Close popover
+                                  document.body.click();
+                                }}
+                              >
+                                Save
+                              </Button>
+                            </VStack>
                           </PopoverBody>
                         </PopoverContent>
                       </Popover>
@@ -3077,13 +3216,18 @@ function DraggableTaskCard({
                         variant="outline"
                         leftIcon={<FaUsers />}
                         onClick={() => {
-                          // Clear search state when opening modal
                           setSearchUserInput("");
-                          setDataUsers([]);
+                          const projectMembers =
+                            DataProject?.userAssignment?.map(
+                              (assignment) => assignment.userData
+                            ) || [];
+                          setDataUsers(projectMembers);
                           onAssignModalOpen();
                         }}
                       >
                         Assign Task
+                        {ChoosedMemberProjects.length > 0 &&
+                          ` (${ChoosedMemberProjects.length})`}
                       </Button>
                     </HStack>
                     {/* Editable Task Description */}
@@ -3190,6 +3334,7 @@ function DraggableTaskCard({
                               onToggle={handleToggleTaskItem}
                               onEdit={handleEditTaskItem}
                               onDelete={handleDeleteTaskItem}
+                              togglingItemId={togglingItemId}
                             />
                           ))}
                         </Flex>
@@ -3480,6 +3625,206 @@ function DraggableTaskCard({
                       )}
                     </Box>
 
+                    {/* Backlog Information */}
+                    <Box w="full">
+                      <Text fontSize="sm" color="gray.500" mb={2}>
+                        Backlog
+                      </Text>
+                      {detailedTask?.backlogId && DataBacklog ? (
+                        <Box
+                          p={3}
+                          bg="secondary.50"
+                          border="1px solid"
+                          borderColor="secondary.200"
+                          rounded={radiusStyle}
+                        >
+                          <Text
+                            fontSize="sm"
+                            fontWeight="bold"
+                            color="secondary.700"
+                          >
+                            {DataBacklog.backlogName || "Unknown Backlog"}
+                          </Text>
+                        </Box>
+                      ) : (
+                        <Text fontSize="sm" color="gray.400">
+                          No backlog assigned
+                        </Text>
+                      )}
+                    </Box>
+
+                    {/* Related Tasks */}
+                    <Box w="full">
+                      <HStack justify="space-between" mb={2}>
+                        <Text fontSize="sm" color="gray.500">
+                          Related Tasks
+                        </Text>
+                        <Button
+                          size="xs"
+                          colorScheme="blue"
+                          variant="ghost"
+                          onClick={onTaskPickerOpen}
+                          leftIcon={<FaPlus />}
+                        >
+                          Add
+                        </Button>
+                      </HStack>
+                      {isLoadingRelatedTasks ? (
+                        <Text fontSize="sm" color="gray.400">
+                          Loading...
+                        </Text>
+                      ) : relatedTasks.length > 0 ? (
+                        <VStack align="stretch" spacing={2} w={"full"}>
+                          {relatedTasks.map((relTask) => (
+                            <Box
+                              key={relTask.id}
+                              p={3}
+                              bg={
+                                colorMode === "light" ? "gray.50" : "gray.700"
+                              }
+                              border="1px solid"
+                              borderColor={
+                                colorMode === "light" ? "gray.200" : "gray.600"
+                              }
+                              rounded={radiusStyle}
+                              w={"full"}
+                            >
+                              <HStack
+                                justify="space-between"
+                                align="start"
+                                spacing={2}
+                              >
+                                <VStack
+                                  align="start"
+                                  spacing={1}
+                                  flex={1}
+                                  minW={0}
+                                >
+                                  <HStack spacing={2}>
+                                    <Badge
+                                      size="sm"
+                                      colorScheme={
+                                        relTask.taskPriority === "HIGH"
+                                          ? "red"
+                                          : relTask.taskPriority === "MEDIUM"
+                                          ? "orange"
+                                          : "green"
+                                      }
+                                    >
+                                      {relTask.taskPriority}
+                                    </Badge>
+                                  </HStack>
+                                  <Text fontSize="sm" fontWeight="bold">
+                                    {relTask.taskName}
+                                  </Text>
+                                  <VStack
+                                    align="start"
+                                    spacing={0}
+                                    fontSize="xs"
+                                    color="gray.600"
+                                  >
+                                    {relTask.projectId && (
+                                      <HStack spacing={1}>
+                                        <Text fontWeight="medium">
+                                          Project:
+                                        </Text>
+                                        {relTask.projectNo &&
+                                        relTask.projectName ? (
+                                          <Tooltip
+                                            label={`${relTask.projectNo} - ${relTask.projectName}`}
+                                            placement="top"
+                                          >
+                                            <Text isTruncated maxW="200px">
+                                              {relTask.projectNo} -{" "}
+                                              {relTask.projectName}
+                                            </Text>
+                                          </Tooltip>
+                                        ) : DataProject?.id ===
+                                          relTask.projectId ? (
+                                          <Tooltip
+                                            label={`${DataProject.projectNo} - ${DataProject.projectName}`}
+                                            placement="top"
+                                          >
+                                            <Text isTruncated maxW="200px">
+                                              {DataProject.projectNo} -{" "}
+                                              {DataProject.projectName}
+                                            </Text>
+                                          </Tooltip>
+                                        ) : (
+                                          <Text
+                                            color="orange.600"
+                                            fontWeight="medium"
+                                          >
+                                            {relTask.projectId} (Other Project)
+                                          </Text>
+                                        )}
+                                      </HStack>
+                                    )}
+                                    {relTask.backlogId && (
+                                      <HStack spacing={1}>
+                                        <Text fontWeight="medium">
+                                          Backlog:
+                                        </Text>
+                                        <Text>
+                                          {relTask.backlogName ||
+                                            (DataBacklog?.id === relTask.backlogId
+                                              ? DataBacklog.backlogName
+                                              : relTask.backlogId)}
+                                        </Text>
+                                      </HStack>
+                                    )}
+                                    {relTask.boardName && (
+                                      <HStack spacing={1}>
+                                        <Text fontWeight="medium">Status:</Text>
+                                        <Text>{relTask.boardName}</Text>
+                                      </HStack>
+                                    )}
+                                  </VStack>
+                                  {relTask.assignUsers &&
+                                    relTask.assignUsers.length > 0 && (
+                                      <HStack spacing={2} mt={1}>
+                                        <Text
+                                          fontSize="xs"
+                                          color="gray.500"
+                                          fontWeight="medium"
+                                        >
+                                          Assigned:
+                                        </Text>
+                                        <AvatarGroup size="xs" max={3}>
+                                          {relTask.assignUsers.map((user) => (
+                                            <Avatar
+                                              key={user.id}
+                                              name={user.nama}
+                                              src={
+                                                user.profilePict || undefined
+                                              }
+                                            />
+                                          ))}
+                                        </AvatarGroup>
+                                      </HStack>
+                                    )}
+                                </VStack>
+                                <IconButton
+                                  aria-label="Remove related task"
+                                  icon={<DeleteIcon />}
+                                  size="xs"
+                                  colorScheme="red"
+                                  variant="ghost"
+                                  onClick={() =>
+                                    handleRemoveRelatedTask(relTask.id)
+                                  }
+                                />
+                              </HStack>
+                            </Box>
+                          ))}
+                        </VStack>
+                      ) : (
+                        <Text fontSize="sm" color="gray.400">
+                          No related tasks
+                        </Text>
+                      )}
+                    </Box>
+
                     {/* Dates */}
                     <Box w="full">
                       <Text fontSize="sm" color="gray.500" mb={1}>
@@ -3527,7 +3872,7 @@ function DraggableTaskCard({
                           <Box
                             h="100%"
                             w={`${detailedTask.percentageStatus}%`}
-                            bg="blue.400"
+                            bg="secondary.400"
                             borderRadius="full"
                           />
                         </Box>
@@ -3633,6 +3978,185 @@ function DraggableTaskCard({
         </ModalContent>
       </Modal>
 
+      {/* Task Picker Modal for Related Tasks */}
+      <Modal
+        isOpen={isTaskPickerOpen}
+        onClose={() => {
+          onTaskPickerClose();
+          setSearchTaskTerm("");
+          setSearchTasksResults([]);
+        }}
+        size="2xl"
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Add Related Task</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <VStack spacing={4} align="stretch">
+              <Input
+                placeholder="Type at least 3 characters to search tasks..."
+                value={searchTaskTerm}
+                onChange={(e) => setSearchTaskTerm(e.target.value)}
+              />
+
+              {searchTasksResults.length > 0 ? (
+                <VStack
+                  align="stretch"
+                  spacing={3}
+                  maxH="500px"
+                  overflowY="auto"
+                >
+                  {searchTasksResults
+                    .filter((task) => task.id !== detailedTask?.id)
+                    .filter(
+                      (task) => !relatedTasks.some((rt) => rt.id === task.id)
+                    )
+                    .map((task) => (
+                      <Box
+                        key={task.id}
+                        p={4}
+                        border="1px solid"
+                        borderColor={
+                          colorMode === "light" ? "gray.200" : "gray.600"
+                        }
+                        rounded="md"
+                        _hover={{
+                          bg: colorMode === "light" ? "gray.50" : "gray.700",
+                        }}
+                      >
+                        <HStack justify="space-between" align="start">
+                          <VStack align="start" spacing={2} flex={1}>
+                            <HStack spacing={2}>
+                              <Text
+                                fontSize="xs"
+                                color="gray.500"
+                                fontWeight="medium"
+                              >
+                                {task.taskCode}
+                              </Text>
+                              <Badge
+                                colorScheme={
+                                  task.taskPriority === "HIGH"
+                                    ? "red"
+                                    : task.taskPriority === "MEDIUM"
+                                    ? "orange"
+                                    : "green"
+                                }
+                              >
+                                {task.taskPriority}
+                              </Badge>
+                            </HStack>
+                            <Text fontSize="sm" fontWeight="semibold">
+                              {task.taskName}
+                            </Text>
+                            <VStack
+                              align="start"
+                              spacing={1}
+                              fontSize="xs"
+                              color="gray.600"
+                            >
+                              {task.projectId && (
+                                <HStack spacing={1}>
+                                  <Text fontWeight="medium">Project:</Text>
+                                  {task.projectNo && task.projectName ? (
+                                    <Tooltip
+                                      label={`${task.projectNo} - ${task.projectName}`}
+                                      placement="top"
+                                    >
+                                      <Text isTruncated maxW="300px">
+                                        {task.projectNo} - {task.projectName}
+                                      </Text>
+                                    </Tooltip>
+                                  ) : DataProject?.id === task.projectId ? (
+                                    <Tooltip
+                                      label={`${DataProject.projectNo} - ${DataProject.projectName}`}
+                                      placement="top"
+                                    >
+                                      <Text isTruncated maxW="300px">
+                                        {DataProject.projectNo} -{" "}
+                                        {DataProject.projectName}
+                                      </Text>
+                                    </Tooltip>
+                                  ) : (
+                                    <Text
+                                      color="orange.600"
+                                      fontWeight="medium"
+                                    >
+                                      {task.projectId} (Other Project)
+                                    </Text>
+                                  )}
+                                </HStack>
+                              )}
+                              {task.backlogId && (
+                                <HStack spacing={1}>
+                                  <Text fontWeight="medium">Backlog:</Text>
+                                  <Text>
+                                    {task.backlogName ||
+                                      (DataBacklog?.id === task.backlogId
+                                        ? DataBacklog.backlogName
+                                        : task.backlogId)}
+                                  </Text>
+                                </HStack>
+                              )}
+                              {task.boardName && (
+                                <HStack spacing={1}>
+                                  <Text fontWeight="medium">Status:</Text>
+                                  <Text>{task.boardName}</Text>
+                                </HStack>
+                              )}
+                            </VStack>
+                            {task.assignUsers &&
+                              task.assignUsers.length > 0 && (
+                                <HStack spacing={2}>
+                                  <Text
+                                    fontSize="xs"
+                                    color="gray.500"
+                                    fontWeight="medium"
+                                  >
+                                    Assigned:
+                                  </Text>
+                                  <AvatarGroup size="xs" max={3}>
+                                    {task.assignUsers.map((user) => (
+                                      <Avatar
+                                        key={user.id}
+                                        name={user.nama}
+                                        src={user.profilePict || undefined}
+                                      />
+                                    ))}
+                                  </AvatarGroup>
+                                </HStack>
+                              )}
+                          </VStack>
+                          <Button
+                            size="sm"
+                            colorScheme="blue"
+                            onClick={() => handleAddRelatedTask(task.id)}
+                          >
+                            Add
+                          </Button>
+                        </HStack>
+                      </Box>
+                    ))}
+                </VStack>
+              ) : searchTaskTerm.length > 0 && searchTaskTerm.length < 3 ? (
+                <Text color="gray.500" textAlign="center" py={4}>
+                  Type at least 3 characters to search
+                </Text>
+              ) : searchTaskTerm.length >= 3 ? (
+                <Text color="gray.500" textAlign="center" py={4}>
+                  No tasks found. Try a different search term.
+                </Text>
+              ) : (
+                <Text color="gray.500" textAlign="center" py={4}>
+                  Enter at least 3 characters to search for tasks
+                </Text>
+              )}
+            </VStack>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+
       {/* Assign Task Modal */}
       <Modal
         isOpen={isAssignModalOpen}
@@ -3678,9 +4202,29 @@ function DraggableTaskCard({
                   </Box>
 
                   {/* Search Results */}
-                  <Box>
+                  <Box
+                    h="40vh"
+                    overflowY="auto"
+                    overflowX="hidden"
+                    css={{
+                      "&::-webkit-scrollbar": {
+                        width: "8px",
+                      },
+                      "&::-webkit-scrollbar-track": {
+                        background: "#f1f1f1",
+                        borderRadius: "10px",
+                      },
+                      "&::-webkit-scrollbar-thumb": {
+                        background: "#888",
+                        borderRadius: "10px",
+                      },
+                      "&::-webkit-scrollbar-thumb:hover": {
+                        background: "#555",
+                      },
+                    }}
+                  >
                     {DataUsers.length > 0 && (
-                      <VStack spacing={2} align="stretch">
+                      <VStack spacing={2} align="stretch" pb={2}>
                         {DataUsers.map((user) => {
                           const isAlreadyAssigned = ChoosedMemberProjects.find(
                             (assignedUser) => assignedUser.id === user.id
@@ -3733,7 +4277,27 @@ function DraggableTaskCard({
                   </Box>
 
                   {/* Assigned Users List */}
-                  <Box>
+                  <Box
+                    h="40vh"
+                    overflowY="auto"
+                    overflowX="hidden"
+                    css={{
+                      "&::-webkit-scrollbar": {
+                        width: "8px",
+                      },
+                      "&::-webkit-scrollbar-track": {
+                        background: "#f1f1f1",
+                        borderRadius: "10px",
+                      },
+                      "&::-webkit-scrollbar-thumb": {
+                        background: "#888",
+                        borderRadius: "10px",
+                      },
+                      "&::-webkit-scrollbar-thumb:hover": {
+                        background: "#555",
+                      },
+                    }}
+                  >
                     {ChoosedMemberProjects.length <= 0 ? (
                       <Flex
                         w="full"
@@ -3746,7 +4310,7 @@ function DraggableTaskCard({
                         <Text color="gray.500">No users assigned yet</Text>
                       </Flex>
                     ) : (
-                      <VStack spacing={2} align="stretch">
+                      <VStack spacing={2} align="stretch" pb={2}>
                         {ChoosedMemberProjects.map((user) => (
                           <Flex
                             key={user.id}
@@ -4085,6 +4649,8 @@ function KanbanBacklogPage() {
     CreateSimpleTask,
     MoveTask,
     GenerateKanbanBoard,
+    ListRelatedTasks,
+    AssignRelatedTasks,
   } = useTasks();
   const { List: ListUsers } = useUsers();
 
@@ -4210,6 +4776,7 @@ function KanbanBacklogPage() {
   const [RefreshData, setRefreshData] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
   const [isAutoSaving, setIsAutoSaving] = useState(false);
+  
   // LOCAL INDEX MANAGEMENT - Track local indices separately from API indices
   const [localTaskIndices, setLocalTaskIndices] = useState<Map<string, number>>(
     new Map()
@@ -5860,6 +6427,7 @@ function KanbanBacklogPage() {
                                   task.id === recentlyMovedTaskId
                                 }
                                 DataProject={DataProject}
+                                DataBacklog={DataBacklog}
                                 localTaskIndices={localTaskIndices}
                                 onMoveUp={handleMoveTaskUp}
                                 onMoveDown={handleMoveTaskDown}
@@ -5995,6 +6563,7 @@ function KanbanBacklogPage() {
                     onMoveTask={() => {}}
                     isRecentlyMoved={false}
                     DataProject={DataProject}
+                    DataBacklog={DataBacklog}
                     getEffectiveIndex={() => 0}
                     localTaskIndices={new Map()}
                     onMoveUp={() => {}}
