@@ -366,6 +366,16 @@ const RequirementListChooseData = memo(
                     : "-"}
                 </Text>
               </Flex>
+              <Flex fontSize={"small"} as={Stack} spacing={0}>
+                <Text>Ditugaskan Pada :</Text>
+                <Text fontWeight={600}>
+                  {info.row.original.assignedToDate
+                    ? stringToDateFormatedReverse(
+                      info.row.original.assignedToDate
+                    )
+                    : "-"}
+                </Text>
+              </Flex>
             </Flex>
           ),
           header: () => <span>Tanggal</span>,
@@ -387,6 +397,13 @@ const RequirementListChooseData = memo(
                 filterType: "date",
                 filterLabel: "Tgl. Akhir Memo Dibuat",
               },
+              {
+                field: "assignedToDate",
+                operator: "=",
+                value: "",
+                filterType: "date",
+                filterLabel: "Tgl. Ditugaskan",
+              }
             ],
           } as ColumnMetaCustom,
         },
