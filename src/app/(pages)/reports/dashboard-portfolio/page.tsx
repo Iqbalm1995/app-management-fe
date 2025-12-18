@@ -38,6 +38,7 @@ import {
   ModalFooter,
   ModalBody,
   ModalCloseButton,
+  useColorModeValue,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { getCurrentQuarter, convertQuarterToDateRange } from "@/app/helper/MasterHelper";
@@ -100,6 +101,12 @@ export default function DashboardPortfolioPage() {
   const [isRequirementSummaryModalOpen, setIsRequirementSummaryModalOpen] = useState(false);
   const [isRequirementDivisionModalOpen, setIsRequirementDivisionModalOpen] = useState(false);
   const [isRequirementMemoModalOpen, setIsRequirementMemoModalOpen] = useState(false);
+  
+  // Dark mode colors
+  const bgColor = useColorModeValue("white", "gray.800");
+  const cardBg = useColorModeValue("white", "gray.700");
+  const textColor = useColorModeValue("gray.800", "white");
+  const borderColor = useColorModeValue("gray.200", "gray.600");
   
   const { 
     getProjectSummaryDashboard, 
@@ -1886,10 +1893,10 @@ export default function DashboardPortfolioPage() {
       <Box p={6}>
         <Tabs variant="soft-rounded" colorScheme="blue">
           {/* Filter Controls */}
-          <Card mb={6} rounded={radiusStyle} shadow="lg" bg="white">
+          <Card mb={6} rounded={radiusStyle} shadow="lg" bg={cardBg}>
             <CardBody>
               <Flex justify="space-between" align="center" wrap="wrap" gap={4}>
-                <TabList bg="gray.100" p={1} rounded={radiusStyle}>
+                <TabList bg={useColorModeValue("gray.100", "gray.700")} p={1} rounded={radiusStyle}>
                   <Tab rounded={radiusStyle} _selected={{ bg: "blue.500", color: "white" }}>
                     <Icon as={FiBarChart} mr={2} />
                     General
@@ -1904,14 +1911,14 @@ export default function DashboardPortfolioPage() {
                   </Tab>
                 </TabList>
               
-              <HStack spacing={4} bg="gray.50" p={4} rounded={radiusStyle}>
+              <HStack spacing={4} bg={useColorModeValue("gray.50", "gray.700")} p={4} rounded={radiusStyle}>
                 <VStack spacing={1} align="start">
-                  <Text fontSize="xs" color="gray.600" fontWeight="medium">Year</Text>
+                  <Text fontSize="xs" color={useColorModeValue("gray.600", "gray.300")} fontWeight="medium">Year</Text>
                   <Select
                     value={selectedYear}
                     onChange={(e) => setSelectedYear(e.target.value)}
                     size="sm"
-                    bg="white"
+                    bg={cardBg}
                     rounded={radiusStyle}
                     border="1px solid"
                     borderColor="gray.200"
@@ -1926,12 +1933,12 @@ export default function DashboardPortfolioPage() {
                 </VStack>
                 
                 <VStack spacing={1} align="start">
-                  <Text fontSize="xs" color="gray.600" fontWeight="medium">Quarter</Text>
+                  <Text fontSize="xs" color={useColorModeValue("gray.600", "gray.300")} fontWeight="medium">Quarter</Text>
                   <Select
                     value={selectedQuarter}
                     onChange={(e) => setSelectedQuarter(e.target.value)}
                     size="sm"
-                    bg="white"
+                    bg={cardBg}
                     rounded={radiusStyle}
                     border="1px solid"
                     borderColor="gray.200"
@@ -1993,7 +2000,7 @@ export default function DashboardPortfolioPage() {
               >
                 {/* Project Summary - 4 cols */}
                 <GridItem colSpan={{ base: 12, md: 6, lg: 4 }}>
-                  <Card rounded={radiusStyle} shadow="lg" bg="white" h="full">
+                  <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
                     <CardHeader bg="blue.500" color="white" roundedTop={radiusStyle}>
                       <Flex justify="space-between" align="center">
                         <HStack>
@@ -2036,13 +2043,13 @@ export default function DashboardPortfolioPage() {
                           />
                           <HStack justify="center" mt={4} spacing={6}>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color="gray.600">Total</StatLabel>
+                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Total</StatLabel>
                               <StatNumber color="blue.600" fontSize="lg">
                                 {chartData.reduce((sum, item) => sum + item.projectCount, 0)}
                               </StatNumber>
                             </Stat>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color="gray.600">Categories</StatLabel>
+                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Categories</StatLabel>
                               <StatNumber color="green.600" fontSize="lg">{chartData.length}</StatNumber>
                             </Stat>
                           </HStack>
@@ -2061,7 +2068,7 @@ export default function DashboardPortfolioPage() {
 
                 {/* Project Quarterly - 4 cols */}
                 <GridItem colSpan={{ base: 12, md: 6, lg: 4 }}>
-                  <Card rounded={radiusStyle} shadow="lg" bg="white" h="full">
+                  <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
                     <CardHeader bg="green.500" color="white" roundedTop={radiusStyle}>
                       <Flex justify="space-between" align="center">
                         <HStack>
@@ -2104,13 +2111,13 @@ export default function DashboardPortfolioPage() {
                           />
                           <HStack justify="center" mt={4} spacing={6}>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color="gray.600">Q{selectedQuarter} Total</StatLabel>
+                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Q{selectedQuarter} Total</StatLabel>
                               <StatNumber color="green.600" fontSize="lg">
                                 {quarterlyData.reduce((sum, item) => sum + item.projectCount, 0)}
                               </StatNumber>
                             </Stat>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color="gray.600">Avg per Month</StatLabel>
+                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Avg per Month</StatLabel>
                               <StatNumber color="blue.600" fontSize="lg">
                                 {quarterlyData.length > 0 ? Math.round(quarterlyData.reduce((sum, item) => sum + item.projectCount, 0) / quarterlyData.length) : 0}
                               </StatNumber>
@@ -2131,7 +2138,7 @@ export default function DashboardPortfolioPage() {
 
                 {/* Project Division Owner Quartile - 4 cols */}
                 <GridItem colSpan={{ base: 12, md: 6, lg: 4 }}>
-                  <Card rounded={radiusStyle} shadow="lg" bg="white" h="full">
+                  <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
                     <CardHeader bg="purple.500" color="white" roundedTop={radiusStyle}>
                       <Flex justify="space-between" align="center">
                         <HStack>
@@ -2174,13 +2181,13 @@ export default function DashboardPortfolioPage() {
                           />
                           <HStack justify="center" mt={4} spacing={6}>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color="gray.600">Q{selectedQuarter} Divisions</StatLabel>
+                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Q{selectedQuarter} Divisions</StatLabel>
                               <StatNumber color="purple.600" fontSize="lg">
                                 {divisionCategories.length}
                               </StatNumber>
                             </Stat>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color="gray.600">Total Projects</StatLabel>
+                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Total Projects</StatLabel>
                               <StatNumber color="blue.600" fontSize="lg">
                                 {divisionData.reduce((sum, item) => sum + item.projectCount, 0)}
                               </StatNumber>
@@ -2201,7 +2208,7 @@ export default function DashboardPortfolioPage() {
 
                 {/* Project Characteristics - 6 cols */}
                 <GridItem colSpan={{ base: 12, md: 6 }}>
-                  <Card rounded={radiusStyle} shadow="lg" bg="white" h="full">
+                  <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
                     <CardHeader bg="orange.500" color="white" roundedTop={radiusStyle}>
                       <Flex justify="space-between" align="center">
                         <HStack>
@@ -2244,13 +2251,13 @@ export default function DashboardPortfolioPage() {
                           />
                           <HStack justify="center" mt={4} spacing={6}>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color="gray.600">Characteristics</StatLabel>
+                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Characteristics</StatLabel>
                               <StatNumber color="orange.600" fontSize="lg">
                                 {characteristicsData.length}
                               </StatNumber>
                             </Stat>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color="gray.600">Total Projects</StatLabel>
+                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Total Projects</StatLabel>
                               <StatNumber color="blue.600" fontSize="lg">
                                 {characteristicsData.reduce((sum, item) => sum + item.projectCount, 0)}
                               </StatNumber>
@@ -2271,7 +2278,7 @@ export default function DashboardPortfolioPage() {
 
                 {/* Project Type - 6 cols */}
                 <GridItem colSpan={{ base: 12, md: 6 }}>
-                  <Card rounded={radiusStyle} shadow="lg" bg="white" h="full">
+                  <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
                     <CardHeader bg="teal.500" color="white" roundedTop={radiusStyle}>
                       <Flex justify="space-between" align="center">
                         <HStack>
@@ -2314,13 +2321,13 @@ export default function DashboardPortfolioPage() {
                           />
                           <HStack justify="center" mt={4} spacing={6}>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color="gray.600">Types</StatLabel>
+                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Types</StatLabel>
                               <StatNumber color="teal.600" fontSize="lg">
                                 {projectTypeData.length}
                               </StatNumber>
                             </Stat>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color="gray.600">Total Projects</StatLabel>
+                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Total Projects</StatLabel>
                               <StatNumber color="teal.600" fontSize="lg">
                                 {projectTypeData.reduce((sum, item) => sum + item.projectCount, 0)}
                               </StatNumber>
@@ -2341,7 +2348,7 @@ export default function DashboardPortfolioPage() {
 
                 {/* Project Procurement Work Program Flag - 5 cols */}
                 <GridItem colSpan={{ base: 12, md: 6, lg: 5 }}>
-                  <Card rounded={radiusStyle} shadow="lg" bg="white" h="full">
+                  <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
                     <CardHeader bg="pink.500" color="white" roundedTop={radiusStyle}>
                       <Flex justify="space-between" align="center">
                         <HStack>
@@ -2384,13 +2391,13 @@ export default function DashboardPortfolioPage() {
                           />
                           <HStack justify="center" mt={4} spacing={6}>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color="gray.600">Categories</StatLabel>
+                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Categories</StatLabel>
                               <StatNumber color="pink.600" fontSize="lg">
                                 {procurementWorkProgramData.length}
                               </StatNumber>
                             </Stat>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color="gray.600">Total Projects</StatLabel>
+                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Total Projects</StatLabel>
                               <StatNumber color="pink.600" fontSize="lg">
                                 {procurementWorkProgramData.reduce((sum, item) => sum + item.projectCount, 0)}
                               </StatNumber>
@@ -2411,7 +2418,7 @@ export default function DashboardPortfolioPage() {
 
                 {/* Project Acquisitions - 7 cols */}
                 <GridItem colSpan={{ base: 12, md: 6, lg: 7 }}>
-                  <Card rounded={radiusStyle} shadow="lg" bg="white" h="full">
+                  <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
                     <CardHeader bg="cyan.500" color="white" roundedTop={radiusStyle}>
                       <Flex justify="space-between" align="center">
                         <HStack>
@@ -2454,13 +2461,13 @@ export default function DashboardPortfolioPage() {
                           />
                           <HStack justify="center" mt={4} spacing={6}>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color="gray.600">Acquisitions</StatLabel>
+                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Acquisitions</StatLabel>
                               <StatNumber color="cyan.600" fontSize="lg">
                                 {projectAcquisitionsData.length}
                               </StatNumber>
                             </Stat>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color="gray.600">Total Projects</StatLabel>
+                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Total Projects</StatLabel>
                               <StatNumber color="cyan.600" fontSize="lg">
                                 {projectAcquisitionsData.reduce((sum, item) => sum + item.projectCount, 0)}
                               </StatNumber>
@@ -2481,7 +2488,7 @@ export default function DashboardPortfolioPage() {
 
                 {/* Project by Group Management - 12 cols */}
                 <GridItem colSpan={12}>
-                  <Card rounded={radiusStyle} shadow="lg" bg="white" h="full">
+                  <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
                     <CardHeader bg="purple.500" color="white" roundedTop={radiusStyle}>
                       <Flex justify="space-between" align="center">
                         <HStack>
@@ -2524,13 +2531,13 @@ export default function DashboardPortfolioPage() {
                           />
                           <HStack justify="center" mt={4} spacing={6}>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color="gray.600">Groups</StatLabel>
+                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Groups</StatLabel>
                               <StatNumber color="purple.600" fontSize="lg">
                                 {projectByGroupManageData.length}
                               </StatNumber>
                             </Stat>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color="gray.600">Total Projects</StatLabel>
+                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Total Projects</StatLabel>
                               <StatNumber color="purple.600" fontSize="lg">
                                 {projectByGroupManageData.reduce((sum, item) => sum + item.projectCount, 0)}
                               </StatNumber>
@@ -2560,7 +2567,7 @@ export default function DashboardPortfolioPage() {
               >
                 {/* Project Summary Dev - 4 cols */}
                 <GridItem colSpan={{ base: 12, md: 6, lg: 4 }}>
-                  <Card rounded={radiusStyle} shadow="lg" bg="white" h="full">
+                  <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
                     <CardHeader bg="blue.500" color="white" roundedTop={radiusStyle}>
                       <Flex justify="space-between" align="center">
                         <HStack>
@@ -2603,13 +2610,13 @@ export default function DashboardPortfolioPage() {
                           />
                           <HStack justify="center" mt={4} spacing={6}>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color="gray.600">Active</StatLabel>
+                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Active</StatLabel>
                               <StatNumber color="green.600" fontSize="lg">
                                 {activeCount}
                               </StatNumber>
                             </Stat>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color="gray.600">Closed</StatLabel>
+                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Closed</StatLabel>
                               <StatNumber color="red.600" fontSize="lg">
                                 {closedCount}
                               </StatNumber>
@@ -2630,7 +2637,7 @@ export default function DashboardPortfolioPage() {
 
                 {/* Dev Staff Project Closed - 8 cols */}
                 <GridItem colSpan={{ base: 12, md: 6, lg: 8 }}>
-                  <Card rounded={radiusStyle} shadow="lg" bg="white" h="full">
+                  <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
                     <CardHeader bg="red.500" color="white" roundedTop={radiusStyle}>
                       <Flex justify="space-between" align="center">
                         <HStack>
@@ -2673,7 +2680,7 @@ export default function DashboardPortfolioPage() {
                           />
                           <HStack justify="center" mt={4} spacing={6}>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color="gray.600">Q{selectedQuarter} Users</StatLabel>
+                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Q{selectedQuarter} Users</StatLabel>
                               <StatNumber color="red.600" fontSize="lg">
                                 {devStaffCategories.length}
                               </StatNumber>
@@ -2694,7 +2701,7 @@ export default function DashboardPortfolioPage() {
 
                 {/* Dev Staff Project Active - 12 cols */}
                 <GridItem colSpan={12}>
-                  <Card rounded={radiusStyle} shadow="lg" bg="white" h="full">
+                  <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
                     <CardHeader bg="green.500" color="white" roundedTop={radiusStyle}>
                       <Flex justify="space-between" align="center">
                         <HStack>
@@ -2737,7 +2744,7 @@ export default function DashboardPortfolioPage() {
                           />
                           <HStack justify="center" mt={4} spacing={6}>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color="gray.600">Q{selectedQuarter} Users</StatLabel>
+                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Q{selectedQuarter} Users</StatLabel>
                               <StatNumber color="green.600" fontSize="lg">
                                 {devStaffActiveCategories.length}
                               </StatNumber>
@@ -2767,7 +2774,7 @@ export default function DashboardPortfolioPage() {
               >
                 {/* 1. Requirement Type (BRD vs RFC) - 4 cols */}
                 <GridItem colSpan={{ base: 12, md: 6, lg: 4 }}>
-                  <Card rounded={radiusStyle} shadow="lg" bg="white" h="full">
+                  <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
                     <CardHeader bg="blue.500" color="white" roundedTop={radiusStyle}>
                       <Flex justify="space-between" align="center">
                         <HStack>
@@ -2801,7 +2808,7 @@ export default function DashboardPortfolioPage() {
                         </Box>
                       ) : (
                         <Flex justify="center" align="center" height="300px">
-                          <Text color="gray.500">No data available</Text>
+                          <Text color={useColorModeValue("gray.500", "gray.400")}>No data available</Text>
                         </Flex>
                       )}
                     </CardBody>
@@ -2810,7 +2817,7 @@ export default function DashboardPortfolioPage() {
 
                 {/* 2. BRD Status - 4 cols */}
                 <GridItem colSpan={{ base: 12, md: 6, lg: 4 }}>
-                  <Card rounded={radiusStyle} shadow="lg" bg="white" h="full">
+                  <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
                     <CardHeader bg="cyan.500" color="white" roundedTop={radiusStyle}>
                       <Flex justify="space-between" align="center">
                         <HStack>
@@ -2844,7 +2851,7 @@ export default function DashboardPortfolioPage() {
                         </Box>
                       ) : (
                         <Flex justify="center" align="center" height="300px">
-                          <Text color="gray.500">No BRD data available</Text>
+                          <Text color={useColorModeValue("gray.500", "gray.400")}>No BRD data available</Text>
                         </Flex>
                       )}
                     </CardBody>
@@ -2853,7 +2860,7 @@ export default function DashboardPortfolioPage() {
 
                 {/* 3. RFC Status - 4 cols */}
                 <GridItem colSpan={{ base: 12, md: 6, lg: 4 }}>
-                  <Card rounded={radiusStyle} shadow="lg" bg="white" h="full">
+                  <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
                     <CardHeader bg="teal.500" color="white" roundedTop={radiusStyle}>
                       <Flex justify="space-between" align="center">
                         <HStack>
@@ -2887,7 +2894,7 @@ export default function DashboardPortfolioPage() {
                         </Box>
                       ) : (
                         <Flex justify="center" align="center" height="300px">
-                          <Text color="gray.500">No RFC data available</Text>
+                          <Text color={useColorModeValue("gray.500", "gray.400")}>No RFC data available</Text>
                         </Flex>
                       )}
                     </CardBody>
@@ -2896,7 +2903,7 @@ export default function DashboardPortfolioPage() {
 
                 {/* 4. BRD by Division - 6 cols */}
                 <GridItem colSpan={{ base: 12, md: 6 }}>
-                  <Card rounded={radiusStyle} shadow="lg" bg="white" h="full">
+                  <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
                     <CardHeader bg="purple.500" color="white" roundedTop={radiusStyle}>
                       <Flex justify="space-between" align="center">
                         <HStack>
@@ -2931,7 +2938,7 @@ export default function DashboardPortfolioPage() {
                         </Box>
                       ) : (
                         <Flex justify="center" align="center" height="400px">
-                          <Text color="gray.500">No BRD division data available</Text>
+                          <Text color={useColorModeValue("gray.500", "gray.400")}>No BRD division data available</Text>
                         </Flex>
                       )}
                     </CardBody>
@@ -2940,7 +2947,7 @@ export default function DashboardPortfolioPage() {
 
                 {/* 5. RFC by Division - 6 cols */}
                 <GridItem colSpan={{ base: 12, md: 6 }}>
-                  <Card rounded={radiusStyle} shadow="lg" bg="white" h="full">
+                  <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
                     <CardHeader bg="orange.500" color="white" roundedTop={radiusStyle}>
                       <Flex justify="space-between" align="center">
                         <HStack>
@@ -2975,7 +2982,7 @@ export default function DashboardPortfolioPage() {
                         </Box>
                       ) : (
                         <Flex justify="center" align="center" height="400px">
-                          <Text color="gray.500">No RFC division data available</Text>
+                          <Text color={useColorModeValue("gray.500", "gray.400")}>No RFC division data available</Text>
                         </Flex>
                       )}
                     </CardBody>
@@ -2984,7 +2991,7 @@ export default function DashboardPortfolioPage() {
 
                 {/* 6. With Memo - 6 cols */}
                 <GridItem colSpan={{ base: 12, md: 6 }}>
-                  <Card rounded={radiusStyle} shadow="lg" bg="white" h="full">
+                  <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
                     <CardHeader bg="green.500" color="white" roundedTop={radiusStyle}>
                       <Flex justify="space-between" align="center">
                         <HStack>
@@ -3020,7 +3027,7 @@ export default function DashboardPortfolioPage() {
                         </Box>
                       ) : (
                         <Flex justify="center" align="center" height="300px">
-                          <Text color="gray.500">No memo data available</Text>
+                          <Text color={useColorModeValue("gray.500", "gray.400")}>No memo data available</Text>
                         </Flex>
                       )}
                     </CardBody>
@@ -3029,7 +3036,7 @@ export default function DashboardPortfolioPage() {
 
                 {/* 7. Without Memo - 6 cols */}
                 <GridItem colSpan={{ base: 12, md: 6 }}>
-                  <Card rounded={radiusStyle} shadow="lg" bg="white" h="full">
+                  <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
                     <CardHeader bg="red.500" color="white" roundedTop={radiusStyle}>
                       <Flex justify="space-between" align="center">
                         <HStack>
@@ -3079,7 +3086,7 @@ export default function DashboardPortfolioPage() {
         {/* Dev Staff Project Closed Modal */}
         <Modal isOpen={isDevStaffModalOpen} onClose={() => setIsDevStaffModalOpen(false)} size="6xl">
           <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
-          <ModalContent maxH="90vh" bg="white" shadow="2xl" rounded="xl">
+          <ModalContent maxH="90vh" bg={cardBg} shadow="2xl" rounded="xl">
             <ModalHeader 
               bg="red.500" 
               color="white" 
@@ -3097,7 +3104,7 @@ export default function DashboardPortfolioPage() {
             <ModalBody overflowY="auto" maxH="70vh" p={6}>
               {devStaffModalData.length > 0 ? (
                 <Box>
-                  <Box bg="gray.50" p={4} rounded="lg" mb={4}>
+                  <Box bg={useColorModeValue("gray.50", "gray.700")} p={4} rounded="lg" mb={4}>
                     <Chart
                       options={{
                         ...devStaffProjectClosedChartOptions,
@@ -3125,7 +3132,7 @@ export default function DashboardPortfolioPage() {
                     />
                   </Box>
                   <HStack justify="center" mt={4} spacing={6}>
-                    <Box bg="red.50" p={4} rounded="lg" textAlign="center">
+                    <Box bg={useColorModeValue("red.50", "red.900")} p={4} rounded="lg" textAlign="center">
                       <Stat>
                         <StatLabel color="red.600" fontSize="sm" fontWeight="medium">Total Users</StatLabel>
                         <StatNumber color="red.600" fontSize="2xl" fontWeight="bold">
@@ -3144,7 +3151,7 @@ export default function DashboardPortfolioPage() {
                 </Flex>
               )}
             </ModalBody>
-            <ModalFooter bg="gray.50" roundedBottom="xl" py={4}>
+            <ModalFooter bg={useColorModeValue("gray.50", "gray.700")} roundedBottom="xl" py={4}>
               <Button colorScheme="red" mr={3} onClick={() => setIsDevStaffModalOpen(false)}>
                 Close
               </Button>
@@ -3155,7 +3162,7 @@ export default function DashboardPortfolioPage() {
         {/* Dev Staff Project Active Modal */}
         <Modal isOpen={isDevStaffActiveModalOpen} onClose={() => setIsDevStaffActiveModalOpen(false)} size="6xl">
           <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
-          <ModalContent maxH="90vh" bg="white" shadow="2xl" rounded="xl">
+          <ModalContent maxH="90vh" bg={cardBg} shadow="2xl" rounded="xl">
             <ModalHeader 
               bg="green.500" 
               color="white" 
@@ -3173,7 +3180,7 @@ export default function DashboardPortfolioPage() {
             <ModalBody overflowY="auto" maxH="70vh" p={6}>
               {devStaffActiveModalData.length > 0 ? (
                 <Box>
-                  <Box bg="gray.50" p={4} rounded="lg" mb={4}>
+                  <Box bg={useColorModeValue("gray.50", "gray.700")} p={4} rounded="lg" mb={4}>
                     <Chart
                       options={{
                         ...devStaffProjectActiveChartOptions,
@@ -3201,7 +3208,7 @@ export default function DashboardPortfolioPage() {
                     />
                   </Box>
                   <HStack justify="center" mt={4} spacing={6}>
-                    <Box bg="green.50" p={4} rounded="lg" textAlign="center">
+                    <Box bg={useColorModeValue("green.50", "green.900")} p={4} rounded="lg" textAlign="center">
                       <Stat>
                         <StatLabel color="green.600" fontSize="sm" fontWeight="medium">Total Users</StatLabel>
                         <StatNumber color="green.600" fontSize="2xl" fontWeight="bold">
@@ -3220,7 +3227,7 @@ export default function DashboardPortfolioPage() {
                 </Flex>
               )}
             </ModalBody>
-            <ModalFooter bg="gray.50" roundedBottom="xl" py={4}>
+            <ModalFooter bg={useColorModeValue("gray.50", "gray.700")} roundedBottom="xl" py={4}>
               <Button colorScheme="green" mr={3} onClick={() => setIsDevStaffActiveModalOpen(false)}>
                 Close
               </Button>
@@ -3231,7 +3238,7 @@ export default function DashboardPortfolioPage() {
         {/* Division Owner Quartile Modal */}
         <Modal isOpen={isDivisionModalOpen} onClose={() => setIsDivisionModalOpen(false)} size="6xl">
           <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
-          <ModalContent maxH="90vh" bg="white" shadow="2xl" rounded="xl">
+          <ModalContent maxH="90vh" bg={cardBg} shadow="2xl" rounded="xl">
             <ModalHeader 
               bg="purple.500" 
               color="white" 
@@ -3249,7 +3256,7 @@ export default function DashboardPortfolioPage() {
             <ModalBody overflowY="auto" maxH="70vh" p={6}>
               {divisionModalData.length > 0 ? (
                 <Box>
-                  <Box bg="gray.50" p={4} rounded="lg" mb={4}>
+                  <Box bg={useColorModeValue("gray.50", "gray.700")} p={4} rounded="lg" mb={4}>
                     <Chart
                       options={{
                         ...divisionChartOptions,
@@ -3290,7 +3297,7 @@ export default function DashboardPortfolioPage() {
                     />
                   </Box>
                   <HStack justify="center" mt={4} spacing={6}>
-                    <Box bg="purple.50" p={4} rounded="lg" textAlign="center">
+                    <Box bg={useColorModeValue("purple.50", "purple.900")} p={4} rounded="lg" textAlign="center">
                       <Stat>
                         <StatLabel color="purple.600" fontSize="sm" fontWeight="medium">Total Divisions</StatLabel>
                         <StatNumber color="purple.600" fontSize="2xl" fontWeight="bold">
@@ -3309,7 +3316,7 @@ export default function DashboardPortfolioPage() {
                 </Flex>
               )}
             </ModalBody>
-            <ModalFooter bg="gray.50" roundedBottom="xl" py={4}>
+            <ModalFooter bg={useColorModeValue("gray.50", "gray.700")} roundedBottom="xl" py={4}>
               <Button colorScheme="purple" mr={3} onClick={() => setIsDivisionModalOpen(false)}>
                 Close
               </Button>
@@ -3320,7 +3327,7 @@ export default function DashboardPortfolioPage() {
         {/* Project Quarterly Modal */}
         <Modal isOpen={isProjectQuarterlyModalOpen} onClose={() => setIsProjectQuarterlyModalOpen(false)} size="6xl">
           <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
-          <ModalContent maxH="90vh" bg="white" shadow="2xl" rounded="xl">
+          <ModalContent maxH="90vh" bg={cardBg} shadow="2xl" rounded="xl">
             <ModalHeader 
               bg="purple.500" 
               color="white" 
@@ -3338,7 +3345,7 @@ export default function DashboardPortfolioPage() {
             <ModalBody overflowY="auto" maxH="70vh" p={6}>
               {quarterlyData.length > 0 ? (
                 <Box>
-                  <Box bg="gray.50" p={4} rounded="lg" mb={4}>
+                  <Box bg={useColorModeValue("gray.50", "gray.700")} p={4} rounded="lg" mb={4}>
                     <Chart
                       options={quarterlyChartOptions}
                       series={quarterlyChartSeries}
@@ -3347,7 +3354,7 @@ export default function DashboardPortfolioPage() {
                     />
                   </Box>
                   <HStack justify="center" mt={4} spacing={6}>
-                    <Box bg="purple.50" p={4} rounded="lg" textAlign="center">
+                    <Box bg={useColorModeValue("purple.50", "purple.900")} p={4} rounded="lg" textAlign="center">
                       <Stat>
                         <StatLabel color="purple.600" fontSize="sm" fontWeight="medium">Total Projects</StatLabel>
                         <StatNumber color="purple.600" fontSize="2xl" fontWeight="bold">
@@ -3366,7 +3373,7 @@ export default function DashboardPortfolioPage() {
                 </Flex>
               )}
             </ModalBody>
-            <ModalFooter bg="gray.50" roundedBottom="xl" py={4}>
+            <ModalFooter bg={useColorModeValue("gray.50", "gray.700")} roundedBottom="xl" py={4}>
               <Button colorScheme="purple" mr={3} onClick={() => setIsProjectQuarterlyModalOpen(false)}>
                 Close
               </Button>
@@ -3377,7 +3384,7 @@ export default function DashboardPortfolioPage() {
         {/* Project Summary Modal */}
         <Modal isOpen={isProjectSummaryModalOpen} onClose={() => setIsProjectSummaryModalOpen(false)} size="6xl">
           <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
-          <ModalContent maxH="90vh" bg="white" shadow="2xl" rounded="xl">
+          <ModalContent maxH="90vh" bg={cardBg} shadow="2xl" rounded="xl">
             <ModalHeader 
               bg="blue.500" 
               color="white" 
@@ -3395,7 +3402,7 @@ export default function DashboardPortfolioPage() {
             <ModalBody overflowY="auto" maxH="70vh" p={6}>
               {chartData.length > 0 ? (
                 <Box>
-                  <Box bg="gray.50" p={4} rounded="lg" mb={4}>
+                  <Box bg={useColorModeValue("gray.50", "gray.700")} p={4} rounded="lg" mb={4}>
                     <Chart
                       options={chartOptions}
                       series={chartSeries}
@@ -3404,7 +3411,7 @@ export default function DashboardPortfolioPage() {
                     />
                   </Box>
                   <HStack justify="center" mt={4} spacing={6}>
-                    <Box bg="blue.50" p={4} rounded="lg" textAlign="center">
+                    <Box bg={useColorModeValue("blue.50", "blue.900")} p={4} rounded="lg" textAlign="center">
                       <Stat>
                         <StatLabel color="blue.600" fontSize="sm" fontWeight="medium">Total Projects</StatLabel>
                         <StatNumber color="blue.600" fontSize="2xl" fontWeight="bold">
@@ -3423,7 +3430,7 @@ export default function DashboardPortfolioPage() {
                 </Flex>
               )}
             </ModalBody>
-            <ModalFooter bg="gray.50" roundedBottom="xl" py={4}>
+            <ModalFooter bg={useColorModeValue("gray.50", "gray.700")} roundedBottom="xl" py={4}>
               <Button colorScheme="blue" mr={3} onClick={() => setIsProjectSummaryModalOpen(false)}>
                 Close
               </Button>
@@ -3434,7 +3441,7 @@ export default function DashboardPortfolioPage() {
         {/* Project Characteristics Modal */}
         <Modal isOpen={isCharacteristicsModalOpen} onClose={() => setIsCharacteristicsModalOpen(false)} size="6xl">
           <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
-          <ModalContent maxH="90vh" bg="white" shadow="2xl" rounded="xl">
+          <ModalContent maxH="90vh" bg={cardBg} shadow="2xl" rounded="xl">
             <ModalHeader 
               bg="orange.500" 
               color="white" 
@@ -3452,7 +3459,7 @@ export default function DashboardPortfolioPage() {
             <ModalBody overflowY="auto" maxH="70vh" p={6}>
               {characteristicsModalData.length > 0 ? (
                 <Box>
-                  <Box bg="gray.50" p={4} rounded="lg" mb={4}>
+                  <Box bg={useColorModeValue("gray.50", "gray.700")} p={4} rounded="lg" mb={4}>
                     <Chart
                       options={{
                         ...characteristicsChartOptions,
@@ -3478,7 +3485,7 @@ export default function DashboardPortfolioPage() {
                         </StatNumber>
                       </Stat>
                     </Box>
-                    <Box bg="blue.50" p={4} rounded="lg" textAlign="center">
+                    <Box bg={useColorModeValue("blue.50", "blue.900")} p={4} rounded="lg" textAlign="center">
                       <Stat>
                         <StatLabel color="blue.600" fontSize="sm" fontWeight="medium">Total Projects</StatLabel>
                         <StatNumber color="blue.600" fontSize="2xl" fontWeight="bold">
@@ -3497,7 +3504,7 @@ export default function DashboardPortfolioPage() {
                 </Flex>
               )}
             </ModalBody>
-            <ModalFooter bg="gray.50" roundedBottom="xl" py={4}>
+            <ModalFooter bg={useColorModeValue("gray.50", "gray.700")} roundedBottom="xl" py={4}>
               <Button colorScheme="orange" mr={3} onClick={() => setIsCharacteristicsModalOpen(false)}>
                 Close
               </Button>
@@ -3508,7 +3515,7 @@ export default function DashboardPortfolioPage() {
         {/* Project Type Modal */}
         <Modal isOpen={isProjectTypeModalOpen} onClose={() => setIsProjectTypeModalOpen(false)} size="6xl">
           <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
-          <ModalContent maxH="90vh" bg="white" shadow="2xl" rounded="xl">
+          <ModalContent maxH="90vh" bg={cardBg} shadow="2xl" rounded="xl">
             <ModalHeader 
               bg="teal.500" 
               color="white" 
@@ -3526,7 +3533,7 @@ export default function DashboardPortfolioPage() {
             <ModalBody overflowY="auto" maxH="70vh" p={6}>
               {projectTypeModalData.length > 0 ? (
                 <Box>
-                  <Box bg="gray.50" p={4} rounded="lg" mb={4}>
+                  <Box bg={useColorModeValue("gray.50", "gray.700")} p={4} rounded="lg" mb={4}>
                     <Chart
                       options={{
                         ...projectTypeChartOptions,
@@ -3553,7 +3560,7 @@ export default function DashboardPortfolioPage() {
                         </StatNumber>
                       </Stat>
                     </Box>
-                    <Box bg="blue.50" p={4} rounded="lg" textAlign="center">
+                    <Box bg={useColorModeValue("blue.50", "blue.900")} p={4} rounded="lg" textAlign="center">
                       <Stat>
                         <StatLabel color="blue.600" fontSize="sm" fontWeight="medium">Total Projects</StatLabel>
                         <StatNumber color="blue.600" fontSize="2xl" fontWeight="bold">
@@ -3572,7 +3579,7 @@ export default function DashboardPortfolioPage() {
                 </Flex>
               )}
             </ModalBody>
-            <ModalFooter bg="gray.50" roundedBottom="xl" py={4}>
+            <ModalFooter bg={useColorModeValue("gray.50", "gray.700")} roundedBottom="xl" py={4}>
               <Button colorScheme="teal" mr={3} onClick={() => setIsProjectTypeModalOpen(false)}>
                 Close
               </Button>
@@ -3583,7 +3590,7 @@ export default function DashboardPortfolioPage() {
         {/* Procurement Work Program Modal */}
         <Modal isOpen={isProcurementModalOpen} onClose={() => setIsProcurementModalOpen(false)} size="6xl">
           <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
-          <ModalContent maxH="90vh" bg="white" shadow="2xl" rounded="xl">
+          <ModalContent maxH="90vh" bg={cardBg} shadow="2xl" rounded="xl">
             <ModalHeader bg="pink.500" color="white" roundedTop="xl" py={4} fontSize="lg" fontWeight="bold">
               <HStack>
                 <Icon as={FiTrendingUp} />
@@ -3594,7 +3601,7 @@ export default function DashboardPortfolioPage() {
             <ModalBody overflowY="auto" maxH="70vh" p={6}>
               {procurementModalData.length > 0 ? (
                 <Box>
-                  <Box bg="gray.50" p={4} rounded="lg" mb={4}>
+                  <Box bg={useColorModeValue("gray.50", "gray.700")} p={4} rounded="lg" mb={4}>
                     <Chart
                       options={{
                         ...procurementWorkProgramChartOptions,
@@ -3614,7 +3621,7 @@ export default function DashboardPortfolioPage() {
                         </StatNumber>
                       </Stat>
                     </Box>
-                    <Box bg="blue.50" p={4} rounded="lg" textAlign="center">
+                    <Box bg={useColorModeValue("blue.50", "blue.900")} p={4} rounded="lg" textAlign="center">
                       <Stat>
                         <StatLabel color="blue.600" fontSize="sm" fontWeight="medium">Total Projects</StatLabel>
                         <StatNumber color="blue.600" fontSize="2xl" fontWeight="bold">
@@ -3633,7 +3640,7 @@ export default function DashboardPortfolioPage() {
                 </Flex>
               )}
             </ModalBody>
-            <ModalFooter bg="gray.50" roundedBottom="xl" py={4}>
+            <ModalFooter bg={useColorModeValue("gray.50", "gray.700")} roundedBottom="xl" py={4}>
               <Button colorScheme="pink" mr={3} onClick={() => setIsProcurementModalOpen(false)}>
                 Close
               </Button>
@@ -3644,7 +3651,7 @@ export default function DashboardPortfolioPage() {
         {/* Project Acquisitions Modal */}
         <Modal isOpen={isAcquisitionsModalOpen} onClose={() => setIsAcquisitionsModalOpen(false)} size="6xl">
           <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
-          <ModalContent maxH="90vh" bg="white" shadow="2xl" rounded="xl">
+          <ModalContent maxH="90vh" bg={cardBg} shadow="2xl" rounded="xl">
             <ModalHeader bg="cyan.500" color="white" roundedTop="xl" py={4} fontSize="lg" fontWeight="bold">
               <HStack>
                 <Icon as={FiActivity} />
@@ -3655,7 +3662,7 @@ export default function DashboardPortfolioPage() {
             <ModalBody overflowY="auto" maxH="70vh" p={6}>
               {acquisitionsModalData.length > 0 ? (
                 <Box>
-                  <Box bg="gray.50" p={4} rounded="lg" mb={4}>
+                  <Box bg={useColorModeValue("gray.50", "gray.700")} p={4} rounded="lg" mb={4}>
                     <Chart
                       options={{
                         ...projectAcquisitionsChartOptions,
@@ -3681,7 +3688,7 @@ export default function DashboardPortfolioPage() {
                         </StatNumber>
                       </Stat>
                     </Box>
-                    <Box bg="blue.50" p={4} rounded="lg" textAlign="center">
+                    <Box bg={useColorModeValue("blue.50", "blue.900")} p={4} rounded="lg" textAlign="center">
                       <Stat>
                         <StatLabel color="blue.600" fontSize="sm" fontWeight="medium">Total Projects</StatLabel>
                         <StatNumber color="blue.600" fontSize="2xl" fontWeight="bold">
@@ -3700,7 +3707,7 @@ export default function DashboardPortfolioPage() {
                 </Flex>
               )}
             </ModalBody>
-            <ModalFooter bg="gray.50" roundedBottom="xl" py={4}>
+            <ModalFooter bg={useColorModeValue("gray.50", "gray.700")} roundedBottom="xl" py={4}>
               <Button colorScheme="cyan" mr={3} onClick={() => setIsAcquisitionsModalOpen(false)}>
                 Close
               </Button>
@@ -3711,7 +3718,7 @@ export default function DashboardPortfolioPage() {
         {/* Project by Group Management Modal */}
         <Modal isOpen={isGroupManageModalOpen} onClose={() => setIsGroupManageModalOpen(false)} size="6xl">
           <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
-          <ModalContent maxH="90vh" bg="white" shadow="2xl" rounded="xl">
+          <ModalContent maxH="90vh" bg={cardBg} shadow="2xl" rounded="xl">
             <ModalHeader bg="purple.500" color="white" roundedTop="xl" py={4} fontSize="lg" fontWeight="bold">
               <HStack>
                 <Icon as={FiBarChart} />
@@ -3722,7 +3729,7 @@ export default function DashboardPortfolioPage() {
             <ModalBody overflowY="auto" maxH="70vh" p={6}>
               {groupManageModalData.length > 0 ? (
                 <Box>
-                  <Box bg="gray.50" p={4} rounded="lg" mb={4}>
+                  <Box bg={useColorModeValue("gray.50", "gray.700")} p={4} rounded="lg" mb={4}>
                     <Chart
                       options={{
                         ...projectByGroupManageChartOptions,
@@ -3740,7 +3747,7 @@ export default function DashboardPortfolioPage() {
                     />
                   </Box>
                   <HStack justify="center" mt={4} spacing={6}>
-                    <Box bg="purple.50" p={4} rounded="lg" textAlign="center">
+                    <Box bg={useColorModeValue("purple.50", "purple.900")} p={4} rounded="lg" textAlign="center">
                       <Stat>
                         <StatLabel color="purple.600" fontSize="sm" fontWeight="medium">Total Groups</StatLabel>
                         <StatNumber color="purple.600" fontSize="2xl" fontWeight="bold">
@@ -3748,7 +3755,7 @@ export default function DashboardPortfolioPage() {
                         </StatNumber>
                       </Stat>
                     </Box>
-                    <Box bg="blue.50" p={4} rounded="lg" textAlign="center">
+                    <Box bg={useColorModeValue("blue.50", "blue.900")} p={4} rounded="lg" textAlign="center">
                       <Stat>
                         <StatLabel color="blue.600" fontSize="sm" fontWeight="medium">Total Projects</StatLabel>
                         <StatNumber color="blue.600" fontSize="2xl" fontWeight="bold">
@@ -3767,7 +3774,7 @@ export default function DashboardPortfolioPage() {
                 </Flex>
               )}
             </ModalBody>
-            <ModalFooter bg="gray.50" roundedBottom="xl" py={4}>
+            <ModalFooter bg={useColorModeValue("gray.50", "gray.700")} roundedBottom="xl" py={4}>
               <Button colorScheme="purple" mr={3} onClick={() => setIsGroupManageModalOpen(false)}>
                 Close
               </Button>
@@ -3778,7 +3785,7 @@ export default function DashboardPortfolioPage() {
         {/* Project Summary Dev Modal */}
         <Modal isOpen={isProjectSummaryDevModalOpen} onClose={() => setIsProjectSummaryDevModalOpen(false)} size="6xl">
           <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
-          <ModalContent maxH="90vh" bg="white" shadow="2xl" rounded="xl">
+          <ModalContent maxH="90vh" bg={cardBg} shadow="2xl" rounded="xl">
             <ModalHeader bg="blue.500" color="white" roundedTop="xl" py={4} fontSize="lg" fontWeight="bold">
               <HStack>
                 <Icon as={FiBarChart} />
@@ -3789,7 +3796,7 @@ export default function DashboardPortfolioPage() {
             <ModalBody overflowY="auto" maxH="70vh" p={6}>
               {projectSummaryDevModalData.length > 0 ? (
                 <Box>
-                  <Box bg="gray.50" p={4} rounded="lg" mb={4}>
+                  <Box bg={useColorModeValue("gray.50", "gray.700")} p={4} rounded="lg" mb={4}>
                     <Chart
                       options={{
                         ...projectSummaryDevChartOptions,
@@ -3810,7 +3817,7 @@ export default function DashboardPortfolioPage() {
                     />
                   </Box>
                   <HStack justify="center" mt={4} spacing={6}>
-                    <Box bg="blue.50" p={4} rounded="lg" textAlign="center">
+                    <Box bg={useColorModeValue("blue.50", "blue.900")} p={4} rounded="lg" textAlign="center">
                       <Stat>
                         <StatLabel color="blue.600" fontSize="sm" fontWeight="medium">Total Records</StatLabel>
                         <StatNumber color="blue.600" fontSize="2xl" fontWeight="bold">
@@ -3818,7 +3825,7 @@ export default function DashboardPortfolioPage() {
                         </StatNumber>
                       </Stat>
                     </Box>
-                    <Box bg="green.50" p={4} rounded="lg" textAlign="center">
+                    <Box bg={useColorModeValue("green.50", "green.900")} p={4} rounded="lg" textAlign="center">
                       <Stat>
                         <StatLabel color="green.600" fontSize="sm" fontWeight="medium">Total Projects</StatLabel>
                         <StatNumber color="green.600" fontSize="2xl" fontWeight="bold">
@@ -3837,7 +3844,7 @@ export default function DashboardPortfolioPage() {
                 </Flex>
               )}
             </ModalBody>
-            <ModalFooter bg="gray.50" roundedBottom="xl" py={4}>
+            <ModalFooter bg={useColorModeValue("gray.50", "gray.700")} roundedBottom="xl" py={4}>
               <Button colorScheme="blue" mr={3} onClick={() => setIsProjectSummaryDevModalOpen(false)}>
                 Close
               </Button>
@@ -3848,7 +3855,7 @@ export default function DashboardPortfolioPage() {
         {/* Update Report Confirmation Modal */}
         <Modal isOpen={isUpdateConfirmOpen} onClose={() => setIsUpdateConfirmOpen(false)} size="md">
           <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
-          <ModalContent bg="white" shadow="2xl" rounded="xl">
+          <ModalContent bg={cardBg} shadow="2xl" rounded="xl">
             <ModalHeader bg="orange.500" color="white" roundedTop="xl" py={4} fontSize="lg" fontWeight="bold">
               <HStack>
                 <Icon as={FiActivity} />
@@ -3869,11 +3876,11 @@ export default function DashboardPortfolioPage() {
                     </Text>
                   </HStack>
                 </Box>
-                <Text fontSize="sm" color="gray.600">
+                <Text fontSize="sm" color={useColorModeValue("gray.600", "gray.300")}>
                   The following reports will be updated:
                 </Text>
-                <Box bg="gray.50" p={3} rounded="md" w="full">
-                  <Text fontSize="xs" color="gray.600">
+                <Box bg={useColorModeValue("gray.50", "gray.700")} p={3} rounded="md" w="full">
+                  <Text fontSize="xs" color={useColorModeValue("gray.600", "gray.300")}>
                     • Project Summary • Project Characteristics • Project Type<br/>
                     • Procurement Work Program • Project Acquisitions<br/>
                     • Project by Group Manage • Project Quarterly<br/>
@@ -3882,7 +3889,7 @@ export default function DashboardPortfolioPage() {
                 </Box>
               </VStack>
             </ModalBody>
-            <ModalFooter bg="gray.50" roundedBottom="xl" py={4}>
+            <ModalFooter bg={useColorModeValue("gray.50", "gray.700")} roundedBottom="xl" py={4}>
               <Button variant="ghost" mr={3} onClick={() => setIsUpdateConfirmOpen(false)}>
                 Cancel
               </Button>
@@ -3896,7 +3903,7 @@ export default function DashboardPortfolioPage() {
         {/* Requirement Type Modal */}
         <Modal isOpen={isRequirementTypeModalOpen} onClose={() => setIsRequirementTypeModalOpen(false)} size="xl">
           <ModalOverlay />
-          <ModalContent>
+          <ModalContent bg={cardBg}>
             <ModalHeader>Requirement Type Details</ModalHeader>
             <ModalCloseButton />
             <ModalBody>
@@ -3917,7 +3924,7 @@ export default function DashboardPortfolioPage() {
         {/* Requirement Summary Modal */}
         <Modal isOpen={isRequirementSummaryModalOpen} onClose={() => setIsRequirementSummaryModalOpen(false)} size="4xl">
           <ModalOverlay />
-          <ModalContent>
+          <ModalContent bg={cardBg}>
             <ModalHeader>BRD/RFC Status Details</ModalHeader>
             <ModalCloseButton />
             <ModalBody>
@@ -3956,7 +3963,7 @@ export default function DashboardPortfolioPage() {
         {/* Requirement Division Modal */}
         <Modal isOpen={isRequirementDivisionModalOpen} onClose={() => setIsRequirementDivisionModalOpen(false)} size="6xl">
           <ModalOverlay />
-          <ModalContent>
+          <ModalContent bg={cardBg}>
             <ModalHeader>Requirements by Division Sender</ModalHeader>
             <ModalCloseButton />
             <ModalBody>
@@ -3997,7 +4004,7 @@ export default function DashboardPortfolioPage() {
         {/* Requirement Memo Modal */}
         <Modal isOpen={isRequirementMemoModalOpen} onClose={() => setIsRequirementMemoModalOpen(false)} size="6xl">
           <ModalOverlay />
-          <ModalContent>
+          <ModalContent bg={cardBg}>
             <ModalHeader>Requirements with/without Memo</ModalHeader>
             <ModalCloseButton />
             <ModalBody>
@@ -4053,20 +4060,20 @@ export default function DashboardPortfolioPage() {
             alignItems="center"
             justifyContent="center"
           >
-            <Box bg="white" p={8} rounded="xl" shadow="2xl" maxW="md" w="90%">
+            <Box bg={cardBg} p={8} rounded="xl" shadow="2xl" maxW="md" w="90%">
               <VStack spacing={6}>
                 <HStack>
                   <Icon as={FiActivity} color="orange.500" boxSize={6} />
-                  <Text fontSize="lg" fontWeight="bold" color="gray.800">
+                  <Text fontSize="lg" fontWeight="bold" color={textColor}>
                     Updating Reports
                   </Text>
                 </HStack>
                 
                 <Box w="full">
-                  <Text fontSize="sm" color="gray.600" mb={2}>
+                  <Text fontSize="sm" color={useColorModeValue("gray.600", "gray.300")} mb={2}>
                     {updateStatus || 'Preparing update...'}
                   </Text>
-                  <Box bg="gray.200" rounded="full" h="2" w="full">
+                  <Box bg={useColorModeValue("gray.200", "gray.600")} rounded="full" h="2" w="full">
                     <Box
                       bg="orange.500"
                       h="2"
@@ -4075,12 +4082,12 @@ export default function DashboardPortfolioPage() {
                       width={`${updateProgress}%`}
                     />
                   </Box>
-                  <Text fontSize="xs" color="gray.500" mt={1} textAlign="center">
+                  <Text fontSize="xs" color={useColorModeValue("gray.500", "gray.400")} mt={1} textAlign="center">
                     {Math.round(updateProgress)}% Complete
                   </Text>
                 </Box>
 
-                <Text fontSize="sm" color="gray.600" textAlign="center">
+                <Text fontSize="sm" color={useColorModeValue("gray.600", "gray.300")} textAlign="center">
                   Please wait while we update all report data.<br/>
                   This process may take a few minutes.
                 </Text>
