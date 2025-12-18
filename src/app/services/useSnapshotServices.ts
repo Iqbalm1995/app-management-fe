@@ -161,6 +161,56 @@ export interface SnapshotUserProjectActiveQuartalResponse {
   capturedBy: string;
 }
 
+// Requirement interfaces
+export interface RequirementTypeDashboardResponse {
+  requirementType: string;
+  requirementCount: number;
+}
+
+export interface RequirementSummaryDashboardResponse {
+  requirementType: string;
+  requirementStatus: string;
+  requirementCount: number;
+}
+
+export interface RequirementDivisionSenderDashboardResponse {
+  requirementType: string;
+  divisionName: string;
+  requirementCount: number;
+}
+
+export interface RequirementMemoSummaryDashboardResponse {
+  requirementType: string;
+  isHaveMemo: string;
+  monthPeriod: number;
+  monthName: string;
+  requirementCount: number;
+}
+
+export interface SnapshotRequirementTypeResponse {
+  message: string;
+  snapshotTime: string;
+  totalRecordsProcessed: number;
+}
+
+export interface SnapshotRequirementSummaryResponse {
+  message: string;
+  snapshotTime: string;
+  totalRecordsProcessed: number;
+}
+
+export interface SnapshotRequirementDivisionSenderResponse {
+  message: string;
+  snapshotTime: string;
+  totalRecordsProcessed: number;
+}
+
+export interface SnapshotRequirementMemoSummaryResponse {
+  message: string;
+  snapshotTime: string;
+  totalRecordsProcessed: number;
+}
+
 export interface useSnapshotServicesServices {
   projectSummary: (token: string) => Promise<ApiGenericResponse<SnapshotProjectSummaryResponse> | null>;
   projectCharacteristic: (token: string) => Promise<ApiGenericResponse<SnapshotProjectCharacteristicResponse> | null>;
@@ -183,6 +233,16 @@ export interface useSnapshotServicesServices {
   getProjectByGroupManageDashboard: (payload: DashboardFilterRequest, token: string) => Promise<ApiGenericResponse<ProjectByGroupManageDashboardResponse[]> | null>;
   getDevStaffProjectClosedDashboard: (payload: DashboardFilterRequest, token: string) => Promise<ApiGenericResponse<DevStaffProjectClosedDashboardResponse[]> | null>;
   getDevStaffProjectActiveDashboard: (payload: DashboardFilterRequest, token: string) => Promise<ApiGenericResponse<DevStaffProjectActiveDashboardResponse[]> | null>;
+  // Requirement snapshot methods
+  requirementType: (token: string) => Promise<ApiGenericResponse<SnapshotRequirementTypeResponse> | null>;
+  requirementSummary: (token: string) => Promise<ApiGenericResponse<SnapshotRequirementSummaryResponse> | null>;
+  requirementDivisionSender: (token: string) => Promise<ApiGenericResponse<SnapshotRequirementDivisionSenderResponse> | null>;
+  requirementMemoSummary: (token: string) => Promise<ApiGenericResponse<SnapshotRequirementMemoSummaryResponse> | null>;
+  // Requirement dashboard methods
+  getRequirementTypeDashboard: (payload: DashboardFilterRequest, token: string) => Promise<ApiGenericResponse<RequirementTypeDashboardResponse[]> | null>;
+  getRequirementSummaryDashboard: (payload: DashboardFilterRequest, token: string) => Promise<ApiGenericResponse<RequirementSummaryDashboardResponse[]> | null>;
+  getRequirementDivisionSenderDashboard: (payload: DashboardFilterRequest, token: string) => Promise<ApiGenericResponse<RequirementDivisionSenderDashboardResponse[]> | null>;
+  getRequirementMemoSummaryDashboard: (payload: DashboardFilterRequest, token: string) => Promise<ApiGenericResponse<RequirementMemoSummaryDashboardResponse[]> | null>;
   isLoading: boolean;
   error: string | null;
 }
@@ -283,6 +343,16 @@ const useSnapshotServices = (): useSnapshotServicesServices => {
     getProjectByGroupManageDashboard: (payload: DashboardFilterRequest, token: string) => callDashboard<ProjectByGroupManageDashboardResponse[]>('dashboard/project-by-group-manage', payload, token),
     getDevStaffProjectClosedDashboard: (payload: DashboardFilterRequest, token: string) => callDashboard<DevStaffProjectClosedDashboardResponse[]>('dashboard/dev-staff-project-closed', payload, token),
     getDevStaffProjectActiveDashboard: (payload: DashboardFilterRequest, token: string) => callDashboard<DevStaffProjectActiveDashboardResponse[]>('dashboard/dev-staff-project-active', payload, token),
+    // Requirement snapshot methods
+    requirementType: (token: string) => callSnapshot<SnapshotRequirementTypeResponse>('snapshot/requirement-type', token),
+    requirementSummary: (token: string) => callSnapshot<SnapshotRequirementSummaryResponse>('snapshot/requirement-summary', token),
+    requirementDivisionSender: (token: string) => callSnapshot<SnapshotRequirementDivisionSenderResponse>('snapshot/requirement-division-sender', token),
+    requirementMemoSummary: (token: string) => callSnapshot<SnapshotRequirementMemoSummaryResponse>('snapshot/requirement-memo-summary', token),
+    // Requirement dashboard methods
+    getRequirementTypeDashboard: (payload: DashboardFilterRequest, token: string) => callDashboard<RequirementTypeDashboardResponse[]>('dashboard/requirement-type', payload, token),
+    getRequirementSummaryDashboard: (payload: DashboardFilterRequest, token: string) => callDashboard<RequirementSummaryDashboardResponse[]>('dashboard/requirement-summary', payload, token),
+    getRequirementDivisionSenderDashboard: (payload: DashboardFilterRequest, token: string) => callDashboard<RequirementDivisionSenderDashboardResponse[]>('dashboard/requirement-division-sender', payload, token),
+    getRequirementMemoSummaryDashboard: (payload: DashboardFilterRequest, token: string) => callDashboard<RequirementMemoSummaryDashboardResponse[]>('dashboard/requirement-memo-summary', payload, token),
     isLoading,
     error,
   };

@@ -236,8 +236,6 @@ import { LinkItemProps, LinkItems } from "../constants/menuApplication";
 //   () => import("../_pieces/profile/Profile-modal")
 // );
 
-
-
 export default function NavigationAdmin({ children }: { children: ReactNode }) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [LiteMode, setLiteMode] = useState<boolean>(false);
@@ -393,7 +391,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                 aria-label="lite mode"
                 icon={<RiMenu2Line />}
                 size={"lg"}
-              // rounded={"xl"}
+                // rounded={"xl"}
               />
               <SearchMenuButton LiteModeTrigger={LiteMode} />
             </Box>
@@ -493,8 +491,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                             color={useColorModeValue("gray.600", "gray.300")}
                             mb={2}
                           >
-                            COMING SOON
-                            Feature under development.
+                            COMING SOON Feature under development.
                           </Text>
                           <Text
                             fontSize="xs"
@@ -534,8 +531,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                             color={useColorModeValue("gray.600", "gray.300")}
                             mb={2}
                           >
-                            COMING SOON
-                            Feature under development.
+                            COMING SOON Feature under development.
                           </Text>
                           <Text
                             fontSize="xs"
@@ -768,7 +764,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                     variant="outline"
                     bg="whiteAlpha"
                     borderWidth="0"
-                    borderColor="gray.300"
+                    borderColor="secondary.500"
                     color={colorMode === "light" ? "blue.600" : "blue.300"}
                     position="relative"
                     rounded="full"
@@ -781,6 +777,8 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                       _before: {
                         opacity: 1,
                       },
+                      borderWidth: "0",
+                      borderColor: "gray.300",
                     }}
                     _before={{
                       content: '""',
@@ -947,7 +945,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                 pb={12}
                 pt={5}
                 minH={"100vh"}
-              // bg={"blue.100"}
+                // bg={"blue.100"}
               >
                 <AnimatePresence mode="wait">
                   <MotionBox
@@ -1040,7 +1038,6 @@ const SidebarContent = ({
 
         <AdditionalProfileBar LiteModeTrigger={LiteModeTrigger} />
 
-
         <Flex pt={5} pb={2} mx={3}>
           <VStack w={"full"} h={"65vh"} align={"start"} overflowX="auto">
             {/* <HStack w="full" justify="space-between" align="center" pl={2}>
@@ -1070,14 +1067,22 @@ const SidebarContent = ({
             <Spacer />
             {/* <AdditionalBarAdvertis /> */}
             {/* <AdditionalBarAlt /> */}
-          </VStack >
-        </Flex >
-      </Box >
-    </Box >
+          </VStack>
+        </Flex>
+      </Box>
+    </Box>
   );
 };
 
-const NavItem = ({ data, mode, depth = 0 }: { data: LinkItemProps; mode: boolean; depth?: number }) => {
+const NavItem = ({
+  data,
+  mode,
+  depth = 0,
+}: {
+  data: LinkItemProps;
+  mode: boolean;
+  depth?: number;
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const navItemRef = useRef<HTMLDivElement>(null);
   const hasChildren = data.children && data.children.length > 0;
@@ -1133,7 +1138,7 @@ const NavItem = ({ data, mode, depth = 0 }: { data: LinkItemProps; mode: boolean
         navItemRef.current.scrollIntoView({
           behavior: "smooth",
           block: "nearest",
-          inline: "nearest"
+          inline: "nearest",
         });
       }
     } else {
@@ -1189,10 +1194,20 @@ const NavItem = ({ data, mode, depth = 0 }: { data: LinkItemProps; mode: boolean
             my={isChild ? "2" : "1"}
             rounded={radiusStyle}
             borderLeft={isChild && IsActiveNav ? "3px solid" : "none"}
-            borderLeftColor={isChild && IsActiveNav ? "secondary.300" : "transparent"}
+            borderLeftColor={
+              isChild && IsActiveNav ? "secondary.300" : "transparent"
+            }
             role="group"
             cursor="pointer"
-            boxShadow={IsActiveNav ? (isChild ? "sm" : "md") : hasActiveChild ? "sm" : "none"}
+            boxShadow={
+              IsActiveNav
+                ? isChild
+                  ? "sm"
+                  : "md"
+                : hasActiveChild
+                ? "sm"
+                : "none"
+            }
             fontWeight={IsActiveNav ? "bold" : "normal"}
             _hover={{
               color: "secondary.800",
@@ -1205,19 +1220,18 @@ const NavItem = ({ data, mode, depth = 0 }: { data: LinkItemProps; mode: boolean
             bgGradient={
               isChild && IsActiveNav
                 ? "linear(to-r, secondary.300, secondary.400)"
-                :
-                IsActiveNav
-                  ? "linear(to-r, secondary.500, secondary.600)"
-                  : hasActiveChild
-                    ? "linear(to-r, secondary.500, secondary.600)"
-                    : "linear(to-r, transparent, transparent)"
+                : IsActiveNav
+                ? "linear(to-r, secondary.500, secondary.600)"
+                : hasActiveChild
+                ? "linear(to-r, secondary.500, secondary.600)"
+                : "linear(to-r, transparent, transparent)"
             }
             color={
               IsActiveNav
                 ? "white" // When the navigation item is active, set color to white
                 : hasActiveChild
-                  ? "gray.100" // When has active child
-                  : useColorModeValue("gray.900", "gray.100") // Otherwise, set color based on the color mode
+                ? "gray.100" // When has active child
+                : useColorModeValue("gray.900", "gray.100") // Otherwise, set color based on the color mode
             }
             justifyContent={"center"}
             // onClick={() => {
@@ -1248,8 +1262,8 @@ const NavItem = ({ data, mode, depth = 0 }: { data: LinkItemProps; mode: boolean
                     IsActiveNav
                       ? "white"
                       : hasActiveChild
-                        ? "gray.100"
-                        : useColorModeValue("gray.900", "gray.100")
+                      ? "gray.100"
+                      : useColorModeValue("gray.900", "gray.100")
                   }
                   as={data.icon}
                 />
@@ -1291,7 +1305,12 @@ const NavItem = ({ data, mode, depth = 0 }: { data: LinkItemProps; mode: boolean
           overflow="hidden"
         >
           {data.children.map((child) => (
-            <NavItem key={child.name} data={child} mode={mode} depth={depth + 1} />
+            <NavItem
+              key={child.name}
+              data={child}
+              mode={mode}
+              depth={depth + 1}
+            />
           ))}
         </MotionBox>
       )}
@@ -1508,7 +1527,7 @@ export function AdditionalProfileBar({
                       color={
                         colorMode == "light" ? "primary.500" : "primary.100"
                       }
-                    // color={"secondary.200"}
+                      // color={"secondary.200"}
                     >
                       {(DataAuth && DataAuth.teamRole?.specName) ||
                         (DataAuth && DataAuth.jabatan)}
@@ -1586,7 +1605,11 @@ export function AdditionalProfileBar({
   );
 }
 
-export function SearchMenuButton({ LiteModeTrigger }: { LiteModeTrigger: boolean }) {
+export function SearchMenuButton({
+  LiteModeTrigger,
+}: {
+  LiteModeTrigger: boolean;
+}) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { colorMode } = useColorMode();
   const [searchQuery, setSearchQuery] = useState("");
@@ -1611,7 +1634,6 @@ export function SearchMenuButton({ LiteModeTrigger }: { LiteModeTrigger: boolean
           (item) =>
             item.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
             item.link !== "#"
-
         )
         .slice(0, 5);
       setFilteredMenus(filtered);
