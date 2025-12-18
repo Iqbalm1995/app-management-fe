@@ -128,7 +128,7 @@ const RequirementListChooseData = memo(
       []
     );
     const [SelectedTypeReq, setSelectedTypeReq] = useState<string>("BRD");
-    const [HasRequirementMemo, setHasRequirementMemo] = useState<string>("Y");
+    const [HasRequirementMemo, setHasRequirementMemo] = useState<string>("");
 
     const delay = useCallback(
       (ms: number) => new Promise((resolve) => setTimeout(resolve, ms)),
@@ -366,6 +366,16 @@ const RequirementListChooseData = memo(
                     : "-"}
                 </Text>
               </Flex>
+              <Flex fontSize={"small"} as={Stack} spacing={0}>
+                <Text>Ditugaskan Pada :</Text>
+                <Text fontWeight={600}>
+                  {info.row.original.assignedToDate
+                    ? stringToDateFormatedReverse(
+                      info.row.original.assignedToDate
+                    )
+                    : "-"}
+                </Text>
+              </Flex>
             </Flex>
           ),
           header: () => <span>Tanggal</span>,
@@ -387,6 +397,13 @@ const RequirementListChooseData = memo(
                 filterType: "date",
                 filterLabel: "Tgl. Akhir Memo Dibuat",
               },
+              {
+                field: "assignedToDate",
+                operator: "=",
+                value: "",
+                filterType: "date",
+                filterLabel: "Tgl. Ditugaskan",
+              }
             ],
           } as ColumnMetaCustom,
         },
@@ -664,20 +681,26 @@ const RequirementListChooseData = memo(
 
 
     useEffect(() => {
-      const hasMemoFilter: ListSearchByParamProps[] = [
-        {
-          field: "isHaveMemo",
-          operator: "=",
-          value: HasRequirementMemo,
-          filterLabel: "Terdapat Memo",
-        },
-      ];
+      if (HasRequirementMemo === "") {
+        // Remove memo filter when "Semua" is selected
+        const filteredParams = ParamFilter.filter(f => f.field !== "isHaveMemo");
+        setParamFilter(filteredParams);
+      } else {
+        const hasMemoFilter: ListSearchByParamProps[] = [
+          {
+            field: "isHaveMemo",
+            operator: "=",
+            value: HasRequirementMemo,
+            filterLabel: "Terdapat Memo",
+          },
+        ];
 
-      const updatedFilters = hasMemoFilter.reduce(
-        (acc, filter) => addParamFilterUpdate(acc, filter),
-        ParamFilter
-      );
-      setParamFilter(updatedFilters);
+        const updatedFilters = hasMemoFilter.reduce(
+          (acc, filter) => addParamFilterUpdate(acc, filter),
+          ParamFilter
+        );
+        setParamFilter(updatedFilters);
+      }
     }, [HasRequirementMemo]);
     useEffect(() => {
       const brdStatusApproveStatic: ListSearchByParamProps = {
@@ -772,21 +795,24 @@ const RequirementListChooseData = memo(
             <GridItem colSpan={2} w={"full"}>
               <Flex w={"full"} justifyContent={"space-between"} flexDirection={"row-reverse"} alignItems={"center"}>
                 <ButtonGroup size="sm" isAttached variant="outline">
-                <Menu>
-                  <Box mr={3}>
-                  <MenuButton as={Button} size="sm" rightIcon={<ChevronDownIcon />}>
-                    {HasRequirementMemo === "Y" ? "Memiliki Memo" : "Tidak Memiliki Memo"}
-                  </MenuButton>
-                  <MenuList>
-                    <MenuItem onClick={() => setHasRequirementMemo("Y")}>
-                      Memiliki Memo
-                    </MenuItem>
-                    <MenuItem onClick={() => setHasRequirementMemo("N")}>
-                      Tidak Memiliki Memo
-                    </MenuItem>
-                  </MenuList>
-                  </Box>
-                </Menu>
+                  <Menu>
+                    <Box mr={3}>
+                      <MenuButton as={Button} size="sm" rightIcon={<ChevronDownIcon />}>
+                        {HasRequirementMemo === "Y" ? "Memiliki Memo" : HasRequirementMemo === "N" ? "Tidak Memiliki Memo" : "All"}
+                      </MenuButton>
+                      <MenuList>
+                        <MenuItem onClick={() => setHasRequirementMemo("")}>
+                          All
+                        </MenuItem>
+                        <MenuItem onClick={() => setHasRequirementMemo("Y")}>
+                          Memiliki Memo
+                        </MenuItem>
+                        <MenuItem onClick={() => setHasRequirementMemo("N")}>
+                          Tidak Memiliki Memo
+                        </MenuItem>
+                      </MenuList>
+                    </Box>
+                  </Menu>
                   <Button
                     colorScheme={SelectedTypeReq === "BRD" ? "blue" : "gray"}
                     variant={SelectedTypeReq === "BRD" ? "solid" : "outline"}
@@ -864,18 +890,18 @@ const RequirementListChooseData = memo(
               </Flex>
             </GridItem>
 
-          <GridItem colSpan={2} w={"full"}>
-            {IsLoadingProcess ? (
-              <LoadingMiniSignature />
-            ) : (
-              <Box w={"full"} pt={2}>
-                <TableComponentWithFilterCTX
-                  table={table}
-                  handleFilterChange={handleFilterChange}
-                />
-              </Box>
-            )}
-          </GridItem>
+            <GridItem colSpan={2} w={"full"}>
+              {IsLoadingProcess ? (
+                <LoadingMiniSignature />
+              ) : (
+                <Box w={"full"} pt={2}>
+                  <TableComponentWithFilterCTX
+                    table={table}
+                    handleFilterChange={handleFilterChange}
+                  />
+                </Box>
+              )}
+            </GridItem>
           </Grid>
         </FormControl>
       </Flex>

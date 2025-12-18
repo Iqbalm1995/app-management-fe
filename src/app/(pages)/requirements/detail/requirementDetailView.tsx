@@ -1520,13 +1520,15 @@ const ReqInfoGeneralSectionView = ({
         <FormControl>
           <InputLayoutFull>
             <FormLabel h={"full"} mt={2}>
-              Perihal
+              {DataRequirement.isHaveMemo == "Y" ? "Perihal" : "Perihal Sementara"}
             </FormLabel>
             <Stack spacing={0} h={"full"}>
               {DataRequirement.isHaveMemo == "Y" ? (
                 <Text>{DataRequirement.reqNarative || "N/A"}</Text>
               ) : (
-                <NoMemoAlertText />
+                <Stack spacing={2}>
+                  <Text>{DataRequirement.reqNarative || "N/A"}</Text>
+                </Stack>
               )}
             </Stack>
           </InputLayoutFull>

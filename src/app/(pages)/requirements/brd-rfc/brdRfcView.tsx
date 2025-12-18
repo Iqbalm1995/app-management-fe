@@ -415,16 +415,23 @@ export default function BRDRFCView() {
               as={Stack}
               w="full"
               spacing={2}
-              color="red.500"
               display={info.row.original.isHaveMemo === "N" ? "flex" : "none"}
-              justifyContent="center" // center horizontally
-              alignItems="center" // center vertically (useful for icon + text alignment)
-              fontSize={"x-small"}
             >
-              <FiAlertTriangle />
-              <Text>
-                {info.row.original.requirementType} Belum ada Memo Pengantar
-              </Text>
+              <Flex
+                as={HStack}
+                spacing={2}
+                color="red.500"
+                alignItems="center"
+                fontSize={"small"}
+              >
+                <FiAlertTriangle />
+                <Text>
+                  {info.row.original.requirementType} Belum ada Memo Pengantar
+                </Text>
+              </Flex>
+              <Flex as={Stack} spacing={0}>
+                <Text>{info.row.original.reqNarative}</Text>
+              </Flex>
             </Flex>
             <Flex
               as={Stack}
