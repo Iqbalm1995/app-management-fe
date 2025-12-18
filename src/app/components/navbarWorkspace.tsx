@@ -96,6 +96,7 @@ import {
   FiUmbrella,
   FiLayers,
   FiSearch,
+  FiTarget,
 } from "react-icons/fi";
 import { IconType } from "react-icons";
 import {
@@ -314,9 +315,19 @@ export default function NavigationAdminWorkspace({
   };
 
   const [scrollY, setScrollY] = useState(0);
+  const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
+
   const handleScroll = () => {
     setScrollY(window.scrollY);
   };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setMousePos({ x, y });
+  };
+
   useEffect(() => {
     window.addEventListener("scroll", handleScroll);
     return () => {
@@ -787,14 +798,47 @@ export default function NavigationAdminWorkspace({
                 <Button onClick={toggleColorMode} variant={"ghost"}>
                   {colorMode === "light" ? <MoonIcon /> : <SunIcon />}
                 </Button>
-                <Link href={LINK_MENU_ROOT}>
+                <Link href={"/workspace"}>
                   <Button
-                    leftIcon={<FiPlay />}
+                    leftIcon={<FaCode />}
                     mx={2}
-                    colorScheme={"secondary"}
-                    rounded={radiusStyle}
+                    variant="outline"
+                    bg="whiteAlpha"
+                    borderWidth="0"
+                    borderColor="gray.300"
+                    color={colorMode === "light" ? "blue.600" : "blue.300"}
+                    position="relative"
+                    rounded="full"
+                    px={4}
+                    py={2}
+                    overflow="hidden"
+                    transition="all 0.3s ease"
+                    onMouseMove={handleMouseMove}
+                    _hover={{
+                      _before: {
+                        opacity: 1,
+                      },
+                    }}
+                    _before={{
+                      content: '""',
+                      position: "absolute",
+                      inset: "-6px",
+                      background: `radial-gradient(circle at ${mousePos.x}% ${mousePos.y}%, #4285f4, #ea4335, #fbbc04, #34a853)`,
+                      borderRadius: "full",
+                      opacity: 0,
+                      transition: "opacity 0.3s ease",
+                      zIndex: -2,
+                    }}
+                    _after={{
+                      content: '""',
+                      position: "absolute",
+                      inset: "2px",
+                      bg: colorMode === "light" ? "gray.100" : "gray.900",
+                      borderRadius: "full",
+                      zIndex: -1,
+                    }}
                   >
-                    Landing Page
+                    My Workspace
                   </Button>
                 </Link>
               </Flex>
@@ -927,7 +971,7 @@ export default function NavigationAdminWorkspace({
                 pb={12}
                 pt={5}
                 minH={"100vh"}
-                // bg={"blue.100"}
+              // bg={"blue.100"}
               >
                 <AnimatePresence mode="wait">
                   <MotionBox
@@ -1158,10 +1202,10 @@ const NavItem = ({ data, mode, depth = 0 }: { data: LinkItemProps; mode: boolean
               isChild && IsActiveNav
                 ? "linear(to-r, secondary.300, secondary.400)"
                 : IsActiveNav
-                ? "linear(to-r, secondary.500, secondary.600)"
-                : hasActiveChild
-                ? "linear(to-r, secondary.500, secondary.600)"
-                : "linear(to-r, transparent, transparent)"
+                  ? "linear(to-r, secondary.500, secondary.600)"
+                  : hasActiveChild
+                    ? "linear(to-r, secondary.500, secondary.600)"
+                    : "linear(to-r, transparent, transparent)"
             }
             borderLeft={isChild && IsActiveNav ? "3px solid" : "none"}
             borderLeftColor={isChild && IsActiveNav ? "secondary.300" : "transparent"}
@@ -1169,8 +1213,8 @@ const NavItem = ({ data, mode, depth = 0 }: { data: LinkItemProps; mode: boolean
               IsActiveNav
                 ? "white" // When the navigation item is active, set color to white
                 : hasActiveChild
-                ? "gray.100" // When has active child
-                : useColorModeValue("gray.900", "gray.100") // Otherwise, set color based on the color mode
+                  ? "gray.100" // When has active child
+                  : useColorModeValue("gray.900", "gray.100") // Otherwise, set color based on the color mode
             }
             justifyContent={"center"}
             // onClick={() => {
@@ -1201,8 +1245,8 @@ const NavItem = ({ data, mode, depth = 0 }: { data: LinkItemProps; mode: boolean
                     IsActiveNav
                       ? "white"
                       : hasActiveChild
-                      ? "gray.100"
-                      : useColorModeValue("gray.900", "gray.100")
+                        ? "gray.100"
+                        : useColorModeValue("gray.900", "gray.100")
                   }
                   as={data.icon}
                 />

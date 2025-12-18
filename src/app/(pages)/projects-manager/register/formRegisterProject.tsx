@@ -2451,12 +2451,13 @@ function FormRegisterProjectView() {
                                               px={4}
                                               py={3}
                                             >
-                                              <Flex
-                                                justifyContent={"start"}
-                                                as={HStack}
-                                                spacing={4}
-                                                alignItems={"center"}
+                                              <VStack
+                                                align={"start"}
+                                                
+                                                spacing={1}
+                                                flex={1}
                                               >
+                                                <HStack spacing={2}>
                                                 <Icon
                                                   as={FaCircle}
                                                   color={"secondary.500"}
@@ -2480,7 +2481,17 @@ function FormRegisterProjectView() {
                                                 >
                                                   {preset.wfPresetName}
                                                 </Text>
-                                              </Flex>
+                                                </HStack>
+                                                {preset.wfPresetDesc && (
+                                                  <Text
+                                                    fontSize="xs"
+                                                    color="gray.500"
+                                                    pl={4}
+                                                  >
+                                                    {preset.wfPresetDesc}
+                                                  </Text>
+                                                )}
+                                              </VStack>
                                               <Flex
                                                 justifyContent={"end"}
                                                 alignItems={"center"}
