@@ -204,7 +204,7 @@ function LandingPage() {
                     </Box>
 
                     <Box
-                      fontSize={{ base: "xl", md: "2xl" }}
+                      fontSize={{ base: "md", md: "xl" }}
                       fontWeight="medium"
                       color={colorMode === "light" ? "gray.700" : "gray.300"}
                       lineHeight="1.4"
@@ -226,15 +226,15 @@ function LandingPage() {
                       <Box key={index} w="full">
                         <Box
                           px={4}
-                          py={4}
+                          py={1}
                           backdropFilter={"blur(20px)"}
                           rounded="xl"
-                          border="1px solid"
-                          borderColor={
-                            colorMode === "light"
-                              ? "blackAlpha.200"
-                              : "whiteAlpha.100"
-                          }
+                          // border="1px solid"
+                          // borderColor={
+                          //   colorMode === "light"
+                          //     ? "blackAlpha.200"
+                          //     : "whiteAlpha.100"
+                          // }
                           _hover={{
                             bg:
                               colorMode === "light"
@@ -254,7 +254,7 @@ function LandingPage() {
                             />
                             <VStack align="start" spacing={0}>
                               <Text
-                                fontSize="lg"
+                                fontSize="md"
                                 fontWeight="bold"
                                 color={
                                   colorMode === "light" ? "gray.800" : "white"
@@ -263,7 +263,7 @@ function LandingPage() {
                                 {feature.title}
                               </Text>
                               <Text
-                                fontSize="sm"
+                                fontSize="xs"
                                 color={
                                   colorMode === "light"
                                     ? "gray.600"
