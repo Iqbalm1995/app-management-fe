@@ -312,168 +312,6 @@ const WorkspaceProject = () => {
     "linear(to-r, secondary.600, secondary.800)"
   );
 
-  // Mock data for prototype - using ProjectDataResponse structure
-  const mockProjects: ProjectDataResponse[] = [
-    {
-      id: "1",
-      projectNo: "PRJ-2024-001",
-      projectCode: "ECOM-001",
-      projectName: "E-Commerce Platform",
-      projectDesc: "Modern e-commerce solution with React and Node.js",
-      projectStatus: "In Progress",
-      projectStatusPercentage: 75,
-      projectCategory: "Web Development",
-      projectType: "Internal Development",
-      projectRegisterDate: "2024-01-15",
-      projectClosedDate: null,
-      projectDurationDays: 120,
-      note: null,
-      projectAcquisitionCode: null,
-      projectAcquisitionName: null,
-      projectCharasteristicCode: null,
-      projectCharasteristicName: null,
-      projectSubCharasteristicCode: null,
-      projectSubCharasteristicName: null,
-      projectSubCharasteristicDesc: null,
-      proOwnerDirectorateId: "dir1",
-      proOwnerDirectorateCode: "IT",
-      proOwnerDirectorateName: "IT Directorate",
-      proManageByDirectorateId: "dir1",
-      proManageByDirectorateCode: "IT",
-      proManageByDirectorateName: "IT Directorate",
-      proOwnerDivisionId: "div1",
-      proOwnerDivisionCode: "DEV",
-      proOwnerDivisionName: "Development Division",
-      proOwnerGroupId: "grp1",
-      proOwnerGroupCode: "WEB",
-      proOwnerGroupName: "Web Development Group",
-      proManageByDivisionId: "div1",
-      proManageByDivisionCode: "DEV",
-      proManageByDivisionName: "Development Division",
-      proManageByGroupId: "grp1",
-      proManageByGroupCode: "WEB",
-      proManageByGroupName: "Web Development Group",
-      proManageByTeamId: "team1",
-      proManageByTeamCode: "TEAM1",
-      proManageByTeamName: "Team Alpha",
-      reqParentId: null,
-      createdAt: "2024-01-15T00:00:00Z",
-      createdBy: "admin",
-      updatedAt: "2024-11-10T00:00:00Z",
-      updatedBy: "admin",
-      userAssignment: [
-        {
-          id: "ua1",
-          projectId: "1",
-          userSysId: "sys1",
-          userId: "user1",
-          userData: { id: "user1", nama: "John Doe" } as any,
-          userAssignStatus: "Active",
-          assignDate: "2024-01-15",
-          assignEndDate: null,
-          createdAt: "2024-01-15T00:00:00Z",
-          createdBy: "admin",
-          updatedAt: null,
-          updatedBy: null,
-        },
-        {
-          id: "ua2",
-          projectId: "1",
-          userSysId: "sys2",
-          userId: "user2",
-          userData: { id: "user2", nama: "Jane Smith" } as any,
-          userAssignStatus: "Active",
-          assignDate: "2024-01-15",
-          assignEndDate: null,
-          createdAt: "2024-01-15T00:00:00Z",
-          createdBy: "admin",
-          updatedAt: null,
-          updatedBy: null,
-        },
-      ],
-      appsProject: {
-        id: "app1",
-        appName: "E-Commerce Platform",
-        appShortName: "ECOM",
-      } as any,
-      workPrograms: [],
-      projectWorkflowProjectData: [],
-      projectWorkflowData: [],
-    },
-    {
-      id: "2",
-      projectNo: "PRJ-2024-002",
-      projectCode: "BANK-001",
-      projectName: "Mobile Banking App",
-      projectDesc: "Secure mobile banking application",
-      projectStatus: "Planning",
-      projectStatusPercentage: 25,
-      projectCategory: "Mobile Development",
-      projectType: "Internal Development",
-      projectRegisterDate: "2024-02-01",
-      projectClosedDate: null,
-      projectDurationDays: 90,
-      note: null,
-      projectAcquisitionCode: null,
-      projectAcquisitionName: null,
-      projectCharasteristicCode: null,
-      projectCharasteristicName: null,
-      projectSubCharasteristicCode: null,
-      projectSubCharasteristicName: null,
-      projectSubCharasteristicDesc: null,
-      proOwnerDirectorateId: "dir1",
-      proOwnerDirectorateCode: "IT",
-      proOwnerDirectorateName: "IT Directorate",
-      proManageByDirectorateId: "dir1",
-      proManageByDirectorateCode: "IT",
-      proManageByDirectorateName: "IT Directorate",
-      proOwnerDivisionId: "div2",
-      proOwnerDivisionCode: "MOB",
-      proOwnerDivisionName: "Mobile Division",
-      proOwnerGroupId: "grp2",
-      proOwnerGroupCode: "MOB",
-      proOwnerGroupName: "Mobile Development Group",
-      proManageByDivisionId: "div2",
-      proManageByDivisionCode: "MOB",
-      proManageByDivisionName: "Mobile Division",
-      proManageByGroupId: "grp2",
-      proManageByGroupCode: "MOB",
-      proManageByGroupName: "Mobile Development Group",
-      proManageByTeamId: "team2",
-      proManageByTeamCode: "TEAM2",
-      proManageByTeamName: "Team Beta",
-      reqParentId: null,
-      createdAt: "2024-02-01T00:00:00Z",
-      createdBy: "admin",
-      updatedAt: "2024-11-10T00:00:00Z",
-      updatedBy: "admin",
-      userAssignment: [
-        {
-          id: "ua3",
-          projectId: "2",
-          userSysId: "sys3",
-          userId: "user3",
-          userData: { id: "user3", nama: "Sarah Wilson" } as any,
-          userAssignStatus: "Active",
-          assignDate: "2024-02-01",
-          assignEndDate: null,
-          createdAt: "2024-02-01T00:00:00Z",
-          createdBy: "admin",
-          updatedAt: null,
-          updatedBy: null,
-        },
-      ],
-      appsProject: {
-        id: "app2",
-        appName: "Mobile Banking",
-        appShortName: "BANK",
-      } as any,
-      workPrograms: [],
-      projectWorkflowProjectData: [],
-      projectWorkflowData: [],
-    },
-  ];
-
   const mockTasks: TaskViewModel[] = [
     {
       id: "task1",
@@ -794,27 +632,6 @@ const WorkspaceProject = () => {
       ? Math.round((inProgressTasks.length / totalTasks) * 100)
       : 0;
 
-  const mockNotifications = [
-    {
-      id: 1,
-      message: "New task assigned: API Integration",
-      time: "2 hours ago",
-      type: "task",
-    },
-    {
-      id: 2,
-      message: "Project deadline approaching: Mobile Banking App",
-      time: "4 hours ago",
-      type: "deadline",
-    },
-    {
-      id: 3,
-      message: "Team meeting scheduled for tomorrow",
-      time: "1 day ago",
-      type: "meeting",
-    },
-  ];
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Completed":
@@ -889,129 +706,6 @@ const WorkspaceProject = () => {
       <HeaderContent {...HeaderDataContent} />
 
       <Box p={6}>
-        {/* Dashboard Stats */}
-        <Grid
-          templateColumns={{ base: "1fr", md: "repeat(4, 1fr)" }}
-          gap={6}
-          mb={8}
-        >
-          <Card
-            bg={bgColor}
-            borderColor={borderColor}
-            borderRadius={radiusStyle}
-            _hover={{ transform: "translateY(-2px)", shadow: "lg" }}
-            transition="all 0.2s"
-          >
-            <CardBody>
-              <HStack spacing={4}>
-                <Box
-                  p={3}
-                  bgGradient="linear(to-r, blue.400, blue.500)"
-                  borderRadius="xl"
-                  color="white"
-                >
-                  <Icon as={FiFolder} boxSize={6} />
-                </Box>
-                <VStack align="start" spacing={1}>
-                  <Text fontSize="2xl" fontWeight="bold" color={accentColor}>
-                    {statsLoading ? "..." : stats?.totalProjects ?? 0}
-                  </Text>
-                  <Text color={textColor} fontSize="sm" fontWeight="medium">
-                    Total Projects
-                  </Text>
-                </VStack>
-              </HStack>
-            </CardBody>
-          </Card>
-
-          <Card
-            bg={bgColor}
-            borderColor={borderColor}
-            borderRadius={radiusStyle}
-            _hover={{ transform: "translateY(-2px)", shadow: "lg" }}
-            transition="all 0.2s"
-          >
-            <CardBody>
-              <HStack spacing={4}>
-                <Box
-                  p={3}
-                  bgGradient="linear(to-r, green.400, green.500)"
-                  borderRadius="xl"
-                  color="white"
-                >
-                  <Icon as={FiTarget} boxSize={6} />
-                </Box>
-                <VStack align="start" spacing={1}>
-                  <Text fontSize="2xl" fontWeight="bold" color="green.500">
-                    {statsLoading ? "..." : stats?.activeProjects ?? 0}
-                  </Text>
-                  <Text color={textColor} fontSize="sm" fontWeight="medium">
-                    Active Projects
-                  </Text>
-                </VStack>
-              </HStack>
-            </CardBody>
-          </Card>
-
-          <Card
-            bg={bgColor}
-            borderColor={borderColor}
-            borderRadius={radiusStyle}
-            _hover={{ transform: "translateY(-2px)", shadow: "lg" }}
-            transition="all 0.2s"
-          >
-            <CardBody>
-              <HStack spacing={4}>
-                <Box
-                  p={3}
-                  bgGradient="linear(to-r, purple.400, purple.500)"
-                  borderRadius="xl"
-                  color="white"
-                >
-                  <Icon as={FiCheckCircle} boxSize={6} />
-                </Box>
-                <VStack align="start" spacing={1}>
-                  <Text fontSize="2xl" fontWeight="bold" color="purple.500">
-                    {statsLoading ? "..." : stats?.totalTasks ?? 0}
-                  </Text>
-                  <Text color={textColor} fontSize="sm" fontWeight="medium">
-                    Total Tasks
-                  </Text>
-                </VStack>
-              </HStack>
-            </CardBody>
-          </Card>
-
-          <Card
-            bg={bgColor}
-            borderColor={borderColor}
-            borderRadius={radiusStyle}
-            _hover={{ transform: "translateY(-2px)", shadow: "lg" }}
-            transition="all 0.2s"
-          >
-            <CardBody>
-              <HStack spacing={4}>
-                <Box
-                  p={3}
-                  bgGradient="linear(to-r, orange.400, orange.500)"
-                  borderRadius="xl"
-                  color="white"
-                >
-                  <Icon as={FiClock} boxSize={6} />
-                </Box>
-                <VStack align="start" spacing={1}>
-                  <Text fontSize="2xl" fontWeight="bold" color="orange.500">
-                    {statsLoading ? "..." : stats?.overdueTasks ?? 0}
-                  </Text>
-                  <Text color={textColor} fontSize="sm" fontWeight="medium">
-                    Overdue Tasks
-                  </Text>
-                </VStack>
-              </HStack>
-            </CardBody>
-          </Card>
-        </Grid>
-
         <Grid templateColumns="repeat(12, 1fr)" w="full" gap={5}>
           {/* Main Content */}
           <GridItem colSpan={{ base: 12, sm: 12, md: 9, lg: 9 }} w={"full"}>
@@ -1084,7 +778,13 @@ const WorkspaceProject = () => {
                                     setProjectTypeCounts(res.data);
                                   }
                                 }),
-                                fetchProjects(searchTerm, 9, 0, false, selectedProjectType),
+                                fetchProjects(
+                                  searchTerm,
+                                  9,
+                                  0,
+                                  false,
+                                  selectedProjectType
+                                ),
                               ]);
                             } finally {
                               setProjectsLoading(false);
@@ -1161,7 +861,7 @@ const WorkspaceProject = () => {
                         ? { base: "1fr", md: "repeat(3, 1fr)" }
                         : "1fr"
                     }
-                    gap={4}
+                    gap={5}
                   >
                     {projectsLoading && (
                       <Box gridColumn="1 / -1" py={8}>
@@ -1475,6 +1175,140 @@ const WorkspaceProject = () => {
           {/* Sidebar */}
           <GridItem colSpan={{ base: 12, sm: 12, md: 3, lg: 3 }} w={"full"}>
             <VStack spacing={6} align="stretch">
+              {/* Quick Stats */}
+              <Grid
+                templateColumns={{ base: "repeat(2, 1fr)", md: "repeat(2, 1fr)" }}
+                gap={4}
+              >
+                <Card
+                  bg={bgColor}
+                  borderColor={borderColor}
+                  borderRadius={radiusStyle}
+                  _hover={{ transform: "translateY(-4px)", shadow: "xl" }}
+                  transition="all 0.3s"
+                  shadow="md"
+                >
+                  <CardBody p={5}>
+                    <VStack spacing={3} align="start">
+                      <HStack spacing={2}>
+                        <Icon as={FiFolder} boxSize={5} color="blue.500" />
+                        <Text
+                          color={textColor}
+                          fontSize="sm"
+                          fontWeight="medium"
+                        >
+                          Total Projects
+                        </Text>
+                      </HStack>
+                      <Text
+                        fontSize="4xl"
+                        fontWeight="bold"
+                        color={accentColor}
+                        lineHeight="1"
+                      >
+                        {statsLoading ? "..." : stats?.totalProjects ?? 0}
+                      </Text>
+                    </VStack>
+                  </CardBody>
+                </Card>
+
+                <Card
+                  bg={bgColor}
+                  borderColor={borderColor}
+                  borderRadius={radiusStyle}
+                  _hover={{ transform: "translateY(-4px)", shadow: "xl" }}
+                  transition="all 0.3s"
+                  shadow="md"
+                >
+                  <CardBody p={5}>
+                    <VStack spacing={3} align="start">
+                      <HStack spacing={2}>
+                        <Icon as={FiTarget} boxSize={5} color="green.500" />
+                        <Text
+                          color={textColor}
+                          fontSize="sm"
+                          fontWeight="medium"
+                        >
+                          Active Projects
+                        </Text>
+                      </HStack>
+                      <Text
+                        fontSize="4xl"
+                        fontWeight="bold"
+                        color="green.500"
+                        lineHeight="1"
+                      >
+                        {statsLoading ? "..." : stats?.activeProjects ?? 0}
+                      </Text>
+                    </VStack>
+                  </CardBody>
+                </Card>
+
+                <Card
+                  bg={bgColor}
+                  borderColor={borderColor}
+                  borderRadius={radiusStyle}
+                  _hover={{ transform: "translateY(-4px)", shadow: "xl" }}
+                  transition="all 0.3s"
+                  shadow="md"
+                >
+                  <CardBody p={5}>
+                    <VStack spacing={3} align="start">
+                      <HStack spacing={2}>
+                        <Icon as={FiCheckCircle} boxSize={5} color="purple.500" />
+                        <Text
+                          color={textColor}
+                          fontSize="sm"
+                          fontWeight="medium"
+                        >
+                          Total Tasks
+                        </Text>
+                      </HStack>
+                      <Text
+                        fontSize="4xl"
+                        fontWeight="bold"
+                        color="purple.500"
+                        lineHeight="1"
+                      >
+                        {statsLoading ? "..." : stats?.totalTasks ?? 0}
+                      </Text>
+                    </VStack>
+                  </CardBody>
+                </Card>
+
+                <Card
+                  bg={bgColor}
+                  borderColor={borderColor}
+                  borderRadius={radiusStyle}
+                  _hover={{ transform: "translateY(-4px)", shadow: "xl" }}
+                  transition="all 0.3s"
+                  shadow="md"
+                >
+                  <CardBody p={5}>
+                    <VStack spacing={3} align="start">
+                      <HStack spacing={2}>
+                        <Icon as={FiClock} boxSize={5} color="orange.500" />
+                        <Text
+                          color={textColor}
+                          fontSize="sm"
+                          fontWeight="medium"
+                        >
+                          Overdue Tasks
+                        </Text>
+                      </HStack>
+                      <Text
+                        fontSize="4xl"
+                        fontWeight="bold"
+                        color="orange.500"
+                        lineHeight="1"
+                      >
+                        {statsLoading ? "..." : stats?.overdueTasks ?? 0}
+                      </Text>
+                    </VStack>
+                  </CardBody>
+                </Card>
+              </Grid>
+
               {/* Current Quarter Progress */}
               <Card
                 bg={bgColor}
