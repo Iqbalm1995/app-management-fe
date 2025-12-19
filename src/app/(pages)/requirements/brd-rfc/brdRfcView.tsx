@@ -95,6 +95,10 @@ import {
   HStack,
   IconButton,
   Input,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
   ListItem,
   OrderedList,
   Popover,
@@ -246,6 +250,7 @@ export default function BRDRFCView() {
     }
     return "BRD";
   });
+  const [memoFilter, setMemoFilter] = useState<string>("");
 
   const years = Array.from({ length: 8 }, (_, i) => currentYear - 5 + i);
 
@@ -819,7 +824,18 @@ export default function BRDRFCView() {
         value: viewMode,
         filterLabel: "Type",
       };
-      const filterWithType = [...ParamFilter, typeFilter];
+      let filterWithType = [...ParamFilter, typeFilter];
+
+      // Add memo filter if selected
+      if (memoFilter !== "") {
+        const memoFilterParam: ListSearchByParamProps = {
+          field: "isHaveMemo",
+          operator: "=",
+          value: memoFilter,
+          filterLabel: "Memo Status",
+        };
+        filterWithType = [...filterWithType, memoFilterParam];
+      }
 
       const PayloadList: PaggingListPayload = {
         search: globalFilter,
@@ -875,6 +891,7 @@ export default function BRDRFCView() {
     selectedQuarter,
     ParamFilter,
     viewMode,
+    memoFilter,
   ]);
 
   const table = useReactTable({
@@ -1033,22 +1050,6 @@ export default function BRDRFCView() {
                   <pre>{JSON.stringify(ParamFilter, null, 2)}</pre>
                 </Box> */}
                 {/* View Mode Switch */}
-                <ButtonGroup size="sm" isAttached variant="outline">
-                  <Button
-                    colorScheme={viewMode === "BRD" ? "blue" : "gray"}
-                    variant={viewMode === "BRD" ? "solid" : "outline"}
-                    onClick={() => setViewMode("BRD")}
-                  >
-                    BRD
-                  </Button>
-                  <Button
-                    colorScheme={viewMode === "RFC" ? "blue" : "gray"}
-                    variant={viewMode === "RFC" ? "solid" : "outline"}
-                    onClick={() => setViewMode("RFC")}
-                  >
-                    RFC
-                  </Button>
-                </ButtonGroup>
 
                 {/* FILTER DATA */}
                 <Grid templateColumns="repeat(2, 1fr)" gap={5} w={"full"}>
@@ -1056,13 +1057,14 @@ export default function BRDRFCView() {
                     colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }}
                     w={"full"}
                   >
-                    <HStack
-                      spacing={1}
-                      bg={colorMode === "light" ? "gray.100" : "gray.700"}
-                      rounded="lg"
-                      p={1}
-                      w="fit-content"
-                    >
+                    <HStack spacing={2}>
+                      <HStack
+                        spacing={1}
+                        bg={colorMode === "light" ? "gray.100" : "gray.700"}
+                        rounded="lg"
+                        p={1}
+                        w="fit-content"
+                      >
                       <Popover closeOnBlur={false} placement={"bottom"}>
                         <PopoverTrigger>
                           <Button size={"md"} leftIcon={<FiFilter />}>
@@ -1123,6 +1125,23 @@ export default function BRDRFCView() {
                         </Portal>
                       </Popover>
                     </HStack>
+                    <ButtonGroup size="sm" isAttached variant="outline">
+                      <Button
+                        colorScheme={viewMode === "BRD" ? "blue" : "gray"}
+                        variant={viewMode === "BRD" ? "solid" : "outline"}
+                        onClick={() => setViewMode("BRD")}
+                      >
+                        BRD
+                      </Button>
+                      <Button
+                        colorScheme={viewMode === "RFC" ? "blue" : "gray"}
+                        variant={viewMode === "RFC" ? "solid" : "outline"}
+                        onClick={() => setViewMode("RFC")}
+                      >
+                        RFC
+                      </Button>
+                    </ButtonGroup>
+                    </HStack>
                   </GridItem>
                   <GridItem
                     colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }}
@@ -1130,6 +1149,16 @@ export default function BRDRFCView() {
                   >
                     {/* BUTTON ACTION */}
                     <Flex as={Wrap} justifyContent={"end"} px={0} w={"full"}>
+                      <Menu>
+                        <MenuButton as={Button} size="md" rightIcon={<ChevronDownIcon />}>
+                          {memoFilter === "Y" ? "Memiliki Memo" : memoFilter === "N" ? "Tidak Memiliki Memo" : "Semua"}
+                        </MenuButton>
+                        <MenuList>
+                          <MenuItem onClick={() => setMemoFilter("")}>Semua</MenuItem>
+                          <MenuItem onClick={() => setMemoFilter("Y")}>Memiliki Memo</MenuItem>
+                          <MenuItem onClick={() => setMemoFilter("N")}>Tidak Memiliki Memo</MenuItem>
+                        </MenuList>
+                      </Menu>
                       <Button
                         size={"md"}
                         leftIcon={<FiRefreshCcw />}

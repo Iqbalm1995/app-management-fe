@@ -2746,8 +2746,6 @@ export default function ProjectRegisterView({
                                   formik.setFieldValue("projectNo", "");
                                 }
                               }}
-                              colorScheme="blue"
-                              isDisabled={IsHaveMemo === "N"}
                             />
                             <Text fontSize="sm" color="gray.600">
                               Auto
