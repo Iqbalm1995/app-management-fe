@@ -102,7 +102,7 @@ const AuthPanelModal = () => {
         }}
         onClick={onOpen}
         boxShadow={"md"}
-        // rounded={radiusStyle}
+        rounded={radiusStyle}
       >
         Login
       </Button>
@@ -131,32 +131,171 @@ const AuthPanelModal = () => {
                 colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }}
                 w={"full"}
                 h={"full"}
-                // bg="blue.500"
                 roundedLeft={radiusStyle}
                 display={{ base: "none", sm: "none", md: "flex", lg: "flex" }}
+                overflow="hidden"
               >
                 <Flex
                   roundedLeft={radiusStyle}
                   w={"full"}
                   h={"full"}
-                  bgGradient={"linear(to-r, #1b517e, #063154)"}
-                  backgroundPosition="center"
-                  backgroundRepeat="no-repeat"
-                  backgroundSize="cover"
-                  backgroundImage={`url(./img/currency-bg.png)`}
+                  bgGradient={"linear(to-br, #1e3a8a, #3b82f6, #06b6d4)"}
                   pos={"relative"}
-                  zIndex={1}
+                  alignItems="center"
+                  justifyContent="center"
                 >
+                  {/* Animated Wave Lines */}
                   <Box
-                    roundedLeft={radiusStyle}
-                    pos={"absolute"}
+                    pos="absolute"
                     top="0"
                     left="0"
                     w="full"
                     h="full"
-                    bgGradient="linear(to-b, rgba(17, 17, 17, 5%) 0%, rgba(17, 17, 17, 1) 80%)"
-                    // bg={"red"}
-                  ></Box>
+                    overflow="hidden"
+                  >
+                    <style jsx>{`
+                      @keyframes wave1 {
+                        0%, 100% { transform: translateX(0) translateY(0); }
+                        50% { transform: translateX(-25%) translateY(-10%); }
+                      }
+                      @keyframes wave2 {
+                        0%, 100% { transform: translateX(0) translateY(0); }
+                        50% { transform: translateX(25%) translateY(10%); }
+                      }
+                      @keyframes wave3 {
+                        0%, 100% { transform: translateX(0) translateY(0); }
+                        50% { transform: translateX(-15%) translateY(15%); }
+                      }
+                      @keyframes float {
+                        0%, 100% { transform: translateY(0px); }
+                        50% { transform: translateY(-20px); }
+                      }
+                    `}</style>
+                    
+                    {/* Wave 1 */}
+                    <svg
+                      style={{
+                        position: 'absolute',
+                        top: '10%',
+                        left: '-10%',
+                        width: '120%',
+                        height: '100%',
+                        opacity: 0.15,
+                        animation: 'wave1 20s ease-in-out infinite'
+                      }}
+                      viewBox="0 0 1200 600"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M0,100 Q300,50 600,100 T1200,100 L1200,0 L0,0 Z"
+                        fill="white"
+                      />
+                      <path
+                        d="M0,200 Q300,150 600,200 T1200,200"
+                        stroke="white"
+                        strokeWidth="3"
+                        fill="none"
+                      />
+                    </svg>
+
+                    {/* Wave 2 */}
+                    <svg
+                      style={{
+                        position: 'absolute',
+                        top: '30%',
+                        left: '-5%',
+                        width: '110%',
+                        height: '100%',
+                        opacity: 0.1,
+                        animation: 'wave2 15s ease-in-out infinite'
+                      }}
+                      viewBox="0 0 1200 600"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M0,150 Q400,100 800,150 T1200,150"
+                        stroke="white"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                      <path
+                        d="M0,250 Q400,200 800,250 T1200,250"
+                        stroke="white"
+                        strokeWidth="2"
+                        fill="none"
+                      />
+                    </svg>
+
+                    {/* Wave 3 */}
+                    <svg
+                      style={{
+                        position: 'absolute',
+                        bottom: '0',
+                        left: '0',
+                        width: '100%',
+                        height: '50%',
+                        opacity: 0.2,
+                        animation: 'wave3 25s ease-in-out infinite'
+                      }}
+                      viewBox="0 0 1200 300"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M0,100 Q300,50 600,100 T1200,100 L1200,300 L0,300 Z"
+                        fill="white"
+                      />
+                    </svg>
+
+                    {/* Floating Circles */}
+                    <Box
+                      pos="absolute"
+                      top="20%"
+                      right="15%"
+                      w="80px"
+                      h="80px"
+                      borderRadius="full"
+                      border="2px solid"
+                      borderColor="whiteAlpha.300"
+                      style={{ animation: 'float 6s ease-in-out infinite' }}
+                    />
+                    <Box
+                      pos="absolute"
+                      bottom="25%"
+                      left="10%"
+                      w="60px"
+                      h="60px"
+                      borderRadius="full"
+                      border="2px solid"
+                      borderColor="whiteAlpha.200"
+                      style={{ animation: 'float 8s ease-in-out infinite 1s' }}
+                    />
+                    <Box
+                      pos="absolute"
+                      top="50%"
+                      right="25%"
+                      w="40px"
+                      h="40px"
+                      borderRadius="full"
+                      bg="whiteAlpha.200"
+                      style={{ animation: 'float 7s ease-in-out infinite 2s' }}
+                    />
+                  </Box>
+
+                  {/* Content Overlay */}
+                  <VStack
+                    spacing={4}
+                    zIndex={2}
+                    color="white"
+                    textAlign="center"
+                    px={8}
+                  >
+                    <Text fontSize="3xl" fontWeight="bold">
+                      Welcome Back
+                    </Text>
+                    <Text fontSize="md" opacity={0.9}>
+                      Sign in to continue to your dashboard
+                    </Text>
+                  </VStack>
                 </Flex>
               </GridItem>
               <GridItem
@@ -295,11 +434,11 @@ const AuthForm = () => {
       </Box>
       <Box>
         <Text fontWeight={600} fontSize={"20px"}>
-          Selamat Datang
+          Welcome
         </Text>
       </Box>
       <Box>
-        <Text>Gunakan User ID dan Password Email/PC Anda</Text>
+        <Text>Use your User ID and Email/PC Password</Text>
       </Box>
       <Box>
         {/* FORM AUTH */}
@@ -334,9 +473,7 @@ const AuthForm = () => {
                   variant="flushed"
                   onChange={formik.handleChange}
                   value={formik.values.password}
-                  // pr="4.5rem"
                   type={show ? "text" : "password"}
-                  // placeholder="Isi Password..."
                 />
                 <InputRightElement>
                   <Button
@@ -359,7 +496,7 @@ const AuthForm = () => {
                     variant={"link"}
                     color={"secondary.600"}
                   >
-                    Ganti Password
+                    Change Password
                   </Button>
                 </Link>
                 <Spacer />
@@ -369,7 +506,7 @@ const AuthForm = () => {
                     variant={"link"}
                     onClick={() => setLupaPassText(!LupaPassText)}
                   >
-                    Lupa password?
+                    Forgot password?
                   </Button>
                 </Link>
               </Flex>
@@ -385,7 +522,6 @@ const AuthForm = () => {
               }
               color="white"
               _hover={{
-                // bg: colorMode === "light" ? "blue.700" : "blue.600",
                 transform: "translateY(-3px)",
                 shadow: "xl",
               }}
@@ -394,7 +530,7 @@ const AuthForm = () => {
               h={"50px"}
               isLoading={IsLoadingProcess}
             >
-              Masuk
+              Sign In
             </Button>
             <Text
               fontSize={"smaller"}
@@ -402,8 +538,7 @@ const AuthForm = () => {
               pt={1}
               display={LupaPassText ? "box" : "none"}
             >
-              Untuk Reset Password silahkan ajukan melalui Aplikasi User Id
-              Management (UIM){" "}
+              To reset your password, please submit a request through the User ID Management (UIM) application{" "}
               <Link href={"#"}>
                 <Text as={"span"} fontWeight={600} color={"secondary.600"}>
                   Website UIM
