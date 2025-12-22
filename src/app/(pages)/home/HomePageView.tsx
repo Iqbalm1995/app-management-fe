@@ -6,6 +6,7 @@ import {
 } from "@/app/components/headerContent";
 import LayoutAdmin from "@/app/components/layoutAdmin";
 import { radiusStyle } from "@/app/constants/applicationConstants";
+import useWorkspace, { WorkspaceStatsViewModel } from "@/app/services/useWorkspace";
 import {
   Box,
   Button,
@@ -20,22 +21,18 @@ import {
   Text,
   useColorMode,
   VStack,
-  SimpleGrid,
   Container,
   useColorModeValue,
 } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
-  FiTrendingUp,
   FiUsers,
   FiFolder,
   FiCheckCircle,
   FiBarChart,
-  FiActivity,
   FiTarget,
   FiZap,
   FiArrowRight,
-  FiLayers,
   FiPieChart,
   FiFileText,
 } from "react-icons/fi";
@@ -45,74 +42,192 @@ const HeaderDataContent: HeaderContentProps = {
   breadCrumb: ["Home"],
 };
 
+// Animated Globe Component
+const AnimatedGlobe = () => {
+  const { colorMode } = useColorMode();
+
+  useEffect(() => {
+    const canvas = document.getElementById("globe-canvas") as HTMLCanvasElement;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    canvas.width = 400;
+    canvas.height = 400;
+
+    const centerX = 200;
+    const centerY = 200;
+    const radius = 150;
+    let rotation = 0;
+    let animationId: number;
+
+    // Generate points on sphere
+    const points: Array<{ x: number; y: number; z: number }> = [];
+    const numPoints = 600;
+
+    for (let i = 0; i < numPoints; i++) {
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+
+      points.push({
+        x: radius * Math.sin(phi) * Math.cos(theta),
+        y: radius * Math.sin(phi) * Math.sin(theta),
+        z: radius * Math.cos(phi),
+      });
+    }
+
+    const colors = { base: "255, 255, 255", glow: "255, 255, 255" };
+
+    // Animation loop
+    const animate = () => {
+      ctx.clearRect(0, 0, 400, 400);
+      rotation += 0.003;
+
+      points.forEach((point) => {
+        const cosR = Math.cos(rotation);
+        const sinR = Math.sin(rotation);
+        const rotatedX = point.x * cosR - point.z * sinR;
+        const rotatedZ = point.x * sinR + point.z * cosR;
+
+        if (rotatedZ > -45) {
+          const scale = 200 / (200 + rotatedZ);
+          const x2d = rotatedX * scale + centerX;
+          const y2d = point.y * scale + centerY;
+          const opacity = (rotatedZ + radius) / 300;
+          const size = scale * 1.5;
+
+          ctx.beginPath();
+          ctx.arc(x2d, y2d, size, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${colors.base}, ${opacity * 0.7})`;
+          ctx.fill();
+        }
+      });
+
+      animationId = requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    return () => cancelAnimationFrame(animationId);
+  }, [colorMode]);
+
+  return (
+    <Box
+      position="relative"
+      w="400px"
+      h="400px"
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+    >
+      <canvas id="globe-canvas" style={{ maxWidth: "100%", height: "auto" }} />
+    </Box>
+  );
+};
+
+// Animated Counter Component
+const AnimatedCounter = ({ value, color }: { value: number; color: string }) => {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (value === 0) return;
+    let start = 0;
+    const duration = 1500;
+    const increment = value / (duration / 16);
+    const timer = setInterval(() => {
+      start += increment;
+      if (start >= value) {
+        setCount(value);
+        clearInterval(timer);
+      } else {
+        setCount(Math.floor(start));
+      }
+    }, 16);
+    return () => clearInterval(timer);
+  }, [value]);
+
+  return (
+    <Text fontSize="4xl" fontWeight="bold" color={color}>
+      {count}
+    </Text>
+  );
+};
+
 function HomePageView() {
   const { colorMode } = useColorMode();
   const [userName, setUserName] = useState<string>("");
+  const [stats, setStats] = useState<WorkspaceStatsViewModel | null>(null);
+  const { GetWorkspaceStats } = useWorkspace();
 
-  const bgColor = useColorModeValue("white", "gray.800");
-  const cardBg = useColorModeValue("white", "gray.700");
+  const accentColor = useColorModeValue("blue.300", "blue.300");
   const textColor = useColorModeValue("gray.800", "white");
-  const accentColor = useColorModeValue("blue.500", "blue.300");
+  const cardBg = useColorModeValue("white", "gray.700");
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
+    const token = localStorage.getItem("tokenData");
     if (storedData) {
-      const authData = JSON.parse(storedData);
-      setUserName(authData?.data?.userFullName || "User");
+      const { dataLogin } = JSON.parse(storedData);
+      const name = dataLogin?.nama || "User";
+      setUserName(name.replace(/\b\w/g, (c: string) => c.toUpperCase()));
     }
+    if (token) {
+      GetWorkspaceStats(token).then((res) => {
+        if (res?.data) setStats(res.data);
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const features = [
-    {
-      icon: FiFolder,
-      title: "Project Management",
-      description: "Manage and track all your projects in one centralized platform",
-      color: "blue.500",
-      gradient: "linear(to-br, blue.400, blue.600)",
-    },
-    {
-      icon: FiUsers,
-      title: "Team Collaboration",
-      description: "Work together seamlessly with your team members",
-      color: "green.500",
-      gradient: "linear(to-br, green.400, green.600)",
-    },
-    {
-      icon: FiBarChart,
-      title: "Analytics & Reports",
-      description: "Get insights with comprehensive dashboard and reporting",
-      color: "purple.500",
-      gradient: "linear(to-br, purple.400, purple.600)",
-    },
-    {
-      icon: FiCheckCircle,
-      title: "Task Tracking",
-      description: "Monitor progress and ensure timely completion of tasks",
-      color: "orange.500",
-      gradient: "linear(to-br, orange.400, orange.600)",
-    },
-    {
-      icon: FiFileText,
-      title: "Requirements",
-      description: "Track BRD/RFC requirements and documentation",
-      color: "cyan.500",
-      gradient: "linear(to-br, cyan.400, cyan.600)",
-    },
-    {
-      icon: FiPieChart,
-      title: "Portfolio Dashboard",
-      description: "Visualize project portfolio with interactive charts",
-      color: "pink.500",
-      gradient: "linear(to-br, pink.400, pink.600)",
-    },
-  ];
-
-  const stats = [
-    { label: "Active Projects", value: "150+", icon: FiFolder, color: "blue" },
-    { label: "Team Members", value: "50+", icon: FiUsers, color: "green" },
-    { label: "Completed Tasks", value: "1,200+", icon: FiCheckCircle, color: "purple" },
-    { label: "Success Rate", value: "95%", icon: FiTrendingUp, color: "orange" },
-  ];
+  const features = useMemo(
+    () => [
+      {
+        icon: FiFolder,
+        title: "Project Management",
+        description:
+          "Manage and track all your projects in one centralized platform",
+        color: "blue.500",
+        gradient: "linear(to-br, blue.400, blue.600)",
+      },
+      {
+        icon: FiUsers,
+        title: "Team Collaboration",
+        description: "Work together seamlessly with your team members",
+        color: "green.500",
+        gradient: "linear(to-br, green.400, green.600)",
+      },
+      {
+        icon: FiBarChart,
+        title: "Analytics & Reports",
+        description: "Get insights with comprehensive dashboard and reporting",
+        color: "purple.500",
+        gradient: "linear(to-br, purple.400, purple.600)",
+      },
+      {
+        icon: FiCheckCircle,
+        title: "Task Tracking",
+        description: "Monitor progress and ensure timely completion of tasks",
+        color: "orange.500",
+        gradient: "linear(to-br, orange.400, orange.600)",
+      },
+      {
+        icon: FiFileText,
+        title: "Requirements",
+        description: "Track BRD/RFC requirements and documentation",
+        color: "cyan.500",
+        gradient: "linear(to-br, cyan.400, cyan.600)",
+      },
+      {
+        icon: FiPieChart,
+        title: "Portfolio Dashboard",
+        description: "Visualize project portfolio with interactive charts",
+        color: "pink.500",
+        gradient: "linear(to-br, pink.400, pink.600)",
+      },
+    ],
+    []
+  );
 
   return (
     <LayoutAdmin>
@@ -123,14 +238,15 @@ function HomePageView() {
         position="relative"
         overflow="hidden"
         bgGradient={useColorModeValue(
-          "linear(to-br, secondary.50, cyan.50, secondary.100)",
-          "linear(to-br, gray.900, blue.900, purple.900)"
+          "linear(to-br, secondary.800, secondary.700, secondary.600)",
+          "linear(to-br, gray.900, secondary.900, gray.900)"
         )}
         py={20}
         px={6}
         rounded={radiusStyle}
         mb={8}
         boxShadow={"md"}
+        minH={"72vh"}
       >
         {/* Animated Wave Background */}
         <Box
@@ -155,7 +271,7 @@ function HomePageView() {
           >
             <path
               d="M0,100 Q300,50 600,100 T1200,100 L1200,0 L0,0 Z"
-              fill={colorMode === "light" ? "#3182CE" : "#63B3ED"}
+              fill={"#63B3ED"}
             >
               <animate
                 attributeName="d"
@@ -170,7 +286,7 @@ function HomePageView() {
             </path>
             <path
               d="M0,200 Q400,150 800,200 T1200,200"
-              stroke={colorMode === "light" ? "#3795ff" : "#cae3ff"}
+              stroke={"#cae3ff"}
               strokeWidth="3"
               fill="none"
             >
@@ -188,25 +304,6 @@ function HomePageView() {
           </svg>
         </Box>
 
-        {/* Floating Circles */}
-        <Box
-          position="absolute"
-          top="10%"
-          right="10%"
-          w="100px"
-          h="100px"
-          borderRadius="full"
-          border="2px solid"
-          borderColor={accentColor}
-          opacity={0.2}
-        >
-          <Box
-            as="div"
-            animation="float 6s ease-in-out infinite"
-            w="full"
-            h="full"
-          />
-        </Box>
         <Box
           position="absolute"
           bottom="15%"
@@ -226,51 +323,109 @@ function HomePageView() {
         </Box>
 
         <Container maxW="container.xl" position="relative" zIndex={1}>
-          <VStack spacing={6} textAlign="center">
-            <Box as="div" animation="fadeInScale 1.2s ease-out">
-              <Heading
-                fontSize={{ base: "3xl", md: "5xl", lg: "6xl" }}
-                fontWeight="bold"
-                bgGradient="linear(to-r, secondary.800, secondary.600, secondary.500)"
-                bgClip="text"
-              >
-                Welcome to Project Management
-              </Heading>
-            </Box>
-            <Box as="div" animation="fadeInUp 1s ease-out 0.3s backwards">
-              <Text
-                fontSize={{ base: "lg", md: "xl" }}
-                color={textColor}
-                maxW="2xl"
-                opacity={0.9}
-              >
-                Streamline your workflow, collaborate with your team, and
-                deliver projects successfully
-              </Text>
-            </Box>
-            <Box as="div" animation="fadeInUp 1s ease-out 0.6s backwards">
-              <HStack spacing={4} pt={4}>
-                <Button
-                  size="lg"
-                  colorScheme="blue"
-                  rightIcon={<FiArrowRight />}
-                  _hover={{ transform: "translateY(-2px)", shadow: "lg" }}
-                  transition="all 0.3s"
+          <Grid
+            templateColumns={{ base: "1fr", lg: "1fr 1fr" }}
+            gap={8}
+            alignItems="center"
+          >
+            {/* Left: Welcome Message */}
+            <VStack
+              spacing={6}
+              textAlign={{ base: "center", lg: "left" }}
+              align={{ base: "center", lg: "start" }}
+            >
+              <Box as="div" animation="fadeInScale 1.2s ease-out">
+                <Text
+                  fontSize="lg"
+                  color={accentColor}
+                  fontWeight="semibold"
+                  mb={2}
                 >
-                  Get Started
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  colorScheme="blue"
-                  _hover={{ transform: "translateY(-2px)", shadow: "lg" }}
-                  transition="all 0.3s"
+                  Welcome back, {userName}!
+                </Text>
+                <Heading
+                  fontSize={{ base: "3xl", md: "4xl", lg: "5xl" }}
+                  fontWeight="bold"
+                  bgGradient="linear(to-r, purple.200, purple.400, pink.500)"
+                  bgClip="text"
+                  lineHeight="shorter"
                 >
-                  Learn More
-                </Button>
-              </HStack>
+                  Ready to manage your projects?
+                </Heading>
+              </Box>
+              <Box as="div" animation="fadeInUp 1s ease-out 0.3s backwards">
+                <Text
+                  fontSize={{ base: "md", md: "lg" }}
+                  color={"white"}
+                  opacity={0.9}
+                >
+                  Streamline your workflow, collaborate with your team, and
+                  deliver projects successfully
+                </Text>
+              </Box>
+              <Box as="div" animation="fadeInUp 1s ease-out 0.6s backwards">
+                <HStack spacing={4} pt={4}>
+                  <Button
+                    as="a"
+                    href="/workspace"
+                    size="lg"
+                    bgColor={"white"}
+                    color={"secondary.600"}
+                    rightIcon={<FiArrowRight />}
+                    _hover={{ transform: "translateY(-2px)", shadow: "lg" }}
+                    transition="all 0.3s"
+                  >
+                    Go to Workspace
+                  </Button>
+                  <Button
+                    as="a"
+                    href="/reports/dashboard-portfolio"
+                    size="lg"
+                    variant="outline"
+                    bgColor={"transparent"}
+                    borderColor={"white"}
+                    color={"secondary.100"}
+                    _hover={{ transform: "translateY(-2px)", shadow: "lg" }}
+                    transition="all 0.3s"
+                  >
+                    View Reports
+                  </Button>
+                </HStack>
+              </Box>
+
+              {/* Stats inside hero */}
+              {stats && (
+                <Box as="div" animation="fadeInUp 1s ease-out 0.8s backwards" pt={8}>
+                  <Grid templateColumns="repeat(4, 1fr)" gap={8}>
+                    <VStack spacing={1}>
+                      <AnimatedCounter value={stats.totalProjects} color="blue.300" />
+                      <Text fontSize="sm" color="white" opacity={0.8}>Total Projects</Text>
+                    </VStack>
+                    <VStack spacing={1}>
+                      <AnimatedCounter value={stats.activeProjects} color="green.300" />
+                      <Text fontSize="sm" color="white" opacity={0.8}>Active Projects</Text>
+                    </VStack>
+                    <VStack spacing={1}>
+                      <AnimatedCounter value={stats.totalTasks} color="purple.300" />
+                      <Text fontSize="sm" color="white" opacity={0.8}>Total Tasks</Text>
+                    </VStack>
+                    <VStack spacing={1}>
+                      <AnimatedCounter value={stats.overdueTasks} color="orange.300" />
+                      <Text fontSize="sm" color="white" opacity={0.8}>Overdue Tasks</Text>
+                    </VStack>
+                  </Grid>
+                </Box>
+              )}
+            </VStack>
+
+            {/* Right: Animated Globe */}
+            <Box
+              display={{ base: "none", lg: "block" }}
+              animation="fadeInUp 1s ease-out 0.4s backwards"
+            >
+              <AnimatedGlobe />
             </Box>
-          </VStack>
+          </Grid>
         </Container>
       </Box>
 
@@ -310,8 +465,8 @@ function HomePageView() {
                 h="full"
                 border="1px solid"
                 borderColor={useColorModeValue("gray.100", "gray.700")}
-                _hover={{ 
-                  transform: "translateY(-8px) scale(1.02)", 
+                _hover={{
+                  transform: "translateY(-8px) scale(1.02)",
                   shadow: "2xl",
                   borderColor: feature.color,
                 }}
@@ -331,24 +486,23 @@ function HomePageView() {
                   opacity={0}
                   transition="opacity 0.4s"
                   sx={{
-                    'div:hover > &': { opacity: 0.1 }
+                    "div:hover > &": { opacity: 0.1 },
                   }}
                   pointerEvents="none"
                 />
-                
+
                 <CardBody p={8} position="relative" zIndex={1}>
                   <VStack align="start" spacing={5}>
-                    <Flex
-                      w="full"
-                      justify="space-between"
-                      align="center"
-                    >
+                    <Flex w="full" justify="space-between" align="center">
                       <Box
                         p={4}
                         rounded="xl"
                         bgGradient={feature.gradient}
                         shadow="lg"
-                        _hover={{ transform: "rotate(10deg) scale(1.15)", shadow: "xl" }}
+                        _hover={{
+                          transform: "rotate(10deg) scale(1.15)",
+                          shadow: "xl",
+                        }}
                         transition="all 0.4s"
                       >
                         <Icon as={feature.icon} boxSize={8} color="white" />
@@ -358,7 +512,7 @@ function HomePageView() {
                       <Heading size="md" color={textColor} fontWeight="bold">
                         {feature.title}
                       </Heading>
-                      <Text 
+                      <Text
                         color={useColorModeValue("gray.600", "gray.400")}
                         fontSize="sm"
                         lineHeight="tall"

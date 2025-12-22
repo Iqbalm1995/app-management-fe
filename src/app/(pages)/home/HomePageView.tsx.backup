@@ -6,1295 +6,638 @@ import {
 } from "@/app/components/headerContent";
 import LayoutAdmin from "@/app/components/layoutAdmin";
 import { radiusStyle } from "@/app/constants/applicationConstants";
-import { AuthDataModelInterface } from "@/app/context/AuthContext";
+import useWorkspace, { WorkspaceStatsViewModel } from "@/app/services/useWorkspace";
 import {
-  convertToCustomDateFormat,
-  getCurrentQuarter,
-  getQuarterDateRange,
-  getRandomNumberInclusive,
-  monthSetMaster,
-} from "@/app/helper/MasterHelper";
-import { AuthDataResponse } from "@/app/services/useAuthentications";
-import {
-  Avatar,
-  AvatarGroup,
-  Badge,
   Box,
   Button,
-  Card,
-  CardBody,
-  CardHeader,
-  Flex,
   Grid,
-  GridItem,
   Heading,
   HStack,
   Icon,
-  Progress,
-  Select,
-  Spacer,
-  Stack,
-  Tab,
-  Table,
-  TabList,
-  TabPanel,
-  TabPanels,
-  Tabs,
-  Tbody,
-  Td,
   Text,
-  Th,
-  Thead,
-  Tooltip,
-  Tr,
   useColorMode,
   VStack,
-  Wrap,
-  WrapItem,
-  SimpleGrid,
-  Divider,
-  CircularProgress,
-  CircularProgressLabel,
+  Container,
+  useColorModeValue,
 } from "@chakra-ui/react";
-import { ApexOptions } from "apexcharts";
-import dynamic from "next/dynamic";
-import Link from "next/link";
-import { ReactNode, useEffect, useMemo, useState } from "react";
-import { IconType } from "react-icons";
+import { useEffect, useState, useMemo } from "react";
 import {
-  FiTrendingUp,
-  FiTrendingDown,
   FiUsers,
   FiFolder,
   FiCheckCircle,
-  FiClock,
-  FiAlertCircle,
-  FiRefreshCcw,
-  FiFilter,
-  FiCalendar,
-  FiTarget,
-  FiActivity,
   FiBarChart,
-  FiPieChart,
+  FiTarget,
+  FiZap,
   FiArrowRight,
-  FiMoreHorizontal,
-  FiStar,
-  FiGitBranch,
+  FiPieChart,
+  FiFileText,
 } from "react-icons/fi";
-import {
-  MdOutlineAssignment,
-  MdOutlineBugReport,
-  MdOutlineSpeed,
-  MdOutlineTimeline,
-} from "react-icons/md";
-
-// Dynamically load the Chart component
-const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 const HeaderDataContent: HeaderContentProps = {
-  titleName: "Project Management Dashboard",
-  breadCrumb: ["Home", "Dashboard"],
+  titleName: "Welcome",
+  breadCrumb: ["Home"],
 };
 
-// Mock Data Interfaces
-interface ProjectStats {
-  totalProjects: number;
-  activeProjects: number;
-  completedProjects: number;
-  onHoldProjects: number;
-  totalTasks: number;
-  completedTasks: number;
-  overdueTasks: number;
-  teamMembers: number;
-}
-
-interface RecentProject {
-  id: string;
-  name: string;
-  status: "ACTIVE" | "COMPLETED" | "ONHOLD" | "PLANNING";
-  progress: number;
-  dueDate: string;
-  team: { name: string; avatar?: string }[];
-  priority: "HIGH" | "MEDIUM" | "LOW";
-}
-
-interface RecentTask {
-  id: string;
-  title: string;
-  project: string;
-  assignee: { name: string; avatar?: string };
-  status: "TODO" | "IN_PROGRESS" | "REVIEW" | "DONE";
-  priority: "HIGH" | "MEDIUM" | "LOW";
-  dueDate: string;
-}
-
-interface Activity {
-  id: string;
-  user: { name: string; avatar?: string };
-  action: string;
-  target: string;
-  timestamp: string;
-  type: "project" | "task" | "comment" | "file";
-}
-
-function HomePageView() {
+// Animated Globe Component
+const AnimatedGlobe = () => {
   const { colorMode } = useColorMode();
 
-  // Filter states
-  const currentYear = new Date().getFullYear();
-  const currentQuarter = getCurrentQuarter();
-  const [selectedYear, setSelectedYear] = useState<number>(currentYear);
-  const [selectedQuarter, setSelectedQuarter] = useState<number | "all">(
-    currentQuarter
-  );
-  const [RefreshData, setRefreshData] = useState<number>(0);
-
-  const years = Array.from({ length: 8 }, (_, i) => currentYear - 5 + i);
-
-  // Auth setup
-  const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
-  const [tokenData, setTokenData] = useState<string>("");
-
   useEffect(() => {
-    const storedData = localStorage.getItem("authData");
-    const token: string = localStorage.getItem("tokenData") as string;
+    const canvas = document.getElementById("globe-canvas") as HTMLCanvasElement;
+    if (!canvas) return;
 
-    if (DataAuth == null) {
-      if (storedData) {
-        const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
-        const UserData: AuthDataResponse =
-          StorageAuth.dataLogin as AuthDataResponse;
-        setDataAuth(UserData);
-      }
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    canvas.width = 400;
+    canvas.height = 400;
+
+    const centerX = 200;
+    const centerY = 200;
+    const radius = 150;
+    let rotation = 0;
+    let animationId: number;
+
+    // Generate points on sphere
+    const points: Array<{ x: number; y: number; z: number }> = [];
+    const numPoints = 600;
+
+    for (let i = 0; i < numPoints; i++) {
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+
+      points.push({
+        x: radius * Math.sin(phi) * Math.cos(theta),
+        y: radius * Math.sin(phi) * Math.sin(theta),
+        z: radius * Math.cos(phi),
+      });
     }
 
-    if (token) {
-      setTokenData(token);
-    }
-  }, [DataAuth]);
+    const colors = { base: "255, 255, 255", glow: "255, 255, 255" };
 
-  // Mock data generation
-  const [projectStats, setProjectStats] = useState<ProjectStats>({
-    totalProjects: 0,
-    activeProjects: 0,
-    completedProjects: 0,
-    onHoldProjects: 0,
-    totalTasks: 0,
-    completedTasks: 0,
-    overdueTasks: 0,
-    teamMembers: 0,
-  });
+    // Animation loop
+    const animate = () => {
+      ctx.clearRect(0, 0, 400, 400);
+      rotation += 0.003;
 
-  const [recentProjects, setRecentProjects] = useState<RecentProject[]>([]);
-  const [recentTasks, setRecentTasks] = useState<RecentTask[]>([]);
-  const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
-  const [chartData, setChartData] = useState<any>({});
+      points.forEach((point) => {
+        const cosR = Math.cos(rotation);
+        const sinR = Math.sin(rotation);
+        const rotatedX = point.x * cosR - point.z * sinR;
+        const rotatedZ = point.x * sinR + point.z * cosR;
 
-  const RefreshAction = () => {
-    setRefreshData((prev) => prev + 1);
-  };
+        if (rotatedZ > -45) {
+          const scale = 200 / (200 + rotatedZ);
+          const x2d = rotatedX * scale + centerX;
+          const y2d = point.y * scale + centerY;
+          const opacity = (rotatedZ + radius) / 300;
+          const size = scale * 1.5;
 
-  // Generate mock data
-  useEffect(() => {
-    // Project Statistics
-    const totalProjects = getRandomNumberInclusive(15, 25);
-    const activeProjects = getRandomNumberInclusive(8, 12);
-    const completedProjects = getRandomNumberInclusive(5, 8);
-    const onHoldProjects = totalProjects - activeProjects - completedProjects;
+          ctx.beginPath();
+          ctx.arc(x2d, y2d, size, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${colors.base}, ${opacity * 0.7})`;
+          ctx.fill();
+        }
+      });
 
-    setProjectStats({
-      totalProjects,
-      activeProjects,
-      completedProjects,
-      onHoldProjects,
-      totalTasks: getRandomNumberInclusive(150, 250),
-      completedTasks: getRandomNumberInclusive(80, 120),
-      overdueTasks: getRandomNumberInclusive(5, 15),
-      teamMembers: getRandomNumberInclusive(25, 40),
-    });
+      animationId = requestAnimationFrame(animate);
+    };
 
-    // Recent Projects
-    setRecentProjects([
-      {
-        id: "1",
-        name: "E-Commerce Platform Redesign",
-        status: "ACTIVE",
-        progress: 75,
-        dueDate: "2024-12-15",
-        team: [
-          { name: "John Doe" },
-          { name: "Jane Smith" },
-          { name: "Mike Johnson" },
-        ],
-        priority: "HIGH",
-      },
-      {
-        id: "2",
-        name: "Mobile App Development",
-        status: "ACTIVE",
-        progress: 45,
-        dueDate: "2024-11-30",
-        team: [{ name: "Sarah Wilson" }, { name: "Tom Brown" }],
-        priority: "MEDIUM",
-      },
-      {
-        id: "3",
-        name: "Data Migration Project",
-        status: "COMPLETED",
-        progress: 100,
-        dueDate: "2024-10-20",
-        team: [{ name: "Alex Chen" }, { name: "Lisa Wang" }],
-        priority: "HIGH",
-      },
-      {
-        id: "4",
-        name: "Security Audit Implementation",
-        status: "PLANNING",
-        progress: 15,
-        dueDate: "2024-12-30",
-        team: [{ name: "David Lee" }],
-        priority: "HIGH",
-      },
-    ]);
+    animate();
 
-    // Recent Tasks
-    setRecentTasks([
-      {
-        id: "1",
-        title: "Implement user authentication",
-        project: "E-Commerce Platform",
-        assignee: { name: "John Doe" },
-        status: "IN_PROGRESS",
-        priority: "HIGH",
-        dueDate: "2024-10-25",
-      },
-      {
-        id: "2",
-        title: "Design product catalog UI",
-        project: "E-Commerce Platform",
-        assignee: { name: "Jane Smith" },
-        status: "REVIEW",
-        priority: "MEDIUM",
-        dueDate: "2024-10-23",
-      },
-      {
-        id: "3",
-        title: "Setup CI/CD pipeline",
-        project: "Mobile App Development",
-        assignee: { name: "Mike Johnson" },
-        status: "TODO",
-        priority: "HIGH",
-        dueDate: "2024-10-28",
-      },
-      {
-        id: "4",
-        title: "Write API documentation",
-        project: "Mobile App Development",
-        assignee: { name: "Sarah Wilson" },
-        status: "DONE",
-        priority: "LOW",
-        dueDate: "2024-10-20",
-      },
-    ]);
-
-    // Recent Activities
-    setRecentActivities([
-      {
-        id: "1",
-        user: { name: "John Doe" },
-        action: "completed task",
-        target: "User Authentication Module",
-        timestamp: "2 hours ago",
-        type: "task",
-      },
-      {
-        id: "2",
-        user: { name: "Jane Smith" },
-        action: "commented on",
-        target: "Product Catalog Design",
-        timestamp: "4 hours ago",
-        type: "comment",
-      },
-      {
-        id: "3",
-        user: { name: "Mike Johnson" },
-        action: "created project",
-        target: "Security Audit Implementation",
-        timestamp: "1 day ago",
-        type: "project",
-      },
-      {
-        id: "4",
-        user: { name: "Sarah Wilson" },
-        action: "uploaded file to",
-        target: "Mobile App Development",
-        timestamp: "2 days ago",
-        type: "file",
-      },
-    ]);
-
-    // Chart Data
-    setChartData({
-      projectProgress: {
-        series: [activeProjects, completedProjects, onHoldProjects],
-        labels: ["Active", "Completed", "On Hold"],
-      },
-      taskTrends: {
-        series: [
-          {
-            name: "Tasks Completed",
-            data: Array.from({ length: 7 }, () =>
-              getRandomNumberInclusive(5, 15)
-            ),
-          },
-          {
-            name: "Tasks Created",
-            data: Array.from({ length: 7 }, () =>
-              getRandomNumberInclusive(8, 18)
-            ),
-          },
-        ],
-        categories: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-      },
-      projectPerformance: {
-        series: [
-          {
-            name: "Started",
-            data: Array.from({ length: 6 }, () =>
-              getRandomNumberInclusive(2, 8)
-            ),
-          },
-          {
-            name: "Completed",
-            data: Array.from({ length: 6 }, () =>
-              getRandomNumberInclusive(1, 6)
-            ),
-          },
-          {
-            name: "On Hold",
-            data: Array.from({ length: 6 }, () =>
-              getRandomNumberInclusive(0, 3)
-            ),
-          },
-          {
-            name: "Cancelled",
-            data: Array.from({ length: 6 }, () =>
-              getRandomNumberInclusive(0, 2)
-            ),
-          },
-        ],
-        categories: ["Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-      },
-    });
-  }, [selectedYear, selectedQuarter, RefreshData]);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "ACTIVE":
-      case "IN_PROGRESS":
-        return "blue";
-      case "COMPLETED":
-      case "DONE":
-        return "green";
-      case "ONHOLD":
-      case "REVIEW":
-        return "orange";
-      case "PLANNING":
-      case "TODO":
-        return "purple";
-      default:
-        return "gray";
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "HIGH":
-        return "red";
-      case "MEDIUM":
-        return "orange";
-      case "LOW":
-        return "green";
-      default:
-        return "gray";
-    }
-  };
+    return () => cancelAnimationFrame(animationId);
+  }, [colorMode]);
 
   return (
-    <LayoutAdmin>
-      {/* <HeaderContent
-        titleName={HeaderDataContent.titleName}
-        breadCrumb={HeaderDataContent.breadCrumb}
-      /> */}
-
-      <VStack spacing={6} alignItems="start" w="full" pt={6} px={4}>
-        {/* Welcome Section */}
-        <Box w="full">
-          <Heading
-            as="h2"
-            size="lg"
-            color={colorMode === "light" ? "gray.800" : "white"}
-            mb={2}
-          >
-            Welcome back, {DataAuth?.nama || "User"}! 👋
-          </Heading>
-          <Text color="gray.500" fontSize="md">
-            Here's what's happening with your projects today.
-          </Text>
-        </Box>
-
-        {/* Filter Controls */}
-        <Flex
-          w="full"
-          justify="space-between"
-          align="center"
-          flexWrap="wrap"
-          gap={4}
-        >
-          <HStack spacing={4}>
-            <Text
-              fontWeight="600"
-              color={colorMode === "light" ? "gray.700" : "gray.300"}
-            >
-              Filter by:
-            </Text>
-            <Select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(Number(e.target.value))}
-              size="sm"
-              borderRadius={"md"}
-              w="120px"
-              bg={colorMode === "light" ? "white" : "gray.800"}
-            >
-              {years.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </Select>
-            <Select
-              value={selectedQuarter}
-              onChange={(e) =>
-                setSelectedQuarter(
-                  e.target.value === "all" ? "all" : Number(e.target.value)
-                )
-              }
-              size="sm"
-              borderRadius={"md"}
-              w="100px"
-              bg={colorMode === "light" ? "white" : "gray.800"}
-            >
-              <option value="all">All</option>
-              <option value="1">Q1</option>
-              <option value="2">Q2</option>
-              <option value="3">Q3</option>
-              <option value="4">Q4</option>
-            </Select>
-          </HStack>
-          <Button
-            leftIcon={<FiRefreshCcw />}
-            onClick={RefreshAction}
-            size="sm"
-            variant="outline"
-            colorScheme="blue"
-          >
-            Refresh
-          </Button>
-        </Flex>
-
-        {/* Statistics Cards */}
-        <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6} w="full">
-          <StatCard
-            title="Total Projects"
-            value={projectStats.totalProjects}
-            icon={FiFolder}
-            trend={+12}
-            color="blue"
-          />
-          <StatCard
-            title="Active Projects"
-            value={projectStats.activeProjects}
-            icon={FiActivity}
-            trend={+8}
-            color="green"
-          />
-          <StatCard
-            title="Completed Tasks"
-            value={projectStats.completedTasks}
-            icon={FiCheckCircle}
-            trend={+15}
-            color="purple"
-          />
-          <StatCard
-            title="Team Members"
-            value={projectStats.teamMembers}
-            icon={FiUsers}
-            trend={+3}
-            color="orange"
-          />
-        </SimpleGrid>
-
-        {/* Main Dashboard Grid */}
-        <Grid templateColumns="repeat(12, 1fr)" gap={6} w="full">
-          {/* Project Progress Chart */}
-          <GridItem colSpan={{ base: 12, lg: 8 }}>
-            <Card
-              bg={colorMode === "light" ? "white" : "gray.800"}
-              shadow="lg"
-              rounded="xl"
-              border="1px"
-              borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-            >
-              <CardHeader pb={2}>
-                <HStack justify="space-between">
-                  <VStack align="start" spacing={1}>
-                    <Heading size="md">Project Overview</Heading>
-                    <Text fontSize="sm" color="gray.500">
-                      Current project status distribution
-                    </Text>
-                  </VStack>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    rightIcon={<FiMoreHorizontal />}
-                  >
-                    View All
-                  </Button>
-                </HStack>
-              </CardHeader>
-              <CardBody pt={0}>
-                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
-                  <Box>
-                    {chartData.projectProgress && (
-                      <Chart
-                        options={{
-                          chart: { type: "donut" },
-                          labels: chartData.projectProgress.labels,
-                          colors: ["#3182CE", "#38A169", "#DD6B20"],
-                          legend: { position: "bottom" },
-                          responsive: [
-                            {
-                              breakpoint: 480,
-                              options: {
-                                chart: { width: 200 },
-                                legend: { position: "bottom" },
-                              },
-                            },
-                          ],
-                        }}
-                        series={chartData.projectProgress.series}
-                        type="donut"
-                        height={250}
-                      />
-                    )}
-                  </Box>
-                  <VStack spacing={4} align="stretch">
-                    <ProjectMetric
-                      label="Active Projects"
-                      value={projectStats.activeProjects}
-                      total={projectStats.totalProjects}
-                      color="blue"
-                    />
-                    <ProjectMetric
-                      label="Completed Projects"
-                      value={projectStats.completedProjects}
-                      total={projectStats.totalProjects}
-                      color="green"
-                    />
-                    <ProjectMetric
-                      label="On Hold Projects"
-                      value={projectStats.onHoldProjects}
-                      total={projectStats.totalProjects}
-                      color="orange"
-                    />
-                  </VStack>
-                </SimpleGrid>
-              </CardBody>
-            </Card>
-          </GridItem>
-
-          {/* Quick Stats */}
-          <GridItem colSpan={{ base: 12, lg: 4 }}>
-            <VStack spacing={4}>
-              <Card
-                w="full"
-                bg={colorMode === "light" ? "white" : "gray.800"}
-                shadow="lg"
-                rounded="xl"
-                border="1px"
-                borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-              >
-                <CardBody>
-                  <VStack spacing={4}>
-                    <CircularProgress
-                      value={
-                        (projectStats.completedTasks /
-                          projectStats.totalTasks) *
-                        100
-                      }
-                      size="120px"
-                      color="green.400"
-                      thickness="8px"
-                    >
-                      <CircularProgressLabel fontSize="lg" fontWeight="bold">
-                        {Math.round(
-                          (projectStats.completedTasks /
-                            projectStats.totalTasks) *
-                            100
-                        )}
-                        %
-                      </CircularProgressLabel>
-                    </CircularProgress>
-                    <VStack spacing={1}>
-                      <Text fontWeight="bold" fontSize="lg">
-                        Task Completion
-                      </Text>
-                      <Text fontSize="sm" color="gray.500">
-                        {projectStats.completedTasks} of{" "}
-                        {projectStats.totalTasks} tasks completed
-                      </Text>
-                    </VStack>
-                  </VStack>
-                </CardBody>
-              </Card>
-
-              <Card
-                w="full"
-                bg="red.50"
-                border="1px"
-                borderColor="red.200"
-                rounded="xl"
-              >
-                <CardBody>
-                  <HStack>
-                    <Icon as={FiAlertCircle} color="red.500" boxSize={6} />
-                    <VStack align="start" spacing={0}>
-                      <Text fontWeight="bold" color="red.700">
-                        {projectStats.overdueTasks} Overdue Tasks
-                      </Text>
-                      <Text fontSize="sm" color="red.600">
-                        Require immediate attention
-                      </Text>
-                    </VStack>
-                  </HStack>
-                </CardBody>
-              </Card>
-            </VStack>
-          </GridItem>
-
-          {/* Recent Projects */}
-          <GridItem colSpan={{ base: 12, lg: 6 }}>
-            <Card
-              bg={colorMode === "light" ? "white" : "gray.800"}
-              shadow="lg"
-              rounded="xl"
-              border="1px"
-              borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-              h="full"
-            >
-              <CardHeader pb={2}>
-                <HStack justify="space-between">
-                  <Heading size="md">Recent Projects</Heading>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    rightIcon={<FiArrowRight />}
-                  >
-                    View All
-                  </Button>
-                </HStack>
-              </CardHeader>
-              <CardBody pt={0}>
-                <VStack spacing={4} align="stretch">
-                  {recentProjects.slice(0, 4).map((project) => (
-                    <Box
-                      key={project.id}
-                      p={4}
-                      bg={colorMode === "light" ? "gray.50" : "gray.700"}
-                      rounded="lg"
-                      _hover={{
-                        bg: colorMode === "light" ? "gray.100" : "gray.600",
-                      }}
-                      cursor="pointer"
-                      transition="all 0.2s"
-                    >
-                      <HStack justify="space-between" mb={2}>
-                        <VStack align="start" spacing={1}>
-                          <Text fontWeight="bold" fontSize="sm">
-                            {project.name}
-                          </Text>
-                          <HStack spacing={2}>
-                            <Badge
-                              colorScheme={getStatusColor(project.status)}
-                              size="sm"
-                            >
-                              {project.status}
-                            </Badge>
-                            <Badge
-                              colorScheme={getPriorityColor(project.priority)}
-                              size="sm"
-                            >
-                              {project.priority}
-                            </Badge>
-                          </HStack>
-                        </VStack>
-                        <Text fontSize="xs" color="gray.500">
-                          Due: {new Date(project.dueDate).toLocaleDateString()}
-                        </Text>
-                      </HStack>
-                      <Progress
-                        value={project.progress}
-                        colorScheme={getStatusColor(project.status)}
-                        size="sm"
-                        rounded="full"
-                        mb={2}
-                      />
-                      <HStack justify="space-between">
-                        <AvatarGroup size="xs" max={3}>
-                          {project.team.map((member, idx) => (
-                            <Avatar
-                              key={idx}
-                              name={member.name}
-                              src={member.avatar}
-                            />
-                          ))}
-                        </AvatarGroup>
-                        <Text fontSize="xs" color="gray.500">
-                          {project.progress}% complete
-                        </Text>
-                      </HStack>
-                    </Box>
-                  ))}
-                </VStack>
-              </CardBody>
-            </Card>
-          </GridItem>
-
-          {/* Recent Tasks */}
-          <GridItem colSpan={{ base: 12, lg: 6 }}>
-            <Card
-              bg={colorMode === "light" ? "white" : "gray.800"}
-              shadow="lg"
-              rounded="xl"
-              border="1px"
-              borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-              h="full"
-            >
-              <CardHeader pb={2}>
-                <HStack justify="space-between">
-                  <Heading size="md">Recent Tasks</Heading>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    rightIcon={<FiArrowRight />}
-                  >
-                    View All
-                  </Button>
-                </HStack>
-              </CardHeader>
-              <CardBody pt={0}>
-                <VStack spacing={3} align="stretch">
-                  {recentTasks.map((task) => (
-                    <HStack
-                      key={task.id}
-                      p={3}
-                      bg={colorMode === "light" ? "gray.50" : "gray.700"}
-                      rounded="lg"
-                      _hover={{
-                        bg: colorMode === "light" ? "gray.100" : "gray.600",
-                      }}
-                      cursor="pointer"
-                      transition="all 0.2s"
-                    >
-                      <Avatar
-                        size="sm"
-                        name={task.assignee.name}
-                        src={task.assignee.avatar}
-                      />
-                      <VStack align="start" spacing={0} flex={1}>
-                        <Text fontWeight="bold" fontSize="sm" noOfLines={1}>
-                          {task.title}
-                        </Text>
-                        <Text fontSize="xs" color="gray.500">
-                          {task.project}
-                        </Text>
-                      </VStack>
-                      <VStack align="end" spacing={1}>
-                        <Badge
-                          colorScheme={getStatusColor(task.status)}
-                          size="sm"
-                        >
-                          {task.status.replace("_", " ")}
-                        </Badge>
-                        <Text fontSize="xs" color="gray.500">
-                          {new Date(task.dueDate).toLocaleDateString()}
-                        </Text>
-                      </VStack>
-                    </HStack>
-                  ))}
-                </VStack>
-              </CardBody>
-            </Card>
-          </GridItem>
-
-          {/* Recent Activity */}
-          <GridItem colSpan={{ base: 12 }}>
-            <Card
-              bg={colorMode === "light" ? "white" : "gray.800"}
-              shadow="lg"
-              rounded="xl"
-              border="1px"
-              borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-            >
-              <CardHeader pb={2}>
-                <HStack justify="space-between">
-                  <Heading size="md">Recent Activity</Heading>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    rightIcon={<FiArrowRight />}
-                  >
-                    View All
-                  </Button>
-                </HStack>
-              </CardHeader>
-              <CardBody pt={0}>
-                <VStack spacing={4} align="stretch">
-                  {recentActivities.map((activity) => (
-                    <HStack key={activity.id} spacing={4}>
-                      <Avatar
-                        size="sm"
-                        name={activity.user.name}
-                        src={activity.user.avatar}
-                      />
-                      <VStack align="start" spacing={0} flex={1}>
-                        <Text fontSize="sm">
-                          <Text as="span" fontWeight="bold">
-                            {activity.user.name}
-                          </Text>{" "}
-                          {activity.action}{" "}
-                          <Text as="span" fontWeight="bold">
-                            {activity.target}
-                          </Text>
-                        </Text>
-                        <Text fontSize="xs" color="gray.500">
-                          {activity.timestamp}
-                        </Text>
-                      </VStack>
-                      <Icon
-                        as={
-                          activity.type === "project"
-                            ? FiFolder
-                            : activity.type === "task"
-                            ? FiCheckCircle
-                            : activity.type === "comment"
-                            ? FiActivity
-                            : FiGitBranch
-                        }
-                        color="gray.400"
-                        boxSize={4}
-                      />
-                    </HStack>
-                  ))}
-                </VStack>
-              </CardBody>
-            </Card>
-          </GridItem>
-
-          {/* Project Performance Bar Chart */}
-          <GridItem colSpan={{ base: 12, lg: 8 }}>
-            <Card
-              bg={colorMode === "light" ? "white" : "gray.800"}
-              shadow="lg"
-              rounded="xl"
-              border="1px"
-              borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-            >
-              <CardHeader pb={2}>
-                <HStack justify="space-between">
-                  <VStack align="start" spacing={1}>
-                    <Heading size="md">Project Performance</Heading>
-                    <Text fontSize="sm" color="gray.500">
-                      Monthly project completion trends
-                    </Text>
-                  </VStack>
-                  <HStack spacing={2}>
-                    <Badge colorScheme="blue" variant="subtle">
-                      This Year
-                    </Badge>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      rightIcon={<FiBarChart />}
-                    >
-                      Export
-                    </Button>
-                  </HStack>
-                </HStack>
-              </CardHeader>
-              <CardBody pt={0}>
-                {chartData.projectPerformance && (
-                  <Chart
-                    options={{
-                      chart: {
-                        type: "bar",
-                        toolbar: { show: false },
-                      },
-                      plotOptions: {
-                        bar: {
-                          horizontal: false,
-                          columnWidth: "55%",
-                          borderRadius: 4,
-                        },
-                      },
-                      dataLabels: { enabled: false },
-                      stroke: {
-                        show: true,
-                        width: 2,
-                        colors: ["transparent"],
-                      },
-                      xaxis: {
-                        categories: chartData.projectPerformance.categories,
-                      },
-                      yaxis: {
-                        title: { text: "Number of Projects" },
-                      },
-                      fill: { opacity: 1 },
-                      colors: ["#3182CE", "#38A169", "#DD6B20", "#E53E3E"],
-                      legend: { position: "top" },
-                      grid: {
-                        borderColor:
-                          colorMode === "light" ? "#e2e8f0" : "#4a5568",
-                      },
-                    }}
-                    series={chartData.projectPerformance.series}
-                    type="bar"
-                    height={300}
-                  />
-                )}
-              </CardBody>
-            </Card>
-          </GridItem>
-
-          {/* Team Performance */}
-          <GridItem colSpan={{ base: 12, lg: 4 }}>
-            <Card
-              bg={colorMode === "light" ? "white" : "gray.800"}
-              shadow="lg"
-              rounded="xl"
-              border="1px"
-              borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-              h="full"
-            >
-              <CardHeader pb={2}>
-                <Heading size="md">Top Performers</Heading>
-              </CardHeader>
-              <CardBody pt={0}>
-                <VStack spacing={4} align="stretch">
-                  {[
-                    {
-                      name: "Sarah Wilson",
-                      role: "Project Manager",
-                      score: 95,
-                      avatar: "",
-                    },
-                    {
-                      name: "John Doe",
-                      role: "Lead Developer",
-                      score: 88,
-                      avatar: "",
-                    },
-                    {
-                      name: "Mike Johnson",
-                      role: "DevOps Engineer",
-                      score: 82,
-                      avatar: "",
-                    },
-                    {
-                      name: "Jane Smith",
-                      role: "UI/UX Designer",
-                      score: 79,
-                      avatar: "",
-                    },
-                  ].map((performer, idx) => (
-                    <HStack key={idx} spacing={3}>
-                      <Avatar size="sm" name={performer.name} />
-                      <VStack align="start" spacing={0} flex={1}>
-                        <Text fontWeight="bold" fontSize="sm">
-                          {performer.name}
-                        </Text>
-                        <Text fontSize="xs" color="gray.500">
-                          {performer.role}
-                        </Text>
-                      </VStack>
-                      <VStack align="end" spacing={0}>
-                        <Text fontWeight="bold" fontSize="sm" color="green.500">
-                          {performer.score}%
-                        </Text>
-                        <Progress
-                          value={performer.score}
-                          colorScheme="green"
-                          size="sm"
-                          w="60px"
-                          rounded="full"
-                        />
-                      </VStack>
-                    </HStack>
-                  ))}
-                </VStack>
-              </CardBody>
-            </Card>
-          </GridItem>
-
-          {/* Project Categories */}
-          <GridItem colSpan={{ base: 12, lg: 6 }}>
-            <Card
-              bg={colorMode === "light" ? "white" : "gray.800"}
-              shadow="lg"
-              rounded="xl"
-              border="1px"
-              borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-            >
-              <CardHeader pb={2}>
-                <Heading size="md">Project Categories</Heading>
-              </CardHeader>
-              <CardBody pt={0}>
-                <VStack spacing={4} align="stretch">
-                  {[
-                    {
-                      name: "Web Development",
-                      count: 8,
-                      color: "blue",
-                      icon: FiGitBranch,
-                    },
-                    {
-                      name: "Mobile Apps",
-                      count: 5,
-                      color: "purple",
-                      icon: MdOutlineAssignment,
-                    },
-                    {
-                      name: "Data Analytics",
-                      count: 4,
-                      color: "green",
-                      icon: FiBarChart,
-                    },
-                    {
-                      name: "Infrastructure",
-                      count: 3,
-                      color: "orange",
-                      icon: MdOutlineSpeed,
-                    },
-                    {
-                      name: "Security",
-                      count: 2,
-                      color: "red",
-                      icon: MdOutlineBugReport,
-                    },
-                  ].map((category, idx) => (
-                    <HStack
-                      key={idx}
-                      justify="space-between"
-                      p={3}
-                      bg={colorMode === "light" ? "gray.50" : "gray.700"}
-                      rounded="lg"
-                    >
-                      <HStack spacing={3}>
-                        <Box p={2} bg={`${category.color}.100`} rounded="lg">
-                          <Icon
-                            as={category.icon}
-                            color={`${category.color}.500`}
-                            boxSize={4}
-                          />
-                        </Box>
-                        <Text fontWeight="medium">{category.name}</Text>
-                      </HStack>
-                      <Badge colorScheme={category.color} rounded="full">
-                        {category.count} projects
-                      </Badge>
-                    </HStack>
-                  ))}
-                </VStack>
-              </CardBody>
-            </Card>
-          </GridItem>
-
-          {/* Upcoming Deadlines */}
-          <GridItem colSpan={{ base: 12, lg: 6 }}>
-            <Card
-              bg={colorMode === "light" ? "white" : "gray.800"}
-              shadow="lg"
-              rounded="xl"
-              border="1px"
-              borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-            >
-              <CardHeader pb={2}>
-                <HStack justify="space-between">
-                  <Heading size="md">Upcoming Deadlines</Heading>
-                  <Icon as={FiCalendar} color="gray.400" />
-                </HStack>
-              </CardHeader>
-              <CardBody pt={0}>
-                <VStack spacing={3} align="stretch">
-                  {[
-                    {
-                      project: "E-Commerce Platform",
-                      task: "User Authentication",
-                      dueDate: "2024-10-25",
-                      priority: "HIGH",
-                    },
-                    {
-                      project: "Mobile App",
-                      task: "API Integration",
-                      dueDate: "2024-10-28",
-                      priority: "MEDIUM",
-                    },
-                    {
-                      project: "Data Migration",
-                      task: "Testing Phase",
-                      dueDate: "2024-11-02",
-                      priority: "HIGH",
-                    },
-                    {
-                      project: "Security Audit",
-                      task: "Vulnerability Assessment",
-                      dueDate: "2024-11-05",
-                      priority: "LOW",
-                    },
-                  ].map((deadline, idx) => (
-                    <HStack
-                      key={idx}
-                      spacing={3}
-                      p={3}
-                      bg={colorMode === "light" ? "gray.50" : "gray.700"}
-                      rounded="lg"
-                    >
-                      <VStack align="start" spacing={0} flex={1}>
-                        <Text fontWeight="bold" fontSize="sm">
-                          {deadline.task}
-                        </Text>
-                        <Text fontSize="xs" color="gray.500">
-                          {deadline.project}
-                        </Text>
-                      </VStack>
-                      <VStack align="end" spacing={1}>
-                        <Badge
-                          colorScheme={getPriorityColor(deadline.priority)}
-                          size="sm"
-                        >
-                          {deadline.priority}
-                        </Badge>
-                        <Text fontSize="xs" color="gray.500">
-                          {new Date(deadline.dueDate).toLocaleDateString()}
-                        </Text>
-                      </VStack>
-                    </HStack>
-                  ))}
-                </VStack>
-              </CardBody>
-            </Card>
-          </GridItem>
-        </Grid>
-      </VStack>
-    </LayoutAdmin>
-  );
-}
-
-// Stat Card Component
-const StatCard = ({
-  title,
-  value,
-  icon,
-  trend,
-  color,
-}: {
-  title: string;
-  value: number;
-  icon: IconType;
-  trend: number;
-  color: string;
-}) => {
-  const { colorMode } = useColorMode();
-
-  return (
-    <Card
-      bg={colorMode === "light" ? "white" : "gray.800"}
-      shadow="lg"
-      rounded="xl"
-      border="1px"
-      borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-      _hover={{ transform: "translateY(-2px)", shadow: "xl" }}
-      transition="all 0.2s"
+    <Box
+      position="relative"
+      w="400px"
+      h="400px"
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
     >
-      <CardBody>
-        <HStack justify="space-between">
-          <VStack align="start" spacing={1}>
-            <Text fontSize="sm" color="gray.500" fontWeight="medium">
-              {title}
-            </Text>
-            <Text fontSize="2xl" fontWeight="bold">
-              {value}
-            </Text>
-            <HStack spacing={1}>
-              <Icon
-                as={trend > 0 ? FiTrendingUp : FiTrendingDown}
-                color={trend > 0 ? "green.500" : "red.500"}
-                boxSize={3}
-              />
-              <Text
-                fontSize="xs"
-                color={trend > 0 ? "green.500" : "red.500"}
-                fontWeight="medium"
-              >
-                {trend > 0 ? "+" : ""}
-                {trend}%
-              </Text>
-            </HStack>
-          </VStack>
-          <Box p={3} bg={`${color}.100`} rounded="lg">
-            <Icon as={icon} boxSize={6} color={`${color}.500`} />
-          </Box>
-        </HStack>
-      </CardBody>
-    </Card>
-  );
-};
-
-// Project Metric Component
-const ProjectMetric = ({
-  label,
-  value,
-  total,
-  color,
-}: {
-  label: string;
-  value: number;
-  total: number;
-  color: string;
-}) => {
-  const percentage = Math.round((value / total) * 100);
-
-  return (
-    <Box>
-      <HStack justify="space-between" mb={2}>
-        <Text fontSize="sm" fontWeight="medium">
-          {label}
-        </Text>
-        <Text fontSize="sm" color="gray.500">
-          {value}/{total}
-        </Text>
-      </HStack>
-      <Progress
-        value={percentage}
-        colorScheme={color}
-        size="sm"
-        rounded="full"
-      />
-      <Text fontSize="xs" color="gray.500" mt={1}>
-        {percentage}% of total projects
-      </Text>
+      <canvas id="globe-canvas" style={{ maxWidth: "100%", height: "auto" }} />
     </Box>
   );
 };
+
+// Animated Counter Component
+const AnimatedCounter = ({ value, color }: { value: number; color: string }) => {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (value === 0) return;
+    let start = 0;
+    const duration = 1500;
+    const increment = value / (duration / 16);
+    const timer = setInterval(() => {
+      start += increment;
+      if (start >= value) {
+        setCount(value);
+        clearInterval(timer);
+      } else {
+        setCount(Math.floor(start));
+      }
+    }, 16);
+    return () => clearInterval(timer);
+  }, [value]);
+
+  return (
+    <Text fontSize="4xl" fontWeight="bold" color={color}>
+      {count}
+    </Text>
+  );
+};
+
+function HomePageView() {
+  const { colorMode } = useColorMode();
+  const [userName, setUserName] = useState<string>("");
+  const [stats, setStats] = useState<WorkspaceStatsViewModel | null>(null);
+  const { GetWorkspaceStats } = useWorkspace();
+
+  const accentColor = useColorModeValue("blue.300", "blue.300");
+
+  useEffect(() => {
+    const storedData = localStorage.getItem("authData");
+    const token = localStorage.getItem("tokenData");
+    if (storedData) {
+      const { dataLogin } = JSON.parse(storedData);
+      const name = dataLogin?.nama || "User";
+      setUserName(name.replace(/\b\w/g, (c: string) => c.toUpperCase()));
+    }
+    if (token) {
+      GetWorkspaceStats(token).then((res) => {
+        if (res?.data) setStats(res.data);
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const features = useMemo(
+    () => [
+      {
+        icon: FiFolder,
+        title: "Project Management",
+        description:
+          "Manage and track all your projects in one centralized platform",
+        color: "blue.500",
+        gradient: "linear(to-br, blue.400, blue.600)",
+      },
+      {
+        icon: FiUsers,
+        title: "Team Collaboration",
+        description: "Work together seamlessly with your team members",
+        color: "green.500",
+        gradient: "linear(to-br, green.400, green.600)",
+      },
+      {
+        icon: FiBarChart,
+        title: "Analytics & Reports",
+        description: "Get insights with comprehensive dashboard and reporting",
+        color: "purple.500",
+        gradient: "linear(to-br, purple.400, purple.600)",
+      },
+      {
+        icon: FiCheckCircle,
+        title: "Task Tracking",
+        description: "Monitor progress and ensure timely completion of tasks",
+        color: "orange.500",
+        gradient: "linear(to-br, orange.400, orange.600)",
+      },
+      {
+        icon: FiFileText,
+        title: "Requirements",
+        description: "Track BRD/RFC requirements and documentation",
+        color: "cyan.500",
+        gradient: "linear(to-br, cyan.400, cyan.600)",
+      },
+      {
+        icon: FiPieChart,
+        title: "Portfolio Dashboard",
+        description: "Visualize project portfolio with interactive charts",
+        color: "pink.500",
+        gradient: "linear(to-br, pink.400, pink.600)",
+      },
+    ],
+    []
+  );
+
+  return (
+    <LayoutAdmin>
+      <HeaderContent {...HeaderDataContent} />
+
+      {/* Hero Section with Animated Background */}
+      <Box
+        position="relative"
+        overflow="hidden"
+        bgGradient={useColorModeValue(
+          "linear(to-br, secondary.800, secondary.700, secondary.600)",
+          "linear(to-br, gray.900, secondary.900, gray.900)"
+        )}
+        py={20}
+        px={6}
+        rounded={radiusStyle}
+        mb={8}
+        boxShadow={"md"}
+        minH={"72vh"}
+      >
+        {/* Animated Wave Background */}
+        <Box
+          position="absolute"
+          top="0"
+          left="0"
+          w="full"
+          h="full"
+          overflow="hidden"
+          opacity={0.1}
+        >
+          <svg
+            style={{
+              position: "absolute",
+              top: "0",
+              left: "-10%",
+              width: "120%",
+              height: "100%",
+            }}
+            viewBox="0 0 1200 600"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M0,100 Q300,50 600,100 T1200,100 L1200,0 L0,0 Z"
+              fill={"#63B3ED"}
+            >
+              <animate
+                attributeName="d"
+                dur="10s"
+                repeatCount="indefinite"
+                values="
+                  M0,100 Q300,50 600,100 T1200,100 L1200,0 L0,0 Z;
+                  M0,80 Q300,120 600,80 T1200,80 L1200,0 L0,0 Z;
+                  M0,100 Q300,50 600,100 T1200,100 L1200,0 L0,0 Z
+                "
+              />
+            </path>
+            <path
+              d="M0,200 Q400,150 800,200 T1200,200"
+              stroke={"#cae3ff"}
+              strokeWidth="3"
+              fill="none"
+            >
+              <animate
+                attributeName="d"
+                dur="8s"
+                repeatCount="indefinite"
+                values="
+                  M0,200 Q400,150 800,200 T1200,200;
+                  M0,180 Q400,220 800,180 T1200,180;
+                  M0,200 Q400,150 800,200 T1200,200
+                "
+              />
+            </path>
+          </svg>
+        </Box>
+
+        <Box
+          position="absolute"
+          bottom="15%"
+          left="15%"
+          w="60px"
+          h="60px"
+          borderRadius="full"
+          bg={accentColor}
+          opacity={0.1}
+        >
+          <Box
+            as="div"
+            animation="float 8s ease-in-out infinite 1s"
+            w="full"
+            h="full"
+          />
+        </Box>
+
+        <Container maxW="container.xl" position="relative" zIndex={1}>
+          <Grid
+            templateColumns={{ base: "1fr", lg: "1fr 1fr" }}
+            gap={8}
+            alignItems="center"
+          >
+            {/* Left: Welcome Message */}
+            <VStack
+              spacing={6}
+              textAlign={{ base: "center", lg: "left" }}
+              align={{ base: "center", lg: "start" }}
+            >
+              <Box as="div" animation="fadeInScale 1.2s ease-out">
+                <Text
+                  fontSize="lg"
+                  color={accentColor}
+                  fontWeight="semibold"
+                  mb={2}
+                >
+                  Welcome back, {userName}!
+                </Text>
+                <Heading
+                  fontSize={{ base: "3xl", md: "4xl", lg: "5xl" }}
+                  fontWeight="bold"
+                  bgGradient="linear(to-r, purple.200, purple.400, pink.500)"
+                  bgClip="text"
+                  lineHeight="shorter"
+                >
+                  Ready to manage your projects?
+                </Heading>
+              </Box>
+              <Box as="div" animation="fadeInUp 1s ease-out 0.3s backwards">
+                <Text
+                  fontSize={{ base: "md", md: "lg" }}
+                  color={"white"}
+                  opacity={0.9}
+                >
+                  Streamline your workflow, collaborate with your team, and
+                  deliver projects successfully
+                </Text>
+              </Box>
+              <Box as="div" animation="fadeInUp 1s ease-out 0.6s backwards">
+                <HStack spacing={4} pt={4}>
+                  <Button
+                    as="a"
+                    href="/workspace"
+                    size="lg"
+                    bgColor={"white"}
+                    color={"secondary.600"}
+                    rightIcon={<FiArrowRight />}
+                    _hover={{ transform: "translateY(-2px)", shadow: "lg" }}
+                    transition="all 0.3s"
+                  >
+                    Go to Workspace
+                  </Button>
+                  <Button
+                    as="a"
+                    href="/reports/dashboard-portfolio"
+                    size="lg"
+                    variant="outline"
+                    bgColor={"transparent"}
+                    borderColor={"white"}
+                    color={"secondary.100"}
+                    _hover={{ transform: "translateY(-2px)", shadow: "lg" }}
+                    transition="all 0.3s"
+                  >
+                    View Reports
+                  </Button>
+                </HStack>
+              </Box>
+
+              {/* Stats inside hero */}
+              {stats && (
+                <Box as="div" animation="fadeInUp 1s ease-out 0.8s backwards" pt={8}>
+                  <Grid templateColumns="repeat(4, 1fr)" gap={8}>
+                    <VStack spacing={1}>
+                      <AnimatedCounter value={stats.totalProjects} color="blue.300" />
+                      <Text fontSize="sm" color="white" opacity={0.8}>Total Projects</Text>
+                    </VStack>
+                    <VStack spacing={1}>
+                      <AnimatedCounter value={stats.activeProjects} color="green.300" />
+                      <Text fontSize="sm" color="white" opacity={0.8}>Active Projects</Text>
+                    </VStack>
+                    <VStack spacing={1}>
+                      <AnimatedCounter value={stats.totalTasks} color="purple.300" />
+                      <Text fontSize="sm" color="white" opacity={0.8}>Total Tasks</Text>
+                    </VStack>
+                    <VStack spacing={1}>
+                      <AnimatedCounter value={stats.overdueTasks} color="orange.300" />
+                      <Text fontSize="sm" color="white" opacity={0.8}>Overdue Tasks</Text>
+                    </VStack>
+                  </Grid>
+                </Box>
+              )}
+              </Box>
+            </VStack>
+
+            {/* Right: Animated Globe */}
+            <Box
+              display={{ base: "none", lg: "block" }}
+              animation="fadeInUp 1s ease-out 0.4s backwards"
+            >
+              <AnimatedGlobe />
+            </Box>
+          </Grid>
+        </Container>
+      </Box>
+
+      {/* Features Section */}
+      <Box mb={8}>
+        <VStack spacing={4} mb={12} textAlign="center">
+          <Box animation="fadeInUp 1s ease-out">
+            <Heading size="xl" color={textColor}>
+              Powerful Features
+            </Heading>
+          </Box>
+          <Box animation="fadeInUp 1s ease-out 0.2s backwards">
+            <Text
+              fontSize="lg"
+              color={useColorModeValue("gray.600", "gray.400")}
+              maxW="2xl"
+            >
+              Everything you need to manage projects efficiently and effectively
+            </Text>
+          </Box>
+        </VStack>
+
+        <Grid
+          templateColumns={{
+            base: "1fr",
+            md: "repeat(2, 1fr)",
+            lg: "repeat(3, 1fr)",
+          }}
+          gap={8}
+        >
+          {features.map((feature, index) => (
+            <GridItem key={index}>
+              <Card
+                bg={cardBg}
+                rounded="2xl"
+                shadow="xl"
+                h="full"
+                border="1px solid"
+                borderColor={useColorModeValue("gray.100", "gray.700")}
+                _hover={{
+                  transform: "translateY(-8px) scale(1.02)",
+                  shadow: "2xl",
+                  borderColor: feature.color,
+                }}
+                transition="all 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
+                position="relative"
+                overflow="hidden"
+                animation={`fadeInUp 0.6s ease-out ${index * 0.1}s backwards`}
+              >
+                {/* Gradient Glow Effect */}
+                <Box
+                  position="absolute"
+                  top="-50%"
+                  left="-50%"
+                  w="200%"
+                  h="200%"
+                  bgGradient={feature.gradient}
+                  opacity={0}
+                  transition="opacity 0.4s"
+                  sx={{
+                    "div:hover > &": { opacity: 0.1 },
+                  }}
+                  pointerEvents="none"
+                />
+
+                <CardBody p={8} position="relative" zIndex={1}>
+                  <VStack align="start" spacing={5}>
+                    <Flex w="full" justify="space-between" align="center">
+                      <Box
+                        p={4}
+                        rounded="xl"
+                        bgGradient={feature.gradient}
+                        shadow="lg"
+                        _hover={{
+                          transform: "rotate(10deg) scale(1.15)",
+                          shadow: "xl",
+                        }}
+                        transition="all 0.4s"
+                      >
+                        <Icon as={feature.icon} boxSize={8} color="white" />
+                      </Box>
+                    </Flex>
+                    <VStack align="start" spacing={3} w="full">
+                      <Heading size="md" color={textColor} fontWeight="bold">
+                        {feature.title}
+                      </Heading>
+                      <Text
+                        color={useColorModeValue("gray.600", "gray.400")}
+                        fontSize="sm"
+                        lineHeight="tall"
+                      >
+                        {feature.description}
+                      </Text>
+                    </VStack>
+                    <Box
+                      w="full"
+                      h="1px"
+                      bgGradient={feature.gradient}
+                      opacity={0.3}
+                    />
+                  </VStack>
+                </CardBody>
+              </Card>
+            </GridItem>
+          ))}
+        </Grid>
+      </Box>
+
+      {/* CTA Section with Wave Background */}
+      <Box
+        position="relative"
+        overflow="hidden"
+        bgGradient={useColorModeValue(
+          "linear(to-r, blue.500, purple.600)",
+          "linear(to-r, blue.600, purple.700)"
+        )}
+        py={16}
+        px={6}
+        rounded={radiusStyle}
+        mb={8}
+      >
+        {/* Bottom Wave */}
+        <Box
+          position="absolute"
+          bottom="0"
+          left="0"
+          w="full"
+          h="100px"
+          overflow="hidden"
+        >
+          <svg
+            style={{
+              position: "absolute",
+              bottom: "0",
+              left: "0",
+              width: "100%",
+              height: "100%",
+            }}
+            viewBox="0 0 1200 120"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M0,60 Q300,20 600,60 T1200,60 L1200,120 L0,120 Z"
+              fill="rgba(255,255,255,0.1)"
+            >
+              <animate
+                attributeName="d"
+                dur="12s"
+                repeatCount="indefinite"
+                values="
+                  M0,60 Q300,20 600,60 T1200,60 L1200,120 L0,120 Z;
+                  M0,40 Q300,80 600,40 T1200,40 L1200,120 L0,120 Z;
+                  M0,60 Q300,20 600,60 T1200,60 L1200,120 L0,120 Z
+                "
+              />
+            </path>
+          </svg>
+        </Box>
+
+        <Container maxW="container.xl" position="relative" zIndex={1}>
+          <VStack spacing={6} textAlign="center" color="white">
+            <Icon as={FiZap} boxSize={12} />
+            <Heading fontSize={{ base: "2xl", md: "4xl" }}>
+              Ready to Get Started?
+            </Heading>
+            <Text fontSize={{ base: "md", md: "lg" }} maxW="2xl" opacity={0.9}>
+              Join thousands of teams already using our platform to deliver
+              successful projects
+            </Text>
+            <Button
+              size="lg"
+              bg="white"
+              color="blue.600"
+              rightIcon={<FiArrowRight />}
+              _hover={{ transform: "translateY(-2px)", shadow: "xl" }}
+              transition="all 0.3s"
+            >
+              Start Your Journey
+            </Button>
+          </VStack>
+        </Container>
+      </Box>
+
+      {/* Inline Keyframes */}
+      <style jsx>{`
+        @keyframes float {
+          0%,
+          100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-20px);
+          }
+        }
+        @keyframes fadeInScale {
+          0% {
+            opacity: 0;
+            transform: scale(0.8) translateY(30px);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+        @keyframes fadeInUp {
+          0% {
+            opacity: 0;
+            transform: translateY(40px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
+    </LayoutAdmin>
+  );
+}
 
 export default HomePageView;
