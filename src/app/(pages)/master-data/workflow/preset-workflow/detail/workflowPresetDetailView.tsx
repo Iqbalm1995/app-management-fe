@@ -32,9 +32,12 @@ import {
   Grid,
   GridItem,
   Heading,
+  IconButton,
+  Input,
   HStack,
   Stack,
   Text,
+  Textarea,
   useColorMode,
   VStack,
   Badge,
@@ -42,7 +45,7 @@ import {
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { FiArrowLeft, FiSave } from "react-icons/fi";
+import { FiArrowLeft, FiSave, FiEdit, FiCheck, FiX } from "react-icons/fi";
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: `Configure Workflow Preset`,
@@ -89,6 +92,12 @@ function WorkflowPresetDetailView() {
   >(new Set());
   const [RefreshData, setRefreshData] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [originalName, setOriginalName] = useState("");
+  const [originalDesc, setOriginalDesc] = useState("");
+  const [isEditingDesc, setIsEditingDesc] = useState(false);
+  const [editedName, setEditedName] = useState("");
+  const [editedDesc, setEditedDesc] = useState("");
 
   useEffect(() => {
     const id = searchParams.get("presetId");
@@ -233,6 +242,8 @@ function WorkflowPresetDetailView() {
       const selectedSet = new Set(presetWorkflowIds);
       setSelectedItems(selectedSet);
       setOriginalSelectedItems(selectedSet);
+      setOriginalName(preset.wfPresetName);
+      setOriginalDesc(preset.wfPresetDesc);
     } else {
       showToast({
         description: requestData?.message || RES_GENERIC_ERROR_MSG,
@@ -300,6 +311,10 @@ function WorkflowPresetDetailView() {
         statusToast: "success",
       });
       setOriginalSelectedItems(new Set(currentIds));
+      setOriginalName(DataPreset.wfPresetName);
+      setIsEditingName(false);
+      setIsEditingDesc(false);
+      setOriginalDesc(DataPreset.wfPresetDesc);
     } else {
       showToast({
         description: result?.message || RES_GENERIC_ERROR_MSG,
@@ -310,11 +325,12 @@ function WorkflowPresetDetailView() {
     setIsLoadingProcess(false);
   };
 
-  // Check if there are unsaved changes
   const hasChanges = () => {
     const currentIds = Array.from(selectedItems).sort();
     const originalIds = Array.from(originalSelectedItems).sort();
-    return JSON.stringify(currentIds) !== JSON.stringify(originalIds);
+    const nameChanged = DataPreset?.wfPresetName !== originalName;
+    const descChanged = DataPreset?.wfPresetDesc !== originalDesc;
+    return JSON.stringify(currentIds) !== JSON.stringify(originalIds) || nameChanged || descChanged;
   };
 
   // Load data on mount
@@ -372,17 +388,114 @@ function WorkflowPresetDetailView() {
             minH="500px"
           >
             <CardHeader>
-              <VStack align="start" spacing={2}>
-                <Heading as="h5" size="md">
-                  {DataPreset?.wfPresetName} Configuration
-                </Heading>
-                <HStack spacing={4}>
-                  {/* <Badge colorScheme="blue">{DataPreset?.wfCategoryCode}</Badge> */}
-                  <Text fontSize="sm" color="gray.500">
-                    {DataPreset?.wfPresetDesc}
-                  </Text>
+              <VStack align="start" spacing={2} w="full">
+                {/* Preset Name - Inline Edit */}
+                <HStack w="full" spacing={2}>
+                  {isEditingName ? (
+                    <>
+                      <Input
+                        value={editedName}
+                        onChange={(e) => setEditedName(e.target.value)}
+                        size="md"
+                        fontWeight="semibold"
+                        autoFocus
+                      />
+                      <IconButton
+                        aria-label="Save name"
+                        icon={<FiCheck />}
+                        size="sm"
+                        colorScheme="green"
+                        onClick={() => {
+                          if (DataPreset) {
+                            setDataPreset({ ...DataPreset, wfPresetName: editedName });
+                          }
+                          setIsEditingName(false);
+                        }}
+                      />
+                      <IconButton
+                        aria-label="Cancel"
+                        icon={<FiX />}
+                        size="sm"
+                        onClick={() => {
+                          setEditedName(DataPreset?.wfPresetName || "");
+                          setIsEditingName(false);
+                        }}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <Heading as="h5" size="md">
+                        {DataPreset?.wfPresetName}
+                      </Heading>
+                      <IconButton
+                        aria-label="Edit name"
+                        icon={<FiEdit />}
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setEditedName(DataPreset?.wfPresetName || "");
+                          setIsEditingName(true);
+                        }}
+                      />
+                    </>
+                  )}
                 </HStack>
-                <Text fontSize="sm" color="gray.400">
+
+                {/* Preset Description - Inline Edit */}
+                <HStack w="full" spacing={2} align="start">
+                  {isEditingDesc ? (
+                    <>
+                      <Textarea
+                        value={editedDesc}
+                        onChange={(e) => setEditedDesc(e.target.value)}
+                        size="sm"
+                        rows={2}
+                        autoFocus
+                      />
+                      <VStack spacing={1}>
+                        <IconButton
+                          aria-label="Save description"
+                          icon={<FiCheck />}
+                          size="sm"
+                          colorScheme="green"
+                          onClick={() => {
+                            if (DataPreset) {
+                              setDataPreset({ ...DataPreset, wfPresetDesc: editedDesc });
+                            }
+                            setIsEditingDesc(false);
+                          }}
+                        />
+                        <IconButton
+                          aria-label="Cancel"
+                          icon={<FiX />}
+                          size="sm"
+                          onClick={() => {
+                            setEditedDesc(DataPreset?.wfPresetDesc || "");
+                            setIsEditingDesc(false);
+                          }}
+                        />
+                      </VStack>
+                    </>
+                  ) : (
+                    <>
+                      <Text fontSize="sm" color={colorMode === "light" ? "gray.500" : "gray.400"} >
+                        {DataPreset?.wfPresetDesc}
+                      </Text>
+                      <IconButton
+                        aria-label="Edit description"
+                        icon={<FiEdit />}
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setEditedDesc(DataPreset?.wfPresetDesc || "");
+                          setIsEditingDesc(true);
+                        }}
+                      />
+                    </>
+                  )}
+                </HStack>
+
+                <Text fontSize="sm" color={colorMode === "light" ? "gray.400" : "gray.500"}>
                   Select workflows to include in this preset
                 </Text>
               </VStack>
@@ -418,17 +531,17 @@ function WorkflowPresetDetailView() {
                             <Text
                               fontSize="sm"
                               fontWeight="bold"
-                              color="blue.600"
+                              color={colorMode === "light" ? "blue.600" : "blue.300"}
                               minW="6"
                             >
                               {group.wfgOrder}
                             </Text>
-                            <Text fontSize="md" fontWeight="semibold" flex={1}>
+                            <Text fontSize="md" fontWeight="semibold" flex={1} color={colorMode === "light" ? "gray.800" : "white"}>
                               {group.wfgName}
                             </Text>
                           </HStack>
                           {group.wfgDesc && (
-                            <Text fontSize="sm" color="gray.600" mt={1} ml={8}>
+                            <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.300"} mt={1} ml={8}>
                               {group.wfgDesc}
                             </Text>
                           )}
@@ -469,7 +582,7 @@ function WorkflowPresetDetailView() {
                                       <Text
                                         fontSize="xs"
                                         fontWeight="bold"
-                                        color="green.600"
+                                        color={colorMode === "light" ? "green.600" : "green.300"}
                                         minW="6"
                                       >
                                         {child.wfgOrder}
@@ -485,7 +598,7 @@ function WorkflowPresetDetailView() {
                                     {child.wfgDesc && (
                                       <Text
                                         fontSize="xs"
-                                        color="gray.500"
+                                        color={colorMode === "light" ? "gray.500" : "gray.400"}
                                         mt={1}
                                         ml={8}
                                       >
@@ -540,14 +653,14 @@ function WorkflowPresetDetailView() {
                                                 <Text
                                                   fontSize="xs"
                                                   fontWeight="bold"
-                                                  color="gray.600"
+                                                  color={colorMode === "light" ? "gray.600" : "gray.300"}
                                                   minW="6"
                                                 >
                                                   {grandChild.wfgOrder}
                                                 </Text>
                                                 <Text
                                                   fontSize="sm"
-                                                  color="gray.700"
+                                                  color={colorMode === "light" ? "gray.700" : "gray.200"}
                                                   flex={1}
                                                 >
                                                   {grandChild.wfgName}
@@ -556,7 +669,7 @@ function WorkflowPresetDetailView() {
                                               {grandChild.wfgDesc && (
                                                 <Text
                                                   fontSize="xs"
-                                                  color="gray.500"
+                                                  color={colorMode === "light" ? "gray.500" : "gray.400"}
                                                   mt={1}
                                                   ml={8}
                                                 >
@@ -577,7 +690,7 @@ function WorkflowPresetDetailView() {
 
                     {DataWorkflowGroups.length === 0 && !IsLoadingProcess && (
                       <Box textAlign="center" py={10}>
-                        <Text color="gray.500" fontSize="lg">
+                        <Text color={colorMode === "light" ? "gray.500" : "gray.400"} fontSize="lg">
                           No workflows available for this category
                         </Text>
                       </Box>

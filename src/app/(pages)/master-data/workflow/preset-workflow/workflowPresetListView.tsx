@@ -211,88 +211,108 @@ function WorkflowPresetListView() {
     }
   };
 
+  // Get all descendant IDs (children and grandchildren)
+  const getAllDescendantIds = (workflow: WorkflowGroupResponse): string[] => {
+    const ids: string[] = [];
+    if (workflow.workflowChild && workflow.workflowChild.length > 0) {
+      workflow.workflowChild.forEach((child) => {
+        ids.push(child.id);
+        if (child.workflowChild && child.workflowChild.length > 0) {
+          child.workflowChild.forEach((grandChild) => {
+            ids.push(grandChild.id);
+          });
+        }
+      });
+    }
+    return ids;
+  };
+
+  // Check if any children are selected
+  const hasAnyChildSelected = (workflow: WorkflowGroupResponse, selectedSet: Set<string>): boolean => {
+    if (!workflow.workflowChild || workflow.workflowChild.length === 0) return false;
+    return workflow.workflowChild.some((child) => {
+      const childSelected = selectedSet.has(child.id);
+      const hasGrandChildSelected = child.workflowChild && child.workflowChild.length > 0 &&
+        child.workflowChild.some((gc) => selectedSet.has(gc.id));
+      return childSelected || hasGrandChildSelected;
+    });
+  };
+
   // Checkbox handler for workflows with hierarchical logic
   const handleWorkflowCheckboxChange = (itemId: string, checked: boolean) => {
     setSelectedWorkflows((prev) => {
       const newSet = new Set(prev);
 
-      if (checked) {
-        newSet.add(itemId);
-        // Auto-check parents when child is checked
-        DataWorkflowGroups.forEach((group) => {
-          // Check if this is a level 2 item, then check level 1 parent
-          group.workflowChild?.forEach((child) => {
+      // Find the item in the workflow tree
+      let targetItem: WorkflowGroupResponse | null = null;
+      let parentItem: WorkflowGroupResponse | null = null;
+      let grandParentItem: WorkflowGroupResponse | null = null;
+
+      DataWorkflowGroups.forEach((group) => {
+        if (group.id === itemId) {
+          targetItem = group;
+        } else if (group.workflowChild) {
+          group.workflowChild.forEach((child) => {
             if (child.id === itemId) {
-              newSet.add(group.id);
-            }
-            // Check if this is a level 3 item, then check level 2 and level 1 parents
-            child.workflowChild?.forEach((grandChild) => {
-              if (grandChild.id === itemId) {
-                newSet.add(child.id);
-                newSet.add(group.id);
-              }
-            });
-          });
-        });
-      } else {
-        newSet.delete(itemId);
-        // Auto-uncheck parents if no children are selected
-        DataWorkflowGroups.forEach((group) => {
-          if (group.id === itemId) {
-            // Uncheck all children when parent is unchecked
-            group.workflowChild?.forEach((child) => {
-              newSet.delete(child.id);
-              child.workflowChild?.forEach((grandChild) => {
-                newSet.delete(grandChild.id);
-              });
-            });
-          } else {
-            // Check if this is a level 2 item being unchecked
-            group.workflowChild?.forEach((child) => {
-              if (child.id === itemId) {
-                // Uncheck all level 3 children
-                child.workflowChild?.forEach((grandChild) => {
-                  newSet.delete(grandChild.id);
-                });
-                // Check if level 1 parent should be unchecked
-                const hasOtherSelectedChildren = group.workflowChild?.some(
-                  (sibling) => sibling.id !== itemId && newSet.has(sibling.id)
-                );
-                if (!hasOtherSelectedChildren) {
-                  newSet.delete(group.id);
-                }
-              }
-              // Check if this is a level 3 item being unchecked
-              child.workflowChild?.forEach((grandChild) => {
+              targetItem = child;
+              parentItem = group;
+            } else if (child.workflowChild) {
+              child.workflowChild.forEach((grandChild) => {
                 if (grandChild.id === itemId) {
-                  // Check if level 2 parent should be unchecked
-                  const hasOtherSelectedGrandChildren =
-                    child.workflowChild?.some(
-                      (sibling) =>
-                        sibling.id !== itemId && newSet.has(sibling.id)
-                    );
-                  if (!hasOtherSelectedGrandChildren) {
-                    newSet.delete(child.id);
-                    // Check if level 1 parent should be unchecked
-                    const hasOtherSelectedChildren = group.workflowChild?.some(
-                      (sibling) => newSet.has(sibling.id)
-                    );
-                    if (!hasOtherSelectedChildren) {
-                      newSet.delete(group.id);
-                    }
-                  }
+                  targetItem = grandChild;
+                  parentItem = child;
+                  grandParentItem = group;
                 }
               });
-            });
+            }
+          });
+        }
+      });
+
+      if (!targetItem) return newSet;
+
+      if (checked) {
+        // Add the item
+        newSet.add(itemId);
+
+        // Add all descendants
+        const descendantIds = getAllDescendantIds(targetItem!);
+        descendantIds.forEach((id) => newSet.add(id));
+
+        // Check parent when a child/grandchild is checked
+        if (parentItem) {
+          newSet.add((parentItem as WorkflowGroupResponse).id);
+
+          // Check grandparent when a grandchild is checked
+          if (grandParentItem) {
+            newSet.add((grandParentItem as WorkflowGroupResponse).id);
           }
-        });
+        }
+      } else {
+        // Remove the item
+        newSet.delete(itemId);
+
+        // Remove all descendants
+        const descendantIds = getAllDescendantIds(targetItem!);
+        descendantIds.forEach((id) => newSet.delete(id));
+
+        // Uncheck parent only if NO children remain selected
+        if (parentItem && !hasAnyChildSelected(parentItem, newSet)) {
+          newSet.delete((parentItem as WorkflowGroupResponse).id);
+
+          // Uncheck grandparent only if NO children remain selected
+          if (grandParentItem && !hasAnyChildSelected(grandParentItem, newSet)) {
+            newSet.delete((grandParentItem as WorkflowGroupResponse).id);
+          }
+        }
       }
 
       return newSet;
     });
   };
 
-  // Select All workflows function
+
+  // Select All / Unselect All workflows function
   const handleSelectAllWorkflows = () => {
     const allWorkflowIds = new Set<string>();
 
@@ -306,9 +326,15 @@ function WorkflowPresetListView() {
       });
     });
 
-    setSelectedWorkflows(allWorkflowIds);
-  };
 
+    
+    // If all are selected, unselect all; otherwise select all
+    if (selectedWorkflows.size === allWorkflowIds.size) {
+      setSelectedWorkflows(new Set());
+    } else {
+      setSelectedWorkflows(allWorkflowIds);
+    }
+  };
   // Get all workflow IDs from tree (recursive)
   const getAllWorkflowIds = (workflows: WorkflowGroupResponse[]): string[] => {
     const ids: string[] = [];
@@ -631,10 +657,10 @@ function WorkflowPresetListView() {
                             {CategoryDetail.wfcCode}
                           </Badge>
                         </HStack>
-                        <Text fontSize="sm" color="gray.600">
+                        <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.300"}>
                           {CategoryDetail.wfcDesc || "No description available"}
                         </Text>
-                        <Text fontSize="xs" color="gray.500">
+                        <Text fontSize="xs" color={colorMode === "light" ? "gray.500" : "gray.400"}>
                           Category ID: {CategoryDetail.id}
                         </Text>
                       </VStack>
@@ -655,7 +681,7 @@ function WorkflowPresetListView() {
                       <Heading as="h5" size="md">
                         Workflow Presets
                       </Heading>
-                      <Text fontSize="sm" color="gray.500">
+                      <Text fontSize="sm" color={colorMode === "light" ? "gray.500" : "gray.400"}>
                         Manage workflow templates and presets
                       </Text>
                     </VStack>
@@ -683,7 +709,7 @@ function WorkflowPresetListView() {
                     <LoadingMiniSignature />
                   ) : DataPresets.length === 0 ? (
                     <VStack spacing={4} py={8}>
-                      <Text color="gray.500">No presets found</Text>
+                      <Text color={colorMode === "light" ? "gray.500" : "gray.400"}>No presets found</Text>
                       <Button
                         leftIcon={<FiPlus />}
                         colorScheme="blue"
@@ -749,7 +775,7 @@ function WorkflowPresetListView() {
                           <Text mb={2} fontSize="sm" fontWeight="medium">
                             Selected Workflows: {selectedWorkflows.size}
                           </Text>
-                          <Text fontSize="xs" color="gray.500">
+                          <Text fontSize="xs" color={colorMode === "light" ? "gray.500" : "gray.400"}>
                             Select workflows from the tree on the right
                           </Text>
                           {DataWorkflowGroups.length === 0 && (
@@ -777,7 +803,7 @@ function WorkflowPresetListView() {
                             variant="outline"
                             onClick={handleSelectAllWorkflows}
                           >
-                            Select All
+                            {selectedWorkflows.size === DataWorkflowGroups.reduce((total, g) => total + 1 + (g.workflowChild?.length || 0) + (g.workflowChild?.reduce((t, c) => t + (c.workflowChild?.length || 0), 0) || 0), 0) ? "Unselect All" : "Select All"}
                           </Button>
                         </HStack>
                         {DataWorkflowGroups.length === 0 ? (
@@ -788,7 +814,7 @@ function WorkflowPresetListView() {
                             rounded="md"
                             textAlign="center"
                           >
-                            <Text color="gray.500">Loading workflows...</Text>
+                            <Text color={colorMode === "light" ? "gray.500" : "gray.400"}>Loading workflows...</Text>
                           </Box>
                         ) : (
                           <Box
@@ -918,7 +944,7 @@ function WorkflowPresetListView() {
                                             {/* Level 3 - Grandchildren */}
                                             {child.workflowChild &&
                                               child.workflowChild.length >
-                                                0 && (
+                                              0 && (
                                                 <VStack
                                                   spacing={1}
                                                   align="stretch"
@@ -963,7 +989,7 @@ function WorkflowPresetListView() {
                                                           <Text
                                                             fontSize="xs"
                                                             fontWeight="bold"
-                                                            color="gray.600"
+                                                            color={colorMode === "light" ? "gray.600" : "gray.300"}
                                                             minW="4"
                                                           >
                                                             {
@@ -972,7 +998,7 @@ function WorkflowPresetListView() {
                                                           </Text>
                                                           <Text
                                                             fontSize="xs"
-                                                            color="gray.700"
+                                                            color={colorMode === "light" ? "gray.700" : "gray.200"}
                                                             flex={1}
                                                             noOfLines={1}
                                                           >
