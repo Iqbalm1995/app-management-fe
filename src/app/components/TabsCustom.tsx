@@ -79,6 +79,7 @@ export const TabButtonCustomStyle = ({ children }: { children: ReactNode }) => {
       fontWeight={600}
       alignItems={"center"}
       cursor={"pointer"}
+      whiteSpace={"nowrap"}
       _hover={{
         // bg: colorMode == "light" ? "gray.100" : "gray.800",
         // bg: "secondary.200",

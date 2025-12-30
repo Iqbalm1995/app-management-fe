@@ -250,14 +250,14 @@ const FormSchema = yup.object().shape({
     .array()
     .of(
       yup.object({
-        userId: yup.string().required("User ID is required"),
+        // userId: yup.string().required("User ID is required"), // Commented for future use
       })
     )
     .required(),
 
   // AREA 2
-  userPicId: yup.string().nullable(),
-  userPicIdentityNumber: yup.string().nullable(),
+  // userPicId: yup.string().nullable(), // Commented for future use
+  // userPicIdentityNumber: yup.string().nullable(), // Commented for future use
   userPicName: yup.string().nullable(),
   userPicContanct: yup.string().nullable(),
   userPicEmail: yup.string().email().nullable(),
@@ -2975,6 +2975,7 @@ function RegisterRequirementFormPage({
                         <InputGroupPanel
                           headerTitle={`Informasi Person In Charge (PIC)`}
                         >
+                          {/* User ID Field - Commented for future use
                           <FormControl
                             id="searchPICUser"
                             isInvalid={formik.errors.userPicId ? true : false}
@@ -3011,7 +3012,9 @@ function RegisterRequirementFormPage({
                               </Stack>
                             </InputLayoutFull>
                           </FormControl>
+                          */}
 
+                          {/* NIP Field - Commented for future use
                           <FormControl
                             id="userPicIdentityNumber"
                             isInvalid={
@@ -3043,6 +3046,7 @@ function RegisterRequirementFormPage({
                               </Stack>
                             </InputLayout>
                           </FormControl>
+                          */}
 
                           <FormControl
                             id="userPicName"

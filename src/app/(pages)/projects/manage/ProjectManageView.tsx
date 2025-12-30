@@ -284,26 +284,26 @@ export default function ProjectManageView() {
                       <Text>Details</Text>
                     </HStack>
                   </TabButtonCustomStyle>
-                  {showFeaturesTab && (
-                    <TabButtonCustomStyle>
-                      <HStack>
-                        <FiCpu size={16} />
-                        <Text>Features</Text>
-                      </HStack>
-                    </TabButtonCustomStyle>
-                  )}
                   {showWorkstageTab && (
                     <TabButtonCustomStyle>
                       <HStack>
                         <FiPlayCircle size={16} />
-                        <Text>Workstage</Text>
+                        <Text>Procurements</Text>
+                      </HStack>
+                    </TabButtonCustomStyle>
+                  )}
+                  {showFeaturesTab && (
+                    <TabButtonCustomStyle>
+                      <HStack>
+                        <FiCpu size={16} />
+                        <Text>Work Progress</Text>
                       </HStack>
                     </TabButtonCustomStyle>
                   )}
                   <TabButtonCustomStyle>
                     <HStack>
                       <FiFileText size={16} />
-                      <Text>Documentation</Text>
+                      <Text>Work Documentation</Text>
                     </HStack>
                   </TabButtonCustomStyle>
                   <TabButtonCustomStyle>
@@ -393,11 +393,11 @@ export default function ProjectManageView() {
                   <TabPanels minH="600px">
                     <OverviewTab DataProject={DataProject} onRefreshProject={refreshProjectDetail} />
                     <DetailsTab DataProject={DataProject} />
-                    {showFeaturesTab && (
-                      <FeaturesTab DataProject={DataProject} />
-                    )}
                     {showWorkstageTab && (
                       <WorkstageProcurementTab DataProject={DataProject} />
+                    )}
+                    {showFeaturesTab && (
+                      <FeaturesTab DataProject={DataProject} />
                     )}
                     <DocumentationTab DataProject={DataProject} />
                     <TeamTab DataProject={DataProject} />
@@ -537,11 +537,11 @@ export default function ProjectManageView() {
                                 ? "green.400"
                                 : DataProject.appsProject.appsStatus ===
                                   "DEVELOPMENT"
-                                ? "blue.400"
-                                : DataProject.appsProject.appsStatus ===
-                                  "TESTING"
-                                ? "orange.400"
-                                : "red.400"
+                                  ? "blue.400"
+                                  : DataProject.appsProject.appsStatus ===
+                                    "TESTING"
+                                    ? "orange.400"
+                                    : "red.400"
                             }
                             rounded="full"
                             border="2px solid white"
@@ -590,11 +590,11 @@ export default function ProjectManageView() {
                                   ? "green"
                                   : DataProject.appsProject.appsStatus ===
                                     "DEVELOPMENT"
-                                  ? "blue"
-                                  : DataProject.appsProject.appsStatus ===
-                                    "TESTING"
-                                  ? "orange"
-                                  : "red"
+                                    ? "blue"
+                                    : DataProject.appsProject.appsStatus ===
+                                      "TESTING"
+                                      ? "orange"
+                                      : "red"
                               }
                               size="sm"
                               px={2}
@@ -831,10 +831,10 @@ export default function ProjectManageView() {
                                 DataProject.projectStatus === "ACTIVE"
                                   ? "green"
                                   : DataProject.projectStatus === "ONHOLD"
-                                  ? "orange"
-                                  : DataProject.projectStatus === "COMPLETED"
-                                  ? "blue"
-                                  : "gray"
+                                    ? "orange"
+                                    : DataProject.projectStatus === "COMPLETED"
+                                      ? "blue"
+                                      : "gray"
                               }
                             >
                               {DataProject.projectStatus}
