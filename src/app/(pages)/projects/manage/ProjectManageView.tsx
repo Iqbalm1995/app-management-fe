@@ -391,7 +391,10 @@ export default function ProjectManageView() {
               >
                 <CardBody>
                   <TabPanels minH="600px">
-                    <OverviewTab DataProject={DataProject} onRefreshProject={refreshProjectDetail} />
+                    <OverviewTab
+                      DataProject={DataProject}
+                      onRefreshProject={refreshProjectDetail}
+                    />
                     <DetailsTab DataProject={DataProject} />
                     {showWorkstageTab && (
                       <WorkstageProcurementTab DataProject={DataProject} />
@@ -537,11 +540,11 @@ export default function ProjectManageView() {
                                 ? "green.400"
                                 : DataProject.appsProject.appsStatus ===
                                   "DEVELOPMENT"
-                                  ? "blue.400"
-                                  : DataProject.appsProject.appsStatus ===
-                                    "TESTING"
-                                    ? "orange.400"
-                                    : "red.400"
+                                ? "blue.400"
+                                : DataProject.appsProject.appsStatus ===
+                                  "TESTING"
+                                ? "orange.400"
+                                : "red.400"
                             }
                             rounded="full"
                             border="2px solid white"
@@ -590,11 +593,11 @@ export default function ProjectManageView() {
                                   ? "green"
                                   : DataProject.appsProject.appsStatus ===
                                     "DEVELOPMENT"
-                                    ? "blue"
-                                    : DataProject.appsProject.appsStatus ===
-                                      "TESTING"
-                                      ? "orange"
-                                      : "red"
+                                  ? "blue"
+                                  : DataProject.appsProject.appsStatus ===
+                                    "TESTING"
+                                  ? "orange"
+                                  : "red"
                               }
                               size="sm"
                               px={2}
@@ -831,10 +834,10 @@ export default function ProjectManageView() {
                                 DataProject.projectStatus === "ACTIVE"
                                   ? "green"
                                   : DataProject.projectStatus === "ONHOLD"
-                                    ? "orange"
-                                    : DataProject.projectStatus === "COMPLETED"
-                                      ? "blue"
-                                      : "gray"
+                                  ? "orange"
+                                  : DataProject.projectStatus === "COMPLETED"
+                                  ? "blue"
+                                  : "gray"
                               }
                             >
                               {DataProject.projectStatus}

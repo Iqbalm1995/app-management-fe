@@ -390,9 +390,7 @@ export const ProjectDetailHeader = ({
                   </AvatarGroup>
                 )}
 
-              <VStack spacing={2} align="center">
-
-              </VStack>
+              <VStack spacing={2} align="center"></VStack>
             </VStack>
           </Stack>
         ) : (
