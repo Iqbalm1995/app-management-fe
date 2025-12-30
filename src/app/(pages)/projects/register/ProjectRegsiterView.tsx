@@ -5701,9 +5701,29 @@ export default function ProjectRegisterView({
                                 {IsLoadingWorkflowProcurements ? (
                                   <LoadingMiniSignature />
                                 ) : (
-                                  renderWorkflowLevelProcurement(
-                                    DataWorkflowGroupsProcurements
-                                  )
+                                  <>
+                                    {renderWorkflowLevelProcurement(
+                                      DataWorkflowGroupsProcurements
+                                    )}
+                                    
+                                    {selectedWorkflowProcurementsIds.size > 0 && (
+                                      <Box
+                                        mt={4}
+                                        p={3}
+                                        bg="blue.50"
+                                        rounded="md"
+                                        w="full"
+                                      >
+                                        <Text
+                                          fontSize="sm"
+                                          fontWeight="medium"
+                                          color="blue.800"
+                                        >
+                                          Selected: {selectedWorkflowProcurementsIds.size} workflow(s)
+                                        </Text>
+                                      </Box>
+                                    )}
+                                  </>
                                 )}
                               </Flex>
                             </GridItem>
