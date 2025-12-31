@@ -355,6 +355,8 @@ function RegisterRequirementFormPage({
   const perihalCursorPosRef = useRef<number | null>(null);
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
+  const namaLengkapRef = useRef<HTMLInputElement>(null);
+  const namaLengkapCursorPosRef = useRef<number | null>(null);
   const { InsertReq, RegisterDraft, RegisterUpdate, ListReqMedia, GetDetailById, ListBacklog } = useRequirements();
   const { InsertMediaObjectByKey, DeleteMediaObject } = useMediaObject();
   const [requirementId, setRequirementId] = useState<string | null>(null);
@@ -1308,6 +1310,11 @@ function RegisterRequirementFormPage({
       perihalSementaraRef.current.setSelectionRange(perihalCursorPosRef.current, perihalCursorPosRef.current);
     }
   }, [formik.values.reqNarative]);
+  useEffect(() => {
+    if (namaLengkapRef.current && namaLengkapCursorPosRef.current !== null) {
+      namaLengkapRef.current.setSelectionRange(namaLengkapCursorPosRef.current, namaLengkapCursorPosRef.current);
+    }
+  }, [formik.values.userPicName]);
   // BACKLOG DATA
   const [DataBackLogs, setDataBackLogs] = useState<ReqBacklogPayload[]>([]);
 
@@ -3060,9 +3067,15 @@ function RegisterRequirementFormPage({
                               <Stack spacing={0} h={"full"}>
                                 <Input
                                   id="userPicName"
+                                  ref={namaLengkapRef}
                                   name="userPicName"
                                   type="text"
-                                  onChange={formik.handleChange}
+                                  onChange={(e) => {
+                                    const input = e.target as HTMLInputElement;
+                                    namaLengkapCursorPosRef.current = input.selectionStart;
+                                    e.target.value = e.target.value.toUpperCase();
+                                    formik.handleChange(e);
+                                  }}
                                   value={formik.values.userPicName ?? ""}
                                   placeholder={`Nama Lengkap PIC`}
                                   minLength={9}
