@@ -1,0 +1,707 @@
+"use client";
+
+import { useState } from "react";
+import {
+  Box,
+  Flex,
+  Heading,
+  Text,
+  VStack,
+  HStack,
+  Card,
+  CardBody,
+  Badge,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  useColorMode,
+  Icon,
+  Divider,
+  Tabs,
+  TabList,
+  TabPanels,
+  Tab,
+  TabPanel,
+  Step,
+  StepDescription,
+  StepIcon,
+  StepIndicator,
+  StepNumber,
+  StepSeparator,
+  StepStatus,
+  StepTitle,
+  Stepper,
+  useSteps,
+} from "@chakra-ui/react";
+import LayoutAdmin from "@/app/components/layoutAdmin";
+import { FiCheckCircle, FiClock, FiEye, FiPlay, FiSend, FiUser, FiLayers } from "react-icons/fi";
+
+export default function KnowledgeBaseView() {
+  const { colorMode } = useColorMode();
+
+  return (
+    <LayoutAdmin>
+      <Box p={6}>
+        <Heading size="lg" mb={6}>
+          Basis Pengetahuan
+        </Heading>
+
+        <Flex gap={6} direction={{ base: "column", lg: "row" }}>
+          {/* Left Navigation Panel */}
+          <Box
+            w={{ base: "100%", lg: "260px" }}
+            flexShrink={0}
+          >
+            <Card
+              bg={colorMode === "light" ? "white" : "gray.800"}
+              shadow="md"
+              position={{ base: "relative", lg: "sticky" }}
+              top={{ base: "0", lg: "20px" }}
+              borderRadius="lg"
+            >
+              <CardBody p={6}>
+                <VStack spacing={4} align="stretch">
+                  <Box>
+                    <HStack spacing={3} mb={2}>
+                      <Icon as={FiLayers} boxSize={5} color="blue.500" />
+                      <Heading size="md" color={colorMode === "light" ? "gray.800" : "white"}>
+                        Navigation
+                      </Heading>
+                    </HStack>
+                    <Divider />
+                  </Box>
+
+                  <Box
+                    p={4}
+                    bg={colorMode === "light" ? "blue.50" : "blue.900"}
+                    borderRadius="md"
+                    borderLeft="4px solid"
+                    borderColor="blue.500"
+                  >
+                    <Text fontSize="sm" fontWeight="medium" color={colorMode === "light" ? "blue.800" : "blue.100"}>
+                      Alur Kerja BRD / RFC
+                    </Text>
+                    <Text fontSize="xs" mt={1} color={colorMode === "light" ? "blue.600" : "blue.200"}>
+                      Dokumentasi proses end-to-end
+                    </Text>
+                  </Box>
+
+                  <Divider />
+
+                  <VStack spacing={2} align="stretch">
+                    <Text fontSize="xs" fontWeight="bold" color={colorMode === "light" ? "gray.500" : "gray.400"} textTransform="uppercase">
+                      Navigasi Cepat
+                    </Text>
+                    <HStack spacing={2}>
+                      <Icon as={FiEye} boxSize={4} color="gray.500" />
+                      <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.300"}>Overview</Text>
+                    </HStack>
+                    <HStack spacing={2}>
+                      <Icon as={FiUser} boxSize={4} color="green.500" />
+                      <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.300"}>Maker Flow</Text>
+                    </HStack>
+                    <HStack spacing={2}>
+                      <Icon as={FiCheckCircle} boxSize={4} color="purple.500" />
+                      <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.300"}>Approval Flow</Text>
+                    </HStack>
+                    <HStack spacing={2}>
+                      <Icon as={FiClock} boxSize={4} color="orange.500" />
+                      <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.300"}>Status & Aturan</Text>
+                    </HStack>
+                  </VStack>
+                </VStack>
+              </CardBody>
+            </Card>
+          </Box>
+
+          {/* Right Content Area with Tabs */}
+          <Box flex={1}>
+            <Card
+              bg={colorMode === "light" ? "white" : "gray.800"}
+              shadow="md"
+              borderRadius="lg"
+            >
+              <CardBody p={6}>
+                <Tabs colorScheme="blue" variant="enclosed">
+                  <TabList>
+                    <Tab>
+                      <Icon as={FiEye} mr={2} />
+                      Ringkasan
+                    </Tab>
+                    <Tab>
+                      <Icon as={FiUser} mr={2} />
+                      Alur MAKER
+                    </Tab>
+                    <Tab>
+                      <Icon as={FiCheckCircle} mr={2} />
+                      Alur APPROVAL
+                    </Tab>
+                    <Tab>
+                      <Icon as={FiClock} mr={2} />
+                      Status & Aturan
+                    </Tab>
+                  </TabList>
+
+                  <TabPanels>
+                    <TabPanel px={0} py={6}>
+                      <OverviewContent colorMode={colorMode} />
+                    </TabPanel>
+                    <TabPanel px={0} py={6}>
+                      <MakerFlowContent colorMode={colorMode} />
+                    </TabPanel>
+                    <TabPanel px={0} py={6}>
+                      <ApprovalFlowContent colorMode={colorMode} />
+                    </TabPanel>
+                    <TabPanel px={0} py={6}>
+                      <StatusAndRulesContent colorMode={colorMode} />
+                    </TabPanel>
+                  </TabPanels>
+                </Tabs>
+              </CardBody>
+            </Card>
+          </Box>
+        </Flex>
+      </Box>
+    </LayoutAdmin>
+  );
+}
+
+// Overview Content
+function OverviewContent({ colorMode }: { colorMode: string }) {
+  return (
+    <VStack spacing={6} align="stretch">
+      <Box>
+        <Heading size="lg" mb={4}>
+          Ringkasan Alur Kerja BRD / RFC
+        </Heading>
+        <Text fontSize="md" color={colorMode === "light" ? "gray.600" : "gray.300"} mb={4}>
+          Proses BRD (Business Requirements Document) dan RFC (Request for Change) mengikuti alur kerja terstruktur berbasis peran yang dirancang untuk memastikan kualitas dan akuntabilitas di setiap tahap.
+        </Text>
+      </Box>
+
+      <Card bg={colorMode === "light" ? "blue.50" : "blue.900"} borderLeft="4px solid" borderColor="blue.500">
+        <CardBody>
+          <Heading size="sm" mb={2}>
+            Prinsip Utama
+          </Heading>
+          <VStack spacing={2} align="stretch">
+            <HStack>
+              <Icon as={FiCheckCircle} color="blue.500" />
+              <Text>Alur kerja berbasis peran dengan tanggung jawab yang jelas</Text>
+            </HStack>
+            <HStack>
+              <Icon as={FiCheckCircle} color="blue.500" />
+              <Text>Proses berurutan mencegah tahapan yang terlewat</Text>
+            </HStack>
+            <HStack>
+              <Icon as={FiCheckCircle} color="blue.500" />
+              <Text>Visibilitas tombol berdasarkan status untuk memastikan alur yang tepat</Text>
+            </HStack>
+            <HStack>
+              <Icon as={FiCheckCircle} color="blue.500" />
+              <Text>Pelacakan otomatis terhadap timeline review</Text>
+            </HStack>
+          </VStack>
+        </CardBody>
+      </Card>
+
+      <Box>
+        <Heading size="md" mb={3}>
+          Peran dalam Alur Kerja
+        </Heading>
+        <VStack spacing={3} align="stretch">
+          <Card bg={colorMode === "light" ? "green.50" : "green.900"}>
+            <CardBody>
+              <HStack mb={2}>
+                <Badge colorScheme="green" fontSize="md" px={3} py={1}>
+                  MAKER
+                </Badge>
+              </HStack>
+              <Text>
+                Bertanggung jawab untuk menerima BRD/RFC, menginput kebutuhan, memulai review, dan mengirimkan pekerjaan yang telah selesai untuk disetujui.
+              </Text>
+            </CardBody>
+          </Card>
+
+          <Card bg={colorMode === "light" ? "purple.50" : "purple.900"}>
+            <CardBody>
+              <HStack mb={2}>
+                <Badge colorScheme="purple" fontSize="md" px={3} py={1}>
+                  APPROVAL
+                </Badge>
+              </HStack>
+              <Text>
+                Bertanggung jawab untuk meninjau kebutuhan yang telah dikirim, memberikan feedback, dan menyetujui atau menolak pekerjaan.
+              </Text>
+            </CardBody>
+          </Card>
+        </VStack>
+      </Box>
+
+      <Box>
+        <Heading size="md" mb={3}>
+          Alur Proses
+        </Heading>
+        <Text mb={3}>
+          Alur kerja berjalan secara berurutan dari MAKER ke APPROVAL:
+        </Text>
+        <Flex
+          direction={{ base: "column", md: "row" }}
+          gap={4}
+          align="center"
+          justify="center"
+        >
+          <Card flex={1} bg={colorMode === "light" ? "green.50" : "green.900"} textAlign="center">
+            <CardBody>
+              <Badge colorScheme="green" mb={2}>MAKER</Badge>
+              <Text fontSize="sm">Input & Review</Text>
+            </CardBody>
+          </Card>
+          <Icon as={FiSend} boxSize={6} color="blue.500" />
+          <Card flex={1} bg={colorMode === "light" ? "purple.50" : "purple.900"} textAlign="center">
+            <CardBody>
+              <Badge colorScheme="purple" mb={2}>APPROVAL</Badge>
+              <Text fontSize="sm">Review & Persetujuan</Text>
+            </CardBody>
+          </Card>
+        </Flex>
+      </Box>
+    </VStack>
+  );
+}
+
+// MAKER Flow Content
+function MakerFlowContent({ colorMode }: { colorMode: string }) {
+  return (
+    <VStack spacing={6} align="stretch">
+      <Box>
+        <HStack mb={4}>
+          <Badge colorScheme="green" fontSize="lg" px={4} py={2}>
+            MAKER
+          </Badge>
+          <Heading size="lg"></Heading>
+        </HStack>
+        <Text fontSize="md" color={colorMode === "light" ? "gray.600" : "gray.300"}>
+          Flow User Maker
+        </Text>
+      </Box>
+
+      <VStack spacing={4} align="stretch">
+        <Card borderLeft="4px solid" borderColor="green.500">
+          <CardBody>
+            <HStack mb={2}>
+              <Badge colorScheme="green">Step  1</Badge>
+              <Heading size="sm">Menerima BRD/RFC</Heading>
+            </HStack>
+            <Text>
+              BRD atau RFC baru ditugaskan kepada Anda. Kebutuhan muncul dalam daftar kebutuhan Anda dengan status "Baru" atau "Pending".
+            </Text>
+          </CardBody>
+        </Card>
+
+        <Card borderLeft="4px solid" borderColor="green.500">
+          <CardBody>
+            <HStack mb={2}>
+              <Badge colorScheme="green">Step  2</Badge>
+              <Heading size="sm">Input Kebutuhan</Heading>
+            </HStack>
+            <Text>
+              Buka kebutuhan dan isi semua detail yang diperlukan, termasuk deskripsi, kriteria penerimaan, dan lampiran.
+            </Text>
+          </CardBody>
+        </Card>
+
+        <Card borderLeft="4px solid" borderColor="green.500">
+          <CardBody>
+            <HStack mb={2}>
+              <Badge colorScheme="green">Step  3</Badge>
+              <Heading size="sm">Lihat dalam Tabel Kebutuhan</Heading>
+            </HStack>
+            <Text mb={3}>
+              Kebutuhan ditampilkan dalam tabel dengan aksi berikut:
+            </Text>
+            <VStack spacing={2} align="stretch" pl={4}>
+              <HStack>
+                <Icon as={FiEye} color="blue.500" />
+                <Text><strong>Preview:</strong> Lihat detail kebutuhan (selalu tersedia)</Text>
+              </HStack>
+              <HStack>
+                <Icon as={FiPlay} color="green.500" />
+                <Text><strong>Mulai Review:</strong> Memulai proses review</Text>
+              </HStack>
+            </VStack>
+          </CardBody>
+        </Card>
+
+        <Card borderLeft="4px solid" borderColor="green.500">
+          <CardBody>
+            <HStack mb={2}>
+              <Badge colorScheme="green">Step  4</Badge>
+              <Heading size="sm">Mulai Review</Heading>
+            </HStack>
+            <Text mb={3}>
+              Ketika Anda klik "Mulai Review":
+            </Text>
+            <VStack spacing={2} align="stretch" pl={4}>
+              <HStack>
+                <Icon as={FiClock} color="orange.500" />
+                <Text>Penghitungan hari review dimulai secara otomatis</Text>
+              </HStack>
+              <HStack>
+                <Icon as={FiCheckCircle} color="green.500" />
+                <Text>Status kebutuhan berubah menjadi "Dalam Proses" atau "Sedang Review"</Text>
+              </HStack>
+            </VStack>
+          </CardBody>
+        </Card>
+
+        <Card borderLeft="4px solid" borderColor="green.500">
+          <CardBody>
+            <HStack mb={2}>
+              <Badge colorScheme="green">Step  5</Badge>
+              <Heading size="sm">Selesaikan dan Kirim Review</Heading>
+            </HStack>
+            <Text>
+              Setelah menyelesaikan review Anda, kirim kebutuhan untuk disetujui. Ini memindahkan alur kerja ke peran APPROVAL.
+            </Text>
+          </CardBody>
+        </Card>
+
+        <Card borderLeft="4px solid" borderColor="green.500">
+          <CardBody>
+            <HStack mb={2}>
+              <Badge colorScheme="green">Step  6</Badge>
+              <Heading size="sm">Status Setelah Pengiriman</Heading>
+            </HStack>
+            <Text mb={3}>
+              Setelah pengiriman:
+            </Text>
+            <VStack spacing={2} align="stretch" pl={4}>
+              <HStack>
+                <Badge colorScheme="red">Nonaktif</Badge>
+                <Text>Tombol "Mulai Review" tidak lagi tersedia</Text>
+              </HStack>
+              <HStack>
+                <Badge colorScheme="blue">Aktif</Badge>
+                <Text>Tombol "Preview" tetap tersedia untuk melihat</Text>
+              </HStack>
+            </VStack>
+          </CardBody>
+        </Card>
+      </VStack>
+    </VStack>
+  );
+}
+
+// APPROVAL Flow Content
+function ApprovalFlowContent({ colorMode }: { colorMode: string }) {
+  return (
+    <VStack spacing={6} align="stretch">
+      <Box>
+        <HStack mb={4}>
+          <Badge colorScheme="purple" fontSize="lg" px={4} py={2}>
+            APPROVAL
+          </Badge>
+          <Heading size="lg">Alur Swimlane</Heading>
+        </HStack>
+        <Text fontSize="md" color={colorMode === "light" ? "gray.600" : "gray.300"}>
+          Ikuti langkah-langkah berikut untuk meninjau dan menyetujui kebutuhan sebagai APPROVER.
+        </Text>
+      </Box>
+
+      <VStack spacing={4} align="stretch">
+        <Card borderLeft="4px solid" borderColor="purple.500">
+          <CardBody>
+            <HStack mb={2}>
+              <Badge colorScheme="purple">Step  1</Badge>
+              <Heading size="sm">Menerima BRD/RFC</Heading>
+            </HStack>
+            <Text>
+              BRD atau RFC dikirim oleh MAKER dan muncul dalam antrian persetujuan Anda. Anda menerima notifikasi bahwa kebutuhan siap untuk ditinjau.
+            </Text>
+          </CardBody>
+        </Card>
+
+        <Card borderLeft="4px solid" borderColor="purple.500">
+          <CardBody>
+            <HStack mb={2}>
+              <Badge colorScheme="purple">Step  2</Badge>
+              <Heading size="sm">Lihat Daftar Kebutuhan</Heading>
+            </HStack>
+            <Text>
+              Kebutuhan yang menunggu persetujuan ditampilkan dalam tabel. Anda dapat melihat status dan aksi yang tersedia untuk setiap kebutuhan.
+            </Text>
+          </CardBody>
+        </Card>
+
+        <Card borderLeft="4px solid" borderColor="purple.500">
+          <CardBody>
+            <HStack mb={2}>
+              <Badge colorScheme="purple">Step  3</Badge>
+              <Heading size="sm">Preview Sebelum Pengiriman</Heading>
+            </HStack>
+            <Text mb={3}>
+              Saat MAKER belum mengirim review:
+            </Text>
+            <VStack spacing={2} align="stretch" pl={4}>
+              <HStack>
+                <Icon as={FiEye} color="blue.500" />
+                <Text>Tombol "Preview" terlihat</Text>
+              </HStack>
+              <HStack>
+                <Icon as={FiClock} color="gray.500" />
+                <Text>Anda dapat melihat kebutuhan tetapi belum dapat mengambil tindakan</Text>
+              </HStack>
+            </VStack>
+          </CardBody>
+        </Card>
+
+        <Card borderLeft="4px solid" borderColor="purple.500">
+          <CardBody>
+            <HStack mb={2}>
+              <Badge colorScheme="purple">Step  4</Badge>
+              <Heading size="sm">Tinjau Kebutuhan yang Dikirim</Heading>
+            </HStack>
+            <Text mb={3}>
+              Setelah MAKER mengirim review:
+            </Text>
+            <VStack spacing={2} align="stretch" pl={4}>
+              <HStack>
+                <Icon as={FiCheckCircle} color="green.500" />
+                <Text>Status kebutuhan berubah menjadi "Dikirim" atau "Menunggu Persetujuan"</Text>
+              </HStack>
+              <HStack>
+                <Icon as={FiEye} color="blue.500" />
+                <Text>Anda sekarang dapat meninjau detail kebutuhan secara lengkap</Text>
+              </HStack>
+            </VStack>
+          </CardBody>
+        </Card>
+
+        <Card borderLeft="4px solid" borderColor="purple.500">
+          <CardBody>
+            <HStack mb={2}>
+              <Badge colorScheme="purple">Step  5</Badge>
+              <Heading size="sm">Setujui atau Tolak</Heading>
+            </HStack>
+            <Text mb={3}>
+              Berdasarkan tinjauan Anda, Anda dapat:
+            </Text>
+            <VStack spacing={2} align="stretch" pl={4}>
+              <HStack>
+                <Badge colorScheme="green">Setujui</Badge>
+                <Text>Terima kebutuhan dan pindahkan ke tahap berikutnya</Text>
+              </HStack>
+              <HStack>
+                <Badge colorScheme="red">Tolak</Badge>
+                <Text>Kirim kembali ke MAKER dengan feedback untuk revisi</Text>
+              </HStack>
+            </VStack>
+          </CardBody>
+        </Card>
+
+        <Card borderLeft="4px solid" borderColor="purple.500">
+          <CardBody>
+            <HStack mb={2}>
+              <Badge colorScheme="purple">Step  6</Badge>
+              <Heading size="sm">Berikan Feedback</Heading>
+            </HStack>
+            <Text>
+              Jika menolak, berikan feedback yang jelas menjelaskan apa yang perlu diubah. Kebutuhan kembali ke MAKER untuk revisi.
+            </Text>
+          </CardBody>
+        </Card>
+      </VStack>
+    </VStack>
+  );
+}
+
+// Status and Rules Combined Content
+function StatusAndRulesContent({ colorMode }: { colorMode: string }) {
+  return (
+    <VStack spacing={6} align="stretch">
+      <Box>
+        <Heading size="lg" mb={4}>
+          Status & Aturan
+        </Heading>
+        <Text fontSize="md" color={colorMode === "light" ? "gray.600" : "gray.300"}>
+          Memahami transisi status, perilaku tombol, dan aturan alur kerja.
+        </Text>
+      </Box>
+
+      {/* Status Mapping Table */}
+      <Box>
+        <Heading size="md" mb={3}>
+          Pemetaan Status & Aksi
+        </Heading>
+        <Box overflowX="auto">
+          <Table variant="simple" size="sm">
+            <Thead bg={colorMode === "light" ? "gray.100" : "gray.700"}>
+              <Tr>
+                <Th>Aksi Pengguna</Th>
+                <Th>Status Kebutuhan</Th>
+                <Th>Tombol Preview</Th>
+                <Th>Tombol Mulai Review</Th>
+                <Th>Peran</Th>
+              </Tr>
+            </Thead>
+            <Tbody>
+              <Tr>
+                <Td>BRD/RFC Dibuat</Td>
+                <Td><Badge colorScheme="gray">Baru</Badge></Td>
+                <Td><Badge colorScheme="blue">Aktif</Badge></Td>
+                <Td><Badge colorScheme="green">Aktif</Badge></Td>
+                <Td><Badge colorScheme="green">MAKER</Badge></Td>
+              </Tr>
+              <Tr bg={colorMode === "light" ? "gray.50" : "gray.800"}>
+                <Td>Mulai Review Diklik</Td>
+                <Td><Badge colorScheme="orange">Dalam Proses</Badge></Td>
+                <Td><Badge colorScheme="blue">Aktif</Badge></Td>
+                <Td><Badge colorScheme="green">Aktif</Badge></Td>
+                <Td><Badge colorScheme="green">MAKER</Badge></Td>
+              </Tr>
+              <Tr>
+                <Td>Review Dikirim</Td>
+                <Td><Badge colorScheme="yellow">Dikirim</Badge></Td>
+                <Td><Badge colorScheme="blue">Aktif</Badge></Td>
+                <Td><Badge colorScheme="red">Nonaktif</Badge></Td>
+                <Td><Badge colorScheme="green">MAKER</Badge></Td>
+              </Tr>
+              <Tr bg={colorMode === "light" ? "gray.50" : "gray.800"}>
+                <Td>Menunggu Persetujuan</Td>
+                <Td><Badge colorScheme="purple">Menunggu Persetujuan</Badge></Td>
+                <Td><Badge colorScheme="blue">Aktif</Badge></Td>
+                <Td><Badge colorScheme="gray">N/A</Badge></Td>
+                <Td><Badge colorScheme="purple">APPROVAL</Badge></Td>
+              </Tr>
+              <Tr>
+                <Td>Disetujui</Td>
+                <Td><Badge colorScheme="green">Disetujui</Badge></Td>
+                <Td><Badge colorScheme="blue">Aktif</Badge></Td>
+                <Td><Badge colorScheme="gray">N/A</Badge></Td>
+                <Td><Badge colorScheme="purple">APPROVAL</Badge></Td>
+              </Tr>
+              <Tr bg={colorMode === "light" ? "gray.50" : "gray.800"}>
+                <Td>Ditolak</Td>
+                <Td><Badge colorScheme="red">Ditolak</Badge></Td>
+                <Td><Badge colorScheme="blue">Aktif</Badge></Td>
+                <Td><Badge colorScheme="green">Aktif</Badge></Td>
+                <Td><Badge colorScheme="green">MAKER</Badge></Td>
+              </Tr>
+            </Tbody>
+          </Table>
+        </Box>
+      </Box>
+
+      {/* Button Behavior */}
+      <Card borderLeft="4px solid" borderColor="blue.500">
+        <CardBody>
+          <Heading size="md" mb={3}>
+            Perilaku Tombol
+          </Heading>
+          <VStack spacing={3} align="stretch">
+            <Box>
+              <HStack mb={2}>
+                <Icon as={FiEye} color="blue.500" />
+                <Text fontWeight="bold">Tombol Preview</Text>
+              </HStack>
+              <Text pl={6} fontSize="sm">
+                Selalu tersedia untuk melihat detail kebutuhan. Dapat diakses oleh peran MAKER dan APPROVAL pada status apa pun.
+              </Text>
+            </Box>
+            <Box>
+              <HStack mb={2}>
+                <Icon as={FiPlay} color="green.500" />
+                <Text fontWeight="bold">Tombol Mulai Review</Text>
+              </HStack>
+              <Text pl={6} fontSize="sm">
+                Hanya tersedia untuk peran MAKER. Aktif ketika kebutuhan baru atau ditolak. Nonaktif setelah pengiriman hingga kebutuhan ditolak dan dikembalikan.
+              </Text>
+            </Box>
+          </VStack>
+        </CardBody>
+      </Card>
+
+      {/* Review Day Counting */}
+      <Card borderLeft="4px solid" borderColor="orange.500">
+        <CardBody>
+          <Heading size="md" mb={3}>
+            Penghitungan Hari Review
+          </Heading>
+          <VStack spacing={2} align="stretch">
+            <HStack>
+              <Icon as={FiClock} color="orange.500" />
+              <Text>Penghitungan hari review dimulai hanya setelah "Mulai Review" diklik.</Text>
+            </HStack>
+            <HStack>
+              <Icon as={FiClock} color="orange.500" />
+              <Text>Penghitung melacak hari kerja, bukan hari kalender.</Text>
+            </HStack>
+            <HStack>
+              <Icon as={FiClock} color="orange.500" />
+              <Text>Waktu review terlihat oleh peran MAKER dan APPROVAL.</Text>
+            </HStack>
+            <HStack>
+              <Icon as={FiClock} color="orange.500" />
+              <Text>Penghitungan berhenti saat kebutuhan dikirim dan dilanjutkan jika ditolak.</Text>
+            </HStack>
+          </VStack>
+        </CardBody>
+      </Card>
+
+      {/* Workflow Rules */}
+      <Card borderLeft="4px solid" borderColor="purple.500">
+        <CardBody>
+          <Heading size="md" mb={3}>
+            Aturan Alur Kerja
+          </Heading>
+          <VStack spacing={2} align="stretch">
+            <HStack>
+              <Icon as={FiCheckCircle} color="purple.500" />
+              <Text>Setiap Step  harus diselesaikan sebelum pindah ke Step  berikutnya.</Text>
+            </HStack>
+            <HStack>
+              <Icon as={FiCheckCircle} color="purple.500" />
+              <Text>Step  tidak dapat dilewati atau dilakukan di luar urutan.</Text>
+            </HStack>
+            <HStack>
+              <Icon as={FiCheckCircle} color="purple.500" />
+              <Text>Visibilitas tombol berdasarkan peran dan status.</Text>
+            </HStack>
+            <HStack>
+              <Icon as={FiCheckCircle} color="purple.500" />
+              <Text>Indikator visual menunjukkan kemajuan saat ini dalam alur kerja.</Text>
+            </HStack>
+          </VStack>
+        </CardBody>
+      </Card>
+
+      {/* Best Practices */}
+      <Card bg={colorMode === "light" ? "blue.50" : "blue.900"}>
+        <CardBody>
+          <Heading size="md" mb={3}>
+            Praktik Terbaik
+          </Heading>
+          <VStack spacing={3} align="stretch">
+            <Box>
+              <Text fontWeight="bold" mb={1}>Untuk MAKER:</Text>
+              <Text pl={4} fontSize="sm">• Mulai review hanya ketika Anda siap untuk memulai pekerjaan.</Text>
+              <Text pl={4} fontSize="sm">• Lengkapi semua field yang diperlukan sebelum pengiriman.</Text>
+              <Text pl={4} fontSize="sm">• Gunakan fungsi preview untuk memverifikasi pekerjaan Anda.</Text>
+            </Box>
+            <Box>
+              <Text fontWeight="bold" mb={1}>Untuk APPROVAL:</Text>
+              <Text pl={4} fontSize="sm">• Tinjau kebutuhan dengan segera untuk menghindari penundaan.</Text>
+              <Text pl={4} fontSize="sm">• Berikan feedback yang spesifik dan dapat ditindaklanjuti saat menolak.</Text>
+              <Text pl={4} fontSize="sm">• Gunakan preview untuk memeriksa kebutuhan sebelum dikirim.</Text>
+            </Box>
+          </VStack>
+        </CardBody>
+      </Card>
+    </VStack>
+  );
+}
+
