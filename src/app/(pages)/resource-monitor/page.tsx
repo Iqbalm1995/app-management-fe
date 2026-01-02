@@ -130,6 +130,8 @@ export default function ResourceMonitorPage() {
   const [selectedQuarter, setSelectedQuarter] =
     useState<number>(currentQuarter);
   const [selectedTeam, setSelectedTeam] = useState<string>("");
+  const [orderBy, setOrderBy] = useState<string>("activeProjectCount");
+  const [orderDir, setOrderDir] = useState<"asc" | "desc">("desc");
   const [teams, setTeams] = useState<TeamsResponse[]>([]);
 
   useEffect(() => {
@@ -198,8 +200,8 @@ export default function ResourceMonitorPage() {
             limit: pageSize,
             page: pageIndex,
             filterWhere,
-            fieldOrder: ["nama"],
-            orderDir: "asc",
+            fieldOrder: [orderBy],
+            orderDir: orderDir,
           };
 
           const UrlEndpoint = buildUrlPort(
@@ -258,6 +260,8 @@ export default function ResourceMonitorPage() {
     selectedYear,
     selectedQuarter,
     selectedTeam,
+    orderBy,
+    orderDir,
   ]);
 
   const columns: ColumnDef<UserResourceLoad>[] = useMemo(
@@ -557,6 +561,55 @@ export default function ResourceMonitorPage() {
                         <Search2Icon color="gray.400" />
                       </Flex>
                     </Flex>
+                  </VStack>
+
+                  <VStack spacing={1} align="start">
+                    <Text
+                      fontSize="xs"
+                      color={colorMode === "light" ? "gray.600" : "gray.300"}
+                      fontWeight="medium"
+                    >
+                      Order By
+                    </Text>
+                    <Select
+                      value={orderBy}
+                      onChange={(e) => {
+                        setOrderBy(e.target.value);
+                        setPagination({ pageIndex: 0, pageSize });
+                      }}
+                      size="sm"
+                      rounded={radiusStyle}
+                      minW="150px"
+                      bg={colorMode === "light" ? "white" : "gray.600"}
+                    >
+                      <option value="nama">Name</option>
+                      <option value="activeProjectCount">Projects</option>
+                      <option value="assignedTaskCount">Tasks</option>
+                    </Select>
+                  </VStack>
+
+                  <VStack spacing={1} align="start">
+                    <Text
+                      fontSize="xs"
+                      color={colorMode === "light" ? "gray.600" : "gray.300"}
+                      fontWeight="medium"
+                    >
+                      Direction
+                    </Text>
+                    <Select
+                      value={orderDir}
+                      onChange={(e) => {
+                        setOrderDir(e.target.value as "asc" | "desc");
+                        setPagination({ pageIndex: 0, pageSize });
+                      }}
+                      size="sm"
+                      rounded={radiusStyle}
+                      minW="100px"
+                      bg={colorMode === "light" ? "white" : "gray.600"}
+                    >
+                      <option value="asc">ASC</option>
+                      <option value="desc">DESC</option>
+                    </Select>
                   </VStack>
 
                   <VStack spacing={1} align="start">
