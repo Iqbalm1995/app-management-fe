@@ -1054,8 +1054,8 @@ const SidebarContent = ({
         <AdditionalProfileBar LiteModeTrigger={LiteModeTrigger} />
         <Flex pt={5} pb={2} mx={3}>
           <VStack w={"full"} h={"65vh"} align={"start"} overflowX="auto">
-            {/* <HStack w="full" justify="space-between" align="center" pl={2}>
-              <Tooltip label="Hide menu pro" placement="top" hasArrow>
+            <HStack w="full" justify="space-between" align="center" pl={2}>
+              <Tooltip label="Show Beta Menu" placement="top" hasArrow>
                 <FormControl display="flex" alignItems="center">
                   <FormLabel
                     htmlFor="hide-pro"
@@ -1063,7 +1063,7 @@ const SidebarContent = ({
                     fontSize={"smaller"}
                     display={LiteModeTrigger ? "none" : "flex"}
                   >
-                    Hide Pro ?
+                    Show Beta Menu
                   </FormLabel>
                   <Switch
                     id="hide-pro"
@@ -1073,7 +1073,7 @@ const SidebarContent = ({
                   />
                 </FormControl>
               </Tooltip>
-            </HStack> */}
+            </HStack>
             <Box w={"full"} overflowY={"auto"}>
               {LinkItems.filter((link) => !hideProMenus || !link.isPro).map(
                 (link) => (

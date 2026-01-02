@@ -255,6 +255,7 @@ export const LinkItems: LinkItemProps[] = [
     name: "Vendor ",
     icon: FiUmbrella,
     link: "/coming-soon",
+    isPro: true,
     role: ["admin"],
 
     menuID: "1",
@@ -290,6 +291,7 @@ export const LinkItems: LinkItemProps[] = [
   },
   {
     name: "Resource ",
+    isPro: true,
     icon: TbUsers,
     link: "/coming-soon",
     role: ["admin"],
@@ -329,6 +331,7 @@ export const LinkItems: LinkItemProps[] = [
     name: "Meeting ",
     icon: AiOutlineVideoCamera,
     link: "/coming-soon",
+    isPro: true,
     role: ["admin"],
 
     menuID: "1",
@@ -432,6 +435,7 @@ export const LinkItems: LinkItemProps[] = [
     name: "Assets Management",
     icon: FaRegStar,
     link: "/coming-soon",
+    isPro: true,
     role: ["admin"],
     menuID: "1",
 
@@ -470,6 +474,7 @@ export const LinkItems: LinkItemProps[] = [
     icon: BsDatabaseGear,
     link: "/coming-soon",
     role: ["admin"],
+    isPro: true,
 
     menuID: "1",
     children: [
@@ -611,11 +616,12 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Bjb Apps User Guide",
         icon: LuBookHeart,
-        link: "/coming-soon",
+        link: "/show-flow",
         role: ["admin"],
 
         menuID: "1",
-        children: [],
+        children: [
+        ],
       },
       {
         name: "Document Templates",
@@ -861,6 +867,7 @@ export const LinkItems: LinkItemProps[] = [
     name: "System Parameters",
     icon: TbSettingsCog, // general system/settings icon
     link: "/coming-soon",
+    isPro: true,
 
     role: ["admin"],
     menuID: "1",
@@ -1035,13 +1042,14 @@ export const LinkItems: LinkItemProps[] = [
     link: "/file-archives",
     role: ["admin"],
     menuID: "1",
-    isPro: false,
+    isPro: true,
     children: [],
   },
   {
     name: "Audit Trail",
     icon: RxActivityLog,
     link: "/audit-trail",
+    isPro: true,
     role: ["admin"],
     menuID: "1",
     children: [],
