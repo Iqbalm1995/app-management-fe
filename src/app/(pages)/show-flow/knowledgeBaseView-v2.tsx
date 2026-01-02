@@ -36,7 +36,7 @@ export default function KnowledgeBaseViewV2() {
 
   const guideItems = [
     { id: "requirement-flow", label: "Requirement Flow", icon: FiLayers },
-    { id: "project-setup", label: "Project Register Flow", icon: FiUser, disabled: true },
+    { id: "project-setup", label: "Project Register Flow", icon: FiUser, disabled: false },
     { id: "task-management", label: "Kanban Flow", icon: FiCheckCircle, disabled: true },
     // { id: "deployment", label: "Deployment Guide", icon: FiArrowRight, disabled: true },
   ];
