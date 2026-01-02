@@ -289,40 +289,39 @@ export const LinkItems: LinkItemProps[] = [
     ],
   },
   {
-    name: "Resource ",
+    name: "Resource Monitoring",
     icon: TbUsers,
-    link: "/coming-soon",
+    link: "/resource-monitor",
     role: ["admin"],
-
     menuID: "1",
     children: [
-      {
-        name: "Resource Load Tracking",
-        icon: TbUserHeart,
-        link: "/coming-soon",
-        role: ["admin"],
+      // {
+      //   name: "Resource Load Tracking",
+      //   icon: TbUserHeart,
+      //   link: "/coming-soon",
+      //   role: ["admin"],
 
-        menuID: "1",
-        children: [],
-      },
-      {
-        name: "Resource Allocation",
-        icon: TbUserShare,
-        link: "/coming-soon",
-        role: ["admin"],
+      //   menuID: "1",
+      //   children: [],
+      // },
+      // {
+      //   name: "Resource Allocation",
+      //   icon: TbUserShare,
+      //   link: "/coming-soon",
+      //   role: ["admin"],
 
-        menuID: "1",
-        children: [],
-      },
-      {
-        name: "Resource Availability",
-        icon: TbUserBolt,
-        link: "/coming-soon",
-        role: ["admin"],
+      //   menuID: "1",
+      //   children: [],
+      // },
+      // {
+      //   name: "Resource Availability",
+      //   icon: TbUserBolt,
+      //   link: "/coming-soon",
+      //   role: ["admin"],
 
-        menuID: "1",
-        children: [],
-      },
+      //   menuID: "1",
+      //   children: [],
+      // },
     ],
   },
   {

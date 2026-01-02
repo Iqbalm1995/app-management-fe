@@ -6,7 +6,9 @@ import {
 } from "@/app/components/headerContent";
 import LayoutAdmin from "@/app/components/layoutAdmin";
 import { radiusStyle } from "@/app/constants/applicationConstants";
-import useWorkspace, { WorkspaceStatsViewModel } from "@/app/services/useWorkspace";
+import useWorkspace, {
+  WorkspaceStatsViewModel,
+} from "@/app/services/useWorkspace";
 import {
   Box,
   Button,
@@ -77,7 +79,17 @@ const AnimatedGlobe = () => {
       });
     }
 
-    const colors = { base: "255, 255, 255", glow: "255, 255, 255" };
+    const colors = { base: "39, 245, 211", glow: "255, 255, 255" };
+
+    // Function to draw triangle
+    const drawTriangle = (x: number, y: number, size: number) => {
+      const height = size * Math.sqrt(3);
+      ctx.beginPath();
+      ctx.moveTo(x, y - height / 2);
+      ctx.lineTo(x - size, y + height / 2);
+      ctx.lineTo(x + size, y + height / 2);
+      ctx.closePath();
+    };
 
     // Animation loop
     const animate = () => {
@@ -95,10 +107,9 @@ const AnimatedGlobe = () => {
           const x2d = rotatedX * scale + centerX;
           const y2d = point.y * scale + centerY;
           const opacity = (rotatedZ + radius) / 300;
-          const size = scale * 1.5;
+          const size = scale * 2.5;
 
-          ctx.beginPath();
-          ctx.arc(x2d, y2d, size, 0, Math.PI * 2);
+          drawTriangle(x2d, y2d, size);
           ctx.fillStyle = `rgba(${colors.base}, ${opacity * 0.7})`;
           ctx.fill();
         }
@@ -127,7 +138,13 @@ const AnimatedGlobe = () => {
 };
 
 // Animated Counter Component
-const AnimatedCounter = ({ value, color }: { value: number; color: string }) => {
+const AnimatedCounter = ({
+  value,
+  color,
+}: {
+  value: number;
+  color: string;
+}) => {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
@@ -346,7 +363,7 @@ function HomePageView() {
                 <Heading
                   fontSize={{ base: "3xl", md: "4xl", lg: "5xl" }}
                   fontWeight="bold"
-                  bgGradient="linear(to-r, purple.200, purple.400, pink.500)"
+                  bgGradient="linear(to-r, secondary.300, teal.500, yellow.400)"
                   bgClip="text"
                   lineHeight="shorter"
                 >
@@ -395,23 +412,47 @@ function HomePageView() {
 
               {/* Stats inside hero */}
               {stats && (
-                <Box as="div" animation="fadeInUp 1s ease-out 0.8s backwards" pt={8}>
+                <Box
+                  as="div"
+                  animation="fadeInUp 1s ease-out 0.8s backwards"
+                  pt={8}
+                >
                   <Grid templateColumns="repeat(4, 1fr)" gap={8}>
                     <VStack spacing={1}>
-                      <AnimatedCounter value={stats.totalProjects} color="blue.300" />
-                      <Text fontSize="sm" color="white" opacity={0.8}>Total Projects</Text>
+                      <AnimatedCounter
+                        value={stats.totalProjects}
+                        color="blue.300"
+                      />
+                      <Text fontSize="sm" color="white" opacity={0.8}>
+                        Total Projects
+                      </Text>
                     </VStack>
                     <VStack spacing={1}>
-                      <AnimatedCounter value={stats.activeProjects} color="green.300" />
-                      <Text fontSize="sm" color="white" opacity={0.8}>Active Projects</Text>
+                      <AnimatedCounter
+                        value={stats.activeProjects}
+                        color="green.300"
+                      />
+                      <Text fontSize="sm" color="white" opacity={0.8}>
+                        Active Projects
+                      </Text>
                     </VStack>
                     <VStack spacing={1}>
-                      <AnimatedCounter value={stats.totalTasks} color="purple.300" />
-                      <Text fontSize="sm" color="white" opacity={0.8}>Total Tasks</Text>
+                      <AnimatedCounter
+                        value={stats.totalTasks}
+                        color="purple.300"
+                      />
+                      <Text fontSize="sm" color="white" opacity={0.8}>
+                        Total Tasks
+                      </Text>
                     </VStack>
                     <VStack spacing={1}>
-                      <AnimatedCounter value={stats.overdueTasks} color="orange.300" />
-                      <Text fontSize="sm" color="white" opacity={0.8}>Overdue Tasks</Text>
+                      <AnimatedCounter
+                        value={stats.overdueTasks}
+                        color="orange.300"
+                      />
+                      <Text fontSize="sm" color="white" opacity={0.8}>
+                        Overdue Tasks
+                      </Text>
                     </VStack>
                   </Grid>
                 </Box>

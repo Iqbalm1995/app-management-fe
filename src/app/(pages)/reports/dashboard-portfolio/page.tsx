@@ -41,83 +41,164 @@ import {
   useColorModeValue,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
-import { getCurrentQuarter, convertQuarterToDateRange } from "@/app/helper/MasterHelper";
-import useSnapshotServices, { DashboardFilterRequest, ProjectSummaryDashboardResponse, ProjectQuarterlyDashboardResponse, DivisionOwnerQuartileDashboardResponse, ProjectCharacteristicsDashboardResponse, ProjectTypeDashboardResponse, ProcurementWorkProgramDashboardResponse, ProjectAcquisitionsDashboardResponse, ProjectByGroupManageDashboardResponse, DevStaffProjectClosedDashboardResponse, DevStaffProjectActiveDashboardResponse, RequirementTypeDashboardResponse, RequirementSummaryDashboardResponse, RequirementDivisionSenderDashboardResponse, RequirementMemoSummaryDashboardResponse } from "@/app/services/useSnapshotServices";
+import {
+  getCurrentQuarter,
+  convertQuarterToDateRange,
+} from "@/app/helper/MasterHelper";
+import useSnapshotServices, {
+  DashboardFilterRequest,
+  ProjectSummaryDashboardResponse,
+  ProjectQuarterlyDashboardResponse,
+  DivisionOwnerQuartileDashboardResponse,
+  ProjectCharacteristicsDashboardResponse,
+  ProjectTypeDashboardResponse,
+  ProcurementWorkProgramDashboardResponse,
+  ProjectAcquisitionsDashboardResponse,
+  ProjectByGroupManageDashboardResponse,
+  DevStaffProjectClosedDashboardResponse,
+  DevStaffProjectActiveDashboardResponse,
+  RequirementTypeDashboardResponse,
+  RequirementSummaryDashboardResponse,
+  RequirementDivisionSenderDashboardResponse,
+  RequirementMemoSummaryDashboardResponse,
+} from "@/app/services/useSnapshotServices";
 import dynamic from "next/dynamic";
 import { ApexOptions } from "apexcharts";
-import { FiTrendingUp, FiBarChart, FiActivity, FiRefreshCw } from "react-icons/fi";
+import {
+  FiTrendingUp,
+  FiBarChart,
+  FiActivity,
+  FiRefreshCw,
+} from "react-icons/fi";
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 export default function DashboardPortfolioPage() {
-  const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
-  const [selectedQuarter, setSelectedQuarter] = useState<string>(getCurrentQuarter().toString());
-  const [chartData, setChartData] = useState<ProjectSummaryDashboardResponse[]>([]);
-  const [quarterlyData, setQuarterlyData] = useState<ProjectQuarterlyDashboardResponse[]>([]);
-  const [divisionData, setDivisionData] = useState<DivisionOwnerQuartileDashboardResponse[]>([]);
-  const [characteristicsData, setCharacteristicsData] = useState<ProjectCharacteristicsDashboardResponse[]>([]);
-  const [projectTypeData, setProjectTypeData] = useState<ProjectTypeDashboardResponse[]>([]);
-  const [procurementWorkProgramData, setProcurementWorkProgramData] = useState<ProcurementWorkProgramDashboardResponse[]>([]);
-  const [projectAcquisitionsData, setProjectAcquisitionsData] = useState<ProjectAcquisitionsDashboardResponse[]>([]);
-  const [projectByGroupManageData, setProjectByGroupManageData] = useState<ProjectByGroupManageDashboardResponse[]>([]);
-  const [projectSummaryDevData, setProjectSummaryDevData] = useState<ProjectSummaryDashboardResponse[]>([]);
-  const [devStaffProjectClosedData, setDevStaffProjectClosedData] = useState<DevStaffProjectClosedDashboardResponse[]>([]);
-  const [devStaffModalData, setDevStaffModalData] = useState<DevStaffProjectClosedDashboardResponse[]>([]);
+  const [selectedYear, setSelectedYear] = useState<string>(
+    new Date().getFullYear().toString()
+  );
+  const [selectedQuarter, setSelectedQuarter] = useState<string>(
+    getCurrentQuarter().toString()
+  );
+  const [chartData, setChartData] = useState<ProjectSummaryDashboardResponse[]>(
+    []
+  );
+  const [quarterlyData, setQuarterlyData] = useState<
+    ProjectQuarterlyDashboardResponse[]
+  >([]);
+  const [divisionData, setDivisionData] = useState<
+    DivisionOwnerQuartileDashboardResponse[]
+  >([]);
+  const [characteristicsData, setCharacteristicsData] = useState<
+    ProjectCharacteristicsDashboardResponse[]
+  >([]);
+  const [projectTypeData, setProjectTypeData] = useState<
+    ProjectTypeDashboardResponse[]
+  >([]);
+  const [procurementWorkProgramData, setProcurementWorkProgramData] = useState<
+    ProcurementWorkProgramDashboardResponse[]
+  >([]);
+  const [projectAcquisitionsData, setProjectAcquisitionsData] = useState<
+    ProjectAcquisitionsDashboardResponse[]
+  >([]);
+  const [projectByGroupManageData, setProjectByGroupManageData] = useState<
+    ProjectByGroupManageDashboardResponse[]
+  >([]);
+  const [projectSummaryDevData, setProjectSummaryDevData] = useState<
+    ProjectSummaryDashboardResponse[]
+  >([]);
+  const [devStaffProjectClosedData, setDevStaffProjectClosedData] = useState<
+    DevStaffProjectClosedDashboardResponse[]
+  >([]);
+  const [devStaffModalData, setDevStaffModalData] = useState<
+    DevStaffProjectClosedDashboardResponse[]
+  >([]);
   const [isDevStaffModalOpen, setIsDevStaffModalOpen] = useState(false);
-  const [devStaffProjectActiveData, setDevStaffProjectActiveData] = useState<DevStaffProjectActiveDashboardResponse[]>([]);
-  const [devStaffActiveModalData, setDevStaffActiveModalData] = useState<DevStaffProjectActiveDashboardResponse[]>([]);
-  const [isDevStaffActiveModalOpen, setIsDevStaffActiveModalOpen] = useState(false);
-  const [isProjectSummaryModalOpen, setIsProjectSummaryModalOpen] = useState(false);
-  const [isProjectQuarterlyModalOpen, setIsProjectQuarterlyModalOpen] = useState(false);
+  const [devStaffProjectActiveData, setDevStaffProjectActiveData] = useState<
+    DevStaffProjectActiveDashboardResponse[]
+  >([]);
+  const [devStaffActiveModalData, setDevStaffActiveModalData] = useState<
+    DevStaffProjectActiveDashboardResponse[]
+  >([]);
+  const [isDevStaffActiveModalOpen, setIsDevStaffActiveModalOpen] =
+    useState(false);
+  const [isProjectSummaryModalOpen, setIsProjectSummaryModalOpen] =
+    useState(false);
+  const [isProjectQuarterlyModalOpen, setIsProjectQuarterlyModalOpen] =
+    useState(false);
   const [isDivisionModalOpen, setIsDivisionModalOpen] = useState(false);
-  const [divisionModalData, setDivisionModalData] = useState<DivisionOwnerQuartileDashboardResponse[]>([]);
-  const [isCharacteristicsModalOpen, setIsCharacteristicsModalOpen] = useState(false);
-  const [characteristicsModalData, setCharacteristicsModalData] = useState<ProjectCharacteristicsDashboardResponse[]>([]);
+  const [divisionModalData, setDivisionModalData] = useState<
+    DivisionOwnerQuartileDashboardResponse[]
+  >([]);
+  const [isCharacteristicsModalOpen, setIsCharacteristicsModalOpen] =
+    useState(false);
+  const [characteristicsModalData, setCharacteristicsModalData] = useState<
+    ProjectCharacteristicsDashboardResponse[]
+  >([]);
   const [isProjectTypeModalOpen, setIsProjectTypeModalOpen] = useState(false);
-  const [projectTypeModalData, setProjectTypeModalData] = useState<ProjectTypeDashboardResponse[]>([]);
+  const [projectTypeModalData, setProjectTypeModalData] = useState<
+    ProjectTypeDashboardResponse[]
+  >([]);
   const [isProcurementModalOpen, setIsProcurementModalOpen] = useState(false);
-  const [procurementModalData, setProcurementModalData] = useState<ProcurementWorkProgramDashboardResponse[]>([]);
+  const [procurementModalData, setProcurementModalData] = useState<
+    ProcurementWorkProgramDashboardResponse[]
+  >([]);
   const [isAcquisitionsModalOpen, setIsAcquisitionsModalOpen] = useState(false);
-  const [acquisitionsModalData, setAcquisitionsModalData] = useState<ProjectAcquisitionsDashboardResponse[]>([]);
+  const [acquisitionsModalData, setAcquisitionsModalData] = useState<
+    ProjectAcquisitionsDashboardResponse[]
+  >([]);
   const [isGroupManageModalOpen, setIsGroupManageModalOpen] = useState(false);
-  const [groupManageModalData, setGroupManageModalData] = useState<ProjectByGroupManageDashboardResponse[]>([]);
-  const [isProjectSummaryDevModalOpen, setIsProjectSummaryDevModalOpen] = useState(false);
-  const [projectSummaryDevModalData, setProjectSummaryDevModalData] = useState<ProjectSummaryDashboardResponse[]>([]);
+  const [groupManageModalData, setGroupManageModalData] = useState<
+    ProjectByGroupManageDashboardResponse[]
+  >([]);
+  const [isProjectSummaryDevModalOpen, setIsProjectSummaryDevModalOpen] =
+    useState(false);
+  const [projectSummaryDevModalData, setProjectSummaryDevModalData] = useState<
+    ProjectSummaryDashboardResponse[]
+  >([]);
   const [isUpdateConfirmOpen, setIsUpdateConfirmOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateProgress, setUpdateProgress] = useState(0);
-  const [updateStatus, setUpdateStatus] = useState<string>('');
+  const [updateStatus, setUpdateStatus] = useState<string>("");
   const [tokenData, setTokenData] = useState<string>("");
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
-  
+
   // Requirement state variables
   const [requirementTypeData, setRequirementTypeData] = useState<any[]>([]);
-  const [requirementSummaryData, setRequirementSummaryData] = useState<any[]>([]);
-  const [requirementDivisionData, setRequirementDivisionData] = useState<any[]>([]);
+  const [requirementSummaryData, setRequirementSummaryData] = useState<any[]>(
+    []
+  );
+  const [requirementDivisionData, setRequirementDivisionData] = useState<any[]>(
+    []
+  );
   const [requirementMemoData, setRequirementMemoData] = useState<any[]>([]);
-  
+
   // Requirement modal states
-  const [isRequirementTypeModalOpen, setIsRequirementTypeModalOpen] = useState(false);
-  const [isRequirementSummaryModalOpen, setIsRequirementSummaryModalOpen] = useState(false);
-  const [isRequirementDivisionModalOpen, setIsRequirementDivisionModalOpen] = useState(false);
-  const [isRequirementMemoModalOpen, setIsRequirementMemoModalOpen] = useState(false);
-  
+  const [isRequirementTypeModalOpen, setIsRequirementTypeModalOpen] =
+    useState(false);
+  const [isRequirementSummaryModalOpen, setIsRequirementSummaryModalOpen] =
+    useState(false);
+  const [isRequirementDivisionModalOpen, setIsRequirementDivisionModalOpen] =
+    useState(false);
+  const [isRequirementMemoModalOpen, setIsRequirementMemoModalOpen] =
+    useState(false);
+
   // Dark mode colors
   const bgColor = useColorModeValue("white", "gray.800");
   const cardBg = useColorModeValue("white", "gray.700");
   const textColor = useColorModeValue("gray.800", "white");
   const borderColor = useColorModeValue("gray.200", "gray.600");
-  
-  const { 
-    getProjectSummaryDashboard, 
-    getProjectQuarterlyDashboard, 
-    getDivisionOwnerQuartileDashboard, 
-    getProjectCharacteristicsDashboard, 
-    getProjectTypeDashboard, 
-    getProcurementWorkProgramDashboard, 
-    getProjectAcquisitionsDashboard, 
-    getProjectByGroupManageDashboard, 
-    getDevStaffProjectClosedDashboard, 
+
+  const {
+    getProjectSummaryDashboard,
+    getProjectQuarterlyDashboard,
+    getDivisionOwnerQuartileDashboard,
+    getProjectCharacteristicsDashboard,
+    getProjectTypeDashboard,
+    getProcurementWorkProgramDashboard,
+    getProjectAcquisitionsDashboard,
+    getProjectByGroupManageDashboard,
+    getDevStaffProjectClosedDashboard,
     getDevStaffProjectActiveDashboard,
     projectSummary,
     projectCharacteristic,
@@ -137,8 +218,8 @@ export default function DashboardPortfolioPage() {
     getRequirementSummaryDashboard,
     getRequirementDivisionSenderDashboard,
     getRequirementMemoSummaryDashboard,
-    isLoading, 
-    error 
+    isLoading,
+    error,
   } = useSnapshotServices();
   const toast = useToast();
 
@@ -166,81 +247,116 @@ export default function DashboardPortfolioPage() {
 
   // Month name mapping
   const getMonthName = (monthNumber: number): string => {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
     return months[monthNumber - 1] || monthNumber.toString();
   };
 
   // Shorten division name
   const shortenDivisionName = (fullName: string): string => {
     // Remove "DIVISI" prefix if exists
-    let name = fullName.replace(/^DIVISI\s+/i, '');
-    
+    let name = fullName.replace(/^DIVISI\s+/i, "");
+
     // Split into words and take first letter of each word
-    const words = name.split(/\s+/).filter(word => word.length > 0);
-    const initials = words.map(word => word.charAt(0).toUpperCase()).join('');
-    
+    const words = name.split(/\s+/).filter((word) => word.length > 0);
+    const initials = words.map((word) => word.charAt(0).toUpperCase()).join("");
+
     return initials || fullName;
   };
 
   // Get quarter months with proper mapping
-  const getQuarterMonths = (quarter: string): { monthPeriod: number; monthName: string }[] => {
+  const getQuarterMonths = (
+    quarter: string
+  ): { monthPeriod: number; monthName: string }[] => {
     const quarterMap: { [key: string]: number[] } = {
-      '1': [1, 2, 3],   // Q1: Jan, Feb, Mar
-      '2': [4, 5, 6],   // Q2: Apr, May, Jun
-      '3': [7, 8, 9],   // Q3: Jul, Aug, Sep
-      '4': [10, 11, 12] // Q4: Oct, Nov, Dec
+      "1": [1, 2, 3], // Q1: Jan, Feb, Mar
+      "2": [4, 5, 6], // Q2: Apr, May, Jun
+      "3": [7, 8, 9], // Q3: Jul, Aug, Sep
+      "4": [10, 11, 12], // Q4: Oct, Nov, Dec
     };
-    
-    return quarterMap[quarter]?.map(month => ({
-      monthPeriod: month,
-      monthName: getMonthName(month)
-    })) || [];
+
+    return (
+      quarterMap[quarter]?.map((month) => ({
+        monthPeriod: month,
+        monthName: getMonthName(month),
+      })) || []
+    );
   };
 
-  const getMemoChartData = (memoFlag: 'Y' | 'N') => {
+  const getMemoChartData = (memoFlag: "Y" | "N") => {
     const quarterMonths = getQuarterMonths(selectedQuarter);
-    const filteredData = requirementMemoData.filter((item: any) => item.isHaveMemo === memoFlag);
-    
+    const filteredData = requirementMemoData.filter(
+      (item: any) => item.isHaveMemo === memoFlag
+    );
+
     const brdData = quarterMonths.map(({ monthPeriod }) => {
-      const item = filteredData.find((d: any) => d.monthPeriod === monthPeriod && d.requirementType === 'BRD');
+      const item = filteredData.find(
+        (d: any) => d.monthPeriod === monthPeriod && d.requirementType === "BRD"
+      );
       return item?.requirementCount || 0;
     });
-    
+
     const rfcData = quarterMonths.map(({ monthPeriod }) => {
-      const item = filteredData.find((d: any) => d.monthPeriod === monthPeriod && d.requirementType === 'RFC');
+      const item = filteredData.find(
+        (d: any) => d.monthPeriod === monthPeriod && d.requirementType === "RFC"
+      );
       return item?.requirementCount || 0;
     });
-    
-    return { categories: quarterMonths.map(m => m.monthName), brdData, rfcData };
+
+    return {
+      categories: quarterMonths.map((m) => m.monthName),
+      brdData,
+      rfcData,
+    };
   };
 
   // Load quarterly data from RPT_PROJECT_QUARTAL table
   const loadQuarterlyData = async () => {
     if (!tokenData) return;
 
-    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const dateRange = convertQuarterToDateRange(
+      parseInt(selectedYear),
+      `Q${selectedQuarter}`
+    );
     const filterPayload: DashboardFilterRequest = {
       startDate: dateRange.startDate,
       endDate: dateRange.endDate,
     };
 
     try {
-      const response = await getProjectQuarterlyDashboard(filterPayload, tokenData);
+      const response = await getProjectQuarterlyDashboard(
+        filterPayload,
+        tokenData
+      );
       const apiData = response?.data || [];
-      
+
       // Always show 3 months for the selected quarter
       const quarterMonths = getQuarterMonths(selectedQuarter);
       const completeData = quarterMonths.map(({ monthPeriod, monthName }) => {
-        const existingData = apiData.find(item => item.monthPeriod === monthPeriod);
+        const existingData = apiData.find(
+          (item) => item.monthPeriod === monthPeriod
+        );
         return {
           monthPeriod,
           monthName,
           projectCount: existingData?.projectCount || 0,
           yearPeriod: parseInt(selectedYear),
-          quartalPeriod: parseInt(selectedQuarter)
+          quartalPeriod: parseInt(selectedQuarter),
         };
       });
-      
+
       setQuarterlyData(completeData);
     } catch (err) {
       console.error("Failed to load quarterly data:", err);
@@ -251,46 +367,56 @@ export default function DashboardPortfolioPage() {
   const loadDivisionData = async () => {
     if (!tokenData) return;
 
-    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const dateRange = convertQuarterToDateRange(
+      parseInt(selectedYear),
+      `Q${selectedQuarter}`
+    );
     const filterPayload: DashboardFilterRequest = {
       startDate: dateRange.startDate,
       endDate: dateRange.endDate,
     };
 
     try {
-      const response = await getDivisionOwnerQuartileDashboard(filterPayload, tokenData);
+      const response = await getDivisionOwnerQuartileDashboard(
+        filterPayload,
+        tokenData
+      );
       const apiData = response?.data || [];
-      
+
       // Get unique divisions, limit to 5, and randomize order
       const quarterMonths = getQuarterMonths(selectedQuarter);
-      let uniqueDivisions = [...new Set(apiData.map(item => item.divisionName))];
-      
+      let uniqueDivisions = [
+        ...new Set(apiData.map((item) => item.divisionName)),
+      ];
+
       // Randomize division order
       uniqueDivisions = uniqueDivisions.sort(() => Math.random() - 0.5);
-      
+
       // Limit to maximum 5 divisions
       uniqueDivisions = uniqueDivisions.slice(0, 5);
-      
+
       const completeData: DivisionOwnerQuartileDashboardResponse[] = [];
-      
+
       // If no divisions, create empty structure
       if (uniqueDivisions.length === 0) {
         quarterMonths.forEach(({ monthPeriod, monthName }) => {
           completeData.push({
-            divisionName: 'No Data',
+            divisionName: "No Data",
             monthPeriod,
             monthName,
             projectCount: 0,
             yearPeriod: parseInt(selectedYear),
-            quartalPeriod: parseInt(selectedQuarter)
+            quartalPeriod: parseInt(selectedQuarter),
           });
         });
       } else {
         // Create complete data for each division and month
-        uniqueDivisions.forEach(division => {
+        uniqueDivisions.forEach((division) => {
           quarterMonths.forEach(({ monthPeriod, monthName }) => {
-            const existingData = apiData.find(item => 
-              item.divisionName === division && item.monthPeriod === monthPeriod
+            const existingData = apiData.find(
+              (item) =>
+                item.divisionName === division &&
+                item.monthPeriod === monthPeriod
             );
             completeData.push({
               divisionName: division,
@@ -298,12 +424,12 @@ export default function DashboardPortfolioPage() {
               monthName,
               projectCount: existingData?.projectCount || 0,
               yearPeriod: parseInt(selectedYear),
-              quartalPeriod: parseInt(selectedQuarter)
+              quartalPeriod: parseInt(selectedQuarter),
             });
           });
         });
       }
-      
+
       setDivisionData(completeData);
     } catch (err) {
       console.error("Failed to load division data:", err);
@@ -328,19 +454,27 @@ export default function DashboardPortfolioPage() {
   const loadCharacteristicsData = async () => {
     if (!tokenData) return;
 
-    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const dateRange = convertQuarterToDateRange(
+      parseInt(selectedYear),
+      `Q${selectedQuarter}`
+    );
     const filterPayload: DashboardFilterRequest = {
       startDate: dateRange.startDate,
       endDate: dateRange.endDate,
     };
 
     try {
-      const response = await getProjectCharacteristicsDashboard(filterPayload, tokenData);
+      const response = await getProjectCharacteristicsDashboard(
+        filterPayload,
+        tokenData
+      );
       const apiData = response?.data || [];
-      
+
       // Randomize and limit to 7 characteristics
-      let randomizedData = [...apiData].sort(() => Math.random() - 0.5).slice(0, 7);
-      
+      let randomizedData = [...apiData]
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 7);
+
       setCharacteristicsData(randomizedData);
     } catch (err) {
       console.error("Failed to load characteristics data:", err);
@@ -351,16 +485,19 @@ export default function DashboardPortfolioPage() {
   const loadProjectTypeData = async () => {
     if (!tokenData) return;
 
-    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const dateRange = convertQuarterToDateRange(
+      parseInt(selectedYear),
+      `Q${selectedQuarter}`
+    );
     const filterPayload: DashboardFilterRequest = {
       startDate: dateRange.startDate,
-      endDate: dateRange.endDate
+      endDate: dateRange.endDate,
     };
 
     try {
       const response = await getProjectTypeDashboard(filterPayload, tokenData);
       const apiData = response?.data || [];
-      
+
       setProjectTypeData(apiData);
     } catch (err) {
       console.error("Failed to load project type data:", err);
@@ -371,16 +508,22 @@ export default function DashboardPortfolioPage() {
   const loadProcurementWorkProgramData = async () => {
     if (!tokenData) return;
 
-    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const dateRange = convertQuarterToDateRange(
+      parseInt(selectedYear),
+      `Q${selectedQuarter}`
+    );
     const filterPayload: DashboardFilterRequest = {
       startDate: dateRange.startDate,
-      endDate: dateRange.endDate
+      endDate: dateRange.endDate,
     };
 
     try {
-      const response = await getProcurementWorkProgramDashboard(filterPayload, tokenData);
+      const response = await getProcurementWorkProgramDashboard(
+        filterPayload,
+        tokenData
+      );
       const apiData = response?.data || [];
-      
+
       setProcurementWorkProgramData(apiData);
     } catch (err) {
       console.error("Failed to load procurement work program data:", err);
@@ -391,19 +534,27 @@ export default function DashboardPortfolioPage() {
   const loadProjectAcquisitionsData = async () => {
     if (!tokenData) return;
 
-    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const dateRange = convertQuarterToDateRange(
+      parseInt(selectedYear),
+      `Q${selectedQuarter}`
+    );
     const filterPayload: DashboardFilterRequest = {
       startDate: dateRange.startDate,
-      endDate: dateRange.endDate
+      endDate: dateRange.endDate,
     };
 
     try {
-      const response = await getProjectAcquisitionsDashboard(filterPayload, tokenData);
+      const response = await getProjectAcquisitionsDashboard(
+        filterPayload,
+        tokenData
+      );
       const apiData = response?.data || [];
-      
+
       // Randomize and limit to 7 acquisitions
-      let randomizedData = [...apiData].sort(() => Math.random() - 0.5).slice(0, 7);
-      
+      let randomizedData = [...apiData]
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 7);
+
       setProjectAcquisitionsData(randomizedData);
     } catch (err) {
       console.error("Failed to load project acquisitions data:", err);
@@ -416,21 +567,23 @@ export default function DashboardPortfolioPage() {
     if (name === "Unknown") {
       return "UNK";
     }
-    
+
     // Remove "GROUP" or "GRUP" from the name
-    let formatted = name.replace(/\b(GROUP|GRUP)\b/gi, '').trim();
-    
+    let formatted = name.replace(/\b(GROUP|GRUP)\b/gi, "").trim();
+
     // Split into words
     const words = formatted.split(/\s+/);
-    
+
     // Handle special case for "DIGITAL"
-    const initials = words.map(word => {
-      if (word.toUpperCase() === 'DIGITAL') {
-        return 'DG';
-      }
-      return word.charAt(0).toUpperCase();
-    }).join('');
-    
+    const initials = words
+      .map((word) => {
+        if (word.toUpperCase() === "DIGITAL") {
+          return "DG";
+        }
+        return word.charAt(0).toUpperCase();
+      })
+      .join("");
+
     return initials;
   };
 
@@ -438,19 +591,27 @@ export default function DashboardPortfolioPage() {
   const loadProjectByGroupManageData = async () => {
     if (!tokenData) return;
 
-    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const dateRange = convertQuarterToDateRange(
+      parseInt(selectedYear),
+      `Q${selectedQuarter}`
+    );
     const filterPayload: DashboardFilterRequest = {
       startDate: dateRange.startDate,
-      endDate: dateRange.endDate
+      endDate: dateRange.endDate,
     };
 
     try {
-      const response = await getProjectByGroupManageDashboard(filterPayload, tokenData);
+      const response = await getProjectByGroupManageDashboard(
+        filterPayload,
+        tokenData
+      );
       const apiData = response?.data || [];
-      
+
       // Randomize and limit to 5 groups
-      let randomizedData = [...apiData].sort(() => Math.random() - 0.5).slice(0, 5);
-      
+      let randomizedData = [...apiData]
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 5);
+
       setProjectByGroupManageData(randomizedData);
     } catch (err) {
       console.error("Failed to load project by group manage data:", err);
@@ -461,16 +622,22 @@ export default function DashboardPortfolioPage() {
   const loadProjectSummaryDevData = async () => {
     if (!tokenData) return;
 
-    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const dateRange = convertQuarterToDateRange(
+      parseInt(selectedYear),
+      `Q${selectedQuarter}`
+    );
     const filterPayload: DashboardFilterRequest = {
       startDate: dateRange.startDate,
-      endDate: dateRange.endDate
+      endDate: dateRange.endDate,
     };
 
     try {
-      const response = await getProjectSummaryDashboard(filterPayload, tokenData);
+      const response = await getProjectSummaryDashboard(
+        filterPayload,
+        tokenData
+      );
       const apiData = response?.data || [];
-      
+
       setProjectSummaryDevData(apiData);
     } catch (err) {
       console.error("Failed to load project summary dev data:", err);
@@ -481,16 +648,22 @@ export default function DashboardPortfolioPage() {
   const loadDevStaffProjectClosedData = async () => {
     if (!tokenData) return;
 
-    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const dateRange = convertQuarterToDateRange(
+      parseInt(selectedYear),
+      `Q${selectedQuarter}`
+    );
     const filterPayload: DashboardFilterRequest = {
       startDate: dateRange.startDate,
-      endDate: dateRange.endDate
+      endDate: dateRange.endDate,
     };
 
     try {
-      const response = await getDevStaffProjectClosedDashboard(filterPayload, tokenData);
+      const response = await getDevStaffProjectClosedDashboard(
+        filterPayload,
+        tokenData
+      );
       const apiData = response?.data || [];
-      
+
       // Group by users first, then randomize users and limit to 5
       const userGroups = apiData.reduce((acc, item) => {
         if (!acc[item.userFullName]) {
@@ -499,14 +672,18 @@ export default function DashboardPortfolioPage() {
         acc[item.userFullName].push(item);
         return acc;
       }, {} as Record<string, typeof apiData>);
-      
+
       // Get random 5 users
       const userNames = Object.keys(userGroups);
-      const randomUsers = [...userNames].sort(() => Math.random() - 0.5).slice(0, 5);
-      
+      const randomUsers = [...userNames]
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 5);
+
       // Get all records for these 5 users
-      const randomizedData = randomUsers.flatMap(userName => userGroups[userName]);
-      
+      const randomizedData = randomUsers.flatMap(
+        (userName) => userGroups[userName]
+      );
+
       setDevStaffProjectClosedData(randomizedData);
     } catch (err) {
       console.error("Failed to load dev staff project closed data:", err);
@@ -518,16 +695,22 @@ export default function DashboardPortfolioPage() {
     if (!tokenData) return;
 
     // Use same date range as current filter
-    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const dateRange = convertQuarterToDateRange(
+      parseInt(selectedYear),
+      `Q${selectedQuarter}`
+    );
     const filterPayload: DashboardFilterRequest = {
       startDate: dateRange.startDate,
-      endDate: dateRange.endDate
+      endDate: dateRange.endDate,
     };
 
     try {
-      const response = await getDevStaffProjectClosedDashboard(filterPayload, tokenData);
+      const response = await getDevStaffProjectClosedDashboard(
+        filterPayload,
+        tokenData
+      );
       const apiData = response?.data || [];
-      
+
       setDevStaffModalData(apiData);
       setIsDevStaffModalOpen(true);
     } catch (err) {
@@ -539,16 +722,22 @@ export default function DashboardPortfolioPage() {
   const loadDevStaffProjectActiveData = async () => {
     if (!tokenData) return;
 
-    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const dateRange = convertQuarterToDateRange(
+      parseInt(selectedYear),
+      `Q${selectedQuarter}`
+    );
     const filterPayload: DashboardFilterRequest = {
       startDate: dateRange.startDate,
-      endDate: dateRange.endDate
+      endDate: dateRange.endDate,
     };
 
     try {
-      const response = await getDevStaffProjectActiveDashboard(filterPayload, tokenData);
+      const response = await getDevStaffProjectActiveDashboard(
+        filterPayload,
+        tokenData
+      );
       const apiData = response?.data || [];
-      
+
       // Group by users first, then randomize users and limit to 5
       const userGroups = apiData.reduce((acc, item) => {
         if (!acc[item.userFullName]) {
@@ -557,14 +746,18 @@ export default function DashboardPortfolioPage() {
         acc[item.userFullName].push(item);
         return acc;
       }, {} as Record<string, typeof apiData>);
-      
+
       // Get random 5 users
       const userNames = Object.keys(userGroups);
-      const randomUsers = [...userNames].sort(() => Math.random() - 0.5).slice(0, 5);
-      
+      const randomUsers = [...userNames]
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 5);
+
       // Get all records for these 5 users
-      const randomizedData = randomUsers.flatMap(userName => userGroups[userName]);
-      
+      const randomizedData = randomUsers.flatMap(
+        (userName) => userGroups[userName]
+      );
+
       setDevStaffProjectActiveData(randomizedData);
     } catch (err) {
       console.error("Failed to load dev staff project active data:", err);
@@ -576,16 +769,22 @@ export default function DashboardPortfolioPage() {
     if (!tokenData) return;
 
     // Use same date range as current filter
-    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const dateRange = convertQuarterToDateRange(
+      parseInt(selectedYear),
+      `Q${selectedQuarter}`
+    );
     const filterPayload: DashboardFilterRequest = {
       startDate: dateRange.startDate,
-      endDate: dateRange.endDate
+      endDate: dateRange.endDate,
     };
 
     try {
-      const response = await getDevStaffProjectActiveDashboard(filterPayload, tokenData);
+      const response = await getDevStaffProjectActiveDashboard(
+        filterPayload,
+        tokenData
+      );
       const apiData = response?.data || [];
-      
+
       setDevStaffActiveModalData(apiData);
       setIsDevStaffActiveModalOpen(true);
     } catch (err) {
@@ -609,53 +808,63 @@ export default function DashboardPortfolioPage() {
   const loadAllDivisionData = async () => {
     if (!tokenData) return;
 
-    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const dateRange = convertQuarterToDateRange(
+      parseInt(selectedYear),
+      `Q${selectedQuarter}`
+    );
     const filterPayload: DashboardFilterRequest = {
       startDate: dateRange.startDate,
       endDate: dateRange.endDate,
     };
 
     try {
-      const response = await getDivisionOwnerQuartileDashboard(filterPayload, tokenData);
+      const response = await getDivisionOwnerQuartileDashboard(
+        filterPayload,
+        tokenData
+      );
       const apiData = response?.data || [];
-      
+
       // Get ALL unique divisions (no limit, no randomization for modal)
       const quarterMonths = getQuarterMonths(selectedQuarter);
-      let uniqueDivisions = [...new Set(apiData.map(item => item.divisionName))];
-      
+      let uniqueDivisions = [
+        ...new Set(apiData.map((item) => item.divisionName)),
+      ];
+
       const completeData: DivisionOwnerQuartileDashboardResponse[] = [];
-      
+
       // Create complete data structure for all divisions
       if (uniqueDivisions.length === 0) {
         quarterMonths.forEach(({ monthPeriod, monthName }) => {
           completeData.push({
-            divisionName: 'No Data',
+            divisionName: "No Data",
             monthPeriod,
             monthName,
             projectCount: 0,
             yearPeriod: parseInt(selectedYear),
-            quartalPeriod: parseInt(selectedQuarter)
+            quartalPeriod: parseInt(selectedQuarter),
           });
         });
       } else {
-        uniqueDivisions.forEach(divisionName => {
+        uniqueDivisions.forEach((divisionName) => {
           quarterMonths.forEach(({ monthPeriod, monthName }) => {
-            const existingData = apiData.find(item => 
-              item.divisionName === divisionName && item.monthPeriod === monthPeriod
+            const existingData = apiData.find(
+              (item) =>
+                item.divisionName === divisionName &&
+                item.monthPeriod === monthPeriod
             );
-            
+
             completeData.push({
               divisionName,
               monthPeriod,
               monthName,
               projectCount: existingData?.projectCount || 0,
               yearPeriod: parseInt(selectedYear),
-              quartalPeriod: parseInt(selectedQuarter)
+              quartalPeriod: parseInt(selectedQuarter),
             });
           });
         });
       }
-      
+
       setDivisionModalData(completeData);
       setIsDivisionModalOpen(true);
     } catch (err) {
@@ -667,16 +876,22 @@ export default function DashboardPortfolioPage() {
   const loadAllCharacteristicsData = async () => {
     if (!tokenData) return;
 
-    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const dateRange = convertQuarterToDateRange(
+      parseInt(selectedYear),
+      `Q${selectedQuarter}`
+    );
     const filterPayload: DashboardFilterRequest = {
       startDate: dateRange.startDate,
       endDate: dateRange.endDate,
     };
 
     try {
-      const response = await getProjectCharacteristicsDashboard(filterPayload, tokenData);
+      const response = await getProjectCharacteristicsDashboard(
+        filterPayload,
+        tokenData
+      );
       const apiData = response?.data || [];
-      
+
       setCharacteristicsModalData(apiData);
       setIsCharacteristicsModalOpen(true);
     } catch (err) {
@@ -688,7 +903,10 @@ export default function DashboardPortfolioPage() {
   const loadAllProjectTypeData = async () => {
     if (!tokenData) return;
 
-    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const dateRange = convertQuarterToDateRange(
+      parseInt(selectedYear),
+      `Q${selectedQuarter}`
+    );
     const filterPayload: DashboardFilterRequest = {
       startDate: dateRange.startDate,
       endDate: dateRange.endDate,
@@ -697,7 +915,7 @@ export default function DashboardPortfolioPage() {
     try {
       const response = await getProjectTypeDashboard(filterPayload, tokenData);
       const apiData = response?.data || [];
-      
+
       setProjectTypeModalData(apiData);
       setIsProjectTypeModalOpen(true);
     } catch (err) {
@@ -709,16 +927,22 @@ export default function DashboardPortfolioPage() {
   const loadAllProcurementData = async () => {
     if (!tokenData) return;
 
-    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const dateRange = convertQuarterToDateRange(
+      parseInt(selectedYear),
+      `Q${selectedQuarter}`
+    );
     const filterPayload: DashboardFilterRequest = {
       startDate: dateRange.startDate,
       endDate: dateRange.endDate,
     };
 
     try {
-      const response = await getProcurementWorkProgramDashboard(filterPayload, tokenData);
+      const response = await getProcurementWorkProgramDashboard(
+        filterPayload,
+        tokenData
+      );
       const apiData = response?.data || [];
-      
+
       setProcurementModalData(apiData);
       setIsProcurementModalOpen(true);
     } catch (err) {
@@ -730,16 +954,22 @@ export default function DashboardPortfolioPage() {
   const loadAllAcquisitionsData = async () => {
     if (!tokenData) return;
 
-    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const dateRange = convertQuarterToDateRange(
+      parseInt(selectedYear),
+      `Q${selectedQuarter}`
+    );
     const filterPayload: DashboardFilterRequest = {
       startDate: dateRange.startDate,
       endDate: dateRange.endDate,
     };
 
     try {
-      const response = await getProjectAcquisitionsDashboard(filterPayload, tokenData);
+      const response = await getProjectAcquisitionsDashboard(
+        filterPayload,
+        tokenData
+      );
       const apiData = response?.data || [];
-      
+
       setAcquisitionsModalData(apiData);
       setIsAcquisitionsModalOpen(true);
     } catch (err) {
@@ -751,16 +981,22 @@ export default function DashboardPortfolioPage() {
   const loadAllGroupManageData = async () => {
     if (!tokenData) return;
 
-    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const dateRange = convertQuarterToDateRange(
+      parseInt(selectedYear),
+      `Q${selectedQuarter}`
+    );
     const filterPayload: DashboardFilterRequest = {
       startDate: dateRange.startDate,
       endDate: dateRange.endDate,
     };
 
     try {
-      const response = await getProjectByGroupManageDashboard(filterPayload, tokenData);
+      const response = await getProjectByGroupManageDashboard(
+        filterPayload,
+        tokenData
+      );
       const apiData = response?.data || [];
-      
+
       setGroupManageModalData(apiData);
       setIsGroupManageModalOpen(true);
     } catch (err) {
@@ -772,16 +1008,22 @@ export default function DashboardPortfolioPage() {
   const loadAllProjectSummaryDevData = async () => {
     if (!tokenData) return;
 
-    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const dateRange = convertQuarterToDateRange(
+      parseInt(selectedYear),
+      `Q${selectedQuarter}`
+    );
     const filterPayload: DashboardFilterRequest = {
       startDate: dateRange.startDate,
       endDate: dateRange.endDate,
     };
 
     try {
-      const response = await getProjectSummaryDashboard(filterPayload, tokenData);
+      const response = await getProjectSummaryDashboard(
+        filterPayload,
+        tokenData
+      );
       const apiData = response?.data || [];
-      
+
       setProjectSummaryDevModalData(apiData);
       setIsProjectSummaryDevModalOpen(true);
     } catch (err) {
@@ -790,18 +1032,24 @@ export default function DashboardPortfolioPage() {
   };
 
   // ==================== REQUIREMENT LOAD FUNCTIONS ====================
-  
+
   const loadRequirementTypeData = async () => {
     if (!tokenData) return;
 
-    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const dateRange = convertQuarterToDateRange(
+      parseInt(selectedYear),
+      `Q${selectedQuarter}`
+    );
     const filterPayload: DashboardFilterRequest = {
       startDate: dateRange.startDate,
       endDate: dateRange.endDate,
     };
 
     try {
-      const response = await getRequirementTypeDashboard(filterPayload, tokenData);
+      const response = await getRequirementTypeDashboard(
+        filterPayload,
+        tokenData
+      );
       const apiData = response?.data || [];
       setRequirementTypeData(apiData);
     } catch (err) {
@@ -812,14 +1060,20 @@ export default function DashboardPortfolioPage() {
   const loadRequirementSummaryData = async () => {
     if (!tokenData) return;
 
-    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const dateRange = convertQuarterToDateRange(
+      parseInt(selectedYear),
+      `Q${selectedQuarter}`
+    );
     const filterPayload: DashboardFilterRequest = {
       startDate: dateRange.startDate,
       endDate: dateRange.endDate,
     };
 
     try {
-      const response = await getRequirementSummaryDashboard(filterPayload, tokenData);
+      const response = await getRequirementSummaryDashboard(
+        filterPayload,
+        tokenData
+      );
       const apiData = response?.data || [];
       setRequirementSummaryData(apiData);
     } catch (err) {
@@ -830,14 +1084,20 @@ export default function DashboardPortfolioPage() {
   const loadRequirementDivisionData = async () => {
     if (!tokenData) return;
 
-    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const dateRange = convertQuarterToDateRange(
+      parseInt(selectedYear),
+      `Q${selectedQuarter}`
+    );
     const filterPayload: DashboardFilterRequest = {
       startDate: dateRange.startDate,
       endDate: dateRange.endDate,
     };
 
     try {
-      const response = await getRequirementDivisionSenderDashboard(filterPayload, tokenData);
+      const response = await getRequirementDivisionSenderDashboard(
+        filterPayload,
+        tokenData
+      );
       const apiData = response?.data || [];
       setRequirementDivisionData(apiData);
     } catch (err) {
@@ -848,14 +1108,20 @@ export default function DashboardPortfolioPage() {
   const loadRequirementMemoData = async () => {
     if (!tokenData) return;
 
-    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const dateRange = convertQuarterToDateRange(
+      parseInt(selectedYear),
+      `Q${selectedQuarter}`
+    );
     const filterPayload: DashboardFilterRequest = {
       startDate: dateRange.startDate,
       endDate: dateRange.endDate,
     };
 
     try {
-      const response = await getRequirementMemoSummaryDashboard(filterPayload, tokenData);
+      const response = await getRequirementMemoSummaryDashboard(
+        filterPayload,
+        tokenData
+      );
       const apiData = response?.data || [];
       setRequirementMemoData(apiData);
     } catch (err) {
@@ -881,20 +1147,50 @@ export default function DashboardPortfolioPage() {
     setIsUpdateConfirmOpen(false);
 
     const snapshotCalls = [
-      { name: 'Project Summary', call: () => projectSummary(tokenData) },
-      { name: 'Project Characteristics', call: () => projectCharacteristic(tokenData) },
-      { name: 'Project Type', call: () => projectType(tokenData) },
-      { name: 'Procurement Work Program', call: () => projectProcurementFlag(tokenData) },
-      { name: 'Project Acquisitions', call: () => projectAcquisition(tokenData) },
-      { name: 'Project by Group Manage', call: () => projectByGroupManage(tokenData) },
-      { name: 'Project Quarterly', call: () => projectQuartal(tokenData) },
-      { name: 'Division Owner Quartile', call: () => projectDivisionOwnerQuartal(tokenData) },
-      { name: 'User Project Closed', call: () => userProjectClosedQuartal(tokenData) },
-      { name: 'User Project Active', call: () => userProjectActiveQuartal(tokenData) },
-      { name: 'Requirement Type', call: () => requirementType(tokenData) },
-      { name: 'Requirement Summary', call: () => requirementSummary(tokenData) },
-      { name: 'Requirement Division Sender', call: () => requirementDivisionSender(tokenData) },
-      { name: 'Requirement Memo Summary', call: () => requirementMemoSummary(tokenData) },
+      { name: "Project Summary", call: () => projectSummary(tokenData) },
+      {
+        name: "Project Characteristics",
+        call: () => projectCharacteristic(tokenData),
+      },
+      { name: "Project Type", call: () => projectType(tokenData) },
+      {
+        name: "Procurement Work Program",
+        call: () => projectProcurementFlag(tokenData),
+      },
+      {
+        name: "Project Acquisitions",
+        call: () => projectAcquisition(tokenData),
+      },
+      {
+        name: "Project by Group Manage",
+        call: () => projectByGroupManage(tokenData),
+      },
+      { name: "Project Quarterly", call: () => projectQuartal(tokenData) },
+      {
+        name: "Division Owner Quartile",
+        call: () => projectDivisionOwnerQuartal(tokenData),
+      },
+      {
+        name: "User Project Closed",
+        call: () => userProjectClosedQuartal(tokenData),
+      },
+      {
+        name: "User Project Active",
+        call: () => userProjectActiveQuartal(tokenData),
+      },
+      { name: "Requirement Type", call: () => requirementType(tokenData) },
+      {
+        name: "Requirement Summary",
+        call: () => requirementSummary(tokenData),
+      },
+      {
+        name: "Requirement Division Sender",
+        call: () => requirementDivisionSender(tokenData),
+      },
+      {
+        name: "Requirement Memo Summary",
+        call: () => requirementMemoSummary(tokenData),
+      },
     ];
 
     let successCount = 0;
@@ -907,7 +1203,7 @@ export default function DashboardPortfolioPage() {
       for (let i = 0; i < snapshotCalls.length; i++) {
         const { name, call } = snapshotCalls[i];
         setUpdateStatus(`Updating ${name}...`);
-        
+
         try {
           await call();
           successCount++;
@@ -931,15 +1227,15 @@ export default function DashboardPortfolioPage() {
         }
 
         setUpdateProgress(((i + 1) / snapshotCalls.length) * 100);
-        
+
         // Small delay between calls
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise((resolve) => setTimeout(resolve, 200));
       }
 
       // Ensure minimum 3 seconds loading time
       const elapsedTime = Date.now() - startTime;
       if (elapsedTime < 3000) {
-        await new Promise(resolve => setTimeout(resolve, 3000 - elapsedTime));
+        await new Promise((resolve) => setTimeout(resolve, 3000 - elapsedTime));
       }
 
       // Final status
@@ -963,7 +1259,6 @@ export default function DashboardPortfolioPage() {
 
       // Refresh dashboard data after update
       await handleFilter();
-
     } catch (error) {
       console.error("Update report failed:", error);
       toast({
@@ -976,7 +1271,7 @@ export default function DashboardPortfolioPage() {
     } finally {
       setIsUpdating(false);
       setUpdateProgress(0);
-      setUpdateStatus('');
+      setUpdateStatus("");
     }
   };
 
@@ -1058,7 +1353,7 @@ export default function DashboardPortfolioPage() {
         loadRequirementTypeData(),
         loadRequirementSummaryData(),
         loadRequirementDivisionData(),
-        loadRequirementMemoData()
+        loadRequirementMemoData(),
       ]);
     } catch (err) {
       toast({
@@ -1075,14 +1370,20 @@ export default function DashboardPortfolioPage() {
   const loadProjectSummaryData = async () => {
     if (!tokenData) return;
 
-    const dateRange = convertQuarterToDateRange(parseInt(selectedYear), `Q${selectedQuarter}`);
+    const dateRange = convertQuarterToDateRange(
+      parseInt(selectedYear),
+      `Q${selectedQuarter}`
+    );
     const filterPayload: DashboardFilterRequest = {
       startDate: dateRange.startDate,
       endDate: dateRange.endDate,
     };
 
     try {
-      const response = await getProjectSummaryDashboard(filterPayload, tokenData);
+      const response = await getProjectSummaryDashboard(
+        filterPayload,
+        tokenData
+      );
       if (response?.data) {
         setChartData(response.data);
         // Extract last updated from first item (all items have same timestamp)
@@ -1130,462 +1431,543 @@ export default function DashboardPortfolioPage() {
   // Chart configuration
   const chartOptions: ApexOptions = {
     chart: {
-      type: 'donut',
+      type: "donut",
       height: 400,
-      fontFamily: 'Inter, sans-serif',
+      fontFamily: "Inter, sans-serif",
       animations: {
         enabled: true,
         speed: 800,
-      }
+      },
     },
-    labels: chartData.map(item => item.projectStatus),
-    colors: ['#3182CE', '#38A169', '#D69E2E', '#E53E3E', '#805AD5', '#DD6B20', '#319795', '#E56399'],
+    labels: chartData.map((item) => item.projectStatus),
+    colors: [
+      "#3182CE",
+      "#38A169",
+      "#D69E2E",
+      "#E53E3E",
+      "#805AD5",
+      "#DD6B20",
+      "#319795",
+      "#E56399",
+    ],
     legend: {
-      position: 'bottom',
-      horizontalAlign: 'center',
-      fontSize: '14px',
+      position: "bottom",
+      horizontalAlign: "center",
+      fontSize: "14px",
       fontWeight: 500,
       markers: {
         size: 12,
       },
       itemMargin: {
         horizontal: 8,
-        vertical: 4
-      }
+        vertical: 4,
+      },
     },
     plotOptions: {
       pie: {
         donut: {
-          size: '65%',
+          size: "65%",
           labels: {
             show: true,
             name: {
               show: true,
-              fontSize: '16px',
+              fontSize: "16px",
               fontWeight: 600,
-              color: '#2D3748'
+              color: "#2D3748",
             },
             value: {
               show: true,
-              fontSize: '24px',
+              fontSize: "24px",
               fontWeight: 700,
-              color: '#1A202C',
-              formatter: (val: string) => parseInt(val).toString()
+              color: "#1A202C",
+              formatter: (val: string) => parseInt(val).toString(),
             },
             total: {
               show: true,
               showAlways: true,
-              label: 'Total Projects',
-              fontSize: '14px',
+              label: "Total Projects",
+              fontSize: "14px",
               fontWeight: 500,
-              color: '#718096',
+              color: "#718096",
               formatter: () => {
-                return chartData.reduce((sum, item) => sum + item.projectCount, 0).toString();
-              }
-            }
-          }
-        }
-      }
+                return chartData
+                  .reduce((sum, item) => sum + item.projectCount, 0)
+                  .toString();
+              },
+            },
+          },
+        },
+      },
     },
     dataLabels: {
       enabled: true,
       formatter: (val: number) => `${val.toFixed(1)}%`,
       style: {
-        fontSize: '12px',
+        fontSize: "12px",
         fontWeight: 600,
-        colors: ['#FFFFFF']
+        colors: ["#FFFFFF"],
       },
       dropShadow: {
         enabled: true,
         blur: 2,
-        opacity: 0.8
-      }
+        opacity: 0.8,
+      },
     },
     tooltip: {
       enabled: true,
       style: {
-        fontSize: '14px',
-        fontFamily: 'Inter, sans-serif'
+        fontSize: "14px",
+        fontFamily: "Inter, sans-serif",
       },
       y: {
         formatter: (val: number, opts: any) => {
           const dataIndex = opts.dataPointIndex;
           const count = chartData[dataIndex]?.projectCount || 0;
-          return `${count} project${count !== 1 ? 's' : ''}`;
-        }
-      }
+          return `${count} project${count !== 1 ? "s" : ""}`;
+        },
+      },
     },
     stroke: {
       show: true,
       width: 2,
-      colors: ['#FFFFFF']
-    }
+      colors: ["#FFFFFF"],
+    },
   };
 
-  const chartSeries = chartData.map(item => item.projectCount);
+  const chartSeries = chartData.map((item) => item.projectCount);
 
   // Quarterly Chart Configuration - Vertical Column Chart
   const quarterlyChartOptions: ApexOptions = {
     chart: {
-      type: 'bar',
+      type: "bar",
       height: 300,
-      fontFamily: 'Inter, sans-serif',
+      fontFamily: "Inter, sans-serif",
       animations: {
         enabled: true,
         speed: 800,
       },
       toolbar: {
-        show: false
-      }
+        show: false,
+      },
     },
     plotOptions: {
       bar: {
         horizontal: false,
-        columnWidth: '60%',
+        columnWidth: "60%",
         borderRadius: 4,
         dataLabels: {
-          position: 'top'
-        }
-      }
+          position: "top",
+        },
+      },
     },
-    colors: ['#38A169'],
+    colors: ["#38A169"],
     dataLabels: {
       enabled: true,
       offsetY: -20,
       style: {
-        fontSize: '12px',
+        fontSize: "12px",
         fontWeight: 600,
-        colors: ['#2D3748']
-      }
+        colors: ["#2D3748"],
+      },
     },
     stroke: {
       show: true,
       width: 2,
-      colors: ['transparent']
+      colors: ["transparent"],
     },
     xaxis: {
-      categories: quarterlyData.map(item => item.monthName || getMonthName(item.monthPeriod)),
+      categories: quarterlyData.map(
+        (item) => item.monthName || getMonthName(item.monthPeriod)
+      ),
       labels: {
         style: {
-          fontSize: '12px',
+          fontSize: "12px",
           fontWeight: 500,
-          colors: ['#4A5568']
-        }
-      }
+          colors: ["#4A5568"],
+        },
+      },
     },
     yaxis: {
       title: {
-        text: 'Total Projects',
+        text: "Total Projects",
         style: {
-          fontSize: '12px',
+          fontSize: "12px",
           fontWeight: 500,
-          color: '#4A5568'
-        }
+          color: "#4A5568",
+        },
       },
       labels: {
         style: {
-          fontSize: '12px',
+          fontSize: "12px",
           fontWeight: 500,
-          colors: ['#4A5568']
-        }
-      }
+          colors: ["#4A5568"],
+        },
+      },
     },
     grid: {
-      borderColor: '#E2E8F0',
+      borderColor: "#E2E8F0",
       strokeDashArray: 3,
       yaxis: {
         lines: {
-          show: true
-        }
-      }
+          show: true,
+        },
+      },
     },
     tooltip: {
       shared: false,
       intersect: true,
       style: {
-        fontSize: '12px',
-        fontFamily: 'Inter, sans-serif'
+        fontSize: "12px",
+        fontFamily: "Inter, sans-serif",
       },
       y: {
-        formatter: (val: number) => `${val} projects`
-      }
-    }
+        formatter: (val: number) => `${val} projects`,
+      },
+    },
   };
 
   const quarterlyChartSeries = [
     {
-      name: 'Total Projects',
-      data: quarterlyData.map(item => item.projectCount)
-    }
+      name: "Total Projects",
+      data: quarterlyData.map((item) => item.projectCount),
+    },
   ];
 
   // Division Owner Quartile Chart Configuration - Horizontal Stacked Bar Chart
   const divisionChartOptions: ApexOptions = {
     chart: {
-      type: 'bar',
+      type: "bar",
       height: 400,
       stacked: true,
-      fontFamily: 'Inter, sans-serif',
+      fontFamily: "Inter, sans-serif",
       animations: {
         enabled: true,
         speed: 800,
       },
       toolbar: {
-        show: false
-      }
+        show: false,
+      },
     },
     plotOptions: {
       bar: {
         horizontal: true,
         borderRadius: 4,
         dataLabels: {
-          position: 'center'
-        }
-      }
+          position: "center",
+        },
+      },
     },
-    colors: ['#3182CE', '#319795', '#D69E2E'],
+    colors: ["#3182CE", "#319795", "#D69E2E"],
     dataLabels: {
       enabled: true,
-      formatter: (val: number) => val > 0 ? `${val}` : '',
+      formatter: (val: number) => (val > 0 ? `${val}` : ""),
       style: {
-        fontSize: '11px',
+        fontSize: "11px",
         fontWeight: 600,
-        colors: ['#FFFFFF']
-      }
+        colors: ["#FFFFFF"],
+      },
     },
     stroke: {
       show: true,
       width: 1,
-      colors: ['#FFFFFF']
+      colors: ["#FFFFFF"],
     },
     xaxis: {
       labels: {
         style: {
-          fontSize: '12px',
+          fontSize: "12px",
           fontWeight: 500,
-          colors: ['#4A5568']
-        }
-      }
+          colors: ["#4A5568"],
+        },
+      },
     },
     yaxis: {
       labels: {
         style: {
-          fontSize: '12px',
+          fontSize: "12px",
           fontWeight: 500,
-          colors: ['#4A5568']
-        }
-      }
+          colors: ["#4A5568"],
+        },
+      },
     },
     grid: {
-      borderColor: '#E2E8F0',
+      borderColor: "#E2E8F0",
       strokeDashArray: 3,
       xaxis: {
         lines: {
-          show: true
-        }
-      }
+          show: true,
+        },
+      },
     },
     tooltip: {
       shared: false,
       intersect: true,
       style: {
-        fontSize: '12px',
-        fontFamily: 'Inter, sans-serif'
-      }
+        fontSize: "12px",
+        fontFamily: "Inter, sans-serif",
+      },
     },
     legend: {
-      position: 'top',
-      horizontalAlign: 'center',
-      fontSize: '12px',
+      position: "top",
+      horizontalAlign: "center",
+      fontSize: "12px",
       fontWeight: 500,
       markers: {
         size: 12,
         strokeWidth: 0,
-        shape: 'square'
-      }
-    }
+        shape: "square",
+      },
+    },
   };
 
   // Prepare division chart series data
   const getDivisionChartSeries = () => {
     const quarterMonths = getQuarterMonths(selectedQuarter);
-    const uniqueDivisions = [...new Set(divisionData.map(item => item.divisionName))];
-    
+    const uniqueDivisions = [
+      ...new Set(divisionData.map((item) => item.divisionName)),
+    ];
+
     return quarterMonths.map(({ monthName }) => ({
-      name: monthName || '',
-      data: uniqueDivisions.map(division => {
-        const divisionItem = divisionData.find(item => 
-          item.divisionName === division && item.monthName === monthName
+      name: monthName || "",
+      data: uniqueDivisions.map((division) => {
+        const divisionItem = divisionData.find(
+          (item) =>
+            item.divisionName === division && item.monthName === monthName
         );
         return divisionItem?.projectCount || 0;
-      })
+      }),
     }));
   };
 
   const divisionChartSeries = getDivisionChartSeries();
-  const divisionCategories = [...new Set(divisionData.map(item => shortenDivisionName(item.divisionName)))];
-  const divisionFullNames = [...new Set(divisionData.map(item => item.divisionName))];
+  const divisionCategories = [
+    ...new Set(
+      divisionData.map((item) => shortenDivisionName(item.divisionName))
+    ),
+  ];
+  const divisionFullNames = [
+    ...new Set(divisionData.map((item) => item.divisionName)),
+  ];
 
   // Project Characteristics Chart Configuration
   const characteristicsChartOptions: ApexOptions = {
     chart: {
-      type: 'bar',
+      type: "bar",
       height: 400,
-      fontFamily: 'Inter, sans-serif',
-      toolbar: { show: false }
+      fontFamily: "Inter, sans-serif",
+      toolbar: { show: false },
     },
     plotOptions: {
-      bar: { 
-        horizontal: true, 
+      bar: {
+        horizontal: true,
         borderRadius: 4,
-        distributed: true
-      }
+        distributed: true,
+      },
     },
-    colors: ['#ED8936', '#38B2AC', '#3182CE', '#805AD5', '#D69E2E', '#E53E3E', '#38A169'],
+    colors: [
+      "#ED8936",
+      "#38B2AC",
+      "#3182CE",
+      "#805AD5",
+      "#D69E2E",
+      "#E53E3E",
+      "#38A169",
+    ],
     fill: {
-      colors: ['#ED8936', '#38B2AC', '#3182CE', '#805AD5', '#D69E2E', '#E53E3E', '#38A169']
+      colors: [
+        "#ED8936",
+        "#38B2AC",
+        "#3182CE",
+        "#805AD5",
+        "#D69E2E",
+        "#E53E3E",
+        "#38A169",
+      ],
     },
     dataLabels: {
       enabled: true,
-      formatter: (val: number) => val > 0 ? `${val}` : ''
+      formatter: (val: number) => (val > 0 ? `${val}` : ""),
     },
     xaxis: {
-      categories: characteristicsData.map(item => item.characteristicName)
+      categories: characteristicsData.map((item) => item.characteristicName),
     },
     tooltip: {
-      y: { formatter: (val: number) => `${val} projects` }
-    }
+      y: { formatter: (val: number) => `${val} projects` },
+    },
   };
 
   // Project Type Pie Chart Configuration
   const projectTypeChartOptions: ApexOptions = {
     chart: {
-      type: 'pie',
+      type: "pie",
       height: 400,
-      fontFamily: 'Inter, sans-serif'
+      fontFamily: "Inter, sans-serif",
     },
-    colors: ['#ED8936', '#38B2AC', '#3182CE', '#805AD5', '#D69E2E', '#E53E3E', '#38A169', '#F56565', '#48BB78'],
-    labels: projectTypeData.map(item => item.projectTypeName),
+    colors: [
+      "#ED8936",
+      "#38B2AC",
+      "#3182CE",
+      "#805AD5",
+      "#D69E2E",
+      "#E53E3E",
+      "#38A169",
+      "#F56565",
+      "#48BB78",
+    ],
+    labels: projectTypeData.map((item) => item.projectTypeName),
     dataLabels: {
       enabled: true,
       formatter: (val: number, opts: any) => {
         const count = projectTypeData[opts.seriesIndex]?.projectCount || 0;
         return `${count}`;
-      }
+      },
     },
     legend: {
-      position: 'bottom'
+      position: "bottom",
     },
     tooltip: {
-      y: { formatter: (val: number) => `${val} projects` }
-    }
+      y: { formatter: (val: number) => `${val} projects` },
+    },
   };
 
-  const projectTypeChartSeries = projectTypeData.map(item => item.projectCount);
+  const projectTypeChartSeries = projectTypeData.map(
+    (item) => item.projectCount
+  );
 
   // Procurement Work Program Donut Chart Configuration
   const procurementWorkProgramChartOptions: ApexOptions = {
     chart: {
-      type: 'donut',
+      type: "donut",
       height: 400,
-      fontFamily: 'Inter, sans-serif'
+      fontFamily: "Inter, sans-serif",
     },
-    colors: ['#ED8936', '#38B2AC', '#3182CE', '#805AD5', '#D69E2E', '#E53E3E', '#38A169', '#F56565', '#48BB78'],
-    labels: procurementWorkProgramData.map(item => item.procurementWorkProgramFlag),
+    colors: [
+      "#ED8936",
+      "#38B2AC",
+      "#3182CE",
+      "#805AD5",
+      "#D69E2E",
+      "#E53E3E",
+      "#38A169",
+      "#F56565",
+      "#48BB78",
+    ],
+    labels: procurementWorkProgramData.map(
+      (item) => item.procurementWorkProgramFlag
+    ),
     dataLabels: {
       enabled: true,
       formatter: (val: number, opts: any) => {
-        const count = procurementWorkProgramData[opts.seriesIndex]?.projectCount || 0;
+        const count =
+          procurementWorkProgramData[opts.seriesIndex]?.projectCount || 0;
         return `${count}`;
-      }
+      },
     },
     legend: {
-      position: 'bottom'
+      position: "bottom",
     },
     tooltip: {
-      y: { formatter: (val: number) => `${val} projects` }
-    }
+      y: { formatter: (val: number) => `${val} projects` },
+    },
   };
 
-  const procurementWorkProgramChartSeries = procurementWorkProgramData.map(item => item.projectCount);
+  const procurementWorkProgramChartSeries = procurementWorkProgramData.map(
+    (item) => item.projectCount
+  );
 
-  const characteristicsChartSeries = [{
-    name: 'Projects',
-    data: characteristicsData.map(item => item.projectCount)
-  }];
+  const characteristicsChartSeries = [
+    {
+      name: "Projects",
+      data: characteristicsData.map((item) => item.projectCount),
+    },
+  ];
 
   // Project Acquisitions Bar Chart Configuration (same as characteristics)
   const projectAcquisitionsChartOptions: ApexOptions = {
     chart: {
-      type: 'bar',
+      type: "bar",
       height: 400,
-      fontFamily: 'Inter, sans-serif',
+      fontFamily: "Inter, sans-serif",
       toolbar: {
-        show: false
-      }
+        show: false,
+      },
     },
-    colors: ['#ED8936', '#38B2AC', '#3182CE', '#805AD5', '#D69E2E', '#E53E3E', '#38A169'],
+    colors: [
+      "#ED8936",
+      "#38B2AC",
+      "#3182CE",
+      "#805AD5",
+      "#D69E2E",
+      "#E53E3E",
+      "#38A169",
+    ],
     plotOptions: {
       bar: {
         distributed: true,
         horizontal: true,
-        columnWidth: '60%'
-      }
+        columnWidth: "60%",
+      },
     },
     dataLabels: {
       enabled: true,
-      formatter: (val: number) => `${val}`
+      formatter: (val: number) => `${val}`,
     },
     xaxis: {
-      title: { text: 'Project Count' },
-      categories: projectAcquisitionsData.map(item => item.projectAcquisitionName)
+      title: { text: "Project Count" },
+      categories: projectAcquisitionsData.map(
+        (item) => item.projectAcquisitionName
+      ),
     },
     yaxis: {
       labels: {
-        style: { fontSize: '12px' }
-      }
+        style: { fontSize: "12px" },
+      },
     },
     legend: { show: false },
     tooltip: {
-      y: { formatter: (val: number) => `${val} projects` }
-    }
+      y: { formatter: (val: number) => `${val} projects` },
+    },
   };
 
-  const projectAcquisitionsChartSeries = [{
-    name: 'Projects',
-    data: projectAcquisitionsData.map(item => item.projectCount)
-  }];
+  const projectAcquisitionsChartSeries = [
+    {
+      name: "Projects",
+      data: projectAcquisitionsData.map((item) => item.projectCount),
+    },
+  ];
 
   // Project by Group Manage Bar Chart Configuration (horizontal)
   const projectByGroupManageChartOptions: ApexOptions = {
     chart: {
-      type: 'bar',
+      type: "bar",
       height: 400,
-      fontFamily: 'Inter, sans-serif',
+      fontFamily: "Inter, sans-serif",
       toolbar: {
-        show: false
-      }
+        show: false,
+      },
     },
-    colors: ['#ED8936', '#38B2AC', '#3182CE', '#805AD5', '#D69E2E'],
+    colors: ["#ED8936", "#38B2AC", "#3182CE", "#805AD5", "#D69E2E"],
     plotOptions: {
       bar: {
         distributed: true,
         horizontal: true,
-        columnWidth: '60%'
-      }
+        columnWidth: "60%",
+      },
     },
     dataLabels: {
       enabled: true,
-      formatter: (val: number) => `${val}`
+      formatter: (val: number) => `${val}`,
     },
     xaxis: {
-      title: { text: 'Project Count' },
-      categories: projectByGroupManageData.map(item => formatGroupName(item.projectGroupNameManage))
+      title: { text: "Project Count" },
+      categories: projectByGroupManageData.map((item) =>
+        formatGroupName(item.projectGroupNameManage)
+      ),
     },
     yaxis: {
       labels: {
-        style: { fontSize: '12px' }
-      }
+        style: { fontSize: "12px" },
+      },
     },
     legend: { show: false },
     tooltip: {
@@ -1593,49 +1975,68 @@ export default function DashboardPortfolioPage() {
       x: {
         formatter: (val: any, opts: any) => {
           const index = opts.dataPointIndex;
-          return projectByGroupManageData[index]?.projectGroupNameManage || 'Unknown';
-        }
-      }
-    }
+          return (
+            projectByGroupManageData[index]?.projectGroupNameManage || "Unknown"
+          );
+        },
+      },
+    },
   };
 
-  const projectByGroupManageChartSeries = [{
-    name: 'Projects',
-    data: projectByGroupManageData.map(item => item.projectCount)
-  }];
+  const projectByGroupManageChartSeries = [
+    {
+      name: "Projects",
+      data: projectByGroupManageData.map((item) => item.projectCount),
+    },
+  ];
 
   // Project Summary Dev Donut Chart Configuration (Active vs Closed)
-  const activeProjects = projectSummaryDevData.filter(item => {
+  const activeProjects = projectSummaryDevData.filter((item) => {
     const status = item.projectStatus?.toUpperCase();
-    return status?.includes('ACTIVE') || status?.includes('INITIATE') || status?.includes('PROGRESS') || status?.includes('PLANNING');
+    return (
+      status?.includes("ACTIVE") ||
+      status?.includes("INITIATE") ||
+      status?.includes("PROGRESS") ||
+      status?.includes("PLANNING")
+    );
   });
-  const closedProjects = projectSummaryDevData.filter(item => {
+  const closedProjects = projectSummaryDevData.filter((item) => {
     const status = item.projectStatus?.toUpperCase();
-    return status?.includes('CLOSED') || status?.includes('COMPLETED') || status?.includes('CANCELLED');
+    return (
+      status?.includes("CLOSED") ||
+      status?.includes("COMPLETED") ||
+      status?.includes("CANCELLED")
+    );
   });
-  const activeCount = activeProjects.reduce((sum, item) => sum + item.projectCount, 0);
-  const closedCount = closedProjects.reduce((sum, item) => sum + item.projectCount, 0);
+  const activeCount = activeProjects.reduce(
+    (sum, item) => sum + item.projectCount,
+    0
+  );
+  const closedCount = closedProjects.reduce(
+    (sum, item) => sum + item.projectCount,
+    0
+  );
 
   // Debug: Log the data to see the structure
-  console.log('Project Summary Dev Data:', projectSummaryDevData);
-  console.log('Active Count:', activeCount, 'Closed Count:', closedCount);
+  console.log("Project Summary Dev Data:", projectSummaryDevData);
+  console.log("Active Count:", activeCount, "Closed Count:", closedCount);
 
   const projectSummaryDevChartOptions: ApexOptions = {
     chart: {
-      type: 'donut',
+      type: "donut",
       height: 300,
-      fontFamily: 'Inter, sans-serif',
+      fontFamily: "Inter, sans-serif",
       toolbar: {
-        show: false
-      }
+        show: false,
+      },
     },
-    colors: ['#38A169', '#E53E3E'],
-    labels: ['Active', 'Closed'],
+    colors: ["#38A169", "#E53E3E"],
+    labels: ["Active", "Closed"],
     dataLabels: {
       enabled: true,
       formatter: (val: number) => {
-        return Math.round(val) + '%';
-      }
+        return Math.round(val) + "%";
+      },
     },
     plotOptions: {
       pie: {
@@ -1644,84 +2045,86 @@ export default function DashboardPortfolioPage() {
             show: true,
             total: {
               show: true,
-              label: 'Total Projects',
-              formatter: () => `${activeCount + closedCount}`
-            }
-          }
-        }
-      }
+              label: "Total Projects",
+              formatter: () => `${activeCount + closedCount}`,
+            },
+          },
+        },
+      },
     },
     legend: {
-      position: 'bottom'
+      position: "bottom",
     },
     tooltip: {
-      y: { formatter: (val: number) => `${val} projects` }
-    }
+      y: { formatter: (val: number) => `${val} projects` },
+    },
   };
 
   const projectSummaryDevChartSeries = [activeCount, closedCount];
 
   // Dev Staff Project Closed Chart Configuration (same as Division Owner Quartile)
-  const devStaffCategories = [...new Set(devStaffProjectClosedData.map(item => item.userFullName))];
+  const devStaffCategories = [
+    ...new Set(devStaffProjectClosedData.map((item) => item.userFullName)),
+  ];
   const quarterMonths = getQuarterMonths(selectedQuarter);
 
   const devStaffProjectClosedChartOptions: ApexOptions = {
     chart: {
-      type: 'bar',
+      type: "bar",
       height: 300,
       stacked: true,
-      fontFamily: 'Inter, sans-serif',
+      fontFamily: "Inter, sans-serif",
       toolbar: {
-        show: false
-      }
+        show: false,
+      },
     },
-    colors: ['#ED8936', '#38B2AC', '#3182CE'],
+    colors: ["#ED8936", "#38B2AC", "#3182CE"],
     plotOptions: {
       bar: {
         horizontal: true,
         borderRadius: 4,
         dataLabels: {
-          position: 'center'
-        }
-      }
+          position: "center",
+        },
+      },
     },
     dataLabels: {
-      enabled: false
+      enabled: false,
     },
     stroke: {
       show: true,
       width: 2,
-      colors: ['transparent']
+      colors: ["transparent"],
     },
     xaxis: {
       categories: devStaffCategories,
       labels: {
         style: {
-          fontSize: '10px'
-        }
+          fontSize: "10px",
+        },
       },
       title: {
-        text: 'Project Count'
-      }
+        text: "Project Count",
+      },
     },
     yaxis: {
       title: {
-        text: 'User Full Name'
-      }
+        text: "User Full Name",
+      },
     },
     fill: {
-      opacity: 1
+      opacity: 1,
     },
     legend: {
-      position: 'top',
-      horizontalAlign: 'center',
-      fontSize: '12px',
+      position: "top",
+      horizontalAlign: "center",
+      fontSize: "12px",
       fontWeight: 500,
       markers: {
         size: 12,
         strokeWidth: 0,
-        shape: 'square'
-      }
+        shape: "square",
+      },
     },
     tooltip: {
       shared: false,
@@ -1730,101 +2133,115 @@ export default function DashboardPortfolioPage() {
         formatter: (val: number, opts: any) => {
           const seriesIndex = opts.seriesIndex;
           const dataPointIndex = opts.dataPointIndex;
-          const monthName = quarterMonths[seriesIndex]?.monthName || '';
-          const userFullName = devStaffCategories[dataPointIndex] || '';
+          const monthName = quarterMonths[seriesIndex]?.monthName || "";
+          const userFullName = devStaffCategories[dataPointIndex] || "";
           return `${monthName}: ${val} projects<br/>User: ${userFullName}`;
-        }
-      }
-    }
+        },
+      },
+    },
   };
 
   // Helper function to get full month name
   const getFullMonthName = (monthNumber: number): string => {
-    const months = ['January', 'February', 'March', 'April', 'May', 'June', 
-                   'July', 'August', 'September', 'October', 'November', 'December'];
+    const months = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
     return months[monthNumber - 1] || monthNumber.toString();
   };
 
-  const devStaffProjectClosedChartSeries = quarterMonths.map(month => {
-    const seriesData = devStaffCategories.map(user => {
+  const devStaffProjectClosedChartSeries = quarterMonths.map((month) => {
+    const seriesData = devStaffCategories.map((user) => {
       const userMonthData = devStaffProjectClosedData.find(
-        item => item.userFullName === user && (
-          item.monthName === month.monthName ||
-          item.monthName === getFullMonthName(month.monthPeriod) ||
-          item.monthName === month.monthPeriod.toString().padStart(2, '0') ||
-          item.monthName === month.monthPeriod.toString()
-        )
+        (item) =>
+          item.userFullName === user &&
+          (item.monthName === month.monthName ||
+            item.monthName === getFullMonthName(month.monthPeriod) ||
+            item.monthName === month.monthPeriod.toString().padStart(2, "0") ||
+            item.monthName === month.monthPeriod.toString())
       );
       return userMonthData ? userMonthData.projectCount : 0;
     });
-    
+
     return {
       name: month.monthName,
-      data: seriesData
+      data: seriesData,
     };
   });
 
   // Dev Staff Project Active Chart Configuration (same as Dev Staff Project Closed)
-  const devStaffActiveCategories = [...new Set(devStaffProjectActiveData.map(item => item.userFullName))];
+  const devStaffActiveCategories = [
+    ...new Set(devStaffProjectActiveData.map((item) => item.userFullName)),
+  ];
   const quarterMonthsActive = getQuarterMonths(selectedQuarter);
 
   const devStaffProjectActiveChartOptions: ApexOptions = {
     chart: {
-      type: 'bar',
+      type: "bar",
       height: 300,
       stacked: true,
-      fontFamily: 'Inter, sans-serif',
+      fontFamily: "Inter, sans-serif",
       toolbar: {
-        show: false
-      }
+        show: false,
+      },
     },
-    colors: ['#38A169', '#68D391', '#9AE6B4'],
+    colors: ["#38A169", "#68D391", "#9AE6B4"],
     plotOptions: {
       bar: {
         horizontal: true,
         borderRadius: 4,
         dataLabels: {
-          position: 'center'
-        }
-      }
+          position: "center",
+        },
+      },
     },
     dataLabels: {
-      enabled: false
+      enabled: false,
     },
     stroke: {
       show: true,
       width: 2,
-      colors: ['transparent']
+      colors: ["transparent"],
     },
     xaxis: {
       categories: devStaffActiveCategories,
       labels: {
         style: {
-          fontSize: '10px'
-        }
+          fontSize: "10px",
+        },
       },
       title: {
-        text: 'Project Count'
-      }
+        text: "Project Count",
+      },
     },
     yaxis: {
       title: {
-        text: 'User Full Name'
-      }
+        text: "User Full Name",
+      },
     },
     fill: {
-      opacity: 1
+      opacity: 1,
     },
     legend: {
-      position: 'top',
-      horizontalAlign: 'center',
-      fontSize: '12px',
+      position: "top",
+      horizontalAlign: "center",
+      fontSize: "12px",
       fontWeight: 500,
       markers: {
         size: 12,
         strokeWidth: 0,
-        shape: 'square'
-      }
+        shape: "square",
+      },
     },
     tooltip: {
       shared: false,
@@ -1833,30 +2250,30 @@ export default function DashboardPortfolioPage() {
         formatter: (val: number, opts: any) => {
           const seriesIndex = opts.seriesIndex;
           const dataPointIndex = opts.dataPointIndex;
-          const monthName = quarterMonthsActive[seriesIndex]?.monthName || '';
-          const userFullName = devStaffActiveCategories[dataPointIndex] || '';
+          const monthName = quarterMonthsActive[seriesIndex]?.monthName || "";
+          const userFullName = devStaffActiveCategories[dataPointIndex] || "";
           return `${monthName}: ${val} projects<br/>User: ${userFullName}`;
-        }
-      }
-    }
+        },
+      },
+    },
   };
 
-  const devStaffProjectActiveChartSeries = quarterMonthsActive.map(month => {
-    const seriesData = devStaffActiveCategories.map(user => {
+  const devStaffProjectActiveChartSeries = quarterMonthsActive.map((month) => {
+    const seriesData = devStaffActiveCategories.map((user) => {
       const userMonthData = devStaffProjectActiveData.find(
-        item => item.userFullName === user && (
-          item.monthName === month.monthName ||
-          item.monthName === getFullMonthName(month.monthPeriod) ||
-          item.monthName === month.monthPeriod.toString().padStart(2, '0') ||
-          item.monthName === month.monthPeriod.toString()
-        )
+        (item) =>
+          item.userFullName === user &&
+          (item.monthName === month.monthName ||
+            item.monthName === getFullMonthName(month.monthPeriod) ||
+            item.monthName === month.monthPeriod.toString().padStart(2, "0") ||
+            item.monthName === month.monthPeriod.toString())
       );
       return userMonthData ? userMonthData.projectCount : 0;
     });
-    
+
     return {
       name: month.monthName,
-      data: seriesData
+      data: seriesData,
     };
   });
 
@@ -1865,26 +2282,26 @@ export default function DashboardPortfolioPage() {
     ...divisionChartOptions,
     xaxis: {
       ...divisionChartOptions.xaxis,
-      categories: divisionCategories
+      categories: divisionCategories,
     },
     tooltip: {
       shared: false,
       intersect: true,
       style: {
-        fontSize: '12px',
-        fontFamily: 'Inter, sans-serif'
+        fontSize: "12px",
+        fontFamily: "Inter, sans-serif",
       },
       y: {
         formatter: (val: number, opts: any) => {
           const seriesIndex = opts.seriesIndex;
           const dataPointIndex = opts.dataPointIndex;
           const quarterMonths = getQuarterMonths(selectedQuarter);
-          const monthName = quarterMonths[seriesIndex]?.monthName || '';
-          const fullDivisionName = divisionFullNames[dataPointIndex] || '';
+          const monthName = quarterMonths[seriesIndex]?.monthName || "";
+          const fullDivisionName = divisionFullNames[dataPointIndex] || "";
           return `${monthName}: ${val} projects<br/>Division: ${fullDivisionName}`;
-        }
-      }
-    }
+        },
+      },
+    },
   };
 
   return (
@@ -1896,112 +2313,156 @@ export default function DashboardPortfolioPage() {
           <Card mb={6} rounded={radiusStyle} shadow="lg" bg={cardBg}>
             <CardBody>
               <Flex justify="space-between" align="center" wrap="wrap" gap={4}>
-                <TabList bg={useColorModeValue("gray.100", "gray.700")} p={1} rounded={radiusStyle}>
-                  <Tab rounded={radiusStyle} _selected={{ bg: "blue.500", color: "white" }}>
+                <TabList
+                  bg={useColorModeValue("gray.100", "gray.700")}
+                  p={1}
+                  rounded={radiusStyle}
+                >
+                  <Tab
+                    rounded={radiusStyle}
+                    _selected={{ bg: "blue.500", color: "white" }}
+                  >
                     <Icon as={FiBarChart} mr={2} />
                     General
                   </Tab>
-                  <Tab rounded={radiusStyle} _selected={{ bg: "blue.500", color: "white" }}>
+                  <Tab
+                    rounded={radiusStyle}
+                    _selected={{ bg: "blue.500", color: "white" }}
+                  >
                     <Icon as={FiActivity} mr={2} />
                     Special
                   </Tab>
-                  <Tab rounded={radiusStyle} _selected={{ bg: "blue.500", color: "white" }}>
+                  <Tab
+                    rounded={radiusStyle}
+                    _selected={{ bg: "blue.500", color: "white" }}
+                  >
                     <Icon as={FiTrendingUp} mr={2} />
                     Requirement
                   </Tab>
                 </TabList>
-              
-              <HStack spacing={4} bg={useColorModeValue("gray.50", "gray.700")} p={4} rounded={radiusStyle}>
-                <VStack spacing={1} align="start">
-                  <Text fontSize="xs" color={useColorModeValue("gray.600", "gray.300")} fontWeight="medium">Year</Text>
-                  <Select
-                    value={selectedYear}
-                    onChange={(e) => setSelectedYear(e.target.value)}
-                    size="sm"
-                    bg={cardBg}
-                    rounded={radiusStyle}
-                    border="1px solid"
-                    borderColor="gray.200"
-                    _focus={{ borderColor: "blue.400", boxShadow: "0 0 0 1px blue.400" }}
-                  >
-                    {years.map((year) => (
-                      <option key={year} value={year.toString()}>
-                        {year}
-                      </option>
-                    ))}
-                  </Select>
-                </VStack>
-                
-                <VStack spacing={1} align="start">
-                  <Text fontSize="xs" color={useColorModeValue("gray.600", "gray.300")} fontWeight="medium">Quarter</Text>
-                  <Select
-                    value={selectedQuarter}
-                    onChange={(e) => setSelectedQuarter(e.target.value)}
-                    size="sm"
-                    bg={cardBg}
-                    rounded={radiusStyle}
-                    border="1px solid"
-                    borderColor="gray.200"
-                    _focus={{ borderColor: "blue.400", boxShadow: "0 0 0 1px blue.400" }}
-                  >
-                    {quarters.map((quarter) => (
-                      <option key={quarter.value} value={quarter.value}>
-                        {quarter.label}
-                      </option>
-                    ))}
-                  </Select>
-                </VStack>
-                
-                <VStack spacing={1} align="start">
-                  <Text fontSize="xs" color="transparent">Action</Text>
-                  <Button 
-                    colorScheme="blue" 
-                    onClick={handleFilter}
-                    isLoading={isLoading}
-                    loadingText="Loading..."
-                    size="sm"
-                    rounded={radiusStyle}
-                    leftIcon={<FiRefreshCw />}
-                    _hover={{ transform: "translateY(-1px)", shadow: "md" }}
-                    transition="all 0.2s"
-                  >
-                    Filter
-                  </Button>
-                </VStack>
-                
-                <VStack spacing={1} align="start">
-                  <Text fontSize="xs" color="transparent">Update</Text>
-                  <Button 
-                    colorScheme="orange" 
-                    onClick={() => setIsUpdateConfirmOpen(true)}
-                    isLoading={isUpdating}
-                    loadingText="Updating..."
-                    size="sm"
-                    rounded={radiusStyle}
-                    leftIcon={<FiActivity />}
-                    _hover={{ transform: "translateY(-1px)", shadow: "md" }}
-                    transition="all 0.2s"
-                  >
-                    Update Report
-                  </Button>
-                </VStack>
-              </HStack>
-            </Flex>
-          </CardBody>
-        </Card>
+
+                <HStack
+                  spacing={4}
+                  bg={useColorModeValue("gray.50", "gray.700")}
+                  p={4}
+                  rounded={radiusStyle}
+                >
+                  <VStack spacing={1} align="start">
+                    <Text
+                      fontSize="xs"
+                      color={useColorModeValue("gray.600", "gray.300")}
+                      fontWeight="medium"
+                    >
+                      Year
+                    </Text>
+                    <Select
+                      value={selectedYear}
+                      onChange={(e) => setSelectedYear(e.target.value)}
+                      size="sm"
+                      bg={cardBg}
+                      rounded={radiusStyle}
+                      border="1px solid"
+                      borderColor="gray.200"
+                      _focus={{
+                        borderColor: "blue.400",
+                        boxShadow: "0 0 0 1px blue.400",
+                      }}
+                    >
+                      {years.map((year) => (
+                        <option key={year} value={year.toString()}>
+                          {year}
+                        </option>
+                      ))}
+                    </Select>
+                  </VStack>
+
+                  <VStack spacing={1} align="start">
+                    <Text
+                      fontSize="xs"
+                      color={useColorModeValue("gray.600", "gray.300")}
+                      fontWeight="medium"
+                    >
+                      Quarter
+                    </Text>
+                    <Select
+                      value={selectedQuarter}
+                      onChange={(e) => setSelectedQuarter(e.target.value)}
+                      size="sm"
+                      bg={cardBg}
+                      rounded={radiusStyle}
+                      border="1px solid"
+                      borderColor="gray.200"
+                      _focus={{
+                        borderColor: "blue.400",
+                        boxShadow: "0 0 0 1px blue.400",
+                      }}
+                    >
+                      {quarters.map((quarter) => (
+                        <option key={quarter.value} value={quarter.value}>
+                          {quarter.label}
+                        </option>
+                      ))}
+                    </Select>
+                  </VStack>
+
+                  <VStack spacing={1} align="start">
+                    <Text fontSize="xs" color="transparent">
+                      Action
+                    </Text>
+                    <Button
+                      colorScheme="blue"
+                      onClick={handleFilter}
+                      isLoading={isLoading}
+                      loadingText="Loading..."
+                      size="sm"
+                      rounded={radiusStyle}
+                      leftIcon={<FiRefreshCw />}
+                      _hover={{ transform: "translateY(-1px)", shadow: "md" }}
+                      transition="all 0.2s"
+                    >
+                      Filter
+                    </Button>
+                  </VStack>
+
+                  <VStack spacing={1} align="start">
+                    <Text fontSize="xs" color="transparent">
+                      Update
+                    </Text>
+                    <Button
+                      colorScheme="orange"
+                      onClick={() => setIsUpdateConfirmOpen(true)}
+                      isLoading={isUpdating}
+                      loadingText="Updating..."
+                      size="sm"
+                      rounded={radiusStyle}
+                      leftIcon={<FiActivity />}
+                      _hover={{ transform: "translateY(-1px)", shadow: "md" }}
+                      transition="all 0.2s"
+                    >
+                      Update Report
+                    </Button>
+                  </VStack>
+                </HStack>
+              </Flex>
+            </CardBody>
+          </Card>
 
           <TabPanels>
             <TabPanel p={0}>
               {/* 12-Column Grid Layout */}
-              <Grid 
-                templateColumns="repeat(12, 1fr)" 
+              <Grid
+                templateColumns="repeat(12, 1fr)"
                 gap={6}
                 autoRows="min-content"
               >
                 {/* Project Summary - 4 cols */}
                 <GridItem colSpan={{ base: 12, md: 6, lg: 4 }}>
                   <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
-                    <CardHeader bg="blue.500" color="white" roundedTop={radiusStyle}>
+                    <CardHeader
+                      bg="blue.500"
+                      color="white"
+                      roundedTop={radiusStyle}
+                    >
                       <Flex justify="space-between" align="center">
                         <HStack>
                           <Icon as={FiTrendingUp} />
@@ -2010,19 +2471,19 @@ export default function DashboardPortfolioPage() {
                           </Text>
                         </HStack>
                         <HStack spacing={2}>
-                          <Button 
-                            size="xs" 
-                            variant="ghost" 
+                          <Button
+                            size="xs"
+                            variant="ghost"
                             color="white"
-                            onClick={handleFilter} 
+                            onClick={handleFilter}
                             isLoading={isLoading}
                             _hover={{ bg: "whiteAlpha.200" }}
                           >
                             <FiRefreshCw />
                           </Button>
-                          <Button 
-                            size="xs" 
-                            variant="ghost" 
+                          <Button
+                            size="xs"
+                            variant="ghost"
                             color="white"
                             onClick={loadAllProjectSummaryData}
                             _hover={{ bg: "whiteAlpha.200" }}
@@ -2043,21 +2504,54 @@ export default function DashboardPortfolioPage() {
                           />
                           <HStack justify="center" mt={4} spacing={6}>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Total</StatLabel>
+                              <StatLabel
+                                color={useColorModeValue(
+                                  "gray.600",
+                                  "gray.300"
+                                )}
+                              >
+                                Total
+                              </StatLabel>
                               <StatNumber color="blue.600" fontSize="lg">
-                                {chartData.reduce((sum, item) => sum + item.projectCount, 0)}
+                                {chartData.reduce(
+                                  (sum, item) => sum + item.projectCount,
+                                  0
+                                )}
                               </StatNumber>
                             </Stat>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Categories</StatLabel>
-                              <StatNumber color="green.600" fontSize="lg">{chartData.length}</StatNumber>
+                              <StatLabel
+                                color={useColorModeValue(
+                                  "gray.600",
+                                  "gray.300"
+                                )}
+                              >
+                                Categories
+                              </StatLabel>
+                              <StatNumber color="green.600" fontSize="lg">
+                                {chartData.length}
+                              </StatNumber>
                             </Stat>
                           </HStack>
                         </Box>
                       ) : (
-                        <Flex justify="center" align="center" height="300px" direction="column">
-                          <Icon as={FiBarChart} size="48px" color="gray.300" mb={4} />
-                          <Text color="gray.500" fontSize="sm" textAlign="center">
+                        <Flex
+                          justify="center"
+                          align="center"
+                          height="300px"
+                          direction="column"
+                        >
+                          <Icon
+                            as={FiBarChart}
+                            size="48px"
+                            color="gray.300"
+                            mb={4}
+                          />
+                          <Text
+                            color="gray.500"
+                            fontSize="sm"
+                            textAlign="center"
+                          >
                             {isLoading ? "Loading..." : "No data available"}
                           </Text>
                         </Flex>
@@ -2069,7 +2563,11 @@ export default function DashboardPortfolioPage() {
                 {/* Project Quarterly - 4 cols */}
                 <GridItem colSpan={{ base: 12, md: 6, lg: 4 }}>
                   <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
-                    <CardHeader bg="green.500" color="white" roundedTop={radiusStyle}>
+                    <CardHeader
+                      bg="green.500"
+                      color="white"
+                      roundedTop={radiusStyle}
+                    >
                       <Flex justify="space-between" align="center">
                         <HStack>
                           <Icon as={FiActivity} />
@@ -2078,9 +2576,9 @@ export default function DashboardPortfolioPage() {
                           </Text>
                         </HStack>
                         <HStack spacing={2}>
-                          <Button 
-                            size="xs" 
-                            variant="ghost" 
+                          <Button
+                            size="xs"
+                            variant="ghost"
                             color="white"
                             onClick={loadQuarterlyData}
                             isLoading={isLoading}
@@ -2088,9 +2586,9 @@ export default function DashboardPortfolioPage() {
                           >
                             <FiRefreshCw />
                           </Button>
-                          <Button 
-                            size="xs" 
-                            variant="ghost" 
+                          <Button
+                            size="xs"
+                            variant="ghost"
                             color="white"
                             onClick={loadAllProjectQuarterlyData}
                             _hover={{ bg: "whiteAlpha.200" }}
@@ -2111,24 +2609,64 @@ export default function DashboardPortfolioPage() {
                           />
                           <HStack justify="center" mt={4} spacing={6}>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Q{selectedQuarter} Total</StatLabel>
+                              <StatLabel
+                                color={useColorModeValue(
+                                  "gray.600",
+                                  "gray.300"
+                                )}
+                              >
+                                Q{selectedQuarter} Total
+                              </StatLabel>
                               <StatNumber color="green.600" fontSize="lg">
-                                {quarterlyData.reduce((sum, item) => sum + item.projectCount, 0)}
+                                {quarterlyData.reduce(
+                                  (sum, item) => sum + item.projectCount,
+                                  0
+                                )}
                               </StatNumber>
                             </Stat>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Avg per Month</StatLabel>
+                              <StatLabel
+                                color={useColorModeValue(
+                                  "gray.600",
+                                  "gray.300"
+                                )}
+                              >
+                                Avg per Month
+                              </StatLabel>
                               <StatNumber color="blue.600" fontSize="lg">
-                                {quarterlyData.length > 0 ? Math.round(quarterlyData.reduce((sum, item) => sum + item.projectCount, 0) / quarterlyData.length) : 0}
+                                {quarterlyData.length > 0
+                                  ? Math.round(
+                                      quarterlyData.reduce(
+                                        (sum, item) => sum + item.projectCount,
+                                        0
+                                      ) / quarterlyData.length
+                                    )
+                                  : 0}
                               </StatNumber>
                             </Stat>
                           </HStack>
                         </Box>
                       ) : (
-                        <Flex justify="center" align="center" height="300px" direction="column">
-                          <Icon as={FiActivity} size="48px" color="gray.300" mb={4} />
-                          <Text color="gray.500" fontSize="sm" textAlign="center">
-                            {isLoading ? "Loading..." : "No quarterly data available"}
+                        <Flex
+                          justify="center"
+                          align="center"
+                          height="300px"
+                          direction="column"
+                        >
+                          <Icon
+                            as={FiActivity}
+                            size="48px"
+                            color="gray.300"
+                            mb={4}
+                          />
+                          <Text
+                            color="gray.500"
+                            fontSize="sm"
+                            textAlign="center"
+                          >
+                            {isLoading
+                              ? "Loading..."
+                              : "No quarterly data available"}
                           </Text>
                         </Flex>
                       )}
@@ -2139,7 +2677,11 @@ export default function DashboardPortfolioPage() {
                 {/* Project Division Owner Quartile - 4 cols */}
                 <GridItem colSpan={{ base: 12, md: 6, lg: 4 }}>
                   <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
-                    <CardHeader bg="purple.500" color="white" roundedTop={radiusStyle}>
+                    <CardHeader
+                      bg="purple.500"
+                      color="white"
+                      roundedTop={radiusStyle}
+                    >
                       <Flex justify="space-between" align="center">
                         <HStack>
                           <Icon as={FiTrendingUp} />
@@ -2148,9 +2690,9 @@ export default function DashboardPortfolioPage() {
                           </Text>
                         </HStack>
                         <HStack spacing={2}>
-                          <Button 
-                            size="xs" 
-                            variant="ghost" 
+                          <Button
+                            size="xs"
+                            variant="ghost"
                             color="white"
                             onClick={loadDivisionData}
                             isLoading={isLoading}
@@ -2158,9 +2700,9 @@ export default function DashboardPortfolioPage() {
                           >
                             <FiRefreshCw />
                           </Button>
-                          <Button 
-                            size="xs" 
-                            variant="ghost" 
+                          <Button
+                            size="xs"
+                            variant="ghost"
                             color="white"
                             onClick={loadAllDivisionData}
                             _hover={{ bg: "whiteAlpha.200" }}
@@ -2181,24 +2723,56 @@ export default function DashboardPortfolioPage() {
                           />
                           <HStack justify="center" mt={4} spacing={6}>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Q{selectedQuarter} Divisions</StatLabel>
+                              <StatLabel
+                                color={useColorModeValue(
+                                  "gray.600",
+                                  "gray.300"
+                                )}
+                              >
+                                Q{selectedQuarter} Divisions
+                              </StatLabel>
                               <StatNumber color="purple.600" fontSize="lg">
                                 {divisionCategories.length}
                               </StatNumber>
                             </Stat>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Total Projects</StatLabel>
+                              <StatLabel
+                                color={useColorModeValue(
+                                  "gray.600",
+                                  "gray.300"
+                                )}
+                              >
+                                Total Projects
+                              </StatLabel>
                               <StatNumber color="blue.600" fontSize="lg">
-                                {divisionData.reduce((sum, item) => sum + item.projectCount, 0)}
+                                {divisionData.reduce(
+                                  (sum, item) => sum + item.projectCount,
+                                  0
+                                )}
                               </StatNumber>
                             </Stat>
                           </HStack>
                         </Box>
                       ) : (
-                        <Flex justify="center" align="center" height="400px" direction="column">
-                          <Icon as={FiBarChart} size="48px" color="gray.300" mb={4} />
-                          <Text color="gray.500" fontSize="sm" textAlign="center">
-                            No division data available for Q{selectedQuarter} {selectedYear}
+                        <Flex
+                          justify="center"
+                          align="center"
+                          height="400px"
+                          direction="column"
+                        >
+                          <Icon
+                            as={FiBarChart}
+                            size="48px"
+                            color="gray.300"
+                            mb={4}
+                          />
+                          <Text
+                            color="gray.500"
+                            fontSize="sm"
+                            textAlign="center"
+                          >
+                            No division data available for Q{selectedQuarter}{" "}
+                            {selectedYear}
                           </Text>
                         </Flex>
                       )}
@@ -2209,7 +2783,11 @@ export default function DashboardPortfolioPage() {
                 {/* Project Characteristics - 6 cols */}
                 <GridItem colSpan={{ base: 12, md: 6 }}>
                   <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
-                    <CardHeader bg="orange.500" color="white" roundedTop={radiusStyle}>
+                    <CardHeader
+                      bg="orange.500"
+                      color="white"
+                      roundedTop={radiusStyle}
+                    >
                       <Flex justify="space-between" align="center">
                         <HStack>
                           <Icon as={FiActivity} />
@@ -2218,9 +2796,9 @@ export default function DashboardPortfolioPage() {
                           </Text>
                         </HStack>
                         <HStack spacing={2}>
-                          <Button 
-                            size="xs" 
-                            variant="ghost" 
+                          <Button
+                            size="xs"
+                            variant="ghost"
                             color="white"
                             onClick={loadCharacteristicsData}
                             isLoading={isLoading}
@@ -2228,9 +2806,9 @@ export default function DashboardPortfolioPage() {
                           >
                             <FiRefreshCw />
                           </Button>
-                          <Button 
-                            size="xs" 
-                            variant="ghost" 
+                          <Button
+                            size="xs"
+                            variant="ghost"
                             color="white"
                             onClick={loadAllCharacteristicsData}
                             _hover={{ bg: "whiteAlpha.200" }}
@@ -2251,23 +2829,54 @@ export default function DashboardPortfolioPage() {
                           />
                           <HStack justify="center" mt={4} spacing={6}>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Characteristics</StatLabel>
+                              <StatLabel
+                                color={useColorModeValue(
+                                  "gray.600",
+                                  "gray.300"
+                                )}
+                              >
+                                Characteristics
+                              </StatLabel>
                               <StatNumber color="orange.600" fontSize="lg">
                                 {characteristicsData.length}
                               </StatNumber>
                             </Stat>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Total Projects</StatLabel>
+                              <StatLabel
+                                color={useColorModeValue(
+                                  "gray.600",
+                                  "gray.300"
+                                )}
+                              >
+                                Total Projects
+                              </StatLabel>
                               <StatNumber color="blue.600" fontSize="lg">
-                                {characteristicsData.reduce((sum, item) => sum + item.projectCount, 0)}
+                                {characteristicsData.reduce(
+                                  (sum, item) => sum + item.projectCount,
+                                  0
+                                )}
                               </StatNumber>
                             </Stat>
                           </HStack>
                         </Box>
                       ) : (
-                        <Flex justify="center" align="center" height="400px" direction="column">
-                          <Icon as={FiActivity} size="48px" color="gray.300" mb={4} />
-                          <Text color="gray.500" fontSize="sm" textAlign="center">
+                        <Flex
+                          justify="center"
+                          align="center"
+                          height="400px"
+                          direction="column"
+                        >
+                          <Icon
+                            as={FiActivity}
+                            size="48px"
+                            color="gray.300"
+                            mb={4}
+                          />
+                          <Text
+                            color="gray.500"
+                            fontSize="sm"
+                            textAlign="center"
+                          >
                             No characteristics data available
                           </Text>
                         </Flex>
@@ -2279,7 +2888,11 @@ export default function DashboardPortfolioPage() {
                 {/* Project Type - 6 cols */}
                 <GridItem colSpan={{ base: 12, md: 6 }}>
                   <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
-                    <CardHeader bg="teal.500" color="white" roundedTop={radiusStyle}>
+                    <CardHeader
+                      bg="teal.500"
+                      color="white"
+                      roundedTop={radiusStyle}
+                    >
                       <Flex justify="space-between" align="center">
                         <HStack>
                           <Icon as={FiBarChart} />
@@ -2288,9 +2901,9 @@ export default function DashboardPortfolioPage() {
                           </Text>
                         </HStack>
                         <HStack spacing={2}>
-                          <Button 
-                            size="xs" 
-                            variant="ghost" 
+                          <Button
+                            size="xs"
+                            variant="ghost"
                             color="white"
                             onClick={loadProjectTypeData}
                             isLoading={isLoading}
@@ -2298,9 +2911,9 @@ export default function DashboardPortfolioPage() {
                           >
                             <FiRefreshCw />
                           </Button>
-                          <Button 
-                            size="xs" 
-                            variant="ghost" 
+                          <Button
+                            size="xs"
+                            variant="ghost"
                             color="white"
                             onClick={loadAllProjectTypeData}
                             _hover={{ bg: "whiteAlpha.200" }}
@@ -2321,23 +2934,54 @@ export default function DashboardPortfolioPage() {
                           />
                           <HStack justify="center" mt={4} spacing={6}>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Types</StatLabel>
+                              <StatLabel
+                                color={useColorModeValue(
+                                  "gray.600",
+                                  "gray.300"
+                                )}
+                              >
+                                Types
+                              </StatLabel>
                               <StatNumber color="teal.600" fontSize="lg">
                                 {projectTypeData.length}
                               </StatNumber>
                             </Stat>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Total Projects</StatLabel>
+                              <StatLabel
+                                color={useColorModeValue(
+                                  "gray.600",
+                                  "gray.300"
+                                )}
+                              >
+                                Total Projects
+                              </StatLabel>
                               <StatNumber color="teal.600" fontSize="lg">
-                                {projectTypeData.reduce((sum, item) => sum + item.projectCount, 0)}
+                                {projectTypeData.reduce(
+                                  (sum, item) => sum + item.projectCount,
+                                  0
+                                )}
                               </StatNumber>
                             </Stat>
                           </HStack>
                         </Box>
                       ) : (
-                        <Flex justify="center" align="center" height="400px" direction="column">
-                          <Icon as={FiBarChart} size="48px" color="gray.300" mb={4} />
-                          <Text color="gray.500" fontSize="sm" textAlign="center">
+                        <Flex
+                          justify="center"
+                          align="center"
+                          height="400px"
+                          direction="column"
+                        >
+                          <Icon
+                            as={FiBarChart}
+                            size="48px"
+                            color="gray.300"
+                            mb={4}
+                          />
+                          <Text
+                            color="gray.500"
+                            fontSize="sm"
+                            textAlign="center"
+                          >
                             No project type data available
                           </Text>
                         </Flex>
@@ -2349,7 +2993,11 @@ export default function DashboardPortfolioPage() {
                 {/* Project Procurement Work Program Flag - 5 cols */}
                 <GridItem colSpan={{ base: 12, md: 6, lg: 5 }}>
                   <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
-                    <CardHeader bg="pink.500" color="white" roundedTop={radiusStyle}>
+                    <CardHeader
+                      bg="pink.500"
+                      color="white"
+                      roundedTop={radiusStyle}
+                    >
                       <Flex justify="space-between" align="center">
                         <HStack>
                           <Icon as={FiTrendingUp} />
@@ -2358,9 +3006,9 @@ export default function DashboardPortfolioPage() {
                           </Text>
                         </HStack>
                         <HStack spacing={2}>
-                          <Button 
-                            size="xs" 
-                            variant="ghost" 
+                          <Button
+                            size="xs"
+                            variant="ghost"
                             color="white"
                             onClick={loadProcurementWorkProgramData}
                             isLoading={isLoading}
@@ -2368,9 +3016,9 @@ export default function DashboardPortfolioPage() {
                           >
                             <FiRefreshCw />
                           </Button>
-                          <Button 
-                            size="xs" 
-                            variant="ghost" 
+                          <Button
+                            size="xs"
+                            variant="ghost"
                             color="white"
                             onClick={loadAllProcurementData}
                             _hover={{ bg: "whiteAlpha.200" }}
@@ -2391,23 +3039,54 @@ export default function DashboardPortfolioPage() {
                           />
                           <HStack justify="center" mt={4} spacing={6}>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Categories</StatLabel>
+                              <StatLabel
+                                color={useColorModeValue(
+                                  "gray.600",
+                                  "gray.300"
+                                )}
+                              >
+                                Categories
+                              </StatLabel>
                               <StatNumber color="pink.600" fontSize="lg">
                                 {procurementWorkProgramData.length}
                               </StatNumber>
                             </Stat>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Total Projects</StatLabel>
+                              <StatLabel
+                                color={useColorModeValue(
+                                  "gray.600",
+                                  "gray.300"
+                                )}
+                              >
+                                Total Projects
+                              </StatLabel>
                               <StatNumber color="pink.600" fontSize="lg">
-                                {procurementWorkProgramData.reduce((sum, item) => sum + item.projectCount, 0)}
+                                {procurementWorkProgramData.reduce(
+                                  (sum, item) => sum + item.projectCount,
+                                  0
+                                )}
                               </StatNumber>
                             </Stat>
                           </HStack>
                         </Box>
                       ) : (
-                        <Flex justify="center" align="center" height="400px" direction="column">
-                          <Icon as={FiTrendingUp} size="48px" color="gray.300" mb={4} />
-                          <Text color="gray.500" fontSize="sm" textAlign="center">
+                        <Flex
+                          justify="center"
+                          align="center"
+                          height="400px"
+                          direction="column"
+                        >
+                          <Icon
+                            as={FiTrendingUp}
+                            size="48px"
+                            color="gray.300"
+                            mb={4}
+                          />
+                          <Text
+                            color="gray.500"
+                            fontSize="sm"
+                            textAlign="center"
+                          >
                             No procurement work program data available
                           </Text>
                         </Flex>
@@ -2419,7 +3098,11 @@ export default function DashboardPortfolioPage() {
                 {/* Project Acquisitions - 7 cols */}
                 <GridItem colSpan={{ base: 12, md: 6, lg: 7 }}>
                   <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
-                    <CardHeader bg="cyan.500" color="white" roundedTop={radiusStyle}>
+                    <CardHeader
+                      bg="cyan.500"
+                      color="white"
+                      roundedTop={radiusStyle}
+                    >
                       <Flex justify="space-between" align="center">
                         <HStack>
                           <Icon as={FiActivity} />
@@ -2428,9 +3111,9 @@ export default function DashboardPortfolioPage() {
                           </Text>
                         </HStack>
                         <HStack spacing={2}>
-                          <Button 
-                            size="xs" 
-                            variant="ghost" 
+                          <Button
+                            size="xs"
+                            variant="ghost"
                             color="white"
                             onClick={loadProjectAcquisitionsData}
                             isLoading={isLoading}
@@ -2438,9 +3121,9 @@ export default function DashboardPortfolioPage() {
                           >
                             <FiRefreshCw />
                           </Button>
-                          <Button 
-                            size="xs" 
-                            variant="ghost" 
+                          <Button
+                            size="xs"
+                            variant="ghost"
                             color="white"
                             onClick={loadAllAcquisitionsData}
                             _hover={{ bg: "whiteAlpha.200" }}
@@ -2461,23 +3144,54 @@ export default function DashboardPortfolioPage() {
                           />
                           <HStack justify="center" mt={4} spacing={6}>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Acquisitions</StatLabel>
+                              <StatLabel
+                                color={useColorModeValue(
+                                  "gray.600",
+                                  "gray.300"
+                                )}
+                              >
+                                Acquisitions
+                              </StatLabel>
                               <StatNumber color="cyan.600" fontSize="lg">
                                 {projectAcquisitionsData.length}
                               </StatNumber>
                             </Stat>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Total Projects</StatLabel>
+                              <StatLabel
+                                color={useColorModeValue(
+                                  "gray.600",
+                                  "gray.300"
+                                )}
+                              >
+                                Total Projects
+                              </StatLabel>
                               <StatNumber color="cyan.600" fontSize="lg">
-                                {projectAcquisitionsData.reduce((sum, item) => sum + item.projectCount, 0)}
+                                {projectAcquisitionsData.reduce(
+                                  (sum, item) => sum + item.projectCount,
+                                  0
+                                )}
                               </StatNumber>
                             </Stat>
                           </HStack>
                         </Box>
                       ) : (
-                        <Flex justify="center" align="center" height="400px" direction="column">
-                          <Icon as={FiActivity} size="48px" color="gray.300" mb={4} />
-                          <Text color="gray.500" fontSize="sm" textAlign="center">
+                        <Flex
+                          justify="center"
+                          align="center"
+                          height="400px"
+                          direction="column"
+                        >
+                          <Icon
+                            as={FiActivity}
+                            size="48px"
+                            color="gray.300"
+                            mb={4}
+                          />
+                          <Text
+                            color="gray.500"
+                            fontSize="sm"
+                            textAlign="center"
+                          >
                             No project acquisitions data available
                           </Text>
                         </Flex>
@@ -2489,7 +3203,11 @@ export default function DashboardPortfolioPage() {
                 {/* Project by Group Management - 12 cols */}
                 <GridItem colSpan={12}>
                   <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
-                    <CardHeader bg="purple.500" color="white" roundedTop={radiusStyle}>
+                    <CardHeader
+                      bg="purple.500"
+                      color="white"
+                      roundedTop={radiusStyle}
+                    >
                       <Flex justify="space-between" align="center">
                         <HStack>
                           <Icon as={FiBarChart} />
@@ -2498,9 +3216,9 @@ export default function DashboardPortfolioPage() {
                           </Text>
                         </HStack>
                         <HStack spacing={2}>
-                          <Button 
-                            size="xs" 
-                            variant="ghost" 
+                          <Button
+                            size="xs"
+                            variant="ghost"
                             color="white"
                             onClick={loadProjectByGroupManageData}
                             isLoading={isLoading}
@@ -2508,9 +3226,9 @@ export default function DashboardPortfolioPage() {
                           >
                             <FiRefreshCw />
                           </Button>
-                          <Button 
-                            size="xs" 
-                            variant="ghost" 
+                          <Button
+                            size="xs"
+                            variant="ghost"
                             color="white"
                             onClick={loadAllGroupManageData}
                             _hover={{ bg: "whiteAlpha.200" }}
@@ -2531,23 +3249,54 @@ export default function DashboardPortfolioPage() {
                           />
                           <HStack justify="center" mt={4} spacing={6}>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Groups</StatLabel>
+                              <StatLabel
+                                color={useColorModeValue(
+                                  "gray.600",
+                                  "gray.300"
+                                )}
+                              >
+                                Groups
+                              </StatLabel>
                               <StatNumber color="purple.600" fontSize="lg">
                                 {projectByGroupManageData.length}
                               </StatNumber>
                             </Stat>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Total Projects</StatLabel>
+                              <StatLabel
+                                color={useColorModeValue(
+                                  "gray.600",
+                                  "gray.300"
+                                )}
+                              >
+                                Total Projects
+                              </StatLabel>
                               <StatNumber color="purple.600" fontSize="lg">
-                                {projectByGroupManageData.reduce((sum, item) => sum + item.projectCount, 0)}
+                                {projectByGroupManageData.reduce(
+                                  (sum, item) => sum + item.projectCount,
+                                  0
+                                )}
                               </StatNumber>
                             </Stat>
                           </HStack>
                         </Box>
                       ) : (
-                        <Flex justify="center" align="center" height="400px" direction="column">
-                          <Icon as={FiBarChart} size="48px" color="gray.300" mb={4} />
-                          <Text color="gray.500" fontSize="sm" textAlign="center">
+                        <Flex
+                          justify="center"
+                          align="center"
+                          height="400px"
+                          direction="column"
+                        >
+                          <Icon
+                            as={FiBarChart}
+                            size="48px"
+                            color="gray.300"
+                            mb={4}
+                          />
+                          <Text
+                            color="gray.500"
+                            fontSize="sm"
+                            textAlign="center"
+                          >
                             No project by group management data available
                           </Text>
                         </Flex>
@@ -2557,18 +3306,22 @@ export default function DashboardPortfolioPage() {
                 </GridItem>
               </Grid>
             </TabPanel>
-            
+
             <TabPanel p={0}>
               {/* 12-Column Grid Layout for Special Dashboard */}
-              <Grid 
-                templateColumns="repeat(12, 1fr)" 
+              <Grid
+                templateColumns="repeat(12, 1fr)"
                 gap={6}
                 autoRows="min-content"
               >
                 {/* Project Summary Dev - 4 cols */}
                 <GridItem colSpan={{ base: 12, md: 6, lg: 4 }}>
                   <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
-                    <CardHeader bg="blue.500" color="white" roundedTop={radiusStyle}>
+                    <CardHeader
+                      bg="blue.500"
+                      color="white"
+                      roundedTop={radiusStyle}
+                    >
                       <Flex justify="space-between" align="center">
                         <HStack>
                           <Icon as={FiBarChart} />
@@ -2577,9 +3330,9 @@ export default function DashboardPortfolioPage() {
                           </Text>
                         </HStack>
                         <HStack spacing={2}>
-                          <Button 
-                            size="xs" 
-                            variant="ghost" 
+                          <Button
+                            size="xs"
+                            variant="ghost"
                             color="white"
                             onClick={loadProjectSummaryDevData}
                             isLoading={isLoading}
@@ -2587,9 +3340,9 @@ export default function DashboardPortfolioPage() {
                           >
                             <FiRefreshCw />
                           </Button>
-                          <Button 
-                            size="xs" 
-                            variant="ghost" 
+                          <Button
+                            size="xs"
+                            variant="ghost"
                             color="white"
                             onClick={loadAllProjectSummaryDevData}
                             _hover={{ bg: "whiteAlpha.200" }}
@@ -2610,13 +3363,27 @@ export default function DashboardPortfolioPage() {
                           />
                           <HStack justify="center" mt={4} spacing={6}>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Active</StatLabel>
+                              <StatLabel
+                                color={useColorModeValue(
+                                  "gray.600",
+                                  "gray.300"
+                                )}
+                              >
+                                Active
+                              </StatLabel>
                               <StatNumber color="green.600" fontSize="lg">
                                 {activeCount}
                               </StatNumber>
                             </Stat>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Closed</StatLabel>
+                              <StatLabel
+                                color={useColorModeValue(
+                                  "gray.600",
+                                  "gray.300"
+                                )}
+                              >
+                                Closed
+                              </StatLabel>
                               <StatNumber color="red.600" fontSize="lg">
                                 {closedCount}
                               </StatNumber>
@@ -2624,9 +3391,23 @@ export default function DashboardPortfolioPage() {
                           </HStack>
                         </Box>
                       ) : (
-                        <Flex justify="center" align="center" height="300px" direction="column">
-                          <Icon as={FiBarChart} size="48px" color="gray.300" mb={4} />
-                          <Text color="gray.500" fontSize="sm" textAlign="center">
+                        <Flex
+                          justify="center"
+                          align="center"
+                          height="300px"
+                          direction="column"
+                        >
+                          <Icon
+                            as={FiBarChart}
+                            size="48px"
+                            color="gray.300"
+                            mb={4}
+                          />
+                          <Text
+                            color="gray.500"
+                            fontSize="sm"
+                            textAlign="center"
+                          >
                             No project summary dev data available
                           </Text>
                         </Flex>
@@ -2638,7 +3419,11 @@ export default function DashboardPortfolioPage() {
                 {/* Dev Staff Project Closed - 8 cols */}
                 <GridItem colSpan={{ base: 12, md: 6, lg: 8 }}>
                   <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
-                    <CardHeader bg="red.500" color="white" roundedTop={radiusStyle}>
+                    <CardHeader
+                      bg="red.500"
+                      color="white"
+                      roundedTop={radiusStyle}
+                    >
                       <Flex justify="space-between" align="center">
                         <HStack>
                           <Icon as={FiBarChart} />
@@ -2647,9 +3432,9 @@ export default function DashboardPortfolioPage() {
                           </Text>
                         </HStack>
                         <HStack spacing={2}>
-                          <Button 
-                            size="xs" 
-                            variant="ghost" 
+                          <Button
+                            size="xs"
+                            variant="ghost"
                             color="white"
                             onClick={loadDevStaffProjectClosedData}
                             isLoading={isLoading}
@@ -2657,9 +3442,9 @@ export default function DashboardPortfolioPage() {
                           >
                             <FiRefreshCw />
                           </Button>
-                          <Button 
-                            size="xs" 
-                            variant="ghost" 
+                          <Button
+                            size="xs"
+                            variant="ghost"
                             color="white"
                             onClick={loadAllDevStaffProjectClosedData}
                             _hover={{ bg: "whiteAlpha.200" }}
@@ -2680,7 +3465,14 @@ export default function DashboardPortfolioPage() {
                           />
                           <HStack justify="center" mt={4} spacing={6}>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Q{selectedQuarter} Users</StatLabel>
+                              <StatLabel
+                                color={useColorModeValue(
+                                  "gray.600",
+                                  "gray.300"
+                                )}
+                              >
+                                Q{selectedQuarter} Users
+                              </StatLabel>
                               <StatNumber color="red.600" fontSize="lg">
                                 {devStaffCategories.length}
                               </StatNumber>
@@ -2688,9 +3480,23 @@ export default function DashboardPortfolioPage() {
                           </HStack>
                         </Box>
                       ) : (
-                        <Flex justify="center" align="center" height="300px" direction="column">
-                          <Icon as={FiBarChart} size="48px" color="gray.300" mb={4} />
-                          <Text color="gray.500" fontSize="sm" textAlign="center">
+                        <Flex
+                          justify="center"
+                          align="center"
+                          height="300px"
+                          direction="column"
+                        >
+                          <Icon
+                            as={FiBarChart}
+                            size="48px"
+                            color="gray.300"
+                            mb={4}
+                          />
+                          <Text
+                            color="gray.500"
+                            fontSize="sm"
+                            textAlign="center"
+                          >
                             No dev staff project closed data available
                           </Text>
                         </Flex>
@@ -2702,7 +3508,11 @@ export default function DashboardPortfolioPage() {
                 {/* Dev Staff Project Active - 12 cols */}
                 <GridItem colSpan={12}>
                   <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
-                    <CardHeader bg="green.500" color="white" roundedTop={radiusStyle}>
+                    <CardHeader
+                      bg="green.500"
+                      color="white"
+                      roundedTop={radiusStyle}
+                    >
                       <Flex justify="space-between" align="center">
                         <HStack>
                           <Icon as={FiBarChart} />
@@ -2711,9 +3521,9 @@ export default function DashboardPortfolioPage() {
                           </Text>
                         </HStack>
                         <HStack spacing={2}>
-                          <Button 
-                            size="xs" 
-                            variant="ghost" 
+                          <Button
+                            size="xs"
+                            variant="ghost"
                             color="white"
                             onClick={loadDevStaffProjectActiveData}
                             isLoading={isLoading}
@@ -2721,9 +3531,9 @@ export default function DashboardPortfolioPage() {
                           >
                             <FiRefreshCw />
                           </Button>
-                          <Button 
-                            size="xs" 
-                            variant="ghost" 
+                          <Button
+                            size="xs"
+                            variant="ghost"
                             color="white"
                             onClick={loadAllDevStaffProjectActiveData}
                             _hover={{ bg: "whiteAlpha.200" }}
@@ -2744,7 +3554,14 @@ export default function DashboardPortfolioPage() {
                           />
                           <HStack justify="center" mt={4} spacing={6}>
                             <Stat textAlign="center" size="sm">
-                              <StatLabel color={useColorModeValue("gray.600", "gray.300")}>Q{selectedQuarter} Users</StatLabel>
+                              <StatLabel
+                                color={useColorModeValue(
+                                  "gray.600",
+                                  "gray.300"
+                                )}
+                              >
+                                Q{selectedQuarter} Users
+                              </StatLabel>
                               <StatNumber color="green.600" fontSize="lg">
                                 {devStaffActiveCategories.length}
                               </StatNumber>
@@ -2752,9 +3569,23 @@ export default function DashboardPortfolioPage() {
                           </HStack>
                         </Box>
                       ) : (
-                        <Flex justify="center" align="center" height="300px" direction="column">
-                          <Icon as={FiBarChart} size="48px" color="gray.300" mb={4} />
-                          <Text color="gray.500" fontSize="sm" textAlign="center">
+                        <Flex
+                          justify="center"
+                          align="center"
+                          height="300px"
+                          direction="column"
+                        >
+                          <Icon
+                            as={FiBarChart}
+                            size="48px"
+                            color="gray.300"
+                            mb={4}
+                          />
+                          <Text
+                            color="gray.500"
+                            fontSize="sm"
+                            textAlign="center"
+                          >
                             No dev staff project active data available
                           </Text>
                         </Flex>
@@ -2764,28 +3595,47 @@ export default function DashboardPortfolioPage() {
                 </GridItem>
               </Grid>
             </TabPanel>
-            
+
             <TabPanel p={0}>
               {/* Requirement Dashboard */}
-              <Grid 
-                templateColumns="repeat(12, 1fr)" 
+              <Grid
+                templateColumns="repeat(12, 1fr)"
                 gap={6}
                 autoRows="min-content"
               >
                 {/* 1. Requirement Type (BRD vs RFC) - 4 cols */}
                 <GridItem colSpan={{ base: 12, md: 6, lg: 4 }}>
                   <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
-                    <CardHeader bg="blue.500" color="white" roundedTop={radiusStyle}>
+                    <CardHeader
+                      bg="blue.500"
+                      color="white"
+                      roundedTop={radiusStyle}
+                    >
                       <Flex justify="space-between" align="center">
                         <HStack>
                           <Icon as={FiTrendingUp} />
-                          <Text fontSize="md" fontWeight="bold">Requirement Type</Text>
+                          <Text fontSize="md" fontWeight="bold">
+                            Requirement Type
+                          </Text>
                         </HStack>
                         <HStack spacing={2}>
-                          <Button size="xs" variant="ghost" color="white" onClick={loadRequirementTypeData} isLoading={isLoading} _hover={{ bg: "whiteAlpha.200" }}>
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            color="white"
+                            onClick={loadRequirementTypeData}
+                            isLoading={isLoading}
+                            _hover={{ bg: "whiteAlpha.200" }}
+                          >
                             <FiRefreshCw />
                           </Button>
-                          <Button size="xs" variant="ghost" color="white" onClick={() => setIsRequirementTypeModalOpen(true)} _hover={{ bg: "whiteAlpha.200" }}>
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            color="white"
+                            onClick={() => setIsRequirementTypeModalOpen(true)}
+                            _hover={{ bg: "whiteAlpha.200" }}
+                          >
                             Details
                           </Button>
                         </HStack>
@@ -2793,22 +3643,33 @@ export default function DashboardPortfolioPage() {
                     </CardHeader>
                     <CardBody p={4}>
                       {requirementTypeData.length > 0 ? (
-                        <Box cursor="pointer" onClick={() => setIsRequirementTypeModalOpen(true)}>
+                        <Box
+                          cursor="pointer"
+                          onClick={() => setIsRequirementTypeModalOpen(true)}
+                        >
                           <Chart
                             options={{
-                              chart: { type: 'pie' },
-                              labels: requirementTypeData.map((item: any) => item.requirementType),
-                              colors: ['#3182CE', '#38A169'],
-                              legend: { position: 'bottom' }
+                              chart: { type: "pie" },
+                              labels: requirementTypeData.map(
+                                (item: any) => item.requirementType
+                              ),
+                              colors: ["#3182CE", "#38A169"],
+                              legend: { position: "bottom" },
                             }}
-                            series={requirementTypeData.map((item: any) => item.requirementCount)}
+                            series={requirementTypeData.map(
+                              (item: any) => item.requirementCount
+                            )}
                             type="pie"
                             height={300}
                           />
                         </Box>
                       ) : (
                         <Flex justify="center" align="center" height="300px">
-                          <Text color={useColorModeValue("gray.500", "gray.400")}>No data available</Text>
+                          <Text
+                            color={useColorModeValue("gray.500", "gray.400")}
+                          >
+                            No data available
+                          </Text>
                         </Flex>
                       )}
                     </CardBody>
@@ -2818,40 +3679,85 @@ export default function DashboardPortfolioPage() {
                 {/* 2. BRD Status - 4 cols */}
                 <GridItem colSpan={{ base: 12, md: 6, lg: 4 }}>
                   <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
-                    <CardHeader bg="cyan.500" color="white" roundedTop={radiusStyle}>
+                    <CardHeader
+                      bg="cyan.500"
+                      color="white"
+                      roundedTop={radiusStyle}
+                    >
                       <Flex justify="space-between" align="center">
                         <HStack>
                           <Icon as={FiBarChart} />
-                          <Text fontSize="md" fontWeight="bold">BRD Status</Text>
+                          <Text fontSize="md" fontWeight="bold">
+                            BRD Status
+                          </Text>
                         </HStack>
                         <HStack spacing={2}>
-                          <Button size="xs" variant="ghost" color="white" onClick={loadRequirementSummaryData} isLoading={isLoading} _hover={{ bg: "whiteAlpha.200" }}>
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            color="white"
+                            onClick={loadRequirementSummaryData}
+                            isLoading={isLoading}
+                            _hover={{ bg: "whiteAlpha.200" }}
+                          >
                             <FiRefreshCw />
                           </Button>
-                          <Button size="xs" variant="ghost" color="white" onClick={() => setIsRequirementSummaryModalOpen(true)} _hover={{ bg: "whiteAlpha.200" }}>
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            color="white"
+                            onClick={() =>
+                              setIsRequirementSummaryModalOpen(true)
+                            }
+                            _hover={{ bg: "whiteAlpha.200" }}
+                          >
                             Details
                           </Button>
                         </HStack>
                       </Flex>
                     </CardHeader>
                     <CardBody p={4}>
-                      {requirementSummaryData.filter((item: any) => item.requirementType === 'BRD').length > 0 ? (
-                        <Box cursor="pointer" onClick={() => setIsRequirementSummaryModalOpen(true)}>
+                      {requirementSummaryData.filter(
+                        (item: any) => item.requirementType === "BRD"
+                      ).length > 0 ? (
+                        <Box
+                          cursor="pointer"
+                          onClick={() => setIsRequirementSummaryModalOpen(true)}
+                        >
                           <Chart
                             options={{
-                              chart: { type: 'donut' },
-                              labels: requirementSummaryData.filter((item: any) => item.requirementType === 'BRD').map((item: any) => item.requirementStatus),
-                              colors: ['#ED8936', '#38B2AC', '#3182CE', '#38A169', '#D69E2E', '#E53E3E'],
-                              legend: { position: 'bottom' }
+                              chart: { type: "donut" },
+                              labels: requirementSummaryData
+                                .filter(
+                                  (item: any) => item.requirementType === "BRD"
+                                )
+                                .map((item: any) => item.requirementStatus),
+                              colors: [
+                                "#ED8936",
+                                "#38B2AC",
+                                "#3182CE",
+                                "#38A169",
+                                "#D69E2E",
+                                "#E53E3E",
+                              ],
+                              legend: { position: "bottom" },
                             }}
-                            series={requirementSummaryData.filter((item: any) => item.requirementType === 'BRD').map((item: any) => item.requirementCount)}
+                            series={requirementSummaryData
+                              .filter(
+                                (item: any) => item.requirementType === "BRD"
+                              )
+                              .map((item: any) => item.requirementCount)}
                             type="donut"
                             height={300}
                           />
                         </Box>
                       ) : (
                         <Flex justify="center" align="center" height="300px">
-                          <Text color={useColorModeValue("gray.500", "gray.400")}>No BRD data available</Text>
+                          <Text
+                            color={useColorModeValue("gray.500", "gray.400")}
+                          >
+                            No BRD data available
+                          </Text>
                         </Flex>
                       )}
                     </CardBody>
@@ -2861,40 +3767,85 @@ export default function DashboardPortfolioPage() {
                 {/* 3. RFC Status - 4 cols */}
                 <GridItem colSpan={{ base: 12, md: 6, lg: 4 }}>
                   <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
-                    <CardHeader bg="teal.500" color="white" roundedTop={radiusStyle}>
+                    <CardHeader
+                      bg="teal.500"
+                      color="white"
+                      roundedTop={radiusStyle}
+                    >
                       <Flex justify="space-between" align="center">
                         <HStack>
                           <Icon as={FiBarChart} />
-                          <Text fontSize="md" fontWeight="bold">RFC Status</Text>
+                          <Text fontSize="md" fontWeight="bold">
+                            RFC Status
+                          </Text>
                         </HStack>
                         <HStack spacing={2}>
-                          <Button size="xs" variant="ghost" color="white" onClick={loadRequirementSummaryData} isLoading={isLoading} _hover={{ bg: "whiteAlpha.200" }}>
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            color="white"
+                            onClick={loadRequirementSummaryData}
+                            isLoading={isLoading}
+                            _hover={{ bg: "whiteAlpha.200" }}
+                          >
                             <FiRefreshCw />
                           </Button>
-                          <Button size="xs" variant="ghost" color="white" onClick={() => setIsRequirementSummaryModalOpen(true)} _hover={{ bg: "whiteAlpha.200" }}>
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            color="white"
+                            onClick={() =>
+                              setIsRequirementSummaryModalOpen(true)
+                            }
+                            _hover={{ bg: "whiteAlpha.200" }}
+                          >
                             Details
                           </Button>
                         </HStack>
                       </Flex>
                     </CardHeader>
                     <CardBody p={4}>
-                      {requirementSummaryData.filter((item: any) => item.requirementType === 'RFC').length > 0 ? (
-                        <Box cursor="pointer" onClick={() => setIsRequirementSummaryModalOpen(true)}>
+                      {requirementSummaryData.filter(
+                        (item: any) => item.requirementType === "RFC"
+                      ).length > 0 ? (
+                        <Box
+                          cursor="pointer"
+                          onClick={() => setIsRequirementSummaryModalOpen(true)}
+                        >
                           <Chart
                             options={{
-                              chart: { type: 'donut' },
-                              labels: requirementSummaryData.filter((item: any) => item.requirementType === 'RFC').map((item: any) => item.requirementStatus),
-                              colors: ['#ED8936', '#38B2AC', '#3182CE', '#38A169', '#D69E2E', '#E53E3E'],
-                              legend: { position: 'bottom' }
+                              chart: { type: "donut" },
+                              labels: requirementSummaryData
+                                .filter(
+                                  (item: any) => item.requirementType === "RFC"
+                                )
+                                .map((item: any) => item.requirementStatus),
+                              colors: [
+                                "#ED8936",
+                                "#38B2AC",
+                                "#3182CE",
+                                "#38A169",
+                                "#D69E2E",
+                                "#E53E3E",
+                              ],
+                              legend: { position: "bottom" },
                             }}
-                            series={requirementSummaryData.filter((item: any) => item.requirementType === 'RFC').map((item: any) => item.requirementCount)}
+                            series={requirementSummaryData
+                              .filter(
+                                (item: any) => item.requirementType === "RFC"
+                              )
+                              .map((item: any) => item.requirementCount)}
                             type="donut"
                             height={300}
                           />
                         </Box>
                       ) : (
                         <Flex justify="center" align="center" height="300px">
-                          <Text color={useColorModeValue("gray.500", "gray.400")}>No RFC data available</Text>
+                          <Text
+                            color={useColorModeValue("gray.500", "gray.400")}
+                          >
+                            No RFC data available
+                          </Text>
                         </Flex>
                       )}
                     </CardBody>
@@ -2904,41 +3855,94 @@ export default function DashboardPortfolioPage() {
                 {/* 4. BRD by Division - 6 cols */}
                 <GridItem colSpan={{ base: 12, md: 6 }}>
                   <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
-                    <CardHeader bg="purple.500" color="white" roundedTop={radiusStyle}>
+                    <CardHeader
+                      bg="purple.500"
+                      color="white"
+                      roundedTop={radiusStyle}
+                    >
                       <Flex justify="space-between" align="center">
                         <HStack>
                           <Icon as={FiActivity} />
-                          <Text fontSize="md" fontWeight="bold">BRD by Division Sender</Text>
+                          <Text fontSize="md" fontWeight="bold">
+                            BRD by Division Sender
+                          </Text>
                         </HStack>
                         <HStack spacing={2}>
-                          <Button size="xs" variant="ghost" color="white" onClick={loadRequirementDivisionData} isLoading={isLoading} _hover={{ bg: "whiteAlpha.200" }}>
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            color="white"
+                            onClick={loadRequirementDivisionData}
+                            isLoading={isLoading}
+                            _hover={{ bg: "whiteAlpha.200" }}
+                          >
                             <FiRefreshCw />
                           </Button>
-                          <Button size="xs" variant="ghost" color="white" onClick={() => setIsRequirementDivisionModalOpen(true)} _hover={{ bg: "whiteAlpha.200" }}>
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            color="white"
+                            onClick={() =>
+                              setIsRequirementDivisionModalOpen(true)
+                            }
+                            _hover={{ bg: "whiteAlpha.200" }}
+                          >
                             Details
                           </Button>
                         </HStack>
                       </Flex>
                     </CardHeader>
                     <CardBody p={4}>
-                      {requirementDivisionData.filter((item: any) => item.requirementType === 'BRD').length > 0 ? (
-                        <Box cursor="pointer" onClick={() => setIsRequirementDivisionModalOpen(true)}>
+                      {requirementDivisionData.filter(
+                        (item: any) => item.requirementType === "BRD"
+                      ).length > 0 ? (
+                        <Box
+                          cursor="pointer"
+                          onClick={() =>
+                            setIsRequirementDivisionModalOpen(true)
+                          }
+                        >
                           <Chart
                             options={{
-                              chart: { type: 'bar' },
-                              plotOptions: { bar: { horizontal: true, distributed: true } },
-                              xaxis: { categories: requirementDivisionData.filter((item: any) => item.requirementType === 'BRD').slice(0, 10).map((item: any) => item.divisionName) },
-                              colors: ['#805AD5'],
-                              legend: { show: false }
+                              chart: { type: "bar" },
+                              plotOptions: {
+                                bar: { horizontal: true, distributed: true },
+                              },
+                              xaxis: {
+                                categories: requirementDivisionData
+                                  .filter(
+                                    (item: any) =>
+                                      item.requirementType === "BRD"
+                                  )
+                                  .slice(0, 10)
+                                  .map((item: any) => item.divisionName),
+                              },
+                              colors: ["#805AD5"],
+                              legend: { show: false },
                             }}
-                            series={[{ name: 'BRD', data: requirementDivisionData.filter((item: any) => item.requirementType === 'BRD').slice(0, 10).map((item: any) => item.requirementCount) }]}
+                            series={[
+                              {
+                                name: "BRD",
+                                data: requirementDivisionData
+                                  .filter(
+                                    (item: any) =>
+                                      item.requirementType === "BRD"
+                                  )
+                                  .slice(0, 10)
+                                  .map((item: any) => item.requirementCount),
+                              },
+                            ]}
                             type="bar"
                             height={400}
                           />
                         </Box>
                       ) : (
                         <Flex justify="center" align="center" height="400px">
-                          <Text color={useColorModeValue("gray.500", "gray.400")}>No BRD division data available</Text>
+                          <Text
+                            color={useColorModeValue("gray.500", "gray.400")}
+                          >
+                            No BRD division data available
+                          </Text>
                         </Flex>
                       )}
                     </CardBody>
@@ -2948,41 +3952,94 @@ export default function DashboardPortfolioPage() {
                 {/* 5. RFC by Division - 6 cols */}
                 <GridItem colSpan={{ base: 12, md: 6 }}>
                   <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
-                    <CardHeader bg="orange.500" color="white" roundedTop={radiusStyle}>
+                    <CardHeader
+                      bg="orange.500"
+                      color="white"
+                      roundedTop={radiusStyle}
+                    >
                       <Flex justify="space-between" align="center">
                         <HStack>
                           <Icon as={FiActivity} />
-                          <Text fontSize="md" fontWeight="bold">RFC by Division Sender</Text>
+                          <Text fontSize="md" fontWeight="bold">
+                            RFC by Division Sender
+                          </Text>
                         </HStack>
                         <HStack spacing={2}>
-                          <Button size="xs" variant="ghost" color="white" onClick={loadRequirementDivisionData} isLoading={isLoading} _hover={{ bg: "whiteAlpha.200" }}>
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            color="white"
+                            onClick={loadRequirementDivisionData}
+                            isLoading={isLoading}
+                            _hover={{ bg: "whiteAlpha.200" }}
+                          >
                             <FiRefreshCw />
                           </Button>
-                          <Button size="xs" variant="ghost" color="white" onClick={() => setIsRequirementDivisionModalOpen(true)} _hover={{ bg: "whiteAlpha.200" }}>
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            color="white"
+                            onClick={() =>
+                              setIsRequirementDivisionModalOpen(true)
+                            }
+                            _hover={{ bg: "whiteAlpha.200" }}
+                          >
                             Details
                           </Button>
                         </HStack>
                       </Flex>
                     </CardHeader>
                     <CardBody p={4}>
-                      {requirementDivisionData.filter((item: any) => item.requirementType === 'RFC').length > 0 ? (
-                        <Box cursor="pointer" onClick={() => setIsRequirementDivisionModalOpen(true)}>
+                      {requirementDivisionData.filter(
+                        (item: any) => item.requirementType === "RFC"
+                      ).length > 0 ? (
+                        <Box
+                          cursor="pointer"
+                          onClick={() =>
+                            setIsRequirementDivisionModalOpen(true)
+                          }
+                        >
                           <Chart
                             options={{
-                              chart: { type: 'bar' },
-                              plotOptions: { bar: { horizontal: true, distributed: true } },
-                              xaxis: { categories: requirementDivisionData.filter((item: any) => item.requirementType === 'RFC').slice(0, 10).map((item: any) => item.divisionName) },
-                              colors: ['#ED8936'],
-                              legend: { show: false }
+                              chart: { type: "bar" },
+                              plotOptions: {
+                                bar: { horizontal: true, distributed: true },
+                              },
+                              xaxis: {
+                                categories: requirementDivisionData
+                                  .filter(
+                                    (item: any) =>
+                                      item.requirementType === "RFC"
+                                  )
+                                  .slice(0, 10)
+                                  .map((item: any) => item.divisionName),
+                              },
+                              colors: ["#ED8936"],
+                              legend: { show: false },
                             }}
-                            series={[{ name: 'RFC', data: requirementDivisionData.filter((item: any) => item.requirementType === 'RFC').slice(0, 10).map((item: any) => item.requirementCount) }]}
+                            series={[
+                              {
+                                name: "RFC",
+                                data: requirementDivisionData
+                                  .filter(
+                                    (item: any) =>
+                                      item.requirementType === "RFC"
+                                  )
+                                  .slice(0, 10)
+                                  .map((item: any) => item.requirementCount),
+                              },
+                            ]}
                             type="bar"
                             height={400}
                           />
                         </Box>
                       ) : (
                         <Flex justify="center" align="center" height="400px">
-                          <Text color={useColorModeValue("gray.500", "gray.400")}>No RFC division data available</Text>
+                          <Text
+                            color={useColorModeValue("gray.500", "gray.400")}
+                          >
+                            No RFC division data available
+                          </Text>
                         </Flex>
                       )}
                     </CardBody>
@@ -2992,34 +4049,66 @@ export default function DashboardPortfolioPage() {
                 {/* 6. With Memo - 6 cols */}
                 <GridItem colSpan={{ base: 12, md: 6 }}>
                   <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
-                    <CardHeader bg="green.500" color="white" roundedTop={radiusStyle}>
+                    <CardHeader
+                      bg="green.500"
+                      color="white"
+                      roundedTop={radiusStyle}
+                    >
                       <Flex justify="space-between" align="center">
                         <HStack>
                           <Icon as={FiTrendingUp} />
-                          <Text fontSize="md" fontWeight="bold">Requirements with Memo</Text>
+                          <Text fontSize="md" fontWeight="bold">
+                            Requirements with Memo
+                          </Text>
                         </HStack>
                         <HStack spacing={2}>
-                          <Button size="xs" variant="ghost" color="white" onClick={loadRequirementMemoData} isLoading={isLoading} _hover={{ bg: "whiteAlpha.200" }}>
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            color="white"
+                            onClick={loadRequirementMemoData}
+                            isLoading={isLoading}
+                            _hover={{ bg: "whiteAlpha.200" }}
+                          >
                             <FiRefreshCw />
                           </Button>
-                          <Button size="xs" variant="ghost" color="white" onClick={() => setIsRequirementMemoModalOpen(true)} _hover={{ bg: "whiteAlpha.200" }}>
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            color="white"
+                            onClick={() => setIsRequirementMemoModalOpen(true)}
+                            _hover={{ bg: "whiteAlpha.200" }}
+                          >
                             Details
                           </Button>
                         </HStack>
                       </Flex>
                     </CardHeader>
                     <CardBody p={4}>
-                      {requirementMemoData.filter((item: any) => item.isHaveMemo === 'Y').length > 0 ? (
-                        <Box cursor="pointer" onClick={() => setIsRequirementMemoModalOpen(true)}>
+                      {requirementMemoData.filter(
+                        (item: any) => item.isHaveMemo === "Y"
+                      ).length > 0 ? (
+                        <Box
+                          cursor="pointer"
+                          onClick={() => setIsRequirementMemoModalOpen(true)}
+                        >
                           <Chart
                             options={{
-                              chart: { type: 'bar', stacked: true },
-                              xaxis: { categories: getMemoChartData('Y').categories },
-                              colors: ['#3182CE', '#38A169']
+                              chart: { type: "bar", stacked: true },
+                              xaxis: {
+                                categories: getMemoChartData("Y").categories,
+                              },
+                              colors: ["#3182CE", "#38A169"],
                             }}
                             series={[
-                              { name: 'BRD', data: getMemoChartData('Y').brdData },
-                              { name: 'RFC', data: getMemoChartData('Y').rfcData }
+                              {
+                                name: "BRD",
+                                data: getMemoChartData("Y").brdData,
+                              },
+                              {
+                                name: "RFC",
+                                data: getMemoChartData("Y").rfcData,
+                              },
                             ]}
                             type="bar"
                             height={300}
@@ -3027,7 +4116,11 @@ export default function DashboardPortfolioPage() {
                         </Box>
                       ) : (
                         <Flex justify="center" align="center" height="300px">
-                          <Text color={useColorModeValue("gray.500", "gray.400")}>No memo data available</Text>
+                          <Text
+                            color={useColorModeValue("gray.500", "gray.400")}
+                          >
+                            No memo data available
+                          </Text>
                         </Flex>
                       )}
                     </CardBody>
@@ -3037,34 +4130,66 @@ export default function DashboardPortfolioPage() {
                 {/* 7. Without Memo - 6 cols */}
                 <GridItem colSpan={{ base: 12, md: 6 }}>
                   <Card rounded={radiusStyle} shadow="lg" bg={cardBg} h="full">
-                    <CardHeader bg="red.500" color="white" roundedTop={radiusStyle}>
+                    <CardHeader
+                      bg="red.500"
+                      color="white"
+                      roundedTop={radiusStyle}
+                    >
                       <Flex justify="space-between" align="center">
                         <HStack>
                           <Icon as={FiTrendingUp} />
-                          <Text fontSize="md" fontWeight="bold">Requirements without Memo</Text>
+                          <Text fontSize="md" fontWeight="bold">
+                            Requirements without Memo
+                          </Text>
                         </HStack>
                         <HStack spacing={2}>
-                          <Button size="xs" variant="ghost" color="white" onClick={loadRequirementMemoData} isLoading={isLoading} _hover={{ bg: "whiteAlpha.200" }}>
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            color="white"
+                            onClick={loadRequirementMemoData}
+                            isLoading={isLoading}
+                            _hover={{ bg: "whiteAlpha.200" }}
+                          >
                             <FiRefreshCw />
                           </Button>
-                          <Button size="xs" variant="ghost" color="white" onClick={() => setIsRequirementMemoModalOpen(true)} _hover={{ bg: "whiteAlpha.200" }}>
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            color="white"
+                            onClick={() => setIsRequirementMemoModalOpen(true)}
+                            _hover={{ bg: "whiteAlpha.200" }}
+                          >
                             Details
                           </Button>
                         </HStack>
                       </Flex>
                     </CardHeader>
                     <CardBody p={4}>
-                      {requirementMemoData.filter((item: any) => item.isHaveMemo === 'N').length > 0 ? (
-                        <Box cursor="pointer" onClick={() => setIsRequirementMemoModalOpen(true)}>
+                      {requirementMemoData.filter(
+                        (item: any) => item.isHaveMemo === "N"
+                      ).length > 0 ? (
+                        <Box
+                          cursor="pointer"
+                          onClick={() => setIsRequirementMemoModalOpen(true)}
+                        >
                           <Chart
                             options={{
-                              chart: { type: 'bar', stacked: true },
-                              xaxis: { categories: getMemoChartData('N').categories },
-                              colors: ['#3182CE', '#38A169']
+                              chart: { type: "bar", stacked: true },
+                              xaxis: {
+                                categories: getMemoChartData("N").categories,
+                              },
+                              colors: ["#3182CE", "#38A169"],
                             }}
                             series={[
-                              { name: 'BRD', data: getMemoChartData('N').brdData },
-                              { name: 'RFC', data: getMemoChartData('N').rfcData }
+                              {
+                                name: "BRD",
+                                data: getMemoChartData("N").brdData,
+                              },
+                              {
+                                name: "RFC",
+                                data: getMemoChartData("N").rfcData,
+                              },
                             ]}
                             type="bar"
                             height={300}
@@ -3084,66 +4209,130 @@ export default function DashboardPortfolioPage() {
         </Tabs>
 
         {/* Dev Staff Project Closed Modal */}
-        <Modal isOpen={isDevStaffModalOpen} onClose={() => setIsDevStaffModalOpen(false)} size="6xl">
+        <Modal
+          isOpen={isDevStaffModalOpen}
+          onClose={() => setIsDevStaffModalOpen(false)}
+          size="6xl"
+        >
           <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
           <ModalContent maxH="90vh" bg={cardBg} shadow="2xl" rounded="xl">
-            <ModalHeader 
-              bg="red.500" 
-              color="white" 
-              roundedTop="xl" 
+            <ModalHeader
+              bg="red.500"
+              color="white"
+              roundedTop="xl"
               py={4}
               fontSize="lg"
               fontWeight="bold"
             >
               <HStack>
                 <Icon as={FiBarChart} />
-                <Text>Dev Staff Project Closed - All Data (Q{selectedQuarter} {selectedYear})</Text>
+                <Text>
+                  Dev Staff Project Closed - All Data (Q{selectedQuarter}{" "}
+                  {selectedYear})
+                </Text>
               </HStack>
             </ModalHeader>
             <ModalCloseButton color="white" />
             <ModalBody overflowY="auto" maxH="70vh" p={6}>
               {devStaffModalData.length > 0 ? (
                 <Box>
-                  <Box bg={useColorModeValue("gray.50", "gray.700")} p={4} rounded="lg" mb={4}>
+                  <Box
+                    bg={useColorModeValue("gray.50", "gray.700")}
+                    p={4}
+                    rounded="lg"
+                    mb={4}
+                  >
                     <Chart
                       options={{
                         ...devStaffProjectClosedChartOptions,
                         xaxis: {
                           ...devStaffProjectClosedChartOptions.xaxis,
-                          categories: [...new Set(devStaffModalData.map(item => item.userFullName))]
-                        }
+                          categories: [
+                            ...new Set(
+                              devStaffModalData.map((item) => item.userFullName)
+                            ),
+                          ],
+                        },
                       }}
-                      series={getQuarterMonths(selectedQuarter).map(month => ({
-                        name: month.monthName,
-                        data: [...new Set(devStaffModalData.map(item => item.userFullName))].map(user => {
-                          const userMonthData = devStaffModalData.find(
-                            item => item.userFullName === user && (
-                              item.monthName === month.monthName ||
-                              item.monthName === getFullMonthName(month.monthPeriod) ||
-                              item.monthName === month.monthPeriod.toString().padStart(2, '0') ||
-                              item.monthName === month.monthPeriod.toString()
-                            )
-                          );
-                          return userMonthData ? userMonthData.projectCount : 0;
+                      series={getQuarterMonths(selectedQuarter).map(
+                        (month) => ({
+                          name: month.monthName,
+                          data: [
+                            ...new Set(
+                              devStaffModalData.map((item) => item.userFullName)
+                            ),
+                          ].map((user) => {
+                            const userMonthData = devStaffModalData.find(
+                              (item) =>
+                                item.userFullName === user &&
+                                (item.monthName === month.monthName ||
+                                  item.monthName ===
+                                    getFullMonthName(month.monthPeriod) ||
+                                  item.monthName ===
+                                    month.monthPeriod
+                                      .toString()
+                                      .padStart(2, "0") ||
+                                  item.monthName ===
+                                    month.monthPeriod.toString())
+                            );
+                            return userMonthData
+                              ? userMonthData.projectCount
+                              : 0;
+                          }),
                         })
-                      }))}
+                      )}
                       type="bar"
-                      height={Math.max(400, [...new Set(devStaffModalData.map(item => item.userFullName))].length * 30)}
+                      height={Math.max(
+                        400,
+                        [
+                          ...new Set(
+                            devStaffModalData.map((item) => item.userFullName)
+                          ),
+                        ].length * 30
+                      )}
                     />
                   </Box>
                   <HStack justify="center" mt={4} spacing={6}>
-                    <Box bg={useColorModeValue("red.50", "red.900")} p={4} rounded="lg" textAlign="center">
+                    <Box
+                      bg={useColorModeValue("red.50", "red.900")}
+                      p={4}
+                      rounded="lg"
+                      textAlign="center"
+                    >
                       <Stat>
-                        <StatLabel color="red.600" fontSize="sm" fontWeight="medium">Total Users</StatLabel>
-                        <StatNumber color="red.600" fontSize="2xl" fontWeight="bold">
-                          {[...new Set(devStaffModalData.map(item => item.userFullName))].length}
+                        <StatLabel
+                          color="red.600"
+                          fontSize="sm"
+                          fontWeight="medium"
+                        >
+                          Total Users
+                        </StatLabel>
+                        <StatNumber
+                          color="red.600"
+                          fontSize="2xl"
+                          fontWeight="bold"
+                        >
+                          {
+                            [
+                              ...new Set(
+                                devStaffModalData.map(
+                                  (item) => item.userFullName
+                                )
+                              ),
+                            ].length
+                          }
                         </StatNumber>
                       </Stat>
                     </Box>
                   </HStack>
                 </Box>
               ) : (
-                <Flex justify="center" align="center" height="300px" direction="column">
+                <Flex
+                  justify="center"
+                  align="center"
+                  height="300px"
+                  direction="column"
+                >
                   <Icon as={FiBarChart} size="48px" color="gray.300" mb={4} />
                   <Text color="gray.500" fontSize="sm" textAlign="center">
                     No dev staff project closed data available
@@ -3151,8 +4340,16 @@ export default function DashboardPortfolioPage() {
                 </Flex>
               )}
             </ModalBody>
-            <ModalFooter bg={useColorModeValue("gray.50", "gray.700")} roundedBottom="xl" py={4}>
-              <Button colorScheme="red" mr={3} onClick={() => setIsDevStaffModalOpen(false)}>
+            <ModalFooter
+              bg={useColorModeValue("gray.50", "gray.700")}
+              roundedBottom="xl"
+              py={4}
+            >
+              <Button
+                colorScheme="red"
+                mr={3}
+                onClick={() => setIsDevStaffModalOpen(false)}
+              >
                 Close
               </Button>
             </ModalFooter>
@@ -3160,66 +4357,136 @@ export default function DashboardPortfolioPage() {
         </Modal>
 
         {/* Dev Staff Project Active Modal */}
-        <Modal isOpen={isDevStaffActiveModalOpen} onClose={() => setIsDevStaffActiveModalOpen(false)} size="6xl">
+        <Modal
+          isOpen={isDevStaffActiveModalOpen}
+          onClose={() => setIsDevStaffActiveModalOpen(false)}
+          size="6xl"
+        >
           <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
           <ModalContent maxH="90vh" bg={cardBg} shadow="2xl" rounded="xl">
-            <ModalHeader 
-              bg="green.500" 
-              color="white" 
-              roundedTop="xl" 
+            <ModalHeader
+              bg="green.500"
+              color="white"
+              roundedTop="xl"
               py={4}
               fontSize="lg"
               fontWeight="bold"
             >
               <HStack>
                 <Icon as={FiBarChart} />
-                <Text>Dev Staff Project Active - All Data (Q{selectedQuarter} {selectedYear})</Text>
+                <Text>
+                  Dev Staff Project Active - All Data (Q{selectedQuarter}{" "}
+                  {selectedYear})
+                </Text>
               </HStack>
             </ModalHeader>
             <ModalCloseButton color="white" />
             <ModalBody overflowY="auto" maxH="70vh" p={6}>
               {devStaffActiveModalData.length > 0 ? (
                 <Box>
-                  <Box bg={useColorModeValue("gray.50", "gray.700")} p={4} rounded="lg" mb={4}>
+                  <Box
+                    bg={useColorModeValue("gray.50", "gray.700")}
+                    p={4}
+                    rounded="lg"
+                    mb={4}
+                  >
                     <Chart
                       options={{
                         ...devStaffProjectActiveChartOptions,
                         xaxis: {
                           ...devStaffProjectActiveChartOptions.xaxis,
-                          categories: [...new Set(devStaffActiveModalData.map(item => item.userFullName))]
-                        }
+                          categories: [
+                            ...new Set(
+                              devStaffActiveModalData.map(
+                                (item) => item.userFullName
+                              )
+                            ),
+                          ],
+                        },
                       }}
-                      series={getQuarterMonths(selectedQuarter).map(month => ({
-                        name: month.monthName,
-                        data: [...new Set(devStaffActiveModalData.map(item => item.userFullName))].map(user => {
-                          const userMonthData = devStaffActiveModalData.find(
-                            item => item.userFullName === user && (
-                              item.monthName === month.monthName ||
-                              item.monthName === getFullMonthName(month.monthPeriod) ||
-                              item.monthName === month.monthPeriod.toString().padStart(2, '0') ||
-                              item.monthName === month.monthPeriod.toString()
-                            )
-                          );
-                          return userMonthData ? userMonthData.projectCount : 0;
+                      series={getQuarterMonths(selectedQuarter).map(
+                        (month) => ({
+                          name: month.monthName,
+                          data: [
+                            ...new Set(
+                              devStaffActiveModalData.map(
+                                (item) => item.userFullName
+                              )
+                            ),
+                          ].map((user) => {
+                            const userMonthData = devStaffActiveModalData.find(
+                              (item) =>
+                                item.userFullName === user &&
+                                (item.monthName === month.monthName ||
+                                  item.monthName ===
+                                    getFullMonthName(month.monthPeriod) ||
+                                  item.monthName ===
+                                    month.monthPeriod
+                                      .toString()
+                                      .padStart(2, "0") ||
+                                  item.monthName ===
+                                    month.monthPeriod.toString())
+                            );
+                            return userMonthData
+                              ? userMonthData.projectCount
+                              : 0;
+                          }),
                         })
-                      }))}
+                      )}
                       type="bar"
-                      height={Math.max(400, [...new Set(devStaffActiveModalData.map(item => item.userFullName))].length * 30)}
+                      height={Math.max(
+                        400,
+                        [
+                          ...new Set(
+                            devStaffActiveModalData.map(
+                              (item) => item.userFullName
+                            )
+                          ),
+                        ].length * 30
+                      )}
                     />
                   </Box>
                   <HStack justify="center" mt={4} spacing={6}>
-                    <Box bg={useColorModeValue("green.50", "green.900")} p={4} rounded="lg" textAlign="center">
+                    <Box
+                      bg={useColorModeValue("green.50", "green.900")}
+                      p={4}
+                      rounded="lg"
+                      textAlign="center"
+                    >
                       <Stat>
-                        <StatLabel color="green.600" fontSize="sm" fontWeight="medium">Total Users</StatLabel>
-                        <StatNumber color="green.600" fontSize="2xl" fontWeight="bold">
-                          {[...new Set(devStaffActiveModalData.map(item => item.userFullName))].length}
+                        <StatLabel
+                          color="green.600"
+                          fontSize="sm"
+                          fontWeight="medium"
+                        >
+                          Total Users
+                        </StatLabel>
+                        <StatNumber
+                          color="green.600"
+                          fontSize="2xl"
+                          fontWeight="bold"
+                        >
+                          {
+                            [
+                              ...new Set(
+                                devStaffActiveModalData.map(
+                                  (item) => item.userFullName
+                                )
+                              ),
+                            ].length
+                          }
                         </StatNumber>
                       </Stat>
                     </Box>
                   </HStack>
                 </Box>
               ) : (
-                <Flex justify="center" align="center" height="300px" direction="column">
+                <Flex
+                  justify="center"
+                  align="center"
+                  height="300px"
+                  direction="column"
+                >
                   <Icon as={FiBarChart} size="48px" color="gray.300" mb={4} />
                   <Text color="gray.500" fontSize="sm" textAlign="center">
                     No dev staff project active data available
@@ -3227,8 +4494,16 @@ export default function DashboardPortfolioPage() {
                 </Flex>
               )}
             </ModalBody>
-            <ModalFooter bg={useColorModeValue("gray.50", "gray.700")} roundedBottom="xl" py={4}>
-              <Button colorScheme="green" mr={3} onClick={() => setIsDevStaffActiveModalOpen(false)}>
+            <ModalFooter
+              bg={useColorModeValue("gray.50", "gray.700")}
+              roundedBottom="xl"
+              py={4}
+            >
+              <Button
+                colorScheme="green"
+                mr={3}
+                onClick={() => setIsDevStaffActiveModalOpen(false)}
+              >
                 Close
               </Button>
             </ModalFooter>
@@ -3236,79 +4511,151 @@ export default function DashboardPortfolioPage() {
         </Modal>
 
         {/* Division Owner Quartile Modal */}
-        <Modal isOpen={isDivisionModalOpen} onClose={() => setIsDivisionModalOpen(false)} size="6xl">
+        <Modal
+          isOpen={isDivisionModalOpen}
+          onClose={() => setIsDivisionModalOpen(false)}
+          size="6xl"
+        >
           <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
           <ModalContent maxH="90vh" bg={cardBg} shadow="2xl" rounded="xl">
-            <ModalHeader 
-              bg="purple.500" 
-              color="white" 
-              roundedTop="xl" 
+            <ModalHeader
+              bg="purple.500"
+              color="white"
+              roundedTop="xl"
               py={4}
               fontSize="lg"
               fontWeight="bold"
             >
               <HStack>
                 <Icon as={FiTrendingUp} />
-                <Text>Division Owner Quartile - All Data (Q{selectedQuarter} {selectedYear})</Text>
+                <Text>
+                  Division Owner Quartile - All Data (Q{selectedQuarter}{" "}
+                  {selectedYear})
+                </Text>
               </HStack>
             </ModalHeader>
             <ModalCloseButton color="white" />
             <ModalBody overflowY="auto" maxH="70vh" p={6}>
               {divisionModalData.length > 0 ? (
                 <Box>
-                  <Box bg={useColorModeValue("gray.50", "gray.700")} p={4} rounded="lg" mb={4}>
+                  <Box
+                    bg={useColorModeValue("gray.50", "gray.700")}
+                    p={4}
+                    rounded="lg"
+                    mb={4}
+                  >
                     <Chart
                       options={{
                         ...divisionChartOptions,
                         xaxis: {
                           ...divisionChartOptions.xaxis,
-                          categories: [...new Set(divisionModalData.map(item => shortenDivisionName(item.divisionName)))]
+                          categories: [
+                            ...new Set(
+                              divisionModalData.map((item) =>
+                                shortenDivisionName(item.divisionName)
+                              )
+                            ),
+                          ],
                         },
                         tooltip: {
                           shared: false,
                           intersect: true,
                           style: {
-                            fontSize: '12px',
-                            fontFamily: 'Inter, sans-serif'
+                            fontSize: "12px",
+                            fontFamily: "Inter, sans-serif",
                           },
                           y: {
                             formatter: (val: number, opts: any) => {
                               const seriesIndex = opts.seriesIndex;
                               const dataPointIndex = opts.dataPointIndex;
-                              const quarterMonths = getQuarterMonths(selectedQuarter);
-                              const monthName = quarterMonths[seriesIndex]?.monthName || '';
-                              const fullDivisionName = [...new Set(divisionModalData.map(item => item.divisionName))][dataPointIndex] || '';
+                              const quarterMonths =
+                                getQuarterMonths(selectedQuarter);
+                              const monthName =
+                                quarterMonths[seriesIndex]?.monthName || "";
+                              const fullDivisionName =
+                                [
+                                  ...new Set(
+                                    divisionModalData.map(
+                                      (item) => item.divisionName
+                                    )
+                                  ),
+                                ][dataPointIndex] || "";
                               return `${monthName}: ${val} projects<br/>Division: ${fullDivisionName}`;
-                            }
-                          }
-                        }
+                            },
+                          },
+                        },
                       }}
-                      series={getQuarterMonths(selectedQuarter).map(({ monthName }) => ({
-                        name: monthName || '',
-                        data: [...new Set(divisionModalData.map(item => shortenDivisionName(item.divisionName)))].map(division => {
-                          const divisionItem = divisionModalData.find(item => 
-                            shortenDivisionName(item.divisionName) === division && item.monthName === monthName
-                          );
-                          return divisionItem?.projectCount || 0;
+                      series={getQuarterMonths(selectedQuarter).map(
+                        ({ monthName }) => ({
+                          name: monthName || "",
+                          data: [
+                            ...new Set(
+                              divisionModalData.map((item) =>
+                                shortenDivisionName(item.divisionName)
+                              )
+                            ),
+                          ].map((division) => {
+                            const divisionItem = divisionModalData.find(
+                              (item) =>
+                                shortenDivisionName(item.divisionName) ===
+                                  division && item.monthName === monthName
+                            );
+                            return divisionItem?.projectCount || 0;
+                          }),
                         })
-                      }))}
+                      )}
                       type="bar"
-                      height={Math.max(400, [...new Set(divisionModalData.map(item => item.divisionName))].length * 30)}
+                      height={Math.max(
+                        400,
+                        [
+                          ...new Set(
+                            divisionModalData.map((item) => item.divisionName)
+                          ),
+                        ].length * 30
+                      )}
                     />
                   </Box>
                   <HStack justify="center" mt={4} spacing={6}>
-                    <Box bg={useColorModeValue("purple.50", "purple.900")} p={4} rounded="lg" textAlign="center">
+                    <Box
+                      bg={useColorModeValue("purple.50", "purple.900")}
+                      p={4}
+                      rounded="lg"
+                      textAlign="center"
+                    >
                       <Stat>
-                        <StatLabel color="purple.600" fontSize="sm" fontWeight="medium">Total Divisions</StatLabel>
-                        <StatNumber color="purple.600" fontSize="2xl" fontWeight="bold">
-                          {[...new Set(divisionModalData.map(item => item.divisionName))].length}
+                        <StatLabel
+                          color="purple.600"
+                          fontSize="sm"
+                          fontWeight="medium"
+                        >
+                          Total Divisions
+                        </StatLabel>
+                        <StatNumber
+                          color="purple.600"
+                          fontSize="2xl"
+                          fontWeight="bold"
+                        >
+                          {
+                            [
+                              ...new Set(
+                                divisionModalData.map(
+                                  (item) => item.divisionName
+                                )
+                              ),
+                            ].length
+                          }
                         </StatNumber>
                       </Stat>
                     </Box>
                   </HStack>
                 </Box>
               ) : (
-                <Flex justify="center" align="center" height="300px" direction="column">
+                <Flex
+                  justify="center"
+                  align="center"
+                  height="300px"
+                  direction="column"
+                >
                   <Icon as={FiTrendingUp} size="48px" color="gray.300" mb={4} />
                   <Text color="gray.500" fontSize="sm" textAlign="center">
                     No division owner quartile data available
@@ -3316,8 +4663,16 @@ export default function DashboardPortfolioPage() {
                 </Flex>
               )}
             </ModalBody>
-            <ModalFooter bg={useColorModeValue("gray.50", "gray.700")} roundedBottom="xl" py={4}>
-              <Button colorScheme="purple" mr={3} onClick={() => setIsDivisionModalOpen(false)}>
+            <ModalFooter
+              bg={useColorModeValue("gray.50", "gray.700")}
+              roundedBottom="xl"
+              py={4}
+            >
+              <Button
+                colorScheme="purple"
+                mr={3}
+                onClick={() => setIsDivisionModalOpen(false)}
+              >
                 Close
               </Button>
             </ModalFooter>
@@ -3325,27 +4680,39 @@ export default function DashboardPortfolioPage() {
         </Modal>
 
         {/* Project Quarterly Modal */}
-        <Modal isOpen={isProjectQuarterlyModalOpen} onClose={() => setIsProjectQuarterlyModalOpen(false)} size="6xl">
+        <Modal
+          isOpen={isProjectQuarterlyModalOpen}
+          onClose={() => setIsProjectQuarterlyModalOpen(false)}
+          size="6xl"
+        >
           <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
           <ModalContent maxH="90vh" bg={cardBg} shadow="2xl" rounded="xl">
-            <ModalHeader 
-              bg="purple.500" 
-              color="white" 
-              roundedTop="xl" 
+            <ModalHeader
+              bg="purple.500"
+              color="white"
+              roundedTop="xl"
               py={4}
               fontSize="lg"
               fontWeight="bold"
             >
               <HStack>
                 <Icon as={FiActivity} />
-                <Text>Project Quarterly - All Data (Q{selectedQuarter} {selectedYear})</Text>
+                <Text>
+                  Project Quarterly - All Data (Q{selectedQuarter}{" "}
+                  {selectedYear})
+                </Text>
               </HStack>
             </ModalHeader>
             <ModalCloseButton color="white" />
             <ModalBody overflowY="auto" maxH="70vh" p={6}>
               {quarterlyData.length > 0 ? (
                 <Box>
-                  <Box bg={useColorModeValue("gray.50", "gray.700")} p={4} rounded="lg" mb={4}>
+                  <Box
+                    bg={useColorModeValue("gray.50", "gray.700")}
+                    p={4}
+                    rounded="lg"
+                    mb={4}
+                  >
                     <Chart
                       options={quarterlyChartOptions}
                       series={quarterlyChartSeries}
@@ -3354,18 +4721,41 @@ export default function DashboardPortfolioPage() {
                     />
                   </Box>
                   <HStack justify="center" mt={4} spacing={6}>
-                    <Box bg={useColorModeValue("purple.50", "purple.900")} p={4} rounded="lg" textAlign="center">
+                    <Box
+                      bg={useColorModeValue("purple.50", "purple.900")}
+                      p={4}
+                      rounded="lg"
+                      textAlign="center"
+                    >
                       <Stat>
-                        <StatLabel color="purple.600" fontSize="sm" fontWeight="medium">Total Projects</StatLabel>
-                        <StatNumber color="purple.600" fontSize="2xl" fontWeight="bold">
-                          {quarterlyData.reduce((sum, item) => sum + item.projectCount, 0)}
+                        <StatLabel
+                          color="purple.600"
+                          fontSize="sm"
+                          fontWeight="medium"
+                        >
+                          Total Projects
+                        </StatLabel>
+                        <StatNumber
+                          color="purple.600"
+                          fontSize="2xl"
+                          fontWeight="bold"
+                        >
+                          {quarterlyData.reduce(
+                            (sum, item) => sum + item.projectCount,
+                            0
+                          )}
                         </StatNumber>
                       </Stat>
                     </Box>
                   </HStack>
                 </Box>
               ) : (
-                <Flex justify="center" align="center" height="300px" direction="column">
+                <Flex
+                  justify="center"
+                  align="center"
+                  height="300px"
+                  direction="column"
+                >
                   <Icon as={FiActivity} size="48px" color="gray.300" mb={4} />
                   <Text color="gray.500" fontSize="sm" textAlign="center">
                     No project quarterly data available
@@ -3373,8 +4763,16 @@ export default function DashboardPortfolioPage() {
                 </Flex>
               )}
             </ModalBody>
-            <ModalFooter bg={useColorModeValue("gray.50", "gray.700")} roundedBottom="xl" py={4}>
-              <Button colorScheme="purple" mr={3} onClick={() => setIsProjectQuarterlyModalOpen(false)}>
+            <ModalFooter
+              bg={useColorModeValue("gray.50", "gray.700")}
+              roundedBottom="xl"
+              py={4}
+            >
+              <Button
+                colorScheme="purple"
+                mr={3}
+                onClick={() => setIsProjectQuarterlyModalOpen(false)}
+              >
                 Close
               </Button>
             </ModalFooter>
@@ -3382,27 +4780,38 @@ export default function DashboardPortfolioPage() {
         </Modal>
 
         {/* Project Summary Modal */}
-        <Modal isOpen={isProjectSummaryModalOpen} onClose={() => setIsProjectSummaryModalOpen(false)} size="6xl">
+        <Modal
+          isOpen={isProjectSummaryModalOpen}
+          onClose={() => setIsProjectSummaryModalOpen(false)}
+          size="6xl"
+        >
           <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
           <ModalContent maxH="90vh" bg={cardBg} shadow="2xl" rounded="xl">
-            <ModalHeader 
-              bg="blue.500" 
-              color="white" 
-              roundedTop="xl" 
+            <ModalHeader
+              bg="blue.500"
+              color="white"
+              roundedTop="xl"
               py={4}
               fontSize="lg"
               fontWeight="bold"
             >
               <HStack>
                 <Icon as={FiTrendingUp} />
-                <Text>Project Summary - All Data (Q{selectedQuarter} {selectedYear})</Text>
+                <Text>
+                  Project Summary - All Data (Q{selectedQuarter} {selectedYear})
+                </Text>
               </HStack>
             </ModalHeader>
             <ModalCloseButton color="white" />
             <ModalBody overflowY="auto" maxH="70vh" p={6}>
               {chartData.length > 0 ? (
                 <Box>
-                  <Box bg={useColorModeValue("gray.50", "gray.700")} p={4} rounded="lg" mb={4}>
+                  <Box
+                    bg={useColorModeValue("gray.50", "gray.700")}
+                    p={4}
+                    rounded="lg"
+                    mb={4}
+                  >
                     <Chart
                       options={chartOptions}
                       series={chartSeries}
@@ -3411,18 +4820,41 @@ export default function DashboardPortfolioPage() {
                     />
                   </Box>
                   <HStack justify="center" mt={4} spacing={6}>
-                    <Box bg={useColorModeValue("blue.50", "blue.900")} p={4} rounded="lg" textAlign="center">
+                    <Box
+                      bg={useColorModeValue("blue.50", "blue.900")}
+                      p={4}
+                      rounded="lg"
+                      textAlign="center"
+                    >
                       <Stat>
-                        <StatLabel color="blue.600" fontSize="sm" fontWeight="medium">Total Projects</StatLabel>
-                        <StatNumber color="blue.600" fontSize="2xl" fontWeight="bold">
-                          {chartData.reduce((sum, item) => sum + item.projectCount, 0)}
+                        <StatLabel
+                          color="blue.600"
+                          fontSize="sm"
+                          fontWeight="medium"
+                        >
+                          Total Projects
+                        </StatLabel>
+                        <StatNumber
+                          color="blue.600"
+                          fontSize="2xl"
+                          fontWeight="bold"
+                        >
+                          {chartData.reduce(
+                            (sum, item) => sum + item.projectCount,
+                            0
+                          )}
                         </StatNumber>
                       </Stat>
                     </Box>
                   </HStack>
                 </Box>
               ) : (
-                <Flex justify="center" align="center" height="300px" direction="column">
+                <Flex
+                  justify="center"
+                  align="center"
+                  height="300px"
+                  direction="column"
+                >
                   <Icon as={FiTrendingUp} size="48px" color="gray.300" mb={4} />
                   <Text color="gray.500" fontSize="sm" textAlign="center">
                     No project summary data available
@@ -3430,8 +4862,16 @@ export default function DashboardPortfolioPage() {
                 </Flex>
               )}
             </ModalBody>
-            <ModalFooter bg={useColorModeValue("gray.50", "gray.700")} roundedBottom="xl" py={4}>
-              <Button colorScheme="blue" mr={3} onClick={() => setIsProjectSummaryModalOpen(false)}>
+            <ModalFooter
+              bg={useColorModeValue("gray.50", "gray.700")}
+              roundedBottom="xl"
+              py={4}
+            >
+              <Button
+                colorScheme="blue"
+                mr={3}
+                onClick={() => setIsProjectSummaryModalOpen(false)}
+              >
                 Close
               </Button>
             </ModalFooter>
@@ -3439,64 +4879,118 @@ export default function DashboardPortfolioPage() {
         </Modal>
 
         {/* Project Characteristics Modal */}
-        <Modal isOpen={isCharacteristicsModalOpen} onClose={() => setIsCharacteristicsModalOpen(false)} size="6xl">
+        <Modal
+          isOpen={isCharacteristicsModalOpen}
+          onClose={() => setIsCharacteristicsModalOpen(false)}
+          size="6xl"
+        >
           <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
           <ModalContent maxH="90vh" bg={cardBg} shadow="2xl" rounded="xl">
-            <ModalHeader 
-              bg="orange.500" 
-              color="white" 
-              roundedTop="xl" 
+            <ModalHeader
+              bg="orange.500"
+              color="white"
+              roundedTop="xl"
               py={4}
               fontSize="lg"
               fontWeight="bold"
             >
               <HStack>
                 <Icon as={FiActivity} />
-                <Text>Project Characteristics - All Data (Q{selectedQuarter} {selectedYear})</Text>
+                <Text>
+                  Project Characteristics - All Data (Q{selectedQuarter}{" "}
+                  {selectedYear})
+                </Text>
               </HStack>
             </ModalHeader>
             <ModalCloseButton color="white" />
             <ModalBody overflowY="auto" maxH="70vh" p={6}>
               {characteristicsModalData.length > 0 ? (
                 <Box>
-                  <Box bg={useColorModeValue("gray.50", "gray.700")} p={4} rounded="lg" mb={4}>
+                  <Box
+                    bg={useColorModeValue("gray.50", "gray.700")}
+                    p={4}
+                    rounded="lg"
+                    mb={4}
+                  >
                     <Chart
                       options={{
                         ...characteristicsChartOptions,
                         xaxis: {
                           ...characteristicsChartOptions.xaxis,
-                          categories: characteristicsModalData.map(item => item.characteristicName)
-                        }
+                          categories: characteristicsModalData.map(
+                            (item) => item.characteristicName
+                          ),
+                        },
                       }}
-                      series={[{
-                        name: 'Projects',
-                        data: characteristicsModalData.map(item => item.projectCount)
-                      }]}
+                      series={[
+                        {
+                          name: "Projects",
+                          data: characteristicsModalData.map(
+                            (item) => item.projectCount
+                          ),
+                        },
+                      ]}
                       type="bar"
-                      height={Math.max(400, characteristicsModalData.length * 30)}
+                      height={Math.max(
+                        400,
+                        characteristicsModalData.length * 30
+                      )}
                     />
                   </Box>
                   <HStack justify="center" mt={4} spacing={6}>
                     <Box bg="orange.50" p={4} rounded="lg" textAlign="center">
                       <Stat>
-                        <StatLabel color="orange.600" fontSize="sm" fontWeight="medium">Total Characteristics</StatLabel>
-                        <StatNumber color="orange.600" fontSize="2xl" fontWeight="bold">
+                        <StatLabel
+                          color="orange.600"
+                          fontSize="sm"
+                          fontWeight="medium"
+                        >
+                          Total Characteristics
+                        </StatLabel>
+                        <StatNumber
+                          color="orange.600"
+                          fontSize="2xl"
+                          fontWeight="bold"
+                        >
                           {characteristicsModalData.length}
                         </StatNumber>
                       </Stat>
                     </Box>
-                    <Box bg={useColorModeValue("blue.50", "blue.900")} p={4} rounded="lg" textAlign="center">
+                    <Box
+                      bg={useColorModeValue("blue.50", "blue.900")}
+                      p={4}
+                      rounded="lg"
+                      textAlign="center"
+                    >
                       <Stat>
-                        <StatLabel color="blue.600" fontSize="sm" fontWeight="medium">Total Projects</StatLabel>
-                        <StatNumber color="blue.600" fontSize="2xl" fontWeight="bold">
-                          {characteristicsModalData.reduce((sum, item) => sum + item.projectCount, 0)}
+                        <StatLabel
+                          color="blue.600"
+                          fontSize="sm"
+                          fontWeight="medium"
+                        >
+                          Total Projects
+                        </StatLabel>
+                        <StatNumber
+                          color="blue.600"
+                          fontSize="2xl"
+                          fontWeight="bold"
+                        >
+                          {characteristicsModalData.reduce(
+                            (sum, item) => sum + item.projectCount,
+                            0
+                          )}
                         </StatNumber>
                       </Stat>
                     </Box>
                   </HStack>
                 </Box>
               ) : (
-                <Flex justify="center" align="center" height="300px" direction="column">
+                <Flex
+                  justify="center"
+                  align="center"
+                  height="300px"
+                  direction="column"
+                >
                   <Icon as={FiActivity} size="48px" color="gray.300" mb={4} />
                   <Text color="gray.500" fontSize="sm" textAlign="center">
                     No project characteristics data available
@@ -3504,8 +4998,16 @@ export default function DashboardPortfolioPage() {
                 </Flex>
               )}
             </ModalBody>
-            <ModalFooter bg={useColorModeValue("gray.50", "gray.700")} roundedBottom="xl" py={4}>
-              <Button colorScheme="orange" mr={3} onClick={() => setIsCharacteristicsModalOpen(false)}>
+            <ModalFooter
+              bg={useColorModeValue("gray.50", "gray.700")}
+              roundedBottom="xl"
+              py={4}
+            >
+              <Button
+                colorScheme="orange"
+                mr={3}
+                onClick={() => setIsCharacteristicsModalOpen(false)}
+              >
                 Close
               </Button>
             </ModalFooter>
@@ -3513,40 +5015,57 @@ export default function DashboardPortfolioPage() {
         </Modal>
 
         {/* Project Type Modal */}
-        <Modal isOpen={isProjectTypeModalOpen} onClose={() => setIsProjectTypeModalOpen(false)} size="6xl">
+        <Modal
+          isOpen={isProjectTypeModalOpen}
+          onClose={() => setIsProjectTypeModalOpen(false)}
+          size="6xl"
+        >
           <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
           <ModalContent maxH="90vh" bg={cardBg} shadow="2xl" rounded="xl">
-            <ModalHeader 
-              bg="teal.500" 
-              color="white" 
-              roundedTop="xl" 
+            <ModalHeader
+              bg="teal.500"
+              color="white"
+              roundedTop="xl"
               py={4}
               fontSize="lg"
               fontWeight="bold"
             >
               <HStack>
                 <Icon as={FiBarChart} />
-                <Text>Project Type - All Data (Q{selectedQuarter} {selectedYear})</Text>
+                <Text>
+                  Project Type - All Data (Q{selectedQuarter} {selectedYear})
+                </Text>
               </HStack>
             </ModalHeader>
             <ModalCloseButton color="white" />
             <ModalBody overflowY="auto" maxH="70vh" p={6}>
               {projectTypeModalData.length > 0 ? (
                 <Box>
-                  <Box bg={useColorModeValue("gray.50", "gray.700")} p={4} rounded="lg" mb={4}>
+                  <Box
+                    bg={useColorModeValue("gray.50", "gray.700")}
+                    p={4}
+                    rounded="lg"
+                    mb={4}
+                  >
                     <Chart
                       options={{
                         ...projectTypeChartOptions,
-                        labels: projectTypeModalData.map(item => item.projectTypeName),
+                        labels: projectTypeModalData.map(
+                          (item) => item.projectTypeName
+                        ),
                         dataLabels: {
                           enabled: true,
                           formatter: (val: number, opts: any) => {
-                            const count = projectTypeModalData[opts.seriesIndex]?.projectCount || 0;
+                            const count =
+                              projectTypeModalData[opts.seriesIndex]
+                                ?.projectCount || 0;
                             return `${count}`;
-                          }
-                        }
+                          },
+                        },
                       }}
-                      series={projectTypeModalData.map(item => item.projectCount)}
+                      series={projectTypeModalData.map(
+                        (item) => item.projectCount
+                      )}
                       type="pie"
                       height={400}
                     />
@@ -3554,24 +5073,57 @@ export default function DashboardPortfolioPage() {
                   <HStack justify="center" mt={4} spacing={6}>
                     <Box bg="teal.50" p={4} rounded="lg" textAlign="center">
                       <Stat>
-                        <StatLabel color="teal.600" fontSize="sm" fontWeight="medium">Total Types</StatLabel>
-                        <StatNumber color="teal.600" fontSize="2xl" fontWeight="bold">
+                        <StatLabel
+                          color="teal.600"
+                          fontSize="sm"
+                          fontWeight="medium"
+                        >
+                          Total Types
+                        </StatLabel>
+                        <StatNumber
+                          color="teal.600"
+                          fontSize="2xl"
+                          fontWeight="bold"
+                        >
                           {projectTypeModalData.length}
                         </StatNumber>
                       </Stat>
                     </Box>
-                    <Box bg={useColorModeValue("blue.50", "blue.900")} p={4} rounded="lg" textAlign="center">
+                    <Box
+                      bg={useColorModeValue("blue.50", "blue.900")}
+                      p={4}
+                      rounded="lg"
+                      textAlign="center"
+                    >
                       <Stat>
-                        <StatLabel color="blue.600" fontSize="sm" fontWeight="medium">Total Projects</StatLabel>
-                        <StatNumber color="blue.600" fontSize="2xl" fontWeight="bold">
-                          {projectTypeModalData.reduce((sum, item) => sum + item.projectCount, 0)}
+                        <StatLabel
+                          color="blue.600"
+                          fontSize="sm"
+                          fontWeight="medium"
+                        >
+                          Total Projects
+                        </StatLabel>
+                        <StatNumber
+                          color="blue.600"
+                          fontSize="2xl"
+                          fontWeight="bold"
+                        >
+                          {projectTypeModalData.reduce(
+                            (sum, item) => sum + item.projectCount,
+                            0
+                          )}
                         </StatNumber>
                       </Stat>
                     </Box>
                   </HStack>
                 </Box>
               ) : (
-                <Flex justify="center" align="center" height="300px" direction="column">
+                <Flex
+                  justify="center"
+                  align="center"
+                  height="300px"
+                  direction="column"
+                >
                   <Icon as={FiBarChart} size="48px" color="gray.300" mb={4} />
                   <Text color="gray.500" fontSize="sm" textAlign="center">
                     No project type data available
@@ -3579,8 +5131,16 @@ export default function DashboardPortfolioPage() {
                 </Flex>
               )}
             </ModalBody>
-            <ModalFooter bg={useColorModeValue("gray.50", "gray.700")} roundedBottom="xl" py={4}>
-              <Button colorScheme="teal" mr={3} onClick={() => setIsProjectTypeModalOpen(false)}>
+            <ModalFooter
+              bg={useColorModeValue("gray.50", "gray.700")}
+              roundedBottom="xl"
+              py={4}
+            >
+              <Button
+                colorScheme="teal"
+                mr={3}
+                onClick={() => setIsProjectTypeModalOpen(false)}
+              >
                 Close
               </Button>
             </ModalFooter>
@@ -3588,26 +5148,49 @@ export default function DashboardPortfolioPage() {
         </Modal>
 
         {/* Procurement Work Program Modal */}
-        <Modal isOpen={isProcurementModalOpen} onClose={() => setIsProcurementModalOpen(false)} size="6xl">
+        <Modal
+          isOpen={isProcurementModalOpen}
+          onClose={() => setIsProcurementModalOpen(false)}
+          size="6xl"
+        >
           <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
           <ModalContent maxH="90vh" bg={cardBg} shadow="2xl" rounded="xl">
-            <ModalHeader bg="pink.500" color="white" roundedTop="xl" py={4} fontSize="lg" fontWeight="bold">
+            <ModalHeader
+              bg="pink.500"
+              color="white"
+              roundedTop="xl"
+              py={4}
+              fontSize="lg"
+              fontWeight="bold"
+            >
               <HStack>
                 <Icon as={FiTrendingUp} />
-                <Text>Procurement Work Program - All Data (Q{selectedQuarter} {selectedYear})</Text>
+                <Text>
+                  Procurement Work Program - All Data (Q{selectedQuarter}{" "}
+                  {selectedYear})
+                </Text>
               </HStack>
             </ModalHeader>
             <ModalCloseButton color="white" />
             <ModalBody overflowY="auto" maxH="70vh" p={6}>
               {procurementModalData.length > 0 ? (
                 <Box>
-                  <Box bg={useColorModeValue("gray.50", "gray.700")} p={4} rounded="lg" mb={4}>
+                  <Box
+                    bg={useColorModeValue("gray.50", "gray.700")}
+                    p={4}
+                    rounded="lg"
+                    mb={4}
+                  >
                     <Chart
                       options={{
                         ...procurementWorkProgramChartOptions,
-                        labels: procurementModalData.map(item => item.procurementWorkProgramFlag)
+                        labels: procurementModalData.map(
+                          (item) => item.procurementWorkProgramFlag
+                        ),
                       }}
-                      series={procurementModalData.map(item => item.projectCount)}
+                      series={procurementModalData.map(
+                        (item) => item.projectCount
+                      )}
                       type="donut"
                       height={400}
                     />
@@ -3615,24 +5198,57 @@ export default function DashboardPortfolioPage() {
                   <HStack justify="center" mt={4} spacing={6}>
                     <Box bg="pink.50" p={4} rounded="lg" textAlign="center">
                       <Stat>
-                        <StatLabel color="pink.600" fontSize="sm" fontWeight="medium">Total Programs</StatLabel>
-                        <StatNumber color="pink.600" fontSize="2xl" fontWeight="bold">
+                        <StatLabel
+                          color="pink.600"
+                          fontSize="sm"
+                          fontWeight="medium"
+                        >
+                          Total Programs
+                        </StatLabel>
+                        <StatNumber
+                          color="pink.600"
+                          fontSize="2xl"
+                          fontWeight="bold"
+                        >
                           {procurementModalData.length}
                         </StatNumber>
                       </Stat>
                     </Box>
-                    <Box bg={useColorModeValue("blue.50", "blue.900")} p={4} rounded="lg" textAlign="center">
+                    <Box
+                      bg={useColorModeValue("blue.50", "blue.900")}
+                      p={4}
+                      rounded="lg"
+                      textAlign="center"
+                    >
                       <Stat>
-                        <StatLabel color="blue.600" fontSize="sm" fontWeight="medium">Total Projects</StatLabel>
-                        <StatNumber color="blue.600" fontSize="2xl" fontWeight="bold">
-                          {procurementModalData.reduce((sum, item) => sum + item.projectCount, 0)}
+                        <StatLabel
+                          color="blue.600"
+                          fontSize="sm"
+                          fontWeight="medium"
+                        >
+                          Total Projects
+                        </StatLabel>
+                        <StatNumber
+                          color="blue.600"
+                          fontSize="2xl"
+                          fontWeight="bold"
+                        >
+                          {procurementModalData.reduce(
+                            (sum, item) => sum + item.projectCount,
+                            0
+                          )}
                         </StatNumber>
                       </Stat>
                     </Box>
                   </HStack>
                 </Box>
               ) : (
-                <Flex justify="center" align="center" height="300px" direction="column">
+                <Flex
+                  justify="center"
+                  align="center"
+                  height="300px"
+                  direction="column"
+                >
                   <Icon as={FiTrendingUp} size="48px" color="gray.300" mb={4} />
                   <Text color="gray.500" fontSize="sm" textAlign="center">
                     No procurement work program data available
@@ -3640,8 +5256,16 @@ export default function DashboardPortfolioPage() {
                 </Flex>
               )}
             </ModalBody>
-            <ModalFooter bg={useColorModeValue("gray.50", "gray.700")} roundedBottom="xl" py={4}>
-              <Button colorScheme="pink" mr={3} onClick={() => setIsProcurementModalOpen(false)}>
+            <ModalFooter
+              bg={useColorModeValue("gray.50", "gray.700")}
+              roundedBottom="xl"
+              py={4}
+            >
+              <Button
+                colorScheme="pink"
+                mr={3}
+                onClick={() => setIsProcurementModalOpen(false)}
+              >
                 Close
               </Button>
             </ModalFooter>
@@ -3649,32 +5273,57 @@ export default function DashboardPortfolioPage() {
         </Modal>
 
         {/* Project Acquisitions Modal */}
-        <Modal isOpen={isAcquisitionsModalOpen} onClose={() => setIsAcquisitionsModalOpen(false)} size="6xl">
+        <Modal
+          isOpen={isAcquisitionsModalOpen}
+          onClose={() => setIsAcquisitionsModalOpen(false)}
+          size="6xl"
+        >
           <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
           <ModalContent maxH="90vh" bg={cardBg} shadow="2xl" rounded="xl">
-            <ModalHeader bg="cyan.500" color="white" roundedTop="xl" py={4} fontSize="lg" fontWeight="bold">
+            <ModalHeader
+              bg="cyan.500"
+              color="white"
+              roundedTop="xl"
+              py={4}
+              fontSize="lg"
+              fontWeight="bold"
+            >
               <HStack>
                 <Icon as={FiActivity} />
-                <Text>Project Acquisitions - All Data (Q{selectedQuarter} {selectedYear})</Text>
+                <Text>
+                  Project Acquisitions - All Data (Q{selectedQuarter}{" "}
+                  {selectedYear})
+                </Text>
               </HStack>
             </ModalHeader>
             <ModalCloseButton color="white" />
             <ModalBody overflowY="auto" maxH="70vh" p={6}>
               {acquisitionsModalData.length > 0 ? (
                 <Box>
-                  <Box bg={useColorModeValue("gray.50", "gray.700")} p={4} rounded="lg" mb={4}>
+                  <Box
+                    bg={useColorModeValue("gray.50", "gray.700")}
+                    p={4}
+                    rounded="lg"
+                    mb={4}
+                  >
                     <Chart
                       options={{
                         ...projectAcquisitionsChartOptions,
                         xaxis: {
                           ...projectAcquisitionsChartOptions.xaxis,
-                          categories: acquisitionsModalData.map(item => item.projectAcquisitionName)
-                        }
+                          categories: acquisitionsModalData.map(
+                            (item) => item.projectAcquisitionName
+                          ),
+                        },
                       }}
-                      series={[{
-                        name: 'Projects',
-                        data: acquisitionsModalData.map(item => item.projectCount)
-                      }]}
+                      series={[
+                        {
+                          name: "Projects",
+                          data: acquisitionsModalData.map(
+                            (item) => item.projectCount
+                          ),
+                        },
+                      ]}
                       type="bar"
                       height={Math.max(400, acquisitionsModalData.length * 30)}
                     />
@@ -3682,24 +5331,57 @@ export default function DashboardPortfolioPage() {
                   <HStack justify="center" mt={4} spacing={6}>
                     <Box bg="cyan.50" p={4} rounded="lg" textAlign="center">
                       <Stat>
-                        <StatLabel color="cyan.600" fontSize="sm" fontWeight="medium">Total Acquisitions</StatLabel>
-                        <StatNumber color="cyan.600" fontSize="2xl" fontWeight="bold">
+                        <StatLabel
+                          color="cyan.600"
+                          fontSize="sm"
+                          fontWeight="medium"
+                        >
+                          Total Acquisitions
+                        </StatLabel>
+                        <StatNumber
+                          color="cyan.600"
+                          fontSize="2xl"
+                          fontWeight="bold"
+                        >
                           {acquisitionsModalData.length}
                         </StatNumber>
                       </Stat>
                     </Box>
-                    <Box bg={useColorModeValue("blue.50", "blue.900")} p={4} rounded="lg" textAlign="center">
+                    <Box
+                      bg={useColorModeValue("blue.50", "blue.900")}
+                      p={4}
+                      rounded="lg"
+                      textAlign="center"
+                    >
                       <Stat>
-                        <StatLabel color="blue.600" fontSize="sm" fontWeight="medium">Total Projects</StatLabel>
-                        <StatNumber color="blue.600" fontSize="2xl" fontWeight="bold">
-                          {acquisitionsModalData.reduce((sum, item) => sum + item.projectCount, 0)}
+                        <StatLabel
+                          color="blue.600"
+                          fontSize="sm"
+                          fontWeight="medium"
+                        >
+                          Total Projects
+                        </StatLabel>
+                        <StatNumber
+                          color="blue.600"
+                          fontSize="2xl"
+                          fontWeight="bold"
+                        >
+                          {acquisitionsModalData.reduce(
+                            (sum, item) => sum + item.projectCount,
+                            0
+                          )}
                         </StatNumber>
                       </Stat>
                     </Box>
                   </HStack>
                 </Box>
               ) : (
-                <Flex justify="center" align="center" height="300px" direction="column">
+                <Flex
+                  justify="center"
+                  align="center"
+                  height="300px"
+                  direction="column"
+                >
                   <Icon as={FiActivity} size="48px" color="gray.300" mb={4} />
                   <Text color="gray.500" fontSize="sm" textAlign="center">
                     No project acquisitions data available
@@ -3707,8 +5389,16 @@ export default function DashboardPortfolioPage() {
                 </Flex>
               )}
             </ModalBody>
-            <ModalFooter bg={useColorModeValue("gray.50", "gray.700")} roundedBottom="xl" py={4}>
-              <Button colorScheme="cyan" mr={3} onClick={() => setIsAcquisitionsModalOpen(false)}>
+            <ModalFooter
+              bg={useColorModeValue("gray.50", "gray.700")}
+              roundedBottom="xl"
+              py={4}
+            >
+              <Button
+                colorScheme="cyan"
+                mr={3}
+                onClick={() => setIsAcquisitionsModalOpen(false)}
+              >
                 Close
               </Button>
             </ModalFooter>
@@ -3716,57 +5406,120 @@ export default function DashboardPortfolioPage() {
         </Modal>
 
         {/* Project by Group Management Modal */}
-        <Modal isOpen={isGroupManageModalOpen} onClose={() => setIsGroupManageModalOpen(false)} size="6xl">
+        <Modal
+          isOpen={isGroupManageModalOpen}
+          onClose={() => setIsGroupManageModalOpen(false)}
+          size="6xl"
+        >
           <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
           <ModalContent maxH="90vh" bg={cardBg} shadow="2xl" rounded="xl">
-            <ModalHeader bg="purple.500" color="white" roundedTop="xl" py={4} fontSize="lg" fontWeight="bold">
+            <ModalHeader
+              bg="purple.500"
+              color="white"
+              roundedTop="xl"
+              py={4}
+              fontSize="lg"
+              fontWeight="bold"
+            >
               <HStack>
                 <Icon as={FiBarChart} />
-                <Text>Project by Group Management - All Data (Q{selectedQuarter} {selectedYear})</Text>
+                <Text>
+                  Project by Group Management - All Data (Q{selectedQuarter}{" "}
+                  {selectedYear})
+                </Text>
               </HStack>
             </ModalHeader>
             <ModalCloseButton color="white" />
             <ModalBody overflowY="auto" maxH="70vh" p={6}>
               {groupManageModalData.length > 0 ? (
                 <Box>
-                  <Box bg={useColorModeValue("gray.50", "gray.700")} p={4} rounded="lg" mb={4}>
+                  <Box
+                    bg={useColorModeValue("gray.50", "gray.700")}
+                    p={4}
+                    rounded="lg"
+                    mb={4}
+                  >
                     <Chart
                       options={{
                         ...projectByGroupManageChartOptions,
                         xaxis: {
                           ...projectByGroupManageChartOptions.xaxis,
-                          categories: groupManageModalData.map(item => formatGroupName(item.projectGroupNameManage))
-                        }
+                          categories: groupManageModalData.map((item) =>
+                            formatGroupName(item.projectGroupNameManage)
+                          ),
+                        },
                       }}
-                      series={[{
-                        name: 'Projects',
-                        data: groupManageModalData.map(item => item.projectCount)
-                      }]}
+                      series={[
+                        {
+                          name: "Projects",
+                          data: groupManageModalData.map(
+                            (item) => item.projectCount
+                          ),
+                        },
+                      ]}
                       type="bar"
                       height={Math.max(400, groupManageModalData.length * 30)}
                     />
                   </Box>
                   <HStack justify="center" mt={4} spacing={6}>
-                    <Box bg={useColorModeValue("purple.50", "purple.900")} p={4} rounded="lg" textAlign="center">
+                    <Box
+                      bg={useColorModeValue("purple.50", "purple.900")}
+                      p={4}
+                      rounded="lg"
+                      textAlign="center"
+                    >
                       <Stat>
-                        <StatLabel color="purple.600" fontSize="sm" fontWeight="medium">Total Groups</StatLabel>
-                        <StatNumber color="purple.600" fontSize="2xl" fontWeight="bold">
+                        <StatLabel
+                          color="purple.600"
+                          fontSize="sm"
+                          fontWeight="medium"
+                        >
+                          Total Groups
+                        </StatLabel>
+                        <StatNumber
+                          color="purple.600"
+                          fontSize="2xl"
+                          fontWeight="bold"
+                        >
                           {groupManageModalData.length}
                         </StatNumber>
                       </Stat>
                     </Box>
-                    <Box bg={useColorModeValue("blue.50", "blue.900")} p={4} rounded="lg" textAlign="center">
+                    <Box
+                      bg={useColorModeValue("blue.50", "blue.900")}
+                      p={4}
+                      rounded="lg"
+                      textAlign="center"
+                    >
                       <Stat>
-                        <StatLabel color="blue.600" fontSize="sm" fontWeight="medium">Total Projects</StatLabel>
-                        <StatNumber color="blue.600" fontSize="2xl" fontWeight="bold">
-                          {groupManageModalData.reduce((sum, item) => sum + item.projectCount, 0)}
+                        <StatLabel
+                          color="blue.600"
+                          fontSize="sm"
+                          fontWeight="medium"
+                        >
+                          Total Projects
+                        </StatLabel>
+                        <StatNumber
+                          color="blue.600"
+                          fontSize="2xl"
+                          fontWeight="bold"
+                        >
+                          {groupManageModalData.reduce(
+                            (sum, item) => sum + item.projectCount,
+                            0
+                          )}
                         </StatNumber>
                       </Stat>
                     </Box>
                   </HStack>
                 </Box>
               ) : (
-                <Flex justify="center" align="center" height="300px" direction="column">
+                <Flex
+                  justify="center"
+                  align="center"
+                  height="300px"
+                  direction="column"
+                >
                   <Icon as={FiBarChart} size="48px" color="gray.300" mb={4} />
                   <Text color="gray.500" fontSize="sm" textAlign="center">
                     No project by group management data available
@@ -3774,8 +5527,16 @@ export default function DashboardPortfolioPage() {
                 </Flex>
               )}
             </ModalBody>
-            <ModalFooter bg={useColorModeValue("gray.50", "gray.700")} roundedBottom="xl" py={4}>
-              <Button colorScheme="purple" mr={3} onClick={() => setIsGroupManageModalOpen(false)}>
+            <ModalFooter
+              bg={useColorModeValue("gray.50", "gray.700")}
+              roundedBottom="xl"
+              py={4}
+            >
+              <Button
+                colorScheme="purple"
+                mr={3}
+                onClick={() => setIsGroupManageModalOpen(false)}
+              >
                 Close
               </Button>
             </ModalFooter>
@@ -3783,60 +5544,130 @@ export default function DashboardPortfolioPage() {
         </Modal>
 
         {/* Project Summary Dev Modal */}
-        <Modal isOpen={isProjectSummaryDevModalOpen} onClose={() => setIsProjectSummaryDevModalOpen(false)} size="6xl">
+        <Modal
+          isOpen={isProjectSummaryDevModalOpen}
+          onClose={() => setIsProjectSummaryDevModalOpen(false)}
+          size="6xl"
+        >
           <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
           <ModalContent maxH="90vh" bg={cardBg} shadow="2xl" rounded="xl">
-            <ModalHeader bg="blue.500" color="white" roundedTop="xl" py={4} fontSize="lg" fontWeight="bold">
+            <ModalHeader
+              bg="blue.500"
+              color="white"
+              roundedTop="xl"
+              py={4}
+              fontSize="lg"
+              fontWeight="bold"
+            >
               <HStack>
                 <Icon as={FiBarChart} />
-                <Text>Project Summary Dev - All Data (Q{selectedQuarter} {selectedYear})</Text>
+                <Text>
+                  Project Summary Dev - All Data (Q{selectedQuarter}{" "}
+                  {selectedYear})
+                </Text>
               </HStack>
             </ModalHeader>
             <ModalCloseButton color="white" />
             <ModalBody overflowY="auto" maxH="70vh" p={6}>
               {projectSummaryDevModalData.length > 0 ? (
                 <Box>
-                  <Box bg={useColorModeValue("gray.50", "gray.700")} p={4} rounded="lg" mb={4}>
+                  <Box
+                    bg={useColorModeValue("gray.50", "gray.700")}
+                    p={4}
+                    rounded="lg"
+                    mb={4}
+                  >
                     <Chart
                       options={{
                         ...projectSummaryDevChartOptions,
-                        labels: ['Active Projects', 'Closed Projects']
+                        labels: ["Active Projects", "Closed Projects"],
                       }}
                       series={[
-                        projectSummaryDevModalData.filter(item => {
-                          const status = item.projectStatus?.toUpperCase();
-                          return status?.includes('ACTIVE') || status?.includes('INITIATE') || status?.includes('PROGRESS') || status?.includes('PLANNING');
-                        }).reduce((sum, item) => sum + item.projectCount, 0),
-                        projectSummaryDevModalData.filter(item => {
-                          const status = item.projectStatus?.toUpperCase();
-                          return status?.includes('CLOSED') || status?.includes('COMPLETE') || status?.includes('FINISH');
-                        }).reduce((sum, item) => sum + item.projectCount, 0)
+                        projectSummaryDevModalData
+                          .filter((item) => {
+                            const status = item.projectStatus?.toUpperCase();
+                            return (
+                              status?.includes("ACTIVE") ||
+                              status?.includes("INITIATE") ||
+                              status?.includes("PROGRESS") ||
+                              status?.includes("PLANNING")
+                            );
+                          })
+                          .reduce((sum, item) => sum + item.projectCount, 0),
+                        projectSummaryDevModalData
+                          .filter((item) => {
+                            const status = item.projectStatus?.toUpperCase();
+                            return (
+                              status?.includes("CLOSED") ||
+                              status?.includes("COMPLETE") ||
+                              status?.includes("FINISH")
+                            );
+                          })
+                          .reduce((sum, item) => sum + item.projectCount, 0),
                       ]}
                       type="donut"
                       height={400}
                     />
                   </Box>
                   <HStack justify="center" mt={4} spacing={6}>
-                    <Box bg={useColorModeValue("blue.50", "blue.900")} p={4} rounded="lg" textAlign="center">
+                    <Box
+                      bg={useColorModeValue("blue.50", "blue.900")}
+                      p={4}
+                      rounded="lg"
+                      textAlign="center"
+                    >
                       <Stat>
-                        <StatLabel color="blue.600" fontSize="sm" fontWeight="medium">Total Records</StatLabel>
-                        <StatNumber color="blue.600" fontSize="2xl" fontWeight="bold">
+                        <StatLabel
+                          color="blue.600"
+                          fontSize="sm"
+                          fontWeight="medium"
+                        >
+                          Total Records
+                        </StatLabel>
+                        <StatNumber
+                          color="blue.600"
+                          fontSize="2xl"
+                          fontWeight="bold"
+                        >
                           {projectSummaryDevModalData.length}
                         </StatNumber>
                       </Stat>
                     </Box>
-                    <Box bg={useColorModeValue("green.50", "green.900")} p={4} rounded="lg" textAlign="center">
+                    <Box
+                      bg={useColorModeValue("green.50", "green.900")}
+                      p={4}
+                      rounded="lg"
+                      textAlign="center"
+                    >
                       <Stat>
-                        <StatLabel color="green.600" fontSize="sm" fontWeight="medium">Total Projects</StatLabel>
-                        <StatNumber color="green.600" fontSize="2xl" fontWeight="bold">
-                          {projectSummaryDevModalData.reduce((sum, item) => sum + item.projectCount, 0)}
+                        <StatLabel
+                          color="green.600"
+                          fontSize="sm"
+                          fontWeight="medium"
+                        >
+                          Total Projects
+                        </StatLabel>
+                        <StatNumber
+                          color="green.600"
+                          fontSize="2xl"
+                          fontWeight="bold"
+                        >
+                          {projectSummaryDevModalData.reduce(
+                            (sum, item) => sum + item.projectCount,
+                            0
+                          )}
                         </StatNumber>
                       </Stat>
                     </Box>
                   </HStack>
                 </Box>
               ) : (
-                <Flex justify="center" align="center" height="300px" direction="column">
+                <Flex
+                  justify="center"
+                  align="center"
+                  height="300px"
+                  direction="column"
+                >
                   <Icon as={FiBarChart} size="48px" color="gray.300" mb={4} />
                   <Text color="gray.500" fontSize="sm" textAlign="center">
                     No project summary dev data available
@@ -3844,8 +5675,16 @@ export default function DashboardPortfolioPage() {
                 </Flex>
               )}
             </ModalBody>
-            <ModalFooter bg={useColorModeValue("gray.50", "gray.700")} roundedBottom="xl" py={4}>
-              <Button colorScheme="blue" mr={3} onClick={() => setIsProjectSummaryDevModalOpen(false)}>
+            <ModalFooter
+              bg={useColorModeValue("gray.50", "gray.700")}
+              roundedBottom="xl"
+              py={4}
+            >
+              <Button
+                colorScheme="blue"
+                mr={3}
+                onClick={() => setIsProjectSummaryDevModalOpen(false)}
+              >
                 Close
               </Button>
             </ModalFooter>
@@ -3853,10 +5692,21 @@ export default function DashboardPortfolioPage() {
         </Modal>
 
         {/* Update Report Confirmation Modal */}
-        <Modal isOpen={isUpdateConfirmOpen} onClose={() => setIsUpdateConfirmOpen(false)} size="md">
+        <Modal
+          isOpen={isUpdateConfirmOpen}
+          onClose={() => setIsUpdateConfirmOpen(false)}
+          size="md"
+        >
           <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
           <ModalContent bg={cardBg} shadow="2xl" rounded="xl">
-            <ModalHeader bg="orange.500" color="white" roundedTop="xl" py={4} fontSize="lg" fontWeight="bold">
+            <ModalHeader
+              bg="orange.500"
+              color="white"
+              roundedTop="xl"
+              py={4}
+              fontSize="lg"
+              fontWeight="bold"
+            >
               <HStack>
                 <Icon as={FiActivity} />
                 <Text>Update Report Confirmation</Text>
@@ -3866,31 +5716,54 @@ export default function DashboardPortfolioPage() {
             <ModalBody p={6}>
               <VStack spacing={4} align="start">
                 <Text fontSize="md" color="gray.700">
-                  This will update all report snapshots with current data. This process may take several minutes.
+                  This will update all report snapshots with current data. This
+                  process may take several minutes.
                 </Text>
                 <Box bg="yellow.50" p={4} rounded="lg" w="full">
                   <HStack>
                     <Icon as={FiActivity} color="yellow.600" />
                     <Text fontSize="sm" color="yellow.800" fontWeight="medium">
-                      Warning: Report data processing takes time. Please do not close this page during the update.
+                      Warning: Report data processing takes time. Please do not
+                      close this page during the update.
                     </Text>
                   </HStack>
                 </Box>
-                <Text fontSize="sm" color={useColorModeValue("gray.600", "gray.300")}>
+                <Text
+                  fontSize="sm"
+                  color={useColorModeValue("gray.600", "gray.300")}
+                >
                   The following reports will be updated:
                 </Text>
-                <Box bg={useColorModeValue("gray.50", "gray.700")} p={3} rounded="md" w="full">
-                  <Text fontSize="xs" color={useColorModeValue("gray.600", "gray.300")}>
-                    • Project Summary • Project Characteristics • Project Type<br/>
-                    • Procurement Work Program • Project Acquisitions<br/>
-                    • Project by Group Manage • Project Quarterly<br/>
-                    • Division Owner Quartile • User Project Data
+                <Box
+                  bg={useColorModeValue("gray.50", "gray.700")}
+                  p={3}
+                  rounded="md"
+                  w="full"
+                >
+                  <Text
+                    fontSize="xs"
+                    color={useColorModeValue("gray.600", "gray.300")}
+                  >
+                    • Project Summary • Project Characteristics • Project Type
+                    <br />
+                    • Procurement Work Program • Project Acquisitions
+                    <br />
+                    • Project by Group Manage • Project Quarterly
+                    <br />• Division Owner Quartile • User Project Data
                   </Text>
                 </Box>
               </VStack>
             </ModalBody>
-            <ModalFooter bg={useColorModeValue("gray.50", "gray.700")} roundedBottom="xl" py={4}>
-              <Button variant="ghost" mr={3} onClick={() => setIsUpdateConfirmOpen(false)}>
+            <ModalFooter
+              bg={useColorModeValue("gray.50", "gray.700")}
+              roundedBottom="xl"
+              py={4}
+            >
+              <Button
+                variant="ghost"
+                mr={3}
+                onClick={() => setIsUpdateConfirmOpen(false)}
+              >
                 Cancel
               </Button>
               <Button colorScheme="orange" onClick={handleUpdateReport}>
@@ -3901,7 +5774,11 @@ export default function DashboardPortfolioPage() {
         </Modal>
 
         {/* Requirement Type Modal */}
-        <Modal isOpen={isRequirementTypeModalOpen} onClose={() => setIsRequirementTypeModalOpen(false)} size="xl">
+        <Modal
+          isOpen={isRequirementTypeModalOpen}
+          onClose={() => setIsRequirementTypeModalOpen(false)}
+          size="xl"
+        >
           <ModalOverlay />
           <ModalContent bg={cardBg}>
             <ModalHeader>Requirement Type Details</ModalHeader>
@@ -3909,11 +5786,15 @@ export default function DashboardPortfolioPage() {
             <ModalBody>
               <Chart
                 options={{
-                  chart: { type: 'pie' },
-                  labels: requirementTypeData.map((item: any) => item.requirementType),
-                  colors: ['#3182CE', '#38A169']
+                  chart: { type: "pie" },
+                  labels: requirementTypeData.map(
+                    (item: any) => item.requirementType
+                  ),
+                  colors: ["#3182CE", "#38A169"],
                 }}
-                series={requirementTypeData.map((item: any) => item.requirementCount)}
+                series={requirementTypeData.map(
+                  (item: any) => item.requirementCount
+                )}
                 type="pie"
                 height={350}
               />
@@ -3922,7 +5803,11 @@ export default function DashboardPortfolioPage() {
         </Modal>
 
         {/* Requirement Summary Modal */}
-        <Modal isOpen={isRequirementSummaryModalOpen} onClose={() => setIsRequirementSummaryModalOpen(false)} size="4xl">
+        <Modal
+          isOpen={isRequirementSummaryModalOpen}
+          onClose={() => setIsRequirementSummaryModalOpen(false)}
+          size="4xl"
+        >
           <ModalOverlay />
           <ModalContent bg={cardBg}>
             <ModalHeader>BRD/RFC Status Details</ModalHeader>
@@ -3930,27 +5815,53 @@ export default function DashboardPortfolioPage() {
             <ModalBody>
               <Grid templateColumns="repeat(2, 1fr)" gap={6}>
                 <GridItem>
-                  <Text fontWeight="bold" mb={2}>BRD Status</Text>
+                  <Text fontWeight="bold" mb={2}>
+                    BRD Status
+                  </Text>
                   <Chart
                     options={{
-                      chart: { type: 'donut' },
-                      labels: requirementSummaryData.filter((item: any) => item.requirementType === 'BRD').map((item: any) => item.requirementStatus),
-                      colors: ['#ED8936', '#38B2AC', '#3182CE', '#38A169', '#D69E2E', '#E53E3E']
+                      chart: { type: "donut" },
+                      labels: requirementSummaryData
+                        .filter((item: any) => item.requirementType === "BRD")
+                        .map((item: any) => item.requirementStatus),
+                      colors: [
+                        "#ED8936",
+                        "#38B2AC",
+                        "#3182CE",
+                        "#38A169",
+                        "#D69E2E",
+                        "#E53E3E",
+                      ],
                     }}
-                    series={requirementSummaryData.filter((item: any) => item.requirementType === 'BRD').map((item: any) => item.requirementCount)}
+                    series={requirementSummaryData
+                      .filter((item: any) => item.requirementType === "BRD")
+                      .map((item: any) => item.requirementCount)}
                     type="donut"
                     height={300}
                   />
                 </GridItem>
                 <GridItem>
-                  <Text fontWeight="bold" mb={2}>RFC Status</Text>
+                  <Text fontWeight="bold" mb={2}>
+                    RFC Status
+                  </Text>
                   <Chart
                     options={{
-                      chart: { type: 'donut' },
-                      labels: requirementSummaryData.filter((item: any) => item.requirementType === 'RFC').map((item: any) => item.requirementStatus),
-                      colors: ['#ED8936', '#38B2AC', '#3182CE', '#38A169', '#D69E2E', '#E53E3E']
+                      chart: { type: "donut" },
+                      labels: requirementSummaryData
+                        .filter((item: any) => item.requirementType === "RFC")
+                        .map((item: any) => item.requirementStatus),
+                      colors: [
+                        "#ED8936",
+                        "#38B2AC",
+                        "#3182CE",
+                        "#38A169",
+                        "#D69E2E",
+                        "#E53E3E",
+                      ],
                     }}
-                    series={requirementSummaryData.filter((item: any) => item.requirementType === 'RFC').map((item: any) => item.requirementCount)}
+                    series={requirementSummaryData
+                      .filter((item: any) => item.requirementType === "RFC")
+                      .map((item: any) => item.requirementCount)}
                     type="donut"
                     height={300}
                   />
@@ -3961,7 +5872,11 @@ export default function DashboardPortfolioPage() {
         </Modal>
 
         {/* Requirement Division Modal */}
-        <Modal isOpen={isRequirementDivisionModalOpen} onClose={() => setIsRequirementDivisionModalOpen(false)} size="6xl">
+        <Modal
+          isOpen={isRequirementDivisionModalOpen}
+          onClose={() => setIsRequirementDivisionModalOpen(false)}
+          size="6xl"
+        >
           <ModalOverlay />
           <ModalContent bg={cardBg}>
             <ModalHeader>Requirements by Division Sender</ModalHeader>
@@ -3969,29 +5884,59 @@ export default function DashboardPortfolioPage() {
             <ModalBody>
               <Grid templateColumns="repeat(2, 1fr)" gap={6}>
                 <GridItem>
-                  <Text fontWeight="bold" mb={2}>BRD by Division</Text>
+                  <Text fontWeight="bold" mb={2}>
+                    BRD by Division
+                  </Text>
                   <Chart
                     options={{
-                      chart: { type: 'bar' },
-                      plotOptions: { bar: { horizontal: true, distributed: true } },
-                      xaxis: { categories: requirementDivisionData.filter((item: any) => item.requirementType === 'BRD').map((item: any) => item.divisionName) },
-                      colors: ['#805AD5']
+                      chart: { type: "bar" },
+                      plotOptions: {
+                        bar: { horizontal: true, distributed: true },
+                      },
+                      xaxis: {
+                        categories: requirementDivisionData
+                          .filter((item: any) => item.requirementType === "BRD")
+                          .map((item: any) => item.divisionName),
+                      },
+                      colors: ["#805AD5"],
                     }}
-                    series={[{ name: 'BRD', data: requirementDivisionData.filter((item: any) => item.requirementType === 'BRD').map((item: any) => item.requirementCount) }]}
+                    series={[
+                      {
+                        name: "BRD",
+                        data: requirementDivisionData
+                          .filter((item: any) => item.requirementType === "BRD")
+                          .map((item: any) => item.requirementCount),
+                      },
+                    ]}
                     type="bar"
                     height={500}
                   />
                 </GridItem>
                 <GridItem>
-                  <Text fontWeight="bold" mb={2}>RFC by Division</Text>
+                  <Text fontWeight="bold" mb={2}>
+                    RFC by Division
+                  </Text>
                   <Chart
                     options={{
-                      chart: { type: 'bar' },
-                      plotOptions: { bar: { horizontal: true, distributed: true } },
-                      xaxis: { categories: requirementDivisionData.filter((item: any) => item.requirementType === 'RFC').map((item: any) => item.divisionName) },
-                      colors: ['#ED8936']
+                      chart: { type: "bar" },
+                      plotOptions: {
+                        bar: { horizontal: true, distributed: true },
+                      },
+                      xaxis: {
+                        categories: requirementDivisionData
+                          .filter((item: any) => item.requirementType === "RFC")
+                          .map((item: any) => item.divisionName),
+                      },
+                      colors: ["#ED8936"],
                     }}
-                    series={[{ name: 'RFC', data: requirementDivisionData.filter((item: any) => item.requirementType === 'RFC').map((item: any) => item.requirementCount) }]}
+                    series={[
+                      {
+                        name: "RFC",
+                        data: requirementDivisionData
+                          .filter((item: any) => item.requirementType === "RFC")
+                          .map((item: any) => item.requirementCount),
+                      },
+                    ]}
                     type="bar"
                     height={500}
                   />
@@ -4002,7 +5947,11 @@ export default function DashboardPortfolioPage() {
         </Modal>
 
         {/* Requirement Memo Modal */}
-        <Modal isOpen={isRequirementMemoModalOpen} onClose={() => setIsRequirementMemoModalOpen(false)} size="6xl">
+        <Modal
+          isOpen={isRequirementMemoModalOpen}
+          onClose={() => setIsRequirementMemoModalOpen(false)}
+          size="6xl"
+        >
           <ModalOverlay />
           <ModalContent bg={cardBg}>
             <ModalHeader>Requirements with/without Memo</ModalHeader>
@@ -4010,32 +5959,36 @@ export default function DashboardPortfolioPage() {
             <ModalBody>
               <Grid templateColumns="repeat(2, 1fr)" gap={6}>
                 <GridItem>
-                  <Text fontWeight="bold" mb={2}>With Memo</Text>
+                  <Text fontWeight="bold" mb={2}>
+                    With Memo
+                  </Text>
                   <Chart
                     options={{
-                      chart: { type: 'bar', stacked: true },
-                      xaxis: { categories: getMemoChartData('Y').categories },
-                      colors: ['#3182CE', '#38A169']
+                      chart: { type: "bar", stacked: true },
+                      xaxis: { categories: getMemoChartData("Y").categories },
+                      colors: ["#3182CE", "#38A169"],
                     }}
                     series={[
-                      { name: 'BRD', data: getMemoChartData('Y').brdData },
-                      { name: 'RFC', data: getMemoChartData('Y').rfcData }
+                      { name: "BRD", data: getMemoChartData("Y").brdData },
+                      { name: "RFC", data: getMemoChartData("Y").rfcData },
                     ]}
                     type="bar"
                     height={350}
                   />
                 </GridItem>
                 <GridItem>
-                  <Text fontWeight="bold" mb={2}>Without Memo</Text>
+                  <Text fontWeight="bold" mb={2}>
+                    Without Memo
+                  </Text>
                   <Chart
                     options={{
-                      chart: { type: 'bar', stacked: true },
-                      xaxis: { categories: getMemoChartData('N').categories },
-                      colors: ['#3182CE', '#38A169']
+                      chart: { type: "bar", stacked: true },
+                      xaxis: { categories: getMemoChartData("N").categories },
+                      colors: ["#3182CE", "#38A169"],
                     }}
                     series={[
-                      { name: 'BRD', data: getMemoChartData('N').brdData },
-                      { name: 'RFC', data: getMemoChartData('N').rfcData }
+                      { name: "BRD", data: getMemoChartData("N").brdData },
+                      { name: "RFC", data: getMemoChartData("N").rfcData },
                     ]}
                     type="bar"
                     height={350}
@@ -4068,12 +6021,21 @@ export default function DashboardPortfolioPage() {
                     Updating Reports
                   </Text>
                 </HStack>
-                
+
                 <Box w="full">
-                  <Text fontSize="sm" color={useColorModeValue("gray.600", "gray.300")} mb={2}>
-                    {updateStatus || 'Preparing update...'}
+                  <Text
+                    fontSize="sm"
+                    color={useColorModeValue("gray.600", "gray.300")}
+                    mb={2}
+                  >
+                    {updateStatus || "Preparing update..."}
                   </Text>
-                  <Box bg={useColorModeValue("gray.200", "gray.600")} rounded="full" h="2" w="full">
+                  <Box
+                    bg={useColorModeValue("gray.200", "gray.600")}
+                    rounded="full"
+                    h="2"
+                    w="full"
+                  >
                     <Box
                       bg="orange.500"
                       h="2"
@@ -4082,13 +6044,23 @@ export default function DashboardPortfolioPage() {
                       width={`${updateProgress}%`}
                     />
                   </Box>
-                  <Text fontSize="xs" color={useColorModeValue("gray.500", "gray.400")} mt={1} textAlign="center">
+                  <Text
+                    fontSize="xs"
+                    color={useColorModeValue("gray.500", "gray.400")}
+                    mt={1}
+                    textAlign="center"
+                  >
                     {Math.round(updateProgress)}% Complete
                   </Text>
                 </Box>
 
-                <Text fontSize="sm" color={useColorModeValue("gray.600", "gray.300")} textAlign="center">
-                  Please wait while we update all report data.<br/>
+                <Text
+                  fontSize="sm"
+                  color={useColorModeValue("gray.600", "gray.300")}
+                  textAlign="center"
+                >
+                  Please wait while we update all report data.
+                  <br />
                   This process may take a few minutes.
                 </Text>
               </VStack>
