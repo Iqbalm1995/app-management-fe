@@ -99,6 +99,7 @@ import {
   FiSearch,
 } from "react-icons/fi";
 import { IconType } from "react-icons";
+import { GoDotFill } from "react-icons/go";
 import {
   ChevronDownIcon,
   ChevronRightIcon,
@@ -1045,7 +1046,7 @@ const SidebarContent = ({
 
                 <FormControl display="flex" alignItems="center">
                   <FormLabel htmlFor="hide-pro" mb="0" fontSize={"smaller"} display={LiteModeTrigger ? "none" : "flex"}>
-                    Show Beta Menu
+                    Coming Soon
                   </FormLabel>
                   <Switch
                     id="hide-pro"
@@ -1058,7 +1059,7 @@ const SidebarContent = ({
               </Tooltip >
             </HStack >
             <Box w={"full"} overflowY={"auto"}>
-              {LinkItems.filter((link) => !hideProMenus || !link.isPro).map(
+              {LinkItems.filter((link) => hideProMenus || !link.isPro).map(
                 (link) => (
                   <NavItem key={link.name} data={link} mode={LiteModeTrigger} />
                 )
@@ -1275,7 +1276,7 @@ const NavItem = ({
                 display={mode ? "none" : "flex"}
                 as={HStack}
               >
-                {data.isPro && <Badge colorScheme="secondary">.</Badge>}
+                {data.isPro && <Icon as={GoDotFill} color="secondary.500" boxSize={3} />}
                 <Text fontSize={isChild ? "sm" : "md"}>{data.name}</Text>
                 {hasChildren && (
                   <Icon

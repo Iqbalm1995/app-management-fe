@@ -99,6 +99,7 @@ import {
   FiTarget,
 } from "react-icons/fi";
 import { IconType } from "react-icons";
+import { GoDotFill } from "react-icons/go";
 import {
   ChevronDownIcon,
   ChevronRightIcon,
@@ -1055,7 +1056,7 @@ const SidebarContent = ({
         <Flex pt={5} pb={2} mx={3}>
           <VStack w={"full"} h={"65vh"} align={"start"} overflowX="auto">
             <HStack w="full" justify="space-between" align="center" pl={2}>
-              <Tooltip label="Show Beta Menu" placement="top" hasArrow>
+              <Tooltip label="Under Develop Menu" placement="top" hasArrow>
                 <FormControl display="flex" alignItems="center">
                   <FormLabel
                     htmlFor="hide-pro"
@@ -1063,7 +1064,7 @@ const SidebarContent = ({
                     fontSize={"smaller"}
                     display={LiteModeTrigger ? "none" : "flex"}
                   >
-                    Show Beta Menu
+                    Coming Soon
                   </FormLabel>
                   <Switch
                     id="hide-pro"
@@ -1075,7 +1076,7 @@ const SidebarContent = ({
               </Tooltip>
             </HStack>
             <Box w={"full"} overflowY={"auto"}>
-              {LinkItems.filter((link) => !hideProMenus || !link.isPro).map(
+              {LinkItems.filter((link) => hideProMenus || !link.isPro).map(
                 (link) => (
                   <NavItem key={link.name} data={link} mode={LiteModeTrigger} />
                 )
@@ -1258,7 +1259,7 @@ const NavItem = ({ data, mode, depth = 0 }: { data: LinkItemProps; mode: boolean
                 display={mode ? "none" : "flex"}
                 as={HStack}
               >
-                {data.isPro && <Badge colorScheme="secondary">Pro</Badge>}
+                {data.isPro && <Icon as={GoDotFill} color="secondary.500" boxSize={3} />}
                 <Text fontSize={isChild ? "sm" : "md"}>{data.name}</Text>
                 {hasChildren && (
                   <Icon
