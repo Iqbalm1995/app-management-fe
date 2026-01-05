@@ -426,7 +426,7 @@ export default function NavigationAdminWorkspace({
                 mx="5"
                 justifyContent="space-between"
               >
-                <LogoApplications colorText="secondary.500" />
+                <LogoApplications colorText="secondary.500" shortLabel={true} />
                 <CloseButton
                   display={{ base: "flex", md: "none" }}
                   onClick={onClose}
@@ -1078,7 +1078,7 @@ const SidebarContent = ({
             <Box w={"full"} overflowY={"auto"}>
               {LinkItems.filter((link) => hideProMenus || !link.isPro).map(
                 (link) => (
-                  <NavItem key={link.name} data={link} mode={LiteModeTrigger} />
+                  <NavItem key={link.name} data={link} mode={LiteModeTrigger} hideProMenus={hideProMenus} />
                 )
               )}
             </Box>
@@ -1092,7 +1092,7 @@ const SidebarContent = ({
   );
 };
 
-const NavItem = ({ data, mode, depth = 0 }: { data: LinkItemProps; mode: boolean; depth?: number }) => {
+const NavItem = ({ data, mode, depth = 0, hideProMenus = false }: { data: LinkItemProps; mode: boolean; depth?: number; hideProMenus?: boolean }) => {
   const [isOpen, setIsOpen] = useState(false);
   const hasChildren = data.children && data.children.length > 0;
   const [isHovered, setIsHovered] = useState(false);
@@ -1288,8 +1288,8 @@ const NavItem = ({ data, mode, depth = 0 }: { data: LinkItemProps; mode: boolean
           exit={{ height: 0, opacity: 0 }}
           overflow="hidden"
         >
-          {data.children.map((child) => (
-            <NavItem key={child.name} data={child} mode={mode} depth={depth + 1} />
+          {data.children.filter((child) => hideProMenus || !child.isPro).map((child) => (
+            <NavItem key={child.name} data={child} mode={mode} depth={depth + 1} hideProMenus={hideProMenus} />
           ))}
         </MotionBox>
       )}

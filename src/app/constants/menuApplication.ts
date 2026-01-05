@@ -191,6 +191,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Prerequisites",
         icon: MdChangeHistory,
+        isPro: true,
         link: "/coming-soon",
         role: ["admin"],
 
@@ -236,7 +237,7 @@ export const LinkItems: LinkItemProps[] = [
         icon: BsCloudUpload,
         link: "/projects-deployments",
         role: ["admin"],
-        isPro: false,
+        isPro: true,
         menuID: "1",
         children: [],
       },
@@ -245,7 +246,7 @@ export const LinkItems: LinkItemProps[] = [
         icon: TbTimeline,
         link: "/coming-soon",
         role: ["admin"],
-
+        isPro: true,
         menuID: "1",
         children: [],
       },
@@ -264,6 +265,7 @@ export const LinkItems: LinkItemProps[] = [
         name: "Work Program",
         icon: FiUmbrella,
         link: "/coming-soon",
+        isPro: true,
         role: ["admin"],
 
         menuID: "1",
@@ -273,6 +275,7 @@ export const LinkItems: LinkItemProps[] = [
         name: "Vendor",
         icon: LiaFileContractSolid,
         link: "/coming-soon",
+        isPro: true,
         role: ["admin"],
 
         menuID: "1",
@@ -282,6 +285,7 @@ export const LinkItems: LinkItemProps[] = [
         name: "Payment Tracking",
         icon: FiLayers,
         link: "/coming-soon",
+        isPro: true,
         role: ["admin"],
 
         menuID: "1",
@@ -290,7 +294,7 @@ export const LinkItems: LinkItemProps[] = [
     ],
   },
   {
-    name: "Resource Monitoring",
+    name: "Resource Management",
     icon: TbUsers,
     link: "/resource-monitor",
     role: ["admin"],
@@ -337,6 +341,7 @@ export const LinkItems: LinkItemProps[] = [
         link: "/coming-soon",
         role: ["admin"],
 
+        isPro: true,
         menuID: "1",
         children: [],
       },
@@ -479,6 +484,7 @@ export const LinkItems: LinkItemProps[] = [
         link: "/coming-soon",
         role: ["admin"],
 
+        isPro: true,
         menuID: "1",
         children: [],
       },
@@ -524,6 +530,7 @@ export const LinkItems: LinkItemProps[] = [
         link: "/coming-soon",
         role: ["admin"],
 
+        isPro: true,
         menuID: "1",
         children: [],
       },
@@ -604,7 +611,7 @@ export const LinkItems: LinkItemProps[] = [
         icon: BsChatDots,
         link: "/coming-soon",
         role: ["admin"],
-
+        isPro: true,
         menuID: "1",
         children: [],
       },
@@ -622,7 +629,7 @@ export const LinkItems: LinkItemProps[] = [
         icon: IoMdBookmarks,
         link: "/coming-soon",
         role: ["admin"],
-
+        isPro: true,
         menuID: "1",
         children: [],
       },
@@ -746,6 +753,7 @@ export const LinkItems: LinkItemProps[] = [
     icon: TbAdjustmentsCog, // general "settings/parameters" icon
     link: "/coming-soon",
     role: ["admin"],
+    isPro: true,
     menuID: "1",
     children: [
       {
@@ -841,7 +849,7 @@ export const LinkItems: LinkItemProps[] = [
         name: "Parameter Language Mapping",
         icon: TbLanguage,
         link: "/coming-soon",
-
+        isPro: true,
         role: ["admin"],
         menuID: "1",
         children: [],
@@ -850,7 +858,7 @@ export const LinkItems: LinkItemProps[] = [
         name: "Project Codes",
         icon: TbCode,
         link: "/coming-soon",
-
+        isPro: true,
         role: ["admin"],
         menuID: "1",
         children: [],
@@ -873,6 +881,7 @@ export const LinkItems: LinkItemProps[] = [
 
         role: ["admin"],
         menuID: "1",
+        isPro: true,
         children: [],
       },
       {
@@ -882,6 +891,7 @@ export const LinkItems: LinkItemProps[] = [
 
         role: ["admin"],
         menuID: "1",
+        isPro: true,
         children: [],
       },
       {
@@ -891,6 +901,7 @@ export const LinkItems: LinkItemProps[] = [
 
         role: ["admin"],
         menuID: "1",
+        isPro: true,
         children: [],
       },
       {
@@ -900,6 +911,7 @@ export const LinkItems: LinkItemProps[] = [
 
         role: ["admin"],
         menuID: "1",
+        isPro: true,
         children: [],
       },
       {
@@ -909,6 +921,7 @@ export const LinkItems: LinkItemProps[] = [
 
         role: ["admin"],
         menuID: "1",
+        isPro: true,
         children: [],
       },
     ],
