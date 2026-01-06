@@ -1666,6 +1666,36 @@ const ReqInfoPersonelSectionView = ({
         </FormControl>
       </InputGroupPanel>
 
+      <InputGroupPanel headerTitle={`Division Requirement Managed By`}>
+        <FormControl>
+          <InputLayoutFull>
+            <FormLabel h={"full"} mt={2}>
+              Divisi Yang Mengatur Requirement
+            </FormLabel>
+            <Stack spacing={0} h={"full"}>
+              <Text>
+                Direktorat :
+                <Text pl={2} as={"span"} fontWeight={600}>
+                  {DataRequirement.reqManageByDirectorateName || "N/A"}
+                </Text>
+              </Text>
+              <Text>
+                Divisi :
+                <Text pl={2} as={"span"} fontWeight={600}>
+                  {DataRequirement.reqManageByDivisionName || "N/A"}
+                </Text>
+              </Text>
+              <Text>
+                Group :
+                <Text pl={2} as={"span"} fontWeight={600}>
+                  {DataRequirement.reqManageByGroupName || "N/A"}
+                </Text>
+              </Text>
+            </Stack>
+          </InputLayoutFull>
+        </FormControl>
+      </InputGroupPanel>
+
       <InputGroupPanel headerTitle={`Informasi Person In Charge (PIC)`}>
         <FormControl>
           <InputLayoutFull>
