@@ -515,22 +515,223 @@ export default function ResourceMonitorPage() {
                       rounded={radiusStyle}
                       _selected={{ bg: "blue.500", color: "white" }}
                     >
-                      <FiBarChart style={{ marginRight: "8px" }} />
-                      Resource Load Tracking
+                      <FiActivity style={{ marginRight: "8px" }} />
+                      Resource Allocation & Availability
                     </Tab>
                     <Tab
                       mx={1}
                       rounded={radiusStyle}
                       _selected={{ bg: "blue.500", color: "white" }}
                     >
-                      <FiActivity style={{ marginRight: "8px" }} />
-                      Resource Allocation & Availability
+                      <FiBarChart style={{ marginRight: "8px" }} />
+                      Resource Load Tracking
                     </Tab>
                   </TabList>
                 </CardBody>
               </Card>
 
               <TabPanels>
+                <TabPanel px={0}>
+                  <VStack spacing={6} align="stretch">
+                    {/* Heatmap Filters */}
+                    <Card
+                      rounded={radiusStyle}
+                      shadow="lg"
+                      bg={colorMode === "light" ? "white" : "gray.800"}
+                    >
+                      <CardBody>
+                        <HStack spacing={4} flexWrap="wrap">
+                          <VStack spacing={1} align="start">
+                            <Text fontSize="sm" fontWeight="600">
+                              View Mode
+                            </Text>
+                            <Select
+                              value={viewMode}
+                              onChange={(e) => setViewMode(e.target.value)}
+                              size="sm"
+                              rounded={radiusStyle}
+                              minW="120px"
+                            >
+                              <option value="day">Day</option>
+                              <option value="week">Week</option>
+                              <option value="month">Month</option>
+                            </Select>
+                          </VStack>
+
+                          <VStack spacing={1} align="start">
+                            <Text fontSize="sm" fontWeight="600">
+                              Task Threshold
+                            </Text>
+                            <Select
+                              value={taskThreshold}
+                              onChange={(e) => setTaskThreshold(e.target.value)}
+                              size="sm"
+                              rounded={radiusStyle}
+                              minW="120px"
+                            >
+                              <option value="all">All</option>
+                              <option value="0">0</option>
+                              <option value="1-2">1-2</option>
+                              <option value="3-5">3-5</option>
+                              <option value="6-10">6-10</option>
+                              <option value="11+">11+</option>
+                            </Select>
+                          </VStack>
+
+                          <VStack
+                            spacing={1}
+                            align="start"
+                            flex={1}
+                            minW="200px"
+                          >
+                            <Text fontSize="sm" fontWeight="600">
+                              Search User
+                            </Text>
+                            <Flex
+                              borderWidth="1px"
+                              borderRadius={radiusStyle}
+                              overflow="hidden"
+                              bg={colorMode === "light" ? "white" : "gray.600"}
+                              w="full"
+                            >
+                              <Input
+                                placeholder="Name, email, user ID..."
+                                border="none"
+                                size="sm"
+                                value={userSearch}
+                                onChange={(e) => setUserSearch(e.target.value)}
+                                _focus={{ outline: "none" }}
+                              />
+                              <Flex align="center" px={3}>
+                                <Search2Icon color="gray.400" />
+                              </Flex>
+                            </Flex>
+                          </VStack>
+                        </HStack>
+                      </CardBody>
+                    </Card>
+
+                    {/* Heatmap Chart */}
+                    <Card
+                      rounded={radiusStyle}
+                      shadow="lg"
+                      bg={colorMode === "light" ? "white" : "gray.800"}
+                    >
+                      <CardHeader>
+                        <VStack align="start" spacing={1}>
+                          <Heading
+                            size="md"
+                            color={
+                              colorMode === "light" ? "blue.700" : "blue.300"
+                            }
+                          >
+                            Task Allocation Heatmap
+                          </Heading>
+                          <Text fontSize="sm" color="gray.500">
+                            Q{selectedQuarter} {selectedYear} - View by{" "}
+                            {viewMode}
+                          </Text>
+                        </VStack>
+                      </CardHeader>
+                      <CardBody>
+                        {heatmapLoading ? (
+                          <Flex justify="center" align="center" h="400px">
+                            <VStack>
+                              <Text>Loading heatmap...</Text>
+                            </VStack>
+                          </Flex>
+                        ) : heatmapData.length > 0 ? (
+                          <Box overflowX="auto">
+                            <Chart
+                              options={
+                                {
+                                  chart: {
+                                    type: "heatmap",
+                                    toolbar: { show: true },
+                                  },
+                                  dataLabels: { enabled: false },
+                                  colors: ["#008FFB"],
+                                  xaxis: {
+                                    type: "category",
+                                  },
+                                  yaxis: {
+                                    labels: {
+                                      style: {
+                                        fontSize: "12px",
+                                      },
+                                    },
+                                  },
+                                  plotOptions: {
+                                    heatmap: {
+                                      shadeIntensity: 0.5,
+                                      colorScale: {
+                                        ranges: [
+                                          {
+                                            from: 0,
+                                            to: 0,
+                                            color: "#f3f4f6",
+                                            name: "0",
+                                          },
+                                          {
+                                            from: 1,
+                                            to: 2,
+                                            color: "#dbeafe",
+                                            name: "1-2",
+                                          },
+                                          {
+                                            from: 3,
+                                            to: 5,
+                                            color: "#93c5fd",
+                                            name: "3-5",
+                                          },
+                                          {
+                                            from: 6,
+                                            to: 10,
+                                            color: "#3b82f6",
+                                            name: "6-10",
+                                          },
+                                          {
+                                            from: 11,
+                                            to: 999,
+                                            color: "#1e40af",
+                                            name: "11+",
+                                          },
+                                        ],
+                                      },
+                                    },
+                                  },
+                                  tooltip: {
+                                    y: {
+                                      formatter: (val: number) =>
+                                        `${val} tasks`,
+                                    },
+                                  },
+                                } as ApexOptions
+                              }
+                              series={filteredHeatmapData.map((user: any) => ({
+                                name: user.userName,
+                                data: user.taskCounts.map((tc: any) => ({
+                                  x: tc.period,
+                                  y: tc.taskCount,
+                                })),
+                              }))}
+                              type="heatmap"
+                              height={Math.max(400, filteredHeatmapData.length * 40)}
+                            />
+                          </Box>
+                        ) : (
+                          <Flex justify="center" align="center" h="400px">
+                            <VStack>
+                              <FiActivity size={48} color="gray" />
+                              <Text color="gray.500">No data available</Text>
+                            </VStack>
+                          </Flex>
+                        )}
+                      </CardBody>
+                    </Card>
+                  </VStack>
+                </TabPanel>
+
                 <TabPanel px={0}>
                   {/* Filters for Resource Load Tracking */}
                   <Card
@@ -785,207 +986,6 @@ export default function ResourceMonitorPage() {
                       />
                     </CardBody>
                   </Card>
-                </TabPanel>
-
-                <TabPanel px={0}>
-                  <VStack spacing={6} align="stretch">
-                    {/* Heatmap Filters */}
-                    <Card
-                      rounded={radiusStyle}
-                      shadow="lg"
-                      bg={colorMode === "light" ? "white" : "gray.800"}
-                    >
-                      <CardBody>
-                        <HStack spacing={4} flexWrap="wrap">
-                          <VStack spacing={1} align="start">
-                            <Text fontSize="sm" fontWeight="600">
-                              View Mode
-                            </Text>
-                            <Select
-                              value={viewMode}
-                              onChange={(e) => setViewMode(e.target.value)}
-                              size="sm"
-                              rounded={radiusStyle}
-                              minW="120px"
-                            >
-                              <option value="day">Day</option>
-                              <option value="week">Week</option>
-                              <option value="month">Month</option>
-                            </Select>
-                          </VStack>
-
-                          <VStack spacing={1} align="start">
-                            <Text fontSize="sm" fontWeight="600">
-                              Task Threshold
-                            </Text>
-                            <Select
-                              value={taskThreshold}
-                              onChange={(e) => setTaskThreshold(e.target.value)}
-                              size="sm"
-                              rounded={radiusStyle}
-                              minW="120px"
-                            >
-                              <option value="all">All</option>
-                              <option value="0">0</option>
-                              <option value="1-2">1-2</option>
-                              <option value="3-5">3-5</option>
-                              <option value="6-10">6-10</option>
-                              <option value="11+">11+</option>
-                            </Select>
-                          </VStack>
-
-                          <VStack
-                            spacing={1}
-                            align="start"
-                            flex={1}
-                            minW="200px"
-                          >
-                            <Text fontSize="sm" fontWeight="600">
-                              Search User
-                            </Text>
-                            <Flex
-                              borderWidth="1px"
-                              borderRadius={radiusStyle}
-                              overflow="hidden"
-                              bg={colorMode === "light" ? "white" : "gray.600"}
-                              w="full"
-                            >
-                              <Input
-                                placeholder="Name, email, user ID..."
-                                border="none"
-                                size="sm"
-                                value={userSearch}
-                                onChange={(e) => setUserSearch(e.target.value)}
-                                _focus={{ outline: "none" }}
-                              />
-                              <Flex align="center" px={3}>
-                                <Search2Icon color="gray.400" />
-                              </Flex>
-                            </Flex>
-                          </VStack>
-                        </HStack>
-                      </CardBody>
-                    </Card>
-
-                    {/* Heatmap Chart */}
-                    <Card
-                      rounded={radiusStyle}
-                      shadow="lg"
-                      bg={colorMode === "light" ? "white" : "gray.800"}
-                    >
-                      <CardHeader>
-                        <VStack align="start" spacing={1}>
-                          <Heading
-                            size="md"
-                            color={
-                              colorMode === "light" ? "blue.700" : "blue.300"
-                            }
-                          >
-                            Task Allocation Heatmap
-                          </Heading>
-                          <Text fontSize="sm" color="gray.500">
-                            Q{selectedQuarter} {selectedYear} - View by{" "}
-                            {viewMode}
-                          </Text>
-                        </VStack>
-                      </CardHeader>
-                      <CardBody>
-                        {heatmapLoading ? (
-                          <Flex justify="center" align="center" h="400px">
-                            <VStack>
-                              <Text>Loading heatmap...</Text>
-                            </VStack>
-                          </Flex>
-                        ) : heatmapData.length > 0 ? (
-                          <Box overflowX="auto">
-                            <Chart
-                              options={
-                                {
-                                  chart: {
-                                    type: "heatmap",
-                                    toolbar: { show: true },
-                                  },
-                                  dataLabels: { enabled: false },
-                                  colors: ["#008FFB"],
-                                  xaxis: {
-                                    type: "category",
-                                  },
-                                  yaxis: {
-                                    labels: {
-                                      style: {
-                                        fontSize: "12px",
-                                      },
-                                    },
-                                  },
-                                  plotOptions: {
-                                    heatmap: {
-                                      shadeIntensity: 0.5,
-                                      colorScale: {
-                                        ranges: [
-                                          {
-                                            from: 0,
-                                            to: 0,
-                                            color: "#f3f4f6",
-                                            name: "0",
-                                          },
-                                          {
-                                            from: 1,
-                                            to: 2,
-                                            color: "#dbeafe",
-                                            name: "1-2",
-                                          },
-                                          {
-                                            from: 3,
-                                            to: 5,
-                                            color: "#93c5fd",
-                                            name: "3-5",
-                                          },
-                                          {
-                                            from: 6,
-                                            to: 10,
-                                            color: "#3b82f6",
-                                            name: "6-10",
-                                          },
-                                          {
-                                            from: 11,
-                                            to: 999,
-                                            color: "#1e40af",
-                                            name: "11+",
-                                          },
-                                        ],
-                                      },
-                                    },
-                                  },
-                                  tooltip: {
-                                    y: {
-                                      formatter: (val: number) =>
-                                        `${val} tasks`,
-                                    },
-                                  },
-                                } as ApexOptions
-                              }
-                              series={filteredHeatmapData.map((user: any) => ({
-                                name: user.userName,
-                                data: user.taskCounts.map((tc: any) => ({
-                                  x: tc.period,
-                                  y: tc.taskCount,
-                                })),
-                              }))}
-                              type="heatmap"
-                              height={Math.max(400, filteredHeatmapData.length * 40)}
-                            />
-                          </Box>
-                        ) : (
-                          <Flex justify="center" align="center" h="400px">
-                            <VStack>
-                              <FiActivity size={48} color="gray" />
-                              <Text color="gray.500">No data available</Text>
-                            </VStack>
-                          </Flex>
-                        )}
-                      </CardBody>
-                    </Card>
-                  </VStack>
                 </TabPanel>
               </TabPanels>
             </Tabs>

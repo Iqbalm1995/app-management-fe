@@ -99,6 +99,7 @@ import {
   FiTarget,
 } from "react-icons/fi";
 import { IconType } from "react-icons";
+import { GoDotFill } from "react-icons/go";
 import {
   ChevronDownIcon,
   ChevronRightIcon,
@@ -425,7 +426,7 @@ export default function NavigationAdminWorkspace({
                 mx="5"
                 justifyContent="space-between"
               >
-                <LogoApplications colorText="secondary.500" />
+                <LogoApplications colorText="secondary.500" shortLabel={true} />
                 <CloseButton
                   display={{ base: "flex", md: "none" }}
                   onClick={onClose}
@@ -1055,7 +1056,7 @@ const SidebarContent = ({
         <Flex pt={5} pb={2} mx={3}>
           <VStack w={"full"} h={"65vh"} align={"start"} overflowX="auto">
             <HStack w="full" justify="space-between" align="center" pl={2}>
-              <Tooltip label="Show Beta Menu" placement="top" hasArrow>
+              <Tooltip label="Under Develop Menu" placement="top" hasArrow>
                 <FormControl display="flex" alignItems="center">
                   <FormLabel
                     htmlFor="hide-pro"
@@ -1063,7 +1064,7 @@ const SidebarContent = ({
                     fontSize={"smaller"}
                     display={LiteModeTrigger ? "none" : "flex"}
                   >
-                    Show Beta Menu
+                    Coming Soon
                   </FormLabel>
                   <Switch
                     id="hide-pro"
@@ -1075,9 +1076,9 @@ const SidebarContent = ({
               </Tooltip>
             </HStack>
             <Box w={"full"} overflowY={"auto"}>
-              {LinkItems.filter((link) => !hideProMenus || !link.isPro).map(
+              {LinkItems.filter((link) => hideProMenus || !link.isPro).map(
                 (link) => (
-                  <NavItem key={link.name} data={link} mode={LiteModeTrigger} />
+                  <NavItem key={link.name} data={link} mode={LiteModeTrigger} hideProMenus={hideProMenus} />
                 )
               )}
             </Box>
@@ -1091,7 +1092,7 @@ const SidebarContent = ({
   );
 };
 
-const NavItem = ({ data, mode, depth = 0 }: { data: LinkItemProps; mode: boolean; depth?: number }) => {
+const NavItem = ({ data, mode, depth = 0, hideProMenus = false }: { data: LinkItemProps; mode: boolean; depth?: number; hideProMenus?: boolean }) => {
   const [isOpen, setIsOpen] = useState(false);
   const hasChildren = data.children && data.children.length > 0;
   const [isHovered, setIsHovered] = useState(false);
@@ -1258,7 +1259,7 @@ const NavItem = ({ data, mode, depth = 0 }: { data: LinkItemProps; mode: boolean
                 display={mode ? "none" : "flex"}
                 as={HStack}
               >
-                {data.isPro && <Badge colorScheme="secondary">Pro</Badge>}
+                {data.isPro && <Icon as={GoDotFill} color="secondary.500" boxSize={3} />}
                 <Text fontSize={isChild ? "sm" : "md"}>{data.name}</Text>
                 {hasChildren && (
                   <Icon
@@ -1287,8 +1288,8 @@ const NavItem = ({ data, mode, depth = 0 }: { data: LinkItemProps; mode: boolean
           exit={{ height: 0, opacity: 0 }}
           overflow="hidden"
         >
-          {data.children.map((child) => (
-            <NavItem key={child.name} data={child} mode={mode} depth={depth + 1} />
+          {data.children.filter((child) => hideProMenus || !child.isPro).map((child) => (
+            <NavItem key={child.name} data={child} mode={mode} depth={depth + 1} hideProMenus={hideProMenus} />
           ))}
         </MotionBox>
       )}

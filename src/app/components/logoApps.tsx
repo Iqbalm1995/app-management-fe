@@ -2,7 +2,7 @@ import { Flex, Text, Image, HStack, StackDivider } from "@chakra-ui/react";
 import Link from "next/link";
 import LogoBjb from "../../../publi/img/logo-bjb.png";
 
-export const LogoApplications = ({ colorText }: { colorText: string }) => {
+export const LogoApplications = ({ colorText, shortLabel = false }: { colorText: string; shortLabel?: boolean }) => {
   return (
     <>
       <Link href={"/"}>
@@ -24,7 +24,7 @@ export const LogoApplications = ({ colorText }: { colorText: string }) => {
             overflow="hidden"
             textOverflow="ellipsis"
           >
-            bjb aPPs
+            {shortLabel ? "bjb aPPs" : "Application Performance & Productivity Projects"}
           </Text>
         </HStack>
       </Link>

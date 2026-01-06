@@ -140,7 +140,7 @@ const useWorkspace = () => {
     try {
       const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
       const PathEndpoint: string = "/v1/Workspace/stats";
-      
+
       const response = await axiosInstance.get(
         `${UrlEndpoint}${PathEndpoint}`,
         {
@@ -162,7 +162,7 @@ const useWorkspace = () => {
     setLoading(true);
     try {
       const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
-      
+
       const response = await axiosInstance.post(
         `${UrlEndpoint}/api/v1/workspace/dashboard`,
         {},
@@ -185,7 +185,7 @@ const useWorkspace = () => {
     setLoading(true);
     try {
       const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
-      
+
       const response = await axiosInstance.post(
         `${UrlEndpoint}/v1/workspace/assigned-projects`,
         payload,
@@ -208,7 +208,7 @@ const useWorkspace = () => {
     setLoading(true);
     try {
       const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
-      
+
       const response = await axiosInstance.post(
         `${UrlEndpoint}/api/v1/workspace/calendar/tasks`,
         payload,
@@ -231,7 +231,7 @@ const useWorkspace = () => {
     setLoading(true);
     try {
       const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
-      
+
       const response = await axiosInstance.post(
         `${UrlEndpoint}/api/v1/workspace/my-tasks`,
         {},
@@ -254,7 +254,7 @@ const useWorkspace = () => {
     setLoading(true);
     try {
       const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
-      
+
       const response = await axiosInstance.post(
         `${UrlEndpoint}/api/v1/workspace/notifications`,
         payload,
@@ -277,7 +277,7 @@ const useWorkspace = () => {
     setLoading(true);
     try {
       const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
-      
+
       const response = await axiosInstance.post(
         `${UrlEndpoint}/api/v1/workspace/activity-log`,
         payload,
@@ -300,7 +300,7 @@ const useWorkspace = () => {
     setLoading(true);
     try {
       const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
-      
+
       const response = await axiosInstance.post(
         `${UrlEndpoint}/api/v1/workspace/unread-count`,
         {},
@@ -325,7 +325,7 @@ const useWorkspace = () => {
     try {
       const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
       console.log("[DEBUG] Making request to:", `${UrlEndpoint}/v1/Workspace/projects/${projectId}/detail`);
-      
+
       const response = await axiosInstance.get(
         `${UrlEndpoint}/v1/Workspace/projects/${projectId}/detail`,
         {
@@ -349,7 +349,7 @@ const useWorkspace = () => {
     setLoading(true);
     try {
       const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
-      
+
       const response = await axiosInstance.get(
         `${UrlEndpoint}/v1/Workspace/quarter-progress?quarter=${quarter}&year=${year}`,
         {
@@ -371,7 +371,7 @@ const useWorkspace = () => {
     setLoading(true);
     try {
       const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
-      
+
       const response = await axiosInstance.get(
         `${UrlEndpoint}/v1/Workspace/project-status`,
         {
@@ -393,7 +393,7 @@ const useWorkspace = () => {
     setLoading(true);
     try {
       const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
-      
+
       const response = await axiosInstance.get(
         `${UrlEndpoint}/v1/Workspace/project-type-counts`,
         {
@@ -425,7 +425,7 @@ const useWorkspace = () => {
     GetQuarterProgress,
     GetProjectStatus,
     GetProjectTypeCounts,
-    
+
     // Loading states
     loading,
   };
