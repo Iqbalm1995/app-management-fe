@@ -268,6 +268,11 @@ const FormSchema = yup.object().shape({
   userPicDivisionId: yup.string().nullable(),
   userPicGroupId: yup.string().nullable(),
 
+  // Manage By
+  reqManageByDirectorateId: yup.string().nullable(),
+  reqManageByDivisionId: yup.string().nullable(),
+  reqManageByGroupId: yup.string().nullable(),
+
   // AREA 3
   workPrograms: yup
     .array()
@@ -409,6 +414,11 @@ function RegisterRequirementFormPage({
     userPicDirectorateId: null,
     userPicDivisionId: null,
     userPicGroupId: null,
+
+    // Manage By
+    reqManageByDirectorateId: null,
+    reqManageByDivisionId: null,
+    reqManageByGroupId: null,
 
     // AREA 3
     workPrograms: [],
@@ -874,6 +884,26 @@ function RegisterRequirementFormPage({
               value: groupData[0].id,
             });
           }
+        }
+
+        // Load Requirement Manage By fields if available
+        if (reqData.reqManageByDirectorateId) {
+          formik.setFieldValue(
+            "reqManageByDirectorateId",
+            reqData.reqManageByDirectorateId
+          );
+        }
+        if (reqData.reqManageByDivisionId) {
+          formik.setFieldValue(
+            "reqManageByDivisionId",
+            reqData.reqManageByDivisionId
+          );
+        }
+        if (reqData.reqManageByGroupId) {
+          formik.setFieldValue(
+            "reqManageByGroupId",
+            reqData.reqManageByGroupId
+          );
         }
 
         // Load Work Programs if available
@@ -1589,6 +1619,9 @@ function RegisterRequirementFormPage({
   const [DataDivisions, setDataDivisions] = useState<OrganizationResponse[]>(
     []
   );
+  const [OrganizationData, setOrganizationData] = useState<
+    OrganizationResponse[]
+  >([]);
   const [DivisionSelected, setDivisionSelected] = useState<
     OrganizationResponse[]
   >([]);
@@ -1788,6 +1821,31 @@ function RegisterRequirementFormPage({
       return itemsData;
     }
   };
+
+  // Load all organization data once
+  const LoadAllOrganizationData = async () => {
+    if (OrganizationData.length <= 0 && tokenData) {
+      const PayloadList: PaggingListPayload = {
+        search: "",
+        limit: MAX_SIZE_TABLE,
+        page: 0,
+        filterWhere: [],
+        fieldOrder: ["orgName"],
+        orderDir: "asc",
+      };
+      const token: string = localStorage.getItem("tokenData") as string;
+      const requestData = await ListOrganization(PayloadList, token);
+      if (requestData?.statusCode === RES_CODE_OK && requestData.data) {
+        setOrganizationData(requestData.data as OrganizationResponse[]);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (tokenData) {
+      LoadAllOrganizationData();
+    }
+  }, [tokenData]);
 
   // directorate
 
@@ -3208,6 +3266,237 @@ function RegisterRequirementFormPage({
                                 <FormErrorMessage>
                                   {/* {formik.errors.picAssignUsers} */}
                                 </FormErrorMessage>
+                              </Stack>
+                            </InputLayoutFull>
+                          </FormControl>
+                        </InputGroupPanel>
+
+                        <InputGroupPanel
+                          headerTitle={`Division Requirement Managed By`}
+                        >
+                          <FormControl>
+                            <InputLayoutFull>
+                              <FormLabel h={"full"} mt={2}>
+                                Divisi Yang Mengatur Requirement
+                              </FormLabel>
+                              <Stack spacing={0}>
+                                <Grid
+                                  templateColumns="repeat(3, 1fr)"
+                                  gap={3}
+                                  w={"full"}
+                                >
+                                  <GridItem
+                                    colSpan={{
+                                      base: 3,
+                                      sm: 3,
+                                      md: 3,
+                                      lg: 3,
+                                    }}
+                                    w={"full"}
+                                  >
+                                    <FormControl
+                                      id={"reqManageByDirectorateId"}
+                                      isInvalid={
+                                        formik.errors.reqManageByDirectorateId
+                                          ? true
+                                          : false
+                                      }
+                                      isRequired={!formik.values.isDraft}
+                                    >
+                                      <FormLabel h={"full"} mt={2}>
+                                        Direktorat
+                                      </FormLabel>
+                                      <Select
+                                        id={`reqManageByDirectorateId`}
+                                        options={OrganizationData.filter(
+                                          (f) =>
+                                            f.orgType ==
+                                            ORG_CATEGORY_KEY_DIRECTORATE
+                                        ).map((d) => ({
+                                          label: d.orgName,
+                                          value: d.id,
+                                        }))}
+                                        isDisabled={true}
+                                        isSearchable={true}
+                                        onChange={(e) => {
+                                          if (e) {
+                                            formik.setFieldValue(
+                                              "reqManageByDirectorateId",
+                                              e.value
+                                            );
+                                          } else {
+                                            formik.setFieldValue(
+                                              "reqManageByDirectorateId",
+                                              null
+                                            );
+                                          }
+                                        }}
+                                        placeholder={"Pilih Directorate"}
+                                        value={OrganizationData.filter(
+                                          (f) =>
+                                            f.orgType ==
+                                              ORG_CATEGORY_KEY_DIRECTORATE &&
+                                            f.id ==
+                                              formik.values
+                                                .reqManageByDirectorateId
+                                        ).map((d) => ({
+                                          label: d.orgName,
+                                          value: d.id,
+                                        }))}
+                                      />
+                                      <FormErrorMessage>
+                                        {
+                                          formik.errors
+                                            .reqManageByDirectorateId
+                                        }
+                                      </FormErrorMessage>
+                                    </FormControl>
+                                  </GridItem>
+                                  <GridItem
+                                    colSpan={{
+                                      base: 3,
+                                      sm: 3,
+                                      md: 3,
+                                      lg: 3,
+                                    }}
+                                    w={"full"}
+                                  >
+                                    <FormControl
+                                      id={"reqManageByDivisionId"}
+                                      isInvalid={
+                                        formik.errors.reqManageByDivisionId
+                                          ? true
+                                          : false
+                                      }
+                                      isRequired={!formik.values.isDraft}
+                                    >
+                                      <FormLabel h={"full"} mt={2}>
+                                        Divisi
+                                      </FormLabel>
+                                      <Select
+                                        id={`reqManageByDivisionId`}
+                                        options={OrganizationData.filter(
+                                          (f) =>
+                                            f.orgType == ORG_CATEGORY_KEY_DIVISION
+                                        ).map((d) => ({
+                                          label: d.orgName,
+                                          value: d.id,
+                                        }))}
+                                        isSearchable={true}
+                                        onChange={(e) => {
+                                          if (e) {
+                                            formik.setFieldValue(
+                                              "reqManageByDivisionId",
+                                              e.value
+                                            );
+
+                                            // Auto-fill direktorat from division's parentId
+                                            const selectedDiv =
+                                              OrganizationData.find(
+                                                (org) => org.id === e.value
+                                              );
+                                            if (
+                                              selectedDiv &&
+                                              selectedDiv.parentId
+                                            ) {
+                                              formik.setFieldValue(
+                                                "reqManageByDirectorateId",
+                                                selectedDiv.parentId
+                                              );
+                                            }
+                                          } else {
+                                            formik.setFieldValue(
+                                              "reqManageByDivisionId",
+                                              null
+                                            );
+                                            formik.setFieldValue(
+                                              "reqManageByDirectorateId",
+                                              null
+                                            );
+                                          }
+                                        }}
+                                        placeholder={"Pilih Divisi"}
+                                        value={OrganizationData.filter(
+                                          (f) =>
+                                            f.orgType ==
+                                              ORG_CATEGORY_KEY_DIVISION &&
+                                            f.id ==
+                                              formik.values.reqManageByDivisionId
+                                        ).map((d) => ({
+                                          label: d.orgName,
+                                          value: d.id,
+                                        }))}
+                                      />
+                                      <FormErrorMessage>
+                                        {formik.errors.reqManageByDivisionId}
+                                      </FormErrorMessage>
+                                    </FormControl>
+                                  </GridItem>
+                                  <GridItem
+                                    colSpan={{
+                                      base: 3,
+                                      sm: 3,
+                                      md: 3,
+                                      lg: 3,
+                                    }}
+                                    w={"full"}
+                                  >
+                                    <FormControl
+                                      id={"reqManageByGroupId"}
+                                      isInvalid={
+                                        formik.errors.reqManageByGroupId
+                                          ? true
+                                          : false
+                                      }
+                                    >
+                                      <FormLabel h={"full"} mt={2}>
+                                        Grup
+                                      </FormLabel>
+                                      <Select
+                                        id={`reqManageByGroupId`}
+                                        options={OrganizationData.filter(
+                                          (f) =>
+                                            f.orgType == ORG_CATEGORY_KEY_GROUP &&
+                                            f.parentId ==
+                                              formik.values.reqManageByDivisionId
+                                        ).map((d) => ({
+                                          label: d.orgName,
+                                          value: d.id,
+                                        }))}
+                                        isSearchable={true}
+                                        onChange={(e) => {
+                                          if (e) {
+                                            formik.setFieldValue(
+                                              "reqManageByGroupId",
+                                              e.value
+                                            );
+                                          } else {
+                                            formik.setFieldValue(
+                                              "reqManageByGroupId",
+                                              null
+                                            );
+                                          }
+                                        }}
+                                        placeholder={"Pilih Grup"}
+                                        isDisabled={
+                                          !formik.values.reqManageByDivisionId
+                                        }
+                                        value={OrganizationData.filter(
+                                          (f) =>
+                                            f.orgType == ORG_CATEGORY_KEY_GROUP &&
+                                            f.id ==
+                                              formik.values.reqManageByGroupId
+                                        ).map((d) => ({
+                                          label: d.orgName,
+                                          value: d.id,
+                                        }))}
+                                      />
+                                      <FormErrorMessage>
+                                        {formik.errors.reqManageByGroupId}
+                                      </FormErrorMessage>
+                                    </FormControl>
+                                  </GridItem>
+                                </Grid>
                               </Stack>
                             </InputLayoutFull>
                           </FormControl>

@@ -119,6 +119,17 @@ export interface RequirementsResponse {
   userPicGroupCode?: string | null;
   userPicGroupName?: string | null;
 
+  // Manage By
+  reqManageByDirectorateId?: string | null;
+  reqManageByDirectorateCode?: string | null;
+  reqManageByDirectorateName?: string | null;
+  reqManageByDivisionId?: string | null;
+  reqManageByDivisionCode?: string | null;
+  reqManageByDivisionName?: string | null;
+  reqManageByGroupId?: string | null;
+  reqManageByGroupCode?: string | null;
+  reqManageByGroupName?: string | null;
+
   // STG 3
   workPrograms: RequirementWorkProgramDataResponse[];
 
@@ -228,6 +239,11 @@ export interface RequirementsInsertPayload {
   userPicDirectorateId?: string | null;
   userPicDivisionId?: string | null;
   userPicGroupId?: string | null;
+
+  // Manage By
+  reqManageByDirectorateId?: string | null;
+  reqManageByDivisionId?: string | null;
+  reqManageByGroupId?: string | null;
 
   // AREA 3
   workPrograms: WorkProgramsPayload[];
