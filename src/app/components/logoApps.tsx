@@ -24,7 +24,7 @@ export const LogoApplications = ({ colorText, shortLabel = false }: { colorText:
             overflow="hidden"
             textOverflow="ellipsis"
           >
-            {shortLabel ? "bjb aPPs" : "Application Performance & Productivity Projects"}
+            {shortLabel ? "bjb aPPs" : "bjb aPPs"}
           </Text>
         </HStack>
       </Link>

@@ -103,7 +103,7 @@ function LandingPage() {
   const handleLaunchApp = () => {
     const authData = localStorage.getItem("authData");
     const tokenData = localStorage.getItem("tokenData");
-    
+
     if (!authData || !tokenData) {
       showToast({
         description: "Kamu harus login",
@@ -111,7 +111,7 @@ function LandingPage() {
       });
       return;
     }
-    
+
     window.location.href = "/workspace";
   };
 
@@ -198,9 +198,9 @@ function LandingPage() {
                       }
                       bgClip="text"
                     >
-                      Project Management
+                      Application Performance
                       <br />
-                      Apps Platform
+                      Productivity Projects
                     </Box>
 
                     <Box

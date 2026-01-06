@@ -1647,20 +1647,49 @@ const ReqInfoPersonelSectionView = ({
               Ditugaskan Ke
             </FormLabel>
             <Stack spacing={0} h={"full"}>
-              <OrderedList>
-                {DataRequirement?.approvalDatas?.length ? (
-                  DataRequirement.approvalDatas.map((ua, idx) => (
-                    <ListItem key={idx}>
-                      {`${ua.approverUserFirstName ?? "N/A"} (${ua.approverUserCode ?? "N/A"
-                        })`}
-                    </ListItem>
-                  ))
-                ) : (
-                  <ListItem color="gray.500" fontStyle="italic">
-                    Tidak ada data approval
-                  </ListItem>
-                )}
-              </OrderedList>
+              {DataRequirement?.approvalDatas?.length ? (
+                (() => {
+                  const grouped = DataRequirement.approvalDatas.reduce(
+                    (acc, member) => {
+                      const groupCode = member.groupCode || "UNREGISTERED";
+                      const groupName = member.groupName || "UNREGISTERED MEMBER GROUP";
+
+                      if (!acc[groupCode]) {
+                        acc[groupCode] = {
+                          groupName,
+                          members: [],
+                        };
+                      }
+                      acc[groupCode].members.push(member);
+                      return acc;
+                    },
+                    {} as Record<string, { groupName: string; members: typeof DataRequirement.approvalDatas }>
+                  );
+
+                  let memberIndex = 0;
+                  return Object.entries(grouped).map(([groupCode, { groupName, members }]) => (
+                    <Box key={groupCode} mb={3}>
+                      <Text fontWeight={600} fontSize="md" mb={2}>
+                        {groupName} ({members.length})
+                      </Text>
+                      <OrderedList start={memberIndex + 1}>
+                        {members.map((ua, idx) => {
+                          memberIndex++;
+                          return (
+                            <ListItem key={idx}>
+                              {`${ua.approverUserFirstName ?? "N/A"} (${ua.approverUserCode ?? "N/A"})`}
+                            </ListItem>
+                          );
+                        })}
+                      </OrderedList>
+                    </Box>
+                  ));
+                })()
+              ) : (
+                <Text color="gray.500" fontStyle="italic">
+                  Tidak ada data approval
+                </Text>
+              )}
             </Stack>
           </InputLayoutFull>
         </FormControl>
