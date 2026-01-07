@@ -3129,7 +3129,7 @@ function RegisterRequirementFormPage({
                                             1
                                           </Box>
                                           <Box>
-                                            <Avatar name={formik.values.assignedFromName} src="" />
+                                            <Avatar name={formik.values.assignedFromName || ""} src="" />
                                           </Box>
                                           <Box>
                                             <Stack spacing={0}>

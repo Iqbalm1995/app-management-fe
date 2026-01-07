@@ -228,6 +228,7 @@ export interface RequirementsInsertPayload {
   assignedToDate?: string | null;
   assignedFromId?: string | null;
   assignedFromName?: string | null;
+  assignedFromEmail?: string | null;
   picAssignUsers: PICAssignUserPayload[];
 
   // AREA 2
