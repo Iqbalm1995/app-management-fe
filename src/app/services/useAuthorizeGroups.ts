@@ -54,6 +54,21 @@ export interface AuthorizeGroupUpdatePayload {
   agAccessApprove: string;
 }
 
+export interface UserAssignResponse {
+  id: string;
+  userUimSysId: string;
+  nama?: string | null;
+  userId?: string | null;
+  email?: string | null;
+  jabatan?: string | null;
+  orgName?: string | null;
+}
+
+export interface UserAssignPayload {
+  authGroupId: string;
+  userUimSysIds: string[];
+}
+
 interface useAuthorizeGroups {
   List: (
     payload: PaggingListPayload,
@@ -73,6 +88,18 @@ interface useAuthorizeGroups {
   ) => Promise<ApiGenericResponse<string | null> | null>;
   Delete: (
     id: string,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  GetAssignedUsers: (
+    authGroupId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<UserAssignResponse[] | null> | null>;
+  AssignUsers: (
+    payload: UserAssignPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  UnassignUsers: (
+    payload: UserAssignPayload,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
   isLoading: boolean;
@@ -288,12 +315,138 @@ const useAuthorizeGroups = (): useAuthorizeGroups => {
     }
   };
 
+  const GetAssignedUsers = async (
+    authGroupId: string,
+    token: string
+  ): Promise<ApiGenericResponse<UserAssignResponse[] | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/AuthorizeGroup/${authGroupId}/users`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<UserAssignResponse[] | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during request."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const AssignUsers = async (
+    payload: UserAssignPayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/AuthorizeGroup/assign-user`;
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during request."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const UnassignUsers = async (
+    payload: UserAssignPayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/AuthorizeGroup/unassign-user`;
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during request."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
   return {
     List,
     GetDetailById,
     Insert,
     Update,
     Delete,
+    GetAssignedUsers,
+    AssignUsers,
+    UnassignUsers,
     isLoading,
     error,
   };
