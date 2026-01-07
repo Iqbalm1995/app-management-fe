@@ -89,6 +89,7 @@ import {
   TbUsersGroup,
   TbUserShare,
 } from "react-icons/tb";
+import { TiThMenuOutline } from "react-icons/ti";
 
 export interface LinkItemProps {
   name: string;
@@ -688,6 +689,15 @@ export const LinkItems: LinkItemProps[] = [
         link: "/coming-soon",
         role: ["admin"],
 
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Master Menu",
+        icon: TiThMenuOutline,
+        link: "/master-data/menus",
+
+        role: ["admin"],
         menuID: "1",
         children: [],
       },
