@@ -701,42 +701,23 @@ export const LinkItems: LinkItemProps[] = [
         menuID: "1",
         children: [],
       },
-      // {
-      //   name: "Master Organization Structure",
-      //   icon: RiOrganizationChart,
-      //   link: "/coming-soon",
-      //
-      //   role: ["admin"],
-      //   menuID: "1",
-      //   children: [],
-      // },
-      // {
-      //   name: "Master Certifications",
-      //   icon: PiCertificate,
-      //   link: "/coming-soon",
-      //
-      //   role: ["admin"],
-      //   menuID: "1",
-      //   children: [],
-      // },
-      // {
-      //   name: "Master Programming Language",
-      //   icon: MdOutlineCode,
-      //   link: "/coming-soon",
-      //
-      //   role: ["admin"],
-      //   menuID: "1",
-      //   children: [],
-      // },
-      // {
-      //   name: "Master Specializations",
-      //   icon: TbBolt,
-      //   link: "/coming-soon",
-      //
-      //   role: ["admin"],
-      //   menuID: "1",
-      //   children: [],
-      // },
+    ],
+  },
+  {
+    name: "Access Configurations",
+    icon: IoKeyOutline,
+    link: "/master-data/authorize-groups",
+    role: ["admin"],
+    menuID: "1",
+    children: [
+      {
+        name: "Authorize Group",
+        icon: TbUsersGroup,
+        link: "/master-data/authorize-groups",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
     ],
   },
   // {

@@ -73,6 +73,99 @@ import {
 } from "react-icons/fi";
 import * as FiIcons from "react-icons/fi";
 
+import { IconType } from "react-icons";
+import { AiOutlineVideoCamera, AiOutlineVideoCameraAdd } from "react-icons/ai";
+import { BiAnalyse, BiSolidReport } from "react-icons/bi";
+import {
+  BsChatDots,
+  BsCloudUpload,
+  BsDatabaseGear,
+  BsRocketTakeoff,
+} from "react-icons/bs";
+import { CiMobile2, CiMoneyCheck1 } from "react-icons/ci";
+import {
+  FaChess,
+  FaCode,
+  FaDraftingCompass,
+  FaRegHeart,
+  FaRegStar,
+  FaVial,
+} from "react-icons/fa";
+import { FaDiagramProject, FaO, FaUsersRays } from "react-icons/fa6";
+import {
+  FiDatabase,
+  FiKey,
+  FiLayers,
+  FiUmbrella,
+  FiUpload,
+  FiUsers,
+} from "react-icons/fi";
+import { GrHelpBook } from "react-icons/gr";
+import {
+  HiOutlineDesktopComputer,
+  HiOutlineDocumentReport,
+  HiOutlineInformationCircle,
+} from "react-icons/hi";
+import { ImUserTie } from "react-icons/im";
+import { IoIosCodeDownload, IoMdBookmarks } from "react-icons/io";
+import {
+  IoCalendarNumberOutline,
+  IoCalendarOutline,
+  IoChatbubblesOutline,
+  IoKeyOutline,
+} from "react-icons/io5";
+import { LiaFileContractSolid } from "react-icons/lia";
+import { LuBookHeart, LuServer } from "react-icons/lu";
+import {
+  MdChangeHistory,
+  MdOutlineCircle,
+  MdOutlineCode,
+  MdOutlinePermMedia,
+  MdOutlineSystemUpdateAlt,
+  MdOutlineWorkOutline,
+  MdWebAsset,
+} from "react-icons/md";
+import { PiCertificate, PiFlowArrow } from "react-icons/pi";
+import {
+  RiApps2AiLine,
+  RiCodeBlock,
+  RiMegaphoneLine,
+  RiOrganizationChart,
+} from "react-icons/ri";
+import { RxActivityLog } from "react-icons/rx";
+import {
+  TbAdjustmentsCog,
+  TbArrowsExchange,
+  TbBellShare,
+  TbBolt,
+  TbCalendarTime,
+  TbCategory,
+  TbChartInfographic,
+  TbClipboardList,
+  TbClockExclamation,
+  TbCode,
+  TbContract,
+  TbFileReport,
+  TbFolders,
+  TbHourglassHigh,
+  TbLanguage,
+  TbLayoutDashboardFilled,
+  TbListDetails,
+  TbMoodShare,
+  TbNavigationShare,
+  TbProgressCheck,
+  TbServerCog,
+  TbSettingsCog,
+  TbShare,
+  TbTimeline,
+  TbUserBolt,
+  TbUserHeart,
+  TbUsers,
+  TbUsersGroup,
+  TbUserShare,
+} from "react-icons/tb";
+import { TiThMenuOutline } from "react-icons/ti";
+
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Master Menu",
   breadCrumb: ["Home", "Master Data", "Menus"],
@@ -250,7 +343,9 @@ function MenusManagementPage() {
       isDisable: pendingFormValues.isDisable ? "1" : "0",
       isHide: pendingFormValues.isHide ? "1" : "0",
       isPro: pendingFormValues.isPro ? "Y" : "N",
-      menuPos: pendingFormValues.menuPos ? parseFloat(pendingFormValues.menuPos) : 1,
+      menuPos: pendingFormValues.menuPos
+        ? parseFloat(pendingFormValues.menuPos)
+        : 1,
     };
 
     const token = localStorage.getItem("tokenData") as string;
@@ -328,7 +423,9 @@ function MenusManagementPage() {
       isDisable: pendingFormValues.isDisable ? "1" : "0",
       isHide: pendingFormValues.isHide ? "1" : "0",
       isPro: pendingFormValues.isPro ? "Y" : "N",
-      menuPos: pendingFormValues.menuPos ? parseFloat(pendingFormValues.menuPos) : 1,
+      menuPos: pendingFormValues.menuPos
+        ? parseFloat(pendingFormValues.menuPos)
+        : 1,
     };
 
     const token = localStorage.getItem("tokenData") as string;
@@ -423,11 +520,22 @@ function MenusManagementPage() {
 
     const payload: MenuUpdatePayload = {
       id: editingInline.id,
-      menuCode: editingInline.field === "code" ? inlineValues.code : item.menuCode,
-      menuName: editingInline.field === "name" ? capitalizeEachWord(inlineValues.name) : item.menuName,
-      menuDesc: editingInline.field === "desc" ? inlineValues.desc : item.menuDesc,
-      menuIcon: editingInline.field === "icon" ? inlineValues.icon || "" : item.menuIcon || "",
-      menuLink: editingInline.field === "link" ? inlineValues.link || "" : item.menuLink || "",
+      menuCode:
+        editingInline.field === "code" ? inlineValues.code : item.menuCode,
+      menuName:
+        editingInline.field === "name"
+          ? capitalizeEachWord(inlineValues.name)
+          : item.menuName,
+      menuDesc:
+        editingInline.field === "desc" ? inlineValues.desc : item.menuDesc,
+      menuIcon:
+        editingInline.field === "icon"
+          ? inlineValues.icon || ""
+          : item.menuIcon || "",
+      menuLink:
+        editingInline.field === "link"
+          ? inlineValues.link || ""
+          : item.menuLink || "",
       parentId: item.parentId,
       isDisable: item.isDisable,
       isHide: item.isHide,
@@ -464,7 +572,13 @@ function MenusManagementPage() {
   const startAddChild = (parentId: string, level: number) => {
     const newCode = generateMenuCode(DataMenus);
     setAddingChild({ parentId, level });
-    setNewChildValues({ code: newCode, name: "", desc: "", icon: "", link: "" });
+    setNewChildValues({
+      code: newCode,
+      name: "",
+      desc: "",
+      icon: "",
+      link: "",
+    });
     setExpandedItems((prev) => new Set([...prev, parentId]));
   };
 
@@ -1154,151 +1268,151 @@ function MenusManagementPage() {
           <ModalCloseButton />
           <ModalBody>
             <VStack spacing={4}>
-                <FormControl>
-                  <FormLabel>Menu Code</FormLabel>
-                  <Input
-                    name="menuCode"
-                    value={formik.values.menuCode}
-                    isReadOnly
-                    bg={colorMode === "light" ? "gray.100" : "gray.700"}
-                    cursor="not-allowed"
-                  />
-                </FormControl>
+              <FormControl>
+                <FormLabel>Menu Code</FormLabel>
+                <Input
+                  name="menuCode"
+                  value={formik.values.menuCode}
+                  isReadOnly
+                  bg={colorMode === "light" ? "gray.100" : "gray.700"}
+                  cursor="not-allowed"
+                />
+              </FormControl>
 
-                <FormControl
-                  isInvalid={
-                    !!(formik.errors.menuName && formik.touched.menuName)
-                  }
-                  isRequired
-                >
-                  <FormLabel>Menu Name</FormLabel>
-                  <Input
-                    name="menuName"
-                    value={formik.values.menuName}
-                    onChange={(e) => {
-                      const capitalized = capitalizeEachWord(e.target.value);
-                      formik.setFieldValue("menuName", capitalized);
-                    }}
-                    onBlur={formik.handleBlur}
-                    placeholder="Enter menu name"
-                  />
-                  <FormErrorMessage>{formik.errors.menuName}</FormErrorMessage>
-                </FormControl>
-
-                <FormControl
-                  isInvalid={
-                    !!(formik.errors.menuDesc && formik.touched.menuDesc)
-                  }
-                >
-                  <FormLabel>Description (Optional)</FormLabel>
-                  <Textarea
-                    name="menuDesc"
-                    value={formik.values.menuDesc}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    placeholder="Enter menu description"
-                    rows={3}
-                    maxLength={300}
-                  />
-                  <FormErrorMessage>{formik.errors.menuDesc}</FormErrorMessage>
-                </FormControl>
-
-                <FormControl>
-                  <FormLabel>Icon (Optional)</FormLabel>
-                  <Input
-                    name="menuIcon"
-                    value={formik.values.menuIcon}
-                    onChange={formik.handleChange}
-                    placeholder="Example: FiHome"
-                  />
-                </FormControl>
-
-                <FormControl>
-                  <FormLabel>Link (Optional)</FormLabel>
-                  <Input
-                    name="menuLink"
-                    value={formik.values.menuLink}
-                    onChange={formik.handleChange}
-                    placeholder="Example: /dashboard"
-                  />
-                </FormControl>
-
-                <FormControl>
-                  <FormLabel>Parent Menu (Optional)</FormLabel>
-                  <Select
-                    name="parentId"
-                    value={formik.values.parentId}
-                    onChange={formik.handleChange}
-                    placeholder="Select parent menu"
-                  >
-                    {DataMenus.filter((m) => !m.parentId).map((menu) => (
-                      <option key={menu.id} value={menu.id}>
-                        {menu.menuName}
-                      </option>
-                    ))}
-                  </Select>
-                </FormControl>
-
-                <Grid templateColumns="repeat(3, 1fr)" gap={4} w="full">
-                  <FormControl display="flex" alignItems="center">
-                    <FormLabel mb="0">Is Disable</FormLabel>
-                    <Switch
-                      name="isDisable"
-                      isChecked={formik.values.isDisable}
-                      onChange={(e) =>
-                        formik.setFieldValue("isDisable", e.target.checked)
-                      }
-                    />
-                  </FormControl>
-
-                  <FormControl display="flex" alignItems="center">
-                    <FormLabel mb="0">Is Hide</FormLabel>
-                    <Switch
-                      name="isHide"
-                      isChecked={formik.values.isHide}
-                      onChange={(e) =>
-                        formik.setFieldValue("isHide", e.target.checked)
-                      }
-                    />
-                  </FormControl>
-
-                  <FormControl display="flex" alignItems="center">
-                    <FormLabel mb="0">Is Pro</FormLabel>
-                    <Switch
-                      name="isPro"
-                      isChecked={formik.values.isPro}
-                      onChange={(e) =>
-                        formik.setFieldValue("isPro", e.target.checked)
-                      }
-                    />
-                  </FormControl>
-                </Grid>
-
-                <FormControl>
-                  <FormLabel>Menu Position</FormLabel>
-                  <Input
-                    name="menuPos"
-                    type="number"
-                    value={formik.values.menuPos}
-                    onChange={formik.handleChange}
-                    placeholder="1"
-                  />
-                </FormControl>
-              </VStack>
-            </ModalBody>
-
-            <ModalFooter>
-              <Button variant="ghost" mr={3} onClick={onClose}>
-                Cancel
-              </Button>
-              <Button
-                colorScheme="blue"
-                onClick={() => formik.handleSubmit()}
-                isLoading={formik.isSubmitting}
+              <FormControl
+                isInvalid={
+                  !!(formik.errors.menuName && formik.touched.menuName)
+                }
+                isRequired
               >
-                Save
-              </Button>
-            </ModalFooter>
+                <FormLabel>Menu Name</FormLabel>
+                <Input
+                  name="menuName"
+                  value={formik.values.menuName}
+                  onChange={(e) => {
+                    const capitalized = capitalizeEachWord(e.target.value);
+                    formik.setFieldValue("menuName", capitalized);
+                  }}
+                  onBlur={formik.handleBlur}
+                  placeholder="Enter menu name"
+                />
+                <FormErrorMessage>{formik.errors.menuName}</FormErrorMessage>
+              </FormControl>
+
+              <FormControl
+                isInvalid={
+                  !!(formik.errors.menuDesc && formik.touched.menuDesc)
+                }
+              >
+                <FormLabel>Description (Optional)</FormLabel>
+                <Textarea
+                  name="menuDesc"
+                  value={formik.values.menuDesc}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  placeholder="Enter menu description"
+                  rows={3}
+                  maxLength={300}
+                />
+                <FormErrorMessage>{formik.errors.menuDesc}</FormErrorMessage>
+              </FormControl>
+
+              <FormControl>
+                <FormLabel>Icon (Optional)</FormLabel>
+                <Input
+                  name="menuIcon"
+                  value={formik.values.menuIcon}
+                  onChange={formik.handleChange}
+                  placeholder="Example: FiHome"
+                />
+              </FormControl>
+
+              <FormControl>
+                <FormLabel>Link (Optional)</FormLabel>
+                <Input
+                  name="menuLink"
+                  value={formik.values.menuLink}
+                  onChange={formik.handleChange}
+                  placeholder="Example: /dashboard"
+                />
+              </FormControl>
+
+              <FormControl>
+                <FormLabel>Parent Menu (Optional)</FormLabel>
+                <Select
+                  name="parentId"
+                  value={formik.values.parentId}
+                  onChange={formik.handleChange}
+                  placeholder="Select parent menu"
+                >
+                  {DataMenus.filter((m) => !m.parentId).map((menu) => (
+                    <option key={menu.id} value={menu.id}>
+                      {menu.menuName}
+                    </option>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <Grid templateColumns="repeat(3, 1fr)" gap={4} w="full">
+                <FormControl display="flex" alignItems="center">
+                  <FormLabel mb="0">Is Disable</FormLabel>
+                  <Switch
+                    name="isDisable"
+                    isChecked={formik.values.isDisable}
+                    onChange={(e) =>
+                      formik.setFieldValue("isDisable", e.target.checked)
+                    }
+                  />
+                </FormControl>
+
+                <FormControl display="flex" alignItems="center">
+                  <FormLabel mb="0">Is Hide</FormLabel>
+                  <Switch
+                    name="isHide"
+                    isChecked={formik.values.isHide}
+                    onChange={(e) =>
+                      formik.setFieldValue("isHide", e.target.checked)
+                    }
+                  />
+                </FormControl>
+
+                <FormControl display="flex" alignItems="center">
+                  <FormLabel mb="0">Is Pro</FormLabel>
+                  <Switch
+                    name="isPro"
+                    isChecked={formik.values.isPro}
+                    onChange={(e) =>
+                      formik.setFieldValue("isPro", e.target.checked)
+                    }
+                  />
+                </FormControl>
+              </Grid>
+
+              <FormControl>
+                <FormLabel>Menu Position</FormLabel>
+                <Input
+                  name="menuPos"
+                  type="number"
+                  value={formik.values.menuPos}
+                  onChange={formik.handleChange}
+                  placeholder="1"
+                />
+              </FormControl>
+            </VStack>
+          </ModalBody>
+
+          <ModalFooter>
+            <Button variant="ghost" mr={3} onClick={onClose}>
+              Cancel
+            </Button>
+            <Button
+              colorScheme="blue"
+              onClick={() => formik.handleSubmit()}
+              isLoading={formik.isSubmitting}
+            >
+              Save
+            </Button>
+          </ModalFooter>
         </ModalContent>
       </Modal>
 
@@ -1395,13 +1509,13 @@ function MenusManagementPage() {
                   onChange={editFormik.handleChange}
                   placeholder="Select parent menu"
                 >
-                  {DataMenus.filter((m) => !m.parentId && m.id !== editFormik.values.id).map(
-                    (menu) => (
-                      <option key={menu.id} value={menu.id}>
-                        {menu.menuName}
-                      </option>
-                    )
-                  )}
+                  {DataMenus.filter(
+                    (m) => !m.parentId && m.id !== editFormik.values.id
+                  ).map((menu) => (
+                    <option key={menu.id} value={menu.id}>
+                      {menu.menuName}
+                    </option>
+                  ))}
                 </Select>
               </FormControl>
 
