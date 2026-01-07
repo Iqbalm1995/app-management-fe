@@ -376,6 +376,7 @@ function RegisterRequirementFormPage({
   } = useRequirements();
   const { InsertMediaObjectByKey, DeleteMediaObject } = useMediaObject();
   const [requirementId, setRequirementId] = useState<string | null>(null);
+  const [requirementStatus, setRequirementStatus] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const { ListConstantData } = useConstants();
   const { List: ListUsers } = useUsers();
@@ -721,6 +722,9 @@ function RegisterRequirementFormPage({
           router.push(`/requirements/brd-rfc`);
           return;
         }
+
+        // Store requirement status
+        setRequirementStatus(reqData.reqStatus || null);
 
         // Populate formik with requirement data
         formik.setValues({
@@ -1468,6 +1472,32 @@ function RegisterRequirementFormPage({
     }
   }, [formik.values.userPicName]);
   // BACKLOG DATA
+  // Auto-fill Division and Group from assignedFrom user (after formik is defined)
+  useEffect(() => {
+    const loadUserOrgData = async () => {
+      if (DataAuth && !requirementId && formik.values.assignedFromId && !formik.values.reqManageByDivisionId) {
+        // Fetch full user data to get organization info
+        const userData = await GetDataUser(DataAuth.userId, 1);
+        if (userData.length > 0 && userData[0].team?.organization) {
+          const divisionId = userData[0].team.organization.division?.id;
+          const directorateId = userData[0].team.organization.directorate?.id;
+          const groupId = userData[0].team.organization.group?.id;
+
+          if (divisionId) {
+            formik.setFieldValue("reqManageByDivisionId", divisionId);
+          }
+          if (directorateId) {
+            formik.setFieldValue("reqManageByDirectorateId", directorateId);
+          }
+          if (groupId) {
+            formik.setFieldValue("reqManageByGroupId", groupId);
+          }
+        }
+      }
+    };
+
+    loadUserOrgData();
+  }, [DataAuth, requirementId, formik.values.assignedFromId]);
   const [DataBackLogs, setDataBackLogs] = useState<ReqBacklogPayload[]>([]);
 
   const logMissingRequiredFields = (
@@ -2236,16 +2266,18 @@ function RegisterRequirementFormPage({
               alignItems={"center"}
               gap={3}
             >
-              <Button
-                colorScheme={"blue"}
-                leftIcon={<FiSave />}
-                onClick={handleSaveDraft}
-                isLoading={ActionLoading}
-                px={8}
-                size={"lg"}
-              >
-                {isEditMode ? "Update Draft" : "Save Draft"}
-              </Button>
+              {!(isEditMode && requirementStatus !== "DRAFT") && (
+                <Button
+                  colorScheme={"blue"}
+                  leftIcon={<FiSave />}
+                  onClick={handleSaveDraft}
+                  isLoading={ActionLoading}
+                  px={8}
+                  size={"lg"}
+                >
+                  {isEditMode ? "Update Draft" : "Save Draft"}
+                </Button>
+              )}
               <Button
                 colorScheme={"green"}
                 leftIcon={<FiSave />}
@@ -2255,7 +2287,7 @@ function RegisterRequirementFormPage({
                 px={8}
                 size={"lg"}
               >
-                Submit
+                {isEditMode && requirementStatus === "APPROVED" ? "Update" : "Submit"}
               </Button>
             </Flex>
           </GridItem>
@@ -3335,10 +3367,10 @@ function RegisterRequirementFormPage({
                                         value={OrganizationData.filter(
                                           (f) =>
                                             f.orgType ==
-                                              ORG_CATEGORY_KEY_DIRECTORATE &&
+                                            ORG_CATEGORY_KEY_DIRECTORATE &&
                                             f.id ==
-                                              formik.values
-                                                .reqManageByDirectorateId
+                                            formik.values
+                                              .reqManageByDirectorateId
                                         ).map((d) => ({
                                           label: d.orgName,
                                           value: d.id,
@@ -3419,9 +3451,9 @@ function RegisterRequirementFormPage({
                                         value={OrganizationData.filter(
                                           (f) =>
                                             f.orgType ==
-                                              ORG_CATEGORY_KEY_DIVISION &&
+                                            ORG_CATEGORY_KEY_DIVISION &&
                                             f.id ==
-                                              formik.values.reqManageByDivisionId
+                                            formik.values.reqManageByDivisionId
                                         ).map((d) => ({
                                           label: d.orgName,
                                           value: d.id,
@@ -3458,7 +3490,7 @@ function RegisterRequirementFormPage({
                                           (f) =>
                                             f.orgType == ORG_CATEGORY_KEY_GROUP &&
                                             f.parentId ==
-                                              formik.values.reqManageByDivisionId
+                                            formik.values.reqManageByDivisionId
                                         ).map((d) => ({
                                           label: d.orgName,
                                           value: d.id,
@@ -3485,7 +3517,7 @@ function RegisterRequirementFormPage({
                                           (f) =>
                                             f.orgType == ORG_CATEGORY_KEY_GROUP &&
                                             f.id ==
-                                              formik.values.reqManageByGroupId
+                                            formik.values.reqManageByGroupId
                                         ).map((d) => ({
                                           label: d.orgName,
                                           value: d.id,
