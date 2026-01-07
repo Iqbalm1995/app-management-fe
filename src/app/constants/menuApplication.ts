@@ -24,6 +24,7 @@ import {
   FiUmbrella,
   FiUpload,
   FiUsers,
+  FiAward,
 } from "react-icons/fi";
 import { GrHelpBook } from "react-icons/gr";
 import {
@@ -114,7 +115,7 @@ export const LinkItems: LinkItemProps[] = [
   {
     name: "Workspace",
     icon: BsRocketTakeoff,
-    link: "/workspace",
+    link: "/workspaces",
     role: ["admin"],
     menuID: "1",
     isPro: false,
@@ -701,7 +702,14 @@ export const LinkItems: LinkItemProps[] = [
         menuID: "1",
         children: [],
       },
-      // {
+      {
+        name: "Master Specialization",
+        icon: FiAward,
+        link: "/master-data/specialization",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },      // {
       //   name: "Master Organization Structure",
       //   icon: RiOrganizationChart,
       //   link: "/coming-soon",

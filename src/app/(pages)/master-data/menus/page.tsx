@@ -22,6 +22,7 @@ import useMenus, {
   MenuInsertPayload,
   MenuUpdatePayload,
 } from "@/app/services/useMenus";
+import { LinkItems, LinkItemProps } from "@/app/constants/menuApplication";
 import { PaggingListPayload } from "@/app/types/masterTypes";
 import {
   Box,
@@ -57,6 +58,7 @@ import {
   Select,
   Switch,
   Icon,
+  Tooltip,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { useFormik } from "formik";
@@ -70,8 +72,11 @@ import {
   FiChevronUp,
   FiChevronDown,
   FiChevronRight,
+  FiCloud,
 } from "react-icons/fi";
 import * as FiIcons from "react-icons/fi";
+import * as BiIcons from "react-icons/bi";
+import * as MdIcons from "react-icons/md";
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Master Menu",
@@ -91,6 +96,11 @@ function MenusManagementPage() {
     isOpen: isEditOpen,
     onOpen: onEditOpen,
     onClose: onEditClose,
+  } = useDisclosure();
+  const {
+    isOpen: isSyncModalOpen,
+    onOpen: onSyncModalOpen,
+    onClose: onSyncModalClose,
   } = useDisclosure();
 
   const [HeaderContentState] = useState<HeaderContentProps>(HeaderDataContent);
@@ -132,7 +142,7 @@ function MenusManagementPage() {
 
   const [editingInline, setEditingInline] = useState<{
     id: string;
-    field: "name" | "desc" | "code" | "icon" | "link";
+    field: "name" | "desc" | "code" | "icon" | "link" | "pos";
   } | null>(null);
   const [inlineValues, setInlineValues] = useState<{
     name: string;
@@ -140,7 +150,8 @@ function MenusManagementPage() {
     code: string;
     icon: string;
     link: string;
-  }>({ name: "", desc: "", code: "", icon: "", link: "" });
+    pos: string;
+  }>({ name: "", desc: "", code: "", icon: "", link: "", pos: "" });
 
   const [addingChild, setAddingChild] = useState<{
     parentId: string;
@@ -156,6 +167,8 @@ function MenusManagementPage() {
 
   const [editingItem, setEditingItem] = useState<MenuTreeItem | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [isSynchronizing, setIsSynchronizing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const RefreshAction = () => {
     setDataMenus([]);
@@ -174,14 +187,15 @@ function MenusManagementPage() {
   };
 
   const generateMenuCode = (existingMenus: MenuResponse[]): string => {
-    const codes = existingMenus
-      .map((m) => m.menuCode)
-      .filter((c) => c.startsWith("mn"));
-    const numbers = codes
-      .map((c) => parseInt(c.replace("mn", "")))
-      .filter((n) => !isNaN(n));
-    const maxNumber = numbers.length > 0 ? Math.max(...numbers) : 0;
-    return `mn${String(maxNumber + 1).padStart(3, "0")}`;
+    const existingCodes = new Set(existingMenus.map((m) => m.menuCode));
+    let newCode: string;
+
+    do {
+      const randomNum = Math.floor(Math.random() * 10000);
+      newCode = `mn${String(randomNum).padStart(4, "0")}`;
+    } while (existingCodes.has(newCode));
+
+    return newCode;
   };
 
   const capitalizeEachWord = (str: string): string => {
@@ -190,7 +204,7 @@ function MenusManagementPage() {
 
   const getIconComponent = (iconName: string | null | undefined) => {
     if (!iconName) return null;
-    const IconComponent = (FiIcons as any)[iconName];
+    const IconComponent = (FiIcons as any)[iconName] || (BiIcons as any)[iconName] || (MdIcons as any)[iconName];
     return IconComponent ? IconComponent : null;
   };
 
@@ -371,15 +385,24 @@ function MenusManagementPage() {
     return null;
   };
 
+  const getNextMenuPosition = (existingMenus: MenuResponse[]): number => {
+    if (existingMenus.length === 0) return 1;
+    const maxPos = Math.max(...existingMenus.map(m => m.menuPos || 0));
+    return maxPos + 1;
+  };
+
   const openAddModal = () => {
     const newCode = generateMenuCode(DataMenus);
+    const nextPos = getNextMenuPosition(DataMenus);
     formik.resetForm();
     formik.setFieldValue("menuCode", newCode);
+    formik.setFieldValue("menuPos", String(nextPos));
     onOpen();
   };
 
   const openEditModal = (item: MenuTreeItem) => {
     setEditingItem(item);
+    const nextPos = getNextMenuPosition(DataMenus);
     editFormik.setValues({
       id: item.id,
       menuCode: item.menuCode,
@@ -391,14 +414,14 @@ function MenusManagementPage() {
       isDisable: item.isDisable === "1",
       isHide: item.isHide === "1",
       isPro: item.isPro === "Y",
-      menuPos: String(item.menuPos || 1),
+      menuPos: String(item.menuPos || nextPos),
     });
     onEditOpen();
   };
 
   const startInlineEdit = (
     item: MenuTreeItem,
-    field: "name" | "desc" | "code" | "icon" | "link"
+    field: "name" | "desc" | "code" | "icon" | "link" | "pos"
   ) => {
     setEditingInline({ id: item.id, field });
     setInlineValues({
@@ -407,12 +430,13 @@ function MenusManagementPage() {
       code: item.menuCode,
       icon: item.menuIcon || "",
       link: item.menuLink || "",
+      pos: String(item.menuPos || ""),
     });
   };
 
   const cancelInlineEdit = () => {
     setEditingInline(null);
-    setInlineValues({ name: "", desc: "", code: "", icon: "", link: "" });
+    setInlineValues({ name: "", desc: "", code: "", icon: "", link: "", pos: "" });
   };
 
   const saveInlineEdit = async () => {
@@ -421,6 +445,139 @@ function MenusManagementPage() {
     const item = findItemById(MenuTree, editingInline.id);
     if (!item) return;
 
+    const token = localStorage.getItem("tokenData") as string;
+
+    // Handle position shifting if editing pos field
+    if (editingInline.field === "pos") {
+      // Validate empty input
+      if (!inlineValues.pos || inlineValues.pos.trim() === "") {
+        toast({
+          title: "Invalid Position",
+          description: "Position cannot be empty",
+          status: "error",
+          duration: 2000,
+          isClosable: true,
+        });
+        setEditingInline(null);
+        setInlineValues({ name: "", desc: "", code: "", icon: "", link: "", pos: "" });
+        return;
+      }
+
+      let newPos = Number(inlineValues.pos) || 1;
+      const currentPos = item.menuPos || 1;
+
+      // Validate position range - prevent jumps
+      const maxPos = Math.max(...DataMenus.map(m => m.menuPos || 0));
+      if (newPos > maxPos + 1) {
+        newPos = maxPos + 1;
+        toast({
+          title: "Position adjusted",
+          description: `Position cannot exceed ${maxPos + 1}. Adjusted automatically.`,
+          status: "warning",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+      if (newPos < 1) newPos = 1;
+
+      // If position changed and new position exists
+      if (newPos !== currentPos) {
+        const conflictingMenu = DataMenus.find(
+          m => m.menuPos === newPos && m.id !== item.id
+        );
+
+        if (conflictingMenu) {
+          // Determine shift direction
+          if (newPos < currentPos) {
+            // Moving up: shift items from newPos to currentPos-1 down by 1
+            const menusToShift = DataMenus.filter(
+              m => (m.menuPos || 0) >= newPos && (m.menuPos || 0) < currentPos && m.id !== item.id
+            ).sort((a, b) => (b.menuPos || 0) - (a.menuPos || 0)); // Sort descending
+
+            for (const menu of menusToShift) {
+              const shiftPayload: MenuUpdatePayload = {
+                id: menu.id,
+                menuCode: menu.menuCode,
+                menuName: menu.menuName,
+                menuDesc: menu.menuDesc,
+                menuIcon: menu.menuIcon || "",
+                menuLink: menu.menuLink || "",
+                parentId: menu.parentId,
+                isDisable: menu.isDisable,
+                isHide: menu.isHide,
+                isPro: menu.isPro || "N",
+                menuPos: (menu.menuPos || 0) + 1,
+              };
+              await Update(shiftPayload, token);
+            }
+          } else {
+            // Moving down: shift items from currentPos+1 to newPos up by 1
+            const menusToShift = DataMenus.filter(
+              m => (m.menuPos || 0) > currentPos && (m.menuPos || 0) <= newPos && m.id !== item.id
+            ).sort((a, b) => (a.menuPos || 0) - (b.menuPos || 0)); // Sort ascending
+
+            for (const menu of menusToShift) {
+              const shiftPayload: MenuUpdatePayload = {
+                id: menu.id,
+                menuCode: menu.menuCode,
+                menuName: menu.menuName,
+                menuDesc: menu.menuDesc,
+                menuIcon: menu.menuIcon || "",
+                menuLink: menu.menuLink || "",
+                parentId: menu.parentId,
+                isDisable: menu.isDisable,
+                isHide: menu.isHide,
+                isPro: menu.isPro || "N",
+                menuPos: (menu.menuPos || 0) - 1,
+              };
+              await Update(shiftPayload, token);
+            }
+          }
+        }
+      }
+
+      // Update with validated position
+      const payload: MenuUpdatePayload = {
+        id: editingInline.id,
+        menuCode: item.menuCode,
+        menuName: item.menuName,
+        menuDesc: item.menuDesc,
+        menuIcon: item.menuIcon || "",
+        menuLink: item.menuLink || "",
+        parentId: item.parentId,
+        isDisable: item.isDisable,
+        isHide: item.isHide,
+        isPro: item.isPro || "N",
+        menuPos: newPos,
+      };
+
+      const result = await Update(payload, token);
+
+      if (result?.statusCode === RES_CODE_OK) {
+        RefreshAction();
+        toast({
+          title: "Success",
+          description: "Menu position updated",
+          status: "success",
+          duration: 2000,
+          isClosable: true,
+        });
+      } else {
+        toast({
+          title: "Failed",
+          description: result?.message || "Failed to update menu",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+
+      setEditingInline(null);
+      setInlineValues({ name: "", desc: "", code: "", icon: "", link: "", pos: "" });
+      return;
+    }
+
+    // Handle other fields
     const payload: MenuUpdatePayload = {
       id: editingInline.id,
       menuCode: editingInline.field === "code" ? inlineValues.code : item.menuCode,
@@ -435,7 +592,6 @@ function MenusManagementPage() {
       menuPos: item.menuPos || 1,
     };
 
-    const token = localStorage.getItem("tokenData") as string;
     const result = await Update(payload, token);
 
     if (result?.statusCode === RES_CODE_OK) {
@@ -458,7 +614,7 @@ function MenusManagementPage() {
     }
 
     setEditingInline(null);
-    setInlineValues({ name: "", desc: "", code: "", icon: "", link: "" });
+    setInlineValues({ name: "", desc: "", code: "", icon: "", link: "", pos: "" });
   };
 
   const startAddChild = (parentId: string, level: number) => {
@@ -667,6 +823,156 @@ function MenusManagementPage() {
     return rootMenus;
   };
 
+  const handleSynchronize = async () => {
+    onSyncModalClose();
+    setIsSynchronizing(true);
+    const token = localStorage.getItem("tokenData") as string;
+    let inserted = 0;
+    let skipped = 0;
+
+    try {
+      const syncMenu = async (
+        menuItem: LinkItemProps,
+        parentId: string | null = null,
+        position: number = 1
+      ): Promise<void> => {
+        // Check if menu already exists by link
+        const exists = DataMenus.find((m) => m.menuLink === menuItem.link);
+
+        if (exists) {
+          skipped++;
+          // Still process children with existing parent
+          if (menuItem.children && menuItem.children.length > 0) {
+            for (let i = 0; i < menuItem.children.length; i++) {
+              await syncMenu(menuItem.children[i], exists.id, i + 1);
+            }
+          }
+          return;
+        }
+
+        // Extract icon name from component
+        const iconName = menuItem.icon?.name || "";
+
+        // Generate unique menu code
+        const menuCode = generateMenuCode(DataMenus);
+
+        // Prepare payload
+        const payload: MenuInsertPayload = {
+          menuCode,
+          menuName: menuItem.name,
+          menuDesc: null,
+          menuIcon: iconName,
+          menuLink: menuItem.link,
+          parentId,
+          isDisable: "0",
+          isHide: "0",
+          isPro: menuItem.isPro ? "Y" : "N",
+          menuPos: position,
+        };
+
+        // Insert menu
+        const result = await Insert(payload, token);
+
+        if (result?.statusCode === RES_CODE_OK || result?.statusCode === 201) {
+          inserted++;
+
+          // Get the newly inserted menu ID
+          const newMenuId = result.data;
+
+          // Process children
+          if (menuItem.children && menuItem.children.length > 0) {
+            for (let i = 0; i < menuItem.children.length; i++) {
+              await syncMenu(menuItem.children[i], newMenuId, i + 1);
+            }
+          }
+        }
+      };
+
+      // Process all root menus
+      for (let i = 0; i < LinkItems.length; i++) {
+        await syncMenu(LinkItems[i], null, i + 1);
+      }
+
+      toast({
+        title: "Synchronization Complete",
+        description: `Inserted: ${inserted}, Skipped (duplicates): ${skipped}`,
+        status: "success",
+        duration: 5000,
+        isClosable: true,
+      });
+
+      RefreshAction();
+    } catch (error) {
+      console.error("Synchronization error:", error);
+      toast({
+        title: "Synchronization Failed",
+        description: "An error occurred during synchronization",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setIsSynchronizing(false);
+    }
+  };
+
+  const handleDeleteAllSynced = async () => {
+    onSyncModalClose();
+    setIsDeleting(true);
+    const token = localStorage.getItem("tokenData") as string;
+    let deleted = 0;
+    let failed = 0;
+
+    try {
+      // Get all menus from LinkItems to identify synced menus
+      const syncedLinks = new Set<string>();
+
+      const collectLinks = (items: LinkItemProps[]) => {
+        items.forEach(item => {
+          syncedLinks.add(item.link);
+          if (item.children && item.children.length > 0) {
+            collectLinks(item.children);
+          }
+        });
+      };
+
+      collectLinks(LinkItems);
+
+      // Find and delete menus that match synced links
+      const menusToDelete = DataMenus.filter(menu => menu.menuLink && syncedLinks.has(menu.menuLink));
+
+      for (const menu of menusToDelete) {
+        const result = await Delete(menu.id, token);
+        if (result?.statusCode === RES_CODE_OK) {
+          deleted++;
+        } else {
+          failed++;
+        }
+      }
+
+      toast({
+        title: "Deletion Complete",
+        description: `Deleted: ${deleted}, Failed: ${failed}`,
+        status: deleted > 0 ? "success" : "warning",
+        duration: 5000,
+        isClosable: true,
+      });
+
+      RefreshAction();
+    } catch (error) {
+      console.error("Deletion error:", error);
+      toast({
+        title: "Deletion Failed",
+        description: "An error occurred during deletion",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const GetDataMenus = async (): Promise<MenuResponse[]> => {
     setIsLoadingProcess(true);
 
@@ -745,15 +1051,48 @@ function MenusManagementPage() {
             >
               {isExpanded ? <FiChevronDown /> : <FiChevronRight />}
             </Button>
-            <Text
-              fontSize={level === 1 ? "sm" : "xs"}
-              color="gray.600"
-              fontWeight="bold"
-              minW="8"
-              w="8"
-            >
-              {item.menuPos || "-"}
-            </Text>
+            {editingInline?.id === item.id && editingInline?.field === "pos" ? (
+              <Input
+                value={inlineValues.pos}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === "" || /^\d+$/.test(value)) {
+                    setInlineValues((prev) => ({
+                      ...prev,
+                      pos: value,
+                    }));
+                  }
+                }}
+                onBlur={saveInlineEdit}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") saveInlineEdit();
+                  if (e.key === "Escape") cancelInlineEdit();
+                }}
+                size="sm"
+                autoFocus
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                w="16"
+              />
+            ) : (
+              <Text
+                fontSize={level === 1 ? "sm" : "xs"}
+                color="gray.600"
+                fontWeight="bold"
+                minW="8"
+                w="8"
+                cursor="pointer"
+                onClick={() => startInlineEdit(item, "pos")}
+                _hover={{
+                  bg: colorMode === "light" ? "gray.100" : "gray.700",
+                }}
+                p={1}
+                rounded="sm"
+              >
+                {item.menuPos || "-"}
+              </Text>
+            )}
             {iconComponent && (
               <Icon
                 as={iconComponent}
@@ -761,7 +1100,7 @@ function MenusManagementPage() {
                 fontSize="lg"
               />
             )}
-            <Text
+            {/* <Text
               fontWeight={level === 1 ? "semibold" : "medium"}
               fontSize={level === 1 ? "md" : "sm"}
               color={colorMode === "light" ? "gray.800" : "white"}
@@ -769,7 +1108,7 @@ function MenusManagementPage() {
               w="150px"
             >
               {editingInline?.id === item.id &&
-              editingInline?.field === "code" ? (
+                editingInline?.field === "code" ? (
                 <Input
                   value={inlineValues.code}
                   onChange={(e) =>
@@ -813,7 +1152,7 @@ function MenusManagementPage() {
                   </Box>
                 </HStack>
               )}
-            </Text>
+            </Text> */}
             <Text
               fontWeight={level === 1 ? "semibold" : "medium"}
               fontSize={level === 1 ? "md" : "sm"}
@@ -822,7 +1161,7 @@ function MenusManagementPage() {
               w="180px"
             >
               {editingInline?.id === item.id &&
-              editingInline?.field === "name" ? (
+                editingInline?.field === "name" ? (
                 <Input
                   value={inlineValues.name}
                   onChange={(e) =>
@@ -881,7 +1220,7 @@ function MenusManagementPage() {
                 fontStyle="italic"
               >
                 {editingInline?.id === item.id &&
-                editingInline?.field === "desc" ? (
+                  editingInline?.field === "desc" ? (
                   <Input
                     value={inlineValues.desc}
                     onChange={(e) =>
@@ -1108,6 +1447,16 @@ function MenusManagementPage() {
                       </Button>
                       <Button
                         size="md"
+                        leftIcon={<FiRefreshCcw />}
+                        colorScheme="purple"
+                        onClick={onSyncModalOpen}
+                        isLoading={isSynchronizing}
+                        loadingText="Synchronizing..."
+                      >
+                        Synchronize
+                      </Button>
+                      <Button
+                        size="md"
                         leftIcon={<FiPlus />}
                         colorScheme="secondary"
                         onClick={openAddModal}
@@ -1154,151 +1503,172 @@ function MenusManagementPage() {
           <ModalCloseButton />
           <ModalBody>
             <VStack spacing={4}>
-                <FormControl>
-                  <FormLabel>Menu Code</FormLabel>
-                  <Input
-                    name="menuCode"
-                    value={formik.values.menuCode}
-                    isReadOnly
-                    bg={colorMode === "light" ? "gray.100" : "gray.700"}
-                    cursor="not-allowed"
-                  />
-                </FormControl>
+              <FormControl>
+                <FormLabel>Menu Code</FormLabel>
+                <Input
+                  name="menuCode"
+                  value={formik.values.menuCode}
+                  isReadOnly
+                  bg={colorMode === "light" ? "gray.100" : "gray.700"}
+                  cursor="not-allowed"
+                />
+              </FormControl>
 
-                <FormControl
-                  isInvalid={
-                    !!(formik.errors.menuName && formik.touched.menuName)
-                  }
-                  isRequired
-                >
-                  <FormLabel>Menu Name</FormLabel>
-                  <Input
-                    name="menuName"
-                    value={formik.values.menuName}
-                    onChange={(e) => {
-                      const capitalized = capitalizeEachWord(e.target.value);
-                      formik.setFieldValue("menuName", capitalized);
-                    }}
-                    onBlur={formik.handleBlur}
-                    placeholder="Enter menu name"
-                  />
-                  <FormErrorMessage>{formik.errors.menuName}</FormErrorMessage>
-                </FormControl>
-
-                <FormControl
-                  isInvalid={
-                    !!(formik.errors.menuDesc && formik.touched.menuDesc)
-                  }
-                >
-                  <FormLabel>Description (Optional)</FormLabel>
-                  <Textarea
-                    name="menuDesc"
-                    value={formik.values.menuDesc}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    placeholder="Enter menu description"
-                    rows={3}
-                    maxLength={300}
-                  />
-                  <FormErrorMessage>{formik.errors.menuDesc}</FormErrorMessage>
-                </FormControl>
-
-                <FormControl>
-                  <FormLabel>Icon (Optional)</FormLabel>
-                  <Input
-                    name="menuIcon"
-                    value={formik.values.menuIcon}
-                    onChange={formik.handleChange}
-                    placeholder="Example: FiHome"
-                  />
-                </FormControl>
-
-                <FormControl>
-                  <FormLabel>Link (Optional)</FormLabel>
-                  <Input
-                    name="menuLink"
-                    value={formik.values.menuLink}
-                    onChange={formik.handleChange}
-                    placeholder="Example: /dashboard"
-                  />
-                </FormControl>
-
-                <FormControl>
-                  <FormLabel>Parent Menu (Optional)</FormLabel>
-                  <Select
-                    name="parentId"
-                    value={formik.values.parentId}
-                    onChange={formik.handleChange}
-                    placeholder="Select parent menu"
-                  >
-                    {DataMenus.filter((m) => !m.parentId).map((menu) => (
-                      <option key={menu.id} value={menu.id}>
-                        {menu.menuName}
-                      </option>
-                    ))}
-                  </Select>
-                </FormControl>
-
-                <Grid templateColumns="repeat(3, 1fr)" gap={4} w="full">
-                  <FormControl display="flex" alignItems="center">
-                    <FormLabel mb="0">Is Disable</FormLabel>
-                    <Switch
-                      name="isDisable"
-                      isChecked={formik.values.isDisable}
-                      onChange={(e) =>
-                        formik.setFieldValue("isDisable", e.target.checked)
-                      }
-                    />
-                  </FormControl>
-
-                  <FormControl display="flex" alignItems="center">
-                    <FormLabel mb="0">Is Hide</FormLabel>
-                    <Switch
-                      name="isHide"
-                      isChecked={formik.values.isHide}
-                      onChange={(e) =>
-                        formik.setFieldValue("isHide", e.target.checked)
-                      }
-                    />
-                  </FormControl>
-
-                  <FormControl display="flex" alignItems="center">
-                    <FormLabel mb="0">Is Pro</FormLabel>
-                    <Switch
-                      name="isPro"
-                      isChecked={formik.values.isPro}
-                      onChange={(e) =>
-                        formik.setFieldValue("isPro", e.target.checked)
-                      }
-                    />
-                  </FormControl>
-                </Grid>
-
-                <FormControl>
-                  <FormLabel>Menu Position</FormLabel>
-                  <Input
-                    name="menuPos"
-                    type="number"
-                    value={formik.values.menuPos}
-                    onChange={formik.handleChange}
-                    placeholder="1"
-                  />
-                </FormControl>
-              </VStack>
-            </ModalBody>
-
-            <ModalFooter>
-              <Button variant="ghost" mr={3} onClick={onClose}>
-                Cancel
-              </Button>
-              <Button
-                colorScheme="blue"
-                onClick={() => formik.handleSubmit()}
-                isLoading={formik.isSubmitting}
+              <FormControl
+                isInvalid={
+                  !!(formik.errors.menuName && formik.touched.menuName)
+                }
+                isRequired
               >
-                Save
-              </Button>
-            </ModalFooter>
+                <FormLabel>Menu Name</FormLabel>
+                <Input
+                  name="menuName"
+                  value={formik.values.menuName}
+                  onChange={(e) => {
+                    const capitalized = capitalizeEachWord(e.target.value);
+                    formik.setFieldValue("menuName", capitalized);
+                  }}
+                  onBlur={formik.handleBlur}
+                  placeholder="Enter menu name"
+                />
+                <FormErrorMessage>{formik.errors.menuName}</FormErrorMessage>
+              </FormControl>
+
+              <FormControl
+                isInvalid={
+                  !!(formik.errors.menuDesc && formik.touched.menuDesc)
+                }
+              >
+                <FormLabel>Description (Optional)</FormLabel>
+                <Textarea
+                  name="menuDesc"
+                  value={formik.values.menuDesc}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  placeholder="Enter menu description"
+                  rows={3}
+                  maxLength={300}
+                />
+                <FormErrorMessage>{formik.errors.menuDesc}</FormErrorMessage>
+              </FormControl>
+
+              <FormControl>
+                <FormLabel>
+                  Icon (Optional){" "}
+                  <Tooltip
+                    label="For Further References, follow this link"
+                    placement="top"
+                    hasArrow
+                  >
+                    <Text
+                      as="a"
+                      href="https://react-icons.github.io/react-icons/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      color="blue.500"
+                      fontSize="xs"
+                      textDecoration="underline"
+                      cursor="pointer"
+                      _hover={{ color: "blue.600" }}
+                    >
+                      (?)
+                    </Text>
+                  </Tooltip>
+                </FormLabel>
+                <Input
+                  name="menuIcon"
+                  value={formik.values.menuIcon}
+                  onChange={formik.handleChange}
+                  placeholder="Example: FiHome"
+                />
+              </FormControl>
+
+              <FormControl>
+                <FormLabel>Link (Optional)</FormLabel>
+                <Input
+                  name="menuLink"
+                  value={formik.values.menuLink}
+                  onChange={formik.handleChange}
+                  placeholder="Example: /dashboard"
+                />
+              </FormControl>
+
+              <FormControl>
+                <FormLabel>Parent Menu (Optional)</FormLabel>
+                <Select
+                  name="parentId"
+                  value={formik.values.parentId}
+                  onChange={formik.handleChange}
+                  placeholder="Select parent menu"
+                >
+                  {DataMenus.filter((m) => !m.parentId).map((menu) => (
+                    <option key={menu.id} value={menu.id}>
+                      {menu.menuName}
+                    </option>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <Grid templateColumns="repeat(3, 1fr)" gap={4} w="full">
+                <FormControl display="flex" alignItems="center">
+                  <FormLabel mb="0">Is Disable</FormLabel>
+                  <Switch
+                    name="isDisable"
+                    isChecked={formik.values.isDisable}
+                    onChange={(e) =>
+                      formik.setFieldValue("isDisable", e.target.checked)
+                    }
+                  />
+                </FormControl>
+
+                <FormControl display="flex" alignItems="center">
+                  <FormLabel mb="0">Is Hide</FormLabel>
+                  <Switch
+                    name="isHide"
+                    isChecked={formik.values.isHide}
+                    onChange={(e) =>
+                      formik.setFieldValue("isHide", e.target.checked)
+                    }
+                  />
+                </FormControl>
+
+                <FormControl display="flex" alignItems="center">
+                  <FormLabel mb="0">Is Pro</FormLabel>
+                  <Switch
+                    name="isPro"
+                    isChecked={formik.values.isPro}
+                    onChange={(e) =>
+                      formik.setFieldValue("isPro", e.target.checked)
+                    }
+                  />
+                </FormControl>
+              </Grid>
+
+              <FormControl>
+                <FormLabel>Menu Position</FormLabel>
+                <Input
+                  name="menuPos"
+                  type="number"
+                  value={formik.values.menuPos}
+                  onChange={formik.handleChange}
+                  placeholder="1"
+                />
+              </FormControl>
+            </VStack>
+          </ModalBody>
+
+          <ModalFooter>
+            <Button variant="ghost" mr={3} onClick={onClose}>
+              Cancel
+            </Button>
+            <Button
+              colorScheme="blue"
+              onClick={() => formik.handleSubmit()}
+              isLoading={formik.isSubmitting}
+            >
+              Save
+            </Button>
+          </ModalFooter>
         </ModalContent>
       </Modal>
 
@@ -1368,7 +1738,28 @@ function MenusManagementPage() {
               </FormControl>
 
               <FormControl>
-                <FormLabel>Icon (Optional)</FormLabel>
+                <FormLabel>
+                  Icon (Optional){" "}
+                  <Tooltip
+                    label="For Further References, follow this link"
+                    placement="top"
+                    hasArrow
+                  >
+                    <Text
+                      as="a"
+                      href="https://react-icons.github.io/react-icons/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      color="blue.500"
+                      fontSize="xs"
+                      textDecoration="underline"
+                      cursor="pointer"
+                      _hover={{ color: "blue.600" }}
+                    >
+                      (?)
+                    </Text>
+                  </Tooltip>
+                </FormLabel>
                 <Input
                   name="menuIcon"
                   value={editFormik.values.menuIcon}
@@ -1491,6 +1882,50 @@ function MenusManagementPage() {
         questionMsg={`Are you sure you want to delete menu "${pendingDeleteItem?.name}"?`}
         captionMsg="Confirm Delete"
       />
+
+      {/* Synchronize Confirmation Modal */}
+      <Modal isOpen={isSyncModalOpen} onClose={onSyncModalClose} isCentered>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Synchronize Menus</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <VStack spacing={4} align="start">
+              <Text>
+                This will synchronize menus from <strong>menuApplication.ts</strong> to the database.
+              </Text>
+              <Text color="orange.500" fontWeight="medium">
+                ⚠️ Existing menus with the same link will be skipped.
+              </Text>
+              <Text fontSize="sm" color="gray.500">
+                New menus will be inserted with their hierarchical structure.
+              </Text>
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              variant="ghost"
+              colorScheme="red"
+              mr="auto"
+              onClick={handleDeleteAllSynced}
+              isLoading={isDeleting}
+              loadingText="Deleting..."
+            >
+              Delete All Synced
+            </Button>
+            <Button variant="ghost" mr={3} onClick={onSyncModalClose}>
+              Cancel
+            </Button>
+            <Button
+              colorScheme="blue"
+              onClick={handleSynchronize}
+              isLoading={isSynchronizing}
+            >
+              Synchronize
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </LayoutAdmin>
   );
 }
