@@ -12,8 +12,10 @@ import useAuthorizeGroups, {
   AuthorizeGroupUpdatePayload,
   UserAssignResponse,
   UserAssignPayload,
+  MenuAssignPayload,
 } from "@/app/services/useAuthorizeGroups";
 import useUsers, { UsersResponse } from "@/app/services/useUsers";
+import useMenus, { MenuResponse } from "@/app/services/useMenus";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import {
@@ -64,6 +66,7 @@ import {
   AlertDialogContent,
   AlertDialogOverlay,
   useToast,
+  Checkbox,
 } from "@chakra-ui/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
@@ -77,6 +80,7 @@ import {
   FiUsers,
   FiMenu,
   FiPlus,
+  FiCheck,
 } from "react-icons/fi";
 import { TbUsersGroup } from "react-icons/tb";
 import { radiusStyle } from "@/app/constants/applicationConstants";
@@ -101,8 +105,9 @@ function AuthorizeGroupDetailView() {
   const toast = useToast();
   const cancelRef = useRef<any>(null);
 
-  const { GetDetailById, Update, GetAssignedUsers, AssignUsers, UnassignUsers } = useAuthorizeGroups();
+  const { GetDetailById, Update, GetAssignedUsers, AssignUsers, UnassignUsers, GetAssignedMenus, AssignMenus } = useAuthorizeGroups();
   const { List: ListUsers } = useUsers();
+  const { List: GetMenuList } = useMenus();
 
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
@@ -119,6 +124,11 @@ function AuthorizeGroupDetailView() {
   const [searchUser, setSearchUser] = useState<string>("");
   const [isAddingMember, setIsAddingMember] = useState(false);
   const [userToRemove, setUserToRemove] = useState<{ id: string; name: string } | null>(null);
+
+  // Menu assignment states
+  const [menuList, setMenuList] = useState<MenuResponse[]>([]);
+  const [selectedMenus, setSelectedMenus] = useState<Set<string>>(new Set());
+  const [isSavingMenus, setIsSavingMenus] = useState(false);
 
   const { isOpen: isAddModalOpen, onOpen: onAddModalOpen, onClose: onAddModalClose } = useDisclosure();
   const { isOpen: isRemoveDialogOpen, onOpen: onRemoveDialogOpen, onClose: onRemoveDialogClose } = useDisclosure();
@@ -410,6 +420,133 @@ function AuthorizeGroupDetailView() {
       user.userId?.toLowerCase().includes(searchLower)
     );
   });
+
+  // Menu functions
+  const LoadMenuList = async () => {
+    if (!tokenData) return;
+    const payload: PaggingListPayload = {
+      search: "",
+      limit: 999,
+      page: 0,
+      filterWhere: [],
+      fieldOrder: ["menuPos"],
+      orderDir: "asc",
+    };
+    const result = await GetMenuList(payload, tokenData);
+    if (result?.statusCode === 200 && result.data) {
+      setMenuList(result.data);
+    }
+  };
+
+  const GetAssignedMenusData = async () => {
+    if (!agId || !tokenData) return;
+    const result = await GetAssignedMenus(agId, tokenData);
+    if (result?.statusCode === 200 && result.data) {
+      setSelectedMenus(new Set(result.data));
+    }
+  };
+
+  const handleMenuCheckboxChange = (menuId: string, checked: boolean) => {
+    setSelectedMenus((prev) => {
+      const newSet = new Set(prev);
+      const menu = menuList.find((m) => m.id === menuId);
+      if (!menu) return newSet;
+
+      if (checked) {
+        newSet.add(menuId);
+        // Add all children
+        const addChildren = (parentId: string) => {
+          menuList.filter((m) => m.parentId === parentId).forEach((child) => {
+            newSet.add(child.id);
+            addChildren(child.id);
+          });
+        };
+        addChildren(menuId);
+        // Add parent if exists
+        if (menu.parentId) {
+          newSet.add(menu.parentId);
+          const parent = menuList.find((m) => m.id === menu.parentId);
+          if (parent?.parentId) {
+            newSet.add(parent.parentId);
+          }
+        }
+      } else {
+        newSet.delete(menuId);
+        // Remove all children
+        const removeChildren = (parentId: string) => {
+          menuList.filter((m) => m.parentId === parentId).forEach((child) => {
+            newSet.delete(child.id);
+            removeChildren(child.id);
+          });
+        };
+        removeChildren(menuId);
+        // Remove parent if no siblings are checked
+        if (menu.parentId) {
+          const siblings = menuList.filter((m) => m.parentId === menu.parentId);
+          const hasCheckedSibling = siblings.some((s) => newSet.has(s.id));
+          if (!hasCheckedSibling) {
+            newSet.delete(menu.parentId);
+            // Check grandparent
+            const parent = menuList.find((m) => m.id === menu.parentId);
+            if (parent?.parentId) {
+              const parentSiblings = menuList.filter((m) => m.parentId === parent.parentId);
+              const hasCheckedParentSibling = parentSiblings.some((s) => newSet.has(s.id));
+              if (!hasCheckedParentSibling) {
+                newSet.delete(parent.parentId);
+              }
+            }
+          }
+        }
+      }
+      return newSet;
+    });
+  };
+
+  const handleSaveMenus = async () => {
+    if (!agId || !tokenData) return;
+    try {
+      setIsSavingMenus(true);
+      const payload: MenuAssignPayload = {
+        authGroupId: agId,
+        menuIds: Array.from(selectedMenus),
+      };
+      const response = await AssignMenus(payload, tokenData);
+      if (response?.statusCode === 200) {
+        toast({
+          title: "Success",
+          description: response.message,
+          status: "success",
+          duration: 3000,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: response?.message || "Failed to assign menus",
+          status: "error",
+          duration: 3000,
+        });
+      }
+    } catch (error) {
+      console.error("Error assigning menus:", error);
+    } finally {
+      setIsSavingMenus(false);
+    }
+  };
+
+  useEffect(() => {
+    if (agId && tokenData && DataAuth && activeTabIndex === 2) {
+      LoadMenuList();
+      GetAssignedMenusData();
+    }
+  }, [agId, tokenData, DataAuth, activeTabIndex]);
+
+  const buildMenuTree = (menus: MenuResponse[]): MenuResponse[] => {
+    return menus.filter((m) => !m.parentId).sort((a, b) => (a.menuPos || 0) - (b.menuPos || 0));
+  };
+
+  const getMenuChildren = (parentId: string): MenuResponse[] => {
+    return menuList.filter((m) => m.parentId === parentId).sort((a, b) => (a.menuPos || 0) - (b.menuPos || 0));
+  };
 
   if (IsLoadingProcess) {
     return (
@@ -877,12 +1014,111 @@ function AuthorizeGroupDetailView() {
                 {/* Menu Access Tab */}
                 <TabPanel px={0}>
                   <Card rounded="xl" shadow="md" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"}>
-                    <CardHeader>
-                      <Heading size="md">Menu Access</Heading>
+                    <CardHeader pb={3}>
+                      <HStack justify="space-between">
+                        <Heading size="md">Menu Access Configuration</Heading>
+                        <HStack>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            colorScheme="blue"
+                            onClick={() => {
+                              if (selectedMenus.size === menuList.length) {
+                                setSelectedMenus(new Set());
+                              } else {
+                                setSelectedMenus(new Set(menuList.map((m) => m.id)));
+                              }
+                            }}
+                          >
+                            {selectedMenus.size === menuList.length ? "Unselect All" : "Select All"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            colorScheme="green"
+                            leftIcon={<Icon as={FiCheck} />}
+                            onClick={handleSaveMenus}
+                            isLoading={isSavingMenus}
+                          >
+                            Save Changes
+                          </Button>
+                        </HStack>
+                      </HStack>
                     </CardHeader>
                     <Divider />
                     <CardBody>
-                      <Text color="gray.500">Menu access configuration coming soon...</Text>
+                      <VStack spacing={4} align="stretch">
+                        <Text fontSize="sm" color="gray.600">
+                          Select menus to grant access to this authorize group. Parent menus will be automatically selected when children are checked.
+                        </Text>
+                        <Box
+                          maxH="500px"
+                          overflowY="auto"
+                          border="1px"
+                          borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                          rounded="md"
+                          p={3}
+                        >
+                          {menuList.length === 0 ? (
+                            <Text fontSize="sm" color="gray.500" textAlign="center" py={8}>
+                              Loading menus...
+                            </Text>
+                          ) : (
+                            <VStack spacing={2} align="stretch">
+                              {buildMenuTree(menuList).map((menu) => (
+                                <Box key={menu.id}>
+                                  <Box p={2} bg={colorMode === "light" ? "blue.50" : "blue.900"} border="1px" borderColor={colorMode === "light" ? "blue.200" : "blue.700"} rounded="md">
+                                    <HStack spacing={2}>
+                                      <Checkbox
+                                        isChecked={selectedMenus.has(menu.id)}
+                                        onChange={(e) => handleMenuCheckboxChange(menu.id, e.target.checked)}
+                                        colorScheme="blue"
+                                        size="sm"
+                                      />
+                                      <Text fontSize="sm" fontWeight="semibold" flex={1}>{menu.menuName}</Text>
+                                    </HStack>
+                                  </Box>
+                                  {getMenuChildren(menu.id).length > 0 && (
+                                    <VStack spacing={1} align="stretch" pl={4} mt={1}>
+                                      {getMenuChildren(menu.id).map((child) => (
+                                        <Box key={child.id}>
+                                          <Box p={2} bg={colorMode === "light" ? "green.50" : "green.900"} border="1px" borderColor={colorMode === "light" ? "green.200" : "green.700"} rounded="md">
+                                            <HStack spacing={2}>
+                                              <Checkbox
+                                                isChecked={selectedMenus.has(child.id)}
+                                                onChange={(e) => handleMenuCheckboxChange(child.id, e.target.checked)}
+                                                colorScheme="green"
+                                                size="sm"
+                                              />
+                                              <Text fontSize="sm" fontWeight="medium" flex={1}>{child.menuName}</Text>
+                                            </HStack>
+                                          </Box>
+                                          {getMenuChildren(child.id).length > 0 && (
+                                            <VStack spacing={1} align="stretch" pl={4} mt={1}>
+                                              {getMenuChildren(child.id).map((grandChild) => (
+                                                <Box key={grandChild.id} p={2} bg={colorMode === "light" ? "purple.50" : "purple.900"} border="1px" borderColor={colorMode === "light" ? "purple.200" : "purple.700"} rounded="md">
+                                                  <HStack spacing={2}>
+                                                    <Checkbox
+                                                      isChecked={selectedMenus.has(grandChild.id)}
+                                                      onChange={(e) => handleMenuCheckboxChange(grandChild.id, e.target.checked)}
+                                                      colorScheme="purple"
+                                                      size="sm"
+                                                    />
+                                                    <Text fontSize="sm" flex={1}>{grandChild.menuName}</Text>
+                                                  </HStack>
+                                                </Box>
+                                              ))}
+                                            </VStack>
+                                          )}
+                                        </Box>
+                                      ))}
+                                    </VStack>
+                                  )}
+                                </Box>
+                              ))}
+                            </VStack>
+                          )}
+                        </Box>
+                      </VStack>
                     </CardBody>
                   </Card>
                 </TabPanel>
