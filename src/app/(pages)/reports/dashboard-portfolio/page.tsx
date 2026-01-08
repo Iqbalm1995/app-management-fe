@@ -1995,7 +1995,7 @@ export default function DashboardPortfolioPage() {
     const status = item.projectStatus?.toUpperCase();
     return (
       status?.includes("ACTIVE") ||
-      status?.includes("INITIATE") ||
+      status?.includes("INITIATING") ||
       status?.includes("PROGRESS") ||
       status?.includes("PLANNING")
     );
@@ -5588,7 +5588,7 @@ export default function DashboardPortfolioPage() {
                             const status = item.projectStatus?.toUpperCase();
                             return (
                               status?.includes("ACTIVE") ||
-                              status?.includes("INITIATE") ||
+                              status?.includes("INITIATING") ||
                               status?.includes("PROGRESS") ||
                               status?.includes("PLANNING")
                             );

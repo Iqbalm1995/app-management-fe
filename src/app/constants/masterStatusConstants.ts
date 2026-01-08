@@ -31,7 +31,7 @@ export const REQUIREMENT_STATUSES = [
 ];
 
 // PROJECT STATUSES
-export const PRO_STATUS_INITIATE = "INITIATE";
+export const PRO_STATUS_INITIATE = "INITIATING";
 export const PRO_STATUS_RUNNING = "RUNNING";
 export const PRO_STATUS_TEMPORARY_CLOSED = "TEMPORARY CLOSED";
 export const PRO_STATUS_CLOSED = "CLOSED";
@@ -40,7 +40,7 @@ export const PRO_STATUS_CANCELED = "CANCELED";
 export const PRO_STATUS_COMPLETED = "COMPLETED";
 
 export const PROJECT_STATUSES = [
-  "INITIATE",
+  "INITIATING",
   "RUNNING",
   "TEMPORARY CLOSED",
   "CLOSED",
@@ -90,7 +90,7 @@ export const STATUS_COLORS = {
   "APPROVED": "green",
 
   // Project Status Colors
-  "INITIATE": "blue",
+  "INITIATING": "blue",
   "RUNNING": "green",
   "TEMPORARY CLOSED": "orange",
   "CLOSED": "green",
@@ -111,7 +111,7 @@ export const getStatusColor = (status: string): string => {
   // Handle duplicate status names by context
   if (status === "ON HOLD") return "orange";
   if (status === "CANCELED") return "red";
-  if (status === "INITIATE") return "blue";
+  if (status === "INITIATING") return "blue";
   if (status === "COMPLETED") return "green";
 
   return STATUS_COLORS[status as keyof typeof STATUS_COLORS] || "gray";

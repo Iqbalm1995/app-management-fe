@@ -213,7 +213,7 @@ export const REQ_STATUS_LIST: string[] = [
 
 export const PROJECT_STATUS_LIST: string[] = [
   "NOT STARTED",
-  "INITIATE",
+  "INITIATING",
   "ON DEVELOPMENT",
   "READY FOR TESTING",
   "WAITING APPROVAL",
@@ -228,7 +228,7 @@ export const PROJECT_STATUS_LIST: string[] = [
 
 export const PROJECT_STATUS_LIST_INDEX: OptionDataWithIndex[] = [
   "NOT STARTED",
-  "INITIATE",
+  "INITIATING",
   "ON DEVELOPMENT",
   "READY FOR TESTING",
   "WAITING APPROVAL",
