@@ -41,6 +41,7 @@ import {
   Card,
   CardBody,
   CardHeader,
+  Checkbox,
   Divider,
   Flex,
   FormControl,
@@ -96,6 +97,12 @@ import {
   useDisclosure,
   VStack,
   Wrap,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
 } from "@chakra-ui/react";
 import {
   ColumnDef,
@@ -111,7 +118,7 @@ import { ApexOptions } from "apexcharts";
 import { useFormik } from "formik";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   FiActivity,
   FiChevronDown,
@@ -120,9 +127,11 @@ import {
   FiEdit,
   FiEye,
   FiMoreVertical,
+  FiPlus,
   FiPlusSquare,
   FiRefreshCcw,
   FiSave,
+  FiX,
   FiXCircle,
   FiCheckCircle,
   FiCircle,
@@ -182,7 +191,7 @@ const ProjectFeatureView = ({
     UpdateBacklogBatch,
   } = useRequirements();
 
-  const { GetProjectBacklogProgression } = useProjects();
+  const { GetProjectBacklogProgression, AssignBacklogsToProject } = useProjects();
 
   // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -333,7 +342,7 @@ const FeatureBacklogsView = ({
     GetDetailBacklogById,
   } = useRequirements();
 
-  const { GetProjectBacklogProgression } = useProjects();
+  const { GetProjectBacklogProgression, AssignBacklogsToProject } = useProjects();
   const { CountTaskByBacklogId } = useTasks();
 
   // SetUp auth data on current page
@@ -397,6 +406,14 @@ const FeatureBacklogsView = ({
   const [selectedBacklog, setSelectedBacklog] =
     useState<BacklogDataResponse | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Modal state for assigning backlogs
+  const [isAssignBacklogModalOpen, setIsAssignBacklogModalOpen] = useState(false);
+  const [availableBacklogs, setAvailableBacklogs] = useState<BacklogDataResponse[]>([]);
+  const [selectedBacklogIds, setSelectedBacklogIds] = useState<string[]>([]);
+  const [isLoadingBacklogs, setIsLoadingBacklogs] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const cancelRef = useRef<any>(null);
 
   // Modal state for preview backlog
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
@@ -495,6 +512,100 @@ const FeatureBacklogsView = ({
     setIsSaving(false);
     onRefresh();
   };
+
+  // Load available backlogs from requirement
+  const loadAvailableBacklogs = async () => {
+    if (!DataProject?.reqParentId) return;
+
+    setIsLoadingBacklogs(true);
+    try {
+      const token = localStorage.getItem("tokenData") as string;
+      const payload: PaggingListPayload = {
+        search: "",
+        limit: MAX_SIZE_TABLE,
+        page: 0,
+        filterWhere: [
+          {
+            field: "reqId",
+            operator: "=",
+            value: DataProject.reqParentId,
+          },
+        ],
+        fieldOrder: ["backlogName"],
+        orderDir: "asc",
+      };
+
+      const response = await ListBacklog(payload, token);
+      if (response?.statusCode === RES_CODE_OK && response.data) {
+        setAvailableBacklogs(response.data);
+      }
+    } catch (error) {
+      showToast({
+        description: "Failed to load backlogs",
+        statusToast: "error",
+      });
+    } finally {
+      setIsLoadingBacklogs(false);
+    }
+  };
+
+  // Assign selected backlogs to project
+  const handleAssignBacklogs = async () => {
+    if (selectedBacklogIds.length === 0) {
+      showToast({
+        description: "Please select at least one backlog",
+        statusToast: "warning",
+      });
+      return;
+    }
+
+    // Show confirmation dialog
+    setIsConfirmOpen(true);
+  };
+
+  const confirmAssignBacklogs = async () => {
+    setIsConfirmOpen(false);
+    setActionLoading(true);
+    try {
+      const token = localStorage.getItem("tokenData") as string;
+      const response = await AssignBacklogsToProject(
+        {
+          projectId: DataProject.id,
+          backlogIds: selectedBacklogIds,
+        },
+        token
+      );
+
+      if (response?.statusCode === RES_CODE_OK) {
+        showToast({
+          description: response.message || "Backlogs assigned successfully",
+          statusToast: "success",
+        });
+        setIsAssignBacklogModalOpen(false);
+        setSelectedBacklogIds([]);
+        onRefresh();
+      } else {
+        showToast({
+          description: response?.message || "Failed to assign backlogs",
+          statusToast: "error",
+        });
+      }
+    } catch (error) {
+      showToast({
+        description: "Error assigning backlogs",
+        statusToast: "error",
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Load backlogs when modal opens
+  useEffect(() => {
+    if (isAssignBacklogModalOpen) {
+      loadAvailableBacklogs();
+    }
+  }, [isAssignBacklogModalOpen]);
 
   const columnsData = useMemo<ColumnDef<BacklogDataResponse>[]>(
     () => [
@@ -700,16 +811,16 @@ const FeatureBacklogsView = ({
   // Load Requirements
   useEffect(() => {
     if (DataAuth && DataProject && DataProject.reqParentId) {
-      // LOAD BACKLOGS DATA
+      // LOAD BACKLOGS DATA - Filter by project ID instead of requirement ID
       const PayloadGetBacklogList: PaggingListPayload = {
         search: globalFilter,
         limit: MAX_SIZE_TABLE,
         page: 0,
         filterWhere: [
           {
-            field: "reqId",
+            field: "projectId",
             operator: "=",
-            value: DataProject.reqParentId,
+            value: DataProject.id,
           },
         ],
         fieldOrder: ["createdAt"],
@@ -815,6 +926,18 @@ const FeatureBacklogsView = ({
           </Text>
         </VStack>
         <HStack spacing={3}>
+          {DataProject?.isImported === "Y" && DataBacklogsRequirement.length === 0 && (
+            <Button
+              size="sm"
+              leftIcon={<FiPlus />}
+              colorScheme="blue"
+              rounded="full"
+              onClick={() => setIsAssignBacklogModalOpen(true)}
+              isLoading={ActionLoading}
+            >
+              Assign Backlog
+            </Button>
+          )}
           <Button
             size="sm"
             variant="outline"
@@ -2741,6 +2864,55 @@ const FeatureBacklogsView = ({
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      {/* Assign Backlog Modal */}
+      <AssignBacklogModal
+        isOpen={isAssignBacklogModalOpen}
+        onClose={() => {
+          setIsAssignBacklogModalOpen(false);
+          setSelectedBacklogIds([]);
+        }}
+        availableBacklogs={availableBacklogs}
+        selectedBacklogIds={selectedBacklogIds}
+        setSelectedBacklogIds={setSelectedBacklogIds}
+        onAssign={handleAssignBacklogs}
+        isLoading={ActionLoading}
+        isLoadingBacklogs={isLoadingBacklogs}
+      />
+
+      {/* Confirmation Dialog */}
+      <AlertDialog
+        isOpen={isConfirmOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={() => setIsConfirmOpen(false)}
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              Assign Backlogs
+            </AlertDialogHeader>
+
+            <AlertDialogBody>
+              Are you sure you want to assign {selectedBacklogIds.length} backlog(s) to this project?
+              This action will link the selected backlogs to the project.
+            </AlertDialogBody>
+
+            <AlertDialogFooter>
+              <Button ref={cancelRef} onClick={() => setIsConfirmOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                colorScheme="blue"
+                onClick={confirmAssignBacklogs}
+                ml={3}
+                isLoading={ActionLoading}
+              >
+                Confirm
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
     </VStack>
   );
 };
@@ -4124,6 +4296,277 @@ const BacklogHistoryList = ({ histories }: BacklogHistoryListProps) => {
         </Box>
       ))}
     </VStack>
+  );
+};
+
+// Assign Backlog Modal Component
+const AssignBacklogModal = ({
+  isOpen,
+  onClose,
+  availableBacklogs,
+  selectedBacklogIds,
+  setSelectedBacklogIds,
+  onAssign,
+  isLoading,
+  isLoadingBacklogs,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  availableBacklogs: BacklogDataResponse[];
+  selectedBacklogIds: string[];
+  setSelectedBacklogIds: (ids: string[]) => void;
+  onAssign: () => void;
+  isLoading: boolean;
+  isLoadingBacklogs: boolean;
+}) => {
+  const { colorMode } = useColorMode();
+  const [availableFilter, setAvailableFilter] = useState("");
+
+  const toggleBacklog = (backlogId: string) => {
+    if (selectedBacklogIds.includes(backlogId)) {
+      setSelectedBacklogIds(selectedBacklogIds.filter((id) => id !== backlogId));
+    } else {
+      setSelectedBacklogIds([...selectedBacklogIds, backlogId]);
+    }
+  };
+
+  const toggleAll = (checked: boolean) => {
+    if (checked) {
+      const availableIds = filteredAvailable.filter(b => !b.projectId).map(b => b.id);
+      setSelectedBacklogIds(availableIds);
+    } else {
+      setSelectedBacklogIds([]);
+    }
+  };
+
+  // Separate backlogs
+  const assignedBacklogs = availableBacklogs.filter(b => b.projectId !== null);
+  const availableOnly = availableBacklogs.filter(b => b.projectId === null);
+  
+  const filteredAvailable = availableFilter
+    ? availableOnly.filter(b =>
+        b.backlogName.toLowerCase().includes(availableFilter.toLowerCase()) ||
+        b.backlogDesc?.toLowerCase().includes(availableFilter.toLowerCase())
+      )
+    : availableOnly;
+
+  const selectedBacklogs = availableBacklogs.filter(b => selectedBacklogIds.includes(b.id));
+
+  const priorityColor = (priority: string) => {
+    switch (priority) {
+      case "HIGH": return "red";
+      case "MEDIUM": return "orange";
+      case "LOW": return "green";
+      default: return "gray";
+    }
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} size="6xl">
+      <ModalOverlay />
+      <ModalContent maxH="90vh">
+        <ModalHeader>Assign Backlogs to Project</ModalHeader>
+        <ModalCloseButton />
+        <ModalBody overflowY="auto">
+          {isLoadingBacklogs ? (
+            <Flex justify="center" align="center" minH="200px">
+              <Spinner size="lg" />
+            </Flex>
+          ) : (
+            <VStack spacing={6} align="stretch">
+              {/* Assigned Backlogs */}
+              {assignedBacklogs.length > 0 && (
+                <Card rounded={radiusStyle}>
+                  <CardHeader>
+                    <Heading size="md">Already Assigned to Other Projects</Heading>
+                    <Text fontSize="sm" color="gray.500">
+                      These backlogs are already assigned and cannot be selected
+                    </Text>
+                  </CardHeader>
+                  <CardBody>
+                    <Table size="sm" variant="simple">
+                      <Thead>
+                        <Tr>
+                          <Th>Backlog Name</Th>
+                          <Th>Priority</Th>
+                          <Th>Status</Th>
+                          <Th>Project ID</Th>
+                        </Tr>
+                      </Thead>
+                      <Tbody>
+                        {assignedBacklogs.map((backlog) => (
+                          <Tr key={backlog.id} opacity={0.6}>
+                            <Td>{backlog.backlogName}</Td>
+                            <Td>
+                              <Badge colorScheme={priorityColor(backlog.priority)}>
+                                {backlog.priority}
+                              </Badge>
+                            </Td>
+                            <Td>{backlog.developmentStatus}</Td>
+                            <Td>
+                              <Text fontSize="xs" color="gray.500">
+                                {backlog.projectId}
+                              </Text>
+                            </Td>
+                          </Tr>
+                        ))}
+                      </Tbody>
+                    </Table>
+                  </CardBody>
+                </Card>
+              )}
+
+              {/* Available Backlogs */}
+              <Card rounded={radiusStyle}>
+                <CardHeader>
+                  <HStack justify="space-between">
+                    <VStack align="start" spacing={1}>
+                      <Heading size="md">
+                        Available Backlogs ({filteredAvailable.length})
+                      </Heading>
+                      <Text fontSize="sm" color="gray.500">
+                        Select backlogs to assign to this project
+                      </Text>
+                    </VStack>
+                    <HStack spacing={3}>
+                      <Input
+                        placeholder="Search backlogs..."
+                        size="sm"
+                        onChange={(e) => setAvailableFilter(e.target.value)}
+                        value={availableFilter}
+                        w="250px"
+                      />
+                      <Checkbox
+                        isChecked={
+                          filteredAvailable.length > 0 &&
+                          selectedBacklogIds.length === filteredAvailable.length
+                        }
+                        isIndeterminate={
+                          selectedBacklogIds.length > 0 &&
+                          selectedBacklogIds.length < filteredAvailable.length
+                        }
+                        onChange={(e) => toggleAll(e.target.checked)}
+                      >
+                        Select All
+                      </Checkbox>
+                    </HStack>
+                  </HStack>
+                </CardHeader>
+                <CardBody>
+                  {filteredAvailable.length === 0 ? (
+                    <Text color="gray.500" textAlign="center" py={4}>
+                      {availableFilter
+                        ? `No backlogs found matching "${availableFilter}"`
+                        : "No available backlogs to select"}
+                    </Text>
+                  ) : (
+                    <Table size="sm" variant="simple">
+                      <Thead>
+                        <Tr>
+                          <Th w="50px">Select</Th>
+                          <Th>Backlog Name</Th>
+                          <Th>Priority</Th>
+                          <Th>Urgency</Th>
+                          <Th>Impact</Th>
+                          <Th>Status</Th>
+                        </Tr>
+                      </Thead>
+                      <Tbody>
+                        {filteredAvailable.map((backlog) => (
+                          <Tr key={backlog.id}>
+                            <Td>
+                              <Checkbox
+                                isChecked={selectedBacklogIds.includes(backlog.id)}
+                                onChange={() => toggleBacklog(backlog.id)}
+                              />
+                            </Td>
+                            <Td>{backlog.backlogName}</Td>
+                            <Td>
+                              <Badge colorScheme={priorityColor(backlog.priority)}>
+                                {backlog.priority}
+                              </Badge>
+                            </Td>
+                            <Td>{backlog.urgency}</Td>
+                            <Td>{backlog.impact}</Td>
+                            <Td>{backlog.developmentStatus}</Td>
+                          </Tr>
+                        ))}
+                      </Tbody>
+                    </Table>
+                  )}
+                </CardBody>
+              </Card>
+
+              {/* Selected Backlogs */}
+              {selectedBacklogs.length > 0 && (
+                <Card rounded={radiusStyle} borderColor="blue.500" borderWidth="2px">
+                  <CardHeader>
+                    <Heading size="md">
+                      Selected Backlogs ({selectedBacklogs.length})
+                    </Heading>
+                    <Text fontSize="sm" color="gray.500">
+                      These backlogs will be assigned to the project
+                    </Text>
+                  </CardHeader>
+                  <CardBody>
+                    <Table size="sm" variant="simple">
+                      <Thead>
+                        <Tr>
+                          <Th>Backlog Name</Th>
+                          <Th>Priority</Th>
+                          <Th>Urgency</Th>
+                          <Th>Impact</Th>
+                          <Th>Status</Th>
+                          <Th w="50px">Remove</Th>
+                        </Tr>
+                      </Thead>
+                      <Tbody>
+                        {selectedBacklogs.map((backlog) => (
+                          <Tr key={backlog.id}>
+                            <Td>{backlog.backlogName}</Td>
+                            <Td>
+                              <Badge colorScheme={priorityColor(backlog.priority)}>
+                                {backlog.priority}
+                              </Badge>
+                            </Td>
+                            <Td>{backlog.urgency}</Td>
+                            <Td>{backlog.impact}</Td>
+                            <Td>{backlog.developmentStatus}</Td>
+                            <Td>
+                              <IconButton
+                                aria-label="Remove"
+                                icon={<FiX />}
+                                size="sm"
+                                variant="ghost"
+                                colorScheme="red"
+                                onClick={() => toggleBacklog(backlog.id)}
+                              />
+                            </Td>
+                          </Tr>
+                        ))}
+                      </Tbody>
+                    </Table>
+                  </CardBody>
+                </Card>
+              )}
+            </VStack>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="ghost" mr={3} onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            colorScheme="blue"
+            onClick={onAssign}
+            isLoading={isLoading}
+            isDisabled={selectedBacklogIds.length === 0 || isLoadingBacklogs}
+          >
+            Assign {selectedBacklogIds.length > 0 && `(${selectedBacklogIds.length})`}
+          </Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
   );
 };
 
