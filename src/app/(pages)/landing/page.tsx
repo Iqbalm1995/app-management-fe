@@ -198,7 +198,7 @@ function LandingPage() {
                       }
                       bgClip="text"
                     >
-                      Application Performance
+                      Application Performance &
                       <br />
                       Productivity Projects
                     </Box>
