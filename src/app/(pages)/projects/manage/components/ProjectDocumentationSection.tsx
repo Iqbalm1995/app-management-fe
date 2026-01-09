@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   VStack,
   HStack,
@@ -12,8 +12,30 @@ import {
   Flex,
   Progress,
   StackDivider,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  ModalCloseButton,
+  Checkbox,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
+  Grid,
+  GridItem,
+  Card,
+  CardBody,
+  Icon,
+  Stack,
 } from "@chakra-ui/react";
-import { FiRefreshCcw } from "react-icons/fi";
+import { FiRefreshCcw, FiSettings, FiPlus, FiMinus } from "react-icons/fi";
+import { BsLightningChargeFill } from "react-icons/bs";
+import { FaCircle } from "react-icons/fa";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
@@ -21,11 +43,23 @@ import useProjects, {
   ProjectDataResponse,
   ProjectWorkflowResponse,
 } from "@/app/services/useProjects";
+import useWorkflow, {
+  WorkflowGroupResponse,
+} from "@/app/services/useWorkflow";
+import useWorkflowPreset, {
+  WorkflowPresetResponse,
+} from "@/app/services/useWorkflowPreset";
 import {
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
   radiusStyle,
+  MAX_SIZE_TABLE,
+  WorkStageProcurementId,
+  WorkflowProjectDevelopmentId,
+  WorkflowProjectProcurementId,
+  PROJECT_TYPE_PROCUREMENT,
 } from "@/app/constants/applicationConstants";
+import { PaggingListPayload } from "@/app/types/masterTypes";
 import LoadingMiniSignature from "@/app/components/loadingMini";
 import { DynamicWorkflowBox } from "./WorkflowComponents";
 import { colorProgression } from "@/app/helper/MasterHelper";
@@ -39,7 +73,9 @@ const ProjectDocumentationSection = ({
 }: ProjectDocumentationSectionProps) => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
-  const { ListProjectWorkflow } = useProjects();
+  const { ListProjectWorkflow, AssignWorkflowsToProject } = useProjects();
+  const { ListWorkflowGroups } = useWorkflow();
+  const { ListWorkflowPreset, GetWorkflowPresetById } = useWorkflowPreset();
 
   // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -74,8 +110,215 @@ const ProjectDocumentationSection = ({
   const [TotalLeafNodes, setTotalLeafNodes] = useState<number>(0);
   const [CompletedLeafNodes, setCompletedLeafNodes] = useState<number>(0);
 
+  // Workflow assignment modal state
+  const [isWorkflowModalOpen, setIsWorkflowModalOpen] = useState(false);
+  const [workflowGroups, setWorkflowGroups] = useState<WorkflowGroupResponse[]>([]);
+  const [selectedWorkflowIds, setSelectedWorkflowIds] = useState<Set<string>>(new Set());
+  const [isLoadingWorkflows, setIsLoadingWorkflows] = useState(false);
+  const [workflowPresets, setWorkflowPresets] = useState<WorkflowPresetResponse[]>([]);
+  const [selectedPreset, setSelectedPreset] = useState<WorkflowPresetResponse | null>(null);
+  const [isConfirmWorkflowOpen, setIsConfirmWorkflowOpen] = useState(false);
+  const cancelWorkflowRef = React.useRef<any>(null);
+  const [isAssigning, setIsAssigning] = useState(false);
+
   const RefreshAction = () => {
     setRefreshData((prev) => prev + 1);
+  };
+
+  // Load workflow groups and presets
+  const loadWorkflowData = async () => {
+    if (!DataProject) return;
+    
+    setIsLoadingWorkflows(true);
+    try {
+      // Determine workflow category based on project type
+      const workflowCategoryId = DataProject.projectType === PROJECT_TYPE_PROCUREMENT
+        ? WorkflowProjectProcurementId
+        : WorkflowProjectDevelopmentId;
+
+      // Load workflow groups
+      const workflowPayload: PaggingListPayload = {
+        limit: MAX_SIZE_TABLE,
+        page: 0,
+        search: "",
+        filterWhere: [
+          { field: "parentId", operator: "=", value: "" },
+          { field: "wfgLevel", operator: "=", value: "1" },
+          { field: "wfgCategoryId", operator: "=", value: workflowCategoryId },
+        ],
+        fieldOrder: ["wfgOrder"],
+        orderDir: "asc",
+      };
+      const workflowResponse = await ListWorkflowGroups(workflowPayload, tokenData);
+      if (workflowResponse?.statusCode === RES_CODE_OK && workflowResponse.data) {
+        setWorkflowGroups(workflowResponse.data);
+      }
+
+      // Load presets with same category
+      const presetPayload: PaggingListPayload = {
+        limit: MAX_SIZE_TABLE,
+        page: 0,
+        search: "",
+        filterWhere: [
+          { field: "wfCategoryId", operator: "=", value: workflowCategoryId },
+        ],
+        fieldOrder: ["wfPresetName"],
+        orderDir: "asc",
+      };
+      const presetResponse = await ListWorkflowPreset(presetPayload, tokenData);
+      if (presetResponse?.statusCode === RES_CODE_OK && presetResponse.data) {
+        setWorkflowPresets(presetResponse.data);
+      }
+    } catch (error) {
+      showToast({ description: "Failed to load workflow data", statusToast: "error" });
+    } finally {
+      setIsLoadingWorkflows(false);
+    }
+  };
+
+  const handlePresetChange = async (presetId: string) => {
+    if (!presetId || selectedPreset?.id === presetId) {
+      setSelectedPreset(null);
+      setSelectedWorkflowIds(new Set());
+      return;
+    }
+
+    try {
+      const requestData = await GetWorkflowPresetById(presetId, tokenData);
+      if (requestData?.statusCode === RES_CODE_OK && requestData.data) {
+        setSelectedPreset(requestData.data);
+
+        const allWorkflowIds = new Set<string>();
+        const extractIds = (workflows: WorkflowGroupResponse[]) => {
+          workflows.forEach((workflow) => {
+            allWorkflowIds.add(workflow.id);
+            if (workflow.workflowChild?.length > 0) {
+              extractIds(workflow.workflowChild);
+            }
+          });
+        };
+        extractIds(requestData.data.workflowData);
+        setSelectedWorkflowIds(allWorkflowIds);
+      }
+    } catch (error) {
+      showToast({ description: "Failed to load preset detail", statusToast: "error" });
+    }
+  };
+
+  const getAllChildIds = (wf: WorkflowGroupResponse): string[] => {
+    let ids = [wf.id];
+    if (wf.workflowChild?.length > 0) {
+      wf.workflowChild.forEach((child) => {
+        ids = ids.concat(getAllChildIds(child));
+      });
+    }
+    return ids;
+  };
+
+  const findParent = (
+    targetId: string,
+    workflows: WorkflowGroupResponse[]
+  ): WorkflowGroupResponse | null => {
+    for (const wf of workflows) {
+      if (wf.workflowChild?.some((child) => child.id === targetId)) {
+        return wf;
+      }
+      if (wf.workflowChild?.length > 0) {
+        const found = findParent(targetId, wf.workflowChild);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  const updateParentState = (
+    childId: string,
+    newSelected: Set<string>,
+    allWorkflows: WorkflowGroupResponse[]
+  ) => {
+    const parent = findParent(childId, allWorkflows);
+    if (parent) {
+      const hasAnyChildSelected = parent.workflowChild?.some((child) =>
+        newSelected.has(child.id)
+      );
+      if (hasAnyChildSelected) {
+        newSelected.add(parent.id);
+      } else {
+        newSelected.delete(parent.id);
+      }
+      updateParentState(parent.id, newSelected, allWorkflows);
+    }
+  };
+
+  const toggleWorkflow = (workflowId: string, workflow: WorkflowGroupResponse) => {
+    const newSelected = new Set(selectedWorkflowIds);
+    const isCurrentlyChecked = newSelected.has(workflowId);
+
+    if (isCurrentlyChecked) {
+      const allIds = getAllChildIds(workflow);
+      allIds.forEach((id) => newSelected.delete(id));
+      updateParentState(workflowId, newSelected, workflowGroups);
+    } else {
+      const allIds = getAllChildIds(workflow);
+      allIds.forEach((id) => newSelected.add(id));
+      updateParentState(workflowId, newSelected, workflowGroups);
+    }
+
+    setSelectedWorkflowIds(newSelected);
+  };
+
+  const handleAssignWorkflows = () => {
+    if (selectedWorkflowIds.size === 0) {
+      showToast({ description: "Please select at least one workflow", statusToast: "warning" });
+      return;
+    }
+    setIsConfirmWorkflowOpen(true);
+  };
+
+  const confirmAssignWorkflows = async () => {
+    setIsConfirmWorkflowOpen(false);
+    setIsAssigning(true);
+    try {
+      const response = await AssignWorkflowsToProject(
+        { projectId: DataProject!.id, workflowIds: Array.from(selectedWorkflowIds) },
+        tokenData
+      );
+
+      if (response?.statusCode === RES_CODE_OK) {
+        showToast({ description: response.message || "Workflows assigned successfully", statusToast: "success" });
+        setIsWorkflowModalOpen(false);
+        setSelectedWorkflowIds(new Set());
+        setSelectedPreset(null);
+        RefreshAction();
+      } else {
+        showToast({ description: response?.message || "Failed to assign workflows", statusToast: "error" });
+      }
+    } catch (error) {
+      showToast({ description: "Error assigning workflows", statusToast: "error" });
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
+  const renderWorkflowLevel = (workflows: WorkflowGroupResponse[], level: number = 0) => {
+    if (level >= 3) return [];
+    return workflows.map(workflow => (
+      <Box key={workflow.id} w="full" ml={level * 4}>
+        <Checkbox
+          isChecked={selectedWorkflowIds.has(workflow.id)}
+          colorScheme="blue"
+          size="lg"
+          onChange={() => toggleWorkflow(workflow.id, workflow)}
+        >
+          <Text fontWeight={level === 0 ? "bold" : "normal"}>{workflow.wfgName}</Text>
+        </Checkbox>
+        {workflow.workflowChild && workflow.workflowChild.length > 0 && (
+          <VStack align="stretch" spacing={2} mt={2}>
+            {renderWorkflowLevel(workflow.workflowChild, level + 1)}
+          </VStack>
+        )}
+      </Box>
+    ));
   };
 
   // Count all leaf nodes (nodes without children) recursively
@@ -170,6 +413,21 @@ const ProjectDocumentationSection = ({
           </Text>
         </VStack>
         <HStack spacing={3}>
+          {DataProject?.isImported === "Y" && (!DataWorkflow || DataWorkflow.length === 0) && (
+            <Button
+              size="sm"
+              leftIcon={<FiSettings />}
+              colorScheme="blue"
+              rounded="full"
+              onClick={() => {
+                setIsWorkflowModalOpen(true);
+                loadWorkflowData();
+              }}
+              isLoading={IsLoadingProcess}
+            >
+              Set Work Stages for Documentations
+            </Button>
+          )}
           <Button
             size="sm"
             variant="outline"
@@ -249,6 +507,242 @@ const ProjectDocumentationSection = ({
           </Text>
         </Box>
       )}
+
+      {/* Workflow Assignment Modal */}
+      <Modal isOpen={isWorkflowModalOpen} onClose={() => setIsWorkflowModalOpen(false)} size="6xl">
+        <ModalOverlay />
+        <ModalContent maxH="90vh">
+          <ModalHeader>Set Work Stages for Documentation</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody overflowY="auto">
+            {isLoadingWorkflows ? (
+              <Flex justify="center" align="center" minH="200px">
+                <LoadingMiniSignature />
+              </Flex>
+            ) : (
+              <Grid templateColumns="repeat(12, 1fr)" gap={4} w="full">
+                {/* Left: Workflow Selection */}
+                <GridItem colSpan={{ base: 12, sm: 12, md: 8, lg: 8 }} w="full">
+                  <Flex
+                    as={Stack}
+                    p={6}
+                    w="full"
+                    spacing={4}
+                    rounded={radiusStyle}
+                    borderWidth={1}
+                    boxShadow="md"
+                    borderColor={colorMode === "light" ? "gray.100" : "gray.900"}
+                  >
+                    <Flex as={Stack} w="full">
+                      <Heading size="md">Choose Work Stages</Heading>
+                      <Text
+                        fontSize="sm"
+                        color={colorMode === "light" ? "gray.500" : "gray.400"}
+                      >
+                        Select workflow stages for this project
+                      </Text>
+                    </Flex>
+                    {workflowGroups.length === 0 ? (
+                      <Text color="gray.500" textAlign="center" py={4}>
+                        No workflow stages available
+                      </Text>
+                    ) : (
+                      renderWorkflowLevel(workflowGroups)
+                    )}
+                  </Flex>
+                </GridItem>
+
+                {/* Right: Preset Templates */}
+                <GridItem colSpan={{ base: 12, sm: 12, md: 4, lg: 4 }} w="full">
+                  <Card
+                    rounded={radiusStyle}
+                    bgColor={colorMode === "light" ? "gray.100" : "gray.900"}
+                  >
+                    <CardBody>
+                      <Flex w="full" as={Stack} minH="500px" spacing={6}>
+                        <HStack spacing={4} align="center">
+                          <Box
+                            w={12}
+                            h={12}
+                            bgColor={
+                              colorMode === "light"
+                                ? "secondary.500"
+                                : "gray.800"
+                            }
+                            rounded="lg"
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
+                          >
+                            <Icon
+                              as={BsLightningChargeFill}
+                              color={
+                                colorMode === "light"
+                                  ? "white"
+                                  : "secondary.500"
+                              }
+                            />
+                          </Box>
+                          <VStack align="start" spacing={0} flex={1}>
+                            <HStack spacing={3}>
+                              <Text
+                                fontSize="lg"
+                                fontWeight="bold"
+                                color="secondary.500"
+                              >
+                                Work Stage Preset
+                              </Text>
+                            </HStack>
+                            <Text
+                              fontSize="sm"
+                              color={
+                                colorMode === "light"
+                                  ? "gray.500"
+                                  : "gray.400"
+                              }
+                              lineHeight={1.2}
+                            >
+                              Select workflow stages preset related project work stage
+                            </Text>
+                          </VStack>
+                        </HStack>
+                        <Flex as={Stack} w="full">
+                          {workflowPresets.length > 0 ? (
+                            <VStack align="start" spacing={1}>
+                              {workflowPresets.map((preset) => (
+                                <Flex
+                                  key={preset.id}
+                                  as={HStack}
+                                  w="full"
+                                  justifyContent="space-between"
+                                  alignItems="center"
+                                  bgColor={
+                                    selectedPreset?.id === preset.id
+                                      ? "secondary.100"
+                                      : "transparent"
+                                  }
+                                  rounded={radiusStyle}
+                                  px={4}
+                                  py={3}
+                                >
+                                  <VStack align="start" spacing={1} flex={1}>
+                                    <HStack spacing={2}>
+                                      <Icon
+                                        as={FaCircle}
+                                        color="secondary.500"
+                                        boxSize={2}
+                                      />
+                                      <Text
+                                        fontWeight={
+                                          selectedPreset?.id === preset.id
+                                            ? 600
+                                            : 500
+                                        }
+                                        color={
+                                          selectedPreset?.id === preset.id
+                                            ? "gray.900"
+                                            : colorMode === "light"
+                                            ? "gray.900"
+                                            : "white"
+                                        }
+                                      >
+                                        {preset.wfPresetName}
+                                      </Text>
+                                    </HStack>
+                                    {preset.wfPresetDesc && (
+                                      <Text
+                                        fontSize="xs"
+                                        color="gray.500"
+                                        pl={4}
+                                      >
+                                        {preset.wfPresetDesc}
+                                      </Text>
+                                    )}
+                                  </VStack>
+                                  <Flex
+                                    justifyContent="end"
+                                    alignItems="center"
+                                  >
+                                    <Button
+                                      variant="solid"
+                                      colorScheme={
+                                        selectedPreset?.id === preset.id
+                                          ? "red"
+                                          : "secondary"
+                                      }
+                                      size="xs"
+                                      w="full"
+                                      textAlign="left"
+                                      justifyContent="flex-start"
+                                      onClick={() =>
+                                        handlePresetChange(preset.id)
+                                      }
+                                    >
+                                      {selectedPreset?.id === preset.id ? (
+                                        <FiMinus />
+                                      ) : (
+                                        <FiPlus />
+                                      )}
+                                    </Button>
+                                  </Flex>
+                                </Flex>
+                              ))}
+                            </VStack>
+                          ) : (
+                            <Text fontSize="sm" color="gray.500">
+                              No presets available
+                            </Text>
+                          )}
+                        </Flex>
+                      </Flex>
+                    </CardBody>
+                  </Card>
+                </GridItem>
+              </Grid>
+            )}
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="ghost" mr={3} onClick={() => setIsWorkflowModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              colorScheme="blue"
+              onClick={handleAssignWorkflows}
+              isLoading={isAssigning}
+              isDisabled={selectedWorkflowIds.size === 0 || isLoadingWorkflows}
+            >
+              Assign ({selectedWorkflowIds.size})
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog
+        isOpen={isConfirmWorkflowOpen}
+        leastDestructiveRef={cancelWorkflowRef}
+        onClose={() => setIsConfirmWorkflowOpen(false)}
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              Assign Work Stages
+            </AlertDialogHeader>
+            <AlertDialogBody>
+              Are you sure you want to assign {selectedWorkflowIds.size} work stage(s) to this project?
+              This will set up the documentation workflow structure.
+            </AlertDialogBody>
+            <AlertDialogFooter>
+              <Button ref={cancelWorkflowRef} onClick={() => setIsConfirmWorkflowOpen(false)}>
+                Cancel
+              </Button>
+              <Button colorScheme="blue" onClick={confirmAssignWorkflows} ml={3} isLoading={isAssigning}>
+                Confirm
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
     </VStack>
   );
 };
