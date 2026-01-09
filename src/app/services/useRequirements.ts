@@ -499,6 +499,10 @@ interface useRequirements {
     payload: PaggingListPayloadCustom,
     token: string
   ) => Promise<ApiGenericResponse<MediaObjectResponse[] | null> | null>;
+  GetProjectsByRequirementId: (
+    requirementId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<any[] | null> | null>;
   isLoading: boolean;
   error: string | null;
 }
@@ -1205,6 +1209,47 @@ const useRequirements = (): useRequirements => {
     }
   };
 
+  const GetProjectsByRequirementId = async (
+    requirementId: string,
+    token: string
+  ): Promise<ApiGenericResponse<any[] | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Requirement/${requirementId}/projects`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<any[]>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during get projects."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
   return {
     List,
     ListUnregistProject,
@@ -1223,6 +1268,7 @@ const useRequirements = (): useRequirements => {
     UpdateBacklogBatch,
     DeleteBacklog,
     ListReqMedia,
+    GetProjectsByRequirementId,
     isLoading,
     error,
   };

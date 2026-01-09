@@ -347,6 +347,168 @@ interface UploadedFileItem {
   url: string;
 }
 
+// Crucial data alert component
+interface CrucialDataAlertProps {
+  formik: any;
+  setActiveStep: (step: number) => void;
+}
+
+const CrucialDataAlert: React.FC<CrucialDataAlertProps> = ({ formik, setActiveStep }) => {
+  const hasAppData = formik.values.appInitialCode && formik.values.appInitialCode.trim() !== "";
+  const hasBacklogData = formik.values.backlogFeatures && formik.values.backlogFeatures.length > 0;
+  
+  // Only show if missing critical data
+  if (hasAppData && hasBacklogData) {
+    return null;
+  }
+
+  const missingItems = [];
+  if (!hasAppData) missingItems.push("Aplikasi");
+  if (!hasBacklogData) missingItems.push("Backlog Features");
+
+  return (
+    <Alert status="warning" variant="left-accent" mb={4}>
+      <AlertIcon />
+      <Box flex="1">
+        <AlertTitle fontSize="md" mb={1}>
+          Data Penting Belum Lengkap!
+        </AlertTitle>
+        <AlertDescription fontSize="sm">
+          Requirement ini sudah disetujui namun masih memerlukan data berikut untuk dapat digunakan dalam proyek:
+          <VStack align="start" mt={2} spacing={1}>
+            {missingItems.map((item, index) => (
+              <HStack key={index} spacing={2}>
+                <Text>•</Text>
+                <Text fontWeight="semibold">{item}</Text>
+              </HStack>
+            ))}
+          </VStack>
+        </AlertDescription>
+      </Box>
+      <Button
+        colorScheme="orange"
+        size="sm"
+        onClick={() => setActiveStep(4)}
+        leftIcon={<FiArrowRight />}
+      >
+        Lengkapi Data
+      </Button>
+    </Alert>
+  );
+};
+
+// Projects relation component
+interface ProjectsRelationSectionProps {
+  requirementId: string;
+}
+
+const ProjectsRelationSection: React.FC<ProjectsRelationSectionProps> = ({ requirementId }) => {
+  const [projects, setProjects] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const { GetProjectsByRequirementId } = useRequirements();
+  
+  useEffect(() => {
+    const fetchProjects = async () => {
+      if (!requirementId) return;
+      
+      setIsLoading(true);
+      try {
+        const authData = localStorage.getItem("authData");
+        const token = localStorage.getItem("tokenData");
+        if (authData && token) {
+          const response = await GetProjectsByRequirementId(requirementId, token);
+          
+          if (response && response.statusCode === RES_CODE_OK && response.data) {
+            setProjects(response.data);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching projects:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProjects();
+  }, [requirementId]);
+
+  if (isLoading) {
+    return (
+      <InputGroupPanel headerTitle="Informasi Proyek Terkait">
+        <Flex justify="center" align="center" minH="100px">
+          <LoadingMiniSignature />
+        </Flex>
+      </InputGroupPanel>
+    );
+  }
+
+  if (projects.length === 0) {
+    return (
+      <InputGroupPanel headerTitle="Informasi Proyek Terkait">
+        <Alert status="info">
+          <AlertIcon />
+          <AlertDescription>
+            Requirement ini belum terdaftar ke dalam proyek apapun.
+          </AlertDescription>
+        </Alert>
+      </InputGroupPanel>
+    );
+  }
+
+  return (
+    <InputGroupPanel headerTitle={`Informasi Proyek Terkait (${projects.length} Proyek)`}>
+      <VStack spacing={4} align="stretch">
+        <Text fontSize="sm" color="gray.600">
+          Requirement ini telah terdaftar ke dalam {projects.length} proyek berikut:
+        </Text>
+        
+        {projects.map((project, index) => (
+          <Box
+            key={project.id}
+            p={4}
+            border="1px"
+            borderColor="gray.200"
+            borderRadius="md"
+            bg="gray.50"
+          >
+            <Flex justify="space-between" align="start">
+              <VStack align="start" spacing={2} flex={1}>
+                <HStack>
+                  <Badge colorScheme="blue" variant="solid">
+                    {project.projectNo}
+                  </Badge>
+                  <Badge colorScheme={project.projectStatus === "RUNNING" ? "green" : "orange"}>
+                    {project.projectStatus}
+                  </Badge>
+                </HStack>
+                <Text fontWeight="semibold" fontSize="md">
+                  {project.projectName}
+                </Text>
+                <Text fontSize="sm" color="gray.600">
+                  {project.projectDesc}
+                </Text>
+                <HStack spacing={4} fontSize="xs" color="gray.500">
+                  <Text>Tipe: {project.projectType}</Text>
+                  <Text>Kategori: {project.projectCategory}</Text>
+                </HStack>
+              </VStack>
+              <Link href={`/projects/detail/${project.id}`} target="_blank">
+                <IconButton
+                  aria-label="View project"
+                  icon={<FiExternalLink />}
+                  size="sm"
+                  variant="ghost"
+                  colorScheme="blue"
+                />
+              </Link>
+            </Flex>
+          </Box>
+        ))}
+      </VStack>
+    </InputGroupPanel>
+  );
+};
+
 function RegisterRequirementFormPage({
   type_req_param = "BRD",
 }: {
@@ -385,7 +547,38 @@ function RegisterRequirementFormPage({
   const ModalAppPicker = useDisclosure();
   const [selectedApp, setSelectedApp] =
     useState<ApplicationMasterResponse | null>(null);
+  const [hasProjects, setHasProjects] = useState<boolean>(false);
   const { List: ListApps } = useApps();
+  const { GetProjectsByRequirementId } = useRequirements();
+
+  // Check if requirement has projects
+  const checkRequirementProjects = async () => {
+    if (!requirementId) return;
+    
+    try {
+      const token = localStorage.getItem("tokenData");
+      if (token) {
+        const response = await GetProjectsByRequirementId(requirementId, token);
+        if (response && response.statusCode === RES_CODE_OK && response.data) {
+          setHasProjects(response.data.length > 0);
+        }
+      }
+    } catch (error) {
+      console.error("Error checking projects:", error);
+    }
+  };
+
+  // Check if app selection should be disabled (edit mode + has projects + app already selected from DB)
+  const isAppSelectionDisabled = () => {
+    return isEditMode && hasProjects && !!formik.values.appInitialCode;
+  };
+
+  // Check projects when in edit mode
+  useEffect(() => {
+    if (requirementId && isEditMode) {
+      checkRequirementProjects();
+    }
+  }, [requirementId, isEditMode]);
 
   const initialValues: RequirementsInsertPayload = {
     // STG 1
@@ -2370,6 +2563,14 @@ function RegisterRequirementFormPage({
                       ))}
                     </Stepper>
 
+                    {/* Crucial Alert for Approved Requirements Missing Apps/Backlog Data */}
+                    {isEditMode && requirementStatus === "APPROVED" && (
+                      <CrucialDataAlert 
+                        formik={formik}
+                        setActiveStep={setActiveStep}
+                      />
+                    )}
+
                     {activeStep === 0 && (
                       <Flex as={Stack} w={"full"} spacing={5}>
                         <InputGroupPanel headerTitle={`Memo Pengantar`}>
@@ -2483,6 +2684,11 @@ function RegisterRequirementFormPage({
                             </FormControl>
                           )}
                         </InputGroupPanel>
+
+                        {/* Projects Section - Only show when requirement is approved and in edit mode */}
+                        {isEditMode && requirementStatus === "APPROVED" && requirementId && (
+                          <ProjectsRelationSection requirementId={requirementId} />
+                        )}
                       </Flex>
                     )}
 
@@ -5280,6 +5486,9 @@ function RegisterRequirementFormPage({
                             selectedApp={selectedApp}
                             setSelectedApp={setSelectedApp}
                             tokenData={tokenData}
+                            hasProjects={hasProjects}
+                            isEditMode={isEditMode}
+                            isAppSelectionDisabled={isAppSelectionDisabled}
                           />
                         ) : (
                           <Section4RFCView
@@ -5292,6 +5501,9 @@ function RegisterRequirementFormPage({
                             selectedApp={selectedApp}
                             setSelectedApp={setSelectedApp}
                             tokenData={tokenData}
+                            hasProjects={hasProjects}
+                            isEditMode={isEditMode}
+                            isAppSelectionDisabled={isAppSelectionDisabled}
                           />
                         )}
                       </>
@@ -5616,6 +5828,9 @@ interface Section4BRDProps {
     React.SetStateAction<ApplicationMasterResponse | null>
   >;
   tokenData: string;
+  hasProjects: boolean;
+  isEditMode: boolean;
+  isAppSelectionDisabled: () => boolean;
 }
 
 // STEP 4 SECTION BRD
@@ -5629,6 +5844,9 @@ const Section4BRDView = ({
   setSelectedApp,
   setDataBackLogs,
   tokenData,
+  hasProjects,
+  isEditMode,
+  isAppSelectionDisabled,
 }: Section4BRDProps) => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
@@ -6467,10 +6685,15 @@ const Section4BRDView = ({
                   <Button
                     colorScheme={"secondary"}
                     onClick={() => ModalAppPicker.onOpen()}
-                    isDisabled={ActionLoading}
+                    isDisabled={ActionLoading || isAppSelectionDisabled()}
                   >
                     Pilih Aplikasi
                   </Button>
+                  {isAppSelectionDisabled() && (
+                    <Text fontSize="sm" color="orange.500" mt={1}>
+                      Aplikasi tidak dapat diubah karena requirement sudah terdaftar dalam proyek
+                    </Text>
+                  )}
                   {/* {formik.values.appInitialCode &&
                     formik.values.appInitialCode.length > 2 &&
                     ListDataAplicationExisting.length <= 0 && (
@@ -7289,6 +7512,9 @@ interface Section4RFCProps {
     React.SetStateAction<ApplicationMasterResponse | null>
   >;
   tokenData: string;
+  hasProjects: boolean;
+  isEditMode: boolean;
+  isAppSelectionDisabled: () => boolean;
 }
 
 interface BacklogChangesData {
@@ -7346,6 +7572,9 @@ const Section4RFCView = ({
   setSelectedApp,
   setDataBackLogs,
   tokenData,
+  hasProjects,
+  isEditMode,
+  isAppSelectionDisabled,
 }: Section4RFCProps) => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
@@ -8165,10 +8394,15 @@ const Section4RFCView = ({
                     colorScheme="blue"
                     size="md"
                     onClick={() => ModalAppPicker.onOpen()}
-                    isDisabled={ActionLoading}
+                    isDisabled={ActionLoading || isAppSelectionDisabled()}
                   >
                     Pilih Aplikasi
                   </Button>
+                  {isAppSelectionDisabled() && (
+                    <Text fontSize="sm" color="orange.500" mt={1}>
+                      Aplikasi tidak dapat diubah karena requirement sudah terdaftar dalam proyek
+                    </Text>
+                  )}
                 </HStack>
                 <Box
                   w={"full"}

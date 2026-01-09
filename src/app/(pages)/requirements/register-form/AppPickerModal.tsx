@@ -142,6 +142,16 @@ export default function AppPickerModalForm({
   };
 
   const handleAppSelect = (app: ApplicationMasterResponse) => {
+    // Prevent selection of "OTHER" applications
+    if (app.appCode?.toUpperCase().includes('OTHER') || 
+        app.appShortName?.toUpperCase().includes('OTHER')) {
+      showToast({
+        description: "Aplikasi dengan kategori 'OTHER' tidak dapat dipilih untuk requirement ini.",
+        statusToast: "warning",
+      });
+      return;
+    }
+    
     onAppSelect(app);
   };
 
@@ -175,36 +185,47 @@ export default function AppPickerModalForm({
               ) : (
                 <>
                   <SimpleGrid columns={{ base: 2, md: 3, lg: 4 }} spacing={4}>
-                    {apps.map((app) => (
-                      <Card
-                        key={app.id}
-                        cursor="pointer"
-                        onClick={() => handleAppSelect(app)}
-                        rounded={radiusStyle}
-                        bg={
-                          selectedApp?.id === app.id
-                            ? colorMode === "light"
-                              ? "blue.50"
-                              : "blue.900"
-                            : colorMode === "light"
-                            ? "white"
-                            : "gray.700"
-                        }
-                        borderColor={
-                          selectedApp?.id === app.id
-                            ? "blue.500"
-                            : colorMode === "light"
-                            ? "gray.200"
-                            : "gray.600"
-                        }
-                        borderWidth="2px"
-                        _hover={{
-                          borderColor: "blue.400",
-                          transform: "translateY(-2px)",
-                          shadow: "lg",
-                        }}
-                        transition="all 0.2s"
-                      >
+                    {apps.map((app) => {
+                      const isOtherApp = app.appCode?.toUpperCase().includes('OTHER') || 
+                                        app.appShortName?.toUpperCase().includes('OTHER');
+                      
+                      return (
+                        <Card
+                          key={app.id}
+                          cursor={isOtherApp ? "not-allowed" : "pointer"}
+                          onClick={() => handleAppSelect(app)}
+                          rounded={radiusStyle}
+                          opacity={isOtherApp ? 0.5 : 1}
+                          bg={
+                            selectedApp?.id === app.id
+                              ? colorMode === "light"
+                                ? "blue.50"
+                                : "blue.900"
+                              : colorMode === "light"
+                              ? "white"
+                              : "gray.700"
+                          }
+                          borderColor={
+                            isOtherApp
+                              ? "red.300"
+                              : selectedApp?.id === app.id
+                              ? "blue.500"
+                              : colorMode === "light"
+                              ? "gray.200"
+                              : "gray.600"
+                          }
+                          borderWidth="2px"
+                          _hover={
+                            isOtherApp
+                              ? {}
+                              : {
+                                  borderColor: "blue.400",
+                                  transform: "translateY(-2px)",
+                                  shadow: "lg",
+                                }
+                          }
+                          transition="all 0.2s"
+                        >
                         <CardBody p={4}>
                           <VStack spacing={3}>
                             <Box position="relative">
@@ -246,11 +267,17 @@ export default function AppPickerModalForm({
                               >
                                 {app.appsStatus}
                               </Badge>
+                              {isOtherApp && (
+                                <Badge colorScheme="red" size="sm">
+                                  Tidak dapat dipilih
+                                </Badge>
+                              )}
                             </VStack>
                           </VStack>
                         </CardBody>
                       </Card>
-                    ))}
+                      );
+                    })}
                   </SimpleGrid>
 
                   {apps.length === 0 && !isLoading && (

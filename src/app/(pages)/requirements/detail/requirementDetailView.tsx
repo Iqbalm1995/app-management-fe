@@ -115,6 +115,8 @@ import {
   AlertTitle,
   AlertDescription,
   Badge,
+  VStack,
+  IconButton,
 } from "@chakra-ui/react";
 import {
   ColumnDef,
@@ -145,6 +147,159 @@ import {
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Detail",
   breadCrumb: ["Home", "Requirements", "Detail"],
+};
+
+// Crucial data alert component for detail view
+interface CrucialDataAlertDetailProps {
+  requirementData: any;
+  setActiveStep: (step: number) => void;
+}
+
+const CrucialDataAlertDetail: React.FC<CrucialDataAlertDetailProps> = ({ requirementData, setActiveStep }) => {
+  const hasAppData = requirementData.appInitialCode && requirementData.appInitialCode.trim() !== "";
+  const hasBacklogData = requirementData.backlogFeatures && requirementData.backlogFeatures.length > 0;
+  
+  // Only show if missing critical data
+  if (hasAppData && hasBacklogData) {
+    return null;
+  }
+
+  const missingItems = [];
+  if (!hasAppData) missingItems.push("Aplikasi");
+  if (!hasBacklogData) missingItems.push("Backlog Features");
+
+  return (
+    <Alert status="warning" variant="left-accent" mb={4}>
+      <AlertIcon />
+      <Box flex="1">
+        <AlertTitle fontSize="md" mb={1}>
+          Data Penting Belum Lengkap!
+        </AlertTitle>
+        <AlertDescription fontSize="sm">
+          Requirement ini sudah disetujui namun masih memerlukan data berikut untuk dapat digunakan dalam proyek:
+          <VStack align="start" mt={2} spacing={1}>
+            {missingItems.map((item, index) => (
+              <HStack key={index} spacing={2}>
+                <Text>•</Text>
+                <Text fontWeight="semibold">{item}</Text>
+              </HStack>
+            ))}
+          </VStack>
+        </AlertDescription>
+      </Box>
+      <Button
+        colorScheme="orange"
+        size="sm"
+        onClick={() => setActiveStep(3)} // Step 4 in detail view (0-indexed)
+        leftIcon={<FiArrowRight />}
+      >
+        Lihat Data
+      </Button>
+    </Alert>
+  );
+};
+
+// Projects relation component for detail view
+interface ProjectsRelationSectionDetailProps {
+  requirementId: string;
+}
+
+const ProjectsRelationSectionDetail: React.FC<ProjectsRelationSectionDetailProps> = ({ requirementId }) => {
+  const [projects, setProjects] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const { GetProjectsByRequirementId } = useRequirements();
+  
+  useEffect(() => {
+    const fetchProjects = async () => {
+      if (!requirementId) return;
+      
+      setIsLoading(true);
+      try {
+        const authData = localStorage.getItem("authData");
+        const token = localStorage.getItem("tokenData");
+        if (authData && token) {
+          const response = await GetProjectsByRequirementId(requirementId, token);
+          
+          if (response && response.statusCode === RES_CODE_OK && response.data) {
+            setProjects(response.data);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching projects:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProjects();
+  }, [requirementId]);
+
+  if (isLoading) {
+    return (
+      <InputGroupPanel headerTitle="Informasi Proyek Terkait">
+        <Flex justify="center" align="center" minH="100px">
+          <LoadingMiniSignature />
+        </Flex>
+      </InputGroupPanel>
+    );
+  }
+
+  if (projects.length === 0) {
+    return (
+      <InputGroupPanel headerTitle="Informasi Proyek Terkait">
+        <Alert status="info">
+          <AlertIcon />
+          <AlertDescription>
+            Requirement ini belum terdaftar ke dalam proyek apapun.
+          </AlertDescription>
+        </Alert>
+      </InputGroupPanel>
+    );
+  }
+
+  return (
+    <InputGroupPanel headerTitle={`Informasi Proyek Terkait (${projects.length} Proyek)`}>
+      <VStack spacing={4} align="stretch">
+        <Text fontSize="sm" color="gray.600">
+          Requirement ini telah terdaftar ke dalam {projects.length} proyek berikut:
+        </Text>
+        
+        {projects.map((project, index) => (
+          <Box
+            key={project.id}
+            p={4}
+            border="1px"
+            borderColor="gray.200"
+            borderRadius="md"
+            bg="gray.50"
+          >
+            <Flex justify="space-between" align="start">
+              <VStack align="start" spacing={2} flex={1}>
+                <HStack>
+                  <Badge colorScheme="blue" variant="solid">
+                    {project.projectNo}
+                  </Badge>
+                  <Badge colorScheme={project.projectStatus === "RUNNING" ? "green" : "orange"}>
+                    {project.projectStatus}
+                  </Badge>
+                </HStack>
+                <Text fontWeight="semibold" fontSize="md">
+                  {project.projectName}
+                </Text>
+                <Text fontSize="sm" color="gray.600">
+                  {project.projectDesc}
+                </Text>
+                <HStack spacing={4} fontSize="xs" color="gray.500">
+                  <Text>Tipe: {project.projectType}</Text>
+                  <Text>Kategori: {project.projectCategory}</Text>
+                </HStack>
+              </VStack>
+            </Flex>
+          </Box>
+        ))}
+      </VStack>
+    </InputGroupPanel>
+  );
 };
 
 const PAGE_MODE: string = "VIEW_DETAIL";
@@ -749,6 +904,14 @@ function RequirementDetailView() {
                           </AlertDescription>
                         </Alert>
                       )}
+
+                      {/* Crucial Alert for Approved Requirements Missing Apps/Backlog Data */}
+                      {DataRequirement.reqStatus === "APPROVED" && (
+                        <CrucialDataAlertDetail 
+                          requirementData={DataRequirement}
+                          setActiveStep={setActiveStep}
+                        />
+                      )}
                     </Box>
 
                     {/* Only render step content when client-side mounted */}
@@ -760,6 +923,12 @@ function RequirementDetailView() {
                             steps={steps}
                             activeStep={activeStep}
                           />
+                          
+                          {/* Projects Section - Only show when requirement is approved */}
+                          {DataRequirement.reqStatus === "APPROVED" && (
+                            <ProjectsRelationSectionDetail requirementId={DataRequirement.id} />
+                          )}
+                          
                           {/* Lock overlay */}
                           {/* {DataRequirement.isHaveMemo == "N" && (
                             <CoverLockedFeature
@@ -1372,6 +1541,12 @@ function RequirementDetailView() {
                           activeStep={activeStep}
                           OpenBacklogModal={OpenBacklogModal}
                         />
+                        
+                        {/* Projects Section - Only show when requirement is approved */}
+                        {DataRequirement.reqStatus === "APPROVED" && (
+                          <ProjectsRelationSectionDetail requirementId={DataRequirement.id} />
+                        )}
+                        
                         <InputGroupPanel headerTitle={`Lampiran`}>
                           <ReqInfoSummaryFileAttachmentsViewSimple
                             DataRequirement={DataRequirement}
