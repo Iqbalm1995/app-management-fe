@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   VStack,
   HStack,
@@ -15,6 +16,10 @@ import {
   Badge,
   Divider,
   useColorMode,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
 } from "@chakra-ui/react";
 import {
   FiRefreshCcw,
@@ -516,6 +521,32 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                 <CardBody p={6}>
                   {RequirementData ? (
                     <VStack spacing={6} align="stretch">
+                      {DataProject.isImported === "Y" && (
+                        <Alert
+                          status="error"
+                          variant="left-accent"
+                          rounded="lg"
+                          bg={colorMode === "light" ? "red.50" : "red.900"}
+                          borderColor={colorMode === "light" ? "red.200" : "red.700"}
+                        >
+                          <AlertIcon />
+                          <Box flex="1">
+                            <AlertTitle fontSize="sm" fontWeight="bold">
+                              Imported Project
+                            </AlertTitle>
+                            <AlertDescription fontSize="xs">
+                              Some project features are unavailable. Please complete the Requirements Details to continue.
+                            </AlertDescription>
+                          </Box>
+                          {RequirementData && (
+                            <Link href={`/requirements/${RequirementData.requirementType?.toLowerCase() || 'brd'}/register?id=${RequirementData.id}`}>
+                              <Button size="xs" colorScheme="red" variant="solid">
+                                Edit Requirement
+                              </Button>
+                            </Link>
+                          )}
+                        </Alert>
+                      )}
                       {/* Requirement Details */}
                       <Box
                         p={5}
@@ -533,7 +564,7 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                               {RequirementData.requirementType || "N/A"}
                             </Badge>
                           </HStack>
-                          
+
                           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
                             <Box>
                               <Text fontSize="xs" color="gray.500" fontWeight="medium">Perihal:</Text>
@@ -550,7 +581,7 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                             <Box>
                               <Text fontSize="xs" color="gray.500" fontWeight="medium">Tanggal Memo:</Text>
                               <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                                {RequirementData.reqInititateDate 
+                                {RequirementData.reqInititateDate
                                   ? new Date(RequirementData.reqInititateDate).toLocaleDateString()
                                   : "N/A"}
                               </Text>
@@ -558,7 +589,7 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                             <Box>
                               <Text fontSize="xs" color="gray.500" fontWeight="medium">Tanggal Diterima:</Text>
                               <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                                {RequirementData.reqAcceptedDate 
+                                {RequirementData.reqAcceptedDate
                                   ? new Date(RequirementData.reqAcceptedDate).toLocaleDateString()
                                   : "N/A"}
                               </Text>
@@ -566,7 +597,7 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                             <Box>
                               <Text fontSize="xs" color="gray.500" fontWeight="medium">Durasi:</Text>
                               <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                                {RequirementData.reqDurationDay 
+                                {RequirementData.reqDurationDay
                                   ? `${RequirementData.reqDurationDay} Hari kalender`
                                   : "N/A"}
                               </Text>

@@ -132,6 +132,7 @@ import {
   useColorMode,
   useDisclosure,
   useSteps,
+  Tooltip,
   VStack,
   Wrap,
   WrapItem,
@@ -510,8 +511,8 @@ export default function BRDRFCView() {
               <Text fontWeight={600}>
                 {info.row.original.reqInititateDate
                   ? stringToDateFormatedReverse(
-                      info.row.original.reqInititateDate
-                    )
+                    info.row.original.reqInititateDate
+                  )
                   : "-"}
               </Text>
             </Flex>
@@ -520,8 +521,8 @@ export default function BRDRFCView() {
               <Text fontWeight={600}>
                 {info.row.original.reqAcceptedDate
                   ? stringToDateFormatedReverse(
-                      info.row.original.reqAcceptedDate
-                    )
+                    info.row.original.reqAcceptedDate
+                  )
                   : "-"}
               </Text>
             </Flex>
@@ -530,8 +531,8 @@ export default function BRDRFCView() {
               <Text fontWeight={600}>
                 {info.row.original.assignedToDate
                   ? stringToDateFormatedReverse(
-                      info.row.original.assignedToDate
-                    )
+                    info.row.original.assignedToDate
+                  )
                   : "-"}
               </Text>
             </Flex>
@@ -581,12 +582,31 @@ export default function BRDRFCView() {
             <Flex fontSize={"small"} as={Stack} spacing={0}>
               <Text>Ditugaskan Ke :</Text>
               {info.row.original.approvalDatas?.length ? (
-                info.row.original.approvalDatas.map((x, idx) => (
-                  <Text fontWeight={600} key={idx} fontSize="smaller">
-                    {idx + 1}. {x.approverUserFirstName}{" "}
-                    {x.approverUserLastnameName}
-                  </Text>
-                ))
+                <>
+                  {info.row.original.approvalDatas.slice(0, 3).map((x, idx) => (
+                    <Text fontWeight={600} key={idx} fontSize="smaller">
+                      {idx + 1}. {x.approverUserFirstName} {x.approverUserLastnameName}
+                    </Text>
+                  ))}
+                  {info.row.original.approvalDatas.length > 3 && (
+                    <Tooltip
+                      label={
+                        <VStack align="start" spacing={1}>
+                          {info.row.original.approvalDatas.slice(3).map((x, idx) => (
+                            <Text key={idx} fontSize="xs">
+                              {idx + 4}. {x.approverUserFirstName} {x.approverUserLastnameName}
+                            </Text>
+                          ))}
+                        </VStack>
+                      }
+                      placement="top"
+                    >
+                      <Text fontWeight={600} fontSize="smaller" color="gray.600" cursor="pointer">
+                        ... +{info.row.original.approvalDatas.length - 3} more
+                      </Text>
+                    </Tooltip>
+                  )}
+                </>
               ) : (
                 <Text fontWeight={600} fontSize="smaller" color="gray.500">
                   -
@@ -627,7 +647,7 @@ export default function BRDRFCView() {
             <Flex as={Stack} spacing={2}>
               <Flex as={Stack} spacing={0}>
                 {info?.row?.original?.appInitialCode &&
-                info.row.original.appInitialCode.trim() !== "" ? (
+                  info.row.original.appInitialCode.trim() !== "" ? (
                   <>
                     <Text fontWeight={600}>
                       ({info.row.original.appInitialCode})
@@ -642,7 +662,7 @@ export default function BRDRFCView() {
                     fontStyle="italic"
                     fontSize={"x-small"}
                   >
-                    Applikasi Belum Disematkan
+                    Aplikasi Belum Disematkan
                   </Text>
                 )}
               </Flex>
@@ -738,8 +758,7 @@ export default function BRDRFCView() {
                   isDisabled={!canEdit}
                   onClick={() =>
                     router.push(
-                      `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${
-                        info.row.original.id
+                      `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${info.row.original.id
                       }`
                     )
                   }
@@ -1116,9 +1135,9 @@ export default function BRDRFCView() {
                                             {" "}
                                             {dt.field === "senderDivisionId"
                                               ? OptionDivision.find(
-                                                  (opt) =>
-                                                    opt.value === dt.value
-                                                )?.label || dt.value
+                                                (opt) =>
+                                                  opt.value === dt.value
+                                              )?.label || dt.value
                                               : dt.value}
                                           </Text>
                                         </Text>
@@ -1173,8 +1192,8 @@ export default function BRDRFCView() {
                           {memoFilter === "Y"
                             ? "Memiliki Memo"
                             : memoFilter === "N"
-                            ? "Tidak Memiliki Memo"
-                            : "Semua"}
+                              ? "Tidak Memiliki Memo"
+                              : "Semua"}
                         </MenuButton>
                         <MenuList>
                           <MenuItem onClick={() => setMemoFilter("")}>
