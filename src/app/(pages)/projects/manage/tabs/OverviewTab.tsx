@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import useProjects, {
   ProjectDataResponse,
   ProjectQuickStatsResponse,
@@ -33,6 +34,10 @@ import {
   AvatarGroup,
   Divider,
   Tooltip,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
 } from "@chakra-ui/react";
 import {
   radiusStyle,
@@ -153,7 +158,7 @@ const OverviewTab = ({ DataProject, onRefreshProject }: OverviewTabProps) => {
     setIsUpdatingProgression(true);
     try {
       const response = await UpdateProjectProgressionAndStatus(DataProject.id, tokenData);
-      
+
       if (response?.statusCode === RES_CODE_OK) {
         showToast({
           description: response.data || "Project progression updated successfully",
@@ -255,6 +260,44 @@ const OverviewTab = ({ DataProject, onRefreshProject }: OverviewTabProps) => {
           </Box>
         ) : (
           <>
+            {/* Imported Project Alert */}
+            {DataProject?.isImported === "Y" && (
+              <Alert
+                status="warning"
+                variant="subtle"
+                rounded="xl"
+                bg={colorMode === "light" ? "red.50" : "red.900"}
+                borderColor={colorMode === "light" ? "red.300" : "red.600"}
+                borderWidth="2px"
+              >
+                <AlertIcon boxSize={5} color="red.500" />
+                <Box flex="1">
+                  <AlertTitle fontSize="md" fontWeight="bold" mb={1}>
+                    Imported Project
+                  </AlertTitle>
+                  <AlertDescription fontSize="sm">
+                    Some project features are unavailable. Please complete the Requirements Details to continue.
+                  </AlertDescription>
+                </Box>
+                <Link href={`/requirements/brd/register?id=${DataProject.reqParentId}`}>
+                  <Button
+                    size="sm"
+                    colorScheme="red"
+                    variant="outline"
+                    _hover={{
+                      bg: "red.500",
+                      color: "white",
+                      transform: "translateY(-2px)",
+                      shadow: "md",
+                    }}
+                    transition="all 0.5s"
+                  >
+                    Edit Requirement
+                  </Button>
+                </Link>
+              </Alert>
+            )}
+
             {/* Quick Stats Section */}
             <Box>
               <Heading size="md" mb={4} color={colorMode === "light" ? "gray.700" : "gray.200"}>

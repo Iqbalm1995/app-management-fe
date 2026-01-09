@@ -594,7 +594,7 @@ function ReuirementsBRDPage() {
             <Flex as={Stack} spacing={2}>
               <Flex as={Stack} spacing={0}>
                 {info?.row?.original?.appInitialCode &&
-                info.row.original.appInitialCode.trim() !== "" ? (
+                  info.row.original.appInitialCode.trim() !== "" ? (
                   <>
                     <Text fontWeight={600}>
                       ({info.row.original.appInitialCode})
@@ -609,7 +609,7 @@ function ReuirementsBRDPage() {
                     fontStyle="italic"
                     fontSize={"x-small"}
                   >
-                    Applikasi Belum Disematkan
+                    Aplikasi Belum Disematkan
                   </Text>
                 )}
               </Flex>

@@ -399,7 +399,7 @@ export const LinkItems: LinkItemProps[] = [
         icon: BiSolidReport,
         link: "/reports/project-portfolio",
         role: ["admin"],
-        isPro: false,
+        isPro: true,
         menuID: "1",
         children: [],
       },
@@ -709,6 +709,7 @@ export const LinkItems: LinkItemProps[] = [
     icon: IoKeyOutline,
     link: "/master-data/authorize-groups",
     role: ["admin"],
+    isPro: true,
     menuID: "1",
     children: [
       {
@@ -716,6 +717,7 @@ export const LinkItems: LinkItemProps[] = [
         icon: TbUsersGroup,
         link: "/master-data/authorize-groups",
         role: ["admin"],
+        isPro: true,
         menuID: "1",
         children: [],
       },
@@ -724,6 +726,7 @@ export const LinkItems: LinkItemProps[] = [
         icon: FiAward,
         link: "/master-data/specialization",
         role: ["admin"],
+        isPro: true,
         menuID: "1",
         children: [],
       },      // {
