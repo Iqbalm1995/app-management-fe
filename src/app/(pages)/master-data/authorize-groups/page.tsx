@@ -173,10 +173,10 @@ function AuthorizeGroupsPage() {
       agName: pendingFormValues.agName,
       agDescriptions: pendingFormValues.agDescriptions || null,
       functionIdLink: null,
-      isActive: pendingFormValues.isActive ? "1" : "0",
-      agAccessMaker: pendingFormValues.agAccessMaker ? "1" : "0",
-      agAccessReview: pendingFormValues.agAccessReview ? "1" : "0",
-      agAccessApprove: pendingFormValues.agAccessApprove ? "1" : "0",
+      isActive: pendingFormValues.isActive ? "Y" : "N",
+      agAccessMaker: pendingFormValues.agAccessMaker ? "Y" : "N",
+      agAccessReview: pendingFormValues.agAccessReview ? "Y" : "N",
+      agAccessApprove: pendingFormValues.agAccessApprove ? "Y" : "N",
     };
 
     const token = localStorage.getItem("tokenData") as string;
@@ -282,8 +282,8 @@ function AuthorizeGroupsPage() {
       {
         accessorKey: "isActive",
         cell: (info) => (
-          <Badge colorScheme={info.getValue() === "1" ? "green" : "red"}>
-            {info.getValue() === "1" ? "Active" : "Inactive"}
+          <Badge colorScheme={info.getValue() === "Y" ? "green" : "red"}>
+            {info.getValue() === "Y" ? "Active" : "Inactive"}
           </Badge>
         ),
         header: () => <Text>Status</Text>,
@@ -292,8 +292,8 @@ function AuthorizeGroupsPage() {
       {
         accessorKey: "agAccessMaker",
         cell: (info) => (
-          <Badge colorScheme={info.getValue() === "1" ? "blue" : "gray"} variant="subtle">
-            {info.getValue() === "1" ? "Yes" : "No"}
+          <Badge colorScheme={info.getValue() === "Y" ? "blue" : "gray"} variant="subtle">
+            {info.getValue() === "Y" ? "Yes" : "No"}
           </Badge>
         ),
         header: () => <Text>Maker</Text>,
@@ -302,8 +302,8 @@ function AuthorizeGroupsPage() {
       {
         accessorKey: "agAccessReview",
         cell: (info) => (
-          <Badge colorScheme={info.getValue() === "1" ? "purple" : "gray"} variant="subtle">
-            {info.getValue() === "1" ? "Yes" : "No"}
+          <Badge colorScheme={info.getValue() === "Y" ? "purple" : "gray"} variant="subtle">
+            {info.getValue() === "Y" ? "Yes" : "No"}
           </Badge>
         ),
         header: () => <Text>Review</Text>,
@@ -312,8 +312,8 @@ function AuthorizeGroupsPage() {
       {
         accessorKey: "agAccessApprove",
         cell: (info) => (
-          <Badge colorScheme={info.getValue() === "1" ? "orange" : "gray"} variant="subtle">
-            {info.getValue() === "1" ? "Yes" : "No"}
+          <Badge colorScheme={info.getValue() === "Y" ? "orange" : "gray"} variant="subtle">
+            {info.getValue() === "Y" ? "Yes" : "No"}
           </Badge>
         ),
         header: () => <Text>Approve</Text>,

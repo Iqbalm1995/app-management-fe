@@ -74,6 +74,11 @@ export interface MenuAssignPayload {
   menuIds: string[];
 }
 
+export interface ModuleAssignPayload {
+  authGroupId: string;
+  moduleIds: string[];
+}
+
 interface useAuthorizeGroups {
   List: (
     payload: PaggingListPayload,
@@ -113,6 +118,14 @@ interface useAuthorizeGroups {
   ) => Promise<ApiGenericResponse<string[] | null> | null>;
   AssignMenus: (
     payload: MenuAssignPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  GetAssignedModules: (
+    authGroupId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<string[] | null> | null>;
+  AssignModules: (
+    payload: ModuleAssignPayload,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
   isLoading: boolean;
@@ -533,6 +546,98 @@ const useAuthorizeGroups = (): useAuthorizeGroups => {
     }
   };
 
+  const GetAssignedModules = async (
+    authGroupId: string,
+    token: string
+  ): Promise<ApiGenericResponse<string[] | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/AuthorizeGroup/assigned-modules/${authGroupId}`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<string[]>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(errorResponse.message);
+        return {
+          statusCode: errorResponse.statusCode,
+          message: errorResponse.message,
+          data: null,
+          count: 0,
+          error: errorResponse.message,
+        };
+      } else {
+        setError("An unexpected error occurred");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          message: "An unexpected error occurred",
+          data: null,
+          count: 0,
+          error: null,
+        };
+      }
+    }
+  };
+
+  const AssignModules = async (
+    payload: ModuleAssignPayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/AuthorizeGroup/assign-modules";
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(errorResponse.message);
+        return {
+          statusCode: errorResponse.statusCode,
+          message: errorResponse.message,
+          data: null,
+          count: 0,
+          error: errorResponse.message,
+        };
+      } else {
+        setError("An unexpected error occurred");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          message: "An unexpected error occurred",
+          data: null,
+          count: 0,
+          error: null,
+        };
+      }
+    }
+  };
+
   return {
     List,
     GetDetailById,
@@ -544,6 +649,8 @@ const useAuthorizeGroups = (): useAuthorizeGroups => {
     UnassignUsers,
     GetAssignedMenus,
     AssignMenus,
+    GetAssignedModules,
+    AssignModules,
     isLoading,
     error,
   };

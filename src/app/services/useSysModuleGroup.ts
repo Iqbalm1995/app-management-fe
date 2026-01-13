@@ -43,6 +43,45 @@ export interface ModuleMenuAssignPayload {
   menuIds: string[];
 }
 
+export interface SysModuleStatusFlowResponse {
+  id: string;
+  moduleId: string;
+  codeStatus: string;
+  nameStatus: string;
+  descriptions?: string | null;
+  statusOrder: number;
+  previousCodeStatus?: string | null;
+  nextCodeStatus?: string | null;
+  isFinish: string;
+  isConfirmApproval: string;
+  createdAt: string;
+  createdBy: string;
+  updatedAt?: string | null;
+  updatedBy?: string | null;
+}
+
+export interface SysModuleStatusFlowInsertPayload {
+  moduleId: string;
+  codeStatus: string;
+  nameStatus: string;
+  descriptions?: string | null;
+  previousCodeStatus?: string | null;
+  nextCodeStatus?: string | null;
+  isFinish: string;
+  isConfirmApproval: string;
+}
+
+export interface SysModuleStatusFlowUpdatePayload {
+  id: string;
+  codeStatus: string;
+  nameStatus: string;
+  descriptions?: string | null;
+  previousCodeStatus?: string | null;
+  nextCodeStatus?: string | null;
+  isFinish: string;
+  isConfirmApproval: string;
+}
+
 interface useSysModuleGroupServices {
   List: (
     payload: PaggingListPayload,
@@ -74,6 +113,22 @@ interface useSysModuleGroupServices {
   ) => Promise<ApiGenericResponse<string[] | null> | null>;
   AssignMenus: (
     payload: ModuleMenuAssignPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  GetStatusFlows: (
+    moduleId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<SysModuleStatusFlowResponse[] | null> | null>;
+  InsertStatusFlow: (
+    payload: SysModuleStatusFlowInsertPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  UpdateStatusFlow: (
+    payload: SysModuleStatusFlowUpdatePayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  DeleteStatusFlow: (
+    id: string,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
 
@@ -405,6 +460,158 @@ const useSysModuleGroup = (): useSysModuleGroupServices => {
     }
   };
 
+  const GetStatusFlows = async (
+    moduleId: string,
+    token: string
+  ): Promise<ApiGenericResponse<SysModuleStatusFlowResponse[] | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/SysModuleGroup/status-flows/${moduleId}`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<SysModuleStatusFlowResponse[]>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(err.response?.data?.message || "An error occurred.");
+        return errorResponse;
+      } else {
+        setError("An unexpected error occurred.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          message: "An unexpected error occurred.",
+          data: null,
+        };
+      }
+    }
+  };
+
+  const InsertStatusFlow = async (
+    payload: SysModuleStatusFlowInsertPayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/SysModuleGroup/status-flow/insert";
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(err.response?.data?.message || "An error occurred.");
+        return errorResponse;
+      } else {
+        setError("An unexpected error occurred.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          message: "An unexpected error occurred.",
+          data: null,
+        };
+      }
+    }
+  };
+
+  const UpdateStatusFlow = async (
+    payload: SysModuleStatusFlowUpdatePayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/SysModuleGroup/status-flow/update";
+    try {
+      const response = await axiosInstance.put<
+        ApiGenericResponse<string>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(err.response?.data?.message || "An error occurred.");
+        return errorResponse;
+      } else {
+        setError("An unexpected error occurred.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          message: "An unexpected error occurred.",
+          data: null,
+        };
+      }
+    }
+  };
+
+  const DeleteStatusFlow = async (
+    id: string,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/SysModuleGroup/status-flow/${id}`;
+    try {
+      const response = await axiosInstance.delete<
+        ApiGenericResponse<string>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(err.response?.data?.message || "An error occurred.");
+        return errorResponse;
+      } else {
+        setError("An unexpected error occurred.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          message: "An unexpected error occurred.",
+          data: null,
+        };
+      }
+    }
+  };
+
   return {
     List,
     GetDetailById,
@@ -414,6 +621,10 @@ const useSysModuleGroup = (): useSysModuleGroupServices => {
     Delete,
     GetAssignedMenus,
     AssignMenus,
+    GetStatusFlows,
+    InsertStatusFlow,
+    UpdateStatusFlow,
+    DeleteStatusFlow,
     isLoading,
     error,
   };

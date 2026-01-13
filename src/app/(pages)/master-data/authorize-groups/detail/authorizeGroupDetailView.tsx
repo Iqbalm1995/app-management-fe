@@ -13,9 +13,11 @@ import useAuthorizeGroups, {
   UserAssignResponse,
   UserAssignPayload,
   MenuAssignPayload,
+  ModuleAssignPayload,
 } from "@/app/services/useAuthorizeGroups";
 import useUsers, { UsersResponse } from "@/app/services/useUsers";
 import useMenus, { MenuResponse } from "@/app/services/useMenus";
+import useSysModuleGroup, { SysModuleGroupResponse } from "@/app/services/useSysModuleGroup";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import {
@@ -81,6 +83,7 @@ import {
   FiMenu,
   FiPlus,
   FiCheck,
+  FiLock,
 } from "react-icons/fi";
 import { TbUsersGroup } from "react-icons/tb";
 import { radiusStyle } from "@/app/constants/applicationConstants";
@@ -105,9 +108,11 @@ function AuthorizeGroupDetailView() {
   const toast = useToast();
   const cancelRef = useRef<any>(null);
 
-  const { GetDetailById, Update, GetAssignedUsers, AssignUsers, UnassignUsers, GetAssignedMenus, AssignMenus } = useAuthorizeGroups();
+  const { GetDetailById, Update, GetAssignedUsers, AssignUsers, UnassignUsers, GetAssignedMenus, AssignModules, GetAssignedModules, AssignMenus } = useAuthorizeGroups();
   const { List: ListUsers } = useUsers();
   const { List: GetMenuList } = useMenus();
+  const sysModuleGroupService = useSysModuleGroup();
+  const GetModuleList = sysModuleGroupService.List;
 
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
@@ -130,6 +135,11 @@ function AuthorizeGroupDetailView() {
   const [selectedMenus, setSelectedMenus] = useState<Set<string>>(new Set());
   const [isSavingMenus, setIsSavingMenus] = useState(false);
 
+  // Module assignment states
+  const [moduleList, setModuleList] = useState<SysModuleGroupResponse[]>([]);
+  const [selectedModules, setSelectedModules] = useState<Set<string>>(new Set());
+  const [isSavingModules, setIsSavingModules] = useState(false);
+
   const { isOpen: isAddModalOpen, onOpen: onAddModalOpen, onClose: onAddModalClose } = useDisclosure();
   const { isOpen: isRemoveDialogOpen, onOpen: onRemoveDialogOpen, onClose: onRemoveDialogClose } = useDisclosure();
 
@@ -151,10 +161,10 @@ function AuthorizeGroupDetailView() {
       agCode: "",
       agName: "",
       agDescriptions: "",
-      isActive: "1",
-      agAccessMaker: "0",
-      agAccessReview: "0",
-      agAccessApprove: "0",
+      isActive: "Y",
+      agAccessMaker: "N",
+      agAccessReview: "N",
+      agAccessApprove: "N",
     },
     validationSchema: ValidationSchema,
     validateOnChange: false,
@@ -540,6 +550,81 @@ function AuthorizeGroupDetailView() {
     }
   }, [agId, tokenData, DataAuth, activeTabIndex]);
 
+  // Module assignment functions
+  const LoadModuleList = async () => {
+    if (!tokenData) return;
+    const payload: PaggingListPayload = {
+      search: "",
+      limit: 999,
+      page: 0,
+      filterWhere: [],
+      fieldOrder: ["modName"],
+      orderDir: "asc",
+    };
+    const result = await GetModuleList(payload, tokenData);
+    if (result?.statusCode === 200 && result.data) {
+      setModuleList(result.data);
+    }
+  };
+
+  const GetAssignedModulesData = async () => {
+    if (!agId || !tokenData) return;
+    const result = await GetAssignedModules(agId, tokenData);
+    if (result?.data) {
+      setSelectedModules(new Set(result.data));
+    }
+  };
+
+  const handleModuleCheckboxChange = (moduleId: string, checked: boolean) => {
+    setSelectedModules((prev) => {
+      const newSet = new Set(prev);
+      if (checked) {
+        newSet.add(moduleId);
+      } else {
+        newSet.delete(moduleId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSaveModules = async () => {
+    if (!agId || !tokenData) return;
+    try {
+      setIsSavingModules(true);
+      const payload: ModuleAssignPayload = {
+        authGroupId: agId,
+        moduleIds: Array.from(selectedModules),
+      };
+      const response = await AssignModules(payload, tokenData);
+      if (response?.statusCode === 200) {
+        toast({
+          title: "Success",
+          description: response.message,
+          status: "success",
+          duration: 3000,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: response?.message || "Failed to assign modules",
+          status: "error",
+          duration: 3000,
+        });
+      }
+    } catch (error) {
+      console.error("Error assigning modules:", error);
+    } finally {
+      setIsSavingModules(false);
+    }
+  };
+
+  useEffect(() => {
+    if (agId && tokenData && DataAuth && activeTabIndex === 3) {
+      LoadModuleList();
+      GetAssignedModulesData();
+    }
+  }, [agId, tokenData, DataAuth, activeTabIndex]);
+
   const buildMenuTree = (menus: MenuResponse[]): MenuResponse[] => {
     return menus.filter((m) => !m.parentId).sort((a, b) => (a.menuPos || 0) - (b.menuPos || 0));
   };
@@ -626,7 +711,7 @@ function AuthorizeGroupDetailView() {
                     w="24px"
                     h="24px"
                     rounded="full"
-                    bg={AuthorizeGroupData.isActive === "1" ? "green.400" : "red.400"}
+                    bg={AuthorizeGroupData.isActive === "Y" ? "green.400" : "red.400"}
                     border="3px solid"
                     borderColor={colorMode === "light" ? "white" : "gray.800"}
                     shadow="md"
@@ -648,7 +733,7 @@ function AuthorizeGroupDetailView() {
                         #{AuthorizeGroupData.agCode}
                       </Text>
                       <Badge
-                        colorScheme={AuthorizeGroupData.isActive === "1" ? "green" : "red"}
+                        colorScheme={AuthorizeGroupData.isActive === "Y" ? "green" : "red"}
                         variant="subtle"
                         px={3}
                         py={1}
@@ -656,7 +741,7 @@ function AuthorizeGroupDetailView() {
                         fontSize="xs"
                         fontWeight="semibold"
                       >
-                        {AuthorizeGroupData.isActive === "1" ? "Active" : "Inactive"}
+                        {AuthorizeGroupData.isActive === "Y" ? "Active" : "Inactive"}
                       </Badge>
                     </HStack>
                   </VStack>
@@ -664,7 +749,7 @@ function AuthorizeGroupDetailView() {
                   <HStack spacing={6} mt={2}>
                     <VStack spacing={0} align="start">
                       <HStack>
-                        <Icon as={FiShield} color={AuthorizeGroupData.agAccessMaker === "1" ? "green.300" : "whiteAlpha.500"} />
+                        <Icon as={FiShield} color={AuthorizeGroupData.agAccessMaker === "Y" ? "green.300" : "whiteAlpha.500"} />
                         <Text fontSize="xs" color="whiteAlpha.700" fontWeight="medium" textTransform="uppercase">
                           Maker
                         </Text>
@@ -673,7 +758,7 @@ function AuthorizeGroupDetailView() {
                     <Box w="1px" h="20px" bg="whiteAlpha.300" />
                     <VStack spacing={0} align="start">
                       <HStack>
-                        <Icon as={FiShield} color={AuthorizeGroupData.agAccessReview === "1" ? "green.300" : "whiteAlpha.500"} />
+                        <Icon as={FiShield} color={AuthorizeGroupData.agAccessReview === "Y" ? "green.300" : "whiteAlpha.500"} />
                         <Text fontSize="xs" color="whiteAlpha.700" fontWeight="medium" textTransform="uppercase">
                           Review
                         </Text>
@@ -682,7 +767,7 @@ function AuthorizeGroupDetailView() {
                     <Box w="1px" h="20px" bg="whiteAlpha.300" />
                     <VStack spacing={0} align="start">
                       <HStack>
-                        <Icon as={FiShield} color={AuthorizeGroupData.agAccessApprove === "1" ? "green.300" : "whiteAlpha.500"} />
+                        <Icon as={FiShield} color={AuthorizeGroupData.agAccessApprove === "Y" ? "green.300" : "whiteAlpha.500"} />
                         <Text fontSize="xs" color="whiteAlpha.700" fontWeight="medium" textTransform="uppercase">
                           Approve
                         </Text>
@@ -803,12 +888,12 @@ function AuthorizeGroupDetailView() {
                               </FormLabel>
                               {isEditMode ? (
                                 <Switch
-                                  isChecked={formik.values.isActive === "1"}
-                                  onChange={(e) => formik.setFieldValue("isActive", e.target.checked ? "1" : "0")}
+                                  isChecked={formik.values.isActive === "Y"}
+                                  onChange={(e) => formik.setFieldValue("isActive", e.target.checked ? "Y" : "N")}
                                 />
                               ) : (
-                                <Badge colorScheme={AuthorizeGroupData.isActive === "1" ? "green" : "red"}>
-                                  {AuthorizeGroupData.isActive === "1" ? "Active" : "Inactive"}
+                                <Badge colorScheme={AuthorizeGroupData.isActive === "Y" ? "green" : "red"}>
+                                  {AuthorizeGroupData.isActive === "Y" ? "Active" : "Inactive"}
                                 </Badge>
                               )}
                             </FormControl>
@@ -832,12 +917,12 @@ function AuthorizeGroupDetailView() {
                               </FormLabel>
                               {isEditMode ? (
                                 <Switch
-                                  isChecked={formik.values.agAccessMaker === "1"}
-                                  onChange={(e) => formik.setFieldValue("agAccessMaker", e.target.checked ? "1" : "0")}
+                                  isChecked={formik.values.agAccessMaker === "Y"}
+                                  onChange={(e) => formik.setFieldValue("agAccessMaker", e.target.checked ? "Y" : "N")}
                                 />
                               ) : (
-                                <Badge colorScheme={AuthorizeGroupData.agAccessMaker === "1" ? "green" : "gray"}>
-                                  {AuthorizeGroupData.agAccessMaker === "1" ? "Yes" : "No"}
+                                <Badge colorScheme={AuthorizeGroupData.agAccessMaker === "Y" ? "green" : "gray"}>
+                                  {AuthorizeGroupData.agAccessMaker === "Y" ? "Yes" : "No"}
                                 </Badge>
                               )}
                             </FormControl>
@@ -848,12 +933,12 @@ function AuthorizeGroupDetailView() {
                               </FormLabel>
                               {isEditMode ? (
                                 <Switch
-                                  isChecked={formik.values.agAccessReview === "1"}
-                                  onChange={(e) => formik.setFieldValue("agAccessReview", e.target.checked ? "1" : "0")}
+                                  isChecked={formik.values.agAccessReview === "Y"}
+                                  onChange={(e) => formik.setFieldValue("agAccessReview", e.target.checked ? "Y" : "N")}
                                 />
                               ) : (
-                                <Badge colorScheme={AuthorizeGroupData.agAccessReview === "1" ? "green" : "gray"}>
-                                  {AuthorizeGroupData.agAccessReview === "1" ? "Yes" : "No"}
+                                <Badge colorScheme={AuthorizeGroupData.agAccessReview === "Y" ? "green" : "gray"}>
+                                  {AuthorizeGroupData.agAccessReview === "Y" ? "Yes" : "No"}
                                 </Badge>
                               )}
                             </FormControl>
@@ -864,12 +949,12 @@ function AuthorizeGroupDetailView() {
                               </FormLabel>
                               {isEditMode ? (
                                 <Switch
-                                  isChecked={formik.values.agAccessApprove === "1"}
-                                  onChange={(e) => formik.setFieldValue("agAccessApprove", e.target.checked ? "1" : "0")}
+                                  isChecked={formik.values.agAccessApprove === "Y"}
+                                  onChange={(e) => formik.setFieldValue("agAccessApprove", e.target.checked ? "Y" : "N")}
                                 />
                               ) : (
-                                <Badge colorScheme={AuthorizeGroupData.agAccessApprove === "1" ? "green" : "gray"}>
-                                  {AuthorizeGroupData.agAccessApprove === "1" ? "Yes" : "No"}
+                                <Badge colorScheme={AuthorizeGroupData.agAccessApprove === "Y" ? "green" : "gray"}>
+                                  {AuthorizeGroupData.agAccessApprove === "Y" ? "Yes" : "No"}
                                 </Badge>
                               )}
                             </FormControl>
@@ -1122,6 +1207,114 @@ function AuthorizeGroupDetailView() {
                     </CardBody>
                   </Card>
                 </TabPanel>
+
+                {/* Access Permissions Tab */}
+                <TabPanel>
+                  <Card shadow="sm" rounded={radiusStyle}>
+                    <CardHeader>
+                      <VStack align="stretch" spacing={3}>
+                        <HStack justify="space-between" align="center">
+                          <Heading size="md">Access Permissions</Heading>
+                          <Button
+                            size="sm"
+                            colorScheme="green"
+                            leftIcon={<Icon as={FiCheck} />}
+                            onClick={handleSaveModules}
+                            isLoading={isSavingModules}
+                          >
+                            Save Changes
+                          </Button>
+                        </HStack>
+                        {AuthorizeGroupData && (
+                          <HStack spacing={2} p={3} bg={colorMode === "light" ? "blue.50" : "blue.900"} rounded="md">
+                            <Text fontSize="sm" fontWeight="semibold" color="gray.600">
+                              Access Levels:
+                            </Text>
+                            <Badge colorScheme={AuthorizeGroupData.agAccessMaker === "Y" ? "green" : "gray"} fontSize="xs">
+                              {AuthorizeGroupData.agAccessMaker === "Y" ? "✓" : "✗"} Maker
+                            </Badge>
+                            <Badge colorScheme={AuthorizeGroupData.agAccessReview === "Y" ? "blue" : "gray"} fontSize="xs">
+                              {AuthorizeGroupData.agAccessReview === "Y" ? "✓" : "✗"} Reviewer
+                            </Badge>
+                            <Badge colorScheme={AuthorizeGroupData.agAccessApprove === "Y" ? "purple" : "gray"} fontSize="xs">
+                              {AuthorizeGroupData.agAccessApprove === "Y" ? "✓" : "✗"} Approver
+                            </Badge>
+                          </HStack>
+                        )}
+                      </VStack>
+                    </CardHeader>
+                    <Divider />
+                    <CardBody>
+                      <VStack align="stretch" spacing={3}>
+                        {moduleList.length === 0 ? (
+                          <Text color="gray.500" textAlign="center" py={8}>
+                            No module groups available
+                          </Text>
+                        ) : (
+                          moduleList.map((module) => (
+                            <Box
+                              key={module.id}
+                              p={4}
+                              bg={colorMode === "light" ? "white" : "gray.700"}
+                              border="2px"
+                              borderColor={selectedModules.has(module.id) ? "blue.500" : colorMode === "light" ? "gray.200" : "gray.600"}
+                              rounded="md"
+                              transition="all 0.2s"
+                              _hover={{
+                                borderColor: "blue.400",
+                                shadow: "md",
+                              }}
+                            >
+                              <HStack spacing={3} align="start">
+                                <Checkbox
+                                  isChecked={selectedModules.has(module.id)}
+                                  onChange={(e) => handleModuleCheckboxChange(module.id, e.target.checked)}
+                                  colorScheme="blue"
+                                  size="lg"
+                                  mt={1}
+                                />
+                                <VStack align="start" spacing={1} flex={1}>
+                                  <Text fontWeight="bold" fontSize="md">
+                                    {module.modName}
+                                  </Text>
+                                  <Text fontSize="sm" color="gray.500">
+                                    {module.modCode}
+                                  </Text>
+                                  {module.modDescriptions && (
+                                    <Text fontSize="xs" color="gray.400" mt={1}>
+                                      {module.modDescriptions}
+                                    </Text>
+                                  )}
+                                </VStack>
+                                <VStack align="end" spacing={1}>
+                                  <Badge
+                                    colorScheme={selectedModules.has(module.id) ? "green" : "gray"}
+                                    fontSize="xs"
+                                  >
+                                    {selectedModules.has(module.id) ? "Assigned" : "Not Assigned"}
+                                  </Badge>
+                                  {selectedModules.has(module.id) && AuthorizeGroupData && (
+                                    <HStack spacing={1} mt={1}>
+                                      {AuthorizeGroupData.agAccessMaker === "Y" && (
+                                        <Badge colorScheme="green" fontSize="xs" variant="subtle">M</Badge>
+                                      )}
+                                      {AuthorizeGroupData.agAccessReview === "Y" && (
+                                        <Badge colorScheme="blue" fontSize="xs" variant="subtle">R</Badge>
+                                      )}
+                                      {AuthorizeGroupData.agAccessApprove === "Y" && (
+                                        <Badge colorScheme="purple" fontSize="xs" variant="subtle">A</Badge>
+                                      )}
+                                    </HStack>
+                                  )}
+                                </VStack>
+                              </HStack>
+                            </Box>
+                          ))
+                        )}
+                      </VStack>
+                    </CardBody>
+                  </Card>
+                </TabPanel>
               </TabPanels>
             </GridItem>
 
@@ -1196,6 +1389,24 @@ function AuthorizeGroupDetailView() {
                       <Icon as={FiMenu} />
                       <Text pl={3} fontSize="sm" fontWeight="medium">Menu Access</Text>
                     </Tab>
+                    <Tab
+                      rounded={radiusStyle}
+                      px={4}
+                      py={3}
+                      _selected={{
+                        color: "white",
+                        bg: "secondary.500",
+                        boxShadow: "md",
+                      }}
+                      _hover={{
+                        bg: colorMode === "light" ? "gray.100" : "gray.600",
+                      }}
+                      justifyContent="start"
+                      transition="all 0.2s"
+                    >
+                      <Icon as={FiLock} />
+                      <Text pl={3} fontSize="sm" fontWeight="medium">Access Permissions</Text>
+                    </Tab>
                   </TabList>
                 </CardBody>
               </Card>
@@ -1230,9 +1441,23 @@ function AuthorizeGroupDetailView() {
               </Text>
 
               <FormControl>
-                <FormLabel fontWeight="medium" color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                  Search Users
-                </FormLabel>
+                <HStack justify="space-between" align="end" mb={2}>
+                  <FormLabel fontWeight="medium" color={colorMode === "light" ? "gray.700" : "gray.300"} mb={0}>
+                    Search Users
+                  </FormLabel>
+                  <Button
+                    size="xs"
+                    colorScheme="blue"
+                    variant="outline"
+                    onClick={() => {
+                      const allUserIds = filteredUsers.map(u => u.id);
+                      setSelectedUserIds(allUserIds);
+                    }}
+                    isDisabled={filteredUsers.length === 0}
+                  >
+                    Select All ({filteredUsers.length})
+                  </Button>
+                </HStack>
                 <Input
                   value={searchUser}
                   onChange={(e) => setSearchUser(e.target.value)}

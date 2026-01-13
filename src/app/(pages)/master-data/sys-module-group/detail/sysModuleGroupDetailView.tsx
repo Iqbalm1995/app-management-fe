@@ -11,6 +11,9 @@ import useSysModuleGroup, {
   SysModuleGroupResponse,
   SysModuleGroupUpdatePayload,
   ModuleMenuAssignPayload,
+  SysModuleStatusFlowResponse,
+  SysModuleStatusFlowInsertPayload,
+  SysModuleStatusFlowUpdatePayload,
 } from "@/app/services/useSysModuleGroup";
 import useMenus, { MenuResponse } from "@/app/services/useMenus";
 import { useFormik } from "formik";
@@ -48,6 +51,14 @@ import {
   TabPanel,
   Stack,
   Checkbox,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  ModalCloseButton,
+  Flex,
 } from "@chakra-ui/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -60,6 +71,9 @@ import {
   FiMenu,
   FiChevronDown,
   FiChevronRight,
+  FiGitBranch,
+  FiPlus,
+  FiTrash2,
 } from "react-icons/fi";
 import { PaggingListPayload } from "@/app/types/masterTypes";
 
@@ -77,7 +91,7 @@ function SysModuleGroupDetailView() {
   const searchParams = useSearchParams();
   const moduleId = searchParams.get("id");
 
-  const { GetDetailById, Update, GetAssignedMenus, AssignMenus } = useSysModuleGroup();
+  const { GetDetailById, Update, GetAssignedMenus, AssignMenus, GetStatusFlows, InsertStatusFlow, UpdateStatusFlow, DeleteStatusFlow } = useSysModuleGroup();
   const { List: GetMenuList } = useMenus();
 
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -92,6 +106,20 @@ function SysModuleGroupDetailView() {
   const [selectedMenus, setSelectedMenus] = useState<Set<string>>(new Set());
   const [isSavingMenus, setIsSavingMenus] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set());
+
+  const [statusFlows, setStatusFlows] = useState<SysModuleStatusFlowResponse[]>([]);
+  const [isStatusFlowModalOpen, setIsStatusFlowModalOpen] = useState(false);
+  const [editingStatusFlow, setEditingStatusFlow] = useState<SysModuleStatusFlowResponse | null>(null);
+  const [statusFlowForm, setStatusFlowForm] = useState({
+    codeStatus: "",
+    nameStatus: "",
+    descriptions: "",
+    previousCodeStatus: "",
+    nextCodeStatus: "",
+    isFinish: "N",
+    isConfirmApproval: "N",
+  });
+  const [isSavingStatusFlow, setIsSavingStatusFlow] = useState(false);
 
   const [HeaderDataContent, setHeaderDataContent] = useState<HeaderContentProps>({
     titleName: "Module Group Details",
@@ -137,6 +165,7 @@ function SysModuleGroupDetailView() {
       fetchModuleGroupData();
       fetchMenuList();
       fetchAssignedMenus();
+      fetchStatusFlows();
     }
   }, [DataAuth, tokenData, moduleId]);
 
@@ -281,10 +310,12 @@ function SysModuleGroupDetailView() {
   const toggleMenu = (menuId: string, checked: boolean) => {
     setSelectedMenus((prev) => {
       const newSet = new Set(prev);
+      const menu = menuList.find((m) => m.id === menuId);
+      if (!menu) return newSet;
 
       if (checked) {
         newSet.add(menuId);
-        // Add all children recursively
+        // Add all children
         const addChildren = (parentId: string) => {
           menuList.filter((m) => m.parentId === parentId).forEach((child) => {
             newSet.add(child.id);
@@ -292,9 +323,17 @@ function SysModuleGroupDetailView() {
           });
         };
         addChildren(menuId);
+        // Add parent if exists
+        if (menu.parentId) {
+          newSet.add(menu.parentId);
+          const parent = menuList.find((m) => m.id === menu.parentId);
+          if (parent?.parentId) {
+            newSet.add(parent.parentId);
+          }
+        }
       } else {
         newSet.delete(menuId);
-        // Remove all children recursively
+        // Remove all children
         const removeChildren = (parentId: string) => {
           menuList.filter((m) => m.parentId === parentId).forEach((child) => {
             newSet.delete(child.id);
@@ -302,6 +341,23 @@ function SysModuleGroupDetailView() {
           });
         };
         removeChildren(menuId);
+        // Remove parent if no siblings are checked
+        if (menu.parentId) {
+          const siblings = menuList.filter((m) => m.parentId === menu.parentId);
+          const hasCheckedSibling = siblings.some((s) => newSet.has(s.id));
+          if (!hasCheckedSibling) {
+            newSet.delete(menu.parentId);
+            // Check grandparent
+            const parent = menuList.find((m) => m.id === menu.parentId);
+            if (parent?.parentId) {
+              const parentSiblings = menuList.filter((m) => m.parentId === parent.parentId);
+              const hasCheckedParentSibling = parentSiblings.some((s) => newSet.has(s.id));
+              if (!hasCheckedParentSibling) {
+                newSet.delete(parent.parentId);
+              }
+            }
+          }
+        }
       }
 
       return newSet;
@@ -349,6 +405,140 @@ function SysModuleGroupDetailView() {
     }
   };
 
+  const fetchStatusFlows = async () => {
+    if (!moduleId) return;
+
+    try {
+      const response = await GetStatusFlows(moduleId, tokenData);
+      if (response?.statusCode === RES_CODE_OK && response.data) {
+        setStatusFlows(response.data);
+      }
+    } catch (error) {
+      console.error("Error loading status flows:", error);
+    }
+  };
+
+  const handleOpenStatusFlowModal = () => {
+    setEditingStatusFlow(null);
+    
+    setStatusFlowForm({
+      codeStatus: "",
+      nameStatus: "",
+      descriptions: "",
+      previousCodeStatus: "",
+      nextCodeStatus: "",
+      isFinish: "N",
+      isConfirmApproval: "N",
+    });
+    setIsStatusFlowModalOpen(true);
+  };
+
+  const handleEditStatusFlow = (flow: SysModuleStatusFlowResponse) => {
+    setEditingStatusFlow(flow);
+    
+    // When editing, keep the existing previousCodeStatus and nextCodeStatus
+    setStatusFlowForm({
+      codeStatus: flow.codeStatus,
+      nameStatus: flow.nameStatus,
+      descriptions: flow.descriptions || "",
+      previousCodeStatus: flow.previousCodeStatus || "",
+      nextCodeStatus: flow.nextCodeStatus || "",
+      isFinish: flow.isFinish,
+      isConfirmApproval: flow.isConfirmApproval,
+    });
+    setIsStatusFlowModalOpen(true);
+  };
+
+  const handleSaveStatusFlow = async () => {
+    if (!moduleId || !statusFlowForm.codeStatus || !statusFlowForm.nameStatus) {
+      showToast({
+        description: "Code and Name are required",
+        statusToast: "error",
+      });
+      return;
+    }
+
+    setIsSavingStatusFlow(true);
+    try {
+      let result;
+
+      if (editingStatusFlow) {
+        const payload: SysModuleStatusFlowUpdatePayload = {
+          id: editingStatusFlow.id,
+          codeStatus: statusFlowForm.codeStatus,
+          nameStatus: statusFlowForm.nameStatus,
+          descriptions: statusFlowForm.descriptions || null,
+          previousCodeStatus: statusFlowForm.previousCodeStatus || null,
+          nextCodeStatus: statusFlowForm.isFinish === "Y" ? null : statusFlowForm.nextCodeStatus || null,
+          isFinish: statusFlowForm.isFinish,
+          isConfirmApproval: statusFlowForm.isConfirmApproval,
+        };
+        result = await UpdateStatusFlow(payload, tokenData);
+      } else {
+        const payload: SysModuleStatusFlowInsertPayload = {
+          moduleId: moduleId,
+          codeStatus: statusFlowForm.codeStatus,
+          nameStatus: statusFlowForm.nameStatus,
+          descriptions: statusFlowForm.descriptions || null,
+          previousCodeStatus: statusFlowForm.previousCodeStatus || null,
+          nextCodeStatus: statusFlowForm.isFinish === "Y" ? null : statusFlowForm.nextCodeStatus || null,
+          isFinish: statusFlowForm.isFinish,
+          isConfirmApproval: statusFlowForm.isConfirmApproval,
+        };
+        result = await InsertStatusFlow(payload, tokenData);
+      }
+
+      if (result?.statusCode === RES_CODE_OK) {
+        showToast({
+          description: `Status flow ${editingStatusFlow ? "updated" : "created"} successfully`,
+          statusToast: "success",
+        });
+        setIsStatusFlowModalOpen(false);
+        fetchStatusFlows();
+      } else {
+        showToast({
+          description: result?.message || RES_GENERIC_ERROR_MSG,
+          statusToast: "error",
+        });
+      }
+    } catch (error) {
+      showToast({
+        description: "Error saving status flow",
+        statusToast: "error",
+      });
+    } finally {
+      setIsSavingStatusFlow(false);
+    }
+  };
+
+  const handleDeleteStatusFlow = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this status flow?")) {
+      return;
+    }
+
+    try {
+      const result = await DeleteStatusFlow(id, tokenData);
+
+      if (result?.statusCode === RES_CODE_OK) {
+        showToast({
+          description: "Status flow deleted successfully",
+          statusToast: "success",
+        });
+        fetchStatusFlows();
+      } else {
+        showToast({
+          description: result?.message || RES_GENERIC_ERROR_MSG,
+          statusToast: "error",
+        });
+      }
+    } catch (error) {
+      showToast({
+        description: "Error deleting status flow",
+        statusToast: "error",
+      });
+    }
+  };
+
   return (
     <LayoutAdmin>
       <HeaderContent {...HeaderDataContent} />
@@ -377,6 +567,12 @@ function SysModuleGroupDetailView() {
                 <HStack>
                   <FiMenu />
                   <Text>Menu Module Contains</Text>
+                </HStack>
+              </Tab>
+              <Tab>
+                <HStack>
+                  <FiGitBranch />
+                  <Text>Status Flow</Text>
                 </HStack>
               </Tab>
             </TabList>
@@ -497,7 +693,7 @@ function SysModuleGroupDetailView() {
                   <CardBody>
                     <VStack align="stretch" spacing={4}>
                       <Text fontSize="sm" color="gray.600">
-                        Select root menus to assign to this module group. All sub-menus will be automatically included.
+                        Select menus to assign to this module group. Parent menus will be automatically selected when children are checked.
                       </Text>
                       <Box
                         maxH="500px"
@@ -560,7 +756,7 @@ function SysModuleGroupDetailView() {
                                               <HStack spacing={2}>
                                                 <Checkbox
                                                   isChecked={selectedMenus.has(child.id)}
-                                                  isDisabled
+                                                  onChange={(e) => toggleMenu(child.id, e.target.checked)}
                                                   colorScheme="green"
                                                   size="sm"
                                                 />
@@ -590,7 +786,7 @@ function SysModuleGroupDetailView() {
                                                     <HStack spacing={2}>
                                                       <Checkbox
                                                         isChecked={selectedMenus.has(grandChild.id)}
-                                                        isDisabled
+                                                        onChange={(e) => toggleMenu(grandChild.id, e.target.checked)}
                                                         colorScheme="purple"
                                                         size="sm"
                                                       />
@@ -615,10 +811,458 @@ function SysModuleGroupDetailView() {
                   </CardBody>
                 </Card>
               </TabPanel>
+
+              {/* Status Flow Tab */}
+              <TabPanel>
+                <Card shadow="sm" rounded={radiusStyle}>
+                  <CardHeader>
+                    <HStack justify="space-between">
+                      <Heading size="md">Status Flow</Heading>
+                      <Button
+                        leftIcon={<FiPlus />}
+                        colorScheme="green"
+                        size="sm"
+                        onClick={handleOpenStatusFlowModal}
+                      >
+                        Add Status
+                      </Button>
+                    </HStack>
+                  </CardHeader>
+                  <Divider />
+                  <CardBody>
+                    {(() => {
+                      const finishCount = statusFlows.filter(f => f.isFinish === "Y").length;
+                      const hasWarning = finishCount === 0;
+                      
+                      return (
+                        <VStack align="stretch" spacing={4}>
+                          {hasWarning && statusFlows.length > 0 && (
+                            <Box
+                              p={4}
+                              bg="orange.50"
+                              border="2px"
+                              borderColor="orange.400"
+                              rounded="md"
+                            >
+                              <HStack>
+                                <Badge colorScheme="orange" fontSize="md">WARNING</Badge>
+                                <Text color="orange.700" fontWeight="medium">
+                                  No finish status defined. Please mark at least one status as finish.
+                                </Text>
+                              </HStack>
+                            </Box>
+                          )}
+                          {statusFlows.length === 0 ? (
+                            <Flex justify="center" align="center" minH="300px">
+                              <VStack spacing={4}>
+                                <Text color="gray.500" fontSize="lg">
+                                  No status flows defined yet
+                                </Text>
+                                <Button
+                                  leftIcon={<FiPlus />}
+                                  colorScheme="blue"
+                                  size="lg"
+                                  onClick={handleOpenStatusFlowModal}
+                                >
+                                  Create Status Flow
+                                </Button>
+                              </VStack>
+                            </Flex>
+                          ) : (
+                            statusFlows.map((flow, index) => {
+                              const nextFlows = statusFlows.filter(f => f.nextCodeStatus === flow.codeStatus);
+                              const hasBranching = flow.isConfirmApproval === "Y";
+                              
+                              return (
+                                <Box key={flow.id}>
+                                  <HStack
+                                    p={4}
+                                    bg={colorMode === "light" ? "blue.50" : "blue.900"}
+                                    border="2px"
+                                    borderColor={flow.isFinish === "Y" ? "green.500" : "blue.500"}
+                                    rounded="md"
+                                    justify="space-between"
+                                  >
+                                    <HStack spacing={4} flex={1}>
+                                      <Badge colorScheme="blue" fontSize="lg" px={3} py={1}>
+                                        {index + 1}
+                                      </Badge>
+                                      <VStack align="start" spacing={1}>
+                                        <HStack>
+                                          <Text fontWeight="bold" fontSize="lg">
+                                            {flow.nameStatus}
+                                          </Text>
+                                          {flow.isFinish === "Y" && (
+                                            <Badge colorScheme="green">FINISH</Badge>
+                                          )}
+                                          {hasBranching && (
+                                            <Badge colorScheme="orange">APPROVAL POINT</Badge>
+                                          )}
+                                        </HStack>
+                                        {flow.descriptions && (
+                                          <Text fontSize="sm" color="gray.600">
+                                            {flow.descriptions}
+                                          </Text>
+                                        )}
+                                        {flow.nextCodeStatus && (
+                                          <HStack spacing={2}>
+                                            <Badge colorScheme="purple" variant="outline">
+                                              Next: {statusFlows.find(f => f.codeStatus === flow.nextCodeStatus)?.nameStatus || flow.nextCodeStatus}
+                                            </Badge>
+                                          </HStack>
+                                        )}
+                                      </VStack>
+                                    </HStack>
+                                    <HStack>
+                                      <Button
+                                        size="sm"
+                                        leftIcon={<FiEdit />}
+                                        onClick={() => handleEditStatusFlow(flow)}
+                                      >
+                                        Edit
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        colorScheme="red"
+                                        leftIcon={<FiTrash2 />}
+                                        onClick={() => handleDeleteStatusFlow(flow.id)}
+                                      >
+                                        Delete
+                                      </Button>
+                                    </HStack>
+                                  </HStack>
+                                  {hasBranching && nextFlows.length > 0 && (
+                                    <Flex justify="center" py={2}>
+                                      <VStack spacing={1}>
+                                        <Text fontSize="xs" color="gray.500">Branching Flow</Text>
+                                        <HStack spacing={4}>
+                                          <Badge colorScheme="green">Approved →</Badge>
+                                          <Badge colorScheme="red">Declined →</Badge>
+                                        </HStack>
+                                      </VStack>
+                                    </Flex>
+                                  )}
+                                  {!hasBranching && flow.nextCodeStatus && flow.isFinish === "N" && (
+                                    <Flex justify="center" py={2}>
+                                      <FiChevronDown size={24} color="gray" />
+                                    </Flex>
+                                  )}
+                                </Box>
+                              );
+                            })
+                          )}
+                    </VStack>
+                      );
+                    })()}
+
+                    {/* Flow Diagram Section */}
+                    {statusFlows.length > 0 && (
+                      <>
+                        <Divider my={6} />
+                        <VStack align="stretch" spacing={4}>
+                          <Heading size="md">Flow Diagram</Heading>
+                          <Box
+                            p={6}
+                            bg={colorMode === "light" ? "gray.50" : "gray.800"}
+                            rounded="md"
+                            border="1px"
+                            borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                          >
+                            {(() => {
+                              // Build map by codeStatus
+                              const flowMap = new Map<string, SysModuleStatusFlowResponse>();
+                              statusFlows.forEach(f => flowMap.set(f.codeStatus, f));
+
+                              // Find start node (no previous)
+                              const startNode = statusFlows.find(f => !f.previousCodeStatus);
+
+                              if (!startNode) {
+                                return (
+                                  <Text color="gray.500" textAlign="center">
+                                    No start node found. Set one status without Previous Status.
+                                  </Text>
+                                );
+                              }
+
+                              // Build flow sections
+                              const sections: Array<{
+                                label: string;
+                                node: SysModuleStatusFlowResponse;
+                                color: string;
+                              }> = [];
+
+                              const visited = new Set<string>();
+
+                              const buildSections = (currentCode: string, context: string = "Main Flow") => {
+                                if (visited.has(currentCode)) return;
+                                visited.add(currentCode);
+
+                                const current = flowMap.get(currentCode);
+                                if (!current) return;
+
+                                const isApproval = current.isConfirmApproval === "Y";
+                                const isFinish = current.isFinish === "Y";
+
+                                // Determine color
+                                let color = "blue";
+                                if (isFinish) color = "green";
+                                else if (isApproval) color = "orange";
+
+                                sections.push({
+                                  label: context,
+                                  node: current,
+                                  color: color
+                                });
+
+                                // Find next node
+                                const approvedNext = current.nextCodeStatus ? flowMap.get(current.nextCodeStatus) : null;
+                                
+                                // Find declined branches
+                                const declinedBranches = statusFlows.filter(f => 
+                                  f.previousCodeStatus === current.codeStatus && 
+                                  f.codeStatus !== current.nextCodeStatus
+                                );
+
+                                // Continue main/approved flow
+                                if (approvedNext) {
+                                  const nextContext = isApproval ? "Approved Path" : context;
+                                  buildSections(approvedNext.codeStatus, nextContext);
+                                }
+
+                                // Process declined branches
+                                declinedBranches.forEach(declined => {
+                                  buildSections(declined.codeStatus, "Declined Path");
+                                });
+                              };
+
+                              buildSections(startNode.codeStatus);
+
+                              return (
+                                <VStack align="stretch" spacing={0} divider={<Divider />}>
+                                  {sections.map((section, index) => (
+                                    <HStack
+                                      key={`${section.node.codeStatus}-${index}`}
+                                      spacing={0}
+                                      align="stretch"
+                                      minH="80px"
+                                    >
+                                      {/* Context Label Column */}
+                                      <Box
+                                        w="150px"
+                                        bg={colorMode === "light" ? "gray.100" : "gray.700"}
+                                        borderRight="2px solid"
+                                        borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
+                                        display="flex"
+                                        alignItems="center"
+                                        justifyContent="center"
+                                        p={2}
+                                      >
+                                        <Text
+                                          fontSize="sm"
+                                          fontWeight="semibold"
+                                          color={
+                                            section.label === "Approved Path" ? "green.600" :
+                                            section.label === "Declined Path" ? "red.600" :
+                                            "gray.600"
+                                          }
+                                          textAlign="center"
+                                        >
+                                          {section.label}
+                                        </Text>
+                                      </Box>
+
+                                      {/* Node Content Column */}
+                                      <Box flex={1} p={4} display="flex" alignItems="center">
+                                        <HStack
+                                          w="full"
+                                          p={3}
+                                          bg={colorMode === "light" ? "white" : "gray.600"}
+                                          border="2px solid"
+                                          borderColor={`${section.color}.500`}
+                                          rounded="lg"
+                                          shadow="sm"
+                                          spacing={3}
+                                        >
+                                          <Box
+                                            w="40px"
+                                            h="40px"
+                                            bg={`${section.color}.500`}
+                                            color="white"
+                                            rounded="full"
+                                            display="flex"
+                                            alignItems="center"
+                                            justifyContent="center"
+                                            fontWeight="bold"
+                                            flexShrink={0}
+                                          >
+                                            {section.node.statusOrder}
+                                          </Box>
+                                          <VStack align="start" spacing={0} flex={1}>
+                                            <Text fontWeight="bold">{section.node.nameStatus}</Text>
+                                            <Text fontSize="xs" color="gray.500">
+                                              {section.node.codeStatus}
+                                            </Text>
+                                          </VStack>
+                                          <HStack spacing={1}>
+                                            {section.node.isFinish === "Y" && (
+                                              <Badge colorScheme="green" fontSize="xs">FINISH</Badge>
+                                            )}
+                                            {section.node.isConfirmApproval === "Y" && (
+                                              <Badge colorScheme="orange" fontSize="xs">APPROVAL</Badge>
+                                            )}
+                                          </HStack>
+                                        </HStack>
+                                      </Box>
+                                    </HStack>
+                                  ))}
+                                </VStack>
+                              );
+                            })()}
+                          </Box>
+                        </VStack>
+                      </>
+                    )}
+                  </CardBody>
+                </Card>
+              </TabPanel>
             </TabPanels>
           </Tabs>
         </VStack>
       </Box>
+
+      {/* Status Flow Modal */}
+      <Modal isOpen={isStatusFlowModalOpen} onClose={() => setIsStatusFlowModalOpen(false)} size="lg">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            {editingStatusFlow ? "Edit Status Flow" : "Add New Status Flow"}
+          </ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <VStack spacing={4}>
+              <FormControl isRequired>
+                <FormLabel>Name Status</FormLabel>
+                <Input
+                  value={statusFlowForm.nameStatus}
+                  onChange={(e) => {
+                    const value = e.target.value.toUpperCase();
+                    setStatusFlowForm({ 
+                      ...statusFlowForm, 
+                      nameStatus: value,
+                      codeStatus: value 
+                    });
+                  }}
+                  placeholder="e.g., DRAFT STATUS"
+                />
+              </FormControl>
+
+              <FormControl>
+                <FormLabel>Description</FormLabel>
+                <Textarea
+                  value={statusFlowForm.descriptions}
+                  onChange={(e) =>
+                    setStatusFlowForm({ ...statusFlowForm, descriptions: e.target.value })
+                  }
+                  placeholder="Enter description"
+                  rows={3}
+                />
+              </FormControl>
+
+              <FormControl>
+                <Checkbox
+                  isChecked={statusFlowForm.isConfirmApproval === "Y"}
+                  onChange={(e) =>
+                    setStatusFlowForm({
+                      ...statusFlowForm,
+                      isConfirmApproval: e.target.checked ? "Y" : "N",
+                    })
+                  }
+                  colorScheme="orange"
+                >
+                  Requires Approval? (Creates branching flow)
+                </Checkbox>
+              </FormControl>
+
+              <FormControl>
+                <Checkbox
+                  isChecked={statusFlowForm.isFinish === "Y"}
+                  onChange={(e) =>
+                    setStatusFlowForm({
+                      ...statusFlowForm,
+                      isFinish: e.target.checked ? "Y" : "N",
+                      nextCodeStatus: e.target.checked ? "" : statusFlowForm.nextCodeStatus,
+                    })
+                  }
+                  colorScheme="green"
+                >
+                  Is Finish Status?
+                </Checkbox>
+              </FormControl>
+
+              <FormControl>
+                <FormLabel>Previous Status (Incoming From)</FormLabel>
+                <Select
+                  value={statusFlowForm.previousCodeStatus}
+                  onChange={(e) =>
+                    setStatusFlowForm({ ...statusFlowForm, previousCodeStatus: e.target.value })
+                  }
+                  placeholder="Select previous status"
+                >
+                  {statusFlows
+                    .filter((f) => f.id !== editingStatusFlow?.id)
+                    .map((flow) => (
+                      <option key={flow.id} value={flow.codeStatus}>
+                        {flow.nameStatus}
+                      </option>
+                    ))}
+                </Select>
+                <Text fontSize="xs" color="gray.500" mt={1}>
+                  Which status flows into this one
+                </Text>
+              </FormControl>
+
+              {statusFlowForm.isFinish === "N" && (
+                <FormControl>
+                  <FormLabel>Next Status (Approved Path)</FormLabel>
+                  <Select
+                    value={statusFlowForm.nextCodeStatus}
+                    onChange={(e) =>
+                      setStatusFlowForm({ ...statusFlowForm, nextCodeStatus: e.target.value })
+                    }
+                    placeholder="Select next status"
+                  >
+                    {statusFlows
+                      .filter((f) => f.id !== editingStatusFlow?.id)
+                      .map((flow) => (
+                        <option key={flow.id} value={flow.codeStatus}>
+                          {flow.nameStatus}
+                        </option>
+                      ))}
+                  </Select>
+                  <Text fontSize="xs" color="gray.500" mt={1}>
+                    {statusFlowForm.isConfirmApproval === "Y" 
+                      ? "This is the approved path. Declined items can branch to other statuses."
+                      : "Standard next status in the flow"
+                    }
+                  </Text>
+                </FormControl>
+              )}
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="ghost" mr={3} onClick={() => setIsStatusFlowModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              colorScheme="blue"
+              onClick={handleSaveStatusFlow}
+              isLoading={isSavingStatusFlow}
+            >
+              {editingStatusFlow ? "Update" : "Create"}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </LayoutAdmin>
   );
 }
