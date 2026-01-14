@@ -276,10 +276,10 @@ const OverviewTab = ({ DataProject, onRefreshProject }: OverviewTabProps) => {
                     Imported Project
                   </AlertTitle>
                   <AlertDescription fontSize="sm">
-                    Some project features are unavailable. Please complete the Requirements Details to continue.
+                    Some project features are currently limited. Complete the Requirements Details to get the best experience.
                   </AlertDescription>
                 </Box>
-                <Link href={`/requirements/brd/register?id=${DataProject.reqParentId}`}>
+                <Link target="_blank" rel="noopener noreferrer" href={`/requirements/brd/register?id=${DataProject.reqParentId}`}>
                   <Button
                     size="sm"
                     colorScheme="red"

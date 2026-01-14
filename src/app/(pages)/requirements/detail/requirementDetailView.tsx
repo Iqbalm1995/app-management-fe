@@ -155,9 +155,11 @@ const HeaderDataContent: HeaderContentProps = {
 interface CrucialDataAlertDetailProps {
   requirementData: any;
   setActiveStep: (step: number) => void;
+  requirementType: string;
+  pageMode: string;
 }
 
-const CrucialDataAlertDetail: React.FC<CrucialDataAlertDetailProps> = ({ requirementData, setActiveStep }) => {
+const CrucialDataAlertDetail: React.FC<CrucialDataAlertDetailProps> = ({ requirementData, setActiveStep, requirementType, pageMode }) => {
   const hasAppData = requirementData.appInitialCode && requirementData.appInitialCode.trim() !== "";
   const hasBacklogData = requirementData.backlogFeatures && requirementData.backlogFeatures.length > 0;
   
@@ -189,14 +191,26 @@ const CrucialDataAlertDetail: React.FC<CrucialDataAlertDetailProps> = ({ require
           </VStack>
         </AlertDescription>
       </Box>
-      <Button
-        colorScheme="orange"
-        size="sm"
-        onClick={() => setActiveStep(3)} // Step 4 in detail view (0-indexed)
-        leftIcon={<FiArrowRight />}
-      >
-        Lihat Data
-      </Button>
+      {pageMode === "VIEW_DETAIL" ? (
+        <Link href={`/requirements/${requirementType.toLowerCase()}/register?id=${requirementData.id}`}>
+          <Button
+            colorScheme="orange"
+            size="sm"
+            leftIcon={<FiArrowRight />}
+          >
+            Lihat Data
+          </Button>
+        </Link>
+      ) : (
+        <Button
+          colorScheme="orange"
+          size="sm"
+          leftIcon={<FiArrowRight />}
+          onClick={() => setActiveStep(0)}
+        >
+          Lihat Data
+        </Button>
+      )}
     </Alert>
   );
 };
@@ -989,11 +1003,13 @@ function RequirementDetailView() {
                         </Alert>
                       )}
 
-                      {/* Crucial Alert for Approved Requirements Missing Apps/Backlog Data */}
-                      {DataRequirement.reqStatus === "APPROVED" && (
+                      {/* Crucial Alert for Non-Approved Requirements Missing Apps/Backlog Data */}
+                      {DataRequirement.reqStatus !== "APPROVED" && (
                         <CrucialDataAlertDetail 
                           requirementData={DataRequirement}
                           setActiveStep={setActiveStep}
+                          requirementType={reqType}
+                          pageMode={PageMode}
                         />
                       )}
                     </Box>

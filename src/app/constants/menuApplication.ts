@@ -191,6 +191,14 @@ export const LinkItems: LinkItemProps[] = [
         children: [],
       },
       {
+        name: "Pending Approve",
+        icon: MdOutlineCircle,
+        link: "/requirements/approval-hub",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
         name: "Prerequisites",
         icon: MdChangeHistory,
         isPro: true,

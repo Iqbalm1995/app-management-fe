@@ -535,11 +535,11 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                               Imported Project
                             </AlertTitle>
                             <AlertDescription fontSize="xs">
-                              Some project features are unavailable. Please complete the Requirements Details to continue.
+                              Some project features are currently limited. Complete the Requirements Details to get the best experience.
                             </AlertDescription>
                           </Box>
                           {RequirementData && (
-                            <Link href={`/requirements/${RequirementData.requirementType?.toLowerCase() || 'brd'}/register?id=${RequirementData.id}`}>
+                            <Link target="_blank" rel="noopener noreferrer" href={`/requirements/${RequirementData.requirementType?.toLowerCase() || 'brd'}/register?id=${RequirementData.id}`}>
                               <Button size="xs" colorScheme="red" variant="solid">
                                 Edit Requirement
                               </Button>
