@@ -162,7 +162,7 @@ interface CrucialDataAlertDetailProps {
 const CrucialDataAlertDetail: React.FC<CrucialDataAlertDetailProps> = ({ requirementData, setActiveStep, requirementType, pageMode }) => {
   const hasAppData = requirementData.appInitialCode && requirementData.appInitialCode.trim() !== "";
   const hasBacklogData = requirementData.backlogFeatures && requirementData.backlogFeatures.length > 0;
-  
+
   // Only show if missing critical data
   if (hasAppData && hasBacklogData) {
     return null;
@@ -180,7 +180,7 @@ const CrucialDataAlertDetail: React.FC<CrucialDataAlertDetailProps> = ({ require
           Data Penting Belum Lengkap!
         </AlertTitle>
         <AlertDescription fontSize="sm">
-          Requirement ini sudah disetujui namun masih memerlukan data berikut untuk dapat digunakan dalam proyek:
+          Requirement ini masih memerlukan data berikut untuk dapat digunakan dalam proyek:
           <VStack align="start" mt={2} spacing={1}>
             {missingItems.map((item, index) => (
               <HStack key={index} spacing={2}>
@@ -224,18 +224,18 @@ const ProjectsRelationSectionDetail: React.FC<ProjectsRelationSectionDetailProps
   const [projects, setProjects] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { GetProjectsByRequirementId } = useRequirements();
-  
+
   useEffect(() => {
     const fetchProjects = async () => {
       if (!requirementId) return;
-      
+
       setIsLoading(true);
       try {
         const authData = localStorage.getItem("authData");
         const token = localStorage.getItem("tokenData");
         if (authData && token) {
           const response = await GetProjectsByRequirementId(requirementId, token);
-          
+
           if (response && response.statusCode === RES_CODE_OK && response.data) {
             setProjects(response.data);
           }
@@ -279,7 +279,7 @@ const ProjectsRelationSectionDetail: React.FC<ProjectsRelationSectionDetailProps
         <Text fontSize="sm" color="gray.600">
           Requirement ini telah terdaftar ke dalam {projects.length} proyek berikut:
         </Text>
-        
+
         {projects.map((project, index) => (
           <Box
             key={project.id}
@@ -749,7 +749,7 @@ function RequirementDetailView() {
   useEffect(() => {
     const loadAvailableStatuses = async () => {
       if (!tokenData) return;
-      
+
       setIsLoadingStatuses(true);
       try {
         const result = await GetApprovalStatusChoices(tokenData);
@@ -1005,7 +1005,7 @@ function RequirementDetailView() {
 
                       {/* Crucial Alert for Non-Approved Requirements Missing Apps/Backlog Data */}
                       {DataRequirement.reqStatus !== "APPROVED" && (
-                        <CrucialDataAlertDetail 
+                        <CrucialDataAlertDetail
                           requirementData={DataRequirement}
                           setActiveStep={setActiveStep}
                           requirementType={reqType}
@@ -1023,12 +1023,12 @@ function RequirementDetailView() {
                             steps={steps}
                             activeStep={activeStep}
                           />
-                          
+
                           {/* Projects Section - Only show when requirement is approved */}
                           {DataRequirement.reqStatus === "APPROVED" && (
                             <ProjectsRelationSectionDetail requirementId={DataRequirement.id} />
                           )}
-                          
+
                           {/* Lock overlay */}
                           {/* {DataRequirement.isHaveMemo == "N" && (
                             <CoverLockedFeature
@@ -1538,12 +1538,12 @@ function RequirementDetailView() {
                           activeStep={activeStep}
                           OpenBacklogModal={OpenBacklogModal}
                         />
-                        
+
                         {/* Projects Section - Only show when requirement is approved */}
                         {DataRequirement.reqStatus === "APPROVED" && (
                           <ProjectsRelationSectionDetail requirementId={DataRequirement.id} />
                         )}
-                        
+
                         <InputGroupPanel headerTitle={`Lampiran`}>
                           <ReqInfoSummaryFileAttachmentsViewSimple
                             DataRequirement={DataRequirement}
