@@ -17,6 +17,7 @@ import axios from "axios";
 import handleAxiosError from "../utils/handleAxiosError";
 import { UsersResponse } from "./useUsers";
 import { MediaObjectResponse } from "./useMediaObject";
+import { SysModuleStatusFlowResponse } from "./useSysModuleGroup";
 
 export interface RequirementApprovalDataResponse {
   id: string;
@@ -70,6 +71,106 @@ export interface RequirementWorkProgramDataResponse {
   groupName?: string | null;
   createdAt: Date;
   createdBy: string;
+}
+
+export interface RequirementHistoryResponse {
+  id: string;
+  parentId: string;
+  requirementType: string;
+  reqNumber: string;
+  reqNarative: string;
+  reqInititateDate?: string | null;
+  reqAcceptedDate?: string | null;
+  reqStatus?: string | null;
+  reqDurationDay: number;
+  reqReviewStartDate?: string | null;
+  reqReviewEndDate?: string | null;
+  assignedFromId?: string | null;
+  assignedFromName?: string | null;
+  assignedToId?: string | null;
+  assignedToName?: string | null;
+  userPicId?: string | null;
+  userPicName?: string | null;
+  userPicContanct?: string | null;
+  userPicEmail?: string | null;
+  appInitialCode?: string | null;
+  appInitialName?: string | null;
+  backlogFeature?: string | null;
+  backlogDescription?: string | null;
+  backlogChange?: string | null;
+  note?: string | null;
+  nextStep?: string | null;
+  createdAt: string;
+  createdBy: string;
+  updatedAt?: string | null;
+  updatedBy?: string | null;
+  deletedAt?: string | null;
+  reffParentId?: string | null;
+  assignedToDate?: string | null;
+  reqReviewDurationDay: number;
+  isCarryOver: string;
+  senderDivisionId?: string | null;
+  senderDivisionCode?: string | null;
+  senderDivisionName?: string | null;
+  appAccessMedia?: string | null;
+  appTypes?: string | null;
+  appTypeCustom?: string | null;
+  appRelatedness?: string | null;
+  appRelatednessDesc?: string | null;
+  appTransactionals?: string | null;
+  appOperational24hrs?: string | null;
+  appOperationalDays?: string | null;
+  appOperationalHourOpen?: string | null;
+  appOperationalHourClosed?: string | null;
+  appLiveTargetDate?: string | null;
+  userPicIdentityNumber?: string | null;
+  userPicDivisionId?: string | null;
+  userPicDivisionCode?: string | null;
+  userPicDivisionName?: string | null;
+  userPicGroupId?: string | null;
+  userPicGroupCode?: string | null;
+  userPicGroupName?: string | null;
+  appEnvLocations?: string | null;
+  appEnvLocationsOthers?: string | null;
+  appPrivateAuth: string;
+  appHightAvailability: string;
+  appIntegrationOthersApps?: string | null;
+  isHaveMemo: string;
+  appTargetUsers: string;
+  appAccessFrontsiteDns?: string | null;
+  appAccessFrontsiteIp?: string | null;
+  appAccessBacksiteDns?: string | null;
+  appAccessBacksiteIp?: string | null;
+  senderDirectorateId?: string | null;
+  senderDirectorateCode?: string | null;
+  senderDirectorateName?: string | null;
+  userPicDirectorateId?: string | null;
+  userPicDirectorateCode?: string | null;
+  userPicDirectorateName?: string | null;
+  reqManageByDirectorateId?: string | null;
+  reqManageByDirectorateCode?: string | null;
+  reqManageByDirectorateName?: string | null;
+  reqManageByDivisionId?: string | null;
+  reqManageByDivisionCode?: string | null;
+  reqManageByDivisionName?: string | null;
+  reqManageByGroupId?: string | null;
+  reqManageByGroupCode?: string | null;
+  reqManageByGroupName?: string | null;
+  approvalBy?: string | null;
+  approvalAt?: string | null;
+  approvalNote?: string | null;
+  approvalNama?: string | null;
+  approvalJabatan?: string | null;
+  approvalNamaUnitKerja?: string | null;
+  approvalOrgDirectorateId?: string | null;
+  approvalOrgDirectorateCode?: string | null;
+  approvalOrgDirectorateName?: string | null;
+  approvalOrgDivisionId?: string | null;
+  approvalOrgDivisionCode?: string | null;
+  approvalOrgDivisionName?: string | null;
+  approvalOrgGroupId?: string | null;
+  approvalOrgGroupCode?: string | null;
+  approvalOrgGroupName?: string | null;
 }
 
 export interface RequirementsResponse {
@@ -171,6 +272,12 @@ export interface RequirementsResponse {
   backlogAvailableCount?: number;
   backlogTakenCount?: number;
 
+  // HISTORY
+  requirementHistories?: RequirementHistoryResponse[];
+
+  // STATUS INFO
+  isStatusFinal?: boolean;
+
   // ADDITIONAL
   createdAt: string;
   createdBy: string;
@@ -207,6 +314,12 @@ export interface ReqBacklogPayload {
   note?: string | null;
   posOrder: number;
   reffData?: BacklogDataResponse | null; // Parent backlog data for RFC
+}
+
+export interface RequirementApprovalPayload {
+  id: string;
+  statusApprove: string;
+  noteApproval?: string | null;
 }
 
 export interface RequirementsInsertPayload {
@@ -452,6 +565,21 @@ interface useRequirements {
   ) => Promise<ApiGenericResponse<string | null> | null>;
   RegisterUpdate: (
     payload: RequirementsInsertPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  ApproveRequirement: (
+    payload: RequirementApprovalPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  GetApprovalStatusChoices: (
+    token: string
+  ) => Promise<ApiGenericResponse<SysModuleStatusFlowResponse[] | null> | null>;
+  StartReview: (
+    id: string,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  RequestApproval: (
+    id: string,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
   GetReqParentAppsByAppsId: (
@@ -743,6 +871,169 @@ const useRequirements = (): useRequirements => {
         const errorResponse = handleAxiosError(err);
         setError(
           err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const ApproveRequirement = async (
+    payload: RequirementApprovalPayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Requirement/approve`;
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const GetApprovalStatusChoices = async (
+    token: string
+  ): Promise<ApiGenericResponse<SysModuleStatusFlowResponse[] | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Requirement/approval-status-choices`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<SysModuleStatusFlowResponse[]>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const StartReview = async (
+    id: string,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Requirement/start-review/${id}`;
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, {}, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const RequestApproval = async (
+    id: string,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Requirement/request-approval`;
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, { id }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred."
         );
         return errorResponse;
       } else {
@@ -1257,6 +1548,10 @@ const useRequirements = (): useRequirements => {
     InsertReq,
     RegisterDraft,
     RegisterUpdate,
+    ApproveRequirement,
+    GetApprovalStatusChoices,
+    StartReview,
+    RequestApproval,
     GetReqParentAppsByAppsId,
     GetReqParentAppsByAppsCode,
     GetReqParentAppsByAppsInitial,

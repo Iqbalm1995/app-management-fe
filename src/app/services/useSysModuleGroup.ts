@@ -54,6 +54,7 @@ export interface SysModuleStatusFlowResponse {
   nextCodeStatus?: string | null;
   isFinish: string;
   isConfirmApproval: string;
+  isDisplayOnChoice: string;
   createdAt: string;
   createdBy: string;
   updatedAt?: string | null;
@@ -69,6 +70,7 @@ export interface SysModuleStatusFlowInsertPayload {
   nextCodeStatus?: string | null;
   isFinish: string;
   isConfirmApproval: string;
+  isDisplayOnChoice: string;
 }
 
 export interface SysModuleStatusFlowUpdatePayload {
@@ -80,6 +82,7 @@ export interface SysModuleStatusFlowUpdatePayload {
   nextCodeStatus?: string | null;
   isFinish: string;
   isConfirmApproval: string;
+  isDisplayOnChoice: string;
 }
 
 interface useSysModuleGroupServices {

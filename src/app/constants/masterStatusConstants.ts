@@ -6,6 +6,7 @@ export const REQ_STATUS_CARRY_OVER = "CARRY OVER";
 export const REQ_STATUS_NEED_REVIEW = "NEEDS REVIEW";
 export const REQ_STATUS_IN_PROGRESS_REVIEW = "IN PROGRESS REVIEW";
 export const REQ_STATUS_TEMPORARY_APPROVED = "TEMPORARY APPROVED";
+export const REQ_WAITING_APPROVAL = "WAITING APPROVAL";
 export const REQ_STATUS_APPROVED = "APPROVED";
 export const REQ_STATUS_ON_HOLD = "ON HOLD";
 export const REQ_STATUS_CANCELED = "CANCELED";
@@ -22,6 +23,7 @@ export const REQ_DONES_STATUS = ["APPROVED", "TEMPORARY APPROVED"];
 export const REQUIREMENT_STATUSES = [
   "DRAFT",
   "CARRY OVER",
+  "WAITING APPROVAL",
   "NEEDS REVIEW",
   "IN PROGRESS REVIEW",
   "TEMPORARY APPROVED",
@@ -32,6 +34,7 @@ export const REQUIREMENT_STATUSES = [
 
 // PROJECT STATUSES
 export const PRO_STATUS_INITIATE = "INITIATING";
+export const PRO_WAITING_APPROVAL = "WAITING APPROVAL";
 export const PRO_STATUS_RUNNING = "RUNNING";
 export const PRO_STATUS_TEMPORARY_CLOSED = "TEMPORARY CLOSED";
 export const PRO_STATUS_CLOSED = "CLOSED";
@@ -78,23 +81,23 @@ export const PROJECT_DEVELOPMENT_STATUSES = [
 
 // STATUS COLOR MAPPINGS
 export const STATUS_COLORS = {
-  "CANCELED": "red",
-  "ON_HOLD": "orange",
+  CANCELED: "red",
+  ON_HOLD: "orange",
 
   // Requirement Status Colors
-  "DRAFT": "gray",
+  DRAFT: "gray",
   "CARRY OVER": "orange",
   "NEEDS REVIEW": "yellow",
   "IN PROGRESS REVIEW": "blue",
   "TEMPORARY APPROVED": "cyan",
-  "APPROVED": "green",
+  APPROVED: "green",
 
   // Project Status Colors
-  "INITIATING": "blue",
-  "RUNNING": "green",
+  INITIATING: "blue",
+  RUNNING: "green",
   "TEMPORARY CLOSED": "orange",
-  "CLOSED": "green",
-  "COMPLETED": "green",
+  CLOSED: "green",
+  COMPLETED: "green",
 
   // Project Development Status Colors
   "NOT STARTED": "gray",

@@ -108,6 +108,9 @@ export const RES_CODE_SERVER_ERROR: number = 500;
 export const GENERAL_STATUS_ACTIVE: string = "ACTIVE";
 export const GENERAL_STATUS_INACTIVE: string = "INACTIVE";
 
+// MODULE CODES
+export const MODULE_CODE_REQUIREMENT: string = "SYS_REQUIREMENT";
+
 export const OptionChangeLogsCategory: OptionListProps[] = [
   {
     label: "INFO",

@@ -56,7 +56,9 @@ import useRequirements, {
   BacklogDataResponse,
   RequirementsResponse,
   RequirementWorkProgramDataResponse,
+  RequirementApprovalPayload,
 } from "@/app/services/useRequirements";
+import { SysModuleStatusFlowResponse } from "@/app/services/useSysModuleGroup";
 import {
   ColumnMetaCustom,
   ListSearchByParam,
@@ -352,7 +354,7 @@ function RequirementDetailView() {
     }
   };
 
-  const { GetDetailById, ListBacklog, ListReqMedia } = useRequirements();
+  const { GetDetailById, ListBacklog, ListReqMedia, ApproveRequirement, GetApprovalStatusChoices } = useRequirements();
 
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
@@ -724,9 +726,91 @@ function RequirementDetailView() {
     null
   );
   const [ApprovalNote, setApprovalNote] = useState<string | null>(null);
+  const [availableStatuses, setAvailableStatuses] = useState<SysModuleStatusFlowResponse[]>([]);
+  const [isLoadingStatuses, setIsLoadingStatuses] = useState(false);
+  const [isSubmittingApproval, setIsSubmittingApproval] = useState(false);
+  const { isOpen: isApprovalModalOpen, onOpen: onApprovalModalOpen, onClose: onApprovalModalClose } = useDisclosure();
+
+  // Load available statuses for approval
+  useEffect(() => {
+    const loadAvailableStatuses = async () => {
+      if (!tokenData) return;
+      
+      setIsLoadingStatuses(true);
+      try {
+        const result = await GetApprovalStatusChoices(tokenData);
+        if (result?.statusCode === RES_CODE_OK && result.data) {
+          setAvailableStatuses(result.data);
+        }
+      } catch (error) {
+        console.error("Error loading statuses:", error);
+      } finally {
+        setIsLoadingStatuses(false);
+      }
+    };
+
+    loadAvailableStatuses();
+  }, [tokenData]);
+
+  const handleApprovalSubmit = async () => {
+    if (!StatusRequirement) {
+      showToast({
+        description: "Please select a status",
+        statusToast: "warning",
+      });
+      return;
+    }
+
+    if (!DataRequirement?.id) {
+      showToast({
+        description: "Requirement data not loaded",
+        statusToast: "error",
+      });
+      return;
+    }
+
+    setIsSubmittingApproval(true);
+    try {
+      const payload: RequirementApprovalPayload = {
+        id: DataRequirement.id,
+        statusApprove: StatusRequirement,
+        noteApproval: ApprovalNote,
+      };
+
+      const result = await ApproveRequirement(payload, tokenData);
+      if (result?.statusCode === RES_CODE_OK) {
+        showToast({
+          description: "Requirement approved successfully",
+          statusToast: "success",
+        });
+        onApprovalModalClose();
+        // Reload page to refresh data
+        window.location.reload();
+      } else {
+        showToast({
+          description: result?.message || "Failed to approve requirement",
+          statusToast: "error",
+        });
+      }
+    } catch (error) {
+      showToast({
+        description: "An error occurred while approving",
+        statusToast: "error",
+      });
+    } finally {
+      setIsSubmittingApproval(false);
+    }
+  };
 
   const ActionApprovalChangeStatus = () => {
-    console.log("Action Approval");
+    if (!StatusRequirement) {
+      showToast({
+        description: "Please select a status",
+        statusToast: "warning",
+      });
+      return;
+    }
+    onApprovalModalOpen();
   };
 
   // End - Update status Reuirements
@@ -1328,178 +1412,75 @@ function RequirementDetailView() {
                         </InputGroupPanel>
 
                         <InputGroupPanel headerTitle={"Update Status"}>
-                          <FormControl>
-                            <InputLayoutFull>
-                              <FormLabel h={"full"} mt={2}>
-                                Status Action
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
+                          {DataRequirement?.isStatusFinal ? (
+                            <Alert status="success" rounded="md">
+                              <AlertIcon />
+                              <VStack align="start" spacing={1}>
+                                <Text fontWeight="bold">
+                                  Status Already Final
+                                </Text>
+                                <Text fontSize="sm">
+                                  Current Status: <Badge colorScheme="green">{DataRequirement.reqStatus}</Badge>
+                                </Text>
+                                <Text fontSize="sm" color="gray.600">
+                                  This requirement has reached a final status and cannot be changed.
+                                </Text>
+                              </VStack>
+                            </Alert>
+                          ) : (
+                            <Flex as={Stack} spacing={4}>
+                              <FormControl>
+                                <FormLabel>Status Approval</FormLabel>
                                 <RadioGroup
-                                  onChange={setStatusRequirement}
                                   value={StatusRequirement || ""}
+                                  onChange={setStatusRequirement}
                                 >
-                                  <Wrap spacing={5}>
-                                    <Box
-                                      bg={
-                                        DataRequirement.reqStatus ===
-                                          REQ_STATUS_APPROVED
-                                          ? "green.400"
-                                          : "gray.200"
-                                      }
-                                      py={2}
-                                      px={4}
-                                      rounded={"md"}
-                                      color={
-                                        DataRequirement.reqStatus ===
-                                          REQ_STATUS_APPROVED
-                                          ? "green.900"
-                                          : "gray.500"
-                                      }
-                                      fontWeight={600}
-                                      opacity={
-                                        DataRequirement.reqStatus ===
-                                          REQ_STATUS_APPROVED
-                                          ? 1
-                                          : 0.5
-                                      }
-                                    >
-                                      <Radio
-                                        value={REQ_STATUS_APPROVED}
-                                        isDisabled={
-                                          DataRequirement.reqStatus !==
-                                          REQ_STATUS_APPROVED
-                                        }
-                                      >
-                                        {REQ_STATUS_APPROVED}
-                                      </Radio>
-                                    </Box>
-                                    <Box
-                                      bg={
-                                        DataRequirement.reqStatus ===
-                                          REQ_STATUS_TEMPORARY_APPROVED
-                                          ? "teal.400"
-                                          : "gray.200"
-                                      }
-                                      py={2}
-                                      px={4}
-                                      rounded={"md"}
-                                      color={
-                                        DataRequirement.reqStatus ===
-                                          REQ_STATUS_TEMPORARY_APPROVED
-                                          ? "teal.900"
-                                          : "gray.500"
-                                      }
-                                      fontWeight={600}
-                                      opacity={
-                                        DataRequirement.reqStatus ===
-                                          REQ_STATUS_TEMPORARY_APPROVED
-                                          ? 1
-                                          : 0.5
-                                      }
-                                    >
-                                      <Radio
-                                        value={REQ_STATUS_TEMPORARY_APPROVED}
-                                        isDisabled={
-                                          DataRequirement.reqStatus !==
-                                          REQ_STATUS_TEMPORARY_APPROVED
-                                        }
-                                      >
-                                        {REQ_STATUS_TEMPORARY_APPROVED}
-                                      </Radio>
-                                    </Box>
-
-                                    <Box
-                                      bg={
-                                        DataRequirement.reqStatus ===
-                                          REQ_STATUS_ON_HOLD
-                                          ? "yellow.400"
-                                          : "gray.200"
-                                      }
-                                      py={2}
-                                      px={4}
-                                      rounded={"md"}
-                                      color={
-                                        DataRequirement.reqStatus ===
-                                          REQ_STATUS_ON_HOLD
-                                          ? "yellow.900"
-                                          : "gray.500"
-                                      }
-                                      fontWeight={600}
-                                      opacity={
-                                        DataRequirement.reqStatus ===
-                                          REQ_STATUS_ON_HOLD
-                                          ? 1
-                                          : 0.5
-                                      }
-                                    >
-                                      <Radio
-                                        value={REQ_STATUS_ON_HOLD}
-                                        isDisabled={
-                                          DataRequirement.reqStatus !==
-                                          REQ_STATUS_ON_HOLD
-                                        }
-                                      >
-                                        {REQ_STATUS_ON_HOLD}
-                                      </Radio>
-                                    </Box>
-                                    <Box
-                                      bg={
-                                        DataRequirement.reqStatus ===
-                                          REQ_STATUS_CANCELED
-                                          ? "red.400"
-                                          : "gray.200"
-                                      }
-                                      py={2}
-                                      px={4}
-                                      rounded={"md"}
-                                      color={
-                                        DataRequirement.reqStatus ===
-                                          REQ_STATUS_CANCELED
-                                          ? "red.900"
-                                          : "gray.500"
-                                      }
-                                      fontWeight={600}
-                                      opacity={
-                                        DataRequirement.reqStatus ===
-                                          REQ_STATUS_CANCELED
-                                          ? 1
-                                          : 0.5
-                                      }
-                                    >
-                                      <Radio
-                                        value={REQ_STATUS_CANCELED}
-                                        isDisabled={
-                                          DataRequirement.reqStatus !==
-                                          REQ_STATUS_CANCELED
-                                        }
-                                      >
-                                        {REQ_STATUS_CANCELED}
-                                      </Radio>
-                                    </Box>
-                                  </Wrap>
+                                  <Stack spacing={3}>
+                                    {isLoadingStatuses ? (
+                                      <Text fontSize="sm" color="gray.500">
+                                        Loading statuses...
+                                      </Text>
+                                    ) : availableStatuses.length === 0 ? (
+                                      <Text fontSize="sm" color="gray.500">
+                                        No approval statuses available
+                                      </Text>
+                                    ) : (
+                                      availableStatuses.map((status) => (
+                                        <Radio key={status.id} value={status.codeStatus}>
+                                          <HStack>
+                                            <Text>{status.nameStatus}</Text>
+                                            <Badge colorScheme="blue" fontSize="xs">
+                                              {status.codeStatus}
+                                            </Badge>
+                                          </HStack>
+                                        </Radio>
+                                      ))
+                                    )}
+                                  </Stack>
                                 </RadioGroup>
-                              </Stack>
-                            </InputLayoutFull>
-                          </FormControl>
+                              </FormControl>
 
-                          <FormControl>
-                            <InputLayoutFull>
-                              <FormLabel h={"full"} mt={2}>
-                                Catatan
-                              </FormLabel>
-                              <Stack spacing={0} h={"full"}>
+                              <FormControl>
+                                <FormLabel>Note Approval</FormLabel>
                                 <Textarea
-                                  id="reqNote"
-                                  name="reqNote"
-                                  // onChange={formik.handleChange}
-                                  // defaultValue={formik.values.projectDesc ?? ""}
-                                  placeholder={`Catatan (Opsional)`}
-                                  maxLength={300}
-                                // isDisabled={ActionLoading}
+                                  value={ApprovalNote || ""}
+                                  onChange={(e) => setApprovalNote(e.target.value)}
+                                  placeholder="Enter approval note (optional)"
+                                  rows={4}
                                 />
-                              </Stack>
-                            </InputLayoutFull>
-                          </FormControl>
+                              </FormControl>
+
+                              <Flex justifyContent="flex-end">
+                                <Button
+                                  colorScheme="blue"
+                                  onClick={ActionApprovalChangeStatus}
+                                  isDisabled={!StatusRequirement || isSubmittingApproval}
+                                >
+                                  Submit Approval
+                                </Button>
+                              </Flex>
+                            </Flex>
+                          )}
                         </InputGroupPanel>
                       </Flex>
                     )}
@@ -1626,6 +1607,78 @@ function RequirementDetailView() {
           <LoadingMiniSignature />
         </Flex>
       )}
+
+      {/* Approval Confirmation Modal */}
+      <Modal isOpen={isApprovalModalOpen} onClose={onApprovalModalClose} isCentered>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Confirm Approval</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={6}>
+            <VStack align="stretch" spacing={4}>
+              <Box>
+                <Text fontWeight="bold" mb={2}>
+                  Approval Details:
+                </Text>
+                <Stack spacing={2}>
+                  <HStack>
+                    <Text fontWeight="semibold" minW="120px">
+                      Requirement:
+                    </Text>
+                    <Text>
+                      {DataRequirement?.reqNumber || DataRequirement?.reqNarative || "-"}
+                    </Text>
+                  </HStack>
+                  <HStack>
+                    <Text fontWeight="semibold" minW="120px">
+                      Approve Status:
+                    </Text>
+                    <Badge colorScheme="blue">
+                      {availableStatuses.find((s) => s.codeStatus === StatusRequirement)?.nameStatus || StatusRequirement}
+                    </Badge>
+                  </HStack>
+                  <HStack>
+                    <Text fontWeight="semibold" minW="120px">
+                      Approve By:
+                    </Text>
+                    <Text>{DataAuth?.nama || "-"}</Text>
+                  </HStack>
+                  {ApprovalNote && (
+                    <Box>
+                      <Text fontWeight="semibold" mb={1}>
+                        Note:
+                      </Text>
+                      <Text fontSize="sm" color="gray.600">
+                        {ApprovalNote}
+                      </Text>
+                    </Box>
+                  )}
+                </Stack>
+              </Box>
+
+              <Alert status="info" rounded="md">
+                <AlertIcon />
+                <Text fontSize="sm">
+                  Are you sure you want to approve this requirement with the selected status?
+                </Text>
+              </Alert>
+
+              <HStack justifyContent="flex-end" spacing={3}>
+                <Button variant="outline" onClick={onApprovalModalClose}>
+                  Cancel
+                </Button>
+                <Button
+                  colorScheme="blue"
+                  onClick={handleApprovalSubmit}
+                  isLoading={isSubmittingApproval}
+                >
+                  Confirm Approval
+                </Button>
+              </HStack>
+            </VStack>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </LayoutAdmin>
   );
 }
@@ -2951,124 +3004,97 @@ const ReqInfoAcceptanceView = ({
   steps,
   activeStep,
 }: ReqSectionProps) => {
+  // Get latest history for review dates
+  const latestHistory = DataRequirement?.requirementHistories && DataRequirement.requirementHistories.length > 0
+    ? DataRequirement.requirementHistories[DataRequirement.requirementHistories.length - 1]
+    : null;
+
+  const reviewStartDate = DataRequirement.reqReviewStartDate || latestHistory?.reqReviewStartDate;
+  const reviewEndDate = DataRequirement.reqReviewEndDate || latestHistory?.reqReviewEndDate;
+
   return (
     <>
-      <InputGroupPanel headerTitle={"Former BRD Acceptance"}>
-        <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"}>
-          <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }} w={"full"}>
-            <Flex as={Stack} w={"full"} spacing={5}>
-              <FormControl>
-                <InputLayoutFullHalf>
-                  <FormLabel h={"full"} mt={2}>
-                    Tanggal Mulai Review
-                  </FormLabel>
-                  <Stack spacing={0} h={"full"}>
-                    <Text>
-                      {DataRequirement.reqReviewStartDate != null
-                        ? formatDateInputCustom(
-                          DataRequirement.reqReviewStartDate,
-                          "/"
-                        )
-                        : "N/A"}
-                    </Text>
-                  </Stack>
-                </InputLayoutFullHalf>
-              </FormControl>
+      {DataRequirement?.requirementHistories && DataRequirement.requirementHistories.length > 0 ? (
+        DataRequirement.requirementHistories.map((history, idx) => (
+          <InputGroupPanel key={idx} headerTitle={`Former BRD Acceptance #${idx + 1}`}>
+            <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"}>
+              <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }} w={"full"}>
+                <Flex as={Stack} w={"full"} spacing={5}>
+                  <FormControl>
+                    <InputLayoutFullHalf>
+                      <FormLabel h={"full"} mt={2}>
+                        Tanggal Mulai Review
+                      </FormLabel>
+                      <Stack spacing={0} h={"full"}>
+                        <Text>
+                          {history.reqReviewStartDate != null
+                            ? formatDateInputCustom(history.reqReviewStartDate, "/")
+                            : "N/A"}
+                        </Text>
+                      </Stack>
+                    </InputLayoutFullHalf>
+                  </FormControl>
 
-              <FormControl>
-                <InputLayoutFullHalf>
-                  <FormLabel h={"full"} mt={2}>
-                    Tanggal Selesai Review
-                  </FormLabel>
-                  <Stack spacing={0} h={"full"}>
-                    <Text>
-                      {DataRequirement.reqReviewEndDate != null
-                        ? formatDateInputCustom(
-                          DataRequirement.reqReviewEndDate,
-                          "/"
-                        )
-                        : "N/A"}
-                    </Text>
-                  </Stack>
-                </InputLayoutFullHalf>
-              </FormControl>
+                  <FormControl>
+                    <InputLayoutFullHalf>
+                      <FormLabel h={"full"} mt={2}>
+                        Tanggal Selesai Review
+                      </FormLabel>
+                      <Stack spacing={0} h={"full"}>
+                        <Text>
+                          {history.reqReviewEndDate != null
+                            ? formatDateInputCustom(history.reqReviewEndDate, "/")
+                            : "N/A"}
+                        </Text>
+                      </Stack>
+                    </InputLayoutFullHalf>
+                  </FormControl>
 
-              <FormControl>
-                <InputLayoutFullHalf>
-                  <FormLabel h={"full"} mt={2}>
-                    Durasi Review
-                  </FormLabel>
-                  <Stack spacing={0} h={"full"}>
-                    <Text>
-                      {DataRequirement.reqReviewDurationDay != null
-                        ? `${DataRequirement.reqReviewDurationDay} Hari kalender`
-                        : "N/A"}
-                    </Text>
-                  </Stack>
-                </InputLayoutFullHalf>
-              </FormControl>
+                  <FormControl>
+                    <InputLayoutFullHalf>
+                      <FormLabel h={"full"} mt={2}>
+                        Diapprove Oleh
+                      </FormLabel>
+                      <Stack spacing={0} h={"full"}>
+                        <Text>{history.approvalNama || "N/A"}</Text>
+                      </Stack>
+                    </InputLayoutFullHalf>
+                  </FormControl>
+                </Flex>
+              </GridItem>
+              <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }} w={"full"}>
+                <Flex as={Stack} w={"full"} spacing={5}>
+                  <FormControl>
+                    <InputLayoutFull>
+                      <FormLabel h={"full"} mt={2}>
+                        Catatan
+                      </FormLabel>
+                      <Stack spacing={0} h={"full"}>
+                        <Text>{history.approvalNote || "N/A"}</Text>
+                      </Stack>
+                    </InputLayoutFull>
+                  </FormControl>
 
-              <FormControl>
-                <InputLayoutFullHalf>
-                  <FormLabel h={"full"} mt={2}>
-                    Direview Oleh
-                  </FormLabel>
-                  <Stack spacing={0} h={"full"}>
-                    <OrderedList>
-                      {DataRequirement?.approvalDatas?.length ? (
-                        DataRequirement.approvalDatas.map((ua, idx) => (
-                          <ListItem key={idx}>
-                            {`${ua.approverUserFirstName ?? "N/A"} (${ua.approverUserCode ?? "N/A"
-                              })`}
-                          </ListItem>
-                        ))
-                      ) : (
-                        <ListItem color="gray.500" fontStyle="italic">
-                          Tidak ada data approval
-                        </ListItem>
-                      )}
-                    </OrderedList>
-                  </Stack>
-                </InputLayoutFullHalf>
-              </FormControl>
-
-              <FormControl>
-                <InputLayoutFullHalf>
-                  <FormLabel h={"full"} mt={2}>
-                    Diapprove Oleh
-                  </FormLabel>
-                  <Stack spacing={0} h={"full"}>
-                    <Text>N/A</Text>
-                  </Stack>
-                </InputLayoutFullHalf>
-              </FormControl>
-            </Flex>
-          </GridItem>
-          <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }} w={"full"}>
-            <Flex as={Stack} w={"full"} spacing={5}>
-              <FormControl>
-                <InputLayoutFull>
-                  <FormLabel h={"full"} mt={2}>
-                    Catatan
-                  </FormLabel>
-                  <Stack spacing={0} h={"full"}>
-                    <Text>N/A</Text>
-                  </Stack>
-                </InputLayoutFull>
-              </FormControl>
-            </Flex>
-          </GridItem>
-          <GridItem
-            colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}
-            w={"full"}
-          ></GridItem>
-          <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }} w={"full"}>
-            <Flex as={Stack} w={"full"} spacing={5}>
-              <SummaryStatusReq status={DataRequirement.reqStatus || "N/A"} />
-            </Flex>
-          </GridItem>
-        </Grid>
-      </InputGroupPanel>
+                  <FormControl>
+                    <InputLayoutFull>
+                      <FormLabel h={"full"} mt={2}>
+                        Status
+                      </FormLabel>
+                      <Stack spacing={0} h={"full"}>
+                        <SummaryStatusReq status={history.reqStatus || "N/A"} />
+                      </Stack>
+                    </InputLayoutFull>
+                  </FormControl>
+                </Flex>
+              </GridItem>
+            </Grid>
+          </InputGroupPanel>
+        ))
+      ) : (
+        <InputGroupPanel headerTitle={"Former BRD Acceptance"}>
+          <Text color="gray.500" fontStyle="italic">Tidak ada data approval history</Text>
+        </InputGroupPanel>
+      )}
     </>
   );
 };

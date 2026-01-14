@@ -53,6 +53,8 @@ import {
 import {
   REQ_STATUS_NEED_REVIEW,
   REQ_STATUS_CAN_EDIT,
+  REQ_STATUS_IN_PROGRESS_REVIEW,
+  REQ_WAITING_APPROVAL,
 } from "@/app/constants/masterStatusConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import {
@@ -532,6 +534,7 @@ function RegisterRequirementFormPage({
     InsertReq,
     RegisterDraft,
     RegisterUpdate,
+    RequestApproval,
     ListReqMedia,
     GetDetailById,
     ListBacklog,
@@ -540,6 +543,7 @@ function RegisterRequirementFormPage({
   const [requirementId, setRequirementId] = useState<string | null>(null);
   const [requirementStatus, setRequirementStatus] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
+  const [isReviewMode, setIsReviewMode] = useState<boolean>(false);
   const { ListConstantData } = useConstants();
   const { List: ListUsers } = useUsers();
   const { List: ListOrganization } = useOrganization();
@@ -681,9 +685,11 @@ function RegisterRequirementFormPage({
     if (typeof window !== "undefined") {
       const urlParams = new URLSearchParams(window.location.search);
       const reqIdFromUrl = urlParams.get("id");
+      const modeFromUrl = urlParams.get("mode");
       if (reqIdFromUrl && !requirementId && tokenData) {
         setRequirementId(reqIdFromUrl);
         setIsEditMode(true);
+        setIsReviewMode(modeFromUrl === "review");
         loadRequirementData(reqIdFromUrl);
       }
     }
@@ -1760,6 +1766,156 @@ function RegisterRequirementFormPage({
     }
   };
 
+  const handleRequestApproval = async () => {
+    if (!requirementId) {
+      showToast({
+        description: "Requirement ID not found",
+        statusToast: "error",
+      });
+      return;
+    }
+
+    // Validate form data
+    if (ChoosedMemberProjects.length <= 0) {
+      showToast({
+        description: "Personel yang ditugaskan tidak boleh kosong",
+        statusToast: "warning",
+      });
+      return;
+    }
+
+    if (
+      (type_req_param === "BRD" && DataBackLogs.length <= 0) ||
+      (type_req_param === "RFC" &&
+        (!formik.values.backlogFeatures || formik.values.backlogFeatures.length <= 0))
+    ) {
+      showToast({
+        description:
+          type_req_param === "BRD"
+            ? "Scope of Work BRD tidak boleh kosong"
+            : "Perubahan Sistem tidak boleh kosong",
+        statusToast: "warning",
+      });
+      return;
+    }
+
+    const totalFiles = uploadedFiles.length + files.length;
+    if (totalFiles <= 0 && formik.values.isHaveMemo !== "N") {
+      showToast({
+        description: `Upload files must be uploaded, at least one.`,
+        statusToast: "warning",
+      });
+      return;
+    }
+
+    setActionLoading(true);
+    await delay(DELAY_MEDIUM);
+
+    // First, update the requirement data
+    const payload = {
+      requirementId: requirementId,
+      isSubmitSave: true,
+      ...formik.values,
+      backlogFeatures:
+        formik.values.requirementType === "RFC" &&
+          formik.values.backlogFeatures &&
+          formik.values.backlogFeatures.length > 0
+          ? formik.values.backlogFeatures.map((b: any) => ({
+            Id: b.id || null,
+            ParentBacklogId: b.parentBacklogId,
+            BacklogName: b.backlogName,
+            BacklogDesc: b.backlogDesc,
+            Note: b.note,
+            PosOrder: b.posOrder,
+            parentBacklogId: b.parentBacklogId,
+            backlogName: b.backlogName,
+            backlogDesc: b.backlogDesc,
+            note: b.note,
+            posOrder: b.posOrder,
+          }))
+          : DataBackLogs.map((b) => ({
+            Id: b.backlogId || null,
+            ParentBacklogId: b.parentBacklogId,
+            BacklogName: b.backlogName,
+            BacklogDesc: b.backlogDesc,
+            Note: b.note,
+            PosOrder: b.posOrder,
+            backlogId: b.backlogId || null,
+            parentBacklogId: b.parentBacklogId,
+            backlogName: b.backlogName,
+            backlogDesc: b.backlogDesc,
+            note: b.note,
+            posOrder: b.posOrder,
+          })),
+      picAssignUsers: ChoosedMemberProjects.map((m) => ({
+        Id: m.id || null,
+        UserId: m.userId,
+        userId: m.userId,
+      })),
+      PICAssignUsers: ChoosedMemberProjects.map((m) => ({
+        Id: m.id || null,
+        UserId: m.userId,
+      })),
+      workPrograms: formik.values.workPrograms.map((w: any) => ({
+        Id: w.id || null,
+        DirectorateId: w.directorateId,
+        DivisionId: w.divisionId,
+        GroupId: w.groupId,
+        WorkProgramSource: w.workProgramSource,
+        WorkProgramCode: w.workProgramCode,
+        WorkProgramName: w.workProgramName,
+        WorkProgramAccName: w.workProgramAccName,
+        WorkProgramAccNumber: w.workProgramAccNumber,
+        WorkProgramAccCc: w.workProgramAccCc,
+        WorkProgramBudget: w.workProgramBudget,
+        WorkProgramReal: w.workProgramReal,
+        directorateId: w.directorateId,
+        divisionId: w.divisionId,
+        groupId: w.groupId,
+        workProgramSource: w.workProgramSource,
+        workProgramCode: w.workProgramCode,
+        workProgramName: w.workProgramName,
+        workProgramAccName: w.workProgramAccName,
+        workProgramAccNumber: w.workProgramAccNumber,
+        workProgramAccCc: w.workProgramAccCc,
+        workProgramBudget: w.workProgramBudget,
+        workProgramReal: w.workProgramReal,
+      })),
+    };
+
+    const updateResult = await RegisterUpdate(payload, tokenData);
+    
+    if (updateResult?.statusCode !== RES_CODE_OK) {
+      showToast({
+        description: updateResult?.message || "Failed to update requirement",
+        statusToast: "error",
+      });
+      setActionLoading(false);
+      return;
+    }
+
+    // Upload files if any
+    await uploadFilesForDraft(requirementId);
+
+    // Then, request approval
+    const approvalResult = await RequestApproval(requirementId, tokenData);
+    
+    if (approvalResult?.statusCode === RES_CODE_OK) {
+      showToast({
+        description: "Requirement updated and approval request submitted successfully",
+        statusToast: "success",
+      });
+      router.push("/requirements/brd-rfc");
+    } else {
+      showToast({
+        description: approvalResult?.message || "Failed to submit approval request",
+        statusToast: "error",
+      });
+    }
+    
+    setActionLoading(false);
+  };
+
   const handleSaveDraft = async () => {
     setActionLoading(true);
     await delay(DELAY_MEDIUM);
@@ -2425,6 +2581,16 @@ function RegisterRequirementFormPage({
         breadCrumb={HeaderDataContent.breadCrumb}
       />
 
+      {isEditMode && isReviewMode && (
+        <Alert status="info" mb={4} rounded="md">
+          <AlertIcon />
+          <VStack align="start" spacing={0}>
+            <Text fontWeight="bold">Review Mode</Text>
+            <Text fontSize="sm">You are reviewing this requirement</Text>
+          </VStack>
+        </Alert>
+      )}
+
       <ConfirmationDialog
         key={"confirmSaveData"}
         isOpenTrigger={openConfirmSaveDialog}
@@ -2469,6 +2635,19 @@ function RegisterRequirementFormPage({
                   size={"lg"}
                 >
                   {isEditMode ? "Update Draft" : "Save Draft"}
+                </Button>
+              )}
+              {isEditMode && isReviewMode && 
+               (requirementStatus === REQ_STATUS_NEED_REVIEW || requirementStatus === REQ_STATUS_IN_PROGRESS_REVIEW) && (
+                <Button
+                  colorScheme={"orange"}
+                  leftIcon={<FiSave />}
+                  onClick={handleRequestApproval}
+                  isLoading={ActionLoading}
+                  px={8}
+                  size={"lg"}
+                >
+                  Approval Request
                 </Button>
               )}
               <Button

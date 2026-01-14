@@ -40,6 +40,13 @@ const LabelMaster = ({ labelName, groupLabel }: LabelMasterProps) => {
         </Badge>
       );
     }
+    if (labelName == "WAITING APPROVAL") {
+      return (
+        <Badge fontSize="1em" px={2} py={1} rounded={"md"} colorScheme={"yellow"}>
+          {labelName}
+        </Badge>
+      );
+    }
     if (labelName == "TEMPORARY APPROVED") {
       return (
         <Badge fontSize="1em" px={2} py={1} rounded={"md"} colorScheme={"teal"}>

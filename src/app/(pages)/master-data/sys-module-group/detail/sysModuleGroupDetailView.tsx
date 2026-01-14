@@ -118,6 +118,7 @@ function SysModuleGroupDetailView() {
     nextCodeStatus: "",
     isFinish: "N",
     isConfirmApproval: "N",
+    isDisplayOnChoice: "N",
   });
   const [isSavingStatusFlow, setIsSavingStatusFlow] = useState(false);
 
@@ -429,6 +430,7 @@ function SysModuleGroupDetailView() {
       nextCodeStatus: "",
       isFinish: "N",
       isConfirmApproval: "N",
+      isDisplayOnChoice: "N",
     });
     setIsStatusFlowModalOpen(true);
   };
@@ -445,6 +447,7 @@ function SysModuleGroupDetailView() {
       nextCodeStatus: flow.nextCodeStatus || "",
       isFinish: flow.isFinish,
       isConfirmApproval: flow.isConfirmApproval,
+      isDisplayOnChoice: flow.isDisplayOnChoice,
     });
     setIsStatusFlowModalOpen(true);
   };
@@ -472,6 +475,7 @@ function SysModuleGroupDetailView() {
           nextCodeStatus: statusFlowForm.isFinish === "Y" ? null : statusFlowForm.nextCodeStatus || null,
           isFinish: statusFlowForm.isFinish,
           isConfirmApproval: statusFlowForm.isConfirmApproval,
+          isDisplayOnChoice: statusFlowForm.isDisplayOnChoice,
         };
         result = await UpdateStatusFlow(payload, tokenData);
       } else {
@@ -484,6 +488,7 @@ function SysModuleGroupDetailView() {
           nextCodeStatus: statusFlowForm.isFinish === "Y" ? null : statusFlowForm.nextCodeStatus || null,
           isFinish: statusFlowForm.isFinish,
           isConfirmApproval: statusFlowForm.isConfirmApproval,
+          isDisplayOnChoice: statusFlowForm.isDisplayOnChoice,
         };
         result = await InsertStatusFlow(payload, tokenData);
       }
@@ -898,6 +903,9 @@ function SysModuleGroupDetailView() {
                                           {hasBranching && (
                                             <Badge colorScheme="orange">APPROVAL POINT</Badge>
                                           )}
+                                          {flow.isDisplayOnChoice === "Y" && (
+                                            <Badge colorScheme="blue">DISPLAY ON CHOICE</Badge>
+                                          )}
                                         </HStack>
                                         {flow.descriptions && (
                                           <Text fontSize="sm" color="gray.600">
@@ -1196,6 +1204,21 @@ function SysModuleGroupDetailView() {
                   colorScheme="green"
                 >
                   Is Finish Status?
+                </Checkbox>
+              </FormControl>
+
+              <FormControl>
+                <Checkbox
+                  isChecked={statusFlowForm.isDisplayOnChoice === "Y"}
+                  onChange={(e) =>
+                    setStatusFlowForm({
+                      ...statusFlowForm,
+                      isDisplayOnChoice: e.target.checked ? "Y" : "N",
+                    })
+                  }
+                  colorScheme="blue"
+                >
+                  Display on Choice?
                 </Checkbox>
               </FormControl>
 

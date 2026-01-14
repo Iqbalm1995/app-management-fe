@@ -1183,6 +1183,7 @@ export const statusColorMap: Record<string, { bg: string; color: string }> = {
   DRAFT: { bg: "gray.200", color: "gray.800" },
   "NEEDS REVIEW": { bg: "purple.200", color: "purple.800" },
   "IN PROGRESS REVIEW": { bg: "blue.200", color: "blue.800" },
+  "WAITING APPROVAL": { bg: "yellow.200", color: "yellow.800" },
   "TEMPORARY APPROVED": { bg: "teal.200", color: "teal.800" },
   APPROVED: { bg: "green.200", color: "green.800" },
   "ON HOLD": { bg: "orange.200", color: "orange.800" },

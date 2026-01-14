@@ -231,7 +231,7 @@ export default function BRDRFCView() {
   const [tokenData, setTokenData] = useState<string>("");
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
-  const { List, GetDetailById, InsertReq } = useRequirements();
+  const { List, GetDetailById, InsertReq, StartReview } = useRequirements();
   const { ListConstantData } = useConstants();
   const { List: ListUsers } = useUsers();
   const { List: ListOrganization } = useOrganization();
@@ -747,6 +747,18 @@ export default function BRDRFCView() {
             (info.row.original.reqStatus &&
               REQ_STATUS_CAN_EDIT.includes(info.row.original.reqStatus)) ||
             info.row.original.isHaveMemo === "N";
+          
+          // Show review button for non-final statuses
+          const isNonFinalStatus = info.row.original.isStatusFinal === false;
+          const isInProgressReview = info.row.original.reqStatus === REQ_STATUS_IN_PROGRESS_REVIEW;
+          const hasStartedReview = info.row.original.reqReviewStartDate && !info.row.original.reqReviewEndDate;
+          
+          // Resume if: IN_PROGRESS_REVIEW OR (non-final status AND has started review)
+          const isResumeReview = isInProgressReview || (isNonFinalStatus && hasStartedReview);
+          
+          // Show button for all non-final statuses
+          const showReviewButton = isNonFinalStatus;
+          
           return (
             <Flex w={"full"} justifyContent={"center"}>
               <VStack spacing={1} w="full">
@@ -765,6 +777,39 @@ export default function BRDRFCView() {
                 >
                   Edit
                 </Button>
+                {showReviewButton && (
+                  <Button
+                    leftIcon={<FiEdit />}
+                    colorScheme="green"
+                    size="xs"
+                    w="full"
+                    onClick={async () => {
+                      if (!isResumeReview) {
+                        const result = await StartReview(info.row.original.id, tokenData);
+                        if (result?.statusCode === RES_CODE_OK) {
+                          showToast({
+                            description: "Review started successfully",
+                            statusToast: "success",
+                          });
+                          router.push(
+                            `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${info.row.original.id}&mode=review`
+                          );
+                        } else {
+                          showToast({
+                            description: result?.message || "Failed to start review",
+                            statusToast: "error",
+                          });
+                        }
+                      } else {
+                        router.push(
+                          `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${info.row.original.id}&mode=review`
+                        );
+                      }
+                    }}
+                  >
+                    {isResumeReview ? "Resume Review" : "Start Review"}
+                  </Button>
+                )}
                 <Link
                   href={`/requirements/detail?reqId=${info.row.original.id}&type=${info.row.original.requirementType}`}
                   style={{ width: "100%" }}
