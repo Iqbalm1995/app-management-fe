@@ -729,6 +729,15 @@ export const LinkItems: LinkItemProps[] = [
         isPro: true,
         menuID: "1",
         children: [],
+      },
+      {
+        name: "Sys Module Group",
+        icon: TbUsersGroup,
+        link: "/master-data/sys-module-group",
+        role: ["admin"],
+        isPro: true,
+        menuID: "1",
+        children: [],
       },      // {
       //   name: "Master Organization Structure",
       //   icon: RiOrganizationChart,
