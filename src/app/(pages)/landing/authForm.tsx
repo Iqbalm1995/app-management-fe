@@ -11,6 +11,7 @@ import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import useAuthentications, {
   AuthDataResponse,
 } from "@/app/services/useAuthentications";
+import useSysModuleGroup from "@/app/services/useSysModuleGroup";
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import {
   Box,
@@ -334,6 +335,7 @@ const AuthForm = () => {
   const [IsError, setIsError] = useState(false);
   const { goLogin } = useAuth();
   const { Login, GetAuth, isLoading, error } = useAuthentications();
+  const { GetMyAccess } = useSysModuleGroup();
   const [LupaPassText, setLupaPassText] = useState(false);
 
   const formik = useFormik({
@@ -386,17 +388,32 @@ const AuthForm = () => {
       }
 
       showToast({
-        description: "Login Success, Redirecting",
+        description: "Login Success, Loading user data...",
         statusToast: "info",
       });
+      
       const authDataToken: loginReturn = response.data as loginReturn;
+      
+      // Get user data
       const getDataUser: AuthDataResponse | null = await GetDataUser(
         response.data.apiKey
       );
-      console.log(getDataUser);
-      if (getDataUser != null) {
-        await goLogin(getDataUser, authDataToken);
+      
+      if (getDataUser == null) {
+        setIsLoadingProcess(false);
+        return;
       }
+
+      // Get user access data
+      const accessResponse = await GetMyAccess(response.data.apiKey);
+      
+      if (accessResponse?.statusCode === RES_CODE_OK && accessResponse.data) {
+        // Store access data in localStorage
+        localStorage.setItem("accessData", JSON.stringify(accessResponse.data));
+      }
+
+      // Proceed with login
+      await goLogin(getDataUser, authDataToken);
       setIsError(false);
       setIsLoadingProcess(false);
     }

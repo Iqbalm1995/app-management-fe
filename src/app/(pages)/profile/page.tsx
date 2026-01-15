@@ -35,8 +35,18 @@ import {
   FiEdit3,
   FiSettings,
   FiShield,
+  FiCheckCircle,
+  FiXCircle,
+  FiMenu,
+  FiBox,
+  FiActivity,
+  FiClock,
+  FiMonitor,
+  FiRefreshCw,
+  FiGrid,
+  FiList,
+  FiSave,
 } from "react-icons/fi";
-import { FiActivity, FiClock, FiMonitor, FiRefreshCw, FiGrid, FiList, FiSave, FiXCircle } from "react-icons/fi";
 import { Input, Textarea, FormControl, FormLabel, FormErrorMessage } from "@chakra-ui/react";
 import { motion } from "framer-motion";
 import LayoutAdmin from "@/app/components/layoutAdmin";
@@ -52,6 +62,7 @@ import * as yup from "yup";
 import useLogActivityUsers, {
   LogActivityUserSummaryResponse,
 } from "@/app/services/useLogActivityUsers";
+import useSysModuleGroup, { UserAccessResponse } from "@/app/services/useSysModuleGroup";
 import {
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
@@ -70,6 +81,7 @@ export default function ProfilePage() {
   const { GetDetailById: GetTeamDetail, UpdateTeams, ListMembers } = useTeams();
   const { GetPagedList: GetAuditTrail, isLoading: isLoadingAudit } =
     useLogActivityUsers();
+  const { GetMyAccess } = useSysModuleGroup();
 
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
@@ -78,12 +90,14 @@ export default function ProfilePage() {
     LogActivityUserSummaryResponse[]
   >([]);
   const [RefreshAudit, setRefreshAudit] = useState<number>(0);
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list" | "access">("grid");
   const [TeamData, setTeamData] = useState<TeamsResponse | null>(null);
   const [TeamMembers, setTeamMembers] = useState<UsersResponse[]>([]);
   const [IsEditMode, setIsEditMode] = useState(false);
   const [TeamRefresh, setTeamRefresh] = useState<number>(0);
   const [ActionLoading, setActionLoading] = useState(false);
+  const [AccessData, setAccessData] = useState<UserAccessResponse | null>(null);
+  const [IsLoadingAccess, setIsLoadingAccess] = useState(false);
 
   // Auth Effect
   useEffect(() => {
@@ -179,6 +193,40 @@ export default function ProfilePage() {
   const handleRefreshAudit = () => {
     setRefreshAudit((prev) => prev + 1);
   };
+
+  // Fetch Access Data
+  useEffect(() => {
+    const fetchAccessData = async () => {
+      if (tokenData) {
+        // Try to load from localStorage first
+        const cachedAccessData = localStorage.getItem("accessData");
+        
+        if (cachedAccessData) {
+          try {
+            const parsedData = JSON.parse(cachedAccessData);
+            setAccessData(parsedData);
+            setIsLoadingAccess(false);
+            return; // Use cached data, no need to fetch
+          } catch (error) {
+            console.error("Failed to parse cached access data:", error);
+          }
+        }
+
+        // If no cache or parse failed, fetch from API
+        setIsLoadingAccess(true);
+        const response = await GetMyAccess(tokenData);
+        setIsLoadingAccess(false);
+
+        if (response?.statusCode === RES_CODE_OK && response.data) {
+          setAccessData(response.data);
+          // Update cache
+          localStorage.setItem("accessData", JSON.stringify(response.data));
+        }
+      }
+    };
+
+    fetchAccessData();
+  }, [tokenData]);
 
 
   // Team formik
@@ -477,7 +525,7 @@ export default function ProfilePage() {
               fontWeight="bold"
               color={colorMode === "light" ? "gray.800" : "white"}
             >
-              {viewMode === "grid" ? "About Me" : "My Team"}
+              {viewMode === "grid" ? "About Me" : viewMode === "list" ? "My Team" : "My Access"}
             </Text>
             <HStack
               spacing={1}
@@ -526,6 +574,27 @@ export default function ProfilePage() {
                 transition="all 0.2s"
               >
                 Team
+              </Button>
+              <Button
+                size="sm"
+                variant={viewMode === "access" ? "solid" : "ghost"}
+                colorScheme={viewMode === "access" ? "blue" : "gray"}
+                onClick={() => setViewMode("access")}
+                leftIcon={<Icon as={FiShield} boxSize={3} />}
+                fontSize="xs"
+                px={3}
+                h={8}
+                _hover={{
+                  bg:
+                    viewMode === "access"
+                      ? "blue.500"
+                      : colorMode === "light"
+                        ? "gray.200"
+                        : "gray.600",
+                }}
+                transition="all 0.2s"
+              >
+                Access
               </Button>
             </HStack>
           </Flex>
@@ -1259,6 +1328,189 @@ export default function ProfilePage() {
                 )}
               </CardBody>
             </MotionCard>
+          </MotionBox>
+        )}
+
+        {/* Access View */}
+        {viewMode === "access" && (
+          <MotionBox
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            {IsLoadingAccess ? (
+              <Skeleton height="400px" />
+            ) : AccessData ? (
+              <VStack spacing={6} align="stretch">
+                {/* Permissions Summary */}
+                <MotionCard
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  bg={colorMode === "light" ? "white" : "gray.800"}
+                  rounded={radiusStyle}
+                  shadow="lg"
+                  borderWidth="1px"
+                  borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                >
+                  <CardBody>
+                    <Text fontSize="lg" fontWeight="bold" mb={4}>
+                      Aggregated Permissions
+                    </Text>
+                    <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
+                      <HStack p={3} bg={AccessData.aggregatedPermissions.canMake ? "green.50" : "red.50"} rounded="md">
+                        <Icon as={AccessData.aggregatedPermissions.canMake ? FiCheckCircle : FiXCircle} 
+                          color={AccessData.aggregatedPermissions.canMake ? "green.500" : "red.500"} boxSize={5} />
+                        <Text fontWeight="medium">Can Make</Text>
+                      </HStack>
+                      <HStack p={3} bg={AccessData.aggregatedPermissions.canReview ? "green.50" : "red.50"} rounded="md">
+                        <Icon as={AccessData.aggregatedPermissions.canReview ? FiCheckCircle : FiXCircle} 
+                          color={AccessData.aggregatedPermissions.canReview ? "green.500" : "red.500"} boxSize={5} />
+                        <Text fontWeight="medium">Can Review</Text>
+                      </HStack>
+                      <HStack p={3} bg={AccessData.aggregatedPermissions.canApprove ? "green.50" : "red.50"} rounded="md">
+                        <Icon as={AccessData.aggregatedPermissions.canApprove ? FiCheckCircle : FiXCircle} 
+                          color={AccessData.aggregatedPermissions.canApprove ? "green.500" : "red.500"} boxSize={5} />
+                        <Text fontWeight="medium">Can Approve</Text>
+                      </HStack>
+                    </SimpleGrid>
+                  </CardBody>
+                </MotionCard>
+
+                {/* Authorize Groups */}
+                <MotionCard
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  bg={colorMode === "light" ? "white" : "gray.800"}
+                  rounded={radiusStyle}
+                  shadow="lg"
+                  borderWidth="1px"
+                  borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                >
+                  <CardBody>
+                    <Text fontSize="lg" fontWeight="bold" mb={4}>
+                      Authorize Groups ({AccessData.authorizeGroups.length})
+                    </Text>
+                    <VStack align="stretch" spacing={3}>
+                      {AccessData.authorizeGroups.map((group) => (
+                        <Box key={group.id} p={4} borderWidth={1} rounded="md">
+                          <HStack justify="space-between" mb={2}>
+                            <VStack align="start" spacing={0}>
+                              <Text fontWeight="bold">{group.agName}</Text>
+                              <Text fontSize="sm" color="gray.500">{group.agCode}</Text>
+                            </VStack>
+                            <HStack>
+                              {group.agAccessMaker === "Y" && <Badge colorScheme="blue">Maker</Badge>}
+                              {group.agAccessReview === "Y" && <Badge colorScheme="orange">Review</Badge>}
+                              {group.agAccessApprove === "Y" && <Badge colorScheme="green">Approve</Badge>}
+                            </HStack>
+                          </HStack>
+                          {group.agDescriptions && (
+                            <Text fontSize="sm" color="gray.600">{group.agDescriptions}</Text>
+                          )}
+                        </Box>
+                      ))}
+                    </VStack>
+                  </CardBody>
+                </MotionCard>
+
+                {/* Accessible Modules */}
+                <MotionCard
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  bg={colorMode === "light" ? "white" : "gray.800"}
+                  rounded={radiusStyle}
+                  shadow="lg"
+                  borderWidth="1px"
+                  borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                >
+                  <CardBody>
+                    <Text fontSize="lg" fontWeight="bold" mb={4}>
+                      Accessible Modules ({AccessData.accessibleModules.length})
+                    </Text>
+                    <VStack align="stretch" spacing={3}>
+                      {AccessData.accessibleModules.map((module) => (
+                        <Box key={module.id} p={4} borderWidth={1} rounded="md">
+                          <VStack align="stretch" spacing={3}>
+                            <HStack spacing={2}>
+                              <Icon as={FiBox} boxSize={5} color="blue.500" />
+                              <VStack align="start" spacing={0} flex={1}>
+                                <Text fontWeight="bold">{module.modName}</Text>
+                                <Text fontSize="sm" color="gray.500">{module.modCode}</Text>
+                                {module.modDescriptions && (
+                                  <Text fontSize="xs" color="gray.600">{module.modDescriptions}</Text>
+                                )}
+                              </VStack>
+                            </HStack>
+                            <Divider />
+                            <Box>
+                              <Text fontSize="sm" fontWeight="semibold" mb={2}>Authorize Groups:</Text>
+                              <VStack align="stretch" spacing={2}>
+                                {module.authGroups.map((ag, idx) => (
+                                  <HStack key={idx} justify="space-between" p={2} bg="gray.50" rounded="md">
+                                    <Text fontSize="sm">{ag.agName} ({ag.agCode})</Text>
+                                    <HStack spacing={1}>
+                                      {ag.canMake && <Badge colorScheme="blue" size="sm">Make</Badge>}
+                                      {ag.canReview && <Badge colorScheme="orange" size="sm">Review</Badge>}
+                                      {ag.canApprove && <Badge colorScheme="green" size="sm">Approve</Badge>}
+                                    </HStack>
+                                  </HStack>
+                                ))}
+                              </VStack>
+                            </Box>
+                          </VStack>
+                        </Box>
+                      ))}
+                    </VStack>
+                  </CardBody>
+                </MotionCard>
+
+                {/* Accessible Menus */}
+                <MotionCard
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  bg={colorMode === "light" ? "white" : "gray.800"}
+                  rounded={radiusStyle}
+                  shadow="lg"
+                  borderWidth="1px"
+                  borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                >
+                  <CardBody>
+                    <Text fontSize="lg" fontWeight="bold" mb={4}>
+                      Accessible Menus
+                    </Text>
+                    <Box>
+                      {AccessData.accessibleMenus.map((menu) => (
+                        <Box key={menu.id} mb={2}>
+                          <HStack spacing={2} py={2}>
+                            <Icon as={FiMenu} />
+                            <Text fontWeight="medium">{menu.menuName}</Text>
+                            <Text fontSize="xs" color="gray.500">({menu.menuCode})</Text>
+                            {menu.isPro === "Y" && <Badge colorScheme="purple" size="sm">PRO</Badge>}
+                          </HStack>
+                          {menu.children && menu.children.length > 0 && (
+                            <Box pl={6}>
+                              {menu.children.map((child) => (
+                                <HStack key={child.id} spacing={2} py={1}>
+                                  <Icon as={FiMenu} boxSize={3} />
+                                  <Text fontSize="sm">{child.menuName}</Text>
+                                  <Text fontSize="xs" color="gray.500">({child.menuCode})</Text>
+                                  {child.isPro === "Y" && <Badge colorScheme="purple" size="xs">PRO</Badge>}
+                                </HStack>
+                              ))}
+                            </Box>
+                          )}
+                        </Box>
+                      ))}
+                    </Box>
+                  </CardBody>
+                </MotionCard>
+              </VStack>
+            ) : (
+              <Text>No access data available</Text>
+            )}
           </MotionBox>
         )}
       </Container>

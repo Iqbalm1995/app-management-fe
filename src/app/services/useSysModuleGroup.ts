@@ -85,6 +85,58 @@ export interface SysModuleStatusFlowUpdatePayload {
   isDisplayOnChoice: string;
 }
 
+export interface UserAccessResponse {
+  authorizeGroups: UserAuthGroupResponse[];
+  accessibleMenus: UserMenuResponse[];
+  accessibleModules: UserModuleResponse[];
+  aggregatedPermissions: UserPermissionsResponse;
+}
+
+export interface UserAuthGroupResponse {
+  id: string;
+  agCode: string;
+  agName: string;
+  agDescriptions?: string | null;
+  agAccessMaker: string;
+  agAccessReview: string;
+  agAccessApprove: string;
+}
+
+export interface UserMenuResponse {
+  id: string;
+  menuName: string;
+  menuCode: string;
+  menuLink: string;
+  menuIcon: string;
+  menuPos: number;
+  parentId?: string | null;
+  isPro: string;
+  isOperations: string;
+  children?: UserMenuResponse[];
+}
+
+export interface UserModuleResponse {
+  id: string;
+  modCode: string;
+  modName: string;
+  modDescriptions?: string | null;
+  authGroups: ModuleAuthGroupResponse[];
+}
+
+export interface ModuleAuthGroupResponse {
+  agCode: string;
+  agName: string;
+  canMake: boolean;
+  canReview: boolean;
+  canApprove: boolean;
+}
+
+export interface UserPermissionsResponse {
+  canMake: boolean;
+  canReview: boolean;
+  canApprove: boolean;
+}
+
 interface useSysModuleGroupServices {
   List: (
     payload: PaggingListPayload,
@@ -134,6 +186,9 @@ interface useSysModuleGroupServices {
     id: string,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
+  GetMyAccess: (
+    token: string
+  ) => Promise<ApiGenericResponse<UserAccessResponse | null> | null>;
 
   isLoading: boolean;
   error: string | null;
@@ -615,6 +670,43 @@ const useSysModuleGroup = (): useSysModuleGroupServices => {
     }
   };
 
+  const GetMyAccess = async (
+    token: string
+  ): Promise<ApiGenericResponse<UserAccessResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/ModuleGroupHelper/my-access";
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<UserAccessResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(err.response?.data?.message || "An error occurred.");
+        return errorResponse;
+      } else {
+        setError("An unexpected error occurred.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          message: "An unexpected error occurred.",
+          data: null,
+        };
+      }
+    }
+  };
+
   return {
     List,
     GetDetailById,
@@ -628,6 +720,7 @@ const useSysModuleGroup = (): useSysModuleGroupServices => {
     InsertStatusFlow,
     UpdateStatusFlow,
     DeleteStatusFlow,
+    GetMyAccess,
     isLoading,
     error,
   };

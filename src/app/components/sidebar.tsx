@@ -991,10 +991,48 @@ const SidebarContent = ({
     }
     return false;
   });
+  const [filteredMenus, setFilteredMenus] = useState<LinkItemProps[]>([]);
 
   useEffect(() => {
     localStorage.setItem("hideProMenus", JSON.stringify(hideProMenus));
   }, [hideProMenus]);
+
+  useEffect(() => {
+    const accessDataStr = localStorage.getItem("accessData");
+    
+    if (!accessDataStr) {
+      setFilteredMenus([]);
+      return;
+    }
+
+    try {
+      const accessData = JSON.parse(accessDataStr);
+      const accessibleMenus = accessData.accessibleMenus || [];
+      
+      const buildMenuFromAccess = (menus: any[], parentPath: string = ""): LinkItemProps[] => {
+        return menus.map((menu, index) => {
+          const uniquePath = parentPath ? `${parentPath}-${index}` : `${index}`;
+          return {
+            name: menu.menuName,
+            icon: FiCircle,
+            link: menu.menuLink || "#",
+            role: ["user"],
+            menuID: menu.id || uniquePath,
+            isPro: menu.isPro === "Y",
+            children: menu.children && menu.children.length > 0 
+              ? buildMenuFromAccess(menu.children, uniquePath) 
+              : [],
+          };
+        });
+      };
+
+      const accessMenus = buildMenuFromAccess(accessibleMenus);
+      setFilteredMenus(accessMenus);
+    } catch (error) {
+      console.error("Failed to parse accessData:", error);
+      setFilteredMenus([]);
+    }
+  }, []);
 
   const handleScroll = () => {
     setScrollY(window.scrollY);
@@ -1059,9 +1097,9 @@ const SidebarContent = ({
               </Tooltip >
             </HStack >
             <Box w={"full"} overflowY={"auto"}>
-              {LinkItems.filter((link) => hideProMenus || !link.isPro).map(
+              {filteredMenus.filter((link) => hideProMenus || !link.isPro).map(
                 (link) => (
-                  <NavItem key={link.name} data={link} mode={LiteModeTrigger} hideProMenus={hideProMenus} />
+                  <NavItem key={link.menuID} data={link} mode={LiteModeTrigger} hideProMenus={hideProMenus} />
                 )
               )}
             </Box>

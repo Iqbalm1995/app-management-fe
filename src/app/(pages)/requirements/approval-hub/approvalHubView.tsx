@@ -46,7 +46,7 @@ import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useRequirements, { RequirementsResponse } from "@/app/services/useRequirements";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
-import { ColumnMetaCustom, PaggingListPayload } from "@/app/types/masterTypes";
+import { ColumnMetaCustom, PaggingListPayload, FilterParamProps } from "@/app/types/masterTypes";
 
 const HeaderDataContent = {
   titleName: "Pending Approve",
@@ -86,7 +86,7 @@ export default function ApprovalHubView() {
   const [viewMode, setViewMode] = useState<"PENDING" | "APPROVED">("PENDING");
 
   // Filter State
-  const [ParamFilter, setParamFilter] = useState<RequirementsResponse[]>([]);
+  const [ParamFilter, setParamFilter] = useState<FilterParamProps[]>([]);
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
@@ -157,15 +157,15 @@ export default function ApprovalHubView() {
         } as ColumnMetaCustom,
       },
       {
-        accessorFn: (row) => row.status,
+        accessorFn: (row) => row.reqStatus,
         id: "status",
         cell: (info) => (
           <Flex justifyContent={"center"}>
             <Badge
               colorScheme={
-                info.row.original.status === "APPROVED"
+                info.row.original.reqStatus === "APPROVED"
                   ? "green"
-                  : info.row.original.status === "PENDING"
+                  : info.row.original.reqStatus === "PENDING"
                     ? "orange"
                     : "gray"
               }
@@ -173,7 +173,7 @@ export default function ApprovalHubView() {
               px={3}
               py={1}
             >
-              {info.row.original.status || "N/A"}
+              {info.row.original.reqStatus || "N/A"}
             </Badge>
           </Flex>
         ),

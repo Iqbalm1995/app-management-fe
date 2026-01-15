@@ -102,6 +102,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Clear auth data
       localStorage.setItem("authData", JSON.stringify(authData));
       localStorage.setItem("tokenData", "");
+      localStorage.removeItem("accessData"); // Clear access data
 
       // // Clear team data from localStorage
       // // First get the current auth data to extract team ID if available
