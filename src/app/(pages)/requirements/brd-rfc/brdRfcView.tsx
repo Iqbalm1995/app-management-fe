@@ -754,6 +754,7 @@ export default function BRDRFCView() {
 
           const isOnHold = info.row.original.reqStatus === REQ_STATUS_ON_HOLD;
           const isDraft = info.row.original.reqStatus === REQ_STATUS_DRAFT;
+          const isApproved = info.row.original.reqStatus === REQ_STATUS_APPROVED;
 
           const canEdit =
             !isCanceled &&
@@ -788,6 +789,21 @@ export default function BRDRFCView() {
                 >
                   Edit
                 </Button>
+                {isApproved && (
+                  <Link
+                    href={`/requirements/detail?reqId=${info.row.original.id}&type=${info.row.original.requirementType}`}
+                    style={{ width: "100%" }}
+                  >
+                    <Button
+                      leftIcon={<FiEye />}
+                      colorScheme="purple"
+                      size="xs"
+                      w="full"
+                    >
+                      Preview
+                    </Button>
+                  </Link>
+                )}
                 {isDraft && (
                   <Link
                     href={`/requirements/detail?reqId=${info.row.original.id}&type=${info.row.original.requirementType}`}
