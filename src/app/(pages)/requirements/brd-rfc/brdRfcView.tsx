@@ -852,6 +852,7 @@ export default function BRDRFCView() {
                     {isResumeReview ? "Resume Review" : "Start Review"}
                   </Button>
                 )}
+                {/* Detail button hidden for all statuses
                 <Link
                   href={`/requirements/detail?reqId=${info.row.original.id}&type=${info.row.original.requirementType}`}
                   style={{ width: "100%" }}
@@ -861,11 +862,12 @@ export default function BRDRFCView() {
                     colorScheme="secondary"
                     size="xs"
                     w="full"
-                    isDisabled={isCanceled}
+                    isDisabled={isCanceled || isApproved}
                   >
                     Detail
                   </Button>
                 </Link>
+                */}
                 {isCanceled && (
                   <Link
                     href={`/requirements/detail?reqId=${info.row.original.id}&type=${info.row.original.requirementType}`}
@@ -999,7 +1001,7 @@ export default function BRDRFCView() {
                         Preview
                       </Button>
                     </Link>
-                    <Button
+                    {/* <Button
                       leftIcon={<FiEdit />}
                       colorScheme="green"
                       size="xs"
@@ -1011,7 +1013,7 @@ export default function BRDRFCView() {
                       }}
                     >
                       Resume Review
-                    </Button>
+                    </Button> */}
                   </>
                 )}
               </VStack>
