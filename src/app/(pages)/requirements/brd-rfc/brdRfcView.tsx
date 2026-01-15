@@ -40,7 +40,9 @@ import {
   REQ_STATUS_CANCELED,
   REQ_STATUS_DRAFT,
   REQ_STATUS_IN_PROGRESS_REVIEW,
+  REQ_WAITING_APPROVAL,
   REQ_STATUS_NEED_REVIEW,
+  REQ_STATUS_TEMPORARY_APPROVED,
   REQ_STATUS_ON_HOLD,
   REQ_STATUS_CAN_EDIT,
   REQUIREMENT_STATUS_OPTIONS,
@@ -170,6 +172,7 @@ import {
   FiX,
   FiXCircle,
   FiEye,
+  FiCheck,
 } from "react-icons/fi";
 import * as Yup from "yup";
 import { Select } from "chakra-react-select";
@@ -459,7 +462,7 @@ export default function BRDRFCView() {
                 {info.row.original.isCarryOver == "Y" && (
                   <Badge
                     variant="solid"
-                    colorScheme="yellow"
+                    colorScheme="purple"
                     fontSize={"small"}
                     rounded={radiusStyle}
                     px={4}
@@ -744,24 +747,30 @@ export default function BRDRFCView() {
         accessorFn: (row) => row.id,
         id: "actions",
         cell: (info) => {
-          const isCanceled = info.row.original.reqStatus === REQ_STATUS_CANCELED;
-          
+          const isCanceled = info.row.original.reqStatus === "CANCEL";
+          const isTemporaryApproved = info.row.original.reqStatus === REQ_STATUS_TEMPORARY_APPROVED;
+          const isNeedsReview = info.row.original.reqStatus === REQ_STATUS_NEED_REVIEW;
+          const isWaitingApproval = info.row.original.reqStatus === REQ_WAITING_APPROVAL;
+
+          const isOnHold = info.row.original.reqStatus === REQ_STATUS_ON_HOLD;
+          const isDraft = info.row.original.reqStatus === REQ_STATUS_DRAFT;
+
           const canEdit =
             !isCanceled &&
             ((info.row.original.reqStatus &&
               REQ_STATUS_CAN_EDIT.includes(info.row.original.reqStatus)) ||
-            info.row.original.isHaveMemo === "N");
+              info.row.original.isHaveMemo === "N");
           // Show review button for non-final statuses
           const isNonFinalStatus = info.row.original.isStatusFinal === false;
           const isInProgressReview = info.row.original.reqStatus === REQ_STATUS_IN_PROGRESS_REVIEW;
           const hasStartedReview = info.row.original.reqReviewStartDate && !info.row.original.reqReviewEndDate;
-          
+
           // Resume if: IN_PROGRESS_REVIEW OR (non-final status AND has started review)
           const isResumeReview = isInProgressReview || (isNonFinalStatus && hasStartedReview);
-          
+
           // Show button for all non-final statuses
-          const showReviewButton = isNonFinalStatus && !isCanceled;
-          
+          const showReviewButton = isNonFinalStatus && !isCanceled && !isDraft; // Hide start review button for DRAFT
+
           return (
             <Flex w={"full"} justifyContent={"center"}>
               <VStack spacing={1} w="full">
@@ -773,13 +782,27 @@ export default function BRDRFCView() {
                   isDisabled={!canEdit}
                   onClick={() =>
                     router.push(
-                      `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${info.row.original.id
-                      }`
+                      `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${info.row.original.id}`
                     )
                   }
                 >
                   Edit
                 </Button>
+                {isDraft && (
+                  <Link
+                    href={`/requirements/detail?reqId=${info.row.original.id}&type=${info.row.original.requirementType}`}
+                    style={{ width: "100%" }}
+                  >
+                    <Button
+                      leftIcon={<FiEye />}
+                      colorScheme="purple"
+                      size="xs"
+                      w="full"
+                    >
+                      Preview
+                    </Button>
+                  </Link>
+                )}
                 {showReviewButton && (
                   <Button
                     leftIcon={<FiEdit />}
@@ -834,13 +857,146 @@ export default function BRDRFCView() {
                   >
                     <Button
                       leftIcon={<FiEye />}
-                      colorScheme="gray"
+                      colorScheme="purple"
                       size="xs"
                       w="full"
                     >
                       Preview
                     </Button>
                   </Link>
+                )}
+                {isNeedsReview && (
+                  <Link
+                    href={`/requirements/detail?reqId=${info.row.original.id}&type=${info.row.original.requirementType}`}
+                    style={{ width: "100%" }}
+                  >
+                    <Button
+                      leftIcon={<FiEye />}
+                      colorScheme="purple"
+                      size="xs"
+                      w="full"
+                    >
+                      Preview
+                    </Button>
+                  </Link>
+                )}
+                {isWaitingApproval && (
+                  <>
+                    <Link
+                      href={`/requirements/detail?reqId=${info.row.original.id}&type=${info.row.original.requirementType}`}
+                      style={{ width: "100%" }}
+                    >
+                      <Button
+                        leftIcon={<FiEye />}
+                        colorScheme="purple"
+                        size="xs"
+                        w="full"
+                      >
+                        Preview
+                      </Button>
+                    </Link>
+                    <Button
+                      leftIcon={<FiCheck />}
+                      colorScheme="green"
+                      size="xs"
+                      w="full"
+                      onClick={() => {
+                        console.log("Approve requirement:", info.row.original.id);
+                      }}
+                    >
+                      Approve
+                    </Button>
+                  </>
+                )}
+                {isTemporaryApproved && (
+                  <>
+                    <Link
+                      href={`/requirements/detail?reqId=${info.row.original.id}&type=${info.row.original.requirementType}`}
+                      style={{ width: "100%" }}
+                    >
+                      <Button
+                        leftIcon={<FiEye />}
+                        colorScheme="purple"
+                        size="xs"
+                        w="full"
+                      >
+                        Preview
+                      </Button>
+                    </Link>
+                    <Button
+                      leftIcon={<FiEdit />}
+                      colorScheme="green"
+                      size="xs"
+                      w="full"
+                      onClick={() => {
+                        router.push(
+                          `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${info.row.original.id}&mode=review`
+                        );
+                      }}
+                    >
+                      Resume Review
+                    </Button>
+                  </>
+                )}
+                {isOnHold && (
+                  <>
+                    <Link
+                      href={`/requirements/detail?reqId=${info.row.original.id}&type=${info.row.original.requirementType}`}
+                      style={{ width: "100%" }}
+                    >
+                      <Button
+                        leftIcon={<FiEye />}
+                        colorScheme="purple"
+                        size="xs"
+                        w="full"
+                      >
+                        Preview
+                      </Button>
+                    </Link>
+                    <Button
+                      leftIcon={<FiEdit />}
+                      colorScheme="green"
+                      size="xs"
+                      w="full"
+                      onClick={() => {
+                        router.push(
+                          `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${info.row.original.id}&mode=review`
+                        );
+                      }}
+                    >
+                      Resume Review
+                    </Button>
+                  </>
+                )}
+                {isInProgressReview && (
+                  <>
+                    <Link
+                      href={`/requirements/detail?reqId=${info.row.original.id}&type=${info.row.original.requirementType}`}
+                      style={{ width: "100%" }}
+                    >
+                      <Button
+                        leftIcon={<FiEye />}
+                        colorScheme="purple"
+                        size="xs"
+                        w="full"
+                      >
+                        Preview
+                      </Button>
+                    </Link>
+                    <Button
+                      leftIcon={<FiEdit />}
+                      colorScheme="green"
+                      size="xs"
+                      w="full"
+                      onClick={() => {
+                        router.push(
+                          `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${info.row.original.id}&mode=review`
+                        );
+                      }}
+                    >
+                      Resume Review
+                    </Button>
+                  </>
                 )}
               </VStack>
             </Flex>
@@ -1048,7 +1204,7 @@ export default function BRDRFCView() {
                 bgGradient={"linear(to-br, secondary.500, secondary.800)"}
                 rounded={radiusStyle}
                 boxShadow={"md"}
-                colorScheme="blue"
+                colorScheme="purple"
                 size="sm"
                 leftIcon={showAll ? <FiChevronUp /> : <FiChevronDown />}
                 onClick={() => setShowAll(!showAll)}
