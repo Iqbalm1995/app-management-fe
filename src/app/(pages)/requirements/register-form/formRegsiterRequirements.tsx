@@ -358,7 +358,7 @@ interface CrucialDataAlertProps {
 const CrucialDataAlert: React.FC<CrucialDataAlertProps> = ({ formik, setActiveStep }) => {
   const hasAppData = formik.values.appInitialCode && formik.values.appInitialCode.trim() !== "";
   const hasBacklogData = formik.values.backlogFeatures && formik.values.backlogFeatures.length > 0;
-  
+
   // Only show if missing critical data
   if (hasAppData && hasBacklogData) {
     return null;
@@ -376,7 +376,7 @@ const CrucialDataAlert: React.FC<CrucialDataAlertProps> = ({ formik, setActiveSt
           Data Penting Belum Lengkap!
         </AlertTitle>
         <AlertDescription fontSize="sm">
-          Requirement ini sudah disetujui namun masih memerlukan data berikut untuk dapat digunakan dalam proyek:
+          Requirement ini masih memerlukan data berikut untuk dapat digunakan dalam proyek:
           <VStack align="start" mt={2} spacing={1}>
             {missingItems.map((item, index) => (
               <HStack key={index} spacing={2}>
@@ -408,18 +408,18 @@ const ProjectsRelationSection: React.FC<ProjectsRelationSectionProps> = ({ requi
   const [projects, setProjects] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { GetProjectsByRequirementId } = useRequirements();
-  
+
   useEffect(() => {
     const fetchProjects = async () => {
       if (!requirementId) return;
-      
+
       setIsLoading(true);
       try {
         const authData = localStorage.getItem("authData");
         const token = localStorage.getItem("tokenData");
         if (authData && token) {
           const response = await GetProjectsByRequirementId(requirementId, token);
-          
+
           if (response && response.statusCode === RES_CODE_OK && response.data) {
             setProjects(response.data);
           }
@@ -463,7 +463,7 @@ const ProjectsRelationSection: React.FC<ProjectsRelationSectionProps> = ({ requi
         <Text fontSize="sm" color="gray.600">
           Requirement ini telah terdaftar ke dalam {projects.length} proyek berikut:
         </Text>
-        
+
         {projects.map((project, index) => (
           <Box
             key={project.id}
@@ -552,13 +552,14 @@ function RegisterRequirementFormPage({
   const [selectedApp, setSelectedApp] =
     useState<ApplicationMasterResponse | null>(null);
   const [hasProjects, setHasProjects] = useState<boolean>(false);
+  const [initialAppCode, setInitialAppCode] = useState<string | null>(null);
   const { List: ListApps } = useApps();
   const { GetProjectsByRequirementId } = useRequirements();
 
   // Check if requirement has projects
   const checkRequirementProjects = async () => {
     if (!requirementId) return;
-    
+
     try {
       const token = localStorage.getItem("tokenData");
       if (token) {
@@ -574,7 +575,7 @@ function RegisterRequirementFormPage({
 
   // Check if app selection should be disabled (edit mode + has projects + app already selected from DB)
   const isAppSelectionDisabled = () => {
-    return isEditMode && hasProjects && !!formik.values.appInitialCode;
+    return isEditMode && hasProjects && !!initialAppCode;
   };
 
   // Check projects when in edit mode
@@ -983,6 +984,8 @@ function RegisterRequirementFormPage({
           appIntegrationOthersApps: reqData.appIntegrationOthersApps,
           note: reqData.note,
         });
+        // Store initial app code for validation
+        setInitialAppCode(reqData.appInitialCode || null);
 
         // Load PIC Assign Users if available
         if (reqData.approvalDatas && reqData.approvalDatas.length > 0) {
@@ -1884,7 +1887,7 @@ function RegisterRequirementFormPage({
     };
 
     const updateResult = await RegisterUpdate(payload, tokenData);
-    
+
     if (updateResult?.statusCode !== RES_CODE_OK) {
       showToast({
         description: updateResult?.message || "Failed to update requirement",
@@ -1899,7 +1902,7 @@ function RegisterRequirementFormPage({
 
     // Then, request approval
     const approvalResult = await RequestApproval(requirementId, tokenData);
-    
+
     if (approvalResult?.statusCode === RES_CODE_OK) {
       showToast({
         description: "Requirement updated and approval request submitted successfully",
@@ -1912,7 +1915,7 @@ function RegisterRequirementFormPage({
         statusToast: "error",
       });
     }
-    
+
     setActionLoading(false);
   };
 
@@ -2637,19 +2640,19 @@ function RegisterRequirementFormPage({
                   {isEditMode ? "Update Draft" : "Save Draft"}
                 </Button>
               )}
-              {isEditMode && isReviewMode && 
-               (requirementStatus === REQ_STATUS_NEED_REVIEW || requirementStatus === REQ_STATUS_IN_PROGRESS_REVIEW) && (
-                <Button
-                  colorScheme={"orange"}
-                  leftIcon={<FiSave />}
-                  onClick={handleRequestApproval}
-                  isLoading={ActionLoading}
-                  px={8}
-                  size={"lg"}
-                >
-                  Approval Request
-                </Button>
-              )}
+              {isEditMode && isReviewMode &&
+                (requirementStatus === REQ_STATUS_NEED_REVIEW || requirementStatus === REQ_STATUS_IN_PROGRESS_REVIEW) && (
+                  <Button
+                    colorScheme={"orange"}
+                    leftIcon={<FiSave />}
+                    onClick={handleRequestApproval}
+                    isLoading={ActionLoading}
+                    px={8}
+                    size={"lg"}
+                  >
+                    Approval Request
+                  </Button>
+                )}
               <Button
                 colorScheme={"green"}
                 leftIcon={<FiSave />}
@@ -2744,7 +2747,7 @@ function RegisterRequirementFormPage({
 
                     {/* Crucial Alert for Approved Requirements Missing Apps/Backlog Data */}
                     {isEditMode && requirementStatus === "APPROVED" && (
-                      <CrucialDataAlert 
+                      <CrucialDataAlert
                         formik={formik}
                         setActiveStep={setActiveStep}
                       />

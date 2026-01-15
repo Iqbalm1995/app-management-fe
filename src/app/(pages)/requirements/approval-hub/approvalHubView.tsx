@@ -41,12 +41,22 @@ import LayoutAdmin from "@/app/components/layoutAdmin";
 import { HeaderContent } from "@/app/components/headerContent";
 import LoadingMiniSignature from "@/app/components/loadingMini";
 import { TableComponentWithFilterCTX } from "@/app/components/tableComponentV2";
-import { radiusStyle, RES_CODE_OK, RES_GENERIC_ERROR_MSG } from "@/app/constants/applicationConstants";
+import {
+  radiusStyle,
+  RES_CODE_OK,
+  RES_GENERIC_ERROR_MSG,
+} from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
-import useRequirements, { RequirementsResponse } from "@/app/services/useRequirements";
+import useRequirements, {
+  RequirementsResponse,
+} from "@/app/services/useRequirements";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
-import { ColumnMetaCustom, PaggingListPayload, FilterParamProps } from "@/app/types/masterTypes";
+import {
+  ColumnMetaCustom,
+  PaggingListPayload,
+  FilterParamProps,
+} from "@/app/types/masterTypes";
 
 const HeaderDataContent = {
   titleName: "Pending Approve",
@@ -65,7 +75,9 @@ export default function ApprovalHubView() {
   const [RefreshData, setRefreshData] = useState<number>(0);
 
   // Data State
-  const [DataApprovals, setDataApprovals] = useState<RequirementsResponse[]>([]);
+  const [DataApprovals, setDataApprovals] = useState<RequirementsResponse[]>(
+    []
+  );
   const [totalPages, setTotalPageData] = useState<number>(0);
 
   // Pagination
@@ -94,7 +106,8 @@ export default function ApprovalHubView() {
 
     if (DataAuth == null && storedData) {
       const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
-      const UserData: AuthDataResponse = StorageAuth.dataLogin as AuthDataResponse;
+      const UserData: AuthDataResponse =
+        StorageAuth.dataLogin as AuthDataResponse;
       setDataAuth(UserData);
     }
 
@@ -109,7 +122,7 @@ export default function ApprovalHubView() {
   };
 
   const removeFilterData = (filter: any) => {
-    setParamFilter(ParamFilter.filter(f => f !== filter));
+    setParamFilter(ParamFilter.filter((f) => f !== filter));
   };
 
   const handleFilterChange = (newFilters: any[]) => {
@@ -166,8 +179,8 @@ export default function ApprovalHubView() {
                 info.row.original.reqStatus === "APPROVED"
                   ? "green"
                   : info.row.original.reqStatus === "PENDING"
-                    ? "orange"
-                    : "gray"
+                  ? "orange"
+                  : "gray"
               }
               rounded="full"
               px={3}
@@ -297,7 +310,10 @@ export default function ApprovalHubView() {
                                           >
                                             <Text>
                                               {dt.filterLabel}:{" "}
-                                              <Text as={"span"} fontWeight={600}>
+                                              <Text
+                                                as={"span"}
+                                                fontWeight={600}
+                                              >
                                                 {dt.value}
                                               </Text>
                                             </Text>
@@ -306,7 +322,9 @@ export default function ApprovalHubView() {
                                               colorScheme={"red"}
                                               justifyContent={"center"}
                                               variant={"ghost"}
-                                              onClick={() => removeFilterData(dt)}
+                                              onClick={() =>
+                                                removeFilterData(dt)
+                                              }
                                             >
                                               <FiX />
                                             </Button>
