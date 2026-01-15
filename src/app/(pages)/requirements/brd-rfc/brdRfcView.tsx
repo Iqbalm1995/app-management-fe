@@ -169,6 +169,7 @@ import {
   FiSave,
   FiX,
   FiXCircle,
+  FiEye,
 } from "react-icons/fi";
 import * as Yup from "yup";
 import { Select } from "chakra-react-select";
@@ -743,11 +744,13 @@ export default function BRDRFCView() {
         accessorFn: (row) => row.id,
         id: "actions",
         cell: (info) => {
-          const canEdit =
-            (info.row.original.reqStatus &&
-              REQ_STATUS_CAN_EDIT.includes(info.row.original.reqStatus)) ||
-            info.row.original.isHaveMemo === "N";
+          const isCanceled = info.row.original.reqStatus === REQ_STATUS_CANCELED;
           
+          const canEdit =
+            !isCanceled &&
+            ((info.row.original.reqStatus &&
+              REQ_STATUS_CAN_EDIT.includes(info.row.original.reqStatus)) ||
+            info.row.original.isHaveMemo === "N");
           // Show review button for non-final statuses
           const isNonFinalStatus = info.row.original.isStatusFinal === false;
           const isInProgressReview = info.row.original.reqStatus === REQ_STATUS_IN_PROGRESS_REVIEW;
@@ -757,7 +760,7 @@ export default function BRDRFCView() {
           const isResumeReview = isInProgressReview || (isNonFinalStatus && hasStartedReview);
           
           // Show button for all non-final statuses
-          const showReviewButton = isNonFinalStatus;
+          const showReviewButton = isNonFinalStatus && !isCanceled;
           
           return (
             <Flex w={"full"} justifyContent={"center"}>
@@ -819,10 +822,26 @@ export default function BRDRFCView() {
                     colorScheme="secondary"
                     size="xs"
                     w="full"
+                    isDisabled={isCanceled}
                   >
                     Detail
                   </Button>
                 </Link>
+                {isCanceled && (
+                  <Link
+                    href={`/requirements/detail?reqId=${info.row.original.id}&type=${info.row.original.requirementType}`}
+                    style={{ width: "100%" }}
+                  >
+                    <Button
+                      leftIcon={<FiEye />}
+                      colorScheme="gray"
+                      size="xs"
+                      w="full"
+                    >
+                      Preview
+                    </Button>
+                  </Link>
+                )}
               </VStack>
             </Flex>
           );
