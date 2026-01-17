@@ -216,6 +216,13 @@ export const dynamicRoutePatterns: DynamicRoutePattern[] = [
     baseMenu: "/master-data",
   },
 
+  // http://localhost:8998/master-data/authorize-groups/detail?id=1b2a6b11-4f2f-443d-a263-bb5ed344316b
+
+  {
+    pattern: "/master-data/authorize-groups/detail",
+    baseMenu: "/master-data",
+  },
+
   // ===== TEAMS =====
   {
     pattern: "/teams-center/detail",

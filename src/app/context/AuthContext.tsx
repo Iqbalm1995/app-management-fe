@@ -23,6 +23,7 @@ interface AuthContextInterface {
   goLogin: (data: object, dataAuth: loginReturn) => void;
   goLogout: () => void;
   isAuthenticated: boolean;
+  isLoading: boolean;
 }
 
 export interface loginReturn {
@@ -152,6 +153,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         goLogin: handleLogin,
         goLogout: handleLogout,
         isAuthenticated: authData.statusLogin === STATUS_LOGIN_ON,
+        isLoading: loading,
       }}
     >
       {children}

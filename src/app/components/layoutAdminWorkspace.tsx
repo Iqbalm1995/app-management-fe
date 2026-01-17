@@ -13,8 +13,8 @@ const LayoutAdminWorkspace = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
   const router = useRouter();
   const { colorMode } = useColorMode();
-  const { isAuthenticated } = useAuth();
-  const { hasAccess, isLoading: isCheckingAccess, redirectTo } = useAccessControl(isAuthenticated);
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const { hasAccess, isLoading: isCheckingAccess, redirectTo } = useAccessControl(isAuthenticated, isAuthLoading);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

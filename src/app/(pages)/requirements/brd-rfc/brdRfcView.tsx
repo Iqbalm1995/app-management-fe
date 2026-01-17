@@ -855,7 +855,9 @@ export default function BRDRFCView() {
                     size="xs"
                     w="full"
                     onClick={() => {
-                      console.log("Approve requirement:", info.row.original.id);
+                      router.push(
+                        `/requirements/detail?reqId=${info.row.original.id}&type=${info.row.original.requirementType}&approvalMode=true`
+                      );
                     }}
                   >
                     Approve

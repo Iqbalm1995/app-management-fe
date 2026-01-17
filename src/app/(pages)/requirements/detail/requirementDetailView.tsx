@@ -36,6 +36,7 @@ import {
   REQ_STATUS_NEED_REVIEW,
   REQ_STATUS_ON_HOLD,
   REQ_STATUS_TEMPORARY_APPROVED,
+  REQ_WAITING_APPROVAL,
 } from "@/app/constants/masterStatusConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import {
@@ -132,7 +133,7 @@ import {
 } from "@tanstack/react-table";
 import { u } from "framer-motion/client";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
   FiAlertOctagon,
@@ -324,9 +325,11 @@ const PAGE_MODE: string = "VIEW_DETAIL";
 function RequirementDetailView() {
   const showToast = useToastHelper();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { colorMode } = useColorMode();
   const reqId = searchParams.get("reqId");
   const reqType = searchParams.get("type") || "BRD"; // Dynamic type from URL
+  const approvalMode = searchParams.get("approvalMode") === "true"; // Check if in approval mode
   const [PageMode, setPageMode] = useState<string>(PAGE_MODE);
 
   // Dynamic header based on type
@@ -379,6 +382,7 @@ function RequirementDetailView() {
   // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
+  const [canApprove, setCanApprove] = useState<boolean>(false);
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
@@ -396,7 +400,40 @@ function RequirementDetailView() {
     if (token) {
       setTokenData(token);
     }
-  }, [DataAuth]);
+
+    // Load approval permission from accessData
+    const accessDataStr = localStorage.getItem("accessData");
+    if (accessDataStr) {
+      try {
+        const accessData = JSON.parse(accessDataStr);
+        setCanApprove(accessData.aggregatedPermissions?.canApprove || false);
+      } catch (error) {
+        console.error("Failed to parse accessData:", error);
+      }
+    }
+  }, []);
+
+  // Validate approval mode access
+  useEffect(() => {
+    if (approvalMode && canApprove === false) {
+      // If in approval mode but user doesn't have approve permission, redirect to forbidden
+      const accessDataStr = localStorage.getItem("accessData");
+      if (accessDataStr) {
+        try {
+          const accessData = JSON.parse(accessDataStr);
+          const hasApprovePermission = accessData.aggregatedPermissions?.canApprove || false;
+          
+          if (!hasApprovePermission) {
+            router.push("/forbidden");
+          }
+        } catch (error) {
+          router.push("/forbidden");
+        }
+      } else {
+        router.push("/forbidden");
+      }
+    }
+  }, [approvalMode, canApprove, router]);
   // End SetUp auth data on current page
 
   const [ReqId, setReqId] = useState<string | null>(null);
@@ -555,7 +592,7 @@ function RequirementDetailView() {
 
   // onload data
   useEffect(() => {
-    if (DataAuth && DataAuth.team && ReqId) {
+    if (tokenData && ReqId) {
       const GetDataList = async () => {
         const requestData = await GetDetailById(ReqId, tokenData);
         const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
@@ -673,7 +710,7 @@ function RequirementDetailView() {
       };
       GetDataList();
     }
-  }, [DataAuth, RefreshData, ReqId]);
+  }, [tokenData, RefreshData, ReqId]);
 
   const RefreshAction = () => {
     setRefreshData(RefreshData + 1);
@@ -1427,77 +1464,79 @@ function RequirementDetailView() {
                           />
                         </InputGroupPanel>
 
-                        <InputGroupPanel headerTitle={"Update Status"}>
-                          {DataRequirement?.isStatusFinal ? (
-                            <Alert status="success" rounded="md">
-                              <AlertIcon />
-                              <VStack align="start" spacing={1}>
-                                <Text fontWeight="bold">
-                                  Status Already Final
-                                </Text>
-                                <Text fontSize="sm">
-                                  Current Status: <Badge colorScheme="green">{DataRequirement.reqStatus}</Badge>
-                                </Text>
-                                <Text fontSize="sm" color="gray.600">
-                                  This requirement has reached a final status and cannot be changed.
-                                </Text>
-                              </VStack>
-                            </Alert>
-                          ) : (
-                            <Flex as={Stack} spacing={4}>
-                              <FormControl>
-                                <FormLabel>Status Approval</FormLabel>
-                                <RadioGroup
-                                  value={StatusRequirement || ""}
-                                  onChange={setStatusRequirement}
-                                >
-                                  <Stack spacing={3}>
-                                    {isLoadingStatuses ? (
-                                      <Text fontSize="sm" color="gray.500">
-                                        Loading statuses...
-                                      </Text>
-                                    ) : availableStatuses.length === 0 ? (
-                                      <Text fontSize="sm" color="gray.500">
-                                        No approval statuses available
-                                      </Text>
-                                    ) : (
-                                      availableStatuses.map((status) => (
-                                        <Radio key={status.id} value={status.codeStatus}>
-                                          <HStack>
-                                            <Text>{status.nameStatus}</Text>
-                                            <Badge colorScheme="blue" fontSize="xs">
-                                              {status.codeStatus}
-                                            </Badge>
-                                          </HStack>
-                                        </Radio>
-                                      ))
-                                    )}
-                                  </Stack>
-                                </RadioGroup>
-                              </FormControl>
+                        {canApprove && approvalMode && DataRequirement?.reqStatus === REQ_WAITING_APPROVAL && (
+                          <InputGroupPanel headerTitle={"Update Status"}>
+                            {DataRequirement?.isStatusFinal ? (
+                              <Alert status="success" rounded="md">
+                                <AlertIcon />
+                                <VStack align="start" spacing={1}>
+                                  <Text fontWeight="bold">
+                                    Status Already Final
+                                  </Text>
+                                  <Text fontSize="sm">
+                                    Current Status: <Badge colorScheme="green">{DataRequirement.reqStatus}</Badge>
+                                  </Text>
+                                  <Text fontSize="sm" color="gray.600">
+                                    This requirement has reached a final status and cannot be changed.
+                                  </Text>
+                                </VStack>
+                              </Alert>
+                            ) : (
+                              <Flex as={Stack} spacing={4}>
+                                <FormControl>
+                                  <FormLabel>Status Approval</FormLabel>
+                                  <RadioGroup
+                                    value={StatusRequirement || ""}
+                                    onChange={setStatusRequirement}
+                                  >
+                                    <Stack spacing={3}>
+                                      {isLoadingStatuses ? (
+                                        <Text fontSize="sm" color="gray.500">
+                                          Loading statuses...
+                                        </Text>
+                                      ) : availableStatuses.length === 0 ? (
+                                        <Text fontSize="sm" color="gray.500">
+                                          No approval statuses available
+                                        </Text>
+                                      ) : (
+                                        availableStatuses.map((status) => (
+                                          <Radio key={status.id} value={status.codeStatus}>
+                                            <HStack>
+                                              <Text>{status.nameStatus}</Text>
+                                              <Badge colorScheme="blue" fontSize="xs">
+                                                {status.codeStatus}
+                                              </Badge>
+                                            </HStack>
+                                          </Radio>
+                                        ))
+                                      )}
+                                    </Stack>
+                                  </RadioGroup>
+                                </FormControl>
 
-                              <FormControl>
-                                <FormLabel>Note Approval</FormLabel>
-                                <Textarea
-                                  value={ApprovalNote || ""}
-                                  onChange={(e) => setApprovalNote(e.target.value)}
-                                  placeholder="Enter approval note (optional)"
-                                  rows={4}
-                                />
-                              </FormControl>
+                                <FormControl>
+                                  <FormLabel>Note Approval</FormLabel>
+                                  <Textarea
+                                    value={ApprovalNote || ""}
+                                    onChange={(e) => setApprovalNote(e.target.value)}
+                                    placeholder="Enter approval note (optional)"
+                                    rows={4}
+                                  />
+                                </FormControl>
 
-                              <Flex justifyContent="flex-end">
-                                <Button
-                                  colorScheme="blue"
-                                  onClick={ActionApprovalChangeStatus}
-                                  isDisabled={!StatusRequirement || isSubmittingApproval}
-                                >
-                                  Submit Approval
-                                </Button>
+                                <Flex justifyContent="flex-end">
+                                  <Button
+                                    colorScheme="blue"
+                                    onClick={ActionApprovalChangeStatus}
+                                    isDisabled={!StatusRequirement || isSubmittingApproval}
+                                  >
+                                    Submit Approval
+                                  </Button>
+                                </Flex>
                               </Flex>
-                            </Flex>
-                          )}
-                        </InputGroupPanel>
+                            )}
+                          </InputGroupPanel>
+                        )}
                       </Flex>
                     )}
 

@@ -29,12 +29,14 @@ export interface AccessControlResult {
   redirectTo?: string;
 }
 
-export const useAccessControl = (isAuthenticated: boolean): AccessControlResult => {
+export const useAccessControl = (isAuthenticated: boolean, isAuthLoading: boolean): AccessControlResult => {
   const pathname = usePathname();
   const [result, setResult] = useState<AccessControlResult>({
     hasAccess: false,
     isLoading: true,
   });
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 3;
 
   useEffect(() => {
     const checkAccess = async () => {
@@ -46,6 +48,13 @@ export const useAccessControl = (isAuthenticated: boolean): AccessControlResult 
       console.log('=== ACCESS CONTROL START ===');
       console.log('[Access Control] Original pathname:', pathname);
       console.log('[Access Control] Clean path:', cleanPath);
+      console.log('[Access Control] isAuthLoading:', isAuthLoading);
+
+      // Wait for auth to finish loading
+      if (isAuthLoading) {
+        console.log('[Access Control] Waiting for auth to load...');
+        return;
+      }
 
       // 1. Check if route is public
       if (publicRoutes.includes(cleanPath)) {
@@ -87,24 +96,65 @@ export const useAccessControl = (isAuthenticated: boolean): AccessControlResult 
       // 5. Get access data from localStorage
       const accessDataStr = localStorage.getItem("accessData");
       if (!accessDataStr) {
-        console.log('[Access Control] Step 5 - No accessData DENY');
+        console.log('[Access Control] Step 5 - No accessData');
+        
+        // Before redirecting, check if this route is in a whitelist that would need accessData
+        // If it is, we should retry instead of redirecting immediately
+        const isInDynamicPatterns = findDynamicPattern(cleanPath, dynamicRoutePatterns) !== null;
+        const isInModuleRoutes = moduleOnlyRoutes[cleanPath] !== undefined;
+        const isInAggregatedRoutes = aggregatedPermissionRoutes[cleanPath] !== undefined;
+        const isInAnyMenuRoutes = anyMenuAccessRoutes.includes(cleanPath);
+        const isInRouteAccessMap = routeAccessMap[cleanPath] !== undefined;
+        
+        const isWhitelisted = isInDynamicPatterns || isInModuleRoutes || isInAggregatedRoutes || isInAnyMenuRoutes || isInRouteAccessMap;
+        
+        console.log('[Access Control] Route whitelist check:', {
+          isInDynamicPatterns,
+          isInModuleRoutes,
+          isInAggregatedRoutes,
+          isInAnyMenuRoutes,
+          isInRouteAccessMap,
+          isWhitelisted
+        });
+        
+        // Check if user has auth data (authenticated)
+        const authDataStr = localStorage.getItem("authData");
+        const tokenData = localStorage.getItem("tokenData");
+        
+        if (authDataStr && tokenData && isWhitelisted && retryCount < MAX_RETRIES) {
+          // User is authenticated and route is whitelisted but accessData is missing
+          // Retry after a short delay to allow data to load
+          console.log(`[Access Control] Whitelisted route - Retry ${retryCount + 1}/${MAX_RETRIES} - waiting for accessData`);
+          setTimeout(() => {
+            setRetryCount(prev => prev + 1);
+          }, 500);
+          return;
+        }
+        
+        // After max retries or no auth data or not whitelisted, redirect to landing
+        console.log('[Access Control] No accessData after retries - redirect to landing');
         setResult({
           hasAccess: false,
           isLoading: false,
-          redirectTo: "/forbidden",
+          redirectTo: "/landing",
         });
         return;
+      }
+      
+      // Reset retry count if accessData is found
+      if (retryCount > 0) {
+        setRetryCount(0);
       }
 
       let accessData: UserAccessResponse;
       try {
         accessData = JSON.parse(accessDataStr);
       } catch (error) {
-        console.error('[Access Control] Step 5 - Failed to parse accessData:', error);
+        console.error('[Access Control] Step 5 - Failed to parse accessData, redirect to landing');
         setResult({
           hasAccess: false,
           isLoading: false,
-          redirectTo: "/forbidden",
+          redirectTo: "/landing",
         });
         return;
       }
@@ -265,7 +315,7 @@ export const useAccessControl = (isAuthenticated: boolean): AccessControlResult 
     };
 
     checkAccess();
-  }, [pathname, isAuthenticated]);
+  }, [pathname, isAuthenticated, isAuthLoading, retryCount]);
 
   return result;
 };
