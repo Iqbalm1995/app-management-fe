@@ -185,8 +185,8 @@ const OverviewTab = ({ DataProject, onRefreshProject }: OverviewTabProps) => {
   // Chart Options
   const priorityChartOptions = {
     chart: { type: "pie" },
-    labels: ["High", "Medium", "Low"],
-    colors: ["#F56565", "#ED8936", "#48BB78"],
+    labels: ["Critical", "High", "Medium", "Low"],
+    colors: ["#C53030", "#F56565", "#ED8936", "#48BB78"],
     legend: { position: "bottom" },
     responsive: [{
       breakpoint: 480,
@@ -213,6 +213,7 @@ const OverviewTab = ({ DataProject, onRefreshProject }: OverviewTabProps) => {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
+      case "CRITICAL": return "red";
       case "HIGH": return "red";
       case "MEDIUM": return "orange";
       case "LOW": return "green";
@@ -403,7 +404,7 @@ const OverviewTab = ({ DataProject, onRefreshProject }: OverviewTabProps) => {
                             <Text fontSize="sm" fontWeight="bold" mb={2}>Backlogs by Priority</Text>
                             <Chart
                               options={priorityChartOptions}
-                              series={[BacklogStats.backlogsByPriority.high, BacklogStats.backlogsByPriority.medium, BacklogStats.backlogsByPriority.low]}
+                              series={[BacklogStats.backlogsByPriority.critical, BacklogStats.backlogsByPriority.high, BacklogStats.backlogsByPriority.medium, BacklogStats.backlogsByPriority.low]}
                               type="pie"
                               height={250}
                             />

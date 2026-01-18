@@ -116,6 +116,7 @@ import {
   useToastHelperShort,
 } from "../helper/ToastMessagesHelper";
 import { AuthDataModelInterface, useAuth } from "../context/AuthContext";
+import { getIconComponent } from "../utils/iconRegistry";
 import {
   DELAY_ZERO,
   ENDPOINT_API_BASEURL,
@@ -452,7 +453,11 @@ export default function NavigationAdminWorkspace({
               <Flex alignItems={"start"}>
                 <Popover>
                   <PopoverTrigger>
-                    <Button variant={"ghost"} position="relative">
+                    <Button
+                      variant={"ghost"}
+                      position="relative"
+                      display={"none"}
+                    >
                       <RiMegaphoneLine />
                       <Badge
                         colorScheme="orange"
@@ -531,8 +536,7 @@ export default function NavigationAdminWorkspace({
                             color={useColorModeValue("gray.600", "gray.300")}
                             mb={2}
                           >
-                            COMING SOON
-                            Feature under development.
+                            COMING SOON Feature under development.
                           </Text>
                           <Text
                             fontSize="xs"
@@ -572,8 +576,7 @@ export default function NavigationAdminWorkspace({
                             color={useColorModeValue("gray.600", "gray.300")}
                             mb={2}
                           >
-                            COMING SOON
-                            Feature under development.
+                            COMING SOON Feature under development.
                           </Text>
                           <Text
                             fontSize="xs"
@@ -606,7 +609,11 @@ export default function NavigationAdminWorkspace({
                 </Popover>
                 <Popover>
                   <PopoverTrigger>
-                    <Button variant={"ghost"} position="relative">
+                    <Button
+                      variant={"ghost"}
+                      position="relative"
+                      display={"none"}
+                    >
                       <FaRegBell />
                       <Badge
                         colorScheme="red"
@@ -972,7 +979,7 @@ export default function NavigationAdminWorkspace({
                 pb={12}
                 pt={5}
                 minH={"100vh"}
-              // bg={"blue.100"}
+                // bg={"blue.100"}
               >
                 <AnimatePresence mode="wait">
                   <MotionBox
@@ -1040,7 +1047,7 @@ const SidebarContent = ({
           const uniquePath = parentPath ? `${parentPath}-${index}` : `${index}`;
           return {
             name: menu.menuName,
-            icon: FiCircle,
+            icon: getIconComponent(menu.menuIcon),
             link: menu.menuLink || "#",
             role: ["user"],
             menuID: menu.id || uniquePath,

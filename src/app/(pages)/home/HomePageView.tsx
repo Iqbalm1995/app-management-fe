@@ -404,6 +404,7 @@ function HomePageView() {
                     color={"secondary.100"}
                     _hover={{ transform: "translateY(-2px)", shadow: "lg" }}
                     transition="all 0.3s"
+                    display={"none"}
                   >
                     View Reports
                   </Button>

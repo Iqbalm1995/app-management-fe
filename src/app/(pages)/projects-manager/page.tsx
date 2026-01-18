@@ -127,6 +127,8 @@ const ProjectManagerPage = () => {
   // Auth state
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
+  const [canMake, setCanMake] = useState<boolean>(false);
+  const [canReview, setCanReview] = useState<boolean>(false);
 
   // Data state
   const [DataProjects, setDataProjects] = useState<ProjectDataResponse[]>([]);
@@ -175,6 +177,18 @@ const ProjectManagerPage = () => {
 
     if (token) {
       setTokenData(token);
+    }
+
+    // Load permissions from accessData
+    const accessDataStr = localStorage.getItem("accessData");
+    if (accessDataStr) {
+      try {
+        const accessData = JSON.parse(accessDataStr);
+        setCanMake(accessData.aggregatedPermissions?.canMake || false);
+        setCanReview(accessData.aggregatedPermissions?.canReview || false);
+      } catch (error) {
+        console.error("Failed to parse accessData:", error);
+      }
     }
   }, []); // Empty dependency array - run only once on mount
 
@@ -597,16 +611,18 @@ const ProjectManagerPage = () => {
                             >
                               Refresh
                             </Button>
-                            <Link href={`projects-manager/register`}>
-                              <Button
-                                size={"md"}
-                                colorScheme={"secondary"}
-                                leftIcon={<FiPlusSquare />}
-                                isLoading={ActionLoading}
-                              >
-                                Register New Project
-                              </Button>
-                            </Link>
+                            {(canMake || canReview) && (
+                              <Link href={`projects-manager/register`}>
+                                <Button
+                                  size={"md"}
+                                  colorScheme={"secondary"}
+                                  leftIcon={<FiPlusSquare />}
+                                  isLoading={ActionLoading}
+                                >
+                                  Register New Project
+                                </Button>
+                              </Link>
+                            )}
                           </Flex>
                         </Flex>
 

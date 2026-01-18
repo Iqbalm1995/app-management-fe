@@ -659,6 +659,7 @@ export interface ProjectBacklogStatsResponse {
   totalBacklogs: number;
   completedBacklogs: number;
   backlogsByPriority: {
+    critical: number;
     high: number;
     medium: number;
     low: number;

@@ -9,9 +9,10 @@ import ProjectEditSection from "../components/ProjectEditSection";
 
 interface EditTabProps {
   DataProject: ProjectDataResponse | null;
+  canMake: boolean;
 }
 
-const EditTab = ({ DataProject }: EditTabProps) => {
+const EditTab = ({ DataProject, canMake }: EditTabProps) => {
   const { colorMode } = useColorMode();
 
   console.log("EditTab rendering with DataProject:", DataProject?.id);
@@ -19,7 +20,7 @@ const EditTab = ({ DataProject }: EditTabProps) => {
   return (
     <TabPanel>
       <Suspense fallback={<LoadingMiniSquare />}>
-        <ProjectEditSection DataProject={DataProject} />
+        <ProjectEditSection DataProject={DataProject} canMake={canMake} />
       </Suspense>
     </TabPanel>
   );

@@ -32,10 +32,11 @@ import { PaggingListPayload } from "@/app/types/masterTypes";
 
 interface ProjectEditSectionProps {
   DataProject: ProjectDataResponse | null;
+  canMake: boolean;
   onRefresh?: () => void;
 }
 
-const ProjectEditSection = ({ DataProject, onRefresh }: ProjectEditSectionProps) => {
+const ProjectEditSection = ({ DataProject, canMake, onRefresh }: ProjectEditSectionProps) => {
   const { colorMode } = useColorMode();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -348,7 +349,7 @@ const ProjectEditSection = ({ DataProject, onRefresh }: ProjectEditSectionProps)
               onClick={() => setIsEditing(!isEditing)}
               variant={isEditing ? "outline" : "solid"}
               rounded="full"
-              isDisabled={isSaving}
+              isDisabled={isSaving || !canMake}
             >
               {isEditing ? "Cancel" : "Edit Project"}
             </Button>
