@@ -74,10 +74,10 @@ export interface DynamicRoutePattern {
   baseMenu?: string;
   moduleCode?: string;
   permission?:
-    | "make"
-    | "review"
-    | "approve"
-    | ("make" | "review" | "approve")[];
+  | "make"
+  | "review"
+  | "approve"
+  | ("make" | "review" | "approve")[];
 }
 
 export const dynamicRoutePatterns: DynamicRoutePattern[] = [
@@ -178,6 +178,10 @@ export const dynamicRoutePatterns: DynamicRoutePattern[] = [
   {
     pattern: "/master-data/users/:id/detail",
     baseMenu: "/master-data/users",
+  },
+  {
+    pattern: "/master-data/authorize-groups/detail",
+    baseMenu: "/master-data/authorize-groups",
   },
 
   // Menus
