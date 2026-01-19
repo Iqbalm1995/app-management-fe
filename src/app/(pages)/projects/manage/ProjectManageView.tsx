@@ -95,6 +95,7 @@ export default function ProjectManageView() {
     useState<HeaderContentProps>(HeaderDataContent);
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
+  const [canMake, setCanMake] = useState(false);
   const [projectId, setProjectId] = useState<string | null>(null);
   const [DataProject, setDataProject] = useState<ProjectDataResponse | null>(
     null
@@ -126,6 +127,17 @@ export default function ProjectManageView() {
 
     if (token) {
       setTokenData(token);
+    }
+
+    // Load permissions
+    const accessDataStr = localStorage.getItem("accessData");
+    if (accessDataStr) {
+      try {
+        const accessData = JSON.parse(accessDataStr);
+        setCanMake(accessData.aggregatedPermissions?.canMake || false);
+      } catch (error) {
+        console.error("Failed to parse accessData:", error);
+      }
     }
   }, [DataAuth]);
 
@@ -403,10 +415,10 @@ export default function ProjectManageView() {
                       <FeaturesTab DataProject={DataProject} />
                     )}
                     <DocumentationTab DataProject={DataProject} />
-                    <TeamTab DataProject={DataProject} />
+                    <TeamTab DataProject={DataProject} canMake={canMake} />
                     <AnalyticsTab DataProject={DataProject} />
                     <TimelineTab DataProject={DataProject} />
-                    <EditTab DataProject={DataProject} />
+                    <EditTab DataProject={DataProject} canMake={canMake} />
                   </TabPanels>
                 </CardBody>
               </Card>

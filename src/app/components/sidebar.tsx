@@ -116,6 +116,7 @@ import {
   useToastHelperShort,
 } from "../helper/ToastMessagesHelper";
 import { AuthDataModelInterface, useAuth } from "../context/AuthContext";
+import { getIconComponent } from "../utils/iconRegistry";
 import {
   DELAY_ZERO,
   ENDPOINT_API_BASEURL,
@@ -413,7 +414,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
               <Flex alignItems={"start"}>
                 <Popover>
                   <PopoverTrigger>
-                    <Button variant={"ghost"} position="relative">
+                    <Button variant={"ghost"} position="relative" display={"none"}>
                       <RiMegaphoneLine />
                       <Badge
                         colorScheme="orange"
@@ -565,7 +566,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                 </Popover>
                 <Popover>
                   <PopoverTrigger>
-                    <Button variant={"ghost"} position="relative">
+                    <Button variant={"ghost"} position="relative" display={"none"}>
                       <FaRegBell />
                       <Badge
                         colorScheme="red"
@@ -1014,7 +1015,7 @@ const SidebarContent = ({
           const uniquePath = parentPath ? `${parentPath}-${index}` : `${index}`;
           return {
             name: menu.menuName,
-            icon: FiCircle,
+            icon: getIconComponent(menu.menuIcon),
             link: menu.menuLink || "#",
             role: ["user"],
             menuID: menu.id || uniquePath,
@@ -1656,6 +1657,44 @@ export function SearchMenuButton({
   const { colorMode } = useColorMode();
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredMenus, setFilteredMenus] = useState<LinkItemProps[]>([]);
+  const [accessibleMenus, setAccessibleMenus] = useState<LinkItemProps[]>([]);
+
+  useEffect(() => {
+    const accessDataStr = localStorage.getItem("accessData");
+    
+    if (!accessDataStr) {
+      setAccessibleMenus([]);
+      return;
+    }
+
+    try {
+      const accessData = JSON.parse(accessDataStr);
+      const menus = accessData.accessibleMenus || [];
+      
+      const buildMenuFromAccess = (menus: any[], parentPath: string = ""): LinkItemProps[] => {
+        return menus.map((menu, index) => {
+          const uniquePath = parentPath ? `${parentPath}-${index}` : `${index}`;
+          return {
+            name: menu.menuName,
+            icon: getIconComponent(menu.menuIcon),
+            link: menu.menuLink || "#",
+            role: ["user"],
+            menuID: menu.id || uniquePath,
+            isPro: menu.isPro === "Y",
+            children: menu.children && menu.children.length > 0 
+              ? buildMenuFromAccess(menu.children, uniquePath) 
+              : [],
+          };
+        });
+      };
+
+      const accessMenus = buildMenuFromAccess(menus);
+      setAccessibleMenus(accessMenus);
+    } catch (error) {
+      console.error("Failed to parse accessData:", error);
+      setAccessibleMenus([]);
+    }
+  }, []);
 
   const getAllMenuItems = (items: LinkItemProps[]): LinkItemProps[] => {
     let allItems: LinkItemProps[] = [];
@@ -1670,7 +1709,7 @@ export function SearchMenuButton({
 
   useEffect(() => {
     if (searchQuery.trim()) {
-      const allMenus = getAllMenuItems(LinkItems);
+      const allMenus = getAllMenuItems(accessibleMenus);
       const filtered = allMenus
         .filter(
           (item) =>
@@ -1682,7 +1721,7 @@ export function SearchMenuButton({
     } else {
       setFilteredMenus([]);
     }
-  }, [searchQuery]);
+  }, [searchQuery, accessibleMenus]);
 
   return (
     <>

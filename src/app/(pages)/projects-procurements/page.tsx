@@ -128,6 +128,10 @@ const ProjectManagerPage = () => {
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
 
+  // Permission state
+  const [canMake, setCanMake] = useState(false);
+  const [canReview, setCanReview] = useState(false);
+
   // Data state
   const [DataProjects, setDataProjects] = useState<ProjectDataResponse[]>([]);
   const [RefreshData, setRefreshData] = useState<number>(0);
@@ -174,6 +178,18 @@ const ProjectManagerPage = () => {
 
     if (token) {
       setTokenData(token);
+    }
+
+    // Load permissions from accessData
+    const accessDataStr = localStorage.getItem("accessData");
+    if (accessDataStr) {
+      try {
+        const accessData = JSON.parse(accessDataStr);
+        setCanMake(accessData.aggregatedPermissions?.canMake || false);
+        setCanReview(accessData.aggregatedPermissions?.canReview || false);
+      } catch (error) {
+        console.error("Failed to parse accessData:", error);
+      }
     }
   }, []); // Empty dependency array - run only once on mount
 
@@ -670,16 +686,18 @@ const ProjectManagerPage = () => {
                             >
                               Refresh
                             </Button>
-                            <Link href={`projects-procurements/register`}>
-                              <Button
-                                size={"md"}
-                                colorScheme={"secondary"}
-                                leftIcon={<FiPlusSquare />}
-                                isLoading={ActionLoading}
-                              >
-                                Register New Procuremet
-                              </Button>
-                            </Link>
+                            {(canMake || canReview) && (
+                              <Link href={`projects-procurements/register`}>
+                                <Button
+                                  size={"md"}
+                                  colorScheme={"secondary"}
+                                  leftIcon={<FiPlusSquare />}
+                                  isLoading={ActionLoading}
+                                >
+                                  Register New Procuremet
+                                </Button>
+                              </Link>
+                            )}
                           </Flex>
                         </Flex>
 

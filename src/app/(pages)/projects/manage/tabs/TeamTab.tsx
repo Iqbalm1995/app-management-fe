@@ -70,9 +70,10 @@ import { ConfirmationDialog } from "@/app/components/confirmationDialog";
 
 interface TeamTabProps {
   DataProject: ProjectDataResponse | null;
+  canMake: boolean;
 }
 
-const TeamTab = ({ DataProject }: TeamTabProps) => {
+const TeamTab = ({ DataProject, canMake }: TeamTabProps) => {
   const { colorMode } = useColorMode();
   const showToast = useToastHelper();
   const { AssignUnassignMembers, GetProjectMembers, RemoveProjectMember } =
@@ -445,6 +446,7 @@ const TeamTab = ({ DataProject }: TeamTabProps) => {
               leftIcon={<FiUserPlus />}
               rounded="full"
               onClick={handleAddMember}
+              isDisabled={!canMake}
             >
               Update Member
             </Button>
