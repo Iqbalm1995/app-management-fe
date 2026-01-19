@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Tooltip,
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbLink,
@@ -13,6 +14,7 @@ import {
 
 export interface HeaderContentProps {
   titleName: string;
+  titleTooltip?: string;
   breadCrumb: string[];
 }
 

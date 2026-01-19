@@ -236,6 +236,13 @@ export const dynamicRoutePatterns: DynamicRoutePattern[] = [
     pattern: "/teams-center/add",
     baseMenu: "/teams",
   },
+
+  // ==== SPECIALITATION ====
+  {
+    pattern: "/master-data/specialization",
+    baseMenu: "/master-data",
+  },
+
 ];
 
 /**

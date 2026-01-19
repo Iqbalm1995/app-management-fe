@@ -83,6 +83,7 @@ export const PROJECT_DEVELOPMENT_STATUSES = [
 export const STATUS_COLORS = {
   CANCELED: "red",
   ON_HOLD: "orange",
+  "ON HOLD": "orange",
 
   // Requirement Status Colors
   DRAFT: "gray",

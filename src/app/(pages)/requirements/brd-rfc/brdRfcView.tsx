@@ -128,6 +128,12 @@ import {
   Td,
   Text,
   Textarea,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
   Th,
   Thead,
   Tr,
@@ -173,6 +179,7 @@ import {
   FiXCircle,
   FiEye,
   FiCheck,
+  FiAlertCircle,
 } from "react-icons/fi";
 import * as Yup from "yup";
 import { Select } from "chakra-react-select";
@@ -305,6 +312,9 @@ export default function BRDRFCView() {
   const [RefreshData, setRefreshData] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
   const [ActionLoading, setActionLoading] = useState(false);
+  const [startReviewReqId, setStartReviewReqId] = useState<string | null>(null);
+  const { isOpen: isStartReviewOpen, onOpen: onStartReviewOpen, onClose: onStartReviewClose } = useDisclosure();
+  const cancelStartReviewRef = useRef<any>(null);
 
   const [totalPages, setTotalPageData] = useState<number>(0);
   const [globalFilter, setGlobalFilter] = useState<string>("");
@@ -808,22 +818,9 @@ export default function BRDRFCView() {
                     colorScheme="green"
                     size="xs"
                     w="full"
-                    onClick={async () => {
-                      const result = await StartReview(info.row.original.id, tokenData);
-                      if (result?.statusCode === RES_CODE_OK) {
-                        showToast({
-                          description: "Review started successfully",
-                          statusToast: "success",
-                        });
-                        router.push(
-                          `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${info.row.original.id}&mode=review`
-                        );
-                      } else {
-                        showToast({
-                          description: result?.message || "Failed to start review",
-                          statusToast: "error",
-                        });
-                      }
+                    onClick={() => {
+                      setStartReviewReqId(info.row.original.id);
+                      onStartReviewOpen();
                     }}
                   >
                     Start Review
@@ -1446,6 +1443,56 @@ export default function BRDRFCView() {
           </Card>
         </GridItem>
       </Grid>
+
+      {/* Start Review Confirmation Modal */}
+      <AlertDialog isOpen={isStartReviewOpen} onClose={onStartReviewClose} leastDestructiveRef={cancelStartReviewRef} isCentered>
+        <AlertDialogOverlay bg="blackAlpha.300" backdropFilter="blur(10px)">
+          <AlertDialogContent mx={4}>
+            <AlertDialogHeader fontSize="lg" fontWeight="bold" pb={2}>
+              <HStack spacing={2}>
+                <FiAlertCircle />
+                <Text>Start Review?</Text>
+              </HStack>
+            </AlertDialogHeader>
+            <AlertDialogBody py={4}>
+              Are you sure you want to start reviewing this requirement? Once started, the review timer will begin counting.
+            </AlertDialogBody>
+            <AlertDialogFooter pt={4}>
+              <Button ref={cancelStartReviewRef} onClick={onStartReviewClose} colorScheme="red" variant="ghost">
+                Cancel
+              </Button>
+              <Button
+                colorScheme="green"
+                leftIcon={<FiEdit />}
+                onClick={async () => {
+                  if (startReviewReqId) {
+                    const result = await StartReview(startReviewReqId, tokenData);
+                    if (result?.statusCode === RES_CODE_OK) {
+                      showToast({
+                        description: "Review started successfully",
+                        statusToast: "success",
+                      });
+                      onStartReviewClose();
+                      router.push(
+                        `/requirements/${DataReq.find(r => r.id === startReviewReqId)?.requirementType.toLowerCase()}/register?id=${startReviewReqId}&mode=review`
+                      );
+                    } else {
+                      showToast({
+                        description: result?.message || "Failed to start review",
+                        statusToast: "error",
+                      });
+                      onStartReviewClose();
+                    }
+                  }
+                }}
+                ml={3}
+              >
+                Start Review
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
     </LayoutAdmin>
   );
 }

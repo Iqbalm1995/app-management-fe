@@ -101,6 +101,12 @@ import {
   AlertDescription,
   AlertIcon,
   AlertTitle,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
   Avatar,
   Badge,
   Box,
@@ -549,6 +555,8 @@ function RegisterRequirementFormPage({
   const { List: ListOrganization } = useOrganization();
   const [isClient, setIsClient] = useState(false);
   const ModalAppPicker = useDisclosure();
+  const { isOpen: isApprovalRequestOpen, onOpen: onApprovalRequestOpen, onClose: onApprovalRequestClose } = useDisclosure();
+  const cancelApprovalRequestRef = useRef<any>(null);
   const [selectedApp, setSelectedApp] =
     useState<ApplicationMasterResponse | null>(null);
   const [hasProjects, setHasProjects] = useState<boolean>(false);
@@ -1745,7 +1753,7 @@ function RegisterRequirementFormPage({
     setQuestionMsgDialog(
       `Apakah ada yakin akan submit data "${formik.values.isHaveMemo == "Y"
         ? formik.values.reqNumber
-        : type_req_param + " Tanpa Memo"
+        : formik.values.reqNarative || type_req_param + " Tanpa Memo"
       }"?`
     );
     setOpenConfirmSaveDialog(true);
@@ -2052,14 +2060,11 @@ function RegisterRequirementFormPage({
     if (user) {
       formik.setFieldValue("userPicId", user.userId);
       formik.setFieldValue("userPicName", user.nama);
-      // formik.setFieldValue("userPicIdentityNumber", user.nip);
       // formik.setFieldValue("userPicEmail", user.email);
-      //userPicIdentityNumber
       handleSearchUser(user.userId, "searchPICUser");
     } else {
       formik.setFieldValue("userPicId", null);
       formik.setFieldValue("userPicName", null);
-      // formik.setFieldValue("userPicIdentityNumber", null);
       // formik.setFieldValue("userPicEmail", null);
       handleSearchUser("", "searchPICUser");
     }
@@ -2645,7 +2650,7 @@ function RegisterRequirementFormPage({
                   <Button
                     colorScheme={"orange"}
                     leftIcon={<FiSave />}
-                    onClick={handleRequestApproval}
+                    onClick={onApprovalRequestOpen}
                     isLoading={ActionLoading}
                     px={8}
                     size={"lg"}
@@ -5928,6 +5933,39 @@ function RegisterRequirementFormPage({
           </GridItem>
         </Grid>
       </form>
+
+      {/* Approval Request Confirmation Modal */}
+      <AlertDialog isOpen={isApprovalRequestOpen} onClose={onApprovalRequestClose} leastDestructiveRef={cancelApprovalRequestRef} isCentered>
+        <AlertDialogOverlay bg="blackAlpha.300" backdropFilter="blur(10px)">
+          <AlertDialogContent mx={4}>
+            <AlertDialogHeader fontSize="lg" fontWeight="bold" pb={2}>
+              <HStack spacing={2}>
+                <FiCheckCircle />
+                <Text>Send Approval Request?</Text>
+              </HStack>
+            </AlertDialogHeader>
+            <AlertDialogBody py={4}>
+              Are you sure you want to send this requirement for approval?
+            </AlertDialogBody>
+            <AlertDialogFooter pt={4}>
+              <Button ref={cancelApprovalRequestRef} onClick={onApprovalRequestClose} colorScheme="red" variant="ghost">
+                Cancel
+              </Button>
+              <Button
+                colorScheme="orange"
+                leftIcon={<FiSave />}
+                onClick={async () => {
+                  onApprovalRequestClose();
+                  await handleRequestApproval();
+                }}
+                ml={3}
+              >
+                Send Request
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
     </LayoutAdmin>
   );
 }
