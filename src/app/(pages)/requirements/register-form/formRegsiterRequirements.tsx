@@ -7984,8 +7984,6 @@ const Section4RFCView = ({
   useEffect(() => {
     if (
       DataBackLogs.length > 0 &&
-      BacklogApps.length === 0 &&
-      type_req_param === "RFC" &&
       isEditMode // Only populate when loading draft/edit mode
     ) {
       // Convert DataBackLogs to BacklogDataResponse format
@@ -8339,11 +8337,12 @@ const Section4RFCView = ({
             value: ApplicationExistingChoosed.id,
           },
         ];
-        await GetListBacklog("", MAX_SIZE_TABLE, WhereParams);
+        // await GetListBacklog("", MAX_SIZE_TABLE, WhereParams);
       }
     };
     loadBacklogOptions();
   }, [ApplicationExistingChoosed, tokenData]);
+
   const GetDataApplications = async (
     searchValue: string = "",
     limit: number = 1
@@ -8390,7 +8389,7 @@ const Section4RFCView = ({
     if (ApplicationExistingChoosed != null) {
       setApplicationExistingChoosed(null);
       setBacklogAppsOption([]);
-      setBacklogChanges([]);
+      // setBacklogChanges([]);
       setSelectedAppsTypes("");
       setOperationalDays("");
       setSelectedAppsEnvLoc("");
@@ -8523,7 +8522,7 @@ const Section4RFCView = ({
       //         },
     ];
 
-    await GetListBacklog("", MAX_SIZE_TABLE, WhereParams);
+    // await GetListBacklog("", MAX_SIZE_TABLE, WhereParams);
   };
 
   const handleBacklogChange = (
