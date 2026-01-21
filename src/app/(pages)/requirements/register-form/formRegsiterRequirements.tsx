@@ -1590,6 +1590,9 @@ function RegisterRequirementFormPage({
       return;
     }
 
+    console.log("SubmitDraftRequirement - data.backlogFeatures:", data.backlogFeatures);
+    console.log("SubmitDraftRequirement - DataBackLogs:", DataBackLogs);
+
     const payload = {
       requirementId: requirementId!,
       isSubmitSave: true,
@@ -1598,27 +1601,36 @@ function RegisterRequirementFormPage({
         data.requirementType === "RFC" &&
         data.backlogFeatures &&
         data.backlogFeatures.length > 0
-          ? data.backlogFeatures.map((b: any) => ({
-              Id: b.id || null,
-              ParentBacklogId: b.parentBacklogId,
-              BacklogName: b.backlogName,
-              BacklogDesc: b.backlogDesc,
-              Note: b.note,
-              PosOrder: b.posOrder,
-              Urgency: b.urgency || "LOW",
-              Impact: b.impact || "LOW",
-              Priority: b.priority || "LOW",
-              BacklogHistories: b.backlogHistories || [],
-              parentBacklogId: b.parentBacklogId,
-              backlogName: b.backlogName,
-              backlogDesc: b.backlogDesc,
-              note: b.note,
-              posOrder: b.posOrder,
-              urgency: b.urgency || "LOW",
-              impact: b.impact || "LOW",
-              priority: b.priority || "LOW",
-              backlogHistories: b.backlogHistories || [],
-            }))
+          ? data.backlogFeatures.map((b: any) => {
+              console.log("Mapping RFC backlog:", {
+                id: b.id,
+                backlogId: b.backlogId,
+                backlogName: b.backlogName,
+                urgency: b.urgency,
+                backlogHistories: b.backlogHistories,
+              });
+              return {
+                Id: b.id || null,
+                ParentBacklogId: b.parentBacklogId,
+                BacklogName: b.backlogName,
+                BacklogDesc: b.backlogDesc,
+                Note: b.note,
+                PosOrder: b.posOrder,
+                Urgency: b.urgency || "LOW",
+                Impact: b.impact || "LOW",
+                Priority: b.priority || "LOW",
+                BacklogHistories: b.backlogHistories || [],
+                parentBacklogId: b.parentBacklogId,
+                backlogName: b.backlogName,
+                backlogDesc: b.backlogDesc,
+                note: b.note,
+                posOrder: b.posOrder,
+                urgency: b.urgency || "LOW",
+                impact: b.impact || "LOW",
+                priority: b.priority || "LOW",
+                backlogHistories: b.backlogHistories || [],
+              };
+            })
           : DataBackLogs.map((b) => ({
               Id: b.backlogId || null,
               ParentBacklogId: b.parentBacklogId,
