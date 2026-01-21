@@ -708,15 +708,6 @@ export const LinkItems: LinkItemProps[] = [
         menuID: "1",
         children: [],
       },
-      {
-        name: "Master Menu",
-        icon: TiThMenuOutline,
-        link: "/master-data/menus",
-
-        role: ["admin"],
-        menuID: "1",
-        children: [],
-      },
     ],
   },
   {
@@ -724,16 +715,17 @@ export const LinkItems: LinkItemProps[] = [
     icon: IoKeyOutline,
     link: "/master-data/authorize-groups",
     role: ["admin"],
-    isPro: true,
+    isPro: false,
     menuID: "1",
     children: [
       {
-        name: "Authorize Group",
-        icon: TbUsersGroup,
-        link: "/master-data/authorize-groups",
+        name: "Master Menu",
+        icon: TiThMenuOutline,
+        link: "/master-data/menus",
+
         role: ["admin"],
-        isPro: true,
         menuID: "1",
+        
         children: [],
       },
       {
@@ -741,10 +733,20 @@ export const LinkItems: LinkItemProps[] = [
         icon: TbUsersGroup,
         link: "/master-data/sys-module-group",
         role: ["admin"],
-        isPro: true,
+        isPro: false,
         menuID: "1",
         children: [],
-      },      // {
+      },
+      {
+        name: "Authorize Group",
+        icon: TbUsersGroup,
+        link: "/master-data/authorize-groups",
+        role: ["admin"],
+        isPro: false,
+        menuID: "1",
+        children: [],
+      },
+      // {
       //   name: "Master Organization Structure",
       //   icon: RiOrganizationChart,
       //   link: "/coming-soon",

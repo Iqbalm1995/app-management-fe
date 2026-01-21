@@ -313,6 +313,10 @@ export interface ReqBacklogPayload {
   backlogDesc?: string | null;
   note?: string | null;
   posOrder: number;
+  urgency?: string | null;
+  impact?: string | null;
+  priority?: string | null;
+  backlogHistories?: ReqBacklogPayload[];
   reffData?: BacklogDataResponse | null; // Parent backlog data for RFC
 }
 
