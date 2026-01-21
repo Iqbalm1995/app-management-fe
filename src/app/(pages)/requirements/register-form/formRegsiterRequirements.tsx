@@ -7599,10 +7599,11 @@ const Section4BRDView = ({
                     formik.setFieldValue("appPrivateAuth", val)
                   }
                   value={"Y"}
+                  isDisabled={ApplicationExistingChoosed !== null}
                 >
                   <Flex w={"full"} as={HStack}>
-                    <Radio value={"Y"}>Ya</Radio>
-                    <Radio value={"N"} isDisabled>
+                                        <Radio value={"Y"}>Ya</Radio>
+                    <Radio value={"N"}>
                       Tidak
                     </Radio>
                   </Flex>
@@ -9619,10 +9620,11 @@ const Section4RFCView = ({
                     formik.setFieldValue("appPrivateAuth", val)
                   }
                   value={"Y"}
+                  isDisabled={ApplicationExistingChoosed !== null}
                 >
                   <Flex w={"full"} as={HStack}>
-                    <Radio value={"Y"}>Ya</Radio>
-                    <Radio value={"N"} isDisabled>
+                                        <Radio value={"Y"}>Ya</Radio>
+                    <Radio value={"N"}>
                       Tidak
                     </Radio>
                   </Flex>

@@ -44,6 +44,7 @@ import {
   buildUrlPort,
   formatDateInputCustom,
   formatDateTimeBE,
+  formatDateTimeWithSecondsBE,
   formatToRupiah,
   getQuarterText,
   ImagePreviewSM,
@@ -2082,7 +2083,7 @@ const ReqInfoPersonelSectionView = ({
       </InputGroupPanel>
 
       <InputGroupPanel headerTitle={`Informasi Person In Charge (PIC)`}>
-        <FormControl>
+        {/* <FormControl>
           <InputLayoutFull>
             <FormLabel h={"full"} mt={2}>
               User ID
@@ -2102,7 +2103,7 @@ const ReqInfoPersonelSectionView = ({
               <Text>{DataRequirement.userPicIdentityNumber || "N/A"}</Text>
             </Stack>
           </InputLayoutFull>
-        </FormControl>
+        </FormControl> */}
 
         <FormControl>
           <InputLayoutFull>
@@ -3156,7 +3157,7 @@ const ReqInfoAcceptanceView = ({
                       <Stack spacing={0} h={"full"}>
                         <Text>
                           {history.reqReviewStartDate != null
-                            ? formatDateTimeBE(history.reqReviewStartDate)
+                            ? formatDateTimeWithSecondsBE(history.reqReviewStartDate)
                             : "N/A"}
                         </Text>
                       </Stack>
@@ -3171,7 +3172,7 @@ const ReqInfoAcceptanceView = ({
                       <Stack spacing={0} h={"full"}>
                         <Text>
                           {history.reqReviewEndDate != null
-                            ? formatDateTimeBE(history.reqReviewEndDate)
+                            ? formatDateTimeWithSecondsBE(history.reqReviewEndDate)
                             : "N/A"}
                         </Text>
                       </Stack>

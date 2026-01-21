@@ -292,7 +292,7 @@ export default function BRDRFCView() {
     if (token) {
       setTokenData(token);
     }
-    
+
     // Load permissions from accessData
     const accessDataStr = localStorage.getItem("accessData");
     if (accessDataStr) {
@@ -786,9 +786,11 @@ export default function BRDRFCView() {
                 >
                   <Button
                     leftIcon={<FiEye />}
-                    colorScheme="purple"
-                    size="xs"
+                    bg="purple.50"
+                    color="purple.700"
+                    size="xs" py={4} fontSize="sm"
                     w="full"
+                    _hover={{ bg: "purple.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s"
                   >
                     Preview
                   </Button>
@@ -798,8 +800,8 @@ export default function BRDRFCView() {
                 {status === REQ_STATUS_DRAFT && canMake && (
                   <Button
                     leftIcon={<FiEdit />}
-                    colorScheme="blue"
-                    size="xs"
+                    bg="blue.50" color="blue.700" _hover={{ bg: "blue.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s"
+                    size="xs" py={4} fontSize="sm"
                     w="full"
                     onClick={() =>
                       router.push(
@@ -815,8 +817,8 @@ export default function BRDRFCView() {
                 {status === REQ_STATUS_NEED_REVIEW && canReview && (
                   <Button
                     leftIcon={<FiEdit />}
-                    colorScheme="green"
-                    size="xs"
+                    bg="green.50" color="green.700" _hover={{ bg: "green.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s"
+                    size="xs" py={4} fontSize="sm"
                     w="full"
                     onClick={() => {
                       setStartReviewReqId(info.row.original.id);
@@ -831,8 +833,8 @@ export default function BRDRFCView() {
                 {status === REQ_STATUS_IN_PROGRESS_REVIEW && canReview && (
                   <Button
                     leftIcon={<FiEdit />}
-                    colorScheme="green"
-                    size="xs"
+                    bg="green.50" color="green.700" _hover={{ bg: "green.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s"
+                    size="xs" py={4} fontSize="sm"
                     w="full"
                     onClick={() =>
                       router.push(
@@ -848,8 +850,8 @@ export default function BRDRFCView() {
                 {status === REQ_WAITING_APPROVAL && canApprove && (
                   <Button
                     leftIcon={<FiCheck />}
-                    colorScheme="green"
-                    size="xs"
+                    bg="green.50" color="green.700" _hover={{ bg: "green.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s"
+                    size="xs" py={4} fontSize="sm"
                     w="full"
                     onClick={() => {
                       router.push(
@@ -865,8 +867,8 @@ export default function BRDRFCView() {
                 {status === REQ_STATUS_APPROVED && canMake && isHaveMemo === "N" && (
                   <Button
                     leftIcon={<FiEdit />}
-                    colorScheme="blue"
-                    size="xs"
+                    bg="blue.50" color="blue.700" _hover={{ bg: "blue.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s"
+                    size="xs" py={4} fontSize="sm"
                     w="full"
                     onClick={() =>
                       router.push(
@@ -882,8 +884,8 @@ export default function BRDRFCView() {
                 {status === REQ_STATUS_TEMPORARY_APPROVED && canMake && (
                   <Button
                     leftIcon={<FiEdit />}
-                    colorScheme="blue"
-                    size="xs"
+                    bg="blue.50" color="blue.700" _hover={{ bg: "blue.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s"
+                    size="xs" py={4} fontSize="sm"
                     w="full"
                     onClick={() =>
                       router.push(
@@ -897,25 +899,12 @@ export default function BRDRFCView() {
                 {status === REQ_STATUS_TEMPORARY_APPROVED && canReview && (
                   <Button
                     leftIcon={<FiEdit />}
-                    colorScheme="green"
-                    size="xs"
+                    bg="green.50" color="green.700" _hover={{ bg: "green.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s"
+                    size="xs" py={4} fontSize="sm"
                     w="full"
-                    onClick={async () => {
-                      const result = await StartReview(info.row.original.id, tokenData);
-                      if (result?.statusCode === RES_CODE_OK) {
-                        showToast({
-                          description: "Review started successfully",
-                          statusToast: "success",
-                        });
-                        router.push(
-                          `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${info.row.original.id}&mode=review`
-                        );
-                      } else {
-                        showToast({
-                          description: result?.message || "Failed to start review",
-                          statusToast: "error",
-                        });
-                      }
+                    onClick={() => {
+                      setStartReviewReqId(info.row.original.id);
+                      onStartReviewOpen();
                     }}
                   >
                     Start Review
@@ -926,8 +915,8 @@ export default function BRDRFCView() {
                 {status === REQ_STATUS_ON_HOLD && canMake && (
                   <Button
                     leftIcon={<FiEdit />}
-                    colorScheme="blue"
-                    size="xs"
+                    bg="blue.50" color="blue.700" _hover={{ bg: "blue.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s"
+                    size="xs" py={4} fontSize="sm"
                     w="full"
                     onClick={() =>
                       router.push(
@@ -941,25 +930,12 @@ export default function BRDRFCView() {
                 {status === REQ_STATUS_ON_HOLD && canReview && (
                   <Button
                     leftIcon={<FiEdit />}
-                    colorScheme="green"
-                    size="xs"
+                    bg="green.50" color="green.700" _hover={{ bg: "green.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s"
+                    size="xs" py={4} fontSize="sm"
                     w="full"
-                    onClick={async () => {
-                      const result = await StartReview(info.row.original.id, tokenData);
-                      if (result?.statusCode === RES_CODE_OK) {
-                        showToast({
-                          description: "Review started successfully",
-                          statusToast: "success",
-                        });
-                        router.push(
-                          `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${info.row.original.id}&mode=review`
-                        );
-                      } else {
-                        showToast({
-                          description: result?.message || "Failed to start review",
-                          statusToast: "error",
-                        });
-                      }
+                    onClick={() => {
+                      setStartReviewReqId(info.row.original.id);
+                      onStartReviewOpen();
                     }}
                   >
                     Start Review
@@ -1174,7 +1150,7 @@ export default function BRDRFCView() {
                 rounded={radiusStyle}
                 boxShadow={"md"}
                 colorScheme="purple"
-                size="sm"
+                size="xs"
                 leftIcon={showAll ? <FiChevronUp /> : <FiChevronDown />}
                 onClick={() => setShowAll(!showAll)}
               >
@@ -1265,7 +1241,7 @@ export default function BRDRFCView() {
                   overflowX={"auto"}
                   maxH={"350px"}
                   p={2}
-                  bgColor={"gray.200"}
+                  bgColor={"gray.50"}
                 >
                   <pre>{JSON.stringify(ParamFilter, null, 2)}</pre>
                 </Box> */}
@@ -1280,7 +1256,7 @@ export default function BRDRFCView() {
                     <HStack spacing={2}>
                       <HStack
                         spacing={1}
-                        bg={colorMode === "light" ? "gray.100" : "gray.700"}
+                        bg={colorMode === "light" ? "gray.50" : "gray.700"}
                         rounded="lg"
                         p={1}
                         w="fit-content"
@@ -1348,7 +1324,7 @@ export default function BRDRFCView() {
                           </Portal>
                         </Popover>
                       </HStack>
-                      <ButtonGroup size="sm" isAttached variant="outline">
+                      <ButtonGroup size="xs" isAttached variant="outline">
                         <Button
                           colorScheme={viewMode === "BRD" ? "blue" : "gray"}
                           variant={viewMode === "BRD" ? "solid" : "outline"}

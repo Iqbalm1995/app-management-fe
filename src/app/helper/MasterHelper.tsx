@@ -333,6 +333,23 @@ export function formatDateTimeBE(datetimeString: string): string {
   return formattedDate;
 }
 
+export function formatDateTimeWithSecondsBE(datetimeString: string): string {
+  const options: Intl.DateTimeFormatOptions = {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  };
+
+  const formattedDate: string = new Date(datetimeString)
+    .toLocaleDateString(undefined, options)
+    .replace(/(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+):(\d+)/, "$3/$2/$1 $4:$5:$6");
+
+  return formattedDate;
+}
+
 export function formatDateTimeBEPeriodFormat(datetimeString: string): string {
   const inputDate = new Date(datetimeString);
 
