@@ -8323,10 +8323,10 @@ const Section4RFCView = ({
             return;
           }
           console.log("RFC mode: Starting with empty backlog array");
-          setBacklogApps([]);
-          setBacklogAppsOption([]);
-          setBacklogChanges([]);
-          setDataBackLogs([]);
+          // setBacklogApps([]);
+          // setBacklogAppsOption([]);
+          // setBacklogChanges([]);
+          // setDataBackLogs([]);
           return;
         }
 
@@ -8388,7 +8388,7 @@ const Section4RFCView = ({
     console.log(data);
     if (ApplicationExistingChoosed != null) {
       setApplicationExistingChoosed(null);
-      setBacklogAppsOption([]);
+      // setBacklogAppsOption([]);
       // setBacklogChanges([]);
       setSelectedAppsTypes("");
       setOperationalDays("");
