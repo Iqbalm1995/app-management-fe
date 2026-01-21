@@ -1457,14 +1457,141 @@ function RequirementDetailView() {
 
                     {activeStep === 4 && (
                       <Flex as={Stack} w={"full"} spacing={5}>
+                        {reqType === "RFC" ? (
+                          <InputGroupPanel
+                            headerTitle={steps[activeStep].description}
+                          >
+                            <RfcBacklogChangesView
+                              DataBacklogs={DataBacklogsRequirement}
+                              colorMode={colorMode}
+                            />
+                          </InputGroupPanel>
+                        ) : (
+                          <>
+                            <InputGroupPanel
+                              headerTitle={steps[activeStep].description}
+                            >
+                              <ReqInfoSummaryFileAttachmentsView
+                                DataRequirement={DataRequirement}
+                                DataAttachment={DataFileReq}
+                                steps={steps}
+                                activeStep={activeStep}
+                              />
+                            </InputGroupPanel>
+
+                            {canApprove && approvalMode && DataRequirement?.reqStatus === REQ_WAITING_APPROVAL && (
+                              <InputGroupPanel headerTitle={"Update Status"}>
+                                {DataRequirement?.isStatusFinal ? (
+                                  <Alert status="success" rounded="md">
+                                    <AlertIcon />
+                                    <VStack align="start" spacing={1}>
+                                      <Text fontWeight="bold">
+                                        Status Already Final
+                                      </Text>
+                                      <Text fontSize="sm">
+                                        Current Status: <Badge colorScheme="green">{DataRequirement.reqStatus}</Badge>
+                                      </Text>
+                                      <Text fontSize="sm" color="gray.600">
+                                        This requirement has reached a final status and cannot be changed.
+                                      </Text>
+                                    </VStack>
+                                  </Alert>
+                                ) : (
+                                  <Flex as={Stack} spacing={4}>
+                                    <FormControl>
+                                      <HStack spacing={4} align="center">
+                                        <FormLabel mb={0} minW="120px">Status Approval</FormLabel>
+                                        <RadioGroup
+                                          value={StatusRequirement || ""}
+                                          onChange={setStatusRequirement}
+                                        >
+                                          <HStack spacing={3}>
+                                            {isLoadingStatuses ? (
+                                              <Text fontSize="sm" color="gray.500">
+                                                Loading statuses...
+                                              </Text>
+                                            ) : availableStatuses.length === 0 ? (
+                                              <Text fontSize="sm" color="gray.500">
+                                                No approval statuses available
+                                              </Text>
+                                            ) : (
+                                              availableStatuses.map((status) => {
+                                                const colorScheme = STATUS_COLORS[status.codeStatus as keyof typeof STATUS_COLORS] || "gray";
+                                                const isSelected = StatusRequirement === status.codeStatus;
+                                                return (
+                                                  <Box
+                                                    key={status.id}
+                                                    as="label"
+                                                    cursor="pointer"
+                                                    borderRadius="md"
+                                                    bg={`${colorScheme}.100`}
+                                                    px={3}
+                                                    py={2}
+                                                    onDoubleClick={() => {
+                                                      if (isSelected) {
+                                                        setStatusRequirement("");
+                                                      }
+                                                    }}
+                                                  >
+                                                    <Radio
+                                                      value={status.codeStatus}
+                                                      colorScheme="blackAlpha"
+                                                      sx={{
+                                                        '[data-checked]': {
+                                                          bg: 'black',
+                                                          borderColor: 'black',
+                                                        }
+                                                      }}
+                                                    >
+                                                      <Text fontSize="sm" fontWeight="bold" color={`${colorScheme}.700`}>
+                                                        {status.nameStatus}
+                                                      </Text>
+                                                    </Radio>
+                                                  </Box>
+                                                );
+                                              })
+                                            )}
+                                          </HStack>
+                                        </RadioGroup>
+                                      </HStack>
+                                    </FormControl>
+
+                                    <FormControl>
+                                      <HStack spacing={4} align="start">
+                                        <FormLabel mb={0} minW="120px">Note Approval</FormLabel>
+                                        <Textarea
+                                          value={ApprovalNote || ""}
+                                          onChange={(e) => setApprovalNote(e.target.value)}
+                                          placeholder="Enter approval note (optional)"
+                                          rows={4}
+                                          flex="1"
+                                        />
+                                      </HStack>
+                                    </FormControl>
+
+                                    <Flex justifyContent="flex-end">
+                                      <Button
+                                        colorScheme="blue"
+                                        onClick={ActionApprovalChangeStatus}
+                                        isDisabled={!StatusRequirement || isSubmittingApproval}
+                                      >
+                                        Submit Approval
+                                      </Button>
+                                    </Flex>
+                                  </Flex>
+                                )}
+                              </InputGroupPanel>
+                            )}
+                          </>
+                        )}
+                      </Flex>
+                    )}
+
+                    {reqType === "RFC" && activeStep === 5 && (
+                      <Flex as={Stack} w={"full"} spacing={5}>
                         <InputGroupPanel
                           headerTitle={steps[activeStep].description}
                         >
-                          {/* <ReqAttachmentView
-                            RefreshData={RefreshData}
-                            ReqData={DataRequirement}
-                            RefreshAction={RefreshAction}
-                          /> */}
                           <ReqInfoSummaryFileAttachmentsView
                             DataRequirement={DataRequirement}
                             DataAttachment={DataFileReq}
@@ -1576,19 +1703,6 @@ function RequirementDetailView() {
                             )}
                           </InputGroupPanel>
                         )}
-                      </Flex>
-                    )}
-
-                    {reqType === "RFC" && activeStep === 5 && (
-                      <Flex as={Stack} w={"full"} spacing={5}>
-                        <InputGroupPanel
-                          headerTitle={steps[activeStep].description}
-                        >
-                          <RfcBacklogChangesView
-                            DataBacklogs={DataBacklogsRequirement}
-                            colorMode={colorMode}
-                          />
-                        </InputGroupPanel>
                       </Flex>
                     )}
 
