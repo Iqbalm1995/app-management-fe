@@ -2044,8 +2044,16 @@ const ReqInfoGeneralSectionView = ({
             </FormLabel>
             <Stack spacing={0} h={"full"}>
               <Text>
-                {DataRequirement.reqDurationDay != null
-                  ? `${DataRequirement.reqDurationDay} Hari kalender`
+                {DataRequirement.reqInititateDate != null && DataRequirement.reqAcceptedDate != null
+                  ? (() => {
+                      const startDate = new Date(DataRequirement.reqInititateDate);
+                      const endDate = new Date(DataRequirement.reqAcceptedDate);
+                      const diffMs = endDate.getTime() - startDate.getTime();
+                      const diffDays = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+                      return `${diffDays} Hari Kalender`;
+                    })()
+                  : DataRequirement.reqDurationDay != null
+                  ? `${DataRequirement.reqDurationDay} Hari Kalender`
                   : "N/A"}
               </Text>
             </Stack>
