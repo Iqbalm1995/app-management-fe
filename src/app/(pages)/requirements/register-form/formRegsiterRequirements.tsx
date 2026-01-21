@@ -1402,8 +1402,14 @@ function RegisterRequirementFormPage({
     const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
 
     if (isErrorResponse || !requestData) {
+      let errorMessage = requestData?.message || RES_GENERIC_ERROR_MSG;
+      
+      if (requestData?.error?.errors) {
+        errorMessage = "Choose an application in Step 5 to save your draft.";
+      }
+
       showToast({
-        description: requestData?.message || RES_GENERIC_ERROR_MSG,
+        description: errorMessage,
         statusToast: "error",
       });
       setActionLoading(false);
@@ -1522,8 +1528,14 @@ function RegisterRequirementFormPage({
     const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
 
     if (isErrorResponse || !requestData) {
+      let errorMessage = requestData?.message || RES_GENERIC_ERROR_MSG;
+      
+      if (requestData?.error?.errors) {
+        errorMessage = "Choose an application in Step 5 to save your draft.";
+      }
+
       showToast({
-        description: requestData?.message || RES_GENERIC_ERROR_MSG,
+        description: errorMessage,
         statusToast: "error",
       });
       setActionLoading(false);
