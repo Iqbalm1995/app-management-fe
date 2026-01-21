@@ -1074,7 +1074,7 @@ export function calculateDurationInDays(
   const diffTime = endDate.getTime() - startDate.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-  return diffDays;
+  return diffDays + 1;
 }
 
 export const renderFileIcon = (file: File) => {

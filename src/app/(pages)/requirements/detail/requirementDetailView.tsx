@@ -3404,161 +3404,234 @@ const RfcBacklogChangesView = ({
   return (
     <Flex as={Stack} w={"full"} spacing={5}>
       {sortedBacklogs.length > 0 ? (
-        sortedBacklogs.map((backlog, index) => (
-          <Grid
-            key={backlog.id}
-            templateColumns="repeat(2, 1fr)"
-            gap={4}
-            w={"full"}
-          >
-            <GridItem colSpan={2} w={"full"}>
-              <Flex as={HStack} w={"full"} justifyContent={"space-between"}>
-                <Heading as="h5" size="sm">
-                  Perubahan Sistem - {index + 1}
-                </Heading>
-                <Badge colorScheme="blue" size="sm">
-                  {backlog.posOrder || index + 1}
-                </Badge>
-              </Flex>
-            </GridItem>
+        sortedBacklogs.map((backlog, index) => {
+          // Get latest history as Kondisi Eksisting
+          const latestHistory = backlog.backlogHistories && backlog.backlogHistories.length > 0
+            ? backlog.backlogHistories[backlog.backlogHistories.length - 1]
+            : null;
 
-            {/* BEFORE - Left Column */}
-            <GridItem colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }} w={"full"}>
-              <Flex
-                as={Stack}
-                w={"full"}
-                p={5}
-                rounded={radiusStyle}
-                border={"2px"}
-                borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-                spacing={2}
-                boxShadow={"md"}
-                minH={"280px"}
-              >
-                <Flex w={"full"} as={HStack} justifyContent={"space-between"}>
+          return (
+            <Grid
+              key={backlog.id}
+              templateColumns="repeat(2, 1fr)"
+              gap={4}
+              w={"full"}
+            >
+              <GridItem colSpan={2} w={"full"}>
+                <Flex as={HStack} w={"full"} justifyContent={"space-between"}>
                   <Heading as="h5" size="sm">
-                    Kondisi Eksisting
+                    Perubahan Sistem - {index + 1}
                   </Heading>
-                  <Badge
-                    colorScheme={"gray"}
-                    fontSize={"medium"}
-                    px={2}
-                    rounded={"md"}
-                  >
-                    Lama
+                  <Badge colorScheme="blue" size="sm">
+                    {backlog.posOrder || index + 1}
                   </Badge>
                 </Flex>
-                <Divider borderColor={"gray.300"} />
+              </GridItem>
 
-                <FormControl>
-                  <InputLayoutFull>
-                    <FormLabel h={"full"} mt={2}>
-                      Nama Scope
-                    </FormLabel>
-                    <Text>{backlog.reffData?.backlogName || "-"}</Text>
-                  </InputLayoutFull>
-                </FormControl>
-
-                <FormControl>
-                  <InputLayoutFull>
-                    <FormLabel h={"full"} mt={2}>
-                      Deskripsi
-                    </FormLabel>
-                    <Text>{backlog.reffData?.backlogDesc || "-"}</Text>
-                  </InputLayoutFull>
-                </FormControl>
-
-                <FormControl>
-                  <InputLayoutFull>
-                    <FormLabel h={"full"} mt={2}>
-                      Catatan
-                    </FormLabel>
-                    <Text>{backlog.reffData?.note || "-"}</Text>
-                  </InputLayoutFull>
-                </FormControl>
-
-                <FormControl>
-                  <InputLayoutFull>
-                    <FormLabel h={"full"} mt={2}>
-                      Priority
-                    </FormLabel>
-                    <Badge colorScheme="gray">
-                      {backlog.reffData?.posOrder || 0}
+              {/* BEFORE - Left Column */}
+              <GridItem colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }} w={"full"}>
+                <Flex
+                  as={Stack}
+                  w={"full"}
+                  p={5}
+                  rounded={radiusStyle}
+                  border={"2px"}
+                  borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                  spacing={2}
+                  boxShadow={"md"}
+                  minH={"280px"}
+                >
+                  <Flex w={"full"} as={HStack} justifyContent={"space-between"}>
+                    <Heading as="h5" size="sm">
+                      Kondisi Eksisting
+                    </Heading>
+                    <Badge
+                      colorScheme={"gray"}
+                      fontSize={"medium"}
+                      px={2}
+                      rounded={"md"}
+                    >
+                      Lama
                     </Badge>
-                  </InputLayoutFull>
-                </FormControl>
-              </Flex>
-            </GridItem>
+                  </Flex>
+                  <Divider borderColor={"gray.300"} />
 
-            {/* AFTER - Right Column */}
-            <GridItem colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }} w={"full"}>
-              <Flex
-                as={Stack}
-                w={"full"}
-                p={5}
-                rounded={radiusStyle}
-                border={"2px"}
-                borderColor={"secondary.300"}
-                spacing={2}
-                boxShadow={"md"}
-                minH={"280px"}
-              >
-                <Flex w={"full"} as={HStack} justifyContent={"space-between"}>
-                  <Heading as="h5" size="sm">
-                    Kondisi Perubahan
-                  </Heading>
-                  <Badge
-                    colorScheme={"secondary"}
-                    fontSize={"medium"}
-                    px={2}
-                    rounded={"md"}
-                  >
-                    Baru
-                  </Badge>
+                  <FormControl>
+                    <InputLayoutFull>
+                      <FormLabel h={"full"} mt={2}>
+                        Nama Scope
+                      </FormLabel>
+                      <Text>{latestHistory?.backlogName || "-"}</Text>
+                    </InputLayoutFull>
+                  </FormControl>
+
+                  <FormControl>
+                    <InputLayoutFull>
+                      <FormLabel h={"full"} mt={2}>
+                        Deskripsi
+                      </FormLabel>
+                      <Text>{latestHistory?.backlogDesc || "-"}</Text>
+                    </InputLayoutFull>
+                  </FormControl>
+
+                  <FormControl>
+                    <InputLayoutFull>
+                      <FormLabel h={"full"} mt={2}>
+                        Catatan
+                      </FormLabel>
+                      <Text>{latestHistory?.note || "-"}</Text>
+                    </InputLayoutFull>
+                  </FormControl>
+
+                  <FormControl>
+                    <InputLayoutFull>
+                      <FormLabel h={"full"} mt={2}>
+                        Urgency
+                      </FormLabel>
+                      <Badge colorScheme="orange">
+                        {latestHistory?.urgency || "LOW"}
+                      </Badge>
+                    </InputLayoutFull>
+                  </FormControl>
+
+                  <FormControl>
+                    <InputLayoutFull>
+                      <FormLabel h={"full"} mt={2}>
+                        Impact
+                      </FormLabel>
+                      <Badge colorScheme="red">
+                        {latestHistory?.impact || "LOW"}
+                      </Badge>
+                    </InputLayoutFull>
+                  </FormControl>
+
+                  <FormControl>
+                    <InputLayoutFull>
+                      <FormLabel h={"full"} mt={2}>
+                        Priority
+                      </FormLabel>
+                      <Badge colorScheme="purple">
+                        {latestHistory?.priority || "LOW"}
+                      </Badge>
+                    </InputLayoutFull>
+                  </FormControl>
+
+                  <FormControl>
+                    <InputLayoutFull>
+                      <FormLabel h={"full"} mt={2}>
+                        Order Position
+                      </FormLabel>
+                      <Badge colorScheme="gray">
+                        {latestHistory?.posOrder || 0}
+                      </Badge>
+                    </InputLayoutFull>
+                  </FormControl>
                 </Flex>
-                <Divider borderColor={"gray.300"} />
+              </GridItem>
 
-                <FormControl>
-                  <InputLayoutFull>
-                    <FormLabel h={"full"} mt={2}>
-                      Nama Scope
-                    </FormLabel>
-                    <Text>{backlog.backlogName || "-"}</Text>
-                  </InputLayoutFull>
-                </FormControl>
-
-                <FormControl>
-                  <InputLayoutFull>
-                    <FormLabel h={"full"} mt={2}>
-                      Deskripsi
-                    </FormLabel>
-                    <Text>{backlog.backlogDesc || "-"}</Text>
-                  </InputLayoutFull>
-                </FormControl>
-
-                <FormControl>
-                  <InputLayoutFull>
-                    <FormLabel h={"full"} mt={2}>
-                      Catatan
-                    </FormLabel>
-                    <Text>{backlog.note || "-"}</Text>
-                  </InputLayoutFull>
-                </FormControl>
-
-                <FormControl>
-                  <InputLayoutFull>
-                    <FormLabel h={"full"} mt={2}>
-                      Priority
-                    </FormLabel>
-                    <Badge colorScheme="secondary">
-                      {backlog.posOrder || 0}
+              {/* AFTER - Right Column */}
+              <GridItem colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }} w={"full"}>
+                <Flex
+                  as={Stack}
+                  w={"full"}
+                  p={5}
+                  rounded={radiusStyle}
+                  border={"2px"}
+                  borderColor={"secondary.300"}
+                  spacing={2}
+                  boxShadow={"md"}
+                  minH={"280px"}
+                >
+                  <Flex w={"full"} as={HStack} justifyContent={"space-between"}>
+                    <Heading as="h5" size="sm">
+                      Kondisi Perubahan
+                    </Heading>
+                    <Badge
+                      colorScheme={"secondary"}
+                      fontSize={"medium"}
+                      px={2}
+                      rounded={"md"}
+                    >
+                      Baru
                     </Badge>
-                  </InputLayoutFull>
-                </FormControl>
-              </Flex>
-            </GridItem>
-          </Grid>
-        ))
+                  </Flex>
+                  <Divider borderColor={"gray.300"} />
+
+                  <FormControl>
+                    <InputLayoutFull>
+                      <FormLabel h={"full"} mt={2}>
+                        Nama Scope
+                      </FormLabel>
+                      <Text>{backlog.backlogName || "-"}</Text>
+                    </InputLayoutFull>
+                  </FormControl>
+
+                  <FormControl>
+                    <InputLayoutFull>
+                      <FormLabel h={"full"} mt={2}>
+                        Deskripsi
+                      </FormLabel>
+                      <Text>{backlog.backlogDesc || "-"}</Text>
+                    </InputLayoutFull>
+                  </FormControl>
+
+                  <FormControl>
+                    <InputLayoutFull>
+                      <FormLabel h={"full"} mt={2}>
+                        Catatan
+                      </FormLabel>
+                      <Text>{backlog.note || "-"}</Text>
+                    </InputLayoutFull>
+                  </FormControl>
+
+                  <FormControl>
+                    <InputLayoutFull>
+                      <FormLabel h={"full"} mt={2}>
+                        Urgency
+                      </FormLabel>
+                      <Badge colorScheme="orange">
+                        {backlog.urgency || "LOW"}
+                      </Badge>
+                    </InputLayoutFull>
+                  </FormControl>
+
+                  <FormControl>
+                    <InputLayoutFull>
+                      <FormLabel h={"full"} mt={2}>
+                        Impact
+                      </FormLabel>
+                      <Badge colorScheme="red">
+                        {backlog.impact || "LOW"}
+                      </Badge>
+                    </InputLayoutFull>
+                  </FormControl>
+
+                  <FormControl>
+                    <InputLayoutFull>
+                      <FormLabel h={"full"} mt={2}>
+                        Priority
+                      </FormLabel>
+                      <Badge colorScheme="purple">
+                        {backlog.priority || "LOW"}
+                      </Badge>
+                    </InputLayoutFull>
+                  </FormControl>
+
+                  <FormControl>
+                    <InputLayoutFull>
+                      <FormLabel h={"full"} mt={2}>
+                        Order Position
+                      </FormLabel>
+                      <Badge colorScheme="secondary">
+                        {backlog.posOrder || 0}
+                      </Badge>
+                    </InputLayoutFull>
+                  </FormControl>
+                </Flex>
+              </GridItem>
+            </Grid>
+          );
+        })
       ) : (
         <Text color="gray.500" textAlign="center" py={8}>
           Tidak ada data perubahan sistem

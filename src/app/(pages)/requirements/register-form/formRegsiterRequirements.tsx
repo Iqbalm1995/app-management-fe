@@ -9061,7 +9061,6 @@ const Section4RFCView = ({
                                   { label: "LOW", value: "LOW" },
                                   { label: "MEDIUM", value: "MEDIUM" },
                                   { label: "HIGH", value: "HIGH" },
-                                  { label: "CRITICAL", value: "CRITICAL" },
                                 ]}
                                 value={{ label: item.backlog.urgency || "LOW", value: item.backlog.urgency || "LOW" }}
                                 onChange={(e) => {
@@ -9089,7 +9088,6 @@ const Section4RFCView = ({
                                   { label: "LOW", value: "LOW" },
                                   { label: "MEDIUM", value: "MEDIUM" },
                                   { label: "HIGH", value: "HIGH" },
-                                  { label: "CRITICAL", value: "CRITICAL" },
                                 ]}
                                 value={{ label: item.backlog.impact || "LOW", value: item.backlog.impact || "LOW" }}
                                 onChange={(e) => {
@@ -9288,7 +9286,6 @@ const Section4RFCView = ({
                                 { label: "LOW", value: "LOW" },
                                 { label: "MEDIUM", value: "MEDIUM" },
                                 { label: "HIGH", value: "HIGH" },
-                                { label: "CRITICAL", value: "CRITICAL" },
                               ]}
                               value={{ label: item.urgency || "LOW", value: item.urgency || "LOW" }}
                               onChange={(e) => {
@@ -9316,7 +9313,6 @@ const Section4RFCView = ({
                                 { label: "LOW", value: "LOW" },
                                 { label: "MEDIUM", value: "MEDIUM" },
                                 { label: "HIGH", value: "HIGH" },
-                                { label: "CRITICAL", value: "CRITICAL" },
                               ]}
                               value={{ label: item.impact || "LOW", value: item.impact || "LOW" }}
                               onChange={(e) => {
