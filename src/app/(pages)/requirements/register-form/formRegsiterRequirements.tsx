@@ -8135,18 +8135,9 @@ const Section4RFCView = ({
           // For new RFC registration, parentBacklogId should be null
           // History is stored in backlogHistories array instead
           parentBacklogId: null,
-          backlogName:
-            dt.backlog.id === "NEW_SCOPE"
-              ? dt.backlog.backlogName || dt.changes?.backlogName || ""
-              : dt.changes?.backlogName || "",
-          backlogDesc:
-            dt.backlog.id === "NEW_SCOPE"
-              ? dt.backlog.backlogDesc || dt.changes?.backlogDesc || ""
-              : dt.changes?.backlogDesc || "",
-          note:
-            dt.backlog.id === "NEW_SCOPE"
-              ? dt.backlog.note || dt.changes?.note || ""
-              : dt.changes?.note || "",
+          backlogName: dt.changes?.backlogName || "",
+          backlogDesc: dt.changes?.backlogDesc || "",
+          note: dt.changes?.note || "",
           posOrder: dt.changes?.posOrder || DataBackLogs.length + 1,
           urgency: dt.urgency || "LOW",
           impact: dt.impact || "LOW",
