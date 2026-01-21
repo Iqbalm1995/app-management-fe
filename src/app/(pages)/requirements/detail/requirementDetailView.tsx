@@ -1526,8 +1526,8 @@ function RequirementDetailView() {
                                                   }
                                                 }}
                                               >
-                                                <Radio 
-                                                  value={status.codeStatus} 
+                                                <Radio
+                                                  value={status.codeStatus}
                                                   colorScheme="blackAlpha"
                                                   sx={{
                                                     '[data-checked]': {
@@ -1734,7 +1734,7 @@ function RequirementDetailView() {
                         : DataRequirement?.reqNarative || "-"}
                     </Text>
                   </Box>
-                  
+
                   {approvalMode && (
                     <Box>
                       <Text fontSize="xs" color="gray.600" mb={1}>
@@ -1743,30 +1743,30 @@ function RequirementDetailView() {
                       <Text fontWeight="semibold">{DataRequirement?.assignedFromName || "-"}</Text>
                     </Box>
                   )}
-                  
+
                   <Divider />
-                  
+
                   <Box>
                     <Text fontSize="xs" color="gray.600" mb={1}>
                       Approve Status
                     </Text>
-                    <Badge 
-                      colorScheme={STATUS_COLORS[StatusRequirement as keyof typeof STATUS_COLORS] || "blue"} 
-                      fontSize="sm" 
-                      px={2} 
+                    <Badge
+                      colorScheme={STATUS_COLORS[StatusRequirement as keyof typeof STATUS_COLORS] || "blue"}
+                      fontSize="sm"
+                      px={2}
                       py={1}
                     >
                       {availableStatuses.find((s) => s.codeStatus === StatusRequirement)?.nameStatus || StatusRequirement}
                     </Badge>
                   </Box>
-                  
+
                   <Box>
                     <Text fontSize="xs" color="gray.600" mb={1}>
                       Approve By
                     </Text>
                     <Text fontWeight="semibold">{DataAuth?.nama || "-"}</Text>
                   </Box>
-                  
+
                   {ApprovalNote && (
                     <>
                       <Divider />
@@ -1791,7 +1791,7 @@ function RequirementDetailView() {
               </Alert>
             </VStack>
           </ModalBody>
-          
+
           <ModalFooter>
             <Button variant="ghost" colorScheme="red" onClick={onApprovalModalClose} mr={3}>
               Cancel
@@ -3181,16 +3181,33 @@ const ReqInfoAcceptanceView = ({
                   <FormControl>
                     <InputLayoutFullHalf>
                       <FormLabel h={"full"} mt={2}>
-                        Duration
+                        Durasi Review
                       </FormLabel>
                       <Stack spacing={0} h={"full"}>
-                        <Text>
+                        <Text fontWeight="bold">
                           {history.reqReviewStartDate && history.reqReviewEndDate
-                            ? `${Math.ceil(
-                              (new Date(history.reqReviewEndDate).getTime() -
-                                new Date(history.reqReviewStartDate).getTime()) /
-                              (1000 * 60 * 60 * 24)
-                            )} Hari`
+                            ? (() => {
+                              const diffMs = new Date(history.reqReviewEndDate).getTime() -
+                                new Date(history.reqReviewStartDate).getTime();
+                              const diffSeconds = Math.floor(diffMs / 1000);
+                              const diffMinutes = Math.floor(diffMs / (1000 * 60));
+                              const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                              const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+                              if (diffHours < 1) {
+                                const remainingSeconds = diffSeconds % 60;
+                                return `${diffMinutes} Menit ${remainingSeconds} Detik`;
+                              } else if (diffHours < 24) {
+                                const remainingMinutes = diffMinutes % 60;
+                                const remainingSeconds = diffSeconds % 60;
+                                return `${diffHours} Jam ${remainingMinutes} Menit ${remainingSeconds} Detik`;
+                              } else {
+                                const remainingHours = diffHours % 24;
+                                const remainingMinutes = diffMinutes % 60;
+                                const remainingSeconds = diffSeconds % 60;
+                                return `${diffDays} Hari ${remainingHours} Jam ${remainingMinutes} Menit ${remainingSeconds} Detik`;
+                              }
+                            })()
                             : "N/A"}
                         </Text>
                       </Stack>
