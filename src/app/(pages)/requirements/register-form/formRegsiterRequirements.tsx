@@ -7660,6 +7660,8 @@ const Section4BRDView = ({
                   {formik.errors.appAccessMedia}
                 </FormErrorMessage>
                 <Divider py={1} />
+                {ApplicationExistingChoosed === null && (
+                  <>
                 <Text fontSize={"smaller"} py={2}>
                   Tambah Cepat
                 </Text>
@@ -7696,6 +7698,8 @@ const Section4BRDView = ({
                     ))}
                   </Flex>
                 </FormControl>
+                  </>
+                )}
               </Stack>
             </InputLayoutFull>
           </FormControl>
@@ -9680,6 +9684,8 @@ const Section4RFCView = ({
                 <FormErrorMessage>
                   {formik.errors.appAccessMedia}
                 </FormErrorMessage>
+                {ApplicationExistingChoosed === null && (
+                  <>
                 <Divider py={1} />
                 <Text fontSize={"smaller"} py={2}>
                   Tambah Cepat
@@ -9717,6 +9723,8 @@ const Section4RFCView = ({
                     ))}
                   </Flex>
                 </FormControl>
+                  </>
+                )}
               </Stack>
             </InputLayoutFull>
           </FormControl>
