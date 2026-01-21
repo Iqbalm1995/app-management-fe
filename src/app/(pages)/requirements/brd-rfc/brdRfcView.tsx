@@ -313,7 +313,11 @@ export default function BRDRFCView() {
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
   const [ActionLoading, setActionLoading] = useState(false);
   const [startReviewReqId, setStartReviewReqId] = useState<string | null>(null);
-  const { isOpen: isStartReviewOpen, onOpen: onStartReviewOpen, onClose: onStartReviewClose } = useDisclosure();
+  const {
+    isOpen: isStartReviewOpen,
+    onOpen: onStartReviewOpen,
+    onClose: onStartReviewClose,
+  } = useDisclosure();
   const cancelStartReviewRef = useRef<any>(null);
 
   const [totalPages, setTotalPageData] = useState<number>(0);
@@ -615,23 +619,32 @@ export default function BRDRFCView() {
                 <>
                   {info.row.original.approvalDatas.slice(0, 3).map((x, idx) => (
                     <Text fontWeight={600} key={idx} fontSize="smaller">
-                      {idx + 1}. {x.approverUserFirstName} {x.approverUserLastnameName}
+                      {idx + 1}. {x.approverUserFirstName}{" "}
+                      {x.approverUserLastnameName}
                     </Text>
                   ))}
                   {info.row.original.approvalDatas.length > 3 && (
                     <Tooltip
                       label={
                         <VStack align="start" spacing={1}>
-                          {info.row.original.approvalDatas.slice(3).map((x, idx) => (
-                            <Text key={idx} fontSize="xs">
-                              {idx + 4}. {x.approverUserFirstName} {x.approverUserLastnameName}
-                            </Text>
-                          ))}
+                          {info.row.original.approvalDatas
+                            .slice(3)
+                            .map((x, idx) => (
+                              <Text key={idx} fontSize="xs">
+                                {idx + 4}. {x.approverUserFirstName}{" "}
+                                {x.approverUserLastnameName}
+                              </Text>
+                            ))}
                         </VStack>
                       }
                       placement="top"
                     >
-                      <Text fontWeight={600} fontSize="smaller" color="gray.600" cursor="pointer">
+                      <Text
+                        fontWeight={600}
+                        fontSize="smaller"
+                        color="gray.600"
+                        cursor="pointer"
+                      >
                         ... +{info.row.original.approvalDatas.length - 3} more
                       </Text>
                     </Tooltip>
@@ -805,7 +818,8 @@ export default function BRDRFCView() {
                     w="full"
                     onClick={() =>
                       router.push(
-                        `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${info.row.original.id}`
+                        `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${info.row.original.id
+                        }`
                       )
                     }
                   >
@@ -838,7 +852,8 @@ export default function BRDRFCView() {
                     w="full"
                     onClick={() =>
                       router.push(
-                        `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${info.row.original.id}&mode=review`
+                        `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${info.row.original.id
+                        }&mode=review`
                       )
                     }
                   >
@@ -889,7 +904,8 @@ export default function BRDRFCView() {
                     w="full"
                     onClick={() =>
                       router.push(
-                        `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${info.row.original.id}`
+                        `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${info.row.original.id
+                        }`
                       )
                     }
                   >
@@ -902,9 +918,27 @@ export default function BRDRFCView() {
                     bg="green.50" color="green.700" _hover={{ bg: "green.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s"
                     size="xs" py={4} fontSize="sm"
                     w="full"
-                    onClick={() => {
-                      setStartReviewReqId(info.row.original.id);
-                      onStartReviewOpen();
+                    onClick={async () => {
+                      const result = await StartReview(
+                        info.row.original.id,
+                        tokenData
+                      );
+                      if (result?.statusCode === RES_CODE_OK) {
+                        showToast({
+                          description: "Review started successfully",
+                          statusToast: "success",
+                        });
+                        router.push(
+                          `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${info.row.original.id
+                          }&mode=review`
+                        );
+                      } else {
+                        showToast({
+                          description:
+                            result?.message || "Failed to start review",
+                          statusToast: "error",
+                        });
+                      }
                     }}
                   >
                     Start Review
@@ -920,7 +954,8 @@ export default function BRDRFCView() {
                     w="full"
                     onClick={() =>
                       router.push(
-                        `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${info.row.original.id}`
+                        `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${info.row.original.id
+                        }`
                       )
                     }
                   >
@@ -933,9 +968,27 @@ export default function BRDRFCView() {
                     bg="green.50" color="green.700" _hover={{ bg: "green.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s"
                     size="xs" py={4} fontSize="sm"
                     w="full"
-                    onClick={() => {
-                      setStartReviewReqId(info.row.original.id);
-                      onStartReviewOpen();
+                    onClick={async () => {
+                      const result = await StartReview(
+                        info.row.original.id,
+                        tokenData
+                      );
+                      if (result?.statusCode === RES_CODE_OK) {
+                        showToast({
+                          description: "Review started successfully",
+                          statusToast: "success",
+                        });
+                        router.push(
+                          `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${info.row.original.id
+                          }&mode=review`
+                        );
+                      } else {
+                        showToast({
+                          description:
+                            result?.message || "Failed to start review",
+                          statusToast: "error",
+                        });
+                      }
                     }}
                   >
                     Start Review
@@ -1421,7 +1474,12 @@ export default function BRDRFCView() {
       </Grid>
 
       {/* Start Review Confirmation Modal */}
-      <AlertDialog isOpen={isStartReviewOpen} onClose={onStartReviewClose} leastDestructiveRef={cancelStartReviewRef} isCentered>
+      <AlertDialog
+        isOpen={isStartReviewOpen}
+        onClose={onStartReviewClose}
+        leastDestructiveRef={cancelStartReviewRef}
+        isCentered
+      >
         <AlertDialogOverlay bg="blackAlpha.300" backdropFilter="blur(10px)">
           <AlertDialogContent mx={4}>
             <AlertDialogHeader fontSize="lg" fontWeight="bold" pb={2}>
@@ -1431,10 +1489,16 @@ export default function BRDRFCView() {
               </HStack>
             </AlertDialogHeader>
             <AlertDialogBody py={4}>
-              Are you sure you want to start reviewing this requirement? Once started, the review timer will begin counting.
+              Are you sure you want to start reviewing this requirement? Once
+              started, the review timer will begin counting.
             </AlertDialogBody>
             <AlertDialogFooter pt={4}>
-              <Button ref={cancelStartReviewRef} onClick={onStartReviewClose} colorScheme="red" variant="ghost">
+              <Button
+                ref={cancelStartReviewRef}
+                onClick={onStartReviewClose}
+                colorScheme="red"
+                variant="ghost"
+              >
                 Cancel
               </Button>
               <Button
@@ -1442,7 +1506,10 @@ export default function BRDRFCView() {
                 leftIcon={<FiEdit />}
                 onClick={async () => {
                   if (startReviewReqId) {
-                    const result = await StartReview(startReviewReqId, tokenData);
+                    const result = await StartReview(
+                      startReviewReqId,
+                      tokenData
+                    );
                     if (result?.statusCode === RES_CODE_OK) {
                       showToast({
                         description: "Review started successfully",
@@ -1450,11 +1517,14 @@ export default function BRDRFCView() {
                       });
                       onStartReviewClose();
                       router.push(
-                        `/requirements/${DataReq.find(r => r.id === startReviewReqId)?.requirementType.toLowerCase()}/register?id=${startReviewReqId}&mode=review`
+                        `/requirements/${DataReq.find(
+                          (r) => r.id === startReviewReqId
+                        )?.requirementType.toLowerCase()}/register?id=${startReviewReqId}&mode=review`
                       );
                     } else {
                       showToast({
-                        description: result?.message || "Failed to start review",
+                        description:
+                          result?.message || "Failed to start review",
                         statusToast: "error",
                       });
                       onStartReviewClose();
