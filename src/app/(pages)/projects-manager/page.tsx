@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Badge,
   Box,
@@ -87,8 +88,7 @@ import { AuthDataModelInterface, useAuth } from "@/app/context/AuthContext";
 import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
-import useWorkspace from "@/app/services/useWorkspace";
-import { ProjectDataResponse } from "@/app/services/useProjects";
+import useProjects, { ProjectDataResponse } from "@/app/services/useProjects";
 
 // Constants and Types
 import {
@@ -112,17 +112,23 @@ import CardProject from "@/app/components/CardProject";
 import ManagerSidebar from "./components/ManagerSidebar";
 import ModalRegisterProject from "./components/ModalRegisterProject";
 
-const HeaderDataContent: HeaderContentProps = {
-  titleName: "Projects Manager",
-  breadCrumb: ["Home", "Projects Manager"],
-};
-
 const ProjectManagerPage = () => {
   useDocumentTitle("Projects Manager");
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
   const { isAuthenticated, authData, goLogout } = useAuth();
-  const { GetAssignedProjects } = useWorkspace();
+  const { GetAssignedProjects } = useProjects();
+  const searchParams = useSearchParams();
+
+  // Get requirementType from URL param, default to BRD
+  const reqTypeParam = searchParams.get("reqType");
+  const requirementType = reqTypeParam?.toUpperCase() || "BRD";
+
+  // Dynamic header content based on requirementType
+  const HeaderDataContent: HeaderContentProps = {
+    titleName: `Projects Manager ${requirementType}`,
+    breadCrumb: ["Home", "Projects Manager"],
+  };
 
   // Auth state
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -211,15 +217,10 @@ const ProjectManagerPage = () => {
         });
       }
 
-      filterWhere.push({
-        field: "projectType",
-        operator: "=",
-        value: PROJECT_TYPE_INTERNAL_DEVELOPMENT,
-      });
-
       const PayloadList: PaggingListPayloadCustom = {
         search: globalFilter,
-        // teamId: DataAuth.team.id,
+        projectType: requirementType === "BRD" ? PROJECT_TYPE_INTERNAL_DEVELOPMENT : null,
+        requirementType: requirementType,
         limit: pageSize,
         page: pageIndex,
         filterWhere: filterWhere,
@@ -280,6 +281,7 @@ const ProjectManagerPage = () => {
     globalFilter,
     statusFilter,
     tokenData,
+    requirementType,
   ]);
 
   // Table configuration
@@ -437,7 +439,7 @@ const ProjectManagerPage = () => {
                   fontWeight="700"
                   letterSpacing="tight"
                 >
-                  Projects Management Hub
+                  Projects Management Hub {requirementType}
                 </Heading>
                 <Text
                   fontSize="sm"
@@ -1306,4 +1308,13 @@ const ProjectManagerPage = () => {
 
 ProjectManagerPage.displayName = "ProjectManagerPage";
 
-export default ProjectManagerPage;
+// Wrapper with Suspense for useSearchParams
+const ProjectManagerPageWrapper = () => {
+  return (
+    <Suspense fallback={<LoadingMiniSignature />}>
+      <ProjectManagerPage />
+    </Suspense>
+  );
+};
+
+export default ProjectManagerPageWrapper;

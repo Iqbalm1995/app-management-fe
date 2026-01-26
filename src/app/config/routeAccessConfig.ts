@@ -1,7 +1,10 @@
 /**
  * Route Access Configuration
  * Maps routes to their access requirements (menu-based or module-based)
+ * Auto-generated from LinkItems in menuApplication.ts
  */
+
+import { LinkItems, LinkItemProps } from "../constants/menuApplication";
 
 export type PermissionType = 'make' | 'review' | 'approve' | 'view';
 
@@ -20,178 +23,45 @@ export interface RouteAccessRule {
 }
 
 /**
- * Route Access Map
- * Define access rules for specific routes
+ * Generate route access map from LinkItems
  */
-export const routeAccessMap: Record<string, RouteAccessRule> = {
-  // ===== DASHBOARD & HOME =====
-  '/home': { 
-    menuLink: '/home' 
-  },
+const generateRouteAccessMap = (): Record<string, RouteAccessRule> => {
+  const map: Record<string, RouteAccessRule> = {};
   
-  // ===== MASTER DATA =====
-  '/master-data/users': { 
-    menuLink: '/master-data/users',
-    requiresOperations: true // Allows /register, /:id/edit, /:id/detail
-  },
+  const processItem = (item: LinkItemProps) => {
+    // Skip coming-soon and pro features
+    if (item.link === '/coming-soon' || item.isPro) {
+      return;
+    }
+    
+    // Strip query params from link to get clean path
+    const cleanLink = item.link.split('?')[0];
+    
+    // Add the item's link (without query params)
+    map[cleanLink] = {
+      menuLink: cleanLink,
+      requiresOperations: true
+    };
+    
+    // Process children recursively
+    if (item.children && item.children.length > 0) {
+      item.children.forEach(child => processItem(child));
+    }
+  };
   
-  '/master-data/users/register': {
-    menuLink: '/master-data/users',
-    requiresOperations: true
-  },
+  // Process all LinkItems
+  LinkItems.forEach(item => processItem(item));
   
-  '/master-data/menus': { 
-    menuLink: '/master-data/menus',
-    requiresOperations: true
-  },
+  // Add special routes that need custom configuration
+  map['/profile'] = { alwaysAllow: true, requiresAuth: true };
+  map['/change-password'] = { alwaysAllow: true, requiresAuth: true };
+  map['/settings'] = { alwaysAllow: true, requiresAuth: true };
   
-  '/master-data/menus/register': {
-    menuLink: '/master-data/menus',
-    requiresOperations: true
-  },
-  
-  '/master-data/modules': { 
-    menuLink: '/master-data/modules',
-    requiresOperations: true
-  },
-  
-  '/master-data/authorize-groups': { 
-    menuLink: '/master-data/authorize-groups',
-    requiresOperations: true
-  },
-  
-  '/master-data/function-groups': { 
-    menuLink: '/master-data/function-groups',
-    requiresOperations: true
-  },
-  
-  // ===== REQUIREMENTS =====
-  '/requirements/brd': {
-    moduleCode: 'BRD_MODULE',
-    requiredPermission: 'view'
-  },
-  
-  '/requirements/brd/register': {
-    moduleCode: 'BRD_MODULE',
-    requiredPermission: 'make'
-  },
-  
-  '/requirements/rfc': {
-    moduleCode: 'RFC_MODULE',
-    requiredPermission: 'view'
-  },
-  
-  '/requirements/rfc/register': {
-    moduleCode: 'RFC_MODULE',
-    requiredPermission: 'make'
-  },
-  
-  '/requirements/approval-hub': {
-    moduleCode: 'APPROVAL_MODULE',
-    requiredPermission: 'approve'
-  },
-  
-  // ===== PROJECTS =====
-  '/projects-manager': {
-    menuLink: '/projects',
-    requiresOperations: true
-  },
-  
-  '/project-development': {
-    menuLink: '/project-development',
-    requiresOperations: true
-  },
-  
-  '/projects-deployments': {
-    menuLink: '/projects-deployments',
-    requiresOperations: true
-  },
-  
-  '/projects-procurements': {
-    menuLink: '/projects-procurements',
-    requiresOperations: true
-  },
-  
-  // ===== TEAMS =====
-  '/teams': {
-    menuLink: '/teams',
-    requiresOperations: true
-  },
-  
-  '/teams-center': {
-    menuLink: '/teams-center'
-  },
-  
-  // ===== UTILITIES =====
-  '/calendar': {
-    menuLink: '/calendar'
-  },
-  
-  '/kanban': {
-    menuLink: '/kanban'
-  },
-  
-  '/kanban-alt': {
-    menuLink: '/kanban-alt'
-  },
-  
-  '/show-flow': {
-    menuLink: '/show-flow'
-  },
-  
-  '/resource-monitor': {
-    menuLink: '/resource-monitor'
-  },
-  
-  '/file-archives': {
-    moduleCode: 'FILE_MODULE',
-    requiredPermission: 'view'
-  },
-  
-  '/audit-trail': {
-    menuLink: '/audit-trail'
-  },
-  
-  // ===== WORKSPACE =====
-  '/workspace': {
-    menuLink: '/workspace'
-  },
-  
-  '/workspace/development': {
-    menuLink: '/workspace'
-  },
-  
-  '/workspace/testing': {
-    menuLink: '/workspace'
-  },
-  
-  '/workspace/deployment': {
-    menuLink: '/workspace'
-  },
-  
-  // ===== ALWAYS ACCESSIBLE (Authenticated) =====
-  '/profile': { 
-    alwaysAllow: true,
-    requiresAuth: true 
-  },
-  
-  '/change-password': { 
-    alwaysAllow: true,
-    requiresAuth: true 
-  },
-  
-  '/coming-soon': { 
-    alwaysAllow: true,
-    requiresAuth: true 
-  },
-  
-  '/settings': { 
-    alwaysAllow: true,
-    requiresAuth: true 
-  },
-  
-  '/dropzone': { 
-    alwaysAllow: true,
-    requiresAuth: true 
-  }
+  return map;
 };
+
+/**
+ * Route Access Map
+ * Auto-generated from LinkItems in menuApplication.ts
+ */
+export const routeAccessMap: Record<string, RouteAccessRule> = generateRouteAccessMap();

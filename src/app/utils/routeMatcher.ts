@@ -56,13 +56,16 @@ export const matchesMenuPath = (
   const flatMenus = flattenMenus(menus);
   
   for (const menu of flatMenus) {
+    // Strip query params from menu link for comparison
+    const cleanMenuLink = menu.menuLink.split('?')[0];
+    
     // Exact match
-    if (currentPath === menu.menuLink) {
+    if (currentPath === cleanMenuLink) {
       return { matched: true, menu };
     }
     
     // If menu has operations enabled, check if current path starts with menu link
-    if (menu.isOperations === 'Y' && currentPath.startsWith(menu.menuLink)) {
+    if (menu.isOperations === 'Y' && currentPath.startsWith(cleanMenuLink)) {
       return { matched: true, menu };
     }
   }

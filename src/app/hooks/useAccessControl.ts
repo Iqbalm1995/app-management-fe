@@ -163,7 +163,10 @@ export const useAccessControl = (isAuthenticated: boolean, isAuthLoading: boolea
 
       // 6. FIRST: Check if route matches user's accessible menus (EXACT MATCH)
       const flatMenus = flattenMenus(accessData.accessibleMenus);
-      const exactMenuMatch = flatMenus.some(menu => menu.menuLink === cleanPath);
+      const exactMenuMatch = flatMenus.some(menu => {
+        const cleanMenuLink = menu.menuLink.split('?')[0];
+        return cleanMenuLink === cleanPath;
+      });
       if (exactMenuMatch) {
         console.log('[Access Control] Step 6 - Exact menu match ALLOW');
         setResult({ hasAccess: true, isLoading: false });
@@ -296,7 +299,10 @@ export const useAccessControl = (isAuthenticated: boolean, isAuthLoading: boolea
       if (!matched) {
         const flatMenus = flattenMenus(accessData.accessibleMenus);
         console.log('[Access Control] Flat menus:', flatMenus.map(m => m.menuLink));
-        const exactMatch = flatMenus.some(menu => menu.menuLink === cleanPath);
+        const exactMatch = flatMenus.some(menu => {
+          const cleanMenuLink = menu.menuLink.split('?')[0];
+          return cleanMenuLink === cleanPath;
+        });
         console.log('[Access Control] Exact match result:', exactMatch);
         setResult({
           hasAccess: exactMatch,

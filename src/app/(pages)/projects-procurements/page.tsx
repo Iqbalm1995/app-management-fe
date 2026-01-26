@@ -122,7 +122,7 @@ const ProjectManagerPage = () => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
   const { isAuthenticated, authData, goLogout } = useAuth();
-  const { List } = useProjects();
+  const { GetAssignedProjects } = useProjects();
 
   // Auth state
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -212,15 +212,10 @@ const ProjectManagerPage = () => {
         });
       }
 
-      filterWhere.push({
-        field: "projectType",
-        operator: "=",
-        value: PROJECT_TYPE_PROCUREMENT,
-      });
-
       const PayloadList: PaggingListPayloadCustom = {
         search: globalFilter,
-        // teamId: DataAuth.team.id,
+        projectType: PROJECT_TYPE_PROCUREMENT,
+        requirementType: "BRD",
         limit: pageSize,
         page: pageIndex,
         filterWhere: filterWhere,
@@ -231,7 +226,7 @@ const ProjectManagerPage = () => {
       setIsLoadingProcess(true);
       const GetDataList = async () => {
         try {
-          const requestData = await List(PayloadList, tokenData);
+          const requestData = await GetAssignedProjects(PayloadList, tokenData);
           const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
 
           if (isErrorResponse || !requestData) {

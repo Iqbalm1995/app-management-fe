@@ -26,8 +26,12 @@ export const checkMenuAccess = (
     return false;
   }
   
+  // Strip query params for comparison (support filtering via URL params)
+  const cleanMenuLink = menu.menuLink.split('?')[0];
+  const cleanRuleMenuLink = menuLink.split('?')[0];
+  
   // If exact match with menu link
-  if (menu.menuLink === menuLink) {
+  if (cleanMenuLink === cleanRuleMenuLink) {
     if (requiresOperations) {
       // Check if menu has operations enabled
       return menu.isOperations === 'Y';
@@ -36,7 +40,7 @@ export const checkMenuAccess = (
   }
   
   // If current path is child of menu link
-  if (currentPath.startsWith(menuLink) && menu.menuLink === menuLink) {
+  if (currentPath.startsWith(cleanRuleMenuLink) && cleanMenuLink === cleanRuleMenuLink) {
     return menu.isOperations === 'Y';
   }
   

@@ -227,9 +227,25 @@ export const LinkItems: LinkItemProps[] = [
     menuID: "1",
     children: [
       {
+        name: "Pending Approve",
+        icon: MdOutlineCircle,
+        link: "/projects/prending-approve",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
         name: "Internal Development",
         icon: FaCode,
-        link: "/projects-manager",
+        link: "/projects-manager?reqType=brd",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "RFC",
+        icon: FaCode,
+        link: "/projects-manager?reqType=rfc",
         role: ["admin"],
         menuID: "1",
         children: [],
@@ -263,7 +279,7 @@ export const LinkItems: LinkItemProps[] = [
     ],
   },
   {
-    name: "Vendor ",
+    name: "Vendor",
     icon: FiUmbrella,
     link: "/coming-soon",
     isPro: true,
@@ -725,7 +741,7 @@ export const LinkItems: LinkItemProps[] = [
 
         role: ["admin"],
         menuID: "1",
-        
+
         children: [],
       },
       {
