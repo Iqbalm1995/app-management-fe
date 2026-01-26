@@ -1712,6 +1712,13 @@ function RegisterRequirementFormPage({
     validateOnBlur: false,
     onSubmit: async (values) => {
       logMissingRequiredFields(values, FormSchema);
+      if (!values.appLiveTargetDate) {
+        showToast({
+          description: "Target Live is required. Please complete Step 5 (Ringkasan Ruanglingkup).",
+          statusToast: "warning",
+        });
+        return;
+      }
       if (ChoosedMemberProjects.length <= 0) {
         showToast({
           description: "Personel yang ditugaskan tidak boleh kosong",
@@ -1824,6 +1831,13 @@ function RegisterRequirementFormPage({
   const [SaveAsDraft, setSaveAsDraft] = useState<boolean>(false);
 
   const handleConfirmSaveData = (data: RequirementsInsertPayload) => {
+    if (!data.appLiveTargetDate) {
+      showToast({
+        description: "Target Live is required. Please complete Step 5 (Ringkasan Ruanglingkup).",
+        statusToast: "warning",
+      });
+      return;
+    }
     const totalFiles = uploadedFiles.length + files.length;
     if (totalFiles === 0 && data.isHaveMemo !== "N") {
       showToast({

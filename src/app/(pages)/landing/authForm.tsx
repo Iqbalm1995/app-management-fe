@@ -56,6 +56,7 @@ import {
 } from "@chakra-ui/react";
 import { useFormik } from "formik";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FiLogIn } from "react-icons/fi";
 import * as Yup from "yup";
@@ -327,6 +328,7 @@ const AuthPanelModal = () => {
 
 const AuthForm = () => {
   const showToast = useToastHelper();
+  const router = useRouter();
   const [show, setShow] = useState(false);
   const handleClick = () => setShow(!show);
   const { colorMode } = useColorMode();
@@ -360,9 +362,38 @@ const AuthForm = () => {
 
   const AuthAction = async (values: AuthCorporateUserModel) => {
     setIsLoadingProcess(true);
+    
+    // Check if using default password
+    const encryptedPassword = encryptAES(values.password);
+    if (encryptedPassword === "sJTLr62VFATzZr7e3jmwNA==") {
+      showToast({
+        description: "Anda masih menggunakan kata sandi default. Silakan ganti kata sandi untuk melanjutkan.",
+        statusToast: "warning",
+      });
+      
+      // Show success message before redirect
+      setTimeout(() => {
+        showToast({
+          description: "Mengalihkan ke halaman Ganti Kata Sandi…",
+          statusToast: "success",
+        });
+        
+        // Store userId temporarily for change password page
+        localStorage.setItem("tempUserId", values.username);
+        
+        // Redirect after short delay
+        setTimeout(() => {
+          router.push("/change-password");
+        }, 1500);
+      }, 1000);
+      
+      setIsLoadingProcess(false);
+      return;
+    }
+    
     const response = await Login({
       username: values.username,
-      password: encryptAES(values.password),
+      password: encryptedPassword,
       uim: false,
     });
 
