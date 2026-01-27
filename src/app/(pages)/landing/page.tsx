@@ -1,4 +1,5 @@
 "use client";
+import { useRouter } from "next/navigation";
 
 import LayoutLanding from "@/app/components/layoutLanding";
 import RealTimeClock from "@/app/components/realtimeClock";
@@ -31,6 +32,8 @@ import {
   ModalCloseButton,
   ModalContent,
   ModalOverlay,
+  ModalHeader,
+  ModalFooter,
   SimpleGrid,
   Stack,
   Text,
@@ -95,10 +98,34 @@ function LandingPage() {
   const { colorMode } = useColorMode();
   const showToast = useToastHelper();
   const [mounted, setMounted] = useState(false);
+  const [showDefaultPasswordModal, setShowDefaultPasswordModal] = useState(false);
+  const router = useRouter();
+  const [countdown, setCountdown] = useState(30);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Check for default password warning
+  useEffect(() => {
+    const showWarning = localStorage.getItem("showDefaultPasswordWarning");
+    if (showWarning === "true") {
+      setShowDefaultPasswordModal(true);
+      setCountdown(30);
+      localStorage.removeItem("showDefaultPasswordWarning");
+    }
+  }, []);
+
+
+  // Countdown timer for auto-redirect
+  useEffect(() => {
+    if (showDefaultPasswordModal && countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    } else if (countdown === 0) {
+      router.push("/change-password");
+    }
+  }, [showDefaultPasswordModal, countdown, router]);
 
   const handleLaunchApp = () => {
     const authData = localStorage.getItem("authData");
