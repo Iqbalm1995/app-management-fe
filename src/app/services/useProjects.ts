@@ -224,6 +224,7 @@ export interface ProjectDataResponse {
   updatedBy: string | null;
   userAssignment: ProjectUserAssignmentResponse[];
   appsProject: ApplicationMasterShortResponse | null;
+  requirementData: RequirementShortResponse | null;
   workPrograms: RequirementWorkProgramDataResponse[];
   projectWorkflowProjectData: ProjectWorkflowResponse[];
   projectWorkflowData: ProjectWorkflowResponse[];
@@ -242,6 +243,13 @@ export interface ProjectUserAssignmentResponse {
   createdBy: string;
   updatedAt: string | null;
   updatedBy: string | null;
+}
+
+export interface RequirementShortResponse {
+  id: string;
+  requirementType: string;
+  reqNumber: string;
+  reqStatus: string | null;
 }
 
 export interface ProjectWorkflowResponse {
@@ -737,6 +745,10 @@ interface useProjectsServices {
     payload: PaggingListPayload,
     token: string
   ) => Promise<ApiGenericResponse<ProjectDataResponse[] | null> | null>;
+  GetAssignedProjects: (
+    payload: PaggingListPayloadCustom,
+    token: string
+  ) => Promise<ApiGenericResponse<ProjectDataResponse[] | null> | null>;
   GetDetailById: (
     teamId: string,
     token: string
@@ -1054,6 +1066,47 @@ const useProjects = (): useProjectsServices => {
         const errorResponse = handleAxiosError(err);
         setError(
           err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const GetAssignedProjects = async (
+    payload: PaggingListPayloadCustom,
+    token: string
+  ): Promise<ApiGenericResponse<ProjectDataResponse[] | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/Projects/assigned-projects";
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<ProjectDataResponse[]>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during request."
         );
         return errorResponse;
       } else {
@@ -3715,6 +3768,7 @@ const useProjects = (): useProjectsServices => {
 
   return {
     List,
+    GetAssignedProjects,
     GetDetailById,
     GetProjectDetail,
     GetProjectQuickStats,

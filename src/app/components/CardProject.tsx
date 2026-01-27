@@ -219,15 +219,29 @@ const CardProject = memo(
 
                 {/* Project Info */}
                 <VStack spacing={0} align="start">
-                  <Text
-                    fontSize="x-small"
-                    fontWeight="medium"
-                    opacity="0.8"
-                    textAlign="center"
-                    color={"secondary.500"}
-                  >
-                    {data.projectType}
-                  </Text>
+                  <HStack spacing={1}>
+                    <Text
+                      fontSize="x-small"
+                      fontWeight="medium"
+                      opacity="0.8"
+                      color={"secondary.500"}
+                    >
+                      {data.projectType}
+                    </Text>
+                    {data.requirementData?.requirementType && (
+                      <>
+                        <Text fontSize="x-small" opacity="0.5">•</Text>
+                        <Text
+                          fontSize="x-small"
+                          fontWeight="medium"
+                          opacity="0.8"
+                          color={"blue.500"}
+                        >
+                          {data.requirementData.requirementType}
+                        </Text>
+                      </>
+                    )}
+                  </HStack>
 
                   <Tooltip
                     label={data.projectName}
