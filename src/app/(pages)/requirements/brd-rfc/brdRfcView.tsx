@@ -266,6 +266,7 @@ export default function BRDRFCView() {
     return "BRD";
   });
   const [memoFilter, setMemoFilter] = useState<string>("");
+  const [creatorFilter, setCreatorFilter] = useState<string>("");
 
   const years = Array.from({ length: 8 }, (_, i) => currentYear - 5 + i);
 
@@ -1086,6 +1087,17 @@ export default function BRDRFCView() {
         filterWithType = [...filterWithType, memoFilterParam];
       }
 
+      // Add creator filter if "MY" is selected
+      if (creatorFilter === "MY" && DataAuth?.userId) {
+        const creatorFilterParam: ListSearchByParamProps = {
+          field: "assignedFromId",
+          operator: "=",
+          value: DataAuth.userId,
+          filterLabel: "Creator",
+        };
+        filterWithType = [...filterWithType, creatorFilterParam];
+      }
+
       const PayloadList: PaggingListPayload = {
         search: globalFilter,
         limit: pageSize,
@@ -1140,6 +1152,7 @@ export default function BRDRFCView() {
     selectedQuarter,
     ParamFilter,
     viewMode,
+    creatorFilter,
     memoFilter,
   ]);
 
@@ -1402,6 +1415,25 @@ export default function BRDRFCView() {
                     {/* BUTTON ACTION */}
                     <Flex as={Wrap} justifyContent={"end"} px={0} w={"full"}>
                       <Menu>
+                      <Menu>
+                        <MenuButton
+                          as={Button}
+                          size="md"
+                          rightIcon={<ChevronDownIcon />}
+                        >
+                          {creatorFilter === "MY"
+                            ? "Requirement Saya"
+                            : "Semua Requirement"}
+                        </MenuButton>
+                        <MenuList>
+                          <MenuItem onClick={() => setCreatorFilter("")}>
+                            Semua Requirement
+                          </MenuItem>
+                          <MenuItem onClick={() => setCreatorFilter("MY")}>
+                            Requirement Saya
+                          </MenuItem>
+                        </MenuList>
+                      </Menu>
                         <MenuButton
                           as={Button}
                           size="md"

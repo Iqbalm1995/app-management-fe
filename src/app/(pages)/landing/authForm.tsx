@@ -577,7 +577,7 @@ const AuthForm = () => {
                 <Box>
                   <AlertTitle>Anda Menggunakan Password Default!</AlertTitle>
                   <AlertDescription>
-                    Anda menggunakan password default. Setelah login, diharapkan untuk mengganti password Anda di{" "}
+                    Anda memasukkan password default. Setelah login, diharapkan untuk mengganti password Anda di{" "}
                     <Link href="/change-password">
                       <Text as="span" color="blue.500" textDecoration="underline" cursor="pointer">
                         sini
@@ -635,16 +635,22 @@ const AuthForm = () => {
       <Modal isOpen={showDefaultPasswordModal} onClose={() => { }} closeOnOverlayClick={false} isCentered>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>⚠️ Password Default Terdeteksi</ModalHeader>
+          <ModalHeader>Password Default Terdeteksi</ModalHeader>
           <ModalBody>
             <VStack spacing={4} align="stretch">
               <Text>
                 Anda masih menggunakan password default. Untuk keamanan akun Anda, silakan ganti password segera.
               </Text>
               <Box p={4} bg="orange.50" borderRadius="md" borderLeft="4px" borderColor="orange.500">
-                <Text fontWeight="bold" color="orange.700">
-                  Anda akan diarahkan ke halaman Ganti Password dalam {countdown} detik
-                </Text>
+                <AlertDescription>
+                  Anda memasukkan password default. Setelah login, diharapkan untuk mengganti password Anda di{" "}
+                  <Link href="/change-password">
+                    <Text as="span" color="blue.500" textDecoration="underline" cursor="pointer">
+                      sini
+                    </Text>
+                  </Link>
+                  .
+                </AlertDescription>
               </Box>
               <Button
                 colorScheme="blue"
