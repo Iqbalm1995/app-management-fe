@@ -1068,13 +1068,29 @@ export default function BRDRFCView() {
       // setParamFilter(filterWhereData);
 
       // Add viewMode filter
-      const typeFilter: ListSearchByParamProps = {
-        field: "requirementType",
-        operator: "=",
-        value: viewMode,
-        filterLabel: "Type",
-      };
-      let filterWithType = [...ParamFilter, typeFilter];
+      let filterWithType = [...ParamFilter];
+
+      if (viewMode === "MY") {
+        // Filter by current user's requirements (both BRD and RFC)
+        if (DataAuth?.userId) {
+          const myReqFilter: ListSearchByParamProps = {
+            field: "assignedFromId",
+            operator: "=",
+            value: DataAuth.userId,
+            filterLabel: "My Requirements",
+          };
+          filterWithType = [...filterWithType, myReqFilter];
+        }
+      } else {
+        // Filter by requirement type (BRD or RFC)
+        const typeFilter: ListSearchByParamProps = {
+          field: "requirementType",
+          operator: "=",
+          value: viewMode,
+          filterLabel: "Type",
+        };
+        filterWithType = [...filterWithType, typeFilter];
+      }
 
       // Add memo filter if selected
       if (memoFilter !== "") {
@@ -1320,14 +1336,43 @@ export default function BRDRFCView() {
                     w={"full"}
                   >
                     <HStack spacing={2}>
-                      <HStack
-                        spacing={1}
-                        bg={colorMode === "light" ? "gray.50" : "gray.700"}
-                        rounded="lg"
-                        p={1}
-                        w="fit-content"
+                      <Button
+                        size="sm"
+                        variant={viewMode === "BRD" ? "solid" : "ghost"}
+                        colorScheme="blue"
+                        onClick={() => setViewMode("BRD")}
+                        borderRadius="lg"
                       >
-                        <Popover closeOnBlur={false} placement={"bottom"}>
+                        BRD
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={viewMode === "RFC" ? "solid" : "ghost"}
+                        colorScheme="blue"
+                        onClick={() => setViewMode("RFC")}
+                        borderRadius="lg"
+                      >
+                        RFC
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={viewMode === "MY" ? "solid" : "ghost"}
+                        colorScheme="blue"
+                        onClick={() => setViewMode("MY")}
+                        borderRadius="lg"
+                      >
+                        My Requirements
+                      </Button>
+                    </HStack>
+                  </GridItem>
+                  <GridItem
+                    colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }}
+                    w={"full"}
+                  >
+                    {/* BUTTON ACTION */}
+                    <Flex as={Wrap} justifyContent={"end"} alignItems={"center"} gap={2} px={0} w={"full"}>
+
+                      <Popover closeOnBlur={false} placement={"bottom"}>
                           <PopoverTrigger>
                             <Button size={"md"} leftIcon={<FiFilter />}>
                               Filter{" "}
@@ -1389,51 +1434,7 @@ export default function BRDRFCView() {
                             </PopoverContent>
                           </Portal>
                         </Popover>
-                      </HStack>
-                      <ButtonGroup size="xs" isAttached variant="outline">
-                        <Button
-                          colorScheme={viewMode === "BRD" ? "blue" : "gray"}
-                          variant={viewMode === "BRD" ? "solid" : "outline"}
-                          onClick={() => setViewMode("BRD")}
-                        >
-                          BRD
-                        </Button>
-                        <Button
-                          colorScheme={viewMode === "RFC" ? "blue" : "gray"}
-                          variant={viewMode === "RFC" ? "solid" : "outline"}
-                          onClick={() => setViewMode("RFC")}
-                        >
-                          RFC
-                        </Button>
-                      </ButtonGroup>
-                    </HStack>
-                  </GridItem>
-                  <GridItem
-                    colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }}
-                    w={"full"}
-                  >
-                    {/* BUTTON ACTION */}
-                    <Flex as={Wrap} justifyContent={"end"} px={0} w={"full"}>
                       <Menu>
-                      <Menu>
-                        <MenuButton
-                          as={Button}
-                          size="md"
-                          rightIcon={<ChevronDownIcon />}
-                        >
-                          {creatorFilter === "MY"
-                            ? "Requirement Saya"
-                            : "Semua Requirement"}
-                        </MenuButton>
-                        <MenuList>
-                          <MenuItem onClick={() => setCreatorFilter("")}>
-                            Semua Requirement
-                          </MenuItem>
-                          <MenuItem onClick={() => setCreatorFilter("MY")}>
-                            Requirement Saya
-                          </MenuItem>
-                        </MenuList>
-                      </Menu>
                         <MenuButton
                           as={Button}
                           size="md"

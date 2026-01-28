@@ -229,6 +229,14 @@ export default function ApprovalHubView() {
   useEffect(() => {
     if (!DataAuth || !tokenData) return;
 
+
+    // If user has no orgGroupCode, show no results
+    if (!DataAuth.team?.orgGroupCode) {
+      setDataReq([]);
+      setTotalPageData(0);
+      setIsLoadingProcess(false);
+      return;
+    }
     const statusFilter: ListSearchByParamProps = {
       field: "reqStatus",
       operator: "=",
@@ -243,7 +251,14 @@ export default function ApprovalHubView() {
       filterLabel: "Type",
     };
 
-    const filterWithStatusAndType = [...ParamFilter, statusFilter, typeFilter];
+    const orgGroupFilter: ListSearchByParamProps = {
+      field: "reqManageByGroupCode",
+      operator: "=",
+      value: DataAuth.team.orgGroupCode,
+      filterLabel: "Group",
+    };
+
+    const filterWithStatusAndType = [...ParamFilter, statusFilter, typeFilter, orgGroupFilter];
 
     const PayloadList: PaggingListPayload = {
       search: "",
@@ -671,7 +686,7 @@ export default function ApprovalHubView() {
                 >
                   <Button
                     leftIcon={<FiEye />}
-                    colorScheme="purple"
+                    bg="purple.50" color="purple.700" _hover={{ bg: "purple.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s" py={4} fontSize="sm"
                     size="xs"
                     w="full"
                   >
@@ -683,7 +698,7 @@ export default function ApprovalHubView() {
                 {status === REQ_STATUS_DRAFT && canMake && (
                   <Button
                     leftIcon={<FiEdit />}
-                    colorScheme="blue"
+                    bg="blue.50" color="blue.700" _hover={{ bg: "blue.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s" py={4} fontSize="sm"
                     size="xs"
                     w="full"
                     onClick={() =>
@@ -700,7 +715,7 @@ export default function ApprovalHubView() {
                 {status === REQ_STATUS_NEED_REVIEW && canReview && (
                   <Button
                     leftIcon={<FiEdit />}
-                    colorScheme="green"
+                    bg="green.50" color="green.700" _hover={{ bg: "green.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s" py={4} fontSize="sm"
                     size="xs"
                     w="full"
                     onClick={async () => {
@@ -729,7 +744,7 @@ export default function ApprovalHubView() {
                 {status === REQ_STATUS_IN_PROGRESS_REVIEW && canReview && (
                   <Button
                     leftIcon={<FiEdit />}
-                    colorScheme="green"
+                    bg="green.50" color="green.700" _hover={{ bg: "green.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s" py={4} fontSize="sm"
                     size="xs"
                     w="full"
                     onClick={() =>
@@ -746,7 +761,7 @@ export default function ApprovalHubView() {
                 {status === REQ_WAITING_APPROVAL && canApprove && (
                   <Button
                     leftIcon={<FiCheck />}
-                    colorScheme="green"
+                    bg="green.50" color="green.700" _hover={{ bg: "green.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s" py={4} fontSize="sm"
                     size="xs"
                     w="full"
                     onClick={() => {
@@ -763,7 +778,7 @@ export default function ApprovalHubView() {
                 {status === REQ_STATUS_APPROVED && canMake && isHaveMemo === "N" && (
                   <Button
                     leftIcon={<FiEdit />}
-                    colorScheme="blue"
+                    bg="blue.50" color="blue.700" _hover={{ bg: "blue.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s" py={4} fontSize="sm"
                     size="xs"
                     w="full"
                     onClick={() =>
@@ -780,7 +795,7 @@ export default function ApprovalHubView() {
                 {status === REQ_STATUS_TEMPORARY_APPROVED && canMake && (
                   <Button
                     leftIcon={<FiEdit />}
-                    colorScheme="blue"
+                    bg="blue.50" color="blue.700" _hover={{ bg: "blue.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s" py={4} fontSize="sm"
                     size="xs"
                     w="full"
                     onClick={() =>
@@ -795,7 +810,7 @@ export default function ApprovalHubView() {
                 {status === REQ_STATUS_TEMPORARY_APPROVED && canReview && (
                   <Button
                     leftIcon={<FiEdit />}
-                    colorScheme="green"
+                    bg="green.50" color="green.700" _hover={{ bg: "green.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s" py={4} fontSize="sm"
                     size="xs"
                     w="full"
                     onClick={async () => {
@@ -824,7 +839,7 @@ export default function ApprovalHubView() {
                 {status === REQ_STATUS_ON_HOLD && canMake && (
                   <Button
                     leftIcon={<FiEdit />}
-                    colorScheme="blue"
+                    bg="blue.50" color="blue.700" _hover={{ bg: "blue.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s" py={4} fontSize="sm"
                     size="xs"
                     w="full"
                     onClick={() =>
@@ -839,7 +854,7 @@ export default function ApprovalHubView() {
                 {status === REQ_STATUS_ON_HOLD && canReview && (
                   <Button
                     leftIcon={<FiEdit />}
-                    colorScheme="green"
+                    bg="green.50" color="green.700" _hover={{ bg: "green.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s" py={4} fontSize="sm"
                     size="xs"
                     w="full"
                     onClick={async () => {
@@ -949,14 +964,35 @@ export default function ApprovalHubView() {
                     w={"full"}
                   >
                     <HStack spacing={2}>
-                      <HStack
-                        spacing={1}
-                        bg={colorMode === "light" ? "gray.100" : "gray.700"}
-                        rounded="lg"
-                        p={1}
-                        w="fit-content"
-                      >
-                        <Popover closeOnBlur={false} placement={"bottom"}>
+                      <HStack spacing={2} flexWrap="wrap">
+                        <Button
+                          size="sm"
+                          variant={viewMode === "BRD" ? "solid" : "ghost"}
+                          colorScheme="blue"
+                          onClick={() => setViewMode("BRD")}
+                          borderRadius="lg"
+                        >
+                          BRD
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={viewMode === "RFC" ? "solid" : "ghost"}
+                          colorScheme="blue"
+                          onClick={() => setViewMode("RFC")}
+                          borderRadius="lg"
+                        >
+                          RFC
+                        </Button>
+                      </HStack>
+                    </HStack>
+                  </GridItem>
+                  <GridItem
+                    colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }}
+                    w={"full"}
+                  >
+                    {/* BUTTON ACTION */}
+                    <Flex as={Wrap} justifyContent={"end"} alignItems={"center"} gap={2} px={0} w={"full"}>
+                      <Popover closeOnBlur={false} placement={"bottom"}>
                           <PopoverTrigger>
                             <Button size={"md"} leftIcon={<FiFilter />}>
                               Filter{" "}
@@ -1017,31 +1053,6 @@ export default function ApprovalHubView() {
                             </PopoverContent>
                           </Portal>
                         </Popover>
-                      </HStack>
-                      <ButtonGroup size="sm" isAttached variant="outline">
-                        <Button
-                          colorScheme={viewMode === "BRD" ? "blue" : "gray"}
-                          variant={viewMode === "BRD" ? "solid" : "outline"}
-                          onClick={() => setViewMode("BRD")}
-                        >
-                          BRD
-                        </Button>
-                        <Button
-                          colorScheme={viewMode === "RFC" ? "blue" : "gray"}
-                          variant={viewMode === "RFC" ? "solid" : "outline"}
-                          onClick={() => setViewMode("RFC")}
-                        >
-                          RFC
-                        </Button>
-                      </ButtonGroup>
-                    </HStack>
-                  </GridItem>
-                  <GridItem
-                    colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }}
-                    w={"full"}
-                  >
-                    {/* BUTTON ACTION */}
-                    <Flex as={Wrap} justifyContent={"end"} px={0} w={"full"}>
                       <Button
                         size={"md"}
                         leftIcon={<FiRefreshCcw />}
