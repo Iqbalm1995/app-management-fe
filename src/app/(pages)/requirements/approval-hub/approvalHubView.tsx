@@ -98,7 +98,7 @@ export default function ApprovalHubView() {
   const showToast = useToastHelper();
   const { List, StartReview } = useRequirements();
   const { List: ListOrganization } = useOrganization();
-  
+
   // Auth Setup
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
@@ -232,7 +232,7 @@ export default function ApprovalHubView() {
 
     // If user has no orgGroupCode, show no results
     if (!DataAuth.team?.orgGroupCode) {
-      setDataReq([]);
+      setDataApprovals([]);
       setTotalPageData(0);
       setIsLoadingProcess(false);
       return;
@@ -686,7 +686,7 @@ export default function ApprovalHubView() {
                 >
                   <Button
                     leftIcon={<FiEye />}
-                    bg="purple.50" color="purple.700" _hover={{ bg: "purple.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s" py={4} fontSize="sm"
+                    colorScheme="purple"
                     size="xs"
                     w="full"
                   >
@@ -993,66 +993,66 @@ export default function ApprovalHubView() {
                     {/* BUTTON ACTION */}
                     <Flex as={Wrap} justifyContent={"end"} alignItems={"center"} gap={2} px={0} w={"full"}>
                       <Popover closeOnBlur={false} placement={"bottom"}>
-                          <PopoverTrigger>
-                            <Button size={"md"} leftIcon={<FiFilter />}>
-                              Filter{" "}
-                              <Flex
-                                as={"span"}
-                                pl={1}
-                                display={
-                                  ParamFilter.length > 0 ? "flex" : "none"
-                                }
-                                color={"secondary.500"}
-                                fontWeight={600}
-                              >
-                                ({ParamFilter.length})
-                              </Flex>
-                            </Button>
-                          </PopoverTrigger>
-                          <Portal>
-                            <PopoverContent width="auto" minW="xs">
-                              <PopoverBody>
-                                <Flex as={Stack} w={"full"}>
-                                  <Text fontWeight={600}>Filter Data</Text>
-                                  <Divider />
-                                  <Stack spacing={2}>
-                                    {ParamFilter.length === 0 ? (
-                                      <Text fontSize="sm" color="gray.500">
-                                        No active filters
-                                      </Text>
-                                    ) : (
-                                      ParamFilter.map((dt, idx) => (
-                                        <Flex
-                                          key={idx}
-                                          w={"full"}
-                                          alignItems="center"
-                                          as={HStack}
-                                          spacing={2}
-                                        >
-                                          <Text>
-                                            {dt.filterLabel}:{" "}
-                                            <Text as={"span"} fontWeight={600}>
-                                              {dt.value}
-                                            </Text>
+                        <PopoverTrigger>
+                          <Button size={"md"} leftIcon={<FiFilter />}>
+                            Filter{" "}
+                            <Flex
+                              as={"span"}
+                              pl={1}
+                              display={
+                                ParamFilter.length > 0 ? "flex" : "none"
+                              }
+                              color={"secondary.500"}
+                              fontWeight={600}
+                            >
+                              ({ParamFilter.length})
+                            </Flex>
+                          </Button>
+                        </PopoverTrigger>
+                        <Portal>
+                          <PopoverContent width="auto" minW="xs">
+                            <PopoverBody>
+                              <Flex as={Stack} w={"full"}>
+                                <Text fontWeight={600}>Filter Data</Text>
+                                <Divider />
+                                <Stack spacing={2}>
+                                  {ParamFilter.length === 0 ? (
+                                    <Text fontSize="sm" color="gray.500">
+                                      No active filters
+                                    </Text>
+                                  ) : (
+                                    ParamFilter.map((dt, idx) => (
+                                      <Flex
+                                        key={idx}
+                                        w={"full"}
+                                        alignItems="center"
+                                        as={HStack}
+                                        spacing={2}
+                                      >
+                                        <Text>
+                                          {dt.filterLabel}:{" "}
+                                          <Text as={"span"} fontWeight={600}>
+                                            {dt.value}
                                           </Text>
-                                          <Button
-                                            size={"xs"}
-                                            colorScheme={"red"}
-                                            justifyContent={"center"}
-                                            variant={"ghost"}
-                                            onClick={() => removeFilterData(dt)}
-                                          >
-                                            <FiX />
-                                          </Button>
-                                        </Flex>
-                                      ))
-                                    )}
-                                  </Stack>
-                                </Flex>
-                              </PopoverBody>
-                            </PopoverContent>
-                          </Portal>
-                        </Popover>
+                                        </Text>
+                                        <Button
+                                          size={"xs"}
+                                          colorScheme={"red"}
+                                          justifyContent={"center"}
+                                          variant={"ghost"}
+                                          onClick={() => removeFilterData(dt)}
+                                        >
+                                          <FiX />
+                                        </Button>
+                                      </Flex>
+                                    ))
+                                  )}
+                                </Stack>
+                              </Flex>
+                            </PopoverBody>
+                          </PopoverContent>
+                        </Portal>
+                      </Popover>
                       <Button
                         size={"md"}
                         leftIcon={<FiRefreshCcw />}

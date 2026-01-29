@@ -258,13 +258,15 @@ export default function BRDRFCView() {
     currentQuarter
   );
   const [filteredMonths, setFilteredMonths] = useState<string[]>([]);
-  const [viewMode, setViewMode] = useState<"BRD" | "RFC">(() => {
+  type ViewMode = "BRD" | "RFC" | "MY";
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("brdRfcViewMode");
-      return (saved === "RFC" ? "RFC" : "BRD") as "BRD" | "RFC";
+      return saved === "RFC" || saved === "MY" ? saved : "BRD";
     }
     return "BRD";
   });
+
   const [memoFilter, setMemoFilter] = useState<string>("");
   const [creatorFilter, setCreatorFilter] = useState<string>("");
 
@@ -1373,67 +1375,67 @@ export default function BRDRFCView() {
                     <Flex as={Wrap} justifyContent={"end"} alignItems={"center"} gap={2} px={0} w={"full"}>
 
                       <Popover closeOnBlur={false} placement={"bottom"}>
-                          <PopoverTrigger>
-                            <Button size={"md"} leftIcon={<FiFilter />}>
-                              Filter{" "}
-                              <Flex
-                                as={"span"}
-                                pl={1}
-                                display={
-                                  ParamFilter.length > 0 ? "flex" : "none"
-                                }
-                                color={"secondary.500"}
-                                fontWeight={600}
-                              >
-                                ({ParamFilter.length})
-                              </Flex>
-                            </Button>
-                          </PopoverTrigger>
-                          <Portal>
-                            <PopoverContent width="auto" minW="xs">
-                              <PopoverBody>
-                                <Flex as={Stack} w={"full"}>
-                                  <Text fontWeight={600}>Filter Data</Text>
-                                  <Divider />
+                        <PopoverTrigger>
+                          <Button size={"md"} leftIcon={<FiFilter />}>
+                            Filter{" "}
+                            <Flex
+                              as={"span"}
+                              pl={1}
+                              display={
+                                ParamFilter.length > 0 ? "flex" : "none"
+                              }
+                              color={"secondary.500"}
+                              fontWeight={600}
+                            >
+                              ({ParamFilter.length})
+                            </Flex>
+                          </Button>
+                        </PopoverTrigger>
+                        <Portal>
+                          <PopoverContent width="auto" minW="xs">
+                            <PopoverBody>
+                              <Flex as={Stack} w={"full"}>
+                                <Text fontWeight={600}>Filter Data</Text>
+                                <Divider />
 
-                                  <Stack spacing={2}>
-                                    {ParamFilter.map((dt, idx) => (
-                                      <Flex
-                                        key={idx}
-                                        w={"full"}
-                                        alignItems="center"
-                                        as={HStack}
-                                        spacing={2}
-                                      >
-                                        <Text>
-                                          {dt.filterLabel} :{" "}
-                                          <Text as={"span"} fontWeight={600}>
-                                            {" "}
-                                            {dt.field === "senderDivisionId"
-                                              ? OptionDivision.find(
-                                                (opt) =>
-                                                  opt.value === dt.value
-                                              )?.label || dt.value
-                                              : dt.value}
-                                          </Text>
+                                <Stack spacing={2}>
+                                  {ParamFilter.map((dt, idx) => (
+                                    <Flex
+                                      key={idx}
+                                      w={"full"}
+                                      alignItems="center"
+                                      as={HStack}
+                                      spacing={2}
+                                    >
+                                      <Text>
+                                        {dt.filterLabel} :{" "}
+                                        <Text as={"span"} fontWeight={600}>
+                                          {" "}
+                                          {dt.field === "senderDivisionId"
+                                            ? OptionDivision.find(
+                                              (opt) =>
+                                                opt.value === dt.value
+                                            )?.label || dt.value
+                                            : dt.value}
                                         </Text>
-                                        <Button
-                                          size={"xs"}
-                                          colorScheme={"red"}
-                                          justifyContent={"center"}
-                                          variant={"ghost"}
-                                          onClick={() => removeFilterData(dt)}
-                                        >
-                                          <FiX />
-                                        </Button>
-                                      </Flex>
-                                    ))}
-                                  </Stack>
-                                </Flex>
-                              </PopoverBody>
-                            </PopoverContent>
-                          </Portal>
-                        </Popover>
+                                      </Text>
+                                      <Button
+                                        size={"xs"}
+                                        colorScheme={"red"}
+                                        justifyContent={"center"}
+                                        variant={"ghost"}
+                                        onClick={() => removeFilterData(dt)}
+                                      >
+                                        <FiX />
+                                      </Button>
+                                    </Flex>
+                                  ))}
+                                </Stack>
+                              </Flex>
+                            </PopoverBody>
+                          </PopoverContent>
+                        </Portal>
+                      </Popover>
                       <Menu>
                         <MenuButton
                           as={Button}
