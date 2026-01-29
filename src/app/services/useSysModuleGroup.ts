@@ -71,6 +71,7 @@ export interface SysModuleStatusFlowInsertPayload {
   isFinish: string;
   isConfirmApproval: string;
   isDisplayOnChoice: string;
+  userApproverIds?: string[];
 }
 
 export interface SysModuleStatusFlowUpdatePayload {
@@ -83,6 +84,32 @@ export interface SysModuleStatusFlowUpdatePayload {
   isFinish: string;
   isConfirmApproval: string;
   isDisplayOnChoice: string;
+}
+
+export interface UserUIMDataResponse {
+  id: string;
+  nrp: string;
+  nama: string;
+  nip: string;
+  userId: string;
+  email: string;
+  jabatan?: string | null;
+  namaUnitKerja?: string | null;
+  profilePict?: string | null;
+}
+
+export interface SysModuleStatusUserApproverResponse {
+  id: string;
+  moduleStatusId: string;
+  userSysId: string;
+  userData?: UserUIMDataResponse | null;
+  createdAt: string;
+  createdBy: string;
+}
+
+export interface SysModuleStatusUserApproverInsertPayload {
+  moduleStatusId: string;
+  userSysId: string;
 }
 
 export interface UserAccessResponse {
@@ -183,6 +210,18 @@ interface useSysModuleGroupServices {
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
   DeleteStatusFlow: (
+    id: string,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  GetUserApprovers: (
+    moduleStatusId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<SysModuleStatusUserApproverResponse[] | null> | null>;
+  AddUserApprover: (
+    payload: SysModuleStatusUserApproverInsertPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  RemoveUserApprover: (
     id: string,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
@@ -670,6 +709,122 @@ const useSysModuleGroup = (): useSysModuleGroupServices => {
     }
   };
 
+  const GetUserApprovers = async (
+    moduleStatusId: string,
+    token: string
+  ): Promise<ApiGenericResponse<SysModuleStatusUserApproverResponse[] | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/SysModuleGroup/user-approver/status/${moduleStatusId}`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<SysModuleStatusUserApproverResponse[]>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(err.response?.data?.message || "An error occurred.");
+        return errorResponse;
+      } else {
+        setError("An unexpected error occurred.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          message: "An unexpected error occurred.",
+          data: null,
+        };
+      }
+    }
+  };
+
+  const AddUserApprover = async (
+    payload: SysModuleStatusUserApproverInsertPayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/SysModuleGroup/user-approver/add";
+    try {
+      const response = await axiosInstance.post<ApiGenericResponse<string>>(
+        `${UrlEndpoint}${PathEndpoint}`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(err.response?.data?.message || "An error occurred.");
+        return errorResponse;
+      } else {
+        setError("An unexpected error occurred.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          message: "An unexpected error occurred.",
+          data: null,
+        };
+      }
+    }
+  };
+
+  const RemoveUserApprover = async (
+    id: string,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/SysModuleGroup/user-approver/${id}`;
+    try {
+      const response = await axiosInstance.delete<
+        ApiGenericResponse<string>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(err.response?.data?.message || "An error occurred.");
+        return errorResponse;
+      } else {
+        setError("An unexpected error occurred.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          message: "An unexpected error occurred.",
+          data: null,
+        };
+      }
+    }
+  };
+
   const GetMyAccess = async (
     token: string
   ): Promise<ApiGenericResponse<UserAccessResponse | null> | null> => {
@@ -720,6 +875,9 @@ const useSysModuleGroup = (): useSysModuleGroupServices => {
     InsertStatusFlow,
     UpdateStatusFlow,
     DeleteStatusFlow,
+    GetUserApprovers,
+    AddUserApprover,
+    RemoveUserApprover,
     GetMyAccess,
     isLoading,
     error,

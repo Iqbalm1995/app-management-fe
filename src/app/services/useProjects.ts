@@ -181,6 +181,7 @@ export interface ProjectDataResponse {
   projectName: string;
   projectDesc: string;
   projectStatus: string;
+  approvalStatus: string | null;
   note: string | null;
   projectCategory: string;
   projectType: string;
@@ -749,6 +750,10 @@ interface useProjectsServices {
     payload: PaggingListPayloadCustom,
     token: string
   ) => Promise<ApiGenericResponse<ProjectDataResponse[] | null> | null>;
+  GetWaitingApproval: (
+    payload: PaggingListPayloadCustom,
+    token: string
+  ) => Promise<ApiGenericResponse<ProjectDataResponse[] | null> | null>;
   GetDetailById: (
     teamId: string,
     token: string
@@ -1121,7 +1126,53 @@ const useProjects = (): useProjectsServices => {
     }
   };
 
-  const GetDetailById = async (
+  const GetWaitingApproval = async (
+    payload: PaggingListPayloadCustom,
+    token: string
+  ): Promise<ApiGenericResponse<ProjectDataResponse[]> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/Projects/waiting-approval";
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<ProjectDataResponse[]>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during request."
+        );
+        return {
+          statusCode: err.response?.status || RES_CODE_SERVER_ERROR,
+          data: null,
+          message: err.response?.data?.message || "Error occurred",
+          error: null,
+        };
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const GetDetailById = async(
     teamId: string,
     token: string
   ): Promise<ApiGenericResponse<ProjectDataResponse | null> | null> => {
@@ -3769,6 +3820,7 @@ const useProjects = (): useProjectsServices => {
   return {
     List,
     GetAssignedProjects,
+    GetWaitingApproval,
     GetDetailById,
     GetProjectDetail,
     GetProjectQuickStats,

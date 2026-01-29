@@ -14,8 +14,10 @@ import useSysModuleGroup, {
   SysModuleStatusFlowResponse,
   SysModuleStatusFlowInsertPayload,
   SysModuleStatusFlowUpdatePayload,
+  SysModuleStatusUserApproverResponse,
 } from "@/app/services/useSysModuleGroup";
 import useMenus, { MenuResponse } from "@/app/services/useMenus";
+import useUsers, { UsersResponse } from "@/app/services/useUsers";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import {
@@ -59,6 +61,12 @@ import {
   ModalFooter,
   ModalCloseButton,
   Flex,
+  SimpleGrid,
+  Avatar,
+  IconButton,
+  InputGroup,
+  InputLeftElement,
+  Spinner,
 } from "@chakra-ui/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -74,6 +82,7 @@ import {
   FiGitBranch,
   FiPlus,
   FiTrash2,
+  FiSearch,
 } from "react-icons/fi";
 import { PaggingListPayload } from "@/app/types/masterTypes";
 
@@ -91,8 +100,9 @@ function SysModuleGroupDetailView() {
   const searchParams = useSearchParams();
   const moduleId = searchParams.get("id");
 
-  const { GetDetailById, Update, GetAssignedMenus, AssignMenus, GetStatusFlows, InsertStatusFlow, UpdateStatusFlow, DeleteStatusFlow } = useSysModuleGroup();
+  const { GetDetailById, Update, GetAssignedMenus, AssignMenus, GetStatusFlows, InsertStatusFlow, UpdateStatusFlow, DeleteStatusFlow, GetUserApprovers, AddUserApprover, RemoveUserApprover } = useSysModuleGroup();
   const { List: GetMenuList } = useMenus();
+  const { List: GetUserList } = useUsers();
 
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
@@ -121,6 +131,10 @@ function SysModuleGroupDetailView() {
     isDisplayOnChoice: "N",
   });
   const [isSavingStatusFlow, setIsSavingStatusFlow] = useState(false);
+  const [userApprovers, setUserApprovers] = useState<SysModuleStatusUserApproverResponse[]>([]);
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [userSearchResults, setUserSearchResults] = useState<UsersResponse[]>([]);
+  const [isSearchingUsers, setIsSearchingUsers] = useState(false);
 
   const [HeaderDataContent, setHeaderDataContent] = useState<HeaderContentProps>({
     titleName: "Module Group Details",
@@ -432,6 +446,9 @@ function SysModuleGroupDetailView() {
       isConfirmApproval: "N",
       isDisplayOnChoice: "N",
     });
+    setUserApprovers([]);
+    setUserSearchQuery("");
+    setUserSearchResults([]);
     setIsStatusFlowModalOpen(true);
   };
 
@@ -447,8 +464,14 @@ function SysModuleGroupDetailView() {
       nextCodeStatus: flow.nextCodeStatus || "",
       isFinish: flow.isFinish,
       isConfirmApproval: flow.isConfirmApproval,
-      isDisplayOnChoice: flow.isDisplayOnChoice,
+      isDisplayOnChoice: flow.isDisplayOnChoice || "N",
     });
+    
+    // Load user approvers if requires approval
+    if (flow.isConfirmApproval === "Y") {
+      fetchUserApprovers(flow.id);
+    }
+    
     setIsStatusFlowModalOpen(true);
   };
 
@@ -489,6 +512,7 @@ function SysModuleGroupDetailView() {
           isFinish: statusFlowForm.isFinish,
           isConfirmApproval: statusFlowForm.isConfirmApproval,
           isDisplayOnChoice: statusFlowForm.isDisplayOnChoice,
+          userApproverIds: statusFlowForm.isConfirmApproval === "Y" ? userApprovers.map(a => a.userSysId) : undefined,
         };
         result = await InsertStatusFlow(payload, tokenData);
       }
@@ -539,6 +563,148 @@ function SysModuleGroupDetailView() {
     } catch (error) {
       showToast({
         description: "Error deleting status flow",
+        statusToast: "error",
+      });
+    }
+  };
+
+  const fetchUserApprovers = async (statusId: string) => {
+    try {
+      const response = await GetUserApprovers(statusId, tokenData);
+      if (response?.statusCode === RES_CODE_OK && response.data) {
+        setUserApprovers(response.data);
+      }
+    } catch (error) {
+      console.error("Error loading user approvers:", error);
+    }
+  };
+
+  const handleSearchUsers = async (query: string) => {
+    setUserSearchQuery(query);
+    if (query.length < 2) {
+      setUserSearchResults([]);
+      return;
+    }
+
+    setIsSearchingUsers(true);
+    try {
+      const response = await GetUserList(
+        {
+          page: 0,
+          limit: 10,
+          search: query,
+          fieldOrder: ["nama"],
+          orderDir: "asc",
+          filterWhere: [],
+        },
+        tokenData
+      );
+
+      if (response?.statusCode === RES_CODE_OK && response.data) {
+        setUserSearchResults(response.data);
+      }
+    } catch (error) {
+      console.error("Error searching users:", error);
+    } finally {
+      setIsSearchingUsers(false);
+    }
+  };
+
+  const handleAddUserApprover = async (user: UsersResponse) => {
+    const exists = userApprovers.some((a) => a.userSysId === user.id);
+    if (exists) {
+      showToast({
+        description: "User already added as approver",
+        statusToast: "warning",
+      });
+      return;
+    }
+
+    // If editing existing status flow, call API immediately
+    if (editingStatusFlow?.id) {
+      try {
+        const result = await AddUserApprover(
+          {
+            moduleStatusId: editingStatusFlow.id,
+            userSysId: user.id,
+          },
+          tokenData
+        );
+
+        if (result?.statusCode === RES_CODE_OK) {
+          showToast({
+            description: "User approver added successfully",
+            statusToast: "success",
+          });
+          fetchUserApprovers(editingStatusFlow.id);
+          setUserSearchQuery("");
+          setUserSearchResults([]);
+        } else {
+          showToast({
+            description: result?.message || RES_GENERIC_ERROR_MSG,
+            statusToast: "error",
+          });
+        }
+      } catch (error) {
+        showToast({
+          description: "Error adding user approver",
+          statusToast: "error",
+        });
+      }
+    } else {
+      // If creating new status flow, just add to local state
+      const newApprover: SysModuleStatusUserApproverResponse = {
+        id: `temp-${Date.now()}`, // Temporary ID
+        moduleStatusId: "",
+        userSysId: user.id,
+        userData: {
+          id: user.id,
+          nrp: user.nrp,
+          nama: user.nama,
+          nip: user.nip,
+          userId: user.userId,
+          email: user.email,
+          jabatan: user.jabatan,
+          namaUnitKerja: user.namaUnitKerja,
+          profilePict: user.profilePict,
+        },
+        createdAt: new Date().toISOString(),
+        createdBy: "SYSTEM",
+      };
+      setUserApprovers([...userApprovers, newApprover]);
+      setUserSearchQuery("");
+      setUserSearchResults([]);
+    }
+  };
+
+  const handleRemoveUserApprover = async (approverId: string) => {
+    // If creating new status flow, just remove from local state
+    if (!editingStatusFlow?.id) {
+      setUserApprovers(userApprovers.filter((a) => a.id !== approverId));
+      return;
+    }
+
+    // If editing, call API
+    try {
+      const result = await RemoveUserApprover(approverId, tokenData);
+
+      if (result?.statusCode === RES_CODE_OK) {
+        showToast({
+          description: "User approver removed successfully",
+          statusToast: "success",
+        });
+        if (editingStatusFlow?.id) {
+          fetchUserApprovers(editingStatusFlow.id);
+        }
+      } else {
+        showToast({
+          description: result?.message || RES_GENERIC_ERROR_MSG,
+          statusToast: "error",
+        });
+      }
+    } catch (error) {
+      showToast({
+        description: "Error removing user approver",
         statusToast: "error",
       });
     }
@@ -1139,120 +1305,115 @@ function SysModuleGroupDetailView() {
       </Box>
 
       {/* Status Flow Modal */}
-      <Modal isOpen={isStatusFlowModalOpen} onClose={() => setIsStatusFlowModalOpen(false)} size="lg">
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>
+      <Modal 
+        isOpen={isStatusFlowModalOpen} 
+        onClose={() => {
+          setIsStatusFlowModalOpen(false);
+          setUserApprovers([]);
+          setUserSearchQuery("");
+          setUserSearchResults([]);
+        }} 
+        size={statusFlowForm.isConfirmApproval === "Y" ? "6xl" : "lg"}
+        isCentered
+      >
+        <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(4px)" />
+        <ModalContent mx={4} rounded={radiusStyle} shadow="2xl">
+          <ModalHeader fontSize="xl" fontWeight="bold">
             {editingStatusFlow ? "Edit Status Flow" : "Add New Status Flow"}
           </ModalHeader>
           <ModalCloseButton />
-          <ModalBody>
-            <VStack spacing={4}>
-              <FormControl isRequired>
-                <FormLabel>Name Status</FormLabel>
-                <Input
-                  value={statusFlowForm.nameStatus}
-                  onChange={(e) => {
-                    const value = e.target.value.toUpperCase();
-                    setStatusFlowForm({ 
-                      ...statusFlowForm, 
-                      nameStatus: value,
-                      codeStatus: value 
-                    });
-                  }}
-                  placeholder="e.g., DRAFT STATUS"
-                />
-              </FormControl>
+          <ModalBody pb={6}>
+            <SimpleGrid columns={statusFlowForm.isConfirmApproval === "Y" ? { base: 1, lg: 2 } : 1} spacing={6}>
+              {/* Left: Form Fields */}
+              <VStack spacing={4} align="stretch">
+                <FormControl isRequired>
+                  <FormLabel>Name Status</FormLabel>
+                  <Input
+                    value={statusFlowForm.nameStatus}
+                    onChange={(e) => {
+                      const value = e.target.value.toUpperCase();
+                      setStatusFlowForm({ 
+                        ...statusFlowForm, 
+                        nameStatus: value,
+                        codeStatus: value 
+                      });
+                    }}
+                    placeholder="e.g., DRAFT STATUS"
+                  />
+                </FormControl>
 
-              <FormControl>
-                <FormLabel>Description</FormLabel>
-                <Textarea
-                  value={statusFlowForm.descriptions}
-                  onChange={(e) =>
-                    setStatusFlowForm({ ...statusFlowForm, descriptions: e.target.value })
-                  }
-                  placeholder="Enter description"
-                  rows={3}
-                />
-              </FormControl>
-
-              <FormControl>
-                <Checkbox
-                  isChecked={statusFlowForm.isConfirmApproval === "Y"}
-                  onChange={(e) =>
-                    setStatusFlowForm({
-                      ...statusFlowForm,
-                      isConfirmApproval: e.target.checked ? "Y" : "N",
-                    })
-                  }
-                  colorScheme="orange"
-                >
-                  Requires Approval? (Creates branching flow)
-                </Checkbox>
-              </FormControl>
-
-              <FormControl>
-                <Checkbox
-                  isChecked={statusFlowForm.isFinish === "Y"}
-                  onChange={(e) =>
-                    setStatusFlowForm({
-                      ...statusFlowForm,
-                      isFinish: e.target.checked ? "Y" : "N",
-                      nextCodeStatus: e.target.checked ? "" : statusFlowForm.nextCodeStatus,
-                    })
-                  }
-                  colorScheme="green"
-                >
-                  Is Finish Status?
-                </Checkbox>
-              </FormControl>
-
-              <FormControl>
-                <Checkbox
-                  isChecked={statusFlowForm.isDisplayOnChoice === "Y"}
-                  onChange={(e) =>
-                    setStatusFlowForm({
-                      ...statusFlowForm,
-                      isDisplayOnChoice: e.target.checked ? "Y" : "N",
-                    })
-                  }
-                  colorScheme="blue"
-                >
-                  Display on Choice?
-                </Checkbox>
-              </FormControl>
-
-              <FormControl>
-                <FormLabel>Previous Status (Incoming From)</FormLabel>
-                <Select
-                  value={statusFlowForm.previousCodeStatus}
-                  onChange={(e) =>
-                    setStatusFlowForm({ ...statusFlowForm, previousCodeStatus: e.target.value })
-                  }
-                  placeholder="Select previous status"
-                >
-                  {statusFlows
-                    .filter((f) => f.id !== editingStatusFlow?.id)
-                    .map((flow) => (
-                      <option key={flow.id} value={flow.codeStatus}>
-                        {flow.nameStatus}
-                      </option>
-                    ))}
-                </Select>
-                <Text fontSize="xs" color="gray.500" mt={1}>
-                  Which status flows into this one
-                </Text>
-              </FormControl>
-
-              {statusFlowForm.isFinish === "N" && (
                 <FormControl>
-                  <FormLabel>Next Status (Approved Path)</FormLabel>
-                  <Select
-                    value={statusFlowForm.nextCodeStatus}
+                  <FormLabel>Description</FormLabel>
+                  <Textarea
+                    value={statusFlowForm.descriptions}
                     onChange={(e) =>
-                      setStatusFlowForm({ ...statusFlowForm, nextCodeStatus: e.target.value })
+                      setStatusFlowForm({ ...statusFlowForm, descriptions: e.target.value })
                     }
-                    placeholder="Select next status"
+                    placeholder="Enter description"
+                    rows={3}
+                  />
+                </FormControl>
+
+                <FormControl>
+                  <Checkbox
+                    isChecked={statusFlowForm.isConfirmApproval === "Y"}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setStatusFlowForm({
+                        ...statusFlowForm,
+                        isConfirmApproval: checked ? "Y" : "N",
+                      });
+                      if (checked && editingStatusFlow?.id) {
+                        fetchUserApprovers(editingStatusFlow.id);
+                      } else {
+                        setUserApprovers([]);
+                      }
+                    }}
+                    colorScheme="orange"
+                  >
+                    Requires Approval? (Creates branching flow)
+                  </Checkbox>
+                </FormControl>
+
+                <FormControl>
+                  <Checkbox
+                    isChecked={statusFlowForm.isFinish === "Y"}
+                    onChange={(e) =>
+                      setStatusFlowForm({
+                        ...statusFlowForm,
+                        isFinish: e.target.checked ? "Y" : "N",
+                        nextCodeStatus: e.target.checked ? "" : statusFlowForm.nextCodeStatus,
+                      })
+                    }
+                    colorScheme="green"
+                  >
+                    Is Finish Status?
+                  </Checkbox>
+                </FormControl>
+
+                <FormControl>
+                  <Checkbox
+                    isChecked={statusFlowForm.isDisplayOnChoice === "Y"}
+                    onChange={(e) =>
+                      setStatusFlowForm({
+                        ...statusFlowForm,
+                        isDisplayOnChoice: e.target.checked ? "Y" : "N",
+                      })
+                    }
+                    colorScheme="blue"
+                  >
+                    Display on Choice?
+                  </Checkbox>
+                </FormControl>
+
+                <FormControl>
+                  <FormLabel>Previous Status (Incoming From)</FormLabel>
+                  <Select
+                    value={statusFlowForm.previousCodeStatus}
+                    onChange={(e) =>
+                      setStatusFlowForm({ ...statusFlowForm, previousCodeStatus: e.target.value })
+                    }
+                    placeholder="Select previous status"
                   >
                     {statusFlows
                       .filter((f) => f.id !== editingStatusFlow?.id)
@@ -1263,14 +1424,175 @@ function SysModuleGroupDetailView() {
                       ))}
                   </Select>
                   <Text fontSize="xs" color="gray.500" mt={1}>
-                    {statusFlowForm.isConfirmApproval === "Y" 
-                      ? "This is the approved path. Declined items can branch to other statuses."
-                      : "Standard next status in the flow"
-                    }
+                    Which status flows into this one
                   </Text>
                 </FormControl>
+
+                {statusFlowForm.isFinish === "N" && (
+                  <FormControl>
+                    <FormLabel>Next Status (Approved Path)</FormLabel>
+                    <Select
+                      value={statusFlowForm.nextCodeStatus}
+                      onChange={(e) =>
+                        setStatusFlowForm({ ...statusFlowForm, nextCodeStatus: e.target.value })
+                      }
+                      placeholder="Select next status"
+                    >
+                      {statusFlows
+                        .filter((f) => f.id !== editingStatusFlow?.id)
+                        .map((flow) => (
+                          <option key={flow.id} value={flow.codeStatus}>
+                            {flow.nameStatus}
+                          </option>
+                        ))}
+                    </Select>
+                    <Text fontSize="xs" color="gray.500" mt={1}>
+                      {statusFlowForm.isConfirmApproval === "Y" 
+                        ? "This is the approved path. Declined items can branch to other statuses."
+                        : "Standard next status in the flow"
+                      }
+                    </Text>
+                  </FormControl>
+                )}
+              </VStack>
+
+              {/* Right: User Approvers Management */}
+              {statusFlowForm.isConfirmApproval === "Y" && (
+                <VStack align="stretch" spacing={4}>
+                  <Text fontWeight="semibold">User Approvers Management</Text>
+                  
+                  {/* Search */}
+                  <FormControl>
+                    <FormLabel fontSize="sm">Search Users (min 2 characters)</FormLabel>
+                    <InputGroup size="sm">
+                      <InputLeftElement pointerEvents="none">
+                        <FiSearch color="gray" />
+                      </InputLeftElement>
+                      <Input
+                        value={userSearchQuery}
+                        onChange={(e) => handleSearchUsers(e.target.value)}
+                        placeholder="Search by User ID or Name"
+                      />
+                    </InputGroup>
+                  </FormControl>
+
+                  {/* Search Results */}
+                  {userSearchQuery.length >= 2 && (
+                    <Box>
+                      <Text fontSize="sm" fontWeight="medium" mb={2}>Search Results</Text>
+                      <Box 
+                        maxH="150px" 
+                        overflowY="auto"
+                        border="1px"
+                        borderColor="gray.200"
+                        rounded="md"
+                        bg={colorMode === "dark" ? "gray.700" : "white"}
+                      >
+                        {isSearchingUsers ? (
+                          <VStack py={4}>
+                            <Spinner size="sm" color="orange.500" />
+                            <Text fontSize="xs" color="gray.500">Searching...</Text>
+                          </VStack>
+                        ) : userSearchResults.length > 0 ? (
+                          <VStack spacing={0} align="stretch">
+                            {userSearchResults.map((user) => {
+                              const isAlreadyAdded = userApprovers.some((a) => a.userSysId === user.id);
+                              return (
+                                <HStack
+                                  key={user.id}
+                                  p={2}
+                                  spacing={2}
+                                  cursor={isAlreadyAdded ? "not-allowed" : "pointer"}
+                                  opacity={isAlreadyAdded ? 0.5 : 1}
+                                  _hover={!isAlreadyAdded ? {
+                                    bg: colorMode === "light" ? "gray.50" : "gray.600"
+                                  } : {}}
+                                  onClick={() => !isAlreadyAdded && handleAddUserApprover(user)}
+                                  borderBottom="1px"
+                                  borderColor="gray.100"
+                                >
+                                  <Avatar name={user.nama} size="xs" src={user.profilePict || undefined} />
+                                  <VStack align="start" spacing={0} flex={1}>
+                                    <Text fontSize="xs" fontWeight={600}>{user.nama}</Text>
+                                    <Text fontSize="2xs" color="gray.500">{user.userId}</Text>
+                                  </VStack>
+                                  {isAlreadyAdded && (
+                                    <Badge colorScheme="green" fontSize="2xs">Added</Badge>
+                                  )}
+                                </HStack>
+                              );
+                            })}
+                          </VStack>
+                        ) : (
+                          <Text textAlign="center" fontSize="xs" color="gray.500" py={4}>
+                            No users found
+                          </Text>
+                        )}
+                      </Box>
+                    </Box>
+                  )}
+
+                  {/* Assigned Approvers */}
+                  <Box>
+                    <HStack justify="space-between" mb={2}>
+                      <Text fontSize="sm" fontWeight="medium">Assigned Approvers</Text>
+                      <Badge colorScheme="orange">{userApprovers.length}</Badge>
+                    </HStack>
+                    <Box
+                      maxH="250px"
+                      overflowY="auto"
+                      border="1px"
+                      borderColor="orange.200"
+                      rounded="md"
+                      bg={colorMode === "dark" ? "gray.700" : "orange.50"}
+                      p={2}
+                    >
+                      {userApprovers.length === 0 ? (
+                        <Text textAlign="center" fontSize="xs" color="gray.500" py={4}>
+                          No approvers assigned
+                        </Text>
+                      ) : (
+                        <VStack spacing={2} align="stretch">
+                          {userApprovers.map((approver) => (
+                            <HStack
+                              key={approver.id}
+                              p={2}
+                              bg={colorMode === "light" ? "white" : "gray.800"}
+                              rounded="md"
+                              border="1px"
+                              borderColor="gray.200"
+                              spacing={2}
+                            >
+                              <Avatar 
+                                name={approver.userData?.nama || "User"} 
+                                size="xs"
+                                src={approver.userData?.profilePict || undefined}
+                              />
+                              <VStack align="start" spacing={0} flex={1}>
+                                <Text fontSize="xs" fontWeight={600}>
+                                  {approver.userData?.nama || "Unknown"}
+                                </Text>
+                                <Text fontSize="2xs" color="gray.500">
+                                  {approver.userData?.userId || approver.userSysId}
+                                </Text>
+                              </VStack>
+                              <IconButton
+                                aria-label="Remove approver"
+                                icon={<FiTrash2 />}
+                                colorScheme="red"
+                                variant="ghost"
+                                size="xs"
+                                onClick={() => handleRemoveUserApprover(approver.id)}
+                              />
+                            </HStack>
+                          ))}
+                        </VStack>
+                      )}
+                    </Box>
+                  </Box>
+                </VStack>
               )}
-            </VStack>
+            </SimpleGrid>
           </ModalBody>
           <ModalFooter>
             <Button variant="ghost" mr={3} onClick={() => setIsStatusFlowModalOpen(false)}>

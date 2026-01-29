@@ -229,7 +229,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Pending Approve",
         icon: MdOutlineCircle,
-        link: "/projects/prending-approve",
+        link: "/projects/pending-approve",
         role: ["admin"],
         menuID: "1",
         children: [],
