@@ -98,7 +98,7 @@ export default function ApprovalHubView() {
   const showToast = useToastHelper();
   const { List, StartReview } = useRequirements();
   const { List: ListOrganization } = useOrganization();
-  
+
   // Auth Setup
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
@@ -229,6 +229,14 @@ export default function ApprovalHubView() {
   useEffect(() => {
     if (!DataAuth || !tokenData) return;
 
+
+    // If user has no orgGroupCode, show no results
+    if (!DataAuth.team?.orgGroupCode) {
+      setDataApprovals([]);
+      setTotalPageData(0);
+      setIsLoadingProcess(false);
+      return;
+    }
     const statusFilter: ListSearchByParamProps = {
       field: "reqStatus",
       operator: "=",
@@ -243,7 +251,14 @@ export default function ApprovalHubView() {
       filterLabel: "Type",
     };
 
-    const filterWithStatusAndType = [...ParamFilter, statusFilter, typeFilter];
+    const orgGroupFilter: ListSearchByParamProps = {
+      field: "reqManageByGroupCode",
+      operator: "=",
+      value: DataAuth.team.orgGroupCode,
+      filterLabel: "Group",
+    };
+
+    const filterWithStatusAndType = [...ParamFilter, statusFilter, typeFilter, orgGroupFilter];
 
     const PayloadList: PaggingListPayload = {
       search: "",
@@ -683,7 +698,7 @@ export default function ApprovalHubView() {
                 {status === REQ_STATUS_DRAFT && canMake && (
                   <Button
                     leftIcon={<FiEdit />}
-                    colorScheme="blue"
+                    bg="blue.50" color="blue.700" _hover={{ bg: "blue.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s" py={4} fontSize="sm"
                     size="xs"
                     w="full"
                     onClick={() =>
@@ -700,7 +715,7 @@ export default function ApprovalHubView() {
                 {status === REQ_STATUS_NEED_REVIEW && canReview && (
                   <Button
                     leftIcon={<FiEdit />}
-                    colorScheme="green"
+                    bg="green.50" color="green.700" _hover={{ bg: "green.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s" py={4} fontSize="sm"
                     size="xs"
                     w="full"
                     onClick={async () => {
@@ -729,7 +744,7 @@ export default function ApprovalHubView() {
                 {status === REQ_STATUS_IN_PROGRESS_REVIEW && canReview && (
                   <Button
                     leftIcon={<FiEdit />}
-                    colorScheme="green"
+                    bg="green.50" color="green.700" _hover={{ bg: "green.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s" py={4} fontSize="sm"
                     size="xs"
                     w="full"
                     onClick={() =>
@@ -746,7 +761,7 @@ export default function ApprovalHubView() {
                 {status === REQ_WAITING_APPROVAL && canApprove && (
                   <Button
                     leftIcon={<FiCheck />}
-                    colorScheme="green"
+                    bg="green.50" color="green.700" _hover={{ bg: "green.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s" py={4} fontSize="sm"
                     size="xs"
                     w="full"
                     onClick={() => {
@@ -763,7 +778,7 @@ export default function ApprovalHubView() {
                 {status === REQ_STATUS_APPROVED && canMake && isHaveMemo === "N" && (
                   <Button
                     leftIcon={<FiEdit />}
-                    colorScheme="blue"
+                    bg="blue.50" color="blue.700" _hover={{ bg: "blue.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s" py={4} fontSize="sm"
                     size="xs"
                     w="full"
                     onClick={() =>
@@ -780,7 +795,7 @@ export default function ApprovalHubView() {
                 {status === REQ_STATUS_TEMPORARY_APPROVED && canMake && (
                   <Button
                     leftIcon={<FiEdit />}
-                    colorScheme="blue"
+                    bg="blue.50" color="blue.700" _hover={{ bg: "blue.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s" py={4} fontSize="sm"
                     size="xs"
                     w="full"
                     onClick={() =>
@@ -795,7 +810,7 @@ export default function ApprovalHubView() {
                 {status === REQ_STATUS_TEMPORARY_APPROVED && canReview && (
                   <Button
                     leftIcon={<FiEdit />}
-                    colorScheme="green"
+                    bg="green.50" color="green.700" _hover={{ bg: "green.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s" py={4} fontSize="sm"
                     size="xs"
                     w="full"
                     onClick={async () => {
@@ -824,7 +839,7 @@ export default function ApprovalHubView() {
                 {status === REQ_STATUS_ON_HOLD && canMake && (
                   <Button
                     leftIcon={<FiEdit />}
-                    colorScheme="blue"
+                    bg="blue.50" color="blue.700" _hover={{ bg: "blue.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s" py={4} fontSize="sm"
                     size="xs"
                     w="full"
                     onClick={() =>
@@ -839,7 +854,7 @@ export default function ApprovalHubView() {
                 {status === REQ_STATUS_ON_HOLD && canReview && (
                   <Button
                     leftIcon={<FiEdit />}
-                    colorScheme="green"
+                    bg="green.50" color="green.700" _hover={{ bg: "green.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s" py={4} fontSize="sm"
                     size="xs"
                     w="full"
                     onClick={async () => {
@@ -949,91 +964,26 @@ export default function ApprovalHubView() {
                     w={"full"}
                   >
                     <HStack spacing={2}>
-                      <HStack
-                        spacing={1}
-                        bg={colorMode === "light" ? "gray.100" : "gray.700"}
-                        rounded="lg"
-                        p={1}
-                        w="fit-content"
-                      >
-                        <Popover closeOnBlur={false} placement={"bottom"}>
-                          <PopoverTrigger>
-                            <Button size={"md"} leftIcon={<FiFilter />}>
-                              Filter{" "}
-                              <Flex
-                                as={"span"}
-                                pl={1}
-                                display={
-                                  ParamFilter.length > 0 ? "flex" : "none"
-                                }
-                                color={"secondary.500"}
-                                fontWeight={600}
-                              >
-                                ({ParamFilter.length})
-                              </Flex>
-                            </Button>
-                          </PopoverTrigger>
-                          <Portal>
-                            <PopoverContent width="auto" minW="xs">
-                              <PopoverBody>
-                                <Flex as={Stack} w={"full"}>
-                                  <Text fontWeight={600}>Filter Data</Text>
-                                  <Divider />
-                                  <Stack spacing={2}>
-                                    {ParamFilter.length === 0 ? (
-                                      <Text fontSize="sm" color="gray.500">
-                                        No active filters
-                                      </Text>
-                                    ) : (
-                                      ParamFilter.map((dt, idx) => (
-                                        <Flex
-                                          key={idx}
-                                          w={"full"}
-                                          alignItems="center"
-                                          as={HStack}
-                                          spacing={2}
-                                        >
-                                          <Text>
-                                            {dt.filterLabel}:{" "}
-                                            <Text as={"span"} fontWeight={600}>
-                                              {dt.value}
-                                            </Text>
-                                          </Text>
-                                          <Button
-                                            size={"xs"}
-                                            colorScheme={"red"}
-                                            justifyContent={"center"}
-                                            variant={"ghost"}
-                                            onClick={() => removeFilterData(dt)}
-                                          >
-                                            <FiX />
-                                          </Button>
-                                        </Flex>
-                                      ))
-                                    )}
-                                  </Stack>
-                                </Flex>
-                              </PopoverBody>
-                            </PopoverContent>
-                          </Portal>
-                        </Popover>
-                      </HStack>
-                      <ButtonGroup size="sm" isAttached variant="outline">
+                      <HStack spacing={2} flexWrap="wrap">
                         <Button
-                          colorScheme={viewMode === "BRD" ? "blue" : "gray"}
-                          variant={viewMode === "BRD" ? "solid" : "outline"}
+                          size="sm"
+                          variant={viewMode === "BRD" ? "solid" : "ghost"}
+                          colorScheme="blue"
                           onClick={() => setViewMode("BRD")}
+                          borderRadius="lg"
                         >
                           BRD
                         </Button>
                         <Button
-                          colorScheme={viewMode === "RFC" ? "blue" : "gray"}
-                          variant={viewMode === "RFC" ? "solid" : "outline"}
+                          size="sm"
+                          variant={viewMode === "RFC" ? "solid" : "ghost"}
+                          colorScheme="blue"
                           onClick={() => setViewMode("RFC")}
+                          borderRadius="lg"
                         >
                           RFC
                         </Button>
-                      </ButtonGroup>
+                      </HStack>
                     </HStack>
                   </GridItem>
                   <GridItem
@@ -1041,7 +991,68 @@ export default function ApprovalHubView() {
                     w={"full"}
                   >
                     {/* BUTTON ACTION */}
-                    <Flex as={Wrap} justifyContent={"end"} px={0} w={"full"}>
+                    <Flex as={Wrap} justifyContent={"end"} alignItems={"center"} gap={2} px={0} w={"full"}>
+                      <Popover closeOnBlur={false} placement={"bottom"}>
+                        <PopoverTrigger>
+                          <Button size={"md"} leftIcon={<FiFilter />}>
+                            Filter{" "}
+                            <Flex
+                              as={"span"}
+                              pl={1}
+                              display={
+                                ParamFilter.length > 0 ? "flex" : "none"
+                              }
+                              color={"secondary.500"}
+                              fontWeight={600}
+                            >
+                              ({ParamFilter.length})
+                            </Flex>
+                          </Button>
+                        </PopoverTrigger>
+                        <Portal>
+                          <PopoverContent width="auto" minW="xs">
+                            <PopoverBody>
+                              <Flex as={Stack} w={"full"}>
+                                <Text fontWeight={600}>Filter Data</Text>
+                                <Divider />
+                                <Stack spacing={2}>
+                                  {ParamFilter.length === 0 ? (
+                                    <Text fontSize="sm" color="gray.500">
+                                      No active filters
+                                    </Text>
+                                  ) : (
+                                    ParamFilter.map((dt, idx) => (
+                                      <Flex
+                                        key={idx}
+                                        w={"full"}
+                                        alignItems="center"
+                                        as={HStack}
+                                        spacing={2}
+                                      >
+                                        <Text>
+                                          {dt.filterLabel}:{" "}
+                                          <Text as={"span"} fontWeight={600}>
+                                            {dt.value}
+                                          </Text>
+                                        </Text>
+                                        <Button
+                                          size={"xs"}
+                                          colorScheme={"red"}
+                                          justifyContent={"center"}
+                                          variant={"ghost"}
+                                          onClick={() => removeFilterData(dt)}
+                                        >
+                                          <FiX />
+                                        </Button>
+                                      </Flex>
+                                    ))
+                                  )}
+                                </Stack>
+                              </Flex>
+                            </PopoverBody>
+                          </PopoverContent>
+                        </Portal>
+                      </Popover>
                       <Button
                         size={"md"}
                         leftIcon={<FiRefreshCcw />}

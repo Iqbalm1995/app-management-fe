@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import {
   radiusStyle,
   RES_CODE_OK,
@@ -52,6 +53,10 @@ import {
   Image,
   ButtonGroup,
   Divider,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
   useColorMode,
 } from "@chakra-ui/react";
 import { useFormik } from "formik";
@@ -173,7 +178,7 @@ const AuthPanelModal = () => {
                         50% { transform: translateY(-20px); }
                       }
                     `}</style>
-                    
+
                     {/* Wave 1 */}
                     <svg
                       style={{
@@ -339,6 +344,9 @@ const AuthForm = () => {
   const { Login, GetAuth, isLoading, error } = useAuthentications();
   const { GetMyAccess } = useSysModuleGroup();
   const [LupaPassText, setLupaPassText] = useState(false);
+  const [showDefaultPasswordModal, setShowDefaultPasswordModal] = useState(false);
+  const [countdown, setCountdown] = useState(30);
+  const [isDefaultPassword, setIsDefaultPassword] = useState(false);
 
   const formik = useFormik({
     initialValues: initialValueAuthEx,
@@ -360,37 +368,29 @@ const AuthForm = () => {
     setIsError(false);
   }, [formik.values]);
 
+  // Countdown effect for default password modal
+  useEffect(() => {
+    if (showDefaultPasswordModal && countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    } else if (showDefaultPasswordModal && countdown === 0) {
+      router.push("/change-password");
+    }
+  }, [showDefaultPasswordModal, countdown, router]);
+
   const AuthAction = async (values: AuthCorporateUserModel) => {
     setIsLoadingProcess(true);
-    
-    // Check if using default password
+
+
+    // Check if using default password before login
     const encryptedPassword = encryptAES(values.password);
     if (encryptedPassword === "sJTLr62VFATzZr7e3jmwNA==") {
-      showToast({
-        description: "Anda masih menggunakan kata sandi default. Silakan ganti kata sandi untuk melanjutkan.",
-        statusToast: "warning",
-      });
-      
-      // Show success message before redirect
-      setTimeout(() => {
-        showToast({
-          description: "Mengalihkan ke halaman Ganti Kata Sandi…",
-          statusToast: "success",
-        });
-        
-        // Store userId temporarily for change password page
-        localStorage.setItem("tempUserId", values.username);
-        
-        // Redirect after short delay
-        setTimeout(() => {
-          router.push("/change-password");
-        }, 1500);
-      }, 1000);
-      
-      setIsLoadingProcess(false);
-      return;
+      setIsDefaultPassword(true);
+      localStorage.setItem("tempUserId", values.username);
+    } else {
+      setIsDefaultPassword(false);
     }
-    
+
     const response = await Login({
       username: values.username,
       password: encryptedPassword,
@@ -418,18 +418,20 @@ const AuthForm = () => {
         return;
       }
 
+
+
       showToast({
         description: "Login Success, Loading user data...",
         statusToast: "info",
       });
-      
+
       const authDataToken: loginReturn = response.data as loginReturn;
-      
+
       // Get user data
       const getDataUser: AuthDataResponse | null = await GetDataUser(
         response.data.apiKey
       );
-      
+
       if (getDataUser == null) {
         setIsLoadingProcess(false);
         return;
@@ -437,16 +439,26 @@ const AuthForm = () => {
 
       // Get user access data
       const accessResponse = await GetMyAccess(response.data.apiKey);
-      
+
       if (accessResponse?.statusCode === RES_CODE_OK && accessResponse.data) {
         // Store access data in localStorage
         localStorage.setItem("accessData", JSON.stringify(accessResponse.data));
       }
 
       // Proceed with login
-      await goLogin(getDataUser, authDataToken);
-      setIsError(false);
-      setIsLoadingProcess(false);
+
+      // Store flag if default password for landing page modal
+      if (isDefaultPassword) {
+        localStorage.setItem("showDefaultPasswordWarning", "true");
+        await goLogin(getDataUser, authDataToken);
+        setIsError(false);
+        setIsLoadingProcess(false);
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      } else {
+        await goLogin(getDataUser, authDataToken);
+        setIsError(false);
+        setIsLoadingProcess(false);
+      }
     }
   };
 
@@ -559,6 +571,23 @@ const AuthForm = () => {
                 </Link>
               </Flex>
             </Box>
+            {isDefaultPassword && (
+              <Alert status="warning" borderRadius="md" mb={4}>
+                <AlertIcon />
+                <Box>
+                  <AlertTitle>Anda Menggunakan Password Default!</AlertTitle>
+                  <AlertDescription>
+                    Anda memasukkan password default. Setelah login, diharapkan untuk mengganti password Anda di{" "}
+                    <Link href="/change-password">
+                      <Text as="span" color="blue.500" textDecoration="underline" cursor="pointer">
+                        sini
+                      </Text>
+                    </Link>
+                    .
+                  </AlertDescription>
+                </Box>
+              </Alert>
+            )}
             <Button
               rightIcon={<FiLogIn />}
               colorScheme={"secondary"}
@@ -601,6 +630,44 @@ const AuthForm = () => {
           </VStack>
         </form>
       </Box>
+
+      {/* Default Password Warning Modal */}
+      <Modal isOpen={showDefaultPasswordModal} onClose={() => { }} closeOnOverlayClick={false} isCentered>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Password Default Terdeteksi</ModalHeader>
+          <ModalBody>
+            <VStack spacing={4} align="stretch">
+              <Text>
+                Anda masih menggunakan password default. Untuk keamanan akun Anda, silakan ganti password segera.
+              </Text>
+              <Box p={4} bg="orange.50" borderRadius="md" borderLeft="4px" borderColor="orange.500">
+                <AlertDescription>
+                  Anda memasukkan password default. Setelah login, diharapkan untuk mengganti password Anda di{" "}
+                  <Link href="/change-password">
+                    <Text as="span" color="blue.500" textDecoration="underline" cursor="pointer">
+                      sini
+                    </Text>
+                  </Link>
+                  .
+                </AlertDescription>
+              </Box>
+              <Button
+                colorScheme="blue"
+                onClick={() => router.push("/change-password")}
+                size="lg"
+              >
+                Ganti Password Sekarang
+              </Button>
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Text fontSize="sm" color="gray.500">
+              Redirect otomatis dalam {countdown} detik...
+            </Text>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </VStack>
   );
 };

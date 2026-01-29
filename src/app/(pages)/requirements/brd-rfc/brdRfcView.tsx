@@ -258,14 +258,17 @@ export default function BRDRFCView() {
     currentQuarter
   );
   const [filteredMonths, setFilteredMonths] = useState<string[]>([]);
-  const [viewMode, setViewMode] = useState<"BRD" | "RFC">(() => {
+  type ViewMode = "BRD" | "RFC" | "MY";
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("brdRfcViewMode");
-      return (saved === "RFC" ? "RFC" : "BRD") as "BRD" | "RFC";
+      return saved === "RFC" || saved === "MY" ? saved : "BRD";
     }
     return "BRD";
   });
+
   const [memoFilter, setMemoFilter] = useState<string>("");
+  const [creatorFilter, setCreatorFilter] = useState<string>("");
 
   const years = Array.from({ length: 8 }, (_, i) => currentYear - 5 + i);
 
@@ -1067,13 +1070,29 @@ export default function BRDRFCView() {
       // setParamFilter(filterWhereData);
 
       // Add viewMode filter
-      const typeFilter: ListSearchByParamProps = {
-        field: "requirementType",
-        operator: "=",
-        value: viewMode,
-        filterLabel: "Type",
-      };
-      let filterWithType = [...ParamFilter, typeFilter];
+      let filterWithType = [...ParamFilter];
+
+      if (viewMode === "MY") {
+        // Filter by current user's requirements (both BRD and RFC)
+        if (DataAuth?.userId) {
+          const myReqFilter: ListSearchByParamProps = {
+            field: "assignedFromId",
+            operator: "=",
+            value: DataAuth.userId,
+            filterLabel: "My Requirements",
+          };
+          filterWithType = [...filterWithType, myReqFilter];
+        }
+      } else {
+        // Filter by requirement type (BRD or RFC)
+        const typeFilter: ListSearchByParamProps = {
+          field: "requirementType",
+          operator: "=",
+          value: viewMode,
+          filterLabel: "Type",
+        };
+        filterWithType = [...filterWithType, typeFilter];
+      }
 
       // Add memo filter if selected
       if (memoFilter !== "") {
@@ -1084,6 +1103,17 @@ export default function BRDRFCView() {
           filterLabel: "Memo Status",
         };
         filterWithType = [...filterWithType, memoFilterParam];
+      }
+
+      // Add creator filter if "MY" is selected
+      if (creatorFilter === "MY" && DataAuth?.userId) {
+        const creatorFilterParam: ListSearchByParamProps = {
+          field: "assignedFromId",
+          operator: "=",
+          value: DataAuth.userId,
+          filterLabel: "Creator",
+        };
+        filterWithType = [...filterWithType, creatorFilterParam];
       }
 
       const PayloadList: PaggingListPayload = {
@@ -1140,6 +1170,7 @@ export default function BRDRFCView() {
     selectedQuarter,
     ParamFilter,
     viewMode,
+    creatorFilter,
     memoFilter,
   ]);
 
@@ -1307,92 +1338,33 @@ export default function BRDRFCView() {
                     w={"full"}
                   >
                     <HStack spacing={2}>
-                      <HStack
-                        spacing={1}
-                        bg={colorMode === "light" ? "gray.50" : "gray.700"}
-                        rounded="lg"
-                        p={1}
-                        w="fit-content"
+                      <Button
+                        size="sm"
+                        variant={viewMode === "BRD" ? "solid" : "ghost"}
+                        colorScheme="blue"
+                        onClick={() => setViewMode("BRD")}
+                        borderRadius="lg"
                       >
-                        <Popover closeOnBlur={false} placement={"bottom"}>
-                          <PopoverTrigger>
-                            <Button size={"md"} leftIcon={<FiFilter />}>
-                              Filter{" "}
-                              <Flex
-                                as={"span"}
-                                pl={1}
-                                display={
-                                  ParamFilter.length > 0 ? "flex" : "none"
-                                }
-                                color={"secondary.500"}
-                                fontWeight={600}
-                              >
-                                ({ParamFilter.length})
-                              </Flex>
-                            </Button>
-                          </PopoverTrigger>
-                          <Portal>
-                            <PopoverContent width="auto" minW="xs">
-                              <PopoverBody>
-                                <Flex as={Stack} w={"full"}>
-                                  <Text fontWeight={600}>Filter Data</Text>
-                                  <Divider />
-
-                                  <Stack spacing={2}>
-                                    {ParamFilter.map((dt, idx) => (
-                                      <Flex
-                                        key={idx}
-                                        w={"full"}
-                                        alignItems="center"
-                                        as={HStack}
-                                        spacing={2}
-                                      >
-                                        <Text>
-                                          {dt.filterLabel} :{" "}
-                                          <Text as={"span"} fontWeight={600}>
-                                            {" "}
-                                            {dt.field === "senderDivisionId"
-                                              ? OptionDivision.find(
-                                                (opt) =>
-                                                  opt.value === dt.value
-                                              )?.label || dt.value
-                                              : dt.value}
-                                          </Text>
-                                        </Text>
-                                        <Button
-                                          size={"xs"}
-                                          colorScheme={"red"}
-                                          justifyContent={"center"}
-                                          variant={"ghost"}
-                                          onClick={() => removeFilterData(dt)}
-                                        >
-                                          <FiX />
-                                        </Button>
-                                      </Flex>
-                                    ))}
-                                  </Stack>
-                                </Flex>
-                              </PopoverBody>
-                            </PopoverContent>
-                          </Portal>
-                        </Popover>
-                      </HStack>
-                      <ButtonGroup size="xs" isAttached variant="outline">
-                        <Button
-                          colorScheme={viewMode === "BRD" ? "blue" : "gray"}
-                          variant={viewMode === "BRD" ? "solid" : "outline"}
-                          onClick={() => setViewMode("BRD")}
-                        >
-                          BRD
-                        </Button>
-                        <Button
-                          colorScheme={viewMode === "RFC" ? "blue" : "gray"}
-                          variant={viewMode === "RFC" ? "solid" : "outline"}
-                          onClick={() => setViewMode("RFC")}
-                        >
-                          RFC
-                        </Button>
-                      </ButtonGroup>
+                        BRD
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={viewMode === "RFC" ? "solid" : "ghost"}
+                        colorScheme="blue"
+                        onClick={() => setViewMode("RFC")}
+                        borderRadius="lg"
+                      >
+                        RFC
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={viewMode === "MY" ? "solid" : "ghost"}
+                        colorScheme="blue"
+                        onClick={() => setViewMode("MY")}
+                        borderRadius="lg"
+                      >
+                        My Requirements
+                      </Button>
                     </HStack>
                   </GridItem>
                   <GridItem
@@ -1400,7 +1372,70 @@ export default function BRDRFCView() {
                     w={"full"}
                   >
                     {/* BUTTON ACTION */}
-                    <Flex as={Wrap} justifyContent={"end"} px={0} w={"full"}>
+                    <Flex as={Wrap} justifyContent={"end"} alignItems={"center"} gap={2} px={0} w={"full"}>
+
+                      <Popover closeOnBlur={false} placement={"bottom"}>
+                        <PopoverTrigger>
+                          <Button size={"md"} leftIcon={<FiFilter />}>
+                            Filter{" "}
+                            <Flex
+                              as={"span"}
+                              pl={1}
+                              display={
+                                ParamFilter.length > 0 ? "flex" : "none"
+                              }
+                              color={"secondary.500"}
+                              fontWeight={600}
+                            >
+                              ({ParamFilter.length})
+                            </Flex>
+                          </Button>
+                        </PopoverTrigger>
+                        <Portal>
+                          <PopoverContent width="auto" minW="xs">
+                            <PopoverBody>
+                              <Flex as={Stack} w={"full"}>
+                                <Text fontWeight={600}>Filter Data</Text>
+                                <Divider />
+
+                                <Stack spacing={2}>
+                                  {ParamFilter.map((dt, idx) => (
+                                    <Flex
+                                      key={idx}
+                                      w={"full"}
+                                      alignItems="center"
+                                      as={HStack}
+                                      spacing={2}
+                                    >
+                                      <Text>
+                                        {dt.filterLabel} :{" "}
+                                        <Text as={"span"} fontWeight={600}>
+                                          {" "}
+                                          {dt.field === "senderDivisionId"
+                                            ? OptionDivision.find(
+                                              (opt) =>
+                                                opt.value === dt.value
+                                            )?.label || dt.value
+                                            : dt.value}
+                                        </Text>
+                                      </Text>
+                                      <Button
+                                        size={"xs"}
+                                        colorScheme={"red"}
+                                        justifyContent={"center"}
+                                        variant={"ghost"}
+                                        onClick={() => removeFilterData(dt)}
+                                      >
+                                        <FiX />
+                                      </Button>
+                                    </Flex>
+                                  ))}
+                                </Stack>
+                              </Flex>
+                            </PopoverBody>
+                          </PopoverContent>
+                        </Portal>
+                      </Popover>
                       <Menu>
                         <MenuButton
                           as={Button}
