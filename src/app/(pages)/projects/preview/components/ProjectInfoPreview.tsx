@@ -37,6 +37,11 @@ const ProjectInfoPreview = ({ DataProject }: ProjectInfoPreviewProps) => {
   const { colorMode } = useColorMode();
   const router = useRouter();
 
+  // Debug: Check what data is available
+  console.log("DataProject:", DataProject);
+  console.log("workPrograms:", DataProject?.workPrograms);
+  console.log("requirementData:", DataProject?.requirementData);
+
   if (!DataProject) {
     return (
       <Box textAlign="center" py={12}>
@@ -278,7 +283,7 @@ const ProjectInfoPreview = ({ DataProject }: ProjectInfoPreviewProps) => {
                 <FiUsers size={24} />
               </Box>
               <Heading size="sm" color={colorMode === "light" ? "gray.700" : "white"}>
-                Project Managed By
+                Project Initiated By
               </Heading>
             </HStack>
             <VStack spacing={3} align="stretch">
@@ -403,17 +408,26 @@ const ProjectInfoPreview = ({ DataProject }: ProjectInfoPreviewProps) => {
                       >
                         <HStack justify="space-between" mb={2}>
                           <Badge colorScheme="blue" fontSize="xs">
-                            Work Program {index + 1}
+                            {wp.workProgramCode || `Work Program ${index + 1}`}
                           </Badge>
                         </HStack>
                         <Text fontSize="sm" fontWeight="semibold" mb={1}>
                           {wp.workProgramName || "N/A"}
                         </Text>
-                        {wp.workProgramDesc && (
-                          <Text fontSize="xs" color="gray.500">
-                            {wp.workProgramDesc}
-                          </Text>
-                        )}
+                        <SimpleGrid columns={2} spacing={2} mt={2}>
+                          <Box>
+                            <Text fontSize="xs" color="gray.500">Budget</Text>
+                            <Text fontSize="xs" fontWeight="semibold">
+                              {wp.workProgramBudget?.toLocaleString() || "0"}
+                            </Text>
+                          </Box>
+                          <Box>
+                            <Text fontSize="xs" color="gray.500">Division</Text>
+                            <Text fontSize="xs" fontWeight="semibold">
+                              {wp.divisionName || "N/A"}
+                            </Text>
+                          </Box>
+                        </SimpleGrid>
                       </Box>
                     ))}
                   </VStack>
@@ -438,40 +452,51 @@ const ProjectInfoPreview = ({ DataProject }: ProjectInfoPreviewProps) => {
               {/* Requirements Tab */}
               <TabPanel px={0} py={4}>
                 {DataProject.requirementData ? (
-                  <Box
-                    p={4}
-                    bg={colorMode === "light" ? "gray.50" : "gray.700"}
-                    rounded="lg"
-                    border="1px"
-                    borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
-                  >
-                    <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-                      <Box>
-                        <Text fontSize="xs" color="gray.500" mb={1}>
-                          Requirement Type
-                        </Text>
-                        <Badge colorScheme="purple" fontSize="xs">
-                          {DataProject.requirementData.requirementType}
-                        </Badge>
-                      </Box>
-                      <Box>
-                        <Text fontSize="xs" color="gray.500" mb={1}>
-                          Requirement Number
-                        </Text>
-                        <Text fontSize="sm" fontWeight="semibold">
-                          {DataProject.requirementData.reqNumber}
-                        </Text>
-                      </Box>
-                      <Box>
-                        <Text fontSize="xs" color="gray.500" mb={1}>
-                          Status
-                        </Text>
-                        <Badge colorScheme="green" fontSize="xs">
-                          {DataProject.requirementData.reqStatus || "N/A"}
-                        </Badge>
-                      </Box>
-                    </SimpleGrid>
-                  </Box>
+                  <VStack spacing={4} align="stretch">
+                    <Box
+                      p={4}
+                      bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                      rounded="lg"
+                      border="1px"
+                      borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                    >
+                      <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                        <Box>
+                          <Text fontSize="xs" color="gray.500" mb={1}>
+                            Requirement Type
+                          </Text>
+                          <Badge colorScheme="purple" fontSize="xs">
+                            {DataProject.requirementData.requirementType}
+                          </Badge>
+                        </Box>
+                        <Box>
+                          <Text fontSize="xs" color="gray.500" mb={1}>
+                            Requirement Number
+                          </Text>
+                          <Text fontSize="sm" fontWeight="semibold">
+                            {DataProject.requirementData.reqNumber}
+                          </Text>
+                        </Box>
+                        <Box>
+                          <Text fontSize="xs" color="gray.500" mb={1}>
+                            Status
+                          </Text>
+                          <Badge colorScheme="green" fontSize="xs">
+                            {DataProject.requirementData.reqStatus || "N/A"}
+                          </Badge>
+                        </Box>
+                      </SimpleGrid>
+                    </Box>
+
+                    <Button
+                      colorScheme="blue"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => router.push(`/requirements/detail?reqId=${DataProject.requirementData?.id}&type=${DataProject.requirementData?.requirementType}`)}
+                    >
+                      View Full Requirement Details
+                    </Button>
+                  </VStack>
                 ) : (
                   <Text fontSize="sm" color="gray.500">
                     No requirements data available
