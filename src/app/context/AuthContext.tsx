@@ -83,11 +83,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       dataAuth: dataAuth,
       statusLogin: STATUS_LOGIN_ON,
     };
+    
+    // Check if need to redirect to change password BEFORE setTimeout
+    const shouldRedirectToChangePassword = localStorage.getItem("redirectToChangePassword");
+    console.log("Checking redirect flag:", shouldRedirectToChangePassword);
+    
     setTimeout(() => {
       localStorage.setItem("authData", JSON.stringify(authData));
       localStorage.setItem("tokenData", dataAuth.apiKey);
       setAuthData(authData);
-      redirect(LINK_MENU_HOME);
+      
+      if (shouldRedirectToChangePassword === "true") {
+        localStorage.removeItem("redirectToChangePassword");
+        console.log("Redirecting to change-password");
+        redirect("/change-password");
+      } else {
+        console.log("Redirecting to home");
+        redirect(LINK_MENU_HOME);
+      }
     }, DELAY_LOW); // 1-second delay
   };
 
