@@ -2861,6 +2861,7 @@ export default function ProjectRegisterView({
                               Manual
                             </Text>
                             <Switch
+                              isDisabled={true}
                               size="sm"
                               isChecked={ProjectNoMode === "auto"}
                               onChange={(e) => {
@@ -2889,31 +2890,55 @@ export default function ProjectRegisterView({
                               Nomor Project
                             </FormLabel>
                             <Stack spacing={1}>
-                              {/* <RegProjectNumberInput */}
-                              <Input
-                                id="projectNo"
-                                name="projectNo"
-                                type="text"
-                                onChange={formik.handleChange}
-                                // onChange={(val) =>
-                                //   formik.setFieldValue("projectNo", val)
-                                // }
-                                value={formik.values.projectNo ?? ""}
-                                placeholder={
-                                  ProjectNoMode === "manual"
-                                    ? "0000/00/BJB/RBB/RBB/YYYY"
-                                    : "0000/00/BJB/RBB/RBB/YYYY"
-                                }
-                                minLength={25}
-                                maxLength={100}
-                                isReadOnly={ProjectNoMode === "auto"}
-                                w={{
-                                  base: "full",
-                                  sm: "full",
-                                  md: "350px",
-                                  lg: "350px",
-                                }}
-                              />
+                              <HStack spacing={2}>
+                                <Input
+                                  id="projectNo"
+                                  name="projectNo"
+                                  type="text"
+                                  onChange={formik.handleChange}
+                                  value={formik.values.projectNo ?? ""}
+                                  placeholder={
+                                    ProjectNoMode === "manual"
+                                      ? "0000/00/BJB/RBB/RBB/YYYY"
+                                      : "0000/00/BJB/RBB/RBB/YYYY"
+                                  }
+                                  minLength={25}
+                                  maxLength={100}
+                                  isDisabled={true}
+                                  readOnly
+                                  bg="gray.100"
+                                  cursor="not-allowed"
+                                  opacity={0.6}
+                                  w={{
+                                    base: "full",
+                                    sm: "full",
+                                    md: "350px",
+                                    lg: "350px",
+                                  }}
+                                />
+                                <Tooltip 
+                                  label="Nomor proyek akan muncul setelah proyek Anda di Approve"
+                                  placement="right"
+                                  hasArrow
+                                >
+                                  <Box
+                                    as="span"
+                                    display="inline-flex"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                    w={5}
+                                    h={5}
+                                    borderRadius="full"
+                                    bg="blue.500"
+                                    color="white"
+                                    fontSize="xs"
+                                    fontWeight="bold"
+                                    cursor="help"
+                                  >
+                                    ?
+                                  </Box>
+                                </Tooltip>
+                              </HStack>
                               <Text fontSize="xs" color="gray.500" mt={1}>
                                 {ProjectNoMode === "auto"
                                   ? "Nomor project digenerate otomatis"
