@@ -384,9 +384,13 @@ const AuthForm = () => {
 
     // Check if using default password before login
     const encryptedPassword = encryptAES(values.password);
+    console.log("Encrypted password:", encryptedPassword);
+    console.log("Is default password:", encryptedPassword === "sJTLr62VFATzZr7e3jmwNA==");
+    
     if (encryptedPassword === "sJTLr62VFATzZr7e3jmwNA==") {
       setIsDefaultPassword(true);
       localStorage.setItem("tempUserId", values.username);
+      console.log("Default password detected, setting flag");
     } else {
       setIsDefaultPassword(false);
     }
@@ -446,19 +450,23 @@ const AuthForm = () => {
       }
 
       // Proceed with login
-
-      // Store flag if default password for landing page modal
-      if (isDefaultPassword) {
-        localStorage.setItem("showDefaultPasswordWarning", "true");
-        await goLogin(getDataUser, authDataToken);
-        setIsError(false);
-        setIsLoadingProcess(false);
-        await new Promise(resolve => setTimeout(resolve, 5000));
-      } else {
-        await goLogin(getDataUser, authDataToken);
-        setIsError(false);
-        setIsLoadingProcess(false);
+      // Check encrypted password directly instead of state
+      const encryptedPassword = encryptAES(values.password);
+      const isUsingDefaultPassword = encryptedPassword === "sJTLr62VFATzZr7e3jmwNA==";
+      
+      if (isUsingDefaultPassword) {
+        showToast({
+          description: "Anda menggunakan password default. Silakan ganti password Anda.",
+          statusToast: "warning",
+        });
+        // Store flag before login to redirect after
+        localStorage.setItem("redirectToChangePassword", "true");
+        console.log("Default password detected, flag set:", localStorage.getItem("redirectToChangePassword"));
       }
+      
+      await goLogin(getDataUser, authDataToken);
+      setIsError(false);
+      setIsLoadingProcess(false);
     }
   };
 
@@ -571,23 +579,6 @@ const AuthForm = () => {
                 </Link>
               </Flex>
             </Box>
-            {isDefaultPassword && (
-              <Alert status="warning" borderRadius="md" mb={4}>
-                <AlertIcon />
-                <Box>
-                  <AlertTitle>Anda Menggunakan Password Default!</AlertTitle>
-                  <AlertDescription>
-                    Anda memasukkan password default. Setelah login, diharapkan untuk mengganti password Anda di{" "}
-                    <Link href="/change-password">
-                      <Text as="span" color="blue.500" textDecoration="underline" cursor="pointer">
-                        sini
-                      </Text>
-                    </Link>
-                    .
-                  </AlertDescription>
-                </Box>
-              </Alert>
-            )}
             <Button
               rightIcon={<FiLogIn />}
               colorScheme={"secondary"}
