@@ -754,6 +754,14 @@ interface useProjectsServices {
     payload: PaggingListPayloadCustom,
     token: string
   ) => Promise<ApiGenericResponse<ProjectDataResponse[] | null> | null>;
+  ApproveProject: (
+    payload: { projectId: string; isApproved: boolean; note?: string },
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  CanApproveProject: (
+    projectId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<object | null> | null>;
   GetDetailById: (
     teamId: string,
     token: string
@@ -1141,6 +1149,98 @@ const useProjects = (): useProjectsServices => {
       const response = await axiosInstance.post<
         ApiGenericResponse<ProjectDataResponse[]>
       >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during request."
+        );
+        return {
+          statusCode: err.response?.status || RES_CODE_SERVER_ERROR,
+          data: null,
+          message: err.response?.data?.message || "Error occurred",
+          error: null,
+        };
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const ApproveProject = async (
+    payload: { projectId: string; isApproved: boolean; note?: string },
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/Projects/approve";
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during request."
+        );
+        return {
+          statusCode: err.response?.status || RES_CODE_SERVER_ERROR,
+          data: null,
+          message: err.response?.data?.message || "Error occurred",
+          error: null,
+        };
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const CanApproveProject = async (
+    projectId: string,
+    token: string
+  ): Promise<ApiGenericResponse<object | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Projects/${projectId}/can-approve`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<object>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -3821,6 +3921,8 @@ const useProjects = (): useProjectsServices => {
     List,
     GetAssignedProjects,
     GetWaitingApproval,
+    ApproveProject,
+    CanApproveProject,
     GetDetailById,
     GetProjectDetail,
     GetProjectQuickStats,

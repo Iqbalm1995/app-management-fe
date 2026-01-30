@@ -25,17 +25,49 @@ import {
   AlertIcon,
   AlertTitle,
   AlertDescription,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  ModalCloseButton,
+  useDisclosure,
+  Textarea,
+  FormControl,
+  FormLabel,
 } from "@chakra-ui/react";
-import { FiInfo, FiCalendar, FiUsers, FiTarget, FiArrowLeft, FiLayers, FiCheck, FiArrowRight } from "react-icons/fi";
+import { FiInfo, FiCalendar, FiUsers, FiTarget, FiArrowLeft, FiLayers, FiCheck, FiArrowRight, FiX, FiCheckCircle, FiXCircle } from "react-icons/fi";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 interface ProjectInfoPreviewProps {
   DataProject: ProjectDataResponse | null;
+  canApprove?: boolean;
+  onApprove?: (isApproved: boolean, note?: string) => Promise<void>;
 }
 
-const ProjectInfoPreview = ({ DataProject }: ProjectInfoPreviewProps) => {
+const ProjectInfoPreview = ({ DataProject, canApprove = false, onApprove }: ProjectInfoPreviewProps) => {
   const { colorMode } = useColorMode();
   const router = useRouter();
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [isApproving, setIsApproving] = useState(false);
+  const [approvalNote, setApprovalNote] = useState("");
+  const [approvalAction, setApprovalAction] = useState<boolean | null>(null);
+
+  const handleApprovalClick = (isApproved: boolean) => {
+    setApprovalAction(isApproved);
+    onOpen();
+  };
+
+  const handleConfirmApproval = async () => {
+    if (approvalAction === null || !onApprove) return;
+    setIsApproving(true);
+    await onApprove(approvalAction, approvalNote);
+    setIsApproving(false);
+    setApprovalNote("");
+    onClose();
+  };
 
   // Debug: Check what data is available
   console.log("DataProject:", DataProject);
@@ -108,31 +140,43 @@ const ProjectInfoPreview = ({ DataProject }: ProjectInfoPreviewProps) => {
       </Box>
 
       {/* Preview Mode Alert */}
-      <Alert
-        status="info"
-        variant="left-accent"
-        rounded="lg"
-        bg={colorMode === "light" ? "blue.50" : "blue.900"}
-        borderColor="blue.500"
-      >
-        <AlertIcon color="blue.500" />
-        <Box flex="1">
-          <AlertTitle fontSize="sm" color={colorMode === "light" ? "blue.800" : "blue.200"}>
-            Preview Mode
-          </AlertTitle>
-          <AlertDescription fontSize="xs" color={colorMode === "light" ? "blue.700" : "blue.300"}>
-            You are viewing this project in preview mode. Review the details and use the approval button to proceed.
-          </AlertDescription>
-        </Box>
-        <Button
-          leftIcon={<FiArrowRight />}
-          colorScheme="blue"
-          size="sm"
-          onClick={() => router.push("/projects/approval")}
+      {canApprove && (
+        <Alert
+          status="warning"
+          variant="left-accent"
+          rounded="lg"
+          bg={colorMode === "light" ? "orange.50" : "orange.900"}
+          borderColor="orange.500"
         >
-          Approve Now
-        </Button>
-      </Alert>
+          <AlertIcon color="orange.500" />
+          <Box flex="1">
+            <AlertTitle fontSize="sm" color={colorMode === "light" ? "orange.800" : "orange.200"}>
+              Approval Required
+            </AlertTitle>
+            <AlertDescription fontSize="xs" color={colorMode === "light" ? "orange.700" : "orange.300"}>
+              This project is waiting for your approval. Review the details and take action.
+            </AlertDescription>
+          </Box>
+          <HStack spacing={2}>
+            <Button
+              leftIcon={<FiCheckCircle />}
+              colorScheme="green"
+              size="sm"
+              onClick={() => handleApprovalClick(true)}
+            >
+              Approve
+            </Button>
+            <Button
+              leftIcon={<FiXCircle />}
+              colorScheme="red"
+              size="sm"
+              onClick={() => handleApprovalClick(false)}
+            >
+              Decline
+            </Button>
+          </HStack>
+        </Alert>
+      )}
 
       {/* Info Grid */}
       <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
@@ -518,6 +562,65 @@ const ProjectInfoPreview = ({ DataProject }: ProjectInfoPreviewProps) => {
           </Tabs>
         </CardBody>
       </Card>
+
+      {/* Approval Modal */}
+      <Modal isOpen={isOpen} onClose={onClose} size="lg">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            {approvalAction ? "Approve Project" : "Decline Project"}
+          </ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <VStack spacing={4} align="stretch">
+              <Box>
+                <Text fontWeight="bold" mb={2}>Project Information</Text>
+                <VStack align="stretch" spacing={2} fontSize="sm">
+                  <HStack>
+                    <Text color="gray.500">Code:</Text>
+                    <Text fontWeight="semibold">{DataProject?.projectCode}</Text>
+                  </HStack>
+                  <HStack>
+                    <Text color="gray.500">Name:</Text>
+                    <Text fontWeight="semibold">{DataProject?.projectName}</Text>
+                  </HStack>
+                  <HStack>
+                    <Text color="gray.500">Type:</Text>
+                    <Badge colorScheme="blue">{DataProject?.projectType}</Badge>
+                  </HStack>
+                  <HStack>
+                    <Text color="gray.500">Status:</Text>
+                    <Badge colorScheme="orange">{DataProject?.approvalStatus}</Badge>
+                  </HStack>
+                </VStack>
+              </Box>
+              <Divider />
+              <FormControl>
+                <FormLabel>Note (Optional)</FormLabel>
+                <Textarea
+                  value={approvalNote}
+                  onChange={(e) => setApprovalNote(e.target.value)}
+                  placeholder={approvalAction ? "Add approval note..." : "Add reason for declining..."}
+                  rows={4}
+                />
+              </FormControl>
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="ghost" mr={3} onClick={onClose} isDisabled={isApproving}>
+              Cancel
+            </Button>
+            <Button
+              colorScheme={approvalAction ? "green" : "red"}
+              onClick={handleConfirmApproval}
+              isLoading={isApproving}
+              leftIcon={approvalAction ? <FiCheckCircle /> : <FiXCircle />}
+            >
+              {approvalAction ? "Confirm Approval" : "Confirm Decline"}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </VStack>
   );
 };
