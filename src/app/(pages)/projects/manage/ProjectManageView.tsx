@@ -417,7 +417,7 @@ export default function ProjectManageView() {
                     <DocumentationTab DataProject={DataProject} />
                     <TeamTab DataProject={DataProject} canMake={canMake} />
                     <AnalyticsTab DataProject={DataProject} />
-                    <TimelineTab DataProject={DataProject} />
+                    <TimelineTab DataProject={DataProject} authData={DataAuth} />
                     <EditTab DataProject={DataProject} canMake={canMake} />
                   </TabPanels>
                 </CardBody>

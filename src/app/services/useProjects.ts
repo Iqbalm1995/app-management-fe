@@ -231,6 +231,29 @@ export interface ProjectDataResponse {
   projectWorkflowData: ProjectWorkflowResponse[];
 }
 
+export interface ProjectStatusHistoryResponse {
+  id: string;
+  projectId: string;
+  projectStatus: string;
+  createdAt: string;
+  approvalBy: string | null;
+  approvalAt: string | null;
+  approvalNote: string | null;
+  approvalNama: string | null;
+  approvalJabatan: string | null;
+  approvalNamaUnitKerja: string | null;
+  approvalOrgDirectorateId: string | null;
+  approvalOrgDirectorateCode: string | null;
+  approvalOrgDirectorateName: string | null;
+  approvalOrgDivisionId: string | null;
+  approvalOrgDivisionCode: string | null;
+  approvalOrgDivisionName: string | null;
+  approvalOrgGroupId: string | null;
+  approvalOrgGroupCode: string | null;
+  approvalOrgGroupName: string | null;
+  isApprovalPhase: boolean;
+}
+
 export interface ProjectUserAssignmentResponse {
   id: string;
   projectId: string;
@@ -770,6 +793,10 @@ interface useProjectsServices {
     projectId: string,
     token: string
   ) => Promise<ApiGenericResponse<ProjectDetailResponse | null> | null>;
+  GetProjectStatusHistory: (
+    projectId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<ProjectStatusHistoryResponse[] | null> | null>;
   GetProjectQuickStats: (
     projectId: string,
     token: string
@@ -1327,6 +1354,47 @@ const useProjects = (): useProjectsServices => {
     try {
       const response = await axiosInstance.get<
         ApiGenericResponse<ProjectDetailResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during request."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const GetProjectStatusHistory = async (
+    projectId: string,
+    token: string
+  ): Promise<ApiGenericResponse<ProjectStatusHistoryResponse[] | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Projects/${projectId}/status-history`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<ProjectStatusHistoryResponse[]>
       >(`${UrlEndpoint}${PathEndpoint}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -3925,6 +3993,7 @@ const useProjects = (): useProjectsServices => {
     CanApproveProject,
     GetDetailById,
     GetProjectDetail,
+    GetProjectStatusHistory,
     GetProjectQuickStats,
     GetProjectBacklogStats,
     GetProjectDocumentationStats,
