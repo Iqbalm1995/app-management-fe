@@ -33,6 +33,7 @@ import {
   Stack,
   Text,
   useColorMode,
+  VStack,
 } from "@chakra-ui/react";
 import {
   ColumnDef,
@@ -42,7 +43,7 @@ import {
 } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { FiEye } from "react-icons/fi";
+import { FiEye, FiCheck } from "react-icons/fi";
 
 export default function PendingApproveView() {
   const router = useRouter();
@@ -161,8 +162,8 @@ export default function PendingApproveView() {
                 info.row.original.projectType === "INTERNAL_DEVELOPMENT"
                   ? "blue"
                   : info.row.original.projectType === "PROCUREMENT"
-                  ? "green"
-                  : "purple"
+                    ? "green"
+                    : "purple"
               }
               fontSize={"small"}
               rounded={radiusStyle}
@@ -251,20 +252,53 @@ export default function PendingApproveView() {
             justifyContent={"center"}
             alignItems={"center"}
           >
-            <HStack spacing={2}>
+            <VStack spacing={1} w="full">
               <Button
-                size="sm"
+                size="xs"
+                py={4}
+                fontSize="sm"
+                w="full"
+                bg="purple.50"
+                color="purple.700"
+                _hover={{
+                  bg: "purple.300",
+                  transform: "translateY(-2px)",
+                  boxShadow: "md",
+                }}
+                transition="all 0.2s"
                 colorScheme="blue"
                 leftIcon={<FiEye />}
                 onClick={() => {
                   router.push(
-                    `${LINK_MENU_ROOT}/projects/manage?id=${info.row.original.id}`
+                    `/projects/preview?projectId=${info.row.original.id}`
                   );
                 }}
               >
-                Detail
+                Preview
               </Button>
-            </HStack>
+              <Button
+                leftIcon={<FiCheck />}
+                bg="green.50"
+                color="green.700"
+                size="xs"
+                py={4}
+                fontSize="sm"
+                w="full"
+                _hover={{
+                  bg: "green.300",
+                  transform: "translateY(-2px)",
+                  boxShadow: "md",
+                }}
+                transition="all 0.2s"
+                onClick={() => {
+                  router.push(
+                    `/projects/preview?projectId=${info.row.original.id}&approvalMode=true`
+                  );
+                }}
+              >
+                Approve
+              </Button>
+            </VStack>
           </Flex>
         ),
         header: () => <Flex justifyContent={"center"}>Aksi</Flex>,
