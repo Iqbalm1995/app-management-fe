@@ -446,18 +446,19 @@ const AuthForm = () => {
       }
 
       // Proceed with login
+      await goLogin(getDataUser, authDataToken);
+      setIsError(false);
+      setIsLoadingProcess(false);
 
-      // Store flag if default password for landing page modal
+      // Redirect to change password if using default password
       if (isDefaultPassword) {
-        localStorage.setItem("showDefaultPasswordWarning", "true");
-        await goLogin(getDataUser, authDataToken);
-        setIsError(false);
-        setIsLoadingProcess(false);
-        await new Promise(resolve => setTimeout(resolve, 5000));
-      } else {
-        await goLogin(getDataUser, authDataToken);
-        setIsError(false);
-        setIsLoadingProcess(false);
+        showToast({
+          description: "Anda menggunakan password default. Silakan ganti password Anda.",
+          statusToast: "warning",
+        });
+        setTimeout(() => {
+          router.push("/change-password");
+        }, 2000);
       }
     }
   };
