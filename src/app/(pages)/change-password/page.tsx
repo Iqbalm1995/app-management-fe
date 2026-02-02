@@ -35,7 +35,7 @@ import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { encryptAES } from "@/app/helper/HashHelper";
 import { RES_CODE_OK, RES_GENERIC_ERROR_MSG } from "@/app/constants/applicationConstants";
 import useUsers from "@/app/services/useUsers";
-import { AuthDataModelInterface } from "@/app/context/AuthContext";
+import { AuthDataModelInterface, useAuth } from "@/app/context/AuthContext";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 
 interface ChangePasswordModel {
@@ -69,6 +69,7 @@ export default function ChangePasswordPage() {
   const showToast = useToastHelper();
   const router = useRouter();
   const { EditUserPassword } = useUsers();
+  const { goLogout } = useAuth();
   
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -162,23 +163,15 @@ export default function ChangePasswordPage() {
         statusToast: "success",
       });
 
-      // Redirect to login for both logged in users and default password users
-      if (isLoggedIn || isDefaultPassword) {
-        if (isLoggedIn) {
-          localStorage.removeItem("authData");
-          localStorage.removeItem("tokenData");
-        }
-        showToast({
-          description: "Silakan login kembali dengan password baru",
-          statusToast: "info",
-        });
-        setTimeout(() => {
-          router.push("/");
-        }, 2000);
-      } else {
-        // Reset form for non-logged in users
-        formik.resetForm();
-      }
+      showToast({
+        description: "Silakan login kembali dengan password baru",
+        statusToast: "info",
+      });
+      
+      // Use goLogout to properly destroy session and update navbar
+      setTimeout(() => {
+        goLogout();
+      }, 2000);
     } catch (error) {
       showToast({
         description: "Terjadi kesalahan saat mengubah password",

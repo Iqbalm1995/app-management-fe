@@ -134,6 +134,12 @@ import {
   AlertDialogHeader,
   AlertDialogContent,
   AlertDialogOverlay,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalCloseButton,
+  ModalBody,
   Th,
   Thead,
   Tr,
@@ -322,6 +328,12 @@ export default function BRDRFCView() {
     onClose: onStartReviewClose,
   } = useDisclosure();
   const cancelStartReviewRef = useRef<any>(null);
+
+  const {
+    isOpen: isRegisterModalOpen,
+    onOpen: onRegisterModalOpen,
+    onClose: onRegisterModalClose,
+  } = useDisclosure();
 
   const [totalPages, setTotalPageData] = useState<number>(0);
   const [globalFilter, setGlobalFilter] = useState<string>("");
@@ -1450,13 +1462,13 @@ export default function BRDRFCView() {
                         </MenuButton>
                         <MenuList>
                           <MenuItem onClick={() => setMemoFilter("")}>
-                            Semua
+                            All
                           </MenuItem>
                           <MenuItem onClick={() => setMemoFilter("Y")}>
-                            Memiliki Memo
+                            Have Requirement
                           </MenuItem>
                           <MenuItem onClick={() => setMemoFilter("N")}>
-                            Tidak Memiliki Memo
+                            No Requirement
                           </MenuItem>
                         </MenuList>
                       </Menu>
@@ -1465,29 +1477,17 @@ export default function BRDRFCView() {
                         leftIcon={<FiRefreshCcw />}
                         onClick={() => RefreshAction()}
                       >
-                        Muat Ulang
+                        Refresh
                       </Button>
-                      {viewMode === "BRD" && canMake && (
-                        <Link href="/requirements/brd/register">
-                          <Button
-                            size={"md"}
-                            colorScheme={"blue"}
-                            leftIcon={<FiPlusSquare />}
-                          >
-                            Registrasi BRD
-                          </Button>
-                        </Link>
-                      )}
-                      {viewMode === "RFC" && canMake && (
-                        <Link href="/requirements/rfc/register">
-                          <Button
-                            size={"md"}
-                            colorScheme={"secondary"}
-                            leftIcon={<FiPlusSquare />}
-                          >
-                            Registrasi RFC
-                          </Button>
-                        </Link>
+                      {canMake && (
+                        <Button
+                          size={"md"}
+                          colorScheme={"blue"}
+                          leftIcon={<FiPlusSquare />}
+                          onClick={onRegisterModalOpen}
+                        >
+                          Register
+                        </Button>
                       )}
                     </Flex>
                   </GridItem>
@@ -1574,6 +1574,104 @@ export default function BRDRFCView() {
           </AlertDialogContent>
         </AlertDialogOverlay>
       </AlertDialog>
+
+      {/* Register Type Selection Modal */}
+      <Modal isOpen={isRegisterModalOpen} onClose={onRegisterModalClose} isCentered size="lg">
+        <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
+        <ModalContent rounded={radiusStyle} bgColor={colorMode == "light" ? "white" : "gray.800"}>
+          <ModalHeader pb={4}>
+            <Heading as="h4" size="md">Select Registration Type</Heading>
+          </ModalHeader>
+          <ModalCloseButton />
+          <ModalBody py={6} px={6}>
+            <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+              <Link href="/requirements/brd/register" onClick={onRegisterModalClose} style={{ width: "100%" }}>
+                <Box
+                  p={8}
+                  rounded={radiusStyle}
+                  bgGradient="linear(to-br, blue.50, blue.100)"
+                  border="2px solid"
+                  borderColor="blue.200"
+                  cursor="pointer"
+                  transition="all 0.3s"
+                  _hover={{
+                    bgGradient: "linear(to-br, blue.100, blue.200)",
+                    borderColor: "blue.500",
+                    transform: "translateY(-6px)",
+                    boxShadow: "0 12px 24px rgba(59, 130, 246, 0.3)"
+                  }}
+                  h="full"
+                  display="flex"
+                  flexDirection="column"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  position="relative"
+                  overflow="hidden"
+                  _before={{
+                    content: '""',
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    bgGradient: "linear(135deg, rgba(255,255,255,0.5), rgba(255,255,255,0))",
+                    pointerEvents: "none"
+                  }}
+                >
+                  <Box fontSize="4xl" mb={4} color="blue.600" fontWeight="bold">
+                    BRD
+                  </Box>
+                  <Text fontSize="sm" color="blue.700" textAlign="center" fontWeight="500">
+                    Business Requirements Document
+                  </Text>
+                </Box>
+              </Link>
+
+              <Link href="/requirements/rfc/register" onClick={onRegisterModalClose} style={{ width: "100%" }}>
+                <Box
+                  p={8}
+                  rounded={radiusStyle}
+                  bgGradient="linear(to-br, purple.50, purple.100)"
+                  border="2px solid"
+                  borderColor="purple.200"
+                  cursor="pointer"
+                  transition="all 0.3s"
+                  _hover={{
+                    bgGradient: "linear(to-br, purple.100, purple.200)",
+                    borderColor: "purple.500",
+                    transform: "translateY(-6px)",
+                    boxShadow: "0 12px 24px rgba(168, 85, 247, 0.3)"
+                  }}
+                  h="full"
+                  display="flex"
+                  flexDirection="column"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  position="relative"
+                  overflow="hidden"
+                  _before={{
+                    content: '""',
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    bgGradient: "linear(135deg, rgba(255,255,255,0.5), rgba(255,255,255,0))",
+                    pointerEvents: "none"
+                  }}
+                >
+                  <Box fontSize="4xl" mb={4} color="purple.600" fontWeight="bold">
+                    RFC
+                  </Box>
+                  <Text fontSize="sm" color="purple.700" textAlign="center" fontWeight="500">
+                    Request for Change
+                  </Text>
+                </Box>
+              </Link>
+            </Grid>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </LayoutAdmin>
   );
 }

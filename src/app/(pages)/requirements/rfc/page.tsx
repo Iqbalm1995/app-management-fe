@@ -1072,7 +1072,7 @@ function ReuirementsRFCPage() {
                         leftIcon={<FiRefreshCcw />}
                         onClick={() => RefreshAction()}
                       >
-                        Muat Ulang
+                        Refresh
                       </Button>
                       <Link
                         href={`/requirements/${TYPE_REQ.toLocaleLowerCase()}/register`}
