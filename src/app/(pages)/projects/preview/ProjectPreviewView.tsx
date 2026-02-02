@@ -45,7 +45,7 @@ export default function ProjectPreviewView({
 
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
-  const { GetDetailById, GetDetailAppsByProjectId } = useProjects();
+  const { GetDetailById, GetDetailAppsByProjectId, CanApproveProject, ApproveProject } = useProjects();
 
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
@@ -55,6 +55,7 @@ export default function ProjectPreviewView({
   );
   const [DataApps, setDataApps] = useState<AppsResponse | null>(null);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
+  const [canApprove, setCanApprove] = useState<boolean>(false);
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
@@ -138,6 +139,18 @@ export default function ProjectPreviewView({
     }
   }, [DataAuth, DataProject, DataApps, isInitialized]);
 
+  useEffect(() => {
+    if (DataAuth && projectId && tokenData) {
+      const CheckCanApprove = async () => {
+        const response = await CanApproveProject(projectId, tokenData);
+        if (response?.statusCode === RES_CODE_OK && response.data) {
+          setCanApprove(true);
+        }
+      };
+      CheckCanApprove();
+    }
+  }, [DataAuth, projectId, tokenData]);
+
   const isInternalDev =
     DataProject?.projectType === PROJECT_TYPE_INTERNAL_DEVELOPMENT;
   const isProcurement = DataProject?.projectType === PROJECT_TYPE_PROCUREMENT;
@@ -181,7 +194,34 @@ export default function ProjectPreviewView({
     <LayoutAdmin>
       <Box w="full" px={{ base: 4, md: 6 }} py={6}>
         <Suspense fallback={<LoadingMiniSquare />}>
-          <ProjectInfoPreview DataProject={DataProject} />
+          <ProjectInfoPreview 
+            DataProject={DataProject} 
+            canApprove={canApprove}
+            onApprove={async (isApproved: boolean, note?: string) => {
+              if (!projectId) return;
+              const response = await ApproveProject(
+                { projectId, isApproved, note },
+                tokenData
+              );
+              if (response?.statusCode === RES_CODE_OK) {
+                showToast({
+                  description: response.message || "Action completed",
+                  statusToast: "success",
+                });
+                // Refresh data
+                const refreshData = await GetDetailById(projectId, tokenData);
+                if (refreshData?.statusCode === RES_CODE_OK && refreshData.data) {
+                  setDataProject(refreshData.data as ProjectDataResponse);
+                  setCanApprove(false);
+                }
+              } else {
+                showToast({
+                  description: response?.message || "Action failed",
+                  statusToast: "error",
+                });
+              }
+            }}
+          />
         </Suspense>
       </Box>
     </LayoutAdmin>

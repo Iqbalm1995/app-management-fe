@@ -117,11 +117,19 @@ function MenusManagementPage() {
             ? item.menuID 
             : `MN${String(menuCodeCounter++).padStart(4, "0")}`;
           
+          // Extract icon name from component
+          let iconName = "FiCircle";
+          if (typeof item.icon === "string") {
+            iconName = item.icon;
+          } else if (typeof item.icon === "function") {
+            iconName = item.icon.name || "FiCircle";
+          }
+          
           return {
             menuCode: menuCode,
             menuName: item.name,
             menuDesc: null,
-            menuIcon: typeof item.icon === "string" ? item.icon : (item.icon?.name || "FiCircle"),
+            menuIcon: iconName,
             menuLink: item.link,
             parentMenuLink: null,
             isPro: item.isPro ? "Y" : "N",
