@@ -2753,6 +2753,7 @@ function RegisterRequirementFormPage({
                     leftIcon={<FiSave />}
                     onClick={onApprovalRequestOpen}
                     isLoading={ActionLoading}
+                    isDisabled={activeStep !== steps.length - 1}
                     px={8}
                     size={"lg"}
                   >
