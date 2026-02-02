@@ -111,18 +111,34 @@ function MenusManagementPage() {
 
     try {
       let menuCodeCounter = 1;
+      
+      // Build icon name map from LinkItems to preserve original icon names
+      const buildIconMap = (items: typeof LinkItems, map: Map<any, string> = new Map()): Map<any, string> => {
+        items.forEach(item => {
+          if (typeof item.icon === "function" && item.icon.name) {
+            map.set(item.icon, item.icon.name);
+          }
+          if (item.children && item.children.length > 0) {
+            buildIconMap(item.children, map);
+          }
+        });
+        return map;
+      };
+      
+      const iconNameMap = buildIconMap(LinkItems);
+      
       const buildMenuHierarchy = (items: typeof LinkItems): any[] => {
         return items.map((item, index) => {
           const menuCode = item.menuID && item.menuID !== "1" 
             ? item.menuID 
             : `MN${String(menuCodeCounter++).padStart(4, "0")}`;
           
-          // Extract icon name from component
+          // Extract icon name using the pre-built map
           let iconName = "FiCircle";
           if (typeof item.icon === "string") {
             iconName = item.icon;
           } else if (typeof item.icon === "function") {
-            iconName = item.icon.name || "FiCircle";
+            iconName = iconNameMap.get(item.icon) || "FiCircle";
           }
           
           return {
