@@ -127,6 +127,48 @@ function MenusManagementPage() {
       
       const iconNameMap = buildIconMap(LinkItems);
       
+      // Build menu code to icon map from constant
+      const constantIconMap = new Map<string, string>();
+      const buildConstantIconMap = (items: typeof LinkItems) => {
+        items.forEach(item => {
+          const menuCode = item.menuID && item.menuID !== "1" ? item.menuID : "";
+          if (menuCode) {
+            let iconName = "FiCircle";
+            if (typeof item.icon === "string") {
+              iconName = item.icon;
+            } else if (typeof item.icon === "function") {
+              iconName = iconNameMap.get(item.icon) || "FiCircle";
+            }
+            constantIconMap.set(menuCode, iconName);
+          }
+          if (item.children && item.children.length > 0) {
+            buildConstantIconMap(item.children);
+          }
+        });
+      };
+      buildConstantIconMap(LinkItems);
+      
+      // Check if any icons have changed
+      let hasIconChanges = false;
+      DataMenus.forEach(menu => {
+        const constantIcon = constantIconMap.get(menu.menuCode);
+        if (constantIcon && menu.menuIcon !== constantIcon) {
+          hasIconChanges = true;
+        }
+      });
+      
+      if (!hasIconChanges) {
+        toast({
+          title: "No Changes",
+          description: "All menu icons are already up to date",
+          status: "info",
+          duration: 3000,
+          isClosable: true,
+        });
+        setIsSynchronizing(false);
+        return;
+      }
+      
       const buildMenuHierarchy = (items: typeof LinkItems): any[] => {
         return items.map((item, index) => {
           const menuCode = item.menuID && item.menuID !== "1" 
