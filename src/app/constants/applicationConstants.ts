@@ -83,18 +83,18 @@ export const AES_KEY: string = "BJBPortalAESKeys";
 
 // Base URL FE
 // http://192.168.239.117:5000
-// export const BASE_URL_MAIN: string = "http://192.168.239.117";
-export const BASE_URL_MAIN: string = "https://localhost";
+export const BASE_URL_MAIN: string = "http://192.168.239.117";
+// export const BASE_URL_MAIN: string = "https://localhost";
 export const BASE_PORT_MAIN: string = "5555";
 
 // Base Url Endpoint API
-// export const ENDPOINT_API_BASEURL: string = "http://192.168.239.117";
-export const ENDPOINT_API_BASEURL: string = "https://localhost";
+export const ENDPOINT_API_BASEURL: string = "http://192.168.239.117";
+// export const ENDPOINT_API_BASEURL: string = "https://localhost";
 export const ENDPOINT_PORT_BASIC: string = "2332";
 
 // Base Url Endpoint API
-// export const ENDPOINT_API_BASEURL_OBJECT: string = "http://192.168.239.117";
-export const ENDPOINT_API_BASEURL_OBJECT: string = "https://localhost";
+export const ENDPOINT_API_BASEURL_OBJECT: string = "http://192.168.239.117";
+// export const ENDPOINT_API_BASEURL_OBJECT: string = "https://localhost";
 export const ENDPOINT_PORT_BASIC_OBJECT: string = "2332";
 
 // generic response error

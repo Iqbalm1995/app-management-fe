@@ -269,10 +269,12 @@ const PROJECT_ROUTES = {
 
 interface ProjectRegisterViewProps {
   projectTypeRegister: string;
+  reqType?: string | null;
 }
 
 export default function ProjectRegisterView({
   projectTypeRegister,
+  reqType,
 }: ProjectRegisterViewProps) {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
@@ -518,7 +520,11 @@ export default function ProjectRegisterView({
       setActionLoading(false);
 
       if (projectTypeRegister == PROJECT_TYPE_INTERNAL_DEVELOPMENT) {
-        redirect(`/projects-manager/`);
+        if (reqType === "rfc") {
+          redirect(`/projects-manager/?reqType=rfc`);
+        } else {
+          redirect(`/projects-manager/`);
+        }
       }
 
       if (projectTypeRegister == PROJECT_TYPE_PROCUREMENT) {

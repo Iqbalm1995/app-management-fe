@@ -1386,7 +1386,7 @@ export default function BRDRFCView() {
                     {/* BUTTON ACTION */}
                     <Flex as={Wrap} justifyContent={"end"} alignItems={"center"} gap={2} px={0} w={"full"}>
 
-                      <Popover closeOnBlur={false} placement={"bottom"}>
+                      <Popover closeOnBlur={true} placement={"bottom"}>
                         <PopoverTrigger>
                           <Button size={"md"} leftIcon={<FiFilter />}>
                             Filter{" "}

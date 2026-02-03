@@ -156,7 +156,7 @@ export default function PendingApproveView() {
             as={Stack}
             spacing={1}
           >
-            <Badge
+            {/* <Badge
               variant="solid"
               colorScheme={
                 info.row.original.projectType === "INTERNAL_DEVELOPMENT"
@@ -170,7 +170,22 @@ export default function PendingApproveView() {
               px={4}
             >
               {info.row.original.projectType}
-            </Badge>
+            </Badge> */}
+            {info.row.original.requirementData?.requirementType && (
+              <Badge
+                variant="solid"
+                colorScheme={
+                  info.row.original.requirementData.requirementType === "BRD"
+                    ? "cyan"
+                    : "blue"
+                }
+                fontSize={"small"}
+                rounded={radiusStyle}
+                px={4}
+              >
+                {info.row.original.requirementData.requirementType}
+              </Badge>
+            )}
             <Badge
               variant="outline"
               colorScheme="gray"
