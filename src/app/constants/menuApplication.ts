@@ -95,6 +95,7 @@ import { TiThMenuOutline } from "react-icons/ti";
 export interface LinkItemProps {
   name: string;
   icon: IconType;
+  iconName?: string; // Add explicit icon name to avoid minification issues
   link: string;
   role: string[];
   menuID: string;
@@ -107,6 +108,7 @@ export const LinkItems: LinkItemProps[] = [
   {
     name: "Dashboard",
     icon: TbLayoutDashboardFilled,
+    iconName: "TbLayoutDashboardFilled",
     link: "/home",
     role: ["admin"],
     menuID: "1",
@@ -115,6 +117,7 @@ export const LinkItems: LinkItemProps[] = [
   {
     name: "Workspace",
     icon: BsRocketTakeoff,
+    iconName: "BsRocketTakeoff",
     link: "/workspaces",
     role: ["admin"],
     menuID: "1",
@@ -123,6 +126,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "My Project",
         icon: FaCode,
+        iconName: "FaCode",
         link: "/workspace",
         role: ["admin"],
         menuID: "1",
