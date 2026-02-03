@@ -576,10 +576,10 @@ const ProjectInfoPreview = ({ DataProject, canApprove = false, onApprove }: Proj
               <Box>
                 <Text fontWeight="bold" mb={2}>Project Information</Text>
                 <VStack align="stretch" spacing={2} fontSize="sm">
-                  <HStack>
+                  {/* <HStack>
                     <Text color="gray.500">Code:</Text>
                     <Text fontWeight="semibold">{DataProject?.projectCode}</Text>
-                  </HStack>
+                  </HStack> */}
                   <HStack>
                     <Text color="gray.500">Name:</Text>
                     <Text fontWeight="semibold">{DataProject?.projectName}</Text>

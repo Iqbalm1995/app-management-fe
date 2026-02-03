@@ -24,7 +24,7 @@ import {
   VStack,
   Text,
 } from "@chakra-ui/react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import ProjectInfoPreview from "./components/ProjectInfoPreview";
 
@@ -38,6 +38,7 @@ export default function ProjectPreviewView({
   approvalMode: propApprovalMode,
 }: ProjectPreviewViewProps = {}) {
   const showToast = useToastHelper();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const { colorMode } = useColorMode();
   const [isInitialized, setIsInitialized] = useState(false);
@@ -208,12 +209,10 @@ export default function ProjectPreviewView({
                   description: response.message || "Action completed",
                   statusToast: "success",
                 });
-                // Refresh data
-                const refreshData = await GetDetailById(projectId, tokenData);
-                if (refreshData?.statusCode === RES_CODE_OK && refreshData.data) {
-                  setDataProject(refreshData.data as ProjectDataResponse);
-                  setCanApprove(false);
-                }
+                // Redirect back to pending approve list
+                setTimeout(() => {
+                  router.push("/projects/pending-approve");
+                }, 1500);
               } else {
                 showToast({
                   description: response?.message || "Action failed",
