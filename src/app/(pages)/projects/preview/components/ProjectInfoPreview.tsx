@@ -45,6 +45,7 @@ import { UserAssignmentsSection, OrganizationSection } from "./OrganizationSecti
 import { BacklogsSection } from "./BacklogsSection";
 import { WorkStagesSection } from "./WorkStagesSection";
 import { ProcurementStagesSection } from "./ProcurementStagesSection";
+import { WorkProgramsSection } from "./WorkProgramsSection";
 import { StatusHistorySection } from "./StatusHistorySection";
 import { EnhancedApproverSection } from "./EnhancedApproverSection";
 import { ApplicationSection } from "./ApplicationSection";
@@ -99,10 +100,6 @@ const ProjectInfoPreview = ({
   };
 
   // Debug: Check what data is available
-  console.log("DataProject:", DataProject);
-  console.log("workPrograms:", DataProject?.workPrograms);
-  console.log("requirementData:", DataProject?.requirementData);
-
   if (!DataProject) {
     return (
       <Box textAlign="center" py={12}>
@@ -213,6 +210,9 @@ const ProjectInfoPreview = ({
           backlogStats={backlogStats} 
         />
       )}
+
+      {/* Work Programs Section */}
+      <WorkProgramsSection DataProject={DataProject} />
 
       {/* Work Stages Section */}
       <WorkStagesSection DataProject={DataProject} />

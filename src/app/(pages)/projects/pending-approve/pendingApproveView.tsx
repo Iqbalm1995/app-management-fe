@@ -17,6 +17,7 @@ import {
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useProjects, { ProjectDataResponse } from "@/app/services/useProjects";
+import useRequirements from "@/app/services/useRequirements";
 import {
   ColumnMetaCustom,
   PaggingListPayloadCustom,
@@ -52,6 +53,7 @@ export default function PendingApproveView() {
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
   const { GetWaitingApproval } = useProjects();
+  const { GetDetailById: GetRequirementDetail } = useRequirements();
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
@@ -156,7 +158,7 @@ export default function PendingApproveView() {
             as={Stack}
             spacing={1}
           >
-            {/* <Badge
+            <Badge
               variant="solid"
               colorScheme={
                 info.row.original.projectType === "INTERNAL_DEVELOPMENT"
@@ -170,15 +172,11 @@ export default function PendingApproveView() {
               px={4}
             >
               {info.row.original.projectType}
-            </Badge> */}
+            </Badge>
             {info.row.original.requirementData?.requirementType && (
               <Badge
                 variant="solid"
-                colorScheme={
-                  info.row.original.requirementData.requirementType === "BRD"
-                    ? "cyan"
-                    : "blue"
-                }
+                colorScheme="blue"
                 fontSize={"small"}
                 rounded={radiusStyle}
                 px={4}
@@ -360,8 +358,35 @@ export default function PendingApproveView() {
 
     if (response) {
       if (response.statusCode === RES_CODE_OK) {
-        const dataList: ProjectDataResponse[] =
+        let dataList: ProjectDataResponse[] =
           response.data as ProjectDataResponse[];
+        
+        // Fetch requirement data and work programs for projects
+        dataList = await Promise.all(
+          dataList.map(async (project) => {
+            let updatedProject = { ...project };
+
+            // Fetch requirement data for projects with reqParentId but no requirementData
+            if (project.reqParentId && !project.requirementData) {
+              const reqResponse = await GetRequirementDetail(project.reqParentId, tokenData);
+              if (reqResponse?.statusCode === RES_CODE_OK && reqResponse.data) {
+                updatedProject.requirementData = {
+                  id: reqResponse.data.id,
+                  reqNumber: reqResponse.data.reqNumber,
+                  requirementType: reqResponse.data.requirementType,
+                  reqStatus: reqResponse.data.reqStatus || null,
+                };
+                // Also get work programs from requirement
+                if (reqResponse.data.workPrograms) {
+                  updatedProject.workPrograms = reqResponse.data.workPrograms;
+                }
+              }
+            }
+
+            return updatedProject;
+          })
+        );
+
         setDataProjects(dataList);
 
         const totalData = response.countTotal || 0;
