@@ -28,10 +28,14 @@ export const ProcurementStagesSection = ({ DataProject }: ProcurementStagesSecti
     return null;
   }
 
-  // Filter procurement workflows (category PROCUREMENT)
-  const procurementWorkflows = DataProject.projectWorkflowData?.filter(
+  if (!DataProject.projectWorkflowData || DataProject.projectWorkflowData.length === 0) {
+    return null;
+  }
+
+  // Filter top-level procurement workflows (wfCategoryCode === "PROCUREMENT")
+  const procurementWorkflows = DataProject.projectWorkflowData.filter(
     wf => wf.wfCategoryCode === "PROCUREMENT"
-  ) || [];
+  );
 
   if (procurementWorkflows.length === 0) {
     return null;
@@ -68,22 +72,27 @@ export const ProcurementStagesSection = ({ DataProject }: ProcurementStagesSecti
   return (
     <Card shadow="sm" rounded="xl" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"}>
       <CardHeader bg={colorMode === "light" ? "teal.50" : "teal.900"} roundedTop="xl" py={4}>
-        <HStack spacing={3}>
-          <Box
-            w={10}
-            h={10}
-            bgGradient="linear(135deg, teal.400, teal.600)"
-            rounded="xl"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-          >
-            <FaShoppingCart size={20} color="white" />
-          </Box>
-          <Heading size="md" color={colorMode === "light" ? "teal.700" : "teal.200"}>
-            Procurement Stages
-          </Heading>
-        </HStack>
+        <VStack align="start" spacing={1} w="full">
+          <HStack spacing={3}>
+            <Box
+              w={10}
+              h={10}
+              bgGradient="linear(135deg, teal.400, teal.600)"
+              rounded="xl"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+            >
+              <FaShoppingCart size={20} color="white" />
+            </Box>
+            <Heading size="md" color={colorMode === "light" ? "teal.700" : "teal.200"}>
+              Work Stages for Procurement
+            </Heading>
+          </HStack>
+          <Text fontSize="sm" color={colorMode === "light" ? "teal.600" : "teal.300"} pl={14}>
+            Procurement workflow stages for this project
+          </Text>
+        </VStack>
       </CardHeader>
       <CardBody p={6}>
         <VStack align="stretch" spacing={2}>

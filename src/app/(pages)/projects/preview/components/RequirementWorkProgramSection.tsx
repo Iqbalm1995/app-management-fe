@@ -15,7 +15,7 @@ import {
   SimpleGrid,
   Divider,
 } from "@chakra-ui/react";
-import { FiFileText, FiDollarSign } from "react-icons/fi";
+import { FiFileText } from "react-icons/fi";
 
 interface RequirementWorkProgramSectionProps {
   DataProject: ProjectDataResponse;
@@ -119,21 +119,18 @@ export const RequirementWorkProgramSection = ({ DataProject }: RequirementWorkPr
                             <Text fontSize="xs" color="gray.500" fontWeight="medium">
                               Budget:
                             </Text>
-                            <HStack spacing={1}>
-                              <FiDollarSign size={14} color="green" />
-                              <Text fontSize="sm" fontWeight="bold" color="green.600">
-                                {workProgram.workProgramBudget
-                                  ? `Rp ${workProgram.workProgramBudget.toLocaleString()}`
-                                  : "Not specified"}
-                              </Text>
-                            </HStack>
+                            <Text fontSize="sm" fontWeight="bold" color="green.600">
+                              {workProgram.workProgramBudget
+                                ? `Rp ${workProgram.workProgramBudget.toLocaleString()}`
+                                : "Not specified"}
+                            </Text>
                           </VStack>
 
                           <VStack spacing={1} align="start">
                             <Text fontSize="xs" color="gray.500" fontWeight="medium">
                               Division:
                             </Text>
-                            <Text fontSize="sm">
+                            <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
                               {workProgram.divisionName || "Not assigned"}
                             </Text>
                           </VStack>
@@ -142,7 +139,7 @@ export const RequirementWorkProgramSection = ({ DataProject }: RequirementWorkPr
                             <Text fontSize="xs" color="gray.500" fontWeight="medium">
                               Source:
                             </Text>
-                            <Text fontSize="sm">
+                            <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
                               {workProgram.workProgramSource || "Not specified"}
                             </Text>
                           </VStack>
