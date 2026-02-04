@@ -1,6 +1,6 @@
 "use client";
 
-import { ProjectDataResponse } from "@/app/services/useProjects";
+import { ProjectDataResponse, AppsResponse } from "@/app/services/useProjects";
 import {
   VStack,
   HStack,
@@ -40,14 +40,43 @@ import {
 import { FiInfo, FiCalendar, FiUsers, FiTarget, FiArrowLeft, FiLayers, FiCheck, FiArrowRight, FiX, FiCheckCircle, FiXCircle } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { GeneralInfoSection } from "./GeneralInfoSection";
+import { UserAssignmentsSection, OrganizationSection } from "./OrganizationSections";
+import { BacklogsSection } from "./BacklogsSection";
+import { WorkStagesSection } from "./WorkStagesSection";
+import { ProcurementStagesSection } from "./ProcurementStagesSection";
+import { StatusHistorySection } from "./StatusHistorySection";
+import { EnhancedApproverSection } from "./EnhancedApproverSection";
+import { ApplicationSection } from "./ApplicationSection";
+import { RequirementWorkProgramSection } from "./RequirementWorkProgramSection";
+import { BacklogDataResponse } from "@/app/services/useRequirements";
+import { ProjectUserAssignmentResponse } from "@/app/services/useProjects";
 
 interface ProjectInfoPreviewProps {
   DataProject: ProjectDataResponse | null;
+  DataApps?: AppsResponse | null;
+  statusHistory?: any[];
+  workflowBacklogs?: any[];
+  backlogStats?: any;
+  backlogList?: BacklogDataResponse[];
+  projectMembers?: ProjectUserAssignmentResponse[];
   canApprove?: boolean;
+  approvalMode?: boolean;
   onApprove?: (isApproved: boolean, note?: string) => Promise<void>;
 }
 
-const ProjectInfoPreview = ({ DataProject, canApprove = false, onApprove }: ProjectInfoPreviewProps) => {
+const ProjectInfoPreview = ({ 
+  DataProject, 
+  DataApps,
+  statusHistory = [],
+  workflowBacklogs = [],
+  backlogStats,
+  backlogList = [],
+  projectMembers = [],
+  canApprove = false,
+  approvalMode = false,
+  onApprove 
+}: ProjectInfoPreviewProps) => {
   const { colorMode } = useColorMode();
   const router = useRouter();
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -139,429 +168,64 @@ const ProjectInfoPreview = ({ DataProject, canApprove = false, onApprove }: Proj
         </Box>
       </Box>
 
-      {/* Preview Mode Alert */}
-      {canApprove && (
-        <Alert
-          status="warning"
-          variant="left-accent"
-          rounded="lg"
-          bg={colorMode === "light" ? "orange.50" : "orange.900"}
-          borderColor="orange.500"
-        >
-          <AlertIcon color="orange.500" />
-          <Box flex="1">
-            <AlertTitle fontSize="sm" color={colorMode === "light" ? "orange.800" : "orange.200"}>
-              Approval Required
-            </AlertTitle>
-            <AlertDescription fontSize="xs" color={colorMode === "light" ? "orange.700" : "orange.300"}>
-              This project is waiting for your approval. Review the details and take action.
-            </AlertDescription>
-          </Box>
-          <HStack spacing={2}>
-            <Button
-              leftIcon={<FiCheckCircle />}
-              colorScheme="green"
-              size="sm"
-              onClick={() => handleApprovalClick(true)}
-            >
-              Approve
-            </Button>
-            <Button
-              leftIcon={<FiXCircle />}
-              colorScheme="red"
-              size="sm"
-              onClick={() => handleApprovalClick(false)}
-            >
-              Decline
-            </Button>
-          </HStack>
-        </Alert>
+      {/* Enhanced Approver Section */}
+      {approvalMode && canApprove && (
+        <EnhancedApproverSection
+          DataProject={DataProject}
+          canApprove={canApprove}
+          onApprove={() => handleApprovalClick(true)}
+          onDecline={() => handleApprovalClick(false)}
+        />
       )}
 
-      {/* Info Grid */}
-      <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
-        {/* Project Details */}
-        <Card
-          shadow="sm"
-          rounded="xl"
-          border="1px"
-          borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-          transition="all 0.3s"
-          _hover={{ shadow: "md", transform: "translateY(-2px)" }}
-        >
-          <CardBody p={6}>
-            <HStack spacing={3} mb={4}>
-              <Box
-                w={10}
-                h={10}
-                color="blue.500"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-              >
-                <FiInfo size={24} />
-              </Box>
-              <Heading size="sm" color={colorMode === "light" ? "gray.700" : "white"}>
-                Project Details
-              </Heading>
-            </HStack>
-            <VStack spacing={3} align="stretch">
-              <Box>
-                <Text fontSize="xs" color="gray.500" mb={1}>
-                  Project Number
-                </Text>
-                <Text fontSize="sm" fontWeight="semibold">
-                  {DataProject.projectNo || "N/A"}
-                </Text>
-              </Box>
-              <Divider />
-              <Box>
-                <Text fontSize="xs" color="gray.500" mb={1}>
-                  Project Code
-                </Text>
-                <Text fontSize="sm" fontWeight="semibold">
-                  {DataProject.projectCode || "N/A"}
-                </Text>
-              </Box>
-              <Divider />
-              <Box>
-                <Text fontSize="xs" color="gray.500" mb={1}>
-                  Category
-                </Text>
-                <Badge colorScheme="purple" fontSize="xs">
-                  {DataProject.projectCategory || "N/A"}
-                </Badge>
-              </Box>
-            </VStack>
-          </CardBody>
-        </Card>
+      {/* General Information Section */}
+      <GeneralInfoSection DataProject={DataProject} />
 
-        {/* Status & Progress */}
-        <Card
-          shadow="sm"
-          rounded="xl"
-          border="1px"
-          borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-          transition="all 0.3s"
-          _hover={{ shadow: "md", transform: "translateY(-2px)" }}
-        >
-          <CardBody p={6}>
-            <HStack spacing={3} mb={4}>
-              <Box
-                w={10}
-                h={10}
-                color="green.500"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-              >
-                <FiTarget size={24} />
-              </Box>
-              <Heading size="sm" color={colorMode === "light" ? "gray.700" : "white"}>
-                Status & Progress
-              </Heading>
-            </HStack>
-            <VStack spacing={4} align="stretch">
-              <Box>
-                <Text fontSize="xs" color="gray.500" mb={2}>
-                  Status
-                </Text>
-                <Badge
-                  colorScheme={
-                    DataProject.projectStatus === "RUNNING"
-                      ? "green"
-                      : DataProject.projectStatus === "COMPLETED"
-                        ? "blue"
-                        : "orange"
-                  }
-                  fontSize="md"
-                  px={4}
-                  py={2}
-                  rounded="lg"
-                >
-                  {DataProject.projectStatus || "N/A"}
-                </Badge>
-              </Box>
-              <Divider />
-              <Box>
-                <HStack justify="space-between" mb={2}>
-                  <Text fontSize="xs" color="gray.500">
-                    Progress
-                  </Text>
-                  <Text fontSize="sm" fontWeight="bold" color="green.500">
-                    {DataProject.projectStatusPercentage || 0}%
-                  </Text>
-                </HStack>
-                <Progress
-                  value={DataProject.projectStatusPercentage || 0}
-                  colorScheme="green"
-                  size="lg"
-                  rounded="full"
-                  hasStripe
-                  isAnimated
-                />
-              </Box>
-            </VStack>
-          </CardBody>
-        </Card>
+      {/* User Assignments Section */}
+      <UserAssignmentsSection projectMembers={projectMembers} />
 
-        {/* Organization */}
-        <Card
-          shadow="sm"
-          rounded="xl"
-          border="1px"
-          borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-          transition="all 0.3s"
-          _hover={{ shadow: "md", transform: "translateY(-2px)" }}
-        >
-          <CardBody p={6}>
-            <HStack spacing={3} mb={4}>
-              <Box
-                w={10}
-                h={10}
-                color="purple.500"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-              >
-                <FiUsers size={24} />
-              </Box>
-              <Heading size="sm" color={colorMode === "light" ? "gray.700" : "white"}>
-                Project Initiated By
-              </Heading>
-            </HStack>
-            <VStack spacing={3} align="stretch">
-              <Box>
-                <Text fontSize="xs" color="gray.500" mb={1}>
-                  Directorate
-                </Text>
-                <Text fontSize="sm" fontWeight="semibold">
-                  {DataProject.proOwnerDirectorateName || "N/A"}
-                </Text>
-              </Box>
-              <Divider />
-              <Box>
-                <Text fontSize="xs" color="gray.500" mb={1}>
-                  Division
-                </Text>
-                <Text fontSize="sm" fontWeight="semibold">
-                  {DataProject.proOwnerDivisionName || "N/A"}
-                </Text>
-              </Box>
-              <Divider />
-              <Box>
-                <Text fontSize="xs" color="gray.500" mb={1}>
-                  Group
-                </Text>
-                <Text fontSize="sm" fontWeight="semibold">
-                  {DataProject.proOwnerGroupName || "N/A"}
-                </Text>
-              </Box>
-            </VStack>
-          </CardBody>
-        </Card>
+      {/* Organization Sections */}
+      <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+        <OrganizationSection 
+          DataProject={DataProject} 
+          title="Project Initiated By" 
+          colorScheme="purple"
+          type="initiated"
+        />
+        <OrganizationSection 
+          DataProject={DataProject} 
+          title="Project Managed By" 
+          colorScheme="orange"
+          type="managed"
+        />
       </SimpleGrid>
 
-      {/* Characteristics Section */}
-      <Card
-        shadow="sm"
-        rounded="xl"
-        border="1px"
-        borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-      >
-        <CardBody p={6}>
-          <HStack spacing={3} mb={4}>
-            <Box
-              w={10}
-              h={10}
-              color="orange.500"
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-            >
-              <FiLayers size={24} />
-            </Box>
-            <Heading size="sm" color={colorMode === "light" ? "gray.700" : "white"}>
-              Project Overview
-            </Heading>
-          </HStack>
+      {/* Application Section */}
+      <ApplicationSection DataProject={DataProject} />
 
-          <Tabs variant="enclosed" colorScheme="blue">
-            <TabList>
-              <Tab>Characteristic</Tab>
-              <Tab>Scope of Work</Tab>
-              <Tab>Requirements</Tab>
-            </TabList>
+      {/* Requirement & Work Program Section */}
+      <RequirementWorkProgramSection DataProject={DataProject} />
 
-            <TabPanels>
-              {/* Characteristic Tab */}
-              <TabPanel px={0} py={4}>
-                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-                  <Box>
-                    <Text fontSize="xs" color="gray.500" mb={1}>
-                      Characteristic
-                    </Text>
-                    <Text fontSize="sm" fontWeight="semibold">
-                      {DataProject.projectCharasteristicName || "N/A"}
-                    </Text>
-                  </Box>
-                  <Box>
-                    <Text fontSize="xs" color="gray.500" mb={1}>
-                      Sub-Characteristic
-                    </Text>
-                    <Text fontSize="sm" fontWeight="semibold">
-                      {DataProject.projectSubCharasteristicName || "N/A"}
-                    </Text>
-                  </Box>
-                  {DataProject.projectSubCharasteristicDesc && (
-                    <Box gridColumn={{ base: "1", md: "1 / -1" }}>
-                      <Text fontSize="xs" color="gray.500" mb={1}>
-                        Description
-                      </Text>
-                      <Text fontSize="sm">
-                        {DataProject.projectSubCharasteristicDesc}
-                      </Text>
-                    </Box>
-                  )}
-                </SimpleGrid>
+      {/* Backlogs Section */}
+      {backlogList && backlogList.length > 0 && (
+        <BacklogsSection 
+          backlogList={backlogList} 
+          backlogStats={backlogStats} 
+        />
+      )}
 
-                {/* <Button
-                  leftIcon={<FiArrowRight />}
-                  colorScheme="green"
-                  size="md"
-                  mt={6}
-                  w="full"
-                  onClick={() => router.push("/projects/approval")}
-                >
-                  Go To Approval Page
-                </Button> */}
-              </TabPanel>
+      {/* Work Stages Section */}
+      <WorkStagesSection DataProject={DataProject} />
 
-              {/* Scope of Work Tab */}
-              <TabPanel px={0} py={4}>
-                {DataProject.workPrograms && DataProject.workPrograms.length > 0 ? (
-                  <VStack spacing={3} align="stretch">
-                    {DataProject.workPrograms.map((wp, index) => (
-                      <Box
-                        key={index}
-                        p={4}
-                        bg={colorMode === "light" ? "gray.50" : "gray.700"}
-                        rounded="lg"
-                        border="1px"
-                        borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
-                      >
-                        <HStack justify="space-between" mb={2}>
-                          <Badge colorScheme="blue" fontSize="xs">
-                            {wp.workProgramCode || `Work Program ${index + 1}`}
-                          </Badge>
-                        </HStack>
-                        <Text fontSize="sm" fontWeight="semibold" mb={1}>
-                          {wp.workProgramName || "N/A"}
-                        </Text>
-                        <SimpleGrid columns={2} spacing={2} mt={2}>
-                          <Box>
-                            <Text fontSize="xs" color="gray.500">Budget</Text>
-                            <Text fontSize="xs" fontWeight="semibold">
-                              {wp.workProgramBudget?.toLocaleString() || "0"}
-                            </Text>
-                          </Box>
-                          <Box>
-                            <Text fontSize="xs" color="gray.500">Division</Text>
-                            <Text fontSize="xs" fontWeight="semibold">
-                              {wp.divisionName || "N/A"}
-                            </Text>
-                          </Box>
-                        </SimpleGrid>
-                      </Box>
-                    ))}
-                  </VStack>
-                ) : (
-                  <Text fontSize="sm" color="gray.500">
-                    No scope of work data available
-                  </Text>
-                )}
+      {/* Procurement Stages Section (conditional) */}
+      <ProcurementStagesSection DataProject={DataProject} />
 
-                {/* <Button
-                  leftIcon={<FiArrowRight />}
-                  colorScheme="green"
-                  size="md"
-                  mt={6}
-                  w="full"
-                  onClick={() => router.push("/projects/approval")}
-                >
-                  Go To Approval Page
-                </Button> */}
-              </TabPanel>
+      {/* Status History Section */}
+      {statusHistory && statusHistory.length > 0 && (
+        <StatusHistorySection statusHistory={statusHistory} />
+      )}
 
-              {/* Requirements Tab */}
-              <TabPanel px={0} py={4}>
-                {DataProject.requirementData ? (
-                  <VStack spacing={4} align="stretch">
-                    <Box
-                      p={4}
-                      bg={colorMode === "light" ? "gray.50" : "gray.700"}
-                      rounded="lg"
-                      border="1px"
-                      borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
-                    >
-                      <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-                        <Box>
-                          <Text fontSize="xs" color="gray.500" mb={1}>
-                            Requirement Type
-                          </Text>
-                          <Badge colorScheme="purple" fontSize="xs">
-                            {DataProject.requirementData.requirementType}
-                          </Badge>
-                        </Box>
-                        <Box>
-                          <Text fontSize="xs" color="gray.500" mb={1}>
-                            Requirement Number
-                          </Text>
-                          <Text fontSize="sm" fontWeight="semibold">
-                            {DataProject.requirementData.reqNumber}
-                          </Text>
-                        </Box>
-                        <Box>
-                          <Text fontSize="xs" color="gray.500" mb={1}>
-                            Status
-                          </Text>
-                          <Badge colorScheme="green" fontSize="xs">
-                            {DataProject.requirementData.reqStatus || "N/A"}
-                          </Badge>
-                        </Box>
-                      </SimpleGrid>
-                    </Box>
 
-                    <Button
-                      colorScheme="blue"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => router.push(`/requirements/detail?reqId=${DataProject.requirementData?.id}&type=${DataProject.requirementData?.requirementType}`)}
-                    >
-                      View Full Requirement Details
-                    </Button>
-                  </VStack>
-                ) : (
-                  <Text fontSize="sm" color="gray.500">
-                    No requirements data available
-                  </Text>
-                )}
-
-                {/* <Button
-                  leftIcon={<FiArrowRight />}
-                  colorScheme="green"
-                  size="md"
-                  mt={6}
-                  w="full"
-                  onClick={() => router.push("/projects/approval")}
-                >
-                  Go To Approval Page
-                </Button> */}
-              </TabPanel>
-            </TabPanels>
-          </Tabs>
-        </CardBody>
-      </Card>
 
       {/* Approval Modal */}
       <Modal isOpen={isOpen} onClose={onClose} size="lg">

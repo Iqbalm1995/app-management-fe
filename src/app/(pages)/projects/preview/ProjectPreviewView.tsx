@@ -15,7 +15,10 @@ import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useProjects, {
   AppsResponse,
   ProjectDataResponse,
+  ProjectUserAssignmentResponse,
 } from "@/app/services/useProjects";
+import useRequirements, { BacklogDataResponse } from "@/app/services/useRequirements";
+import { PaggingListPayload } from "@/app/types/masterTypes";
 import {
   Box,
   Card,
@@ -46,7 +49,17 @@ export default function ProjectPreviewView({
 
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
-  const { GetDetailById, GetDetailAppsByProjectId, CanApproveProject, ApproveProject } = useProjects();
+  const { 
+    GetDetailById, 
+    GetDetailAppsByProjectId, 
+    CanApproveProject, 
+    ApproveProject,
+    GetProjectStatusHistory,
+    ListProjectWorkflowBacklog,
+    GetProjectBacklogStats,
+    GetProjectMembers
+  } = useProjects();
+  const { ListBacklog } = useRequirements();
 
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
@@ -57,6 +70,11 @@ export default function ProjectPreviewView({
   const [DataApps, setDataApps] = useState<AppsResponse | null>(null);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
   const [canApprove, setCanApprove] = useState<boolean>(false);
+  const [statusHistory, setStatusHistory] = useState<any[]>([]);
+  const [workflowBacklogs, setWorkflowBacklogs] = useState<any[]>([]);
+  const [backlogStats, setBacklogStats] = useState<any>(null);
+  const [backlogList, setBacklogList] = useState<BacklogDataResponse[]>([]);
+  const [projectMembers, setProjectMembers] = useState<ProjectUserAssignmentResponse[]>([]);
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
@@ -152,6 +170,80 @@ export default function ProjectPreviewView({
     }
   }, [DataAuth, projectId, tokenData]);
 
+  useEffect(() => {
+    if (DataAuth && projectId && tokenData && isInitialized) {
+      const LoadStatusHistory = async () => {
+        const response = await GetProjectStatusHistory(projectId, tokenData);
+        if (response?.statusCode === RES_CODE_OK && response.data) {
+          setStatusHistory(response.data);
+        }
+      };
+      LoadStatusHistory();
+    }
+  }, [DataAuth, projectId, tokenData, isInitialized]);
+
+  useEffect(() => {
+    if (DataAuth && projectId && tokenData && isInitialized) {
+      const LoadWorkflowBacklogs = async () => {
+        const response = await ListProjectWorkflowBacklog(projectId, tokenData);
+        if (response?.statusCode === RES_CODE_OK && response.data) {
+          setWorkflowBacklogs(response.data);
+        }
+      };
+      LoadWorkflowBacklogs();
+    }
+  }, [DataAuth, projectId, tokenData, isInitialized]);
+
+  useEffect(() => {
+    if (DataAuth && projectId && tokenData && isInitialized) {
+      const LoadBacklogStats = async () => {
+        const response = await GetProjectBacklogStats(projectId, tokenData);
+        if (response?.statusCode === RES_CODE_OK && response.data) {
+          setBacklogStats(response.data);
+        }
+      };
+      LoadBacklogStats();
+    }
+  }, [DataAuth, projectId, tokenData, isInitialized]);
+
+  useEffect(() => {
+    if (DataAuth && projectId && tokenData && isInitialized) {
+      const LoadBacklogList = async () => {
+        const payload: PaggingListPayload = {
+          search: "",
+          page: 0,
+          limit: 1000,
+          filterWhere: [
+            {
+              field: "projectId",
+              operator: "=",
+              value: projectId,
+            },
+          ],
+          fieldOrder: ["createdAt"],
+          orderDir: "asc",
+        };
+        const response = await ListBacklog(payload, tokenData);
+        if (response?.statusCode === RES_CODE_OK && response.data) {
+          setBacklogList(response.data);
+        }
+      };
+      LoadBacklogList();
+    }
+  }, [DataAuth, projectId, tokenData, isInitialized]);
+
+  useEffect(() => {
+    if (DataAuth && projectId && tokenData && isInitialized) {
+      const LoadProjectMembers = async () => {
+        const response = await GetProjectMembers(projectId, tokenData);
+        if (response?.statusCode === RES_CODE_OK && response.data) {
+          setProjectMembers(response.data);
+        }
+      };
+      LoadProjectMembers();
+    }
+  }, [DataAuth, projectId, tokenData, isInitialized]);
+
   const isInternalDev =
     DataProject?.projectType === PROJECT_TYPE_INTERNAL_DEVELOPMENT;
   const isProcurement = DataProject?.projectType === PROJECT_TYPE_PROCUREMENT;
@@ -196,8 +288,15 @@ export default function ProjectPreviewView({
       <Box w="full" px={{ base: 4, md: 6 }} py={6}>
         <Suspense fallback={<LoadingMiniSquare />}>
           <ProjectInfoPreview 
-            DataProject={DataProject} 
+            DataProject={DataProject}
+            DataApps={DataApps}
+            statusHistory={statusHistory}
+            workflowBacklogs={workflowBacklogs}
+            backlogStats={backlogStats}
+            backlogList={backlogList}
+            projectMembers={projectMembers}
             canApprove={canApprove}
+            approvalMode={approvalMode}
             onApprove={async (isApproved: boolean, note?: string) => {
               if (!projectId) return;
               const response = await ApproveProject(
