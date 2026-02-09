@@ -118,7 +118,28 @@ export default function PendingApproveView() {
             as={Stack}
             spacing={1}
           >
+            {/* Requirement Number */}
+            {info.row.original.requirementData && (
+              <Flex as={Stack} spacing={0}>
+                <Text fontSize="sm" color="gray.500">
+                  {info.row.original.requirementData.reqNumber}
+                </Text>
+              </Flex>
+            )}
+            {/* Project Name */}
             <Flex as={Stack} spacing={0}>
+              <Text fontWeight={600}>{info.row.original.projectName}</Text>
+            </Flex>
+            {/* Perihal/Narrative */}
+            {info.row.original.requirementData && (
+              <Flex as={Stack} spacing={0}>
+                <Text fontSize="xs" color="gray.600" noOfLines={2}>
+                  {info.row.original.requirementData.reqNarative || "N/A"}
+                </Text>
+              </Flex>
+            )}
+            {/* Hidden - Project Code and Number */}
+            {/* <Flex as={Stack} spacing={0}>
               <Text fontWeight={600}>{info.row.original.projectCode}</Text>
               <Text>{info.row.original.projectName}</Text>
             </Flex>
@@ -128,7 +149,7 @@ export default function PendingApproveView() {
                   No: {info.row.original.projectNo}
                 </Text>
               </Flex>
-            )}
+            )} */}
           </Flex>
         ),
         header: () => <span>Nama Project</span>,
@@ -375,6 +396,7 @@ export default function PendingApproveView() {
                   reqNumber: reqResponse.data.reqNumber,
                   requirementType: reqResponse.data.requirementType,
                   reqStatus: reqResponse.data.reqStatus || null,
+                  reqNarative: reqResponse.data.reqNarative,
                 };
                 // Also get work programs from requirement
                 if (reqResponse.data.workPrograms) {

@@ -2956,10 +2956,10 @@ function RegisterRequirementFormPage({
                                     onChange={(e) => {
                                       const textarea =
                                         e.target as HTMLTextAreaElement;
-                                      perihalCursorPosRef.current =
-                                        textarea.selectionStart;
                                       e.target.value =
                                         e.target.value.toUpperCase();
+                                      perihalCursorPosRef.current =
+                                        textarea.selectionStart;
                                       formik.handleChange(e);
                                     }}
                                     value={formik.values.reqNarative ?? ""}
@@ -7233,18 +7233,68 @@ const Section4BRDView = ({
                 Target Pengguna
               </FormLabel>
               <Stack spacing={0} h={"full"}>
-                <RadioGroup
-                  onChange={(val) =>
-                    formik.setFieldValue("appTargetUsers", val)
-                  }
-                  value={formik.values.appTargetUsers ?? ""}
-                  isDisabled={ApplicationExistingChoosed !== null}
-                >
+                <CheckboxGroup>
                   <Flex w={"full"} as={HStack}>
-                    <Radio value={"EXTERNAL"}>EXTERNAL (NASABAH)</Radio>
-                    <Radio value={"INTERNAL"}>INTERNAL (BANK)</Radio>
+                    <Checkbox
+                      isChecked={
+                        formik.values.appTargetUsers
+                          ?.split(",")
+                          .map((s: string) => s.trim())
+                          .includes("EXTERNAL") || false
+                      }
+                      onChange={() => {
+                        const currentList = (formik.values.appTargetUsers || "")
+                          .split(",")
+                          .map((item: string) => item.trim())
+                          .filter(Boolean);
+                        let updatedList: string[];
+                        if (currentList.includes("EXTERNAL")) {
+                          updatedList = currentList.filter(
+                            (item: string) => item !== "EXTERNAL"
+                          );
+                        } else {
+                          updatedList = [...currentList, "EXTERNAL"];
+                        }
+                        const newValue =
+                          updatedList.join(", ") +
+                          (updatedList.length > 0 ? "," : "");
+                        formik.setFieldValue("appTargetUsers", newValue);
+                      }}
+                      isDisabled={ApplicationExistingChoosed !== null}
+                    >
+                      EXTERNAL (NASABAH)
+                    </Checkbox>
+                    <Checkbox
+                      isChecked={
+                        formik.values.appTargetUsers
+                          ?.split(",")
+                          .map((s: string) => s.trim())
+                          .includes("INTERNAL") || false
+                      }
+                      onChange={() => {
+                        const currentList = (formik.values.appTargetUsers || "")
+                          .split(",")
+                          .map((item: string) => item.trim())
+                          .filter(Boolean);
+                        let updatedList: string[];
+                        if (currentList.includes("INTERNAL")) {
+                          updatedList = currentList.filter(
+                            (item: string) => item !== "INTERNAL"
+                          );
+                        } else {
+                          updatedList = [...currentList, "INTERNAL"];
+                        }
+                        const newValue =
+                          updatedList.join(", ") +
+                          (updatedList.length > 0 ? "," : "");
+                        formik.setFieldValue("appTargetUsers", newValue);
+                      }}
+                      isDisabled={ApplicationExistingChoosed !== null}
+                    >
+                      INTERNAL (BANK)
+                    </Checkbox>
                   </Flex>
-                </RadioGroup>
+                </CheckboxGroup>
                 <FormErrorMessage>
                   {formik.errors.appTargetUsers}
                 </FormErrorMessage>
@@ -9414,18 +9464,68 @@ const Section4RFCView = ({
                 Target Pengguna
               </FormLabel>
               <Stack spacing={0} h={"full"}>
-                <RadioGroup
-                  onChange={(val) =>
-                    formik.setFieldValue("appTargetUsers", val)
-                  }
-                  value={formik.values.appTargetUsers ?? ""}
-                  isDisabled={ApplicationExistingChoosed !== null}
-                >
+                <CheckboxGroup>
                   <Flex w={"full"} as={HStack}>
-                    <Radio value={"EXTERNAL"}>EXTERNAL (NASABAH)</Radio>
-                    <Radio value={"INTERNAL"}>INTERNAL (BANK)</Radio>
+                    <Checkbox
+                      isChecked={
+                        formik.values.appTargetUsers
+                          ?.split(",")
+                          .map((s: string) => s.trim())
+                          .includes("EXTERNAL") || false
+                      }
+                      onChange={() => {
+                        const currentList = (formik.values.appTargetUsers || "")
+                          .split(",")
+                          .map((item: string) => item.trim())
+                          .filter(Boolean);
+                        let updatedList: string[];
+                        if (currentList.includes("EXTERNAL")) {
+                          updatedList = currentList.filter(
+                            (item: string) => item !== "EXTERNAL"
+                          );
+                        } else {
+                          updatedList = [...currentList, "EXTERNAL"];
+                        }
+                        const newValue =
+                          updatedList.join(", ") +
+                          (updatedList.length > 0 ? "," : "");
+                        formik.setFieldValue("appTargetUsers", newValue);
+                      }}
+                      isDisabled={ApplicationExistingChoosed !== null}
+                    >
+                      EXTERNAL (NASABAH)
+                    </Checkbox>
+                    <Checkbox
+                      isChecked={
+                        formik.values.appTargetUsers
+                          ?.split(",")
+                          .map((s: string) => s.trim())
+                          .includes("INTERNAL") || false
+                      }
+                      onChange={() => {
+                        const currentList = (formik.values.appTargetUsers || "")
+                          .split(",")
+                          .map((item: string) => item.trim())
+                          .filter(Boolean);
+                        let updatedList: string[];
+                        if (currentList.includes("INTERNAL")) {
+                          updatedList = currentList.filter(
+                            (item: string) => item !== "INTERNAL"
+                          );
+                        } else {
+                          updatedList = [...currentList, "INTERNAL"];
+                        }
+                        const newValue =
+                          updatedList.join(", ") +
+                          (updatedList.length > 0 ? "," : "");
+                        formik.setFieldValue("appTargetUsers", newValue);
+                      }}
+                      isDisabled={ApplicationExistingChoosed !== null}
+                    >
+                      INTERNAL (BANK)
+                    </Checkbox>
                   </Flex>
-                </RadioGroup>
+                </CheckboxGroup>
                 <FormErrorMessage>
                   {formik.errors.appTargetUsers}
                 </FormErrorMessage>
