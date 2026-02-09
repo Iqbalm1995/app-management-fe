@@ -27,6 +27,7 @@ import {
   useColorMode,
   Spinner,
   Center,
+  StackDivider,
 } from "@chakra-ui/react";
 import {
   FiCheckCircle,
@@ -63,7 +64,7 @@ export default function AppPickerModalForm({
   const [isLoading, setIsLoading] = useState(false);
   const [pagination, setPagination] = useState({
     pageIndex: 0,
-    pageSize: 12, // Grid works better with 12 items (3x4 or 4x3)
+    pageSize: 12,
   });
   const [totalData, setTotalData] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
@@ -294,33 +295,32 @@ export default function AppPickerModalForm({
             </Box>
 
             {/* Pagination */}
-            {totalPages > 1 && (
-              <Flex justify="space-between" align="center" mt={4}>
-                <Text
-                  fontSize="sm"
-                  color={colorMode === "light" ? "gray.600" : "gray.400"}
-                >
-                  Halaman {pagination.pageIndex + 1} dari {totalPages} (
-                  {totalData} aplikasi)
-                </Text>
-                <HStack>
-                  <IconButton
-                    aria-label="Previous page"
-                    icon={<FiChevronLeft />}
-                    onClick={handlePreviousPage}
-                    isDisabled={!canPreviousPage}
-                    size="sm"
-                  />
-                  <IconButton
-                    aria-label="Next page"
-                    icon={<FiChevronRight />}
-                    onClick={handleNextPage}
-                    isDisabled={!canNextPage}
-                    size="sm"
-                  />
-                </HStack>
-              </Flex>
-            )}
+            <Flex justify="space-between" align="center" mt={4} gap={4}>
+              <HStack spacing={2} divider={<StackDivider borderColor="gray.300" />}>
+                <Text fontSize="sm" fontWeight={600}>Halaman</Text>
+                <Text fontSize="sm">{pagination.pageIndex + 1}</Text>
+                <Text fontSize="sm">/</Text>
+                <Text fontSize="sm">{totalPages}</Text>
+              </HStack>
+              <HStack spacing={1}>
+                <IconButton
+                  aria-label="Previous page"
+                  icon={<FiChevronLeft />}
+                  onClick={handlePreviousPage}
+                  isDisabled={!canPreviousPage}
+                  size="sm"
+                  variant="outline"
+                />
+                <IconButton
+                  aria-label="Next page"
+                  icon={<FiChevronRight />}
+                  onClick={handleNextPage}
+                  isDisabled={!canNextPage}
+                  size="sm"
+                  variant="outline"
+                />
+              </HStack>
+            </Flex>
           </VStack>
         </ModalBody>
 

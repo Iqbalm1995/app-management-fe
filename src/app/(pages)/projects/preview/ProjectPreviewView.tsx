@@ -244,6 +244,8 @@ export default function ProjectPreviewView({
     }
   }, [DataAuth, projectId, tokenData, isInitialized]);
 
+
+
   const isInternalDev =
     DataProject?.projectType === PROJECT_TYPE_INTERNAL_DEVELOPMENT;
   const isProcurement = DataProject?.projectType === PROJECT_TYPE_PROCUREMENT;

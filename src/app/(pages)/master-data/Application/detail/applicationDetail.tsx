@@ -206,6 +206,7 @@ function ApplicationDetail() {
   const [SelectedAppsTypes, setSelectedAppsTypes] = useState<string>("");
   const [SelectedAppsEnvLoc, setSelectedAppsEnvLoc] = useState<string>("");
   const [OperationalDays, setOperationalDays] = useState<string>("");
+  const [SelectedTargetUsers, setSelectedTargetUsers] = useState<string>("");
   const hasOtherAppsTypes = SelectedAppsTypes.split(",")
     .map((s) => s.trim().toLowerCase())
     .includes("other");
@@ -231,6 +232,25 @@ function ApplicationDetail() {
       updatedList.join(", ") + (updatedList.length > 0 ? "," : "");
     setSelectedAppsTypes(newValue);
     setFormData({ ...formData, appTypes: newValue });
+  };
+
+  const handleTargetUsersCheckboxChange = (value: string) => {
+    const currentList = SelectedTargetUsers.split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    let updatedList: string[];
+
+    if (currentList.includes(value)) {
+      updatedList = currentList.filter((item) => item !== value);
+    } else {
+      updatedList = [...currentList, value];
+    }
+
+    const newValue =
+      updatedList.join(", ") + (updatedList.length > 0 ? "," : "");
+    setSelectedTargetUsers(newValue);
+    setFormData({ ...formData, appTargetUsers: newValue });
   };
 
   const handleAppysEnvLocCheckboxChange = (value: string) => {
@@ -504,13 +524,13 @@ function ApplicationDetail() {
         appShortName: formData.appShortName,
         appsDesc: formData.appsDesc,
         note: formData.note,
-        appTargetUsers: formData.appTargetUsers,
+        appTargetUsers: formData.appTargetUsers.trim().replace(/,\s*$/, ""),
         appAccessFrontsiteDns: formData.appAccessFrontsiteDns,
         appAccessFrontsiteIp: formData.appAccessFrontsiteIp,
         appAccessBacksiteDns: formData.appAccessBacksiteDns,
         appAccessBacksiteIp: formData.appAccessBacksiteIp,
         appAccessMedia: formData.appAccessMedia,
-        appTypes: formData.appTypes,
+        appTypes: formData.appTypes.trim().replace(/,\s*$/, ""),
         appTypeCustom: formData.appTypeCustom,
         appRelatedness: formData.appRelatedness,
         appRelatednessDesc: formData.appRelatednessDesc,
@@ -519,7 +539,7 @@ function ApplicationDetail() {
         appOperationalDays: formData.appOperationalDays,
         appOperationalHourOpen: formData.appOperationalHourOpen,
         appOperationalHourClosed: formData.appOperationalHourClosed,
-        appEnvLocations: formData.appEnvLocations,
+        appEnvLocations: formData.appEnvLocations.trim().replace(/,\s*$/, ""),
         appEnvLocationsOthers: formData.appEnvLocationsOthers,
         appPrivateAuth: formData.appPrivateAuth,
         appHightAvailability: formData.appHightAvailability,
@@ -700,6 +720,7 @@ function ApplicationDetail() {
       setMediaAksesPublic(!!data.appAccessFrontsiteDns);
       setMediaAksesIntranet(!!data.appAccessBacksiteIp);
       setSelectedAppsTypes(data.appTypes || "");
+      setSelectedTargetUsers(data.appTargetUsers || "");
       setSelectedAppsEnvLoc(data.appEnvLocations || "");
       setOperationalDays(data.appOperationalDays || "");
 
@@ -2037,26 +2058,30 @@ function ApplicationDetail() {
                             </Text>
 
                             <FormControl>
-                              <RadioGroup
-                                value={formData.appTargetUsers}
-                                onChange={(val) =>
-                                  IsEditMode &&
-                                  setFormData({
-                                    ...formData,
-                                    appTargetUsers: val,
-                                  })
-                                }
-                                isDisabled={!IsEditMode}
-                              >
+                              <CheckboxGroup>
                                 <HStack spacing={4}>
-                                  <Radio value="EXTERNAL">
+                                  <Checkbox
+                                    isChecked={SelectedTargetUsers.includes("EXTERNAL")}
+                                    onChange={() =>
+                                      IsEditMode &&
+                                      handleTargetUsersCheckboxChange("EXTERNAL")
+                                    }
+                                    isDisabled={!IsEditMode}
+                                  >
                                     EXTERNAL (NASABAH)
-                                  </Radio>
-                                  <Radio value="INTERNAL">
+                                  </Checkbox>
+                                  <Checkbox
+                                    isChecked={SelectedTargetUsers.includes("INTERNAL")}
+                                    onChange={() =>
+                                      IsEditMode &&
+                                      handleTargetUsersCheckboxChange("INTERNAL")
+                                    }
+                                    isDisabled={!IsEditMode}
+                                  >
                                     INTERNAL (BANK)
-                                  </Radio>
+                                  </Checkbox>
                                 </HStack>
-                              </RadioGroup>
+                              </CheckboxGroup>
                             </FormControl>
                           </Box>
 

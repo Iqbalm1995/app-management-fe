@@ -12,8 +12,6 @@ import {
   VStack,
   useColorMode,
   Badge,
-  SimpleGrid,
-  Divider,
 } from "@chakra-ui/react";
 import { FiFileText } from "react-icons/fi";
 
@@ -25,11 +23,6 @@ export const RequirementWorkProgramSection = ({ DataProject }: RequirementWorkPr
   const { colorMode } = useColorMode();
 
   const hasRequirement = DataProject.requirementData;
-  const hasWorkPrograms = DataProject.workPrograms && DataProject.workPrograms.length > 0;
-
-  if (!hasRequirement && !hasWorkPrograms) {
-    return null;
-  }
 
   return (
     <Card shadow="sm" rounded="xl" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"}>
@@ -47,111 +40,53 @@ export const RequirementWorkProgramSection = ({ DataProject }: RequirementWorkPr
             <FiFileText size={20} color="white" />
           </Box>
           <Heading size="md" color={colorMode === "light" ? "pink.700" : "pink.200"}>
-            Requirements & Work Programs
+            Requirement Information
           </Heading>
         </HStack>
       </CardHeader>
       <CardBody p={6}>
-        <VStack spacing={6} align="stretch">
-          {/* Requirement Data */}
-          {hasRequirement && DataProject.requirementData && (
-            <Box>
-              <Text fontSize="sm" fontWeight="bold" color="gray.600" mb={3}>
-                Requirement Information
-              </Text>
-              <Box
-                p={4}
-                bg={colorMode === "light" ? "gray.50" : "gray.700"}
-                rounded="lg"
-                border="1px"
-                borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
-              >
-                <VStack spacing={3} align="stretch">
-                  <HStack justify="space-between">
-                    <Text fontSize="sm" fontWeight="bold">
-                      {DataProject.requirementData.reqNumber}
-                    </Text>
-                    <Badge colorScheme="purple" fontSize="xs">
-                      {DataProject.requirementData.requirementType}
-                    </Badge>
-                  </HStack>
-                  <Box>
-                    <Text fontSize="xs" color="gray.500">Status</Text>
-                    <Badge colorScheme="green" fontSize="xs" mt={1}>
-                      {DataProject.requirementData.reqStatus || "N/A"}
-                    </Badge>
-                  </Box>
+        {!hasRequirement ? (
+          <Box textAlign="center" py={8}>
+            <Text color={colorMode === "light" ? "gray.500" : "gray.400"}>
+              No requirement data available
+            </Text>
+          </Box>
+        ) : (
+          <Box
+            p={4}
+            bg={colorMode === "light" ? "gray.50" : "gray.800"}
+            rounded="lg"
+            border="1px"
+            borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+          >
+            <VStack spacing={4} align="stretch">
+              <HStack justify="space-between" align="start">
+                <VStack align="start" spacing={1}>
+                  <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"}>
+                    Requirement Number
+                  </Text>
+                  <Text fontWeight="bold" fontSize="md">
+                    {hasRequirement?.reqNumber}
+                  </Text>
                 </VStack>
-              </Box>
-            </Box>
-          )}
+                <Badge colorScheme="purple" variant="solid" fontSize="sm">
+                  {hasRequirement?.requirementType}
+                </Badge>
+              </HStack>
 
-          {/* Work Programs */}
-          {hasWorkPrograms && (
-            <>
-              {hasRequirement && <Divider />}
-              <Box>
-                <Text fontSize="sm" fontWeight="bold" color="gray.600" mb={3}>
-                  Work Programs
-                </Text>
-                <VStack spacing={3} align="stretch">
-                  {DataProject.workPrograms.map((workProgram, index) => (
-                    <Box
-                      key={index}
-                      p={4}
-                      bg={colorMode === "light" ? "gray.50" : "gray.700"}
-                      rounded="lg"
-                      border="1px"
-                      borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
-                    >
-                      <VStack spacing={3} align="stretch">
-                        <HStack justify="space-between">
-                          <Text fontSize="sm" fontWeight="bold">
-                            {workProgram.workProgramName || "Work Program"}
-                          </Text>
-                          <Badge colorScheme="blue" fontSize="xs">
-                            {workProgram.workProgramCode || "N/A"}
-                          </Badge>
-                        </HStack>
-
-                        <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
-                          <VStack spacing={1} align="start">
-                            <Text fontSize="xs" color="gray.500" fontWeight="medium">
-                              Budget:
-                            </Text>
-                            <Text fontSize="sm" fontWeight="bold" color="green.600">
-                              {workProgram.workProgramBudget
-                                ? `Rp ${workProgram.workProgramBudget.toLocaleString()}`
-                                : "Not specified"}
-                            </Text>
-                          </VStack>
-
-                          <VStack spacing={1} align="start">
-                            <Text fontSize="xs" color="gray.500" fontWeight="medium">
-                              Division:
-                            </Text>
-                            <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                              {workProgram.divisionName || "Not assigned"}
-                            </Text>
-                          </VStack>
-
-                          <VStack spacing={1} align="start">
-                            <Text fontSize="xs" color="gray.500" fontWeight="medium">
-                              Source:
-                            </Text>
-                            <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                              {workProgram.workProgramSource || "Not specified"}
-                            </Text>
-                          </VStack>
-                        </SimpleGrid>
-                      </VStack>
-                    </Box>
-                  ))}
+              <HStack justify="space-between">
+                <VStack align="start" spacing={1}>
+                  <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"}>
+                    Status
+                  </Text>
+                  <Badge colorScheme="green" variant="solid">
+                    {hasRequirement?.reqStatus || "N/A"}
+                  </Badge>
                 </VStack>
-              </Box>
-            </>
-          )}
-        </VStack>
+              </HStack>
+            </VStack>
+          </Box>
+        )}
       </CardBody>
     </Card>
   );

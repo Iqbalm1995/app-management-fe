@@ -28,18 +28,12 @@ export const ProcurementStagesSection = ({ DataProject }: ProcurementStagesSecti
     return null;
   }
 
-  if (!DataProject.projectWorkflowData || DataProject.projectWorkflowData.length === 0) {
+  if (!DataProject.projectWorkflowProjectData || DataProject.projectWorkflowProjectData.length === 0) {
     return null;
   }
 
-  // Filter top-level procurement workflows (wfCategoryCode === "PROCUREMENT")
-  const procurementWorkflows = DataProject.projectWorkflowData.filter(
-    wf => wf.wfCategoryCode === "PROCUREMENT"
-  );
-
-  if (procurementWorkflows.length === 0) {
-    return null;
-  }
+  // For PROCUREMENT projects, use projectWorkflowProjectData for procurement stages
+  const procurementWorkflows = DataProject.projectWorkflowProjectData;
 
   const renderWorkflowLevel = (workflows: any[], level: number = 0) => {
     if (level >= 3) return null;
@@ -89,9 +83,6 @@ export const ProcurementStagesSection = ({ DataProject }: ProcurementStagesSecti
               Work Stages for Procurement
             </Heading>
           </HStack>
-          <Text fontSize="sm" color={colorMode === "light" ? "teal.600" : "teal.300"} pl={14}>
-            Procurement workflow stages for this project
-          </Text>
         </VStack>
       </CardHeader>
       <CardBody p={6}>

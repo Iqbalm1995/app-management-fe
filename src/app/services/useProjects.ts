@@ -314,6 +314,7 @@ export interface RequirementShortResponse {
   requirementType: string;
   reqNumber: string;
   reqStatus: string | null;
+  reqNarative?: string;
 }
 
 export interface ProjectWorkflowResponse {
