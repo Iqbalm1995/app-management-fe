@@ -20,6 +20,8 @@ import {
   AlertIcon,
   AlertTitle,
   AlertDescription,
+  Spinner,
+  Icon,
 } from "@chakra-ui/react";
 import {
   FiRefreshCcw,
@@ -28,11 +30,12 @@ import {
   FiCalendar,
   FiTag,
   FiActivity,
+  FiFileText,
 } from "react-icons/fi";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
-import useProjects, { ProjectDataResponse } from "@/app/services/useProjects";
+import useProjects, { ProjectDataResponse, ProjectSdlcStageReportResponse } from "@/app/services/useProjects";
 import useRequirements, { RequirementsResponse } from "@/app/services/useRequirements";
 import {
   RES_CODE_OK,
@@ -48,13 +51,17 @@ interface ProjectInfoSectionProps {
 const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
-  const { GetDetailById } = useProjects();
+  const { GetDetailById, ListProjectSdlcStageReports, GetProjectSdlcStages } = useProjects();
   const { GetDetailById: GetRequirementDetailById } = useRequirements();
 
   // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
   const [RequirementData, setRequirementData] = useState<RequirementsResponse | null>(null);
+  const [StageReports, setStageReports] = useState<ProjectSdlcStageReportResponse[]>([]);
+  const [IsLoadingReports, setIsLoadingReports] = useState(false);
+  const [NextStageName, setNextStageName] = useState<string | null>(null);
+  const [IsLoadingNextStage, setIsLoadingNextStage] = useState(false);
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
@@ -73,6 +80,33 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
       setTokenData(token);
     }
   }, [DataAuth]);
+
+  // Fetch SDLC stage reports for current stage
+  useEffect(() => {
+    const fetchStageReports = async () => {
+      if (!DataProject?.sdlcStageId || !tokenData) return;
+
+      setIsLoadingReports(true);
+      try {
+        const response = await ListProjectSdlcStageReports(
+          DataProject.sdlcStageId,
+          1,
+          5,
+          tokenData
+        );
+
+        if (response && response.statusCode === RES_CODE_OK && response.data) {
+          setStageReports(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching stage reports:", error);
+      } finally {
+        setIsLoadingReports(false);
+      }
+    };
+
+    fetchStageReports();
+  }, [DataProject?.sdlcStageId, tokenData]);
 
   // Fetch requirement data when project data is available
   useEffect(() => {
@@ -94,6 +128,43 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
 
     fetchRequirementData();
   }, [DataProject?.reqParentId, tokenData]);
+
+  // Fetch next SDLC stage
+  useEffect(() => {
+    const fetchNextStage = async () => {
+      if (!DataProject?.sdlcStageId || !DataProject?.id || !tokenData) {
+        setNextStageName(null);
+        return;
+      }
+
+      setIsLoadingNextStage(true);
+      try {
+        const response = await GetProjectSdlcStages(DataProject.id, tokenData);
+
+        if (response?.statusCode === RES_CODE_OK && response.data) {
+          const stages = response.data;
+          const currentStage = stages.find(s => s.id === DataProject.sdlcStageId);
+          
+          if (currentStage) {
+            const nextStage = stages
+              .filter(s => s.stagePosOrder > currentStage.stagePosOrder)
+              .sort((a, b) => a.stagePosOrder - b.stagePosOrder)[0];
+            
+            setNextStageName(nextStage?.stageName || null);
+          } else {
+            setNextStageName(null);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching next stage:", error);
+        setNextStageName(null);
+      } finally {
+        setIsLoadingNextStage(false);
+      }
+    };
+
+    fetchNextStage();
+  }, [DataProject?.sdlcStageId, DataProject?.id, tokenData]);
 
   const [RefreshData, setRefreshData] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
@@ -237,7 +308,7 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                           color="gray.600"
                           fontWeight="medium"
                         >
-                          Status:
+                          Project Status:
                         </Text>
                         <Text
                           fontSize="sm"
@@ -251,6 +322,36 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                           {DataProject.projectStatus || "N/A"}
                         </Text>
                       </HStack>
+                      <Divider />
+                      <HStack justify="space-between">
+                        <Text
+                          fontSize="sm"
+                          color="gray.600"
+                          fontWeight="medium"
+                        >
+                          SDLC Status:
+                        </Text>
+                        <Text fontSize="sm" fontWeight="bold" color="blue.600">
+                          {DataProject.sdlcStageName || "Not Set"}
+                        </Text>
+                      </HStack>
+                      {DataProject.sdlcStageId && (
+                        <>
+                          <Divider />
+                          <HStack justify="space-between">
+                            <Text
+                              fontSize="sm"
+                              color="gray.600"
+                              fontWeight="medium"
+                            >
+                              Next SDLC Stage:
+                            </Text>
+                            <Text fontSize="sm" fontWeight="bold" color="gray.600">
+                              {IsLoadingNextStage ? "..." : (NextStageName || "None (Final Stage)")}
+                            </Text>
+                          </HStack>
+                        </>
+                      )}
                       <Divider />
                       <HStack justify="space-between">
                         <Text
@@ -488,6 +589,78 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                       {DataProject.projectDesc ||
                         "No description available for this project."}
                     </Text>
+
+                    {/* SDLC Stage Reports Subsection */}
+                    {DataProject.sdlcStageId && (
+                      <>
+                        <Divider my={4} />
+                        <VStack align="stretch" spacing={3}>
+                          <HStack justify="space-between">
+                            <HStack spacing={2}>
+                              <Icon as={FiFileText} color="blue.500" />
+                              <Heading size="sm" color="gray.700">
+                                Current Stage Reports
+                              </Heading>
+                              <Badge colorScheme="blue" fontSize="xs">
+                                {DataProject.sdlcStageName}
+                              </Badge>
+                            </HStack>
+                          </HStack>
+
+                          {IsLoadingReports ? (
+                            <HStack justify="center" py={4}>
+                              <Spinner size="sm" />
+                              <Text fontSize="sm" color="gray.500">Loading reports...</Text>
+                            </HStack>
+                          ) : StageReports.length === 0 ? (
+                            <Text fontSize="sm" color="gray.500" fontStyle="italic">
+                              No reports for this stage yet.
+                            </Text>
+                          ) : (
+                            <VStack spacing={2} align="stretch">
+                              {StageReports.map((report) => (
+                                <Card key={report.id} variant="outline" size="sm">
+                                  <CardBody>
+                                    <VStack align="stretch" spacing={2}>
+                                      <HStack justify="space-between">
+                                        <Badge 
+                                          colorScheme={
+                                            report.statusLabel.toLowerCase().includes("progress") ? "blue" :
+                                            report.statusLabel.toLowerCase().includes("complete") ? "green" :
+                                            report.statusLabel.toLowerCase().includes("block") ? "red" : "gray"
+                                          }
+                                          fontSize="xs"
+                                        >
+                                          {report.statusLabel}
+                                        </Badge>
+                                        <Text fontSize="xs" color="gray.500">
+                                          {new Date(report.createdAt).toLocaleDateString()}
+                                        </Text>
+                                      </HStack>
+                                      <Text fontSize="sm" noOfLines={2}>
+                                        {report.reportNote}
+                                      </Text>
+                                      {report.tagsReport && (
+                                        <HStack spacing={1} flexWrap="wrap">
+                                          {report.tagsReport.split(",").slice(0, 3).map((tag, i) => (
+                                            <Badge key={i} variant="subtle" colorScheme="gray" fontSize="xs">
+                                              {tag.trim()}
+                                            </Badge>
+                                          ))}
+                                        </HStack>
+                                      )}
+                                      <Text fontSize="xs" color="gray.500">
+                                        By: {report.createdByName}
+                                      </Text>
+                                    </VStack>
+                                  </CardBody>
+                                </Card>
+                              ))}
+                            </VStack>
+                          )}
+                        </VStack>
+                      </>
+                    )}
                   </CardBody>
                 </Card>
               </SimpleGrid>

@@ -58,6 +58,7 @@ import {
   FiChevronRight,
   FiExternalLink,
   FiActivity,
+  FiGitBranch,
   FiZap,
 } from "react-icons/fi";
 import { BsGlobe } from "react-icons/bs";
@@ -71,6 +72,7 @@ import {
   TeamTab,
   AnalyticsTab,
   TimelineTab,
+  SdlcProgressTab,
   EditTab,
 } from "./tabs";
 import { ProjectDetailHeader } from "./components/ProjectDetailHeader";
@@ -338,6 +340,12 @@ export default function ProjectManageView() {
                   </TabButtonCustomStyle>
                   <TabButtonCustomStyle>
                     <HStack>
+                      <FiGitBranch size={16} />
+                      <Text>SDLC Progress</Text>
+                    </HStack>
+                  </TabButtonCustomStyle>
+                  <TabButtonCustomStyle>
+                    <HStack>
                       <FiSettings size={16} />
                       <Text>Edit</Text>
                     </HStack>
@@ -418,6 +426,11 @@ export default function ProjectManageView() {
                     <TeamTab DataProject={DataProject} canMake={canMake} />
                     <AnalyticsTab DataProject={DataProject} />
                     <TimelineTab DataProject={DataProject} authData={DataAuth} />
+                    <SdlcProgressTab 
+                      DataProject={DataProject} 
+                      canMake={canMake}
+                      onProjectUpdate={refreshProjectDetail}
+                    />
                     <EditTab DataProject={DataProject} canMake={canMake} />
                   </TabPanels>
                 </CardBody>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import useProjects, {
   ProjectDataResponse,
@@ -10,6 +10,7 @@ import useProjects, {
   ProjectProcurementStatsResponse,
   ProjectMemberTaskStatsResponse,
   ProjectDeadlineStatsResponse,
+  ProjectSdlcStageResponse,
 } from "@/app/services/useProjects";
 import {
   TabPanel,
@@ -79,6 +80,7 @@ const OverviewTab = ({ DataProject, onRefreshProject }: OverviewTabProps) => {
     GetProjectMemberTaskStats,
     GetProjectDeadlineStats,
     UpdateProjectProgressionAndStatus,
+    GetProjectSdlcStages,
   } = useProjects();
 
   // Auth Setup
@@ -108,11 +110,34 @@ const OverviewTab = ({ DataProject, onRefreshProject }: OverviewTabProps) => {
   const [ProcurementStats, setProcurementStats] = useState<ProjectProcurementStatsResponse | null>(null);
   const [MemberStats, setMemberStats] = useState<ProjectMemberTaskStatsResponse | null>(null);
   const [DeadlineStats, setDeadlineStats] = useState<ProjectDeadlineStatsResponse | null>(null);
+  const [SdlcStages, setSdlcStages] = useState<ProjectSdlcStageResponse[]>([]);
   const [IsLoadingStats, setIsLoadingStats] = useState(false);
   const [IsUpdatingProgression, setIsUpdatingProgression] = useState(false);
 
   // Check if project is procurement type
   const isProcurement = DataProject?.projectType === PROJECT_TYPE_PROCUREMENT;
+
+  // Check if project has SDLC setup
+  const hasSdlcSetup = DataProject?.sdlcId != null;
+
+  // Calculate SDLC progression
+  const stageProgression = useMemo(() => {
+    const totalStages = SdlcStages.length;
+    const completedStages = SdlcStages.filter(
+      (stage) => stage.startDate !== null && stage.endDate !== null
+    ).length;
+    const inProgressStages = SdlcStages.filter(
+      (stage) => stage.startDate !== null && stage.endDate === null
+    ).length;
+    const percentage = totalStages > 0 ? Math.round((completedStages / totalStages) * 100) : 0;
+
+    return {
+      totalStages,
+      completedStages,
+      inProgressStages,
+      percentage,
+    };
+  }, [SdlcStages]);
 
   // Fetch All Stats Function
   const fetchAllStats = async () => {
@@ -135,6 +160,14 @@ const OverviewTab = ({ DataProject, onRefreshProject }: OverviewTabProps) => {
       if (procurement?.statusCode === RES_CODE_OK && procurement.data) setProcurementStats(procurement.data);
       if (member?.statusCode === RES_CODE_OK && member.data) setMemberStats(member.data);
       if (deadline?.statusCode === RES_CODE_OK && deadline.data) setDeadlineStats(deadline.data);
+
+      // Fetch SDLC stages separately if project has SDLC setup
+      if (hasSdlcSetup) {
+        const sdlcStages = await GetProjectSdlcStages(DataProject.id, tokenData);
+        if (sdlcStages?.statusCode === RES_CODE_OK && sdlcStages.data) {
+          setSdlcStages(sdlcStages.data);
+        }
+      }
     } catch (error) {
       console.error("Error fetching stats:", error);
       showToast({
@@ -387,6 +420,54 @@ const OverviewTab = ({ DataProject, onRefreshProject }: OverviewTabProps) => {
               </Heading>
 
               <VStack spacing={6} align="stretch">
+                {/* 0. Stage Progression (if SDLC setup) */}
+                {hasSdlcSetup && SdlcStages.length > 0 && (
+                  <Card 
+                    rounded={radiusStyle} 
+                    shadow="md" 
+                    bg={colorMode === "light" ? "white" : "gray.800"} 
+                    borderWidth="1px" 
+                    borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                  >
+                    <CardBody>
+                      <VStack spacing={4} align="stretch">
+                        <HStack justify="space-between">
+                          <Heading size="sm">
+                            SDLC Progression - {DataProject?.sdlcStageName || "N/A"}
+                          </Heading>
+                          <Badge colorScheme="blue" fontSize="md">
+                            {stageProgression.percentage}%
+                          </Badge>
+                        </HStack>
+                        <Progress
+                          value={stageProgression.percentage}
+                          size="lg"
+                          colorScheme="blue"
+                          rounded="full"
+                        />
+                        <Text fontSize="sm" color="gray.500">
+                          {stageProgression.completedStages} of {stageProgression.totalStages} stages completed
+                        </Text>
+
+                        <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mt={4}>
+                          <Box>
+                            <Text fontSize="sm" color="gray.500">Completed Stages</Text>
+                            <Text fontSize="2xl" fontWeight="bold">
+                              {stageProgression.completedStages}/{stageProgression.totalStages}
+                            </Text>
+                          </Box>
+                          <Box>
+                            <Text fontSize="sm" color="gray.500">In Progress</Text>
+                            <Text fontSize="2xl" fontWeight="bold">
+                              {stageProgression.inProgressStages}
+                            </Text>
+                          </Box>
+                        </SimpleGrid>
+                      </VStack>
+                    </CardBody>
+                  </Card>
+                )}
+
                 {/* 1. Backlog Statistics */}
                 {BacklogStats && (
                   <Card rounded={radiusStyle} shadow="md" bg={colorMode === "light" ? "white" : "gray.800"} borderWidth="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"}>

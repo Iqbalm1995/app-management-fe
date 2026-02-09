@@ -705,6 +705,15 @@ export const LinkItems: LinkItemProps[] = [
         children: [],
       },
       {
+        name: "Master SDLC Flow",
+        icon: TbTimeline,
+        iconName: "TbTimeline",
+        link: "/master-data/sdlc-flow",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
         name: "Master Users",
         icon: FiUsers,
         link: "/master-data/users",

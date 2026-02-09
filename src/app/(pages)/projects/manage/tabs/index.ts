@@ -6,4 +6,5 @@ export { default as DocumentationTab } from "./DocumentationTab";
 export { default as TeamTab } from "./TeamTab";
 export { default as AnalyticsTab } from "./AnalyticsTab";
 export { default as TimelineTab } from "./TimelineTab";
+export { default as SdlcProgressTab } from "./SdlcProgressTab";
 export { default as EditTab } from "./EditTab";

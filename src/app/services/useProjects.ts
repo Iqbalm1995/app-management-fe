@@ -219,6 +219,12 @@ export interface ProjectDataResponse {
   proManageByTeamName: string;
   isImported: string;
   reqParentId: string | null;
+  sdlcId: string | null;
+  sdlcCode: string | null;
+  sdlcName: string | null;
+  sdlcStageId: string | null;
+  sdlcStageCode: string | null;
+  sdlcStageName: string | null;
   createdAt: string;
   createdBy: string;
   updatedAt: string | null;
@@ -229,6 +235,40 @@ export interface ProjectDataResponse {
   workPrograms: RequirementWorkProgramDataResponse[];
   projectWorkflowProjectData: ProjectWorkflowResponse[];
   projectWorkflowData: ProjectWorkflowResponse[];
+}
+
+export interface ProjectSdlcStageResponse {
+  id: string;
+  projectId: string;
+  sdlcFlowId: string;
+  stageCode: string | null;
+  stageName: string;
+  stagePosOrder: number;
+  stageStatusBeforeTiggerChange: string | null;
+  stageStatusAfterTriggerChange: string | null;
+  stageTriggerStatus: string;
+  startDate: string | null;
+  endDate: string | null;
+  durationDays: number | null;
+  isActive: boolean;
+  isCompleted: boolean;
+  createdAt: string;
+  createdBy: string;
+}
+
+export interface ProjectSdlcStageReportResponse {
+  id: string;
+  projectId: string;
+  projectFlowStagesId: string;
+  reportNote: string;
+  tagsReport: string | null;
+  statusLabel: string;
+  createdAt: string;
+  createdBy: string;
+  updatedAt: string | null;
+  updatedBy: string | null;
+  createdByName: string;
+  stageName: string;
 }
 
 export interface ProjectStatusHistoryResponse {
@@ -1068,6 +1108,63 @@ interface useProjectsServices {
 
   AssignWorkflowsToProject: (
     payload: { projectId: string; workflowIds: string[] },
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+
+  SetupProjectSdlc: (
+    projectId: string,
+    sdlcFlowId: string,
+    selectedStageIds: string[],
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+
+  GetProjectSdlcStages: (
+    projectId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<ProjectSdlcStageResponse[] | null> | null>;
+
+  UpdateProjectSdlcStageDates: (
+    stageId: string,
+    startDate: string | null,
+    endDate: string | null,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+
+  ListProjectSdlcStageReports: (
+    projectFlowStagesId: string,
+    page: number,
+    pageSize: number,
+    token: string
+  ) => Promise<ApiGenericResponse<ProjectSdlcStageReportResponse[] | null> | null>;
+
+  GetProjectSdlcStageReportById: (
+    id: string,
+    token: string
+  ) => Promise<ApiGenericResponse<ProjectSdlcStageReportResponse | null> | null>;
+
+  InsertProjectSdlcStageReport: (
+    data: {
+      projectId: string;
+      projectFlowStagesId: string;
+      reportNote: string;
+      tagsReport?: string;
+      statusLabel: string;
+    },
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+
+  UpdateProjectSdlcStageReport: (
+    data: {
+      id: string;
+      reportNote: string;
+      tagsReport?: string;
+      statusLabel: string;
+    },
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+
+  DeleteProjectSdlcStageReport: (
+    id: string,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
 
@@ -3985,6 +4082,296 @@ const useProjects = (): useProjectsServices => {
     }
   };
 
+  const SetupProjectSdlc = async (
+    projectId: string,
+    sdlcFlowId: string,
+    selectedStageIds: string[],
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    const PathEndpoint = "/v1/Projects/setup-sdlc";
+
+    try {
+      const response = await axiosInstance.post<ApiGenericResponse<string>>(
+        `${UrlEndpoint}${PathEndpoint}`,
+        {
+          projectId,
+          sdlcFlowId,
+          selectedStageIds,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(err.response?.data?.message || "Error setting up SDLC");
+        return errorResponse;
+      }
+      setError("Unknown error occurred");
+      return {
+        statusCode: RES_CODE_SERVER_ERROR,
+        data: null,
+        message: "Error connect to api",
+        error: null,
+      };
+    }
+  };
+
+  const GetProjectSdlcStages = async (
+    projectId: string,
+    token: string
+  ): Promise<ApiGenericResponse<ProjectSdlcStageResponse[] | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    const PathEndpoint = `/v1/Projects/${projectId}/sdlc-stages`;
+
+    try {
+      const response = await axiosInstance.get<ApiGenericResponse<ProjectSdlcStageResponse[]>>(
+        `${UrlEndpoint}${PathEndpoint}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(err.response?.data?.message || "Error fetching SDLC stages");
+        return errorResponse;
+      }
+      setError("Unknown error occurred");
+      return {
+        statusCode: RES_CODE_SERVER_ERROR,
+        data: null,
+        message: "Error connect to api",
+        error: null,
+      };
+    }
+  };
+
+  const UpdateProjectSdlcStageDates = async (
+    stageId: string,
+    startDate: string | null,
+    endDate: string | null,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    const PathEndpoint = "/v1/Projects/sdlc-stage/update-dates";
+
+    try {
+      const response = await axiosInstance.put<ApiGenericResponse<string>>(
+        `${UrlEndpoint}${PathEndpoint}`,
+        { stageId, startDate, endDate },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(err.response?.data?.message || "Error updating stage dates");
+        return errorResponse;
+      }
+      setError("Unknown error occurred");
+      return {
+        statusCode: RES_CODE_SERVER_ERROR,
+        data: null,
+        message: "Error connect to api",
+        error: null,
+      };
+    }
+  };
+
+  const ListProjectSdlcStageReports = async (
+    projectFlowStagesId: string,
+    page: number,
+    pageSize: number,
+    token: string
+  ): Promise<ApiGenericResponse<ProjectSdlcStageReportResponse[] | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    const PathEndpoint = "/v1/Projects/sdlc-stage-reports/list";
+
+    try {
+      const response = await axiosInstance.post<ApiGenericResponse<ProjectSdlcStageReportResponse[]>>(
+        `${UrlEndpoint}${PathEndpoint}`,
+        { projectFlowStagesId, page, pageSize },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(err.response?.data?.message || "Error fetching reports");
+        return errorResponse;
+      }
+      setError("Unknown error occurred");
+      return {
+        statusCode: RES_CODE_SERVER_ERROR,
+        data: null,
+        message: "Error connect to api",
+        error: null,
+      };
+    }
+  };
+
+  const GetProjectSdlcStageReportById = async (
+    id: string,
+    token: string
+  ): Promise<ApiGenericResponse<ProjectSdlcStageReportResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    const PathEndpoint = `/v1/Projects/sdlc-stage-reports/${id}`;
+
+    try {
+      const response = await axiosInstance.get<ApiGenericResponse<ProjectSdlcStageReportResponse>>(
+        `${UrlEndpoint}${PathEndpoint}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(err.response?.data?.message || "Error fetching report");
+        return errorResponse;
+      }
+      setError("Unknown error occurred");
+      return {
+        statusCode: RES_CODE_SERVER_ERROR,
+        data: null,
+        message: "Error connect to api",
+        error: null,
+      };
+    }
+  };
+
+  const InsertProjectSdlcStageReport = async (
+    data: {
+      projectId: string;
+      projectFlowStagesId: string;
+      reportNote: string;
+      tagsReport?: string;
+      statusLabel: string;
+    },
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    const PathEndpoint = "/v1/Projects/sdlc-stage-reports";
+
+    try {
+      const response = await axiosInstance.post<ApiGenericResponse<string>>(
+        `${UrlEndpoint}${PathEndpoint}`,
+        data,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(err.response?.data?.message || "Error creating report");
+        return errorResponse;
+      }
+      setError("Unknown error occurred");
+      return {
+        statusCode: RES_CODE_SERVER_ERROR,
+        data: null,
+        message: "Error connect to api",
+        error: null,
+      };
+    }
+  };
+
+  const UpdateProjectSdlcStageReport = async (
+    data: {
+      id: string;
+      reportNote: string;
+      tagsReport?: string;
+      statusLabel: string;
+    },
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    const PathEndpoint = "/v1/Projects/sdlc-stage-reports";
+
+    try {
+      const response = await axiosInstance.put<ApiGenericResponse<string>>(
+        `${UrlEndpoint}${PathEndpoint}`,
+        data,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(err.response?.data?.message || "Error updating report");
+        return errorResponse;
+      }
+      setError("Unknown error occurred");
+      return {
+        statusCode: RES_CODE_SERVER_ERROR,
+        data: null,
+        message: "Error connect to api",
+        error: null,
+      };
+    }
+  };
+
+  const DeleteProjectSdlcStageReport = async (
+    id: string,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    const PathEndpoint = `/v1/Projects/sdlc-stage-reports/${id}`;
+
+    try {
+      const response = await axiosInstance.delete<ApiGenericResponse<string>>(
+        `${UrlEndpoint}${PathEndpoint}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(err.response?.data?.message || "Error deleting report");
+        return errorResponse;
+      }
+      setError("Unknown error occurred");
+      return {
+        statusCode: RES_CODE_SERVER_ERROR,
+        data: null,
+        message: "Error connect to api",
+        error: null,
+      };
+    }
+  };
+
   return {
     List,
     GetAssignedProjects,
@@ -4062,6 +4449,15 @@ const useProjects = (): useProjectsServices => {
     ListProjectWorkflowValue,
     GetDetailProjectWorkflowValueById,
     InsertProjectWorkflowValue,
+
+    SetupProjectSdlc,
+    GetProjectSdlcStages,
+    UpdateProjectSdlcStageDates,
+    ListProjectSdlcStageReports,
+    GetProjectSdlcStageReportById,
+    InsertProjectSdlcStageReport,
+    UpdateProjectSdlcStageReport,
+    DeleteProjectSdlcStageReport,
 
     isLoading,
     error,

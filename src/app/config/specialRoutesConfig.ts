@@ -235,6 +235,13 @@ export const dynamicRoutePatterns: DynamicRoutePattern[] = [
     baseMenu: "/master-data",
   },
 
+  //http://localhost:8998/master-data/sdlc-flow/detail?flowId=a7925d13-8432-4d6d-aa68-ae235175cbda
+
+  {
+    pattern: "/master-data/sdlc-flow/detail",
+    baseMenu: "/master-data",
+  },
+
   // ===== TEAMS =====
   {
     pattern: "/teams-center/detail",
