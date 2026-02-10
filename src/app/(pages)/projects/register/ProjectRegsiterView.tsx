@@ -228,7 +228,7 @@ const projectsInsertBindModelSchema = yup.object({
 });
 
 export const initialProjectsInsertValues: ProjectInsertPayload = {
-  projectNo: null, // Optional
+  projectNo: "-", // Default value
   projectName: "", // Required
   projectDesc: null, // Optional
   note: null, // Optional
@@ -520,10 +520,10 @@ export default function ProjectRegisterView({
       setActionLoading(false);
 
       if (projectTypeRegister == PROJECT_TYPE_INTERNAL_DEVELOPMENT) {
-        if (reqType === "rfc") {
+        if (reqType === "RFC") {
           redirect(`/projects-manager/?reqType=rfc`);
         } else {
-          redirect(`/projects-manager/`);
+          redirect(`/projects-manager/?reqType=brd`);
         }
       }
 
@@ -540,7 +540,9 @@ export default function ProjectRegisterView({
     ? PROJECT_ROUTES[projectTypeRegister as keyof typeof PROJECT_ROUTES]
     : PROJECT_ROUTES[PROJECT_TYPE_PROCUREMENT]; // Default fallback
 
-  const backUrl = routeConfig?.back || "/projects-procurements";
+  const backUrl = projectTypeRegister === PROJECT_TYPE_INTERNAL_DEVELOPMENT
+    ? `/projects-manager/?reqType=${reqType?.toLowerCase() || "brd"}`
+    : (routeConfig?.back || "/projects-procurements");
 
   const GetOptionDataServ = async (
     groupCode: string,
@@ -891,7 +893,8 @@ export default function ProjectRegisterView({
                 );
 
                 if (ProjectNoMode === "auto") {
-                  formik.setFieldValue("projectNo", projectNumber);
+                  // formik.setFieldValue("projectNo", projectNumber);
+                  // Auto-generation disabled - project number will be generated after approval
                 }
               }
             }
@@ -935,7 +938,7 @@ export default function ProjectRegisterView({
         statusToast: "error",
       });
       setIsLoadingProcess(false);
-      redirect(`/projects-manager/`);
+      redirect(`/projects-manager/?reqType=${reqType?.toLowerCase() || "brd"}`);
       return;
     } else {
       // console.log(requestData);
@@ -2446,6 +2449,7 @@ export default function ProjectRegisterView({
               selectedRequirement={DataRequirement}
               onRequirementSelect={setDataRequirement}
               onClose={ModalForm.onClose}
+              requirementType={reqType}
             />
           </ModalBody>
 
@@ -2838,6 +2842,7 @@ export default function ProjectRegisterView({
                                   // maxLength={27}
                                   isRequired
                                   isDisabled={DataRequirement != null}
+                                  readOnly
                                   w={{
                                     base: "full",
                                     sm: "full",
@@ -2861,7 +2866,7 @@ export default function ProjectRegisterView({
                       </InputGroupPanel>
 
                       <InputGroupPanel headerTitle="Informasi Umum">
-                        <Flex justifyContent="flex-end" mb={3}>
+                        <Flex justifyContent="flex-end" mb={3} display="none">
                           <HStack spacing={2}>
                             <Text fontSize="sm" color="gray.600">
                               Manual
@@ -2889,7 +2894,6 @@ export default function ProjectRegisterView({
                         <FormControl
                           id="projectNo"
                           isInvalid={formik.errors.projectNo ? true : false}
-                          isRequired
                         >
                           <InputLayout>
                             <FormLabel h={"full"} mt={2}>
@@ -2902,12 +2906,8 @@ export default function ProjectRegisterView({
                                   name="projectNo"
                                   type="text"
                                   onChange={formik.handleChange}
-                                  value={formik.values.projectNo ?? ""}
-                                  placeholder={
-                                    ProjectNoMode === "manual"
-                                      ? "0000/00/BJB/RBB/RBB/YYYY"
-                                      : "0000/00/BJB/RBB/RBB/YYYY"
-                                  }
+                                  value={formik.values.projectNo ?? "-"}
+                                  placeholder="-"
                                   minLength={25}
                                   maxLength={100}
                                   isDisabled={true}
@@ -2922,7 +2922,7 @@ export default function ProjectRegisterView({
                                     lg: "350px",
                                   }}
                                 />
-                                <Tooltip 
+                                <Tooltip
                                   label="Nomor proyek akan muncul setelah proyek Anda di Approve"
                                   placement="right"
                                   hasArrow
@@ -2945,11 +2945,6 @@ export default function ProjectRegisterView({
                                   </Box>
                                 </Tooltip>
                               </HStack>
-                              <Text fontSize="xs" color="gray.500" mt={1}>
-                                {ProjectNoMode === "auto"
-                                  ? "Nomor project digenerate otomatis"
-                                  : "Contoh: 0000/00/BJB/RBB/RBB/YYYY"}
-                              </Text>
                               <FormErrorMessage>
                                 {formik.errors.projectNo}
                               </FormErrorMessage>

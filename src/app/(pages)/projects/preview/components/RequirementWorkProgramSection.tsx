@@ -24,6 +24,8 @@ export const RequirementWorkProgramSection = ({ DataProject }: RequirementWorkPr
 
   const hasRequirement = DataProject.requirementData;
 
+  console.log("RequirementWorkProgramSection - requirementData:", hasRequirement);
+
   return (
     <Card shadow="sm" rounded="xl" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"}>
       <CardHeader bg={colorMode === "light" ? "pink.50" : "pink.900"} roundedTop="xl" py={4}>
@@ -54,16 +56,12 @@ export const RequirementWorkProgramSection = ({ DataProject }: RequirementWorkPr
         ) : (
           <Box
             p={4}
-            bg={colorMode === "light" ? "gray.50" : "gray.800"}
-            rounded="lg"
-            border="1px"
-            borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
           >
             <VStack spacing={4} align="stretch">
               <HStack justify="space-between" align="start">
                 <VStack align="start" spacing={1}>
                   <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"}>
-                    Requirement Number
+                    Nomor Memo
                   </Text>
                   <Text fontWeight="bold" fontSize="md">
                     {hasRequirement?.reqNumber}
@@ -72,6 +70,52 @@ export const RequirementWorkProgramSection = ({ DataProject }: RequirementWorkPr
                 <Badge colorScheme="purple" variant="solid" fontSize="sm">
                   {hasRequirement?.requirementType}
                 </Badge>
+              </HStack>
+
+              <VStack align="start" spacing={1}>
+                <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"}>
+                  Perihal
+                </Text>
+                <Text fontSize="md">
+                  {hasRequirement?.reqNarative || "-"}
+                </Text>
+              </VStack>
+
+              <HStack justify="space-between" align="start">
+                <VStack align="start" spacing={1}>
+                  <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"}>
+                    Tanggal Memo
+                  </Text>
+                  <Text fontSize="md">
+                    {hasRequirement?.reqInititateDate ? new Date(hasRequirement.reqInititateDate).toLocaleDateString("id-ID") : "-"}
+                  </Text>
+                </VStack>
+                <VStack align="start" spacing={1}>
+                  <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"}>
+                    Tanggal Diterima
+                  </Text>
+                  <Text fontSize="md">
+                    {hasRequirement?.reqAcceptedDate ? new Date(hasRequirement.reqAcceptedDate).toLocaleDateString("id-ID") : "-"}
+                  </Text>
+                </VStack>
+                <VStack align="start" spacing={1}>
+                  <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"}>
+                    Durasi
+                  </Text>
+                  <Text fontSize="md">
+                    {hasRequirement?.reqInititateDate && hasRequirement?.reqAcceptedDate 
+                      ? Math.ceil((new Date(hasRequirement.reqAcceptedDate).getTime() - new Date(hasRequirement.reqInititateDate).getTime()) / (1000 * 60 * 60 * 24)) + " hari"
+                      : "-"}
+                  </Text>
+                </VStack>
+                <VStack align="start" spacing={1}>
+                  <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"}>
+                    CarryOver Status
+                  </Text>
+                  <Text fontSize="md">
+                    {hasRequirement?.isCarryOver === "Y" ? "Ya" : hasRequirement?.isCarryOver === "N" ? "Tidak" : "-"}
+                  </Text>
+                </VStack>
               </HStack>
 
               <HStack justify="space-between">

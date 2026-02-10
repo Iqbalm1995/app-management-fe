@@ -59,7 +59,7 @@ export default function ProjectPreviewView({
     GetProjectBacklogStats,
     GetProjectMembers
   } = useProjects();
-  const { ListBacklog } = useRequirements();
+  const { ListBacklog, GetDetailById: GetRequirementDetail } = useRequirements();
 
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
@@ -181,6 +181,25 @@ export default function ProjectPreviewView({
       LoadStatusHistory();
     }
   }, [DataAuth, projectId, tokenData, isInitialized]);
+
+  useEffect(() => {
+    if (DataAuth && DataProject?.reqParentId && tokenData && isInitialized) {
+      console.log("Fetching requirement data for reqParentId:", DataProject.reqParentId);
+      const LoadRequirementData = async () => {
+        const response = await GetRequirementDetail(DataProject.reqParentId, tokenData);
+        console.log("Requirement response:", response);
+        if (response?.statusCode === RES_CODE_OK && response.data) {
+          console.log("Setting requirement data:", response.data);
+          setDataProject((prev) =>
+            prev ? { ...prev, requirementData: response.data } : null
+          );
+        }
+      };
+      LoadRequirementData();
+    } else {
+      console.log("Skipping requirement fetch - reqParentId:", DataProject?.reqParentId);
+    }
+  }, [DataAuth, DataProject?.reqParentId, tokenData, isInitialized]);
 
   useEffect(() => {
     if (DataAuth && projectId && tokenData && isInitialized) {

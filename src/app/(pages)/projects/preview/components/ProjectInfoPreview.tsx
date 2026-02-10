@@ -178,6 +178,9 @@ const ProjectInfoPreview = ({
       {/* General Information Section */}
       <GeneralInfoSection DataProject={DataProject} />
 
+      {/* Requirement & Work Program Section */}
+      <RequirementWorkProgramSection DataProject={DataProject} />
+
       {/* User Assignments Section */}
       <UserAssignmentsSection projectMembers={projectMembers} />
 
@@ -199,9 +202,6 @@ const ProjectInfoPreview = ({
 
       {/* Application Section */}
       <ApplicationSection DataProject={DataProject} />
-
-      {/* Requirement & Work Program Section */}
-      <RequirementWorkProgramSection DataProject={DataProject} />
 
       {/* Backlogs Section */}
       {backlogList && backlogList.length > 0 && (

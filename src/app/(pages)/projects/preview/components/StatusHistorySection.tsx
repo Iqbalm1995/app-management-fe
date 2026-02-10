@@ -59,7 +59,12 @@ export const StatusHistorySection = ({ statusHistory }: StatusHistorySectionProp
       </CardHeader>
       <CardBody p={6}>
         <VStack spacing={0} align="stretch">
-          {statusHistory.map((history, index) => (
+          {[...statusHistory].reverse().map((history, index, arr) => {
+            // Check if NEXT entry (arr[index + 1]) has approval data
+            const nextEntry = arr[index + 1];
+            const hasApprovalFromNext = nextEntry?.approvalNama;
+            
+            return (
             <Box key={history.id}>
               <HStack spacing={4} align="start" py={4}>
                 {/* Timeline Dot */}
@@ -67,13 +72,13 @@ export const StatusHistorySection = ({ statusHistory }: StatusHistorySectionProp
                   <Box
                     w={4}
                     h={4}
-                    bg={history.isApprovalPhase ? "green.500" : "blue.400"}
+                    bg={hasApprovalFromNext ? "green.500" : history.isApprovalPhase ? "yellow.400" : "blue.400"}
                     rounded="full"
                     border="3px solid"
                     borderColor={colorMode === "light" ? "white" : "gray.800"}
                     shadow="md"
                   />
-                  {index < statusHistory.length - 1 && (
+                  {index < arr.length - 1 && (
                     <Box
                       w="2px"
                       h="full"
@@ -87,7 +92,7 @@ export const StatusHistorySection = ({ statusHistory }: StatusHistorySectionProp
                 <VStack align="start" spacing={2} flex={1}>
                   <HStack spacing={3} wrap="wrap">
                     <Badge
-                      colorScheme={history.isApprovalPhase ? "green" : "blue"}
+                      colorScheme={hasApprovalFromNext ? "green" : history.isApprovalPhase ? "yellow" : "blue"}
                       fontSize="sm"
                       px={3}
                       py={1}
@@ -95,19 +100,14 @@ export const StatusHistorySection = ({ statusHistory }: StatusHistorySectionProp
                     >
                       {history.projectStatus}
                     </Badge>
-                    {history.isApprovalPhase && (
-                      <Badge colorScheme="purple" fontSize="xs" px={2} py={1} rounded="full">
-                        Approval Phase
-                      </Badge>
-                    )}
                   </HStack>
 
                   <Text fontSize="sm" color="gray.600">
                     {formatDate(history.createdAt)}
                   </Text>
 
-                  {/* Approval Details */}
-                  {history.isApprovalPhase && history.approvalNama && (
+                  {/* Approval Details - Show if NEXT entry has approval data */}
+                  {hasApprovalFromNext && (
                     <Box
                       mt={2}
                       p={3}
@@ -121,36 +121,36 @@ export const StatusHistorySection = ({ statusHistory }: StatusHistorySectionProp
                         <HStack spacing={2}>
                           <FiUser size={16} color="green" />
                           <Text fontSize="sm" fontWeight="semibold" color="green.700">
-                            Approved by: {history.approvalNama}
+                            Approved by: {nextEntry.approvalNama}
                           </Text>
                         </HStack>
                         
-                        {history.approvalJabatan && (
+                        {nextEntry.approvalJabatan && (
                           <Text fontSize="xs" color="gray.600">
-                            Position: {history.approvalJabatan}
+                            Position: {nextEntry.approvalJabatan}
                           </Text>
                         )}
                         
-                        {history.approvalOrgDivisionName && (
+                        {nextEntry.approvalOrgDivisionName && (
                           <Text fontSize="xs" color="gray.600">
-                            Division: {history.approvalOrgDivisionName}
+                            Division: {nextEntry.approvalOrgDivisionName}
                           </Text>
                         )}
                         
-                        {history.approvalNote && (
+                        {nextEntry.approvalNote && (
                           <Box mt={2} pt={2} borderTop="1px" borderColor="green.200" w="full">
                             <Text fontSize="xs" color="gray.500" fontWeight="semibold">
                               Note:
                             </Text>
                             <Text fontSize="sm" color="gray.700" mt={1}>
-                              {history.approvalNote}
+                              {nextEntry.approvalNote}
                             </Text>
                           </Box>
                         )}
                         
-                        {history.approvalAt && (
+                        {nextEntry.approvalAt && (
                           <Text fontSize="xs" color="gray.500" mt={1}>
-                            Approved at: {formatDate(history.approvalAt)}
+                            Approved at: {formatDate(nextEntry.approvalAt)}
                           </Text>
                         )}
                       </VStack>
@@ -159,7 +159,8 @@ export const StatusHistorySection = ({ statusHistory }: StatusHistorySectionProp
                 </VStack>
               </HStack>
             </Box>
-          ))}
+            );
+          })}
         </VStack>
       </CardBody>
     </Card>

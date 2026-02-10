@@ -24,11 +24,11 @@ interface EnhancedApproverSectionProps {
   onDecline: () => void;
 }
 
-export const EnhancedApproverSection = ({ 
-  DataProject, 
-  canApprove, 
-  onApprove, 
-  onDecline 
+export const EnhancedApproverSection = ({
+  DataProject,
+  canApprove,
+  onApprove,
+  onDecline
 }: EnhancedApproverSectionProps) => {
   const { colorMode } = useColorMode();
 
@@ -37,16 +37,16 @@ export const EnhancedApproverSection = ({
   }
 
   return (
-    <Card 
-      shadow="xl" 
-      rounded="xl" 
-      border="2px" 
+    <Card
+      shadow="xl"
+      rounded="xl"
+      border="2px"
       borderColor="orange.400"
       bg={colorMode === "light" ? "orange.50" : "orange.900"}
     >
-      <CardHeader 
+      <CardHeader
         bgGradient={colorMode === "light" ? "linear(to-r, orange.400, orange.500)" : "linear(to-r, orange.600, orange.700)"}
-        roundedTop="xl" 
+        roundedTop="xl"
         py={4}
       >
         <HStack spacing={3}>
@@ -70,11 +70,11 @@ export const EnhancedApproverSection = ({
               This project is waiting for your approval decision
             </Text>
           </VStack>
-          <Badge 
-            colorScheme="yellow" 
-            fontSize="sm" 
-            px={3} 
-            py={1} 
+          <Badge
+            colorScheme="yellow"
+            fontSize="sm"
+            px={3}
+            py={1}
             rounded="full"
             bg="yellow.400"
             color="gray.800"
@@ -92,7 +92,7 @@ export const EnhancedApproverSection = ({
             <VStack align="stretch" spacing={2}>
               <HStack justify="space-between">
                 <Text fontSize="sm" color="gray.600">Project Code:</Text>
-                <Text fontSize="sm" fontWeight="medium">{DataProject.projectCode}</Text>
+                <Text fontSize="sm" fontStyle="italic" color={colorMode === "light" ? "blue.700" : "blue.200"}>Kode Project akan muncul setelah semua tahapan Approval disetujui</Text>
               </HStack>
               <HStack justify="space-between">
                 <Text fontSize="sm" color="gray.600">Project Type:</Text>
@@ -139,15 +139,15 @@ export const EnhancedApproverSection = ({
             </HStack>
           </Box>
 
-          <Box 
-            p={3} 
-            bg={colorMode === "light" ? "orange.100" : "orange.800"} 
+          <Box
+            p={3}
+            bg={colorMode === "light" ? "orange.100" : "orange.800"}
             rounded="lg"
             border="1px"
             borderColor="orange.300"
           >
             <Text fontSize="xs" color={colorMode === "light" ? "orange.800" : "orange.200"}>
-              <strong>Note:</strong> Please review all project details carefully before making your approval decision. 
+              <strong>Note:</strong> Please review all project details carefully before making your approval decision.
               Your action will be recorded in the project status history.
             </Text>
           </Box>

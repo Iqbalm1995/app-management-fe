@@ -165,7 +165,7 @@ import {
 import { Formik, FormikState, useFormik } from "formik";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
-import { redirect, useParams, usePathname, useRouter } from "next/navigation";
+import { redirect, useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   FiAlertTriangle,
@@ -242,6 +242,7 @@ const DataCounterReqStatus: CounterDataReqStatusProps[] = [
 export default function BRDRFCView() {
   // SetUp auth data on current page
   const router = useRouter();
+  const searchParams = useSearchParams();
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -266,9 +267,13 @@ export default function BRDRFCView() {
   const [filteredMonths, setFilteredMonths] = useState<string[]>([]);
   type ViewMode = "BRD" | "RFC" | "MY";
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    const queryType = searchParams.get("type");
+    if (queryType === "RFC" || queryType === "BRD") {
+      return queryType as ViewMode;
+    }
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("brdRfcViewMode");
-      return saved === "RFC" || saved === "MY" ? saved : "BRD";
+      return saved === "RFC" || saved === "MY" ? (saved as ViewMode) : "BRD";
     }
     return "BRD";
   });

@@ -31,9 +31,9 @@ export const ApplicationSection = ({ DataProject }: ApplicationSectionProps) => 
 
   return (
     <Card shadow="sm" rounded="xl" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"}>
-      <CardHeader 
+      <CardHeader
         bgGradient={colorMode === "light" ? "linear(to-b, secondary.500, secondary.800)" : "linear(to-b, secondary.600, secondary.900)"}
-        roundedTop="xl" 
+        roundedTop="xl"
         py={4}
       >
         <HStack spacing={3}>
@@ -71,11 +71,11 @@ export const ApplicationSection = ({ DataProject }: ApplicationSectionProps) => 
                 <Badge colorScheme="blue" fontSize="xs">
                   {app.appShortName}
                 </Badge>
-                <Badge 
+                <Badge
                   colorScheme={
                     app.appsStatus === "ACTIVE" ? "green" :
-                    app.appsStatus === "DEVELOPMENT" ? "blue" :
-                    app.appsStatus === "TESTING" ? "orange" : "red"
+                      app.appsStatus === "DEVELOPMENT" ? "blue" :
+                        app.appsStatus === "TESTING" ? "orange" : "red"
                   }
                   fontSize="xs"
                 >
@@ -86,10 +86,10 @@ export const ApplicationSection = ({ DataProject }: ApplicationSectionProps) => 
           </HStack>
 
           <VStack spacing={3} align="stretch">
-            <Box>
+            {/* <Box>
               <Text fontSize="xs" color="gray.500" mb={1}>App Code</Text>
               <Text fontSize="sm" fontWeight="medium">{app.appCode || "N/A"}</Text>
-            </Box>
+            </Box> */}
           </VStack>
         </VStack>
       </CardBody>

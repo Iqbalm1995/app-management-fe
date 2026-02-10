@@ -213,6 +213,9 @@ function FormRegisterProjectView() {
   const searchParams = useSearchParams();
   const { colorMode } = useColorMode();
 
+  const reqTypeParam = searchParams.get("reqType");
+  const reqType = reqTypeParam?.toLowerCase() || "brd";
+
   const {
     GetDetailById: GetReqDetail,
     ListBacklog,
@@ -366,7 +369,7 @@ function FormRegisterProjectView() {
       });
 
       setActionLoading(false);
-      redirect(`/projects-manager/`);
+      redirect(`/projects-manager/?reqType=${reqType}`);
       return;
     }
   };
@@ -685,7 +688,7 @@ function FormRegisterProjectView() {
             statusToast: "error",
           });
           setIsLoadingProcess(false);
-          redirect(`/projects-manager/`);
+          redirect(`/projects-manager/?reqType=${reqType}`);
           return;
         } else {
           // console.log(requestData);
@@ -1452,7 +1455,7 @@ function FormRegisterProjectView() {
               overflowX={"auto"}
               justifyContent={"start"}
             >
-              <Link href={`/projects-manager/`}>
+              <Link href={`/projects-manager/?reqType=${reqType}`}>
                 <Button size={"lg"} leftIcon={<FiArrowLeft />}>
                   Back
                 </Button>
