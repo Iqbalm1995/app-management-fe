@@ -173,6 +173,12 @@ export const dynamicRoutePatterns: DynamicRoutePattern[] = [
     baseMenu: "/projects",
   },
 
+  //projects/doc
+  {
+    pattern: "/projects/doc",
+    baseMenu: "/projects",
+  },
+
   // ===== MASTER DATA =====
   // Users
   {

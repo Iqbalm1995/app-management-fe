@@ -132,7 +132,7 @@ const ProjectInfoPreview = ({
         />
 
         <Box position="relative" zIndex={1}>
-          <Box mb={3}>
+          <HStack mb={3} spacing={2}>
             <IconButton
               aria-label="Back"
               icon={<FiArrowLeft />}
@@ -143,7 +143,17 @@ const ProjectInfoPreview = ({
               rounded="lg"
               _hover={{ bg: "whiteAlpha.400" }}
             />
-          </Box>
+            <Button
+              onClick={() => router.push(`/projects/doc?projectId=${DataProject.id}`)}
+              bg="whiteAlpha.300"
+              color="white"
+              size="md"
+              rounded="lg"
+              _hover={{ bg: "whiteAlpha.400" }}
+            >
+              View As Doc
+            </Button>
+          </HStack>
           <Badge
             bg="whiteAlpha.300"
             color="white"
