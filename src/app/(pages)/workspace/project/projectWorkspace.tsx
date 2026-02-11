@@ -1541,6 +1541,48 @@ const TaskCard: React.FC<TaskCardProps> = ({
     }
   };
 
+  const handleUpdateTaskPriority = async (priority: string) => {
+    if (!detailedTask) return;
+
+    try {
+      setIsLoadingDetails(true);
+
+      const updatePayload: any = {
+        id: detailedTask.id,
+        taskPriority: priority,
+      };
+
+      const response = await UpdateTask(updatePayload, getToken());
+
+      if (response?.statusCode === RES_CODE_OK) {
+        setDetailedTask({
+          ...detailedTask,
+          taskPriority: priority,
+        });
+
+        showToast({
+          description: `Priority updated to ${priority}`,
+          statusToast: "success",
+        });
+
+        onRefreshTasks();
+      } else {
+        showToast({
+          description: response?.message || "Failed to update priority",
+          statusToast: "error",
+        });
+      }
+    } catch (error) {
+      console.error("Error updating priority:", error);
+      showToast({
+        description: "An error occurred while updating priority",
+        statusToast: "error",
+      });
+    } finally {
+      setIsLoadingDetails(false);
+    }
+  };
+
   // Handle archiving a task
   const handleArchiveTask = async (taskId: string) => {
     if (!taskId) return;
@@ -1674,8 +1716,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
                 </Text>
                 {task.backlogId && DataBacklogs.find(b => b.id === task.backlogId)?.backlogEnddate && (
                   <HStack spacing={1} whiteSpace="nowrap">
-                    <Icon as={FiCalendar} color="purple.500" boxSize={3} />
-                    <Text fontSize="xs" color="purple.600" fontWeight="medium">
+                    <Icon as={FiClock} color="red.500" boxSize={3} />
+                    <Text fontSize="xs" color="red.600" fontWeight="medium">
                       {formatDateDDMMYYYY(DataBacklogs.find(b => b.id === task.backlogId)!.backlogEnddate!)}
                     </Text>
                   </HStack>
@@ -1961,16 +2003,19 @@ const TaskCard: React.FC<TaskCardProps> = ({
                         <MenuList>
                           <MenuItem
                             icon={<Badge colorScheme="green">LOW</Badge>}
+                            onClick={() => handleUpdateTaskPriority("LOW")}
                           >
                             Low Priority
                           </MenuItem>
                           <MenuItem
                             icon={<Badge colorScheme="orange">MEDIUM</Badge>}
+                            onClick={() => handleUpdateTaskPriority("MEDIUM")}
                           >
                             Medium Priority
                           </MenuItem>
                           <MenuItem
                             icon={<Badge colorScheme="red">HIGH</Badge>}
+                            onClick={() => handleUpdateTaskPriority("HIGH")}
                           >
                             High Priority
                           </MenuItem>
