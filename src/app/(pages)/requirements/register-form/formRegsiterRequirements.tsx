@@ -899,7 +899,7 @@ function RegisterRequirementFormPage({
 
       setActionLoading(false);
       RefreshAction();
-      redirect(`/requirements/brd-rfc`);
+      redirect(`/requirements/brd-rfc?type=${data.requirementType}`);
       return;
     }
   };

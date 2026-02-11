@@ -614,7 +614,7 @@ const ProjectManagerPage = () => {
                               Refresh
                             </Button>
                             {(canMake || canReview) && (
-                              <Link href={`projects-manager/register`}>
+                              <Link href={`projects-manager/register?reqType=${requirementType.toLowerCase()}`}>
                                 <Button
                                   size={"md"}
                                   colorScheme={"secondary"}

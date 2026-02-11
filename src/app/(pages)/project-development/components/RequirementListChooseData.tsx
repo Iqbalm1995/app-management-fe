@@ -94,6 +94,7 @@ interface RequirementListChooseDataProps {
   onRequirementSelect?: (requirement: RequirementsResponse | null) => void;
   selectedRequirement?: RequirementsResponse | null;
   onClose?: () => void;
+  requirementType?: string;
 }
 
 const RequirementListChooseData = memo(
@@ -101,6 +102,7 @@ const RequirementListChooseData = memo(
     onRequirementSelect,
     selectedRequirement,
     onClose,
+    requirementType,
   }: RequirementListChooseDataProps) => {
     const showToast = useToastHelper();
     const { colorMode } = useColorMode();
@@ -127,7 +129,9 @@ const RequirementListChooseData = memo(
     const [ParamFilter, setParamFilter] = useState<ListSearchByParamProps[]>(
       []
     );
-    const [SelectedTypeReq, setSelectedTypeReq] = useState<string>("BRD");
+    const [SelectedTypeReq, setSelectedTypeReq] = useState<string>(
+      requirementType?.toUpperCase() || "BRD"
+    );
     const [HasRequirementMemo, setHasRequirementMemo] = useState<string>("");
 
     const delay = useCallback(
@@ -817,6 +821,7 @@ const RequirementListChooseData = memo(
                     colorScheme={SelectedTypeReq === "BRD" ? "blue" : "gray"}
                     variant={SelectedTypeReq === "BRD" ? "solid" : "outline"}
                     onClick={() => setSelectedTypeReq("BRD")}
+                    isDisabled={requirementType && requirementType.toUpperCase() !== "BRD"}
                   >
                     BRD
                   </Button>
@@ -824,6 +829,7 @@ const RequirementListChooseData = memo(
                     colorScheme={SelectedTypeReq === "RFC" ? "blue" : "gray"}
                     variant={SelectedTypeReq === "RFC" ? "solid" : "outline"}
                     onClick={() => setSelectedTypeReq("RFC")}
+                    isDisabled={requirementType && requirementType.toUpperCase() !== "RFC"}
                   >
                     RFC
                   </Button>

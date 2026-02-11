@@ -91,7 +91,7 @@ export const BacklogsSection = ({ backlogList }: BacklogsSectionProps) => {
           <Table variant="simple">
             <Thead bg={colorMode === "light" ? "gray.50" : "gray.700"}>
               <Tr>
-                <Th>Code</Th>
+                {/* <Th>Code</Th> */}
                 <Th>Name</Th>
                 <Th>Priority</Th>
                 <Th>Status</Th>
@@ -100,11 +100,11 @@ export const BacklogsSection = ({ backlogList }: BacklogsSectionProps) => {
             <Tbody>
               {currentData.map((backlog) => (
                 <Tr key={backlog.id} _hover={{ bg: colorMode === "light" ? "gray.50" : "gray.700" }}>
-                  <Td>
+                  {/* <Td>
                     <Text fontSize="sm" fontWeight="medium">
                       {backlog.backlogCode}
                     </Text>
-                  </Td>
+                  </Td> */}
                   <Td>
                     <Text fontSize="sm">{backlog.backlogName}</Text>
                   </Td>
@@ -123,7 +123,7 @@ export const BacklogsSection = ({ backlogList }: BacklogsSectionProps) => {
             </Tbody>
           </Table>
         </Box>
-        
+
         {totalPages > 1 && (
           <Box p={4} borderTop="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"}>
             <HStack justify="space-between">

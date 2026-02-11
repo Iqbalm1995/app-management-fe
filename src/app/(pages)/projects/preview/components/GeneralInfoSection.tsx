@@ -68,7 +68,7 @@ export const GeneralInfoSection = ({ DataProject }: GeneralInfoSectionProps) => 
       </CardHeader>
       <CardBody p={6}>
         <VStack spacing={6} align="stretch">
-          {/* Project Identification */}
+          {/* Project Identification
           <Box>
             <Text fontSize="sm" fontWeight="bold" color="gray.600" mb={3}>
               Identitas Project
@@ -82,9 +82,9 @@ export const GeneralInfoSection = ({ DataProject }: GeneralInfoSectionProps) => 
                 <InfoItemBadge label="Jenis Pengadaan" value={DataProject.projectAcquisitionName} colorScheme="orange" />
               )}
             </SimpleGrid>
-          </Box>
+          </Box> */}
 
-          <Divider />
+
 
           {/* Project Details */}
           <Box>
@@ -135,18 +135,18 @@ export const GeneralInfoSection = ({ DataProject }: GeneralInfoSectionProps) => 
               Tanggal & Durasi
             </Text>
             <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
-              <InfoItem 
-                label="Tanggal Register" 
-                value={DataProject.projectRegisterDate ? new Date(DataProject.projectRegisterDate).toLocaleDateString('id-ID') : "N/A"} 
+              <InfoItem
+                label="Tanggal Register"
+                value={DataProject.projectRegisterDate ? new Date(DataProject.projectRegisterDate).toLocaleDateString('id-ID') : "N/A"}
               />
-              <InfoItem 
-                label="Tanggal Selesai" 
-                value={DataProject.projectClosedDate ? new Date(DataProject.projectClosedDate).toLocaleDateString('id-ID') : "N/A"} 
+              {/* <InfoItem
+                label="Tanggal Selesai"
+                value={DataProject.projectClosedDate ? new Date(DataProject.projectClosedDate).toLocaleDateString('id-ID') : "N/A"}
               />
-              <InfoItem 
-                label="Durasi (Hari)" 
-                value={DataProject.projectDurationDays || 0} 
-              />
+              <InfoItem
+                label="Durasi (Hari)"
+                value={DataProject.projectDurationDays || 0}
+              /> */}
             </SimpleGrid>
           </Box>
         </VStack>
