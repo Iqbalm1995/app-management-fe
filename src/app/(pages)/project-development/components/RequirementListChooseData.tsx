@@ -821,7 +821,7 @@ const RequirementListChooseData = memo(
                     colorScheme={SelectedTypeReq === "BRD" ? "blue" : "gray"}
                     variant={SelectedTypeReq === "BRD" ? "solid" : "outline"}
                     onClick={() => setSelectedTypeReq("BRD")}
-                    isDisabled={requirementType && requirementType.toUpperCase() !== "BRD"}
+                    isDisabled={!!requirementType && requirementType.toUpperCase() !== "BRD"}
                   >
                     BRD
                   </Button>
@@ -829,7 +829,7 @@ const RequirementListChooseData = memo(
                     colorScheme={SelectedTypeReq === "RFC" ? "blue" : "gray"}
                     variant={SelectedTypeReq === "RFC" ? "solid" : "outline"}
                     onClick={() => setSelectedTypeReq("RFC")}
-                    isDisabled={requirementType && requirementType.toUpperCase() !== "RFC"}
+                    isDisabled={!!requirementType && requirementType.toUpperCase() !== "RFC"}
                   >
                     RFC
                   </Button>

@@ -315,6 +315,9 @@ export interface RequirementShortResponse {
   reqNumber: string;
   reqStatus: string | null;
   reqNarative?: string;
+  reqInititateDate?: string;
+  reqAcceptedDate?: string;
+  isCarryOver?: string;
 }
 
 export interface ProjectWorkflowResponse {

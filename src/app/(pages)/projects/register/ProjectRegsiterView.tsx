@@ -2449,7 +2449,7 @@ export default function ProjectRegisterView({
               selectedRequirement={DataRequirement}
               onRequirementSelect={setDataRequirement}
               onClose={ModalForm.onClose}
-              requirementType={reqType}
+              requirementType={reqType || undefined}
             />
           </ModalBody>
 

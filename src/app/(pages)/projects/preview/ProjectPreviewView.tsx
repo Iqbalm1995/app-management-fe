@@ -186,12 +186,12 @@ export default function ProjectPreviewView({
     if (DataAuth && DataProject?.reqParentId && tokenData && isInitialized) {
       console.log("Fetching requirement data for reqParentId:", DataProject.reqParentId);
       const LoadRequirementData = async () => {
-        const response = await GetRequirementDetail(DataProject.reqParentId, tokenData);
+        const response = await GetRequirementDetail(DataProject.reqParentId!, tokenData);
         console.log("Requirement response:", response);
         if (response?.statusCode === RES_CODE_OK && response.data) {
           console.log("Setting requirement data:", response.data);
           setDataProject((prev) =>
-            prev ? { ...prev, requirementData: response.data } : null
+            prev ? { ...prev, requirementData: response.data as any } : null
           );
         }
       };
