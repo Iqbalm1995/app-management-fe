@@ -120,13 +120,13 @@ const ProjectManagerPage = () => {
   const { GetAssignedProjects } = useProjects();
   const searchParams = useSearchParams();
 
-  // Get requirementType from URL param, default to BRD
+  // Get requirementType from URL param, only use if it's RFC
   const reqTypeParam = searchParams.get("reqType");
-  const requirementType = reqTypeParam?.toUpperCase() || "BRD";
+  const requirementType = reqTypeParam?.toUpperCase() === "RFC" ? "RFC" : "BRD";
 
   // Dynamic header content based on requirementType
   const HeaderDataContent: HeaderContentProps = {
-    titleName: `Projects Manager ${requirementType}`,
+    titleName: `Projects Manager ${requirementType === "RFC" ? "RFC" : ""}`,
     breadCrumb: ["Home", "Projects Manager"],
   };
 
@@ -614,7 +614,7 @@ const ProjectManagerPage = () => {
                               Refresh
                             </Button>
                             {(canMake || canReview) && (
-                              <Link href={`projects-manager/register?reqType=${requirementType.toLowerCase()}`}>
+                              <Link href={`projects-manager/register${requirementType === "RFC" ? `?reqType=${requirementType.toLowerCase()}` : ''}`}>
                                 <Button
                                   size={"md"}
                                   colorScheme={"secondary"}

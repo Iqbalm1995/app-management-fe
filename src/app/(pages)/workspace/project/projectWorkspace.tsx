@@ -144,7 +144,9 @@ import {
   FiCircle,
   FiClock,
   FiCornerDownLeft,
+  FiEye,
   FiFilter,
+  FiFlag,
   FiHash,
   FiInbox,
   FiLink,
@@ -153,6 +155,7 @@ import {
   FiMessageSquare,
   FiNavigation,
   FiPaperclip,
+  FiPlay,
   FiPlus,
   FiPlusCircle,
   FiRefreshCcw,
@@ -208,6 +211,14 @@ const HeaderDataContent: HeaderContentProps = {
 
 const ItemTypes = {
   TASK: "task",
+};
+
+const formatDateDDMMYYYY = (dateString: string): string => {
+  const date = new Date(dateString);
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
 };
 
 // Define custom window interface to add our global variables
@@ -1594,15 +1605,15 @@ const TaskCard: React.FC<TaskCardProps> = ({
             isRecentlyMoved
               ? "blue.50"
               : colorMode === "light"
-              ? "white"
-              : "gray.800"
+                ? "white"
+                : "gray.800"
           }
           borderColor={
             isRecentlyMoved
               ? "blue.300"
               : colorMode === "light"
-              ? "gray.200"
-              : "gray.600"
+                ? "gray.200"
+                : "gray.600"
           }
           transition="all 0.3s ease"
           rounded={radiusStyle}
@@ -1616,8 +1627,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
               task.taskPriority === "HIGH" || task.taskPriority === "CRITICAL"
                 ? "red.400"
                 : task.taskPriority === "MEDIUM"
-                ? "orange.400"
-                : "green.400"
+                  ? "orange.400"
+                  : "green.400"
             }
           />
 
@@ -1632,11 +1643,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
                   py={1}
                   colorScheme={
                     task.taskPriority === "HIGH" ||
-                    task.taskPriority === "CRITICAL"
+                      task.taskPriority === "CRITICAL"
                       ? "red"
                       : task.taskPriority === "MEDIUM"
-                      ? "orange"
-                      : "green"
+                        ? "orange"
+                        : "green"
                   }
                   variant="subtle"
                 >
@@ -1649,16 +1660,27 @@ const TaskCard: React.FC<TaskCardProps> = ({
                 </Text>
               </HStack>
 
-              {/* Task Title */}
-              <Text
-                fontWeight="600"
-                fontSize="md"
-                lineHeight="1.3"
-                color={colorMode === "light" ? "gray.800" : "white"}
-                noOfLines={2}
-              >
-                {task.taskName}
-              </Text>
+              {/* Task Title with Deadline */}
+              <HStack w="full" justify="space-between" align="start" spacing={2}>
+                <Text
+                  fontWeight="600"
+                  fontSize="md"
+                  lineHeight="1.3"
+                  color={colorMode === "light" ? "gray.800" : "white"}
+                  noOfLines={2}
+                  flex={1}
+                >
+                  {task.taskName}
+                </Text>
+                {task.backlogId && DataBacklogs.find(b => b.id === task.backlogId)?.backlogEnddate && (
+                  <HStack spacing={1} whiteSpace="nowrap">
+                    <Icon as={FiCalendar} color="purple.500" boxSize={3} />
+                    <Text fontSize="xs" color="purple.600" fontWeight="medium">
+                      {formatDateDDMMYYYY(DataBacklogs.find(b => b.id === task.backlogId)!.backlogEnddate!)}
+                    </Text>
+                  </HStack>
+                )}
+              </HStack>
 
               {/* Backlog Info */}
               {task.backlogId && DataBacklogs.length > 0 && (
@@ -1782,15 +1804,25 @@ const TaskCard: React.FC<TaskCardProps> = ({
                 )}
               </HStack>
 
-              {/* Due Date */}
-              {task.endDate && (
-                <HStack spacing={2} w="full">
-                  <Icon as={FiNavigation} color="orange.500" boxSize={3} />
-                  <Text fontSize="xs" color="orange.600" fontWeight="medium">
-                    Due {new Date(task.endDate).toLocaleDateString()}
-                  </Text>
-                </HStack>
-              )}
+              {/* Start Date and End Date */}
+              <HStack spacing={2} w="full" justify="space-between">
+                {task.startDate && (
+                  <HStack spacing={2}>
+                    <Icon as={FiPlay} color="green.500" boxSize={3} />
+                    <Text fontSize="xs" color="green.600" fontWeight="medium">
+                      Start Date : {formatDateDDMMYYYY(task.startDate)}
+                    </Text>
+                  </HStack>
+                )}
+                {task.endDate && (
+                  <HStack spacing={2}>
+                    <Icon as={FiFlag} color="orange.500" boxSize={3} />
+                    <Text fontSize="xs" color="orange.600" fontWeight="medium">
+                      End Date : {formatDateDDMMYYYY(task.endDate)}
+                    </Text>
+                  </HStack>
+                )}
+              </HStack>
 
               {/* Last Updated */}
               <HStack spacing={2} w="full">
@@ -1912,10 +1944,10 @@ const TaskCard: React.FC<TaskCardProps> = ({
                               detailedTask.taskPriority === "HIGH"
                                 ? "red"
                                 : detailedTask.taskPriority === "MEDIUM"
-                                ? "orange"
-                                : detailedTask.taskPriority === "CRITICAL"
-                                ? "purple"
-                                : "green"
+                                  ? "orange"
+                                  : detailedTask.taskPriority === "CRITICAL"
+                                    ? "purple"
+                                    : "green"
                             }
                             fontSize={"large"}
                             rounded={"md"}
@@ -1942,11 +1974,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
                           >
                             High Priority
                           </MenuItem>
-                          <MenuItem
+                          {/* <MenuItem
                             icon={<Badge colorScheme="purple">CRITICAL</Badge>}
                           >
                             Critical Priority
-                          </MenuItem>
+                          </MenuItem> */}
                         </MenuList>
                       </Menu>
                       {isLoadingDetails && <Spinner size="sm" ml={2} />}
@@ -2063,10 +2095,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                               <AlertIcon />
                               <AlertDescription>
                                 Task memiliki deadline pada{" "}
-                                {new Date(
-                                  detailedTask.endDate
-                                ).toLocaleDateString()}
-                                .
+                                {formatDateDDMMYYYY(detailedTask.endDate)}.
                               </AlertDescription>
                             </Alert>
                           );
@@ -2144,20 +2173,12 @@ const TaskCard: React.FC<TaskCardProps> = ({
                             rightIcon={<ChevronDownIcon />}
                           >
                             {detailedTask.startDate && detailedTask.endDate
-                              ? `${new Date(
-                                  detailedTask.startDate
-                                ).toLocaleDateString()} - ${new Date(
-                                  detailedTask.endDate
-                                ).toLocaleDateString()}`
+                              ? `${formatDateDDMMYYYY(detailedTask.startDate)} - ${formatDateDDMMYYYY(detailedTask.endDate)}`
                               : detailedTask.startDate
-                              ? `Starts: ${new Date(
-                                  detailedTask.startDate
-                                ).toLocaleDateString()}`
-                              : detailedTask.endDate
-                              ? `Due: ${new Date(
-                                  detailedTask.endDate
-                                ).toLocaleDateString()}`
-                              : "Set dates"}
+                                ? `Starts: ${formatDateDDMMYYYY(detailedTask.startDate)}`
+                                : detailedTask.endDate
+                                  ? `Due: ${formatDateDDMMYYYY(detailedTask.endDate)}`
+                                  : "Set dates"}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent
@@ -2408,6 +2429,12 @@ const TaskCard: React.FC<TaskCardProps> = ({
                               onChange={(e) =>
                                 setNewTaskItemName(e.target.value)
                               }
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && newTaskItemName.trim()) {
+                                  e.preventDefault();
+                                  handleAddTaskItem(e as any);
+                                }
+                              }}
                               pr="4.5rem"
                               variant={"flushed"}
                               px={2}
@@ -2576,50 +2603,50 @@ const TaskCard: React.FC<TaskCardProps> = ({
                             {/* Show menu only if user owns the comment */}
                             {getCurrentUser()?.id ===
                               comment.userCreated.id && (
-                              <Menu>
-                                <MenuButton
-                                  as={Button}
-                                  size="sm"
-                                  variant="ghost"
-                                  isLoading={deletingCommentId === comment.id}
-                                  isDisabled={isUpdatingComment}
-                                >
-                                  <FaEllipsisVertical />
-                                </MenuButton>
-                                <MenuList>
-                                  <MenuItem
-                                    icon={<FaEdit />}
-                                    onClick={() =>
-                                      handleStartEditComment(
-                                        comment.id,
-                                        comment.comCaptions || ""
-                                      )
-                                    }
-                                    isDisabled={
-                                      editingCommentId === comment.id ||
-                                      isUpdatingComment ||
-                                      deletingCommentId === comment.id
-                                    }
+                                <Menu>
+                                  <MenuButton
+                                    as={Button}
+                                    size="sm"
+                                    variant="ghost"
+                                    isLoading={deletingCommentId === comment.id}
+                                    isDisabled={isUpdatingComment}
                                   >
-                                    Edit Comment
-                                  </MenuItem>
-                                  <MenuItem
-                                    icon={<FaTrash />}
-                                    color="red.500"
-                                    onClick={() =>
-                                      handleDeleteComment(comment.id)
-                                    }
-                                    isDisabled={
-                                      editingCommentId === comment.id ||
-                                      isUpdatingComment ||
-                                      deletingCommentId === comment.id
-                                    }
-                                  >
-                                    Delete Comment
-                                  </MenuItem>
-                                </MenuList>
-                              </Menu>
-                            )}
+                                    <FaEllipsisVertical />
+                                  </MenuButton>
+                                  <MenuList>
+                                    <MenuItem
+                                      icon={<FaEdit />}
+                                      onClick={() =>
+                                        handleStartEditComment(
+                                          comment.id,
+                                          comment.comCaptions || ""
+                                        )
+                                      }
+                                      isDisabled={
+                                        editingCommentId === comment.id ||
+                                        isUpdatingComment ||
+                                        deletingCommentId === comment.id
+                                      }
+                                    >
+                                      Edit Comment
+                                    </MenuItem>
+                                    <MenuItem
+                                      icon={<FaTrash />}
+                                      color="red.500"
+                                      onClick={() =>
+                                        handleDeleteComment(comment.id)
+                                      }
+                                      isDisabled={
+                                        editingCommentId === comment.id ||
+                                        isUpdatingComment ||
+                                        deletingCommentId === comment.id
+                                      }
+                                    >
+                                      Delete Comment
+                                    </MenuItem>
+                                  </MenuList>
+                                </Menu>
+                              )}
                           </Flex>
 
                           {/* Comment text or edit input */}
@@ -2743,7 +2770,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                         Assigned To
                       </Text>
                       {ChoosedMemberProjects &&
-                      ChoosedMemberProjects.length > 0 ? (
+                        ChoosedMemberProjects.length > 0 ? (
                         <Wrap>
                           {ChoosedMemberProjects.map((user) => (
                             <WrapItem key={user.id}>
@@ -2855,8 +2882,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
                                         relTask.taskPriority === "HIGH"
                                           ? "red"
                                           : relTask.taskPriority === "MEDIUM"
-                                          ? "orange"
-                                          : "green"
+                                            ? "orange"
+                                            : "green"
                                       }
                                     >
                                       {relTask.taskPriority}
@@ -2877,7 +2904,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                                           Project:
                                         </Text>
                                         {relTask.projectNo &&
-                                        relTask.projectName ? (
+                                          relTask.projectName ? (
                                           <Tooltip
                                             label={`${relTask.projectNo} - ${relTask.projectName}`}
                                             placement="top"
@@ -2986,9 +3013,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                               Start Date:
                             </Text>
                             <Text fontSize="sm">
-                              {new Date(
-                                detailedTask.startDate
-                              ).toLocaleDateString()}
+                              {formatDateDDMMYYYY(detailedTask.startDate)}
                             </Text>
                           </HStack>
                         ) : (
@@ -2999,12 +3024,10 @@ const TaskCard: React.FC<TaskCardProps> = ({
                         {detailedTask?.endDate && (
                           <HStack>
                             <Text fontSize="xs" fontWeight="bold" w="80px">
-                              Due Date:
+                              End Date:
                             </Text>
                             <Text fontSize="sm">
-                              {new Date(
-                                detailedTask.endDate
-                              ).toLocaleDateString()}
+                              {formatDateDDMMYYYY(detailedTask.endDate)}
                             </Text>
                           </HStack>
                         )}
@@ -3070,7 +3093,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                         w={"full"}
                         colorScheme={
                           detailedTask?.isArchived != null &&
-                          detailedTask?.isArchived == "Y"
+                            detailedTask?.isArchived == "Y"
                             ? "teal"
                             : "red"
                         }
@@ -3078,7 +3101,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                           <Icon
                             as={
                               detailedTask?.isArchived != null &&
-                              detailedTask?.isArchived == "Y"
+                                detailedTask?.isArchived == "Y"
                                 ? FiRotateCcw
                                 : FiArchive
                             }
@@ -3090,7 +3113,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                         isLoading={isArchiving}
                       >
                         {detailedTask?.isArchived != null &&
-                        detailedTask?.isArchived == "Y"
+                          detailedTask?.isArchived == "Y"
                           ? "Restore"
                           : "Archive"}
                       </Button>
@@ -3400,8 +3423,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
                                   task.taskPriority === "HIGH"
                                     ? "red"
                                     : task.taskPriority === "MEDIUM"
-                                    ? "orange"
-                                    : "green"
+                                      ? "orange"
+                                      : "green"
                                 }
                               >
                                 {task.taskPriority}
@@ -3851,7 +3874,7 @@ function ProjectWorkspaceView({
   // API Hooks
   const { GetDetailById: GetProjectDetail } = useProjects();
   const { List: GetMasterBoardTasks } = useMasterBoardTask();
-  const { ListBacklog } = useRequirements();
+  const { ListBacklog, GetDetailById: GetRequirementDetail } = useRequirements();
   const {
     ListTasksBoard,
     ListTasksBoardPaged,
@@ -4073,6 +4096,21 @@ function ProjectWorkspaceView({
       }
     }
   }, [DataBacklogs, projectId, backlogIdFromUrl, router]);
+
+  // Fetch requirement data if project has reqParentId
+  useEffect(() => {
+    if (DataProject?.reqParentId && tokenData) {
+      const LoadRequirementData = async () => {
+        const response = await GetRequirementDetail(DataProject.reqParentId!, tokenData);
+        if (response?.statusCode === RES_CODE_OK && response.data) {
+          setDataProject((prev) =>
+            prev ? { ...prev, requirementData: response.data as any } : null
+          );
+        }
+      };
+      LoadRequirementData();
+    }
+  }, [DataProject?.reqParentId, tokenData, GetRequirementDetail]);
 
   // Refresh Project Tasks (triggered by RefreshData changes after initialization)
   useEffect(() => {
@@ -4628,17 +4666,20 @@ function ProjectWorkspaceView({
   const getProjectStats = () => {
     const totalTasks = DataTasks.length;
 
-    // Count by actual board names (with spaces and uppercase)
-    const completedTasks = DataTasks.filter(
-      (task) => task.boardName?.toUpperCase() === "DONE"
+    const todoTasks = DataTasks.filter(
+      (task) => task.boardName?.toUpperCase() === "TO DO"
     ).length;
 
     const inProgressTasks = DataTasks.filter(
       (task) => task.boardName?.toUpperCase() === "IN PROGRESS"
     ).length;
 
-    const todoTasks = DataTasks.filter(
-      (task) => task.boardName?.toUpperCase() === "TO DO"
+    const inReviewTasks = DataTasks.filter(
+      (task) => task.boardName?.toUpperCase() === "IN REVIEW"
+    ).length;
+
+    const completedTasks = DataTasks.filter(
+      (task) => task.boardName?.toUpperCase() === "DONE"
     ).length;
 
     const completionPercentage =
@@ -4646,9 +4687,10 @@ function ProjectWorkspaceView({
 
     return {
       totalTasks,
-      completedTasks,
-      inProgressTasks,
       todoTasks,
+      inProgressTasks,
+      inReviewTasks,
+      completedTasks,
       completionPercentage,
     };
   };
@@ -4850,8 +4892,8 @@ function ProjectWorkspaceView({
                     loadingStep === "project"
                       ? "blue.500"
                       : loadingStep === "init"
-                      ? "gray.400"
-                      : "gray.500"
+                        ? "gray.400"
+                        : "gray.500"
                   }
                 >
                   Loading project details
@@ -4873,8 +4915,8 @@ function ProjectWorkspaceView({
                     loadingStep === "boards"
                       ? "blue.500"
                       : ["init", "project"].includes(loadingStep)
-                      ? "gray.400"
-                      : "gray.500"
+                        ? "gray.400"
+                        : "gray.500"
                   }
                 >
                   Loading board configuration
@@ -4896,8 +4938,8 @@ function ProjectWorkspaceView({
                     loadingStep === "backlogs"
                       ? "blue.500"
                       : ["init", "project", "boards"].includes(loadingStep)
-                      ? "gray.400"
-                      : "gray.500"
+                        ? "gray.400"
+                        : "gray.500"
                   }
                 >
                   Loading backlogs
@@ -4909,8 +4951,8 @@ function ProjectWorkspaceView({
                 {loadingStep === "tasks" ? (
                   <Spinner size="sm" color="blue.500" />
                 ) : ["init", "project", "boards", "backlogs"].includes(
-                    loadingStep
-                  ) ? (
+                  loadingStep
+                ) ? (
                   <Icon as={FiCircle} color="gray.300" boxSize={5} />
                 ) : (
                   <Icon as={FiCheckCircle} color="green.500" boxSize={5} />
@@ -4921,10 +4963,10 @@ function ProjectWorkspaceView({
                     loadingStep === "tasks"
                       ? "blue.500"
                       : ["init", "project", "boards", "backlogs"].includes(
-                          loadingStep
-                        )
-                      ? "gray.400"
-                      : "gray.500"
+                        loadingStep
+                      )
+                        ? "gray.400"
+                        : "gray.500"
                   }
                 >
                   Loading tasks
@@ -4964,14 +5006,14 @@ function ProjectWorkspaceView({
                     loadingStep === "init"
                       ? "16%"
                       : loadingStep === "project"
-                      ? "33%"
-                      : loadingStep === "boards"
-                      ? "50%"
-                      : loadingStep === "backlogs"
-                      ? "66%"
-                      : loadingStep === "tasks"
-                      ? "83%"
-                      : "100%"
+                        ? "33%"
+                        : loadingStep === "boards"
+                          ? "50%"
+                          : loadingStep === "backlogs"
+                            ? "66%"
+                            : loadingStep === "tasks"
+                              ? "83%"
+                              : "100%"
                   }
                 />
               </Box>
@@ -4979,14 +5021,14 @@ function ProjectWorkspaceView({
                 {loadingStep === "init"
                   ? "16%"
                   : loadingStep === "project"
-                  ? "33%"
-                  : loadingStep === "boards"
-                  ? "50%"
-                  : loadingStep === "backlogs"
-                  ? "66%"
-                  : loadingStep === "tasks"
-                  ? "83%"
-                  : "100%"}
+                    ? "33%"
+                    : loadingStep === "boards"
+                      ? "50%"
+                      : loadingStep === "backlogs"
+                        ? "66%"
+                        : loadingStep === "tasks"
+                          ? "83%"
+                          : "100%"}
               </Text>
             </Box>
           </VStack>
@@ -5066,26 +5108,23 @@ function ProjectWorkspaceView({
                           {DataProject?.projectName || "Project Workspace"}
                         </Heading>
 
-                        <HStack spacing={3} fontSize="sm" color="gray.600">
+                        <HStack spacing={3} fontSize="sm" color="gray.600" wrap="wrap">
                           <HStack spacing={1}>
-                            <Text>No. {DataProject?.projectNo}</Text>
+                            <Text fontWeight="500">Memo No:</Text>
+                            <Text>{DataProject?.requirementData?.reqNumber || "-"}</Text>
                           </HStack>
-                          {DataProject?.proManageByDivisionName && (
-                            <HStack spacing={1}>
-                              <FiUser size={14} />
-                              <Text>{DataProject.proManageByDivisionName}</Text>
-                            </HStack>
-                          )}
-                          {DataProject?.projectRegisterDate && (
-                            <HStack spacing={1}>
-                              <FiCalendar size={14} />
-                              <Text>
-                                {new Date(
-                                  DataProject.projectRegisterDate
-                                ).toLocaleDateString()}
-                              </Text>
-                            </HStack>
-                          )}
+                          <HStack spacing={1}>
+                            <Text fontWeight="500">Project No:</Text>
+                            <Text>{DataProject?.projectNo || "-"}</Text>
+                          </HStack>
+                          <HStack spacing={1}>
+                            <Text fontWeight="500">Inisiator:</Text>
+                            <Text>{DataProject?.proOwnerDivisionName || "-"}</Text>
+                          </HStack>
+                          <HStack spacing={1}>
+                            <Text fontWeight="500">Pengelola:</Text>
+                            <Text>{DataProject?.proManageByDivisionName || "-"}</Text>
+                          </HStack>
                         </HStack>
 
                         {/* Application Info - Prominent Display */}
@@ -5172,15 +5211,9 @@ function ProjectWorkspaceView({
                     rounded={radiusStyle}
                   >
                     <HStack spacing={2}>
-                      <Icon as={FiList} color="blue.500" />
+                      <Icon as={FiClock} color="gray.500" />
                       <Text fontSize="sm" fontWeight="medium">
-                        {projectStats.totalTasks} Total
-                      </Text>
-                    </HStack>
-                    <HStack spacing={2}>
-                      <Icon as={FiCheckCircle} color="green.500" />
-                      <Text fontSize="sm" fontWeight="medium">
-                        {projectStats.completedTasks} Done
+                        {projectStats.todoTasks} To Do
                       </Text>
                     </HStack>
                     <HStack spacing={2}>
@@ -5190,9 +5223,21 @@ function ProjectWorkspaceView({
                       </Text>
                     </HStack>
                     <HStack spacing={2}>
-                      <Icon as={FiClock} color="gray.500" />
+                      <Icon as={FiEye} color="purple.500" />
                       <Text fontSize="sm" fontWeight="medium">
-                        {projectStats.todoTasks} To Do
+                        {projectStats.inReviewTasks} In Review
+                      </Text>
+                    </HStack>
+                    <HStack spacing={2}>
+                      <Icon as={FiCheckCircle} color="green.500" />
+                      <Text fontSize="sm" fontWeight="medium">
+                        {projectStats.completedTasks} Done
+                      </Text>
+                    </HStack>
+                    <HStack spacing={2}>
+                      <Icon as={FiList} color="blue.500" />
+                      <Text fontSize="sm" fontWeight="medium">
+                        {projectStats.totalTasks} Total
                       </Text>
                     </HStack>
                     <Divider orientation="vertical" h="20px" />
@@ -5204,6 +5249,19 @@ function ProjectWorkspaceView({
                         Complete
                       </Text>
                     </HStack>
+                    {DataProject?.requirementData?.appLiveTargetDate && (
+                      <>
+                        <Divider orientation="vertical" h="20px" />
+                        <HStack spacing={1}>
+                          <Text fontSize="xs" fontWeight="medium" color="gray.600">
+                            Target Live:
+                          </Text>
+                          <Text fontSize="xs" color="blue.600" fontWeight="bold">
+                            {formatDateDDMMYYYY(DataProject.requirementData.appLiveTargetDate)}
+                          </Text>
+                        </HStack>
+                      </>
+                    )}
                     {lastUpdated && (
                       <>
                         <Divider orientation="vertical" h="20px" />
@@ -5271,6 +5329,18 @@ function ProjectWorkspaceView({
                     ))}
                   </Select>
 
+                  {filterBacklog && (
+                    <HStack spacing={2}>
+                      <Text fontSize="sm" fontWeight="medium" color="gray.600">
+                        Deadline:
+                      </Text>
+                      <Text fontSize="sm" color="blue.600" fontWeight="medium">
+                        {DataBacklogs.find(b => b.id === filterBacklog)?.backlogEnddate
+                          ? formatDateDDMMYYYY(DataBacklogs.find(b => b.id === filterBacklog)!.backlogEnddate!)
+                          : "-"}
+                      </Text>
+                    </HStack>
+                  )}
                   <Checkbox
                     isChecked={showCompletedTasks}
                     onChange={(e) => setShowCompletedTasks(e.target.checked)}
@@ -5279,6 +5349,7 @@ function ProjectWorkspaceView({
                   >
                     <Text fontSize="sm">Show completed</Text>
                   </Checkbox>
+
                 </HStack>
 
                 <Button
@@ -5570,10 +5641,10 @@ function ProjectWorkspaceView({
                     <TaskCard
                       key={task.id}
                       task={task}
-                      onEdit={() => {}}
-                      onDelete={() => {}}
-                      onUpdateTask={() => {}}
-                      onRefreshTasks={() => {}}
+                      onEdit={() => { }}
+                      onDelete={() => { }}
+                      onUpdateTask={() => { }}
+                      onRefreshTasks={() => { }}
                       isRecentlyMoved={false}
                       DataProject={DataProject}
                       DataBacklogs={DataBacklogs}

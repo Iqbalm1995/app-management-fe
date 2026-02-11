@@ -384,7 +384,7 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
               </Button>
             </Link>
             <Link
-              href={`/kanban?projectId=${DataProject?.id}&backlogId=${info.row.original.id}`}
+              href={`/workspace/project?projectId=${DataProject?.id}&backlogId=${info.row.original.id}`}
             >
               <Button size={"xs"} colorScheme={"gray"} leftIcon={<BsKanban />}>
                 Go To Kanban

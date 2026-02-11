@@ -130,7 +130,7 @@ const RequirementListChooseData = memo(
       []
     );
     const [SelectedTypeReq, setSelectedTypeReq] = useState<string>(
-      requirementType?.toUpperCase() || "BRD"
+      requirementType ? requirementType.toUpperCase() : "BRD"
     );
     const [HasRequirementMemo, setHasRequirementMemo] = useState<string>("");
 

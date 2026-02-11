@@ -97,6 +97,7 @@ export interface TaskViewModel {
   projectNo?: string | null;
   projectName?: string | null;
   backlogName?: string | null;
+  backlogEnddate?: string | null;
 }
 
 export interface CreateSimpleTaskPayload {

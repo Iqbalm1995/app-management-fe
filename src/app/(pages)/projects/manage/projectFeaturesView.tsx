@@ -789,7 +789,7 @@ const FeatureBacklogsView = ({
                 <MenuItem
                   icon={<BsKanban />}
                   as={Link}
-                  href={`/kanban?projectId=${DataProject?.id}&backlogId=${info.row.original.id}`}
+                  href={`/workspace/project?projectId=${DataProject?.id}&backlogId=${info.row.original.id}`}
                 >
                   Go To Kanban
                 </MenuItem>
@@ -4342,12 +4342,12 @@ const AssignBacklogModal = ({
   // Separate backlogs
   const assignedBacklogs = availableBacklogs.filter(b => b.projectId !== null);
   const availableOnly = availableBacklogs.filter(b => b.projectId === null);
-  
+
   const filteredAvailable = availableFilter
     ? availableOnly.filter(b =>
-        b.backlogName.toLowerCase().includes(availableFilter.toLowerCase()) ||
-        b.backlogDesc?.toLowerCase().includes(availableFilter.toLowerCase())
-      )
+      b.backlogName.toLowerCase().includes(availableFilter.toLowerCase()) ||
+      b.backlogDesc?.toLowerCase().includes(availableFilter.toLowerCase())
+    )
     : availableOnly;
 
   const selectedBacklogs = availableBacklogs.filter(b => selectedBacklogIds.includes(b.id));

@@ -318,6 +318,7 @@ export interface RequirementShortResponse {
   reqInititateDate?: string;
   reqAcceptedDate?: string;
   isCarryOver?: string;
+  appLiveTargetDate?: string;
 }
 
 export interface ProjectWorkflowResponse {

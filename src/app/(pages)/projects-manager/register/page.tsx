@@ -10,7 +10,7 @@ const PRJ_TYPE_REGISTER: string = PROJECT_TYPE_INTERNAL_DEVELOPMENT;
 function ProjectRegisterPageContent() {
   const searchParams = useSearchParams();
   const reqTypeParam = searchParams.get("reqType");
-  const reqType = reqTypeParam?.toUpperCase() || "BRD";
+  const reqType = reqTypeParam?.toUpperCase();
 
   return (
     <ProjectRegisterView projectTypeRegister={PRJ_TYPE_REGISTER} reqType={reqType} />

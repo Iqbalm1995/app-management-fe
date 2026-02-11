@@ -496,6 +496,7 @@ export default function ProjectRegisterView({
 
     const payload: ProjectRegisterPayload = {
       ...data,
+      projectNo: (data.projectNo && data.projectNo.trim() && data.projectNo !== "-") ? data.projectNo : null,
       backlogsProject,
       workProgramsBacklogs: [],
       workPrograms: data.workPrograms || [],
@@ -523,7 +524,7 @@ export default function ProjectRegisterView({
         if (reqType === "RFC") {
           redirect(`/projects-manager/?reqType=rfc`);
         } else {
-          redirect(`/projects-manager/?reqType=brd`);
+          redirect(`/projects-manager/`);
         }
       }
 
@@ -541,7 +542,7 @@ export default function ProjectRegisterView({
     : PROJECT_ROUTES[PROJECT_TYPE_PROCUREMENT]; // Default fallback
 
   const backUrl = projectTypeRegister === PROJECT_TYPE_INTERNAL_DEVELOPMENT
-    ? `/projects-manager/?reqType=${reqType?.toLowerCase() || "brd"}`
+    ? (reqType === "RFC" ? `/projects-manager/?reqType=rfc` : `/projects-manager/`)
     : (routeConfig?.back || "/projects-procurements");
 
   const GetOptionDataServ = async (
@@ -938,7 +939,7 @@ export default function ProjectRegisterView({
         statusToast: "error",
       });
       setIsLoadingProcess(false);
-      redirect(`/projects-manager/?reqType=${reqType?.toLowerCase() || "brd"}`);
+      redirect(`/projects-manager/${reqType === "RFC" ? `?reqType=${reqType?.toLowerCase()}` : ""}`);
       return;
     } else {
       // console.log(requestData);
@@ -2906,8 +2907,8 @@ export default function ProjectRegisterView({
                                   name="projectNo"
                                   type="text"
                                   onChange={formik.handleChange}
-                                  value={formik.values.projectNo ?? "-"}
-                                  placeholder="-"
+                                  value={formik.values.projectNo === "-" ? "" : (formik.values.projectNo ?? "")}
+                                  placeholder="Nomor Project akan terisi otomatis"
                                   minLength={25}
                                   maxLength={100}
                                   isDisabled={true}

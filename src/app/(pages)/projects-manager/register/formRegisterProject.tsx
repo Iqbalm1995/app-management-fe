@@ -369,7 +369,7 @@ function FormRegisterProjectView() {
       });
 
       setActionLoading(false);
-      redirect(`/projects-manager/?reqType=${reqType}`);
+      redirect(`/projects-manager/${reqType === "rfc" ? `?reqType=${reqType}` : ""}`);
       return;
     }
   };
@@ -688,7 +688,7 @@ function FormRegisterProjectView() {
             statusToast: "error",
           });
           setIsLoadingProcess(false);
-          redirect(`/projects-manager/?reqType=${reqType}`);
+          redirect(`/projects-manager/${reqType === "rfc" ? `?reqType=${reqType}` : ""}`);
           return;
         } else {
           // console.log(requestData);
@@ -1455,7 +1455,7 @@ function FormRegisterProjectView() {
               overflowX={"auto"}
               justifyContent={"start"}
             >
-              <Link href={`/projects-manager/?reqType=${reqType}`}>
+              <Link href={`/projects-manager/${reqType === "rfc" ? `?reqType=${reqType}` : ""}`}>
                 <Button size={"lg"} leftIcon={<FiArrowLeft />}>
                   Back
                 </Button>
@@ -1686,11 +1686,8 @@ function FormRegisterProjectView() {
                               name="projectNo"
                               type="text"
                               onChange={formik.handleChange}
-                              // onChange={(val) =>
-                              //   formik.setFieldValue("projectNo", val)
-                              // }
-                              value={formik.values.projectNo ?? ""}
-                              placeholder={`0000/00/BJB/XXXX/0000-A/0`}
+                              value={formik.values.projectNo === "-" ? "" : (formik.values.projectNo ?? "")}
+                              placeholder="Nomor Project akan terisi otomatis"
                               minLength={25}
                               maxLength={27}
                               isDisabled={ActionLoading}
@@ -2456,34 +2453,34 @@ function FormRegisterProjectView() {
                                             >
                                               <VStack
                                                 align={"start"}
-                                                
+
                                                 spacing={1}
                                                 flex={1}
                                               >
                                                 <HStack spacing={2}>
-                                                <Icon
-                                                  as={FaCircle}
-                                                  color={"secondary.500"}
-                                                  boxSize={2}
-                                                />
-                                                <Text
-                                                  fontWeight={
-                                                    selectedPreset?.id ===
-                                                      preset.id
-                                                      ? 600
-                                                      : 500
-                                                  }
-                                                  color={
-                                                    selectedPreset?.id ===
-                                                      preset.id
-                                                      ? "gray.900"
-                                                      : colorMode == "light"
+                                                  <Icon
+                                                    as={FaCircle}
+                                                    color={"secondary.500"}
+                                                    boxSize={2}
+                                                  />
+                                                  <Text
+                                                    fontWeight={
+                                                      selectedPreset?.id ===
+                                                        preset.id
+                                                        ? 600
+                                                        : 500
+                                                    }
+                                                    color={
+                                                      selectedPreset?.id ===
+                                                        preset.id
                                                         ? "gray.900"
-                                                        : "white"
-                                                  }
-                                                >
-                                                  {preset.wfPresetName}
-                                                </Text>
+                                                        : colorMode == "light"
+                                                          ? "gray.900"
+                                                          : "white"
+                                                    }
+                                                  >
+                                                    {preset.wfPresetName}
+                                                  </Text>
                                                 </HStack>
                                                 {preset.wfPresetDesc && (
                                                   <Text
