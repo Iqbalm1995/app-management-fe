@@ -114,7 +114,7 @@ export const GeneralInfoSection = ({ DataProject }: GeneralInfoSectionProps) => 
             <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
               <InfoItem label="Karakteristik" value={DataProject.projectCharasteristicName} />
               <InfoItem label="Sub-Karakteristik" value={DataProject.projectSubCharasteristicName} />
-              {DataProject.projectSubCharasteristicDesc && (
+              {/* {DataProject.projectSubCharasteristicDesc && (
                 <Box gridColumn={{ base: "1", md: "1 / -1" }}>
                   <Text fontSize="xs" color="gray.500" mb={1} fontWeight="medium">
                     Deskripsi Sub-Karakteristik
@@ -123,7 +123,7 @@ export const GeneralInfoSection = ({ DataProject }: GeneralInfoSectionProps) => 
                     {DataProject.projectSubCharasteristicDesc}
                   </Text>
                 </Box>
-              )}
+              )} */}
             </SimpleGrid>
           </Box>
 
@@ -132,7 +132,7 @@ export const GeneralInfoSection = ({ DataProject }: GeneralInfoSectionProps) => 
           {/* Dates & Duration */}
           <Box>
             <Text fontSize="sm" fontWeight="bold" color="gray.600" mb={3}>
-              Tanggal & Durasi
+              Tanggal Register
             </Text>
             <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
               <InfoItem

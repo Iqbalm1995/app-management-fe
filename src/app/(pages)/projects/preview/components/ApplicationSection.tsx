@@ -15,6 +15,7 @@ import {
   Avatar,
 } from "@chakra-ui/react";
 import { FiPackage } from "react-icons/fi";
+import { getQuarterText } from "@/app/helper/MasterHelper";
 
 interface ApplicationSectionProps {
   DataProject: ProjectDataResponse;
@@ -83,14 +84,35 @@ export const ApplicationSection = ({ DataProject }: ApplicationSectionProps) => 
                 </Badge>
               </HStack>
             </VStack>
+            <VStack align="start" spacing={1} flex={1}>
+              <Text fontSize="xs" color="gray.500" fontWeight="medium">Target Live Application</Text>
+              <Badge
+                colorScheme="blue"
+                fontSize="sm"
+                px={3}
+                py={1}
+                rounded="md"
+              >
+                {DataProject.requirementData?.appLiveTargetDate
+                  ? new Date(DataProject.requirementData.appLiveTargetDate).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                  : "-"}
+              </Badge>
+            </VStack>
+            <VStack align="start" spacing={1} flex={1}>
+              <Text fontSize="xs" color="gray.500" fontWeight="medium">Terbilang Target Live</Text>
+              <Text fontSize="sm" fontWeight="semibold" color={colorMode === "light" ? "gray.800" : "white"}>
+                {DataProject.requirementData?.appLiveTargetDate
+                  ? getQuarterText(DataProject.requirementData.appLiveTargetDate)
+                  : "-"}
+              </Text>
+            </VStack>
+            <VStack align="start" spacing={1} flex={1}>
+              <Text fontSize="xs" color="gray.500" fontWeight="medium">Catatan</Text>
+              <Text fontSize="sm" fontWeight="semibold" color={colorMode === "light" ? "gray.800" : "white"} noOfLines={2}>
+                {DataProject.requirementData?.note || "-"}
+              </Text>
+            </VStack>
           </HStack>
-
-          <VStack spacing={3} align="stretch">
-            {/* <Box>
-              <Text fontSize="xs" color="gray.500" mb={1}>App Code</Text>
-              <Text fontSize="sm" fontWeight="medium">{app.appCode || "N/A"}</Text>
-            </Box> */}
-          </VStack>
         </VStack>
       </CardBody>
     </Card>

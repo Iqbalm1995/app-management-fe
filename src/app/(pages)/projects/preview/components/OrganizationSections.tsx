@@ -178,23 +178,38 @@ export const UserAssignmentsSection = ({ projectMembers }: UserAssignmentsSectio
 interface OrganizationSectionProps {
   DataProject: ProjectDataResponse;
   title: string;
-  colorScheme: "purple" | "orange";
-  type: "initiated" | "managed";
+  colorScheme: "purple" | "orange" | "blue" | "cyan";
+  type: "initiated" | "managed" | "requirement-initiated" | "requirement-managed";
 }
 
 export const OrganizationSection = ({ DataProject, title, colorScheme, type }: OrganizationSectionProps) => {
   const { colorMode } = useColorMode();
 
-  const directorateName = type === "initiated" 
-    ? DataProject.proOwnerDirectorateName 
-    : DataProject.proManageByDirectorateName;
-  const divisionName = type === "initiated" 
-    ? DataProject.proOwnerDivisionName 
-    : DataProject.proManageByDivisionName;
-  const groupName = type === "initiated" 
-    ? DataProject.proOwnerGroupName 
-    : DataProject.proManageByGroupName;
-  const teamName = type === "managed" 
+  const directorateName = type === "requirement-initiated" 
+    ? DataProject.requirementData?.senderDirectorateName || "-"
+    : type === "requirement-managed"
+      ? DataProject.proManageByDirectorateName
+      : type === "initiated" 
+        ? DataProject.proOwnerDirectorateName 
+        : DataProject.proManageByDirectorateName;
+  
+  const divisionName = type === "requirement-initiated" 
+    ? DataProject.requirementData?.senderDivisionName || "-"
+    : type === "requirement-managed"
+      ? DataProject.proManageByDivisionName
+      : type === "initiated" 
+        ? DataProject.proOwnerDivisionName 
+        : DataProject.proManageByDivisionName;
+  
+  const groupName = type === "requirement-initiated" 
+    ? null
+    : type === "requirement-managed"
+      ? DataProject.proManageByGroupName
+      : type === "initiated" 
+        ? DataProject.proOwnerGroupName 
+        : DataProject.proManageByGroupName;
+  
+  const teamName = (type === "managed" || type === "requirement-managed")
     ? DataProject.proManageByTeamName 
     : null;
 
@@ -204,7 +219,7 @@ export const OrganizationSection = ({ DataProject, title, colorScheme, type }: O
         {label}
       </Text>
       <Text fontSize="sm" fontWeight="semibold" color={colorMode === "light" ? "gray.800" : "white"}>
-        {value || "N/A"}
+        {value || "-"}
       </Text>
     </Box>
   );

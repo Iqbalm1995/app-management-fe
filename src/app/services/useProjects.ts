@@ -319,6 +319,12 @@ export interface RequirementShortResponse {
   reqAcceptedDate?: string;
   isCarryOver?: string;
   appLiveTargetDate?: string;
+  senderDirectorateName?: string;
+  senderDivisionName?: string;
+  reqManageByDirectorateName?: string;
+  reqManageByDivisionName?: string;
+  reqManageByGroupName?: string;
+  note?: string;
 }
 
 export interface ProjectWorkflowResponse {

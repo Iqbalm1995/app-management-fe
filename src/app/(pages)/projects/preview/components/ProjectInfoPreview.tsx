@@ -194,6 +194,24 @@ const ProjectInfoPreview = ({
       {/* User Assignments Section */}
       <UserAssignmentsSection projectMembers={projectMembers} />
 
+      {/* Requirement Organization Sections */}
+      {DataProject?.requirementData && (
+        <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+          <OrganizationSection 
+            DataProject={DataProject} 
+            title="Requirement Initiated By" 
+            colorScheme="blue"
+            type="requirement-initiated"
+          />
+          <OrganizationSection 
+            DataProject={DataProject} 
+            title="Requirement Managed By" 
+            colorScheme="cyan"
+            type="requirement-managed"
+          />
+        </SimpleGrid>
+      )}
+
       {/* Organization Sections */}
       <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
         <OrganizationSection 

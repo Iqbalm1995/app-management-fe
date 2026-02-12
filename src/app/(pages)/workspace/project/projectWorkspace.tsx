@@ -1702,18 +1702,17 @@ const TaskCard: React.FC<TaskCardProps> = ({
                 </Text>
               </HStack>
 
-              {/* Task Title with Deadline */}
-              <HStack w="full" justify="space-between" align="start" spacing={2}>
-                <Text
-                  fontWeight="600"
-                  fontSize="md"
-                  lineHeight="1.3"
-                  color={colorMode === "light" ? "gray.800" : "white"}
-                  noOfLines={2}
-                  flex={1}
-                >
-                  {task.taskName}
-                </Text>
+              {/* Backlog Info and Deadline */}
+              <HStack w="full" justify="space-between" align="center" spacing={2}>
+                {task.backlogId && DataBacklogs.length > 0 && (
+                  <HStack spacing={2}>
+                    <Icon as={FiList} color="secondary.500" boxSize={3} />
+                    <Text fontSize="xs" color="secondary.600" fontWeight="medium">
+                      {DataBacklogs.find((b) => b.id === task.backlogId)
+                        ?.backlogName || "Unknown"}
+                    </Text>
+                  </HStack>
+                )}
                 {task.backlogId && DataBacklogs.find(b => b.id === task.backlogId)?.backlogEnddate && (
                   <HStack spacing={1} whiteSpace="nowrap">
                     <Icon as={FiClock} color="red.500" boxSize={3} />
@@ -1724,16 +1723,17 @@ const TaskCard: React.FC<TaskCardProps> = ({
                 )}
               </HStack>
 
-              {/* Backlog Info */}
-              {task.backlogId && DataBacklogs.length > 0 && (
-                <HStack spacing={2}>
-                  <Icon as={FiList} color="secondary.500" boxSize={3} />
-                  <Text fontSize="xs" color="secondary.600" fontWeight="medium">
-                    {DataBacklogs.find((b) => b.id === task.backlogId)
-                      ?.backlogName || "Unknown"}
-                  </Text>
-                </HStack>
-              )}
+              {/* Task Title */}
+              <Text
+                fontWeight="600"
+                fontSize="md"
+                lineHeight="1.3"
+                color={colorMode === "light" ? "gray.800" : "white"}
+                noOfLines={2}
+                w="full"
+              >
+                {task.taskName}
+              </Text>
 
               {/* Description */}
               {task.taskDesc && (
@@ -1980,6 +1980,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                           width="full"
                           textAlign="left"
                           isLoading={isLoadingDetails}
+                          _hover={{}}
                         >
                           <Badge
                             colorScheme={

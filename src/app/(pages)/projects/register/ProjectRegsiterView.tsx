@@ -1937,8 +1937,8 @@ export default function ProjectRegisterView({
       title: "Step 2",
       description: (
         <HStack>
-          <LiaFileInvoiceDollarSolid />
-          <Text>2. Work Programs</Text>
+          <FiUsers />
+          <Text>2. Team Information</Text>
         </HStack>
       ),
     },
@@ -1946,8 +1946,8 @@ export default function ProjectRegisterView({
       title: "Step 3",
       description: (
         <HStack>
-          <FiUsers />
-          <Text>3. Team Information</Text>
+          <LiaFileInvoiceDollarSolid />
+          <Text>3. Work Programs</Text>
         </HStack>
       ),
     },
@@ -2297,6 +2297,16 @@ export default function ProjectRegisterView({
 
     if (DataAuth && DataRequirement && tokenData) {
       console.log("DataRequirement Loaded");
+      // Set proManageBy fields from requirement data
+      if (DataRequirement.reqManageByDirectorateId) {
+        formik.setFieldValue("proManageByDirectorateId", DataRequirement.reqManageByDirectorateId);
+      }
+      if (DataRequirement.reqManageByDivisionId) {
+        formik.setFieldValue("proManageByDivisionId", DataRequirement.reqManageByDivisionId);
+      }
+      if (DataRequirement.reqManageByGroupId) {
+        formik.setFieldValue("proManageByGroupId", DataRequirement.reqManageByGroupId);
+      }
       GetDataListBacklogs();
 
       formik.setFieldValue(`reqParentId`, DataRequirement.id);
@@ -3423,7 +3433,7 @@ export default function ProjectRegisterView({
                                 name="projectDesc"
                                 onChange={formik.handleChange}
                                 defaultValue={formik.values.projectDesc ?? ""}
-                                placeholder={`Perihal`}
+                                placeholder={`Deskripsi`}
                                 maxLength={300}
                               // isDisabled={ActionLoading}
                               />
@@ -3464,6 +3474,7 @@ export default function ProjectRegisterView({
                         <FormControl
                           id="note"
                           isInvalid={formik.errors.note ? true : false}
+                          display="none"
                         >
                           <InputLayout>
                             <FormLabel h={"full"} mt={2}>
@@ -3491,6 +3502,572 @@ export default function ProjectRegisterView({
 
                   {/* WORK PROGRAMS */}
                   {activeStep === 1 && (
+                    <Flex as={Stack} w={"full"} spacing={5}>
+                      <Grid
+                        templateColumns="repeat(12, 1fr)"
+                        gap={5}
+                        w={"full"}
+                      >
+                        <GridItem
+                          colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}
+                          w={"full"}
+                        >
+                          <Card
+                            rounded={radiusStyle}
+                            boxShadow={"md"}
+                            bgGradient={
+                              "linear(to-br, secondary.800, secondary.500)"
+                            }
+                            color={"white"}
+                            minH={"10vh"}
+                          >
+                            <CardHeader pb={1} fontWeight={600}>
+                              Project Assigns ({ChoosedMemberProjects.length})
+                            </CardHeader>
+                            <CardBody>
+                              <Flex
+                                as={Stack}
+                                w={"full"}
+                                p={2}
+                                spacing={3}
+                                overflowX={"auto"}
+                                minH={"50vh"}
+                              >
+                                {ChoosedMemberProjects.length <= 0 && (
+                                  <Flex w={"full"} justifyContent={"center"}>
+                                    <Text pt={5}>Not have personel yet.</Text>
+                                  </Flex>
+                                )}
+                                {(() => {
+                                  console.log(
+                                    "ChoosedMemberProjects:",
+                                    ChoosedMemberProjects
+                                  );
+                                  console.log(
+                                    "Sample member team:",
+                                    ChoosedMemberProjects[0]?.team
+                                  );
+                                  const grouped = ChoosedMemberProjects.reduce(
+                                    (acc, member) => {
+                                      const groupCode =
+                                        member.team?.organization?.group
+                                          ?.orgCode || "UNREGISTERED";
+                                      const groupName =
+                                        member.team?.organization?.group
+                                          ?.orgName ||
+                                        "UNREGISTERED MEMBER GROUP";
+
+                                      if (!acc[groupCode]) {
+                                        acc[groupCode] = {
+                                          groupName,
+                                          members: [],
+                                        };
+                                      }
+                                      acc[groupCode].members.push(member);
+                                      return acc;
+                                    },
+                                    {} as Record<
+                                      string,
+                                      {
+                                        groupName: string;
+                                        members: typeof ChoosedMemberProjects;
+                                      }
+                                    >
+                                  );
+
+                                  return Object.entries(grouped).map(
+                                    ([groupCode, { groupName, members }]) => (
+                                      <Box key={groupCode} w={"full"} mb={4}>
+                                        <Text
+                                          pb={1}
+                                          fontWeight={600}
+                                          fontSize="lg"
+                                          color="white"
+                                        >
+                                          {groupName} ({members.length})
+                                        </Text>
+                                        <Stack spacing={2}>
+                                          {members.map((dt, index) => (
+                                            <Flex
+                                              bg={
+                                                colorMode == "light"
+                                                  ? "white"
+                                                  : "gray.800"
+                                              }
+                                              w={"full"}
+                                              py={4}
+                                              px={5}
+                                              rounded={radiusStyle}
+                                              boxShadow={"md"}
+                                              as={HStack}
+                                              spacing={5}
+                                              key={`${groupCode}-${index}`}
+                                            >
+                                              <Box>
+                                                <Avatar name={dt.nama} src="" />
+                                              </Box>
+                                              <Box>
+                                                <Stack spacing={0}>
+                                                  <Text
+                                                    color={
+                                                      colorMode == "light"
+                                                        ? "gray.900"
+                                                        : "gray.100"
+                                                    }
+                                                    fontWeight={600}
+                                                  >
+                                                    {dt.nama} ({dt.userId})
+                                                  </Text>
+                                                  <Text
+                                                    fontWeight={500}
+                                                    fontSize={"small"}
+                                                    color={
+                                                      colorMode == "light"
+                                                        ? "secondary.800"
+                                                        : "secondary.200"
+                                                    }
+                                                  >
+                                                    {dt.team?.teamName ||
+                                                      dt.jabatan}{" "}
+                                                    |{" "}
+                                                    {dt.teamRole?.specName ||
+                                                      dt.namaUnitKerja}
+                                                  </Text>
+                                                </Stack>
+                                              </Box>
+                                              <Spacer />
+                                              <>
+                                                <Tooltip
+                                                  label={"Remove"}
+                                                  placement="right-end"
+                                                  hasArrow
+                                                >
+                                                  <Button
+                                                    colorScheme={"red"}
+                                                    variant={"ghost"}
+                                                    rounded={radiusStyle}
+                                                    size={"md"}
+                                                    onClick={() =>
+                                                      handleRemoveUserAssign(
+                                                        dt.id
+                                                      )
+                                                    }
+                                                  >
+                                                    <FiX />
+                                                  </Button>
+                                                </Tooltip>
+                                              </>
+                                            </Flex>
+                                          ))}
+                                        </Stack>
+                                      </Box>
+                                    )
+                                  );
+                                })()}
+                              </Flex>
+                            </CardBody>
+                          </Card>
+                        </GridItem>
+                        <GridItem
+                          colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}
+                          w={"full"}
+                          px={4}
+                        >
+                          <Flex as={Stack} w={"full"} spacing={5} py={0}>
+                            <InputGroupPanel headerTitle={`Assign New User`}>
+                              {/* <FormControl id={"filterDivisionId"}>
+                                    <InputLayoutFull>
+                                      <FormLabel h={"full"} mt={2}>
+                                        Divisi
+                                      </FormLabel>
+                                      <Stack spacing={0}>
+                                        <InputSelectOptions
+                                          Id={"filterDivisionId"}
+                                          OptionData={OptionDivision}
+                                          SelectedData={SelectedDivision}
+                                          handleSelectedData={handleSelectedDivision}
+                                          handleUnSelectedData={
+                                            handleUnSelectedDivision
+                                          }
+                                          placeholder={"Pilih Divisi Pengirim"}
+                                          isDisable={true}
+                                        />
+                                      </Stack>
+                                    </InputLayoutFull>
+                                  </FormControl> */}
+
+                              <FormControl id="searchAssignedToUser">
+                                <InputLayoutFull>
+                                  <FormLabel h={"full"} mt={2}>
+                                    Ditugaskan Ke
+                                  </FormLabel>
+                                  <Stack spacing={0} h={"full"}>
+                                    <Input
+                                      id="searchAssignedToUser"
+                                      name="searchAssignedToUser"
+                                      type="text"
+                                      onChange={(e) => {
+                                        handleSearchUserAssign(e.target.value);
+                                      }}
+                                      value={SearchUserInput}
+                                      placeholder="Cari dengan ID Personel / Nama Personel"
+                                    />
+                                  </Stack>
+                                </InputLayoutFull>
+                              </FormControl>
+
+                              <Flex
+                                as={Stack}
+                                w={"full"}
+                                p={2}
+                                spacing={3}
+                                overflowX={"auto"}
+                              >
+                                {DataUsers.map((dt, index) => {
+                                  const availableData =
+                                    ChoosedMemberProjects.find(
+                                      (x) => x.id === dt.id
+                                    );
+                                  return (
+                                    <Flex
+                                      bg={
+                                        colorMode == "light"
+                                          ? "gray.100"
+                                          : "gray.700"
+                                      }
+                                      w={"full"}
+                                      py={3}
+                                      px={8}
+                                      rounded={radiusStyle}
+                                      boxShadow={"md"}
+                                      as={HStack}
+                                      spacing={8}
+                                      key={index}
+                                    >
+                                      <Box>
+                                        <Avatar name={dt.nama} src="" />
+                                      </Box>
+                                      <Box>
+                                        <Stack spacing={0}>
+                                          <Text
+                                            color={"gray.900"}
+                                            fontWeight={600}
+                                          >
+                                            {dt.nama} ({dt.userId})
+                                          </Text>
+                                          <Text
+                                            fontWeight={500}
+                                            fontSize={"small"}
+                                            color={"gray.700"}
+                                          >
+                                            {dt.team?.teamName || dt.jabatan} |{" "}
+                                            {dt.teamRole?.specName ||
+                                              dt.namaUnitKerja}
+                                          </Text>
+                                        </Stack>
+                                      </Box>
+                                      <Spacer />
+                                      <>
+                                        <Button
+                                          rounded={radiusStyle}
+                                          colorScheme={"green"}
+                                          size={"sm"}
+                                          isDisabled={availableData != null}
+                                          onClick={() =>
+                                            handleAddUserAssign(dt)
+                                          }
+                                        >
+                                          <FiPlusCircle />
+                                        </Button>
+                                      </>
+                                    </Flex>
+                                  );
+                                })}
+                              </Flex>
+                            </InputGroupPanel>
+                            <InputGroupPanel
+                              headerTitle={`Division Project Managed By`}
+                            >
+                              <FormControl>
+                                <InputLayoutFull>
+                                  <FormLabel h={"full"} mt={2}>
+                                    Divisi Yang Mengatur Project
+                                  </FormLabel>
+                                  <Stack spacing={0}>
+                                    <Grid
+                                      templateColumns="repeat(3, 1fr)"
+                                      gap={3}
+                                      w={"full"}
+                                    >
+                                      <GridItem
+                                        colSpan={{
+                                          base: 3,
+                                          sm: 3,
+                                          md: 3,
+                                          lg: 3,
+                                        }}
+                                        w={"full"}
+                                      >
+                                        <FormControl
+                                          id={"proManageByDirectorateId"}
+                                          isInvalid={
+                                            formik.errors
+                                              .proManageByDirectorateId
+                                              ? true
+                                              : false
+                                          }
+                                          isRequired
+                                        >
+                                          <FormLabel h={"full"} mt={2}>
+                                            Direktorat
+                                          </FormLabel>
+                                          <Select
+                                            id={`proManageByDirectorateId`}
+                                            options={OrganizationData.filter(
+                                              (f) =>
+                                                f.orgType ==
+                                                ORG_CATEGORY_KEY_DIRECTORATE
+                                            ).map((d) => ({
+                                              label: d.orgName,
+                                              value: d.id,
+                                            }))}
+                                            isDisabled={true}
+                                            isSearchable={true}
+                                            onChange={(e) => {
+                                              if (e) {
+                                                const selected = {
+                                                  label: e.label,
+                                                  value: e.value,
+                                                };
+                                                handleSelectedCustom(
+                                                  selected,
+                                                  "proManageByDirectorateId"
+                                                );
+                                              } else {
+                                                handleUnSelectedCustom(
+                                                  "proManageByDirectorateId"
+                                                );
+                                              }
+                                            }}
+                                            placeholder={
+                                              "Pilih Directorate PIC"
+                                            }
+                                            value={OrganizationData.filter(
+                                              (f) =>
+                                                f.orgType ==
+                                                ORG_CATEGORY_KEY_DIRECTORATE &&
+                                                f.id ==
+                                                formik.values
+                                                  .proManageByDirectorateId
+                                            ).map((d) => ({
+                                              label: d.orgName,
+                                              value: d.id,
+                                            }))}
+                                          />
+
+                                          <FormErrorMessage>
+                                            {
+                                              formik.errors
+                                                .proManageByDirectorateId
+                                            }
+                                          </FormErrorMessage>
+                                        </FormControl>
+                                      </GridItem>
+                                      <GridItem
+                                        colSpan={{
+                                          base: 3,
+                                          sm: 3,
+                                          md: 3,
+                                          lg: 3,
+                                        }}
+                                        w={"full"}
+                                      >
+                                        <FormControl
+                                          id={"proManageByDivisionId"}
+                                          isInvalid={
+                                            formik.errors.proManageByDivisionId
+                                              ? true
+                                              : false
+                                          }
+                                          isRequired
+                                        >
+                                          <FormLabel h={"full"} mt={2}>
+                                            Divisi
+                                          </FormLabel>
+                                          <Select
+                                            id={`proManageByDivisionId`}
+                                            options={OrganizationData.filter(
+                                              (f) =>
+                                                f.orgType ==
+                                                ORG_CATEGORY_KEY_DIVISION
+                                            ).map((d) => ({
+                                              label: d.orgName,
+                                              value: d.id,
+                                            }))}
+                                            isDisabled={true}
+                                            isSearchable={true}
+                                            onChange={async (e) => {
+                                              if (e) {
+                                                const selected = {
+                                                  label: e.label,
+                                                  value: e.value,
+                                                };
+                                                handleSelectedCustom(
+                                                  selected,
+                                                  "proManageByDivisionId"
+                                                );
+
+                                                // Auto-fill direktorat from division's parentId
+                                                const whereParam: ListSearchByParam[] =
+                                                  [
+                                                    {
+                                                      field: "id",
+                                                      operator: "=",
+                                                      value: e.value,
+                                                    },
+                                                  ];
+                                                const divisionData =
+                                                  await GetDataMasterOrg(
+                                                    "",
+                                                    1,
+                                                    whereParam
+                                                  );
+                                                console.log(
+                                                  "Division selected:",
+                                                  e.value
+                                                );
+                                                console.log(
+                                                  "Division data fetched:",
+                                                  divisionData
+                                                );
+                                                if (
+                                                  divisionData.length > 0 &&
+                                                  divisionData[0].parentId
+                                                ) {
+                                                  console.log(
+                                                    "Setting direktorat to:",
+                                                    divisionData[0].parentId
+                                                  );
+                                                  formik.setFieldValue(
+                                                    "proManageByDirectorateId",
+                                                    divisionData[0].parentId
+                                                  );
+                                                }
+                                              } else {
+                                                handleUnSelectedCustom(
+                                                  "proManageByDivisionId"
+                                                );
+                                                handleUnSelectedCustom(
+                                                  "proManageByDirectorateId"
+                                                );
+                                              }
+                                            }}
+                                            placeholder={"Pilih Divisi"}
+                                            isLoading={IsLoadingProcess}
+                                            value={OrganizationData.filter(
+                                              (f) =>
+                                                f.orgType ==
+                                                ORG_CATEGORY_KEY_DIVISION &&
+                                                f.id ==
+                                                formik.values
+                                                  .proManageByDivisionId
+                                            ).map((d) => ({
+                                              label: d.orgName,
+                                              value: d.id,
+                                            }))}
+                                          />
+
+                                          <FormErrorMessage>
+                                            {
+                                              formik.errors
+                                                .proManageByDivisionId
+                                            }
+                                          </FormErrorMessage>
+                                        </FormControl>
+                                      </GridItem>
+                                      <GridItem
+                                        colSpan={{
+                                          base: 3,
+                                          sm: 3,
+                                          md: 3,
+                                          lg: 3,
+                                        }}
+                                        w={"full"}
+                                      >
+                                        <FormControl
+                                          id={"proManageByGroupId"}
+                                          isInvalid={
+                                            formik.errors.proManageByGroupId
+                                              ? true
+                                              : false
+                                          }
+                                        // isRequired
+                                        >
+                                          <FormLabel h={"full"} mt={2}>
+                                            Grup
+                                          </FormLabel>
+
+                                          <Select
+                                            id={`proManageByGroupId`}
+                                            options={OrganizationData.filter(
+                                              (f) =>
+                                                f.orgType ==
+                                                ORG_CATEGORY_KEY_GROUP
+                                            ).map((d) => ({
+                                              label: d.orgName,
+                                              value: d.id,
+                                            }))}
+                                            isSearchable={true}
+                                            onChange={(e) => {
+                                              if (e) {
+                                                const selected = {
+                                                  label: e.label,
+                                                  value: e.value,
+                                                };
+                                                handleSelectedCustom(
+                                                  selected,
+                                                  "proManageByGroupId"
+                                                );
+                                                //   setSelectedGroupOrgPIC(selected);
+                                              } else {
+                                                handleUnSelectedCustom(
+                                                  "proManageByGroupId"
+                                                );
+                                                //   setSelectedGroupOrgPIC(null);
+                                              }
+                                            }}
+                                            placeholder={"Pilih Group"}
+                                            isLoading={IsLoadingProcess}
+                                            value={OrganizationData.filter(
+                                              (f) =>
+                                                f.orgType ==
+                                                ORG_CATEGORY_KEY_GROUP &&
+                                                f.id ==
+                                                formik.values
+                                                  .proManageByGroupId
+                                            ).map((d) => ({
+                                              label: d.orgName,
+                                              value: d.id,
+                                            }))}
+                                          />
+                                          <FormErrorMessage>
+                                            {formik.errors.proManageByGroupId}
+                                          </FormErrorMessage>
+                                        </FormControl>
+                                      </GridItem>
+                                    </Grid>
+                                  </Stack>
+                                </InputLayoutFull>
+                              </FormControl>
+                            </InputGroupPanel>
+                          </Flex>
+                        </GridItem>
+                      </Grid>
+                    </Flex>
+                  )}
+
+                  {/* FEATURE INFORMATION */}
+                  {activeStep === 2 && (
                     <Flex as={Stack} w={"full"} spacing={5}>
                       <InputGroupPanel headerTitle={`Program Kerja User`}>
                         <FormControl>
@@ -4922,574 +5499,6 @@ export default function ProjectRegisterView({
                   )}
 
                   {/* TREAM INFORMAITON */}
-                  {activeStep === 2 && (
-                    <Flex as={Stack} w={"full"} spacing={5}>
-                      <Grid
-                        templateColumns="repeat(12, 1fr)"
-                        gap={5}
-                        w={"full"}
-                      >
-                        <GridItem
-                          colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}
-                          w={"full"}
-                        >
-                          <Card
-                            rounded={radiusStyle}
-                            boxShadow={"md"}
-                            bgGradient={
-                              "linear(to-br, secondary.800, secondary.500)"
-                            }
-                            color={"white"}
-                            minH={"10vh"}
-                          >
-                            <CardHeader pb={1} fontWeight={600}>
-                              Project Assigns ({ChoosedMemberProjects.length})
-                            </CardHeader>
-                            <CardBody>
-                              <Flex
-                                as={Stack}
-                                w={"full"}
-                                p={2}
-                                spacing={3}
-                                overflowX={"auto"}
-                                minH={"50vh"}
-                              >
-                                {ChoosedMemberProjects.length <= 0 && (
-                                  <Flex w={"full"} justifyContent={"center"}>
-                                    <Text pt={5}>Not have personel yet.</Text>
-                                  </Flex>
-                                )}
-                                {(() => {
-                                  console.log(
-                                    "ChoosedMemberProjects:",
-                                    ChoosedMemberProjects
-                                  );
-                                  console.log(
-                                    "Sample member team:",
-                                    ChoosedMemberProjects[0]?.team
-                                  );
-                                  const grouped = ChoosedMemberProjects.reduce(
-                                    (acc, member) => {
-                                      const groupCode =
-                                        member.team?.organization?.group
-                                          ?.orgCode || "UNREGISTERED";
-                                      const groupName =
-                                        member.team?.organization?.group
-                                          ?.orgName ||
-                                        "UNREGISTERED MEMBER GROUP";
-
-                                      if (!acc[groupCode]) {
-                                        acc[groupCode] = {
-                                          groupName,
-                                          members: [],
-                                        };
-                                      }
-                                      acc[groupCode].members.push(member);
-                                      return acc;
-                                    },
-                                    {} as Record<
-                                      string,
-                                      {
-                                        groupName: string;
-                                        members: typeof ChoosedMemberProjects;
-                                      }
-                                    >
-                                  );
-
-                                  return Object.entries(grouped).map(
-                                    ([groupCode, { groupName, members }]) => (
-                                      <Box key={groupCode} w={"full"} mb={4}>
-                                        <Text
-                                          pb={1}
-                                          fontWeight={600}
-                                          fontSize="lg"
-                                          color="white"
-                                        >
-                                          {groupName} ({members.length})
-                                        </Text>
-                                        <Stack spacing={2}>
-                                          {members.map((dt, index) => (
-                                            <Flex
-                                              bg={
-                                                colorMode == "light"
-                                                  ? "white"
-                                                  : "gray.800"
-                                              }
-                                              w={"full"}
-                                              py={4}
-                                              px={5}
-                                              rounded={radiusStyle}
-                                              boxShadow={"md"}
-                                              as={HStack}
-                                              spacing={5}
-                                              key={`${groupCode}-${index}`}
-                                            >
-                                              <Box>
-                                                <Avatar name={dt.nama} src="" />
-                                              </Box>
-                                              <Box>
-                                                <Stack spacing={0}>
-                                                  <Text
-                                                    color={
-                                                      colorMode == "light"
-                                                        ? "gray.900"
-                                                        : "gray.100"
-                                                    }
-                                                    fontWeight={600}
-                                                  >
-                                                    {dt.nama} ({dt.userId})
-                                                  </Text>
-                                                  <Text
-                                                    fontWeight={500}
-                                                    fontSize={"small"}
-                                                    color={
-                                                      colorMode == "light"
-                                                        ? "secondary.800"
-                                                        : "secondary.200"
-                                                    }
-                                                  >
-                                                    {dt.team?.teamName ||
-                                                      dt.jabatan}{" "}
-                                                    |{" "}
-                                                    {dt.teamRole?.specName ||
-                                                      dt.namaUnitKerja}
-                                                  </Text>
-                                                </Stack>
-                                              </Box>
-                                              <Spacer />
-                                              <>
-                                                <Tooltip
-                                                  label={"Remove"}
-                                                  placement="right-end"
-                                                  hasArrow
-                                                >
-                                                  <Button
-                                                    colorScheme={"red"}
-                                                    variant={"ghost"}
-                                                    rounded={radiusStyle}
-                                                    size={"md"}
-                                                    onClick={() =>
-                                                      handleRemoveUserAssign(
-                                                        dt.id
-                                                      )
-                                                    }
-                                                  >
-                                                    <FiX />
-                                                  </Button>
-                                                </Tooltip>
-                                              </>
-                                            </Flex>
-                                          ))}
-                                        </Stack>
-                                      </Box>
-                                    )
-                                  );
-                                })()}
-                              </Flex>
-                            </CardBody>
-                          </Card>
-                        </GridItem>
-                        <GridItem
-                          colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }}
-                          w={"full"}
-                          px={4}
-                        >
-                          <Flex as={Stack} w={"full"} spacing={5} py={0}>
-                            <InputGroupPanel headerTitle={`Assign New User`}>
-                              {/* <FormControl id={"filterDivisionId"}>
-                                    <InputLayoutFull>
-                                      <FormLabel h={"full"} mt={2}>
-                                        Divisi
-                                      </FormLabel>
-                                      <Stack spacing={0}>
-                                        <InputSelectOptions
-                                          Id={"filterDivisionId"}
-                                          OptionData={OptionDivision}
-                                          SelectedData={SelectedDivision}
-                                          handleSelectedData={handleSelectedDivision}
-                                          handleUnSelectedData={
-                                            handleUnSelectedDivision
-                                          }
-                                          placeholder={"Pilih Divisi Pengirim"}
-                                          isDisable={true}
-                                        />
-                                      </Stack>
-                                    </InputLayoutFull>
-                                  </FormControl> */}
-
-                              <FormControl id="searchAssignedToUser">
-                                <InputLayoutFull>
-                                  <FormLabel h={"full"} mt={2}>
-                                    Ditugaskan Ke
-                                  </FormLabel>
-                                  <Stack spacing={0} h={"full"}>
-                                    <Input
-                                      id="searchAssignedToUser"
-                                      name="searchAssignedToUser"
-                                      type="text"
-                                      onChange={(e) => {
-                                        handleSearchUserAssign(e.target.value);
-                                      }}
-                                      value={SearchUserInput}
-                                      placeholder="Cari dengan ID Personel / Nama Personel"
-                                    />
-                                  </Stack>
-                                </InputLayoutFull>
-                              </FormControl>
-
-                              <Flex
-                                as={Stack}
-                                w={"full"}
-                                p={2}
-                                spacing={3}
-                                overflowX={"auto"}
-                              >
-                                {DataUsers.map((dt, index) => {
-                                  const availableData =
-                                    ChoosedMemberProjects.find(
-                                      (x) => x.id === dt.id
-                                    );
-                                  return (
-                                    <Flex
-                                      bg={
-                                        colorMode == "light"
-                                          ? "gray.100"
-                                          : "gray.700"
-                                      }
-                                      w={"full"}
-                                      py={3}
-                                      px={8}
-                                      rounded={radiusStyle}
-                                      boxShadow={"md"}
-                                      as={HStack}
-                                      spacing={8}
-                                      key={index}
-                                    >
-                                      <Box>
-                                        <Avatar name={dt.nama} src="" />
-                                      </Box>
-                                      <Box>
-                                        <Stack spacing={0}>
-                                          <Text
-                                            color={"gray.900"}
-                                            fontWeight={600}
-                                          >
-                                            {dt.nama} ({dt.userId})
-                                          </Text>
-                                          <Text
-                                            fontWeight={500}
-                                            fontSize={"small"}
-                                            color={"gray.700"}
-                                          >
-                                            {dt.team?.teamName || dt.jabatan} |{" "}
-                                            {dt.teamRole?.specName ||
-                                              dt.namaUnitKerja}
-                                          </Text>
-                                        </Stack>
-                                      </Box>
-                                      <Spacer />
-                                      <>
-                                        <Button
-                                          rounded={radiusStyle}
-                                          colorScheme={"green"}
-                                          size={"sm"}
-                                          isDisabled={availableData != null}
-                                          onClick={() =>
-                                            handleAddUserAssign(dt)
-                                          }
-                                        >
-                                          <FiPlusCircle />
-                                        </Button>
-                                      </>
-                                    </Flex>
-                                  );
-                                })}
-                              </Flex>
-                            </InputGroupPanel>
-                            <InputGroupPanel
-                              headerTitle={`Division Project Managed By`}
-                            >
-                              <FormControl>
-                                <InputLayoutFull>
-                                  <FormLabel h={"full"} mt={2}>
-                                    Divisi Yang Mengatur Project
-                                  </FormLabel>
-                                  <Stack spacing={0}>
-                                    <Grid
-                                      templateColumns="repeat(3, 1fr)"
-                                      gap={3}
-                                      w={"full"}
-                                    >
-                                      <GridItem
-                                        colSpan={{
-                                          base: 3,
-                                          sm: 3,
-                                          md: 3,
-                                          lg: 3,
-                                        }}
-                                        w={"full"}
-                                      >
-                                        <FormControl
-                                          id={"proManageByDirectorateId"}
-                                          isInvalid={
-                                            formik.errors
-                                              .proManageByDirectorateId
-                                              ? true
-                                              : false
-                                          }
-                                          isRequired
-                                        >
-                                          <FormLabel h={"full"} mt={2}>
-                                            Direktorat
-                                          </FormLabel>
-                                          <Select
-                                            id={`proManageByDirectorateId`}
-                                            options={OrganizationData.filter(
-                                              (f) =>
-                                                f.orgType ==
-                                                ORG_CATEGORY_KEY_DIRECTORATE
-                                            ).map((d) => ({
-                                              label: d.orgName,
-                                              value: d.id,
-                                            }))}
-                                            isDisabled={true}
-                                            isSearchable={true}
-                                            onChange={(e) => {
-                                              if (e) {
-                                                const selected = {
-                                                  label: e.label,
-                                                  value: e.value,
-                                                };
-                                                handleSelectedCustom(
-                                                  selected,
-                                                  "proManageByDirectorateId"
-                                                );
-                                              } else {
-                                                handleUnSelectedCustom(
-                                                  "proManageByDirectorateId"
-                                                );
-                                              }
-                                            }}
-                                            placeholder={
-                                              "Pilih Directorate PIC"
-                                            }
-                                            value={OrganizationData.filter(
-                                              (f) =>
-                                                f.orgType ==
-                                                ORG_CATEGORY_KEY_DIRECTORATE &&
-                                                f.id ==
-                                                formik.values
-                                                  .proManageByDirectorateId
-                                            ).map((d) => ({
-                                              label: d.orgName,
-                                              value: d.id,
-                                            }))}
-                                          />
-
-                                          <FormErrorMessage>
-                                            {
-                                              formik.errors
-                                                .proManageByDirectorateId
-                                            }
-                                          </FormErrorMessage>
-                                        </FormControl>
-                                      </GridItem>
-                                      <GridItem
-                                        colSpan={{
-                                          base: 3,
-                                          sm: 3,
-                                          md: 3,
-                                          lg: 3,
-                                        }}
-                                        w={"full"}
-                                      >
-                                        <FormControl
-                                          id={"proManageByDivisionId"}
-                                          isInvalid={
-                                            formik.errors.proManageByDivisionId
-                                              ? true
-                                              : false
-                                          }
-                                          isRequired
-                                        >
-                                          <FormLabel h={"full"} mt={2}>
-                                            Divisi
-                                          </FormLabel>
-                                          <Select
-                                            id={`proManageByDivisionId`}
-                                            options={OrganizationData.filter(
-                                              (f) =>
-                                                f.orgType ==
-                                                ORG_CATEGORY_KEY_DIVISION
-                                            ).map((d) => ({
-                                              label: d.orgName,
-                                              value: d.id,
-                                            }))}
-                                            isSearchable={true}
-                                            onChange={async (e) => {
-                                              if (e) {
-                                                const selected = {
-                                                  label: e.label,
-                                                  value: e.value,
-                                                };
-                                                handleSelectedCustom(
-                                                  selected,
-                                                  "proManageByDivisionId"
-                                                );
-
-                                                // Auto-fill direktorat from division's parentId
-                                                const whereParam: ListSearchByParam[] =
-                                                  [
-                                                    {
-                                                      field: "id",
-                                                      operator: "=",
-                                                      value: e.value,
-                                                    },
-                                                  ];
-                                                const divisionData =
-                                                  await GetDataMasterOrg(
-                                                    "",
-                                                    1,
-                                                    whereParam
-                                                  );
-                                                console.log(
-                                                  "Division selected:",
-                                                  e.value
-                                                );
-                                                console.log(
-                                                  "Division data fetched:",
-                                                  divisionData
-                                                );
-                                                if (
-                                                  divisionData.length > 0 &&
-                                                  divisionData[0].parentId
-                                                ) {
-                                                  console.log(
-                                                    "Setting direktorat to:",
-                                                    divisionData[0].parentId
-                                                  );
-                                                  formik.setFieldValue(
-                                                    "proManageByDirectorateId",
-                                                    divisionData[0].parentId
-                                                  );
-                                                }
-                                              } else {
-                                                handleUnSelectedCustom(
-                                                  "proManageByDivisionId"
-                                                );
-                                                handleUnSelectedCustom(
-                                                  "proManageByDirectorateId"
-                                                );
-                                              }
-                                            }}
-                                            placeholder={"Pilih Divisi"}
-                                            isLoading={IsLoadingProcess}
-                                            value={OrganizationData.filter(
-                                              (f) =>
-                                                f.orgType ==
-                                                ORG_CATEGORY_KEY_DIVISION &&
-                                                f.id ==
-                                                formik.values
-                                                  .proManageByDivisionId
-                                            ).map((d) => ({
-                                              label: d.orgName,
-                                              value: d.id,
-                                            }))}
-                                          />
-
-                                          <FormErrorMessage>
-                                            {
-                                              formik.errors
-                                                .proManageByDivisionId
-                                            }
-                                          </FormErrorMessage>
-                                        </FormControl>
-                                      </GridItem>
-                                      <GridItem
-                                        colSpan={{
-                                          base: 3,
-                                          sm: 3,
-                                          md: 3,
-                                          lg: 3,
-                                        }}
-                                        w={"full"}
-                                      >
-                                        <FormControl
-                                          id={"proManageByGroupId"}
-                                          isInvalid={
-                                            formik.errors.proManageByGroupId
-                                              ? true
-                                              : false
-                                          }
-                                        // isRequired
-                                        >
-                                          <FormLabel h={"full"} mt={2}>
-                                            Grup
-                                          </FormLabel>
-
-                                          <Select
-                                            id={`proManageByGroupId`}
-                                            options={OrganizationData.filter(
-                                              (f) =>
-                                                f.orgType ==
-                                                ORG_CATEGORY_KEY_GROUP &&
-                                                f.parentId ==
-                                                formik.values
-                                                  .proManageByDivisionId
-                                            ).map((d) => ({
-                                              label: d.orgName,
-                                              value: d.id,
-                                            }))}
-                                            isSearchable={true}
-                                            onChange={(e) => {
-                                              if (e) {
-                                                const selected = {
-                                                  label: e.label,
-                                                  value: e.value,
-                                                };
-                                                handleSelectedCustom(
-                                                  selected,
-                                                  "proManageByGroupId"
-                                                );
-                                                //   setSelectedGroupOrgPIC(selected);
-                                              } else {
-                                                handleUnSelectedCustom(
-                                                  "proManageByGroupId"
-                                                );
-                                                //   setSelectedGroupOrgPIC(null);
-                                              }
-                                            }}
-                                            placeholder={"Pilih Group"}
-                                            isLoading={IsLoadingProcess}
-                                            value={OrganizationData.filter(
-                                              (f) =>
-                                                f.orgType ==
-                                                ORG_CATEGORY_KEY_GROUP &&
-                                                f.id ==
-                                                formik.values
-                                                  .proManageByGroupId
-                                            ).map((d) => ({
-                                              label: d.orgName,
-                                              value: d.id,
-                                            }))}
-                                          />
-                                          <FormErrorMessage>
-                                            {formik.errors.proManageByGroupId}
-                                          </FormErrorMessage>
-                                        </FormControl>
-                                      </GridItem>
-                                    </Grid>
-                                  </Stack>
-                                </InputLayoutFull>
-                              </FormControl>
-                            </InputGroupPanel>
-                          </Flex>
-                        </GridItem>
-                      </Grid>
-                    </Flex>
-                  )}
-
-                  {/* FEATURE INFORMATION */}
                   {activeStep === 3 && (
                     <Flex as={Stack} w={"full"} spacing={5}>
                       {/* FOR TYPE PROJECT REGISTER INTERNAL DEVELOPMENT */}

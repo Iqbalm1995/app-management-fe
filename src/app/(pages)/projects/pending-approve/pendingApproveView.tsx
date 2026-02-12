@@ -214,13 +214,11 @@ export default function PendingApproveView() {
               <Text fontWeight={600}>{info.row.original.projectName}</Text>
             </Flex>
             {/* Perihal/Narrative */}
-            {info.row.original.requirementData && (
-              <Flex as={Stack} spacing={0}>
-                <Text fontSize="xs" color="gray.600" noOfLines={2}>
-                  {info.row.original.requirementData.reqNarative || "N/A"}
-                </Text>
-              </Flex>
-            )}
+            <Flex as={Stack} spacing={0}>
+              <Text fontSize="xs" color="gray.600" noOfLines={2}>
+                {info.row.original.requirementData?.reqNarative || "N/A"}
+              </Text>
+            </Flex>
             {/* Hidden - Project Code and Number */}
             {/* <Flex as={Stack} spacing={0}>
               <Text fontWeight={600}>{info.row.original.projectCode}</Text>
@@ -524,6 +522,14 @@ export default function PendingApproveView() {
                 if (reqResponse.data.workPrograms) {
                   updatedProject.workPrograms = reqResponse.data.workPrograms;
                 }
+              }
+            }
+            
+            // If requirementData exists but reqNarative is missing, fetch it
+            if (project.reqParentId && updatedProject.requirementData && !updatedProject.requirementData.reqNarative) {
+              const reqResponse = await GetRequirementDetail(project.reqParentId, tokenData);
+              if (reqResponse?.statusCode === RES_CODE_OK && reqResponse.data) {
+                updatedProject.requirementData.reqNarative = reqResponse.data.reqNarative;
               }
             }
 

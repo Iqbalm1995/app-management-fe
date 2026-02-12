@@ -899,7 +899,7 @@ function RequirementDetailView() {
               onClick={() => RefreshAction()}
               colorScheme={"secondary"}
             >
-              Muat Ulang
+              Refresh
             </Button>
           </Flex>
         </GridItem>
@@ -1946,7 +1946,7 @@ const ReqInfoGeneralSectionView = ({
         <FormControl>
           <InputLayoutFull>
             <FormLabel h={"full"} mt={2}>
-              Diraktorat Pengirim
+              Direktorat Pengirim
             </FormLabel>
             <Stack spacing={0} h={"full"}>
               {DataRequirement.isHaveMemo == "Y" ? (
@@ -2046,15 +2046,15 @@ const ReqInfoGeneralSectionView = ({
               <Text>
                 {DataRequirement.reqInititateDate != null && DataRequirement.reqAcceptedDate != null
                   ? (() => {
-                      const startDate = new Date(DataRequirement.reqInititateDate);
-                      const endDate = new Date(DataRequirement.reqAcceptedDate);
-                      const diffMs = endDate.getTime() - startDate.getTime();
-                      const diffDays = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
-                      return `${diffDays} Hari Kalender`;
-                    })()
+                    const startDate = new Date(DataRequirement.reqInititateDate);
+                    const endDate = new Date(DataRequirement.reqAcceptedDate);
+                    const diffMs = endDate.getTime() - startDate.getTime();
+                    const diffDays = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+                    return `${diffDays} Hari Kalender`;
+                  })()
                   : DataRequirement.reqDurationDay != null
-                  ? `${DataRequirement.reqDurationDay} Hari Kalender`
-                  : "N/A"}
+                    ? `${DataRequirement.reqDurationDay} Hari Kalender`
+                    : "N/A"}
               </Text>
             </Stack>
           </InputLayoutFull>
@@ -3256,16 +3256,16 @@ const ReqInfoAcceptanceView = ({
   activeStep,
 }: ReqSectionProps) => {
   // Get latest history for review dates
-  const latestHistory = DataRequirement?.requirementHistories && DataRequirement.requirementHistories.length > 0
+  const latestHistory = (DataRequirement && DataRequirement.requirementHistories && DataRequirement.requirementHistories.length > 0)
     ? DataRequirement.requirementHistories[DataRequirement.requirementHistories.length - 1]
     : null;
 
-  const reviewStartDate = DataRequirement.reqReviewStartDate || latestHistory?.reqReviewStartDate;
-  const reviewEndDate = DataRequirement.reqReviewEndDate || latestHistory?.reqReviewEndDate;
+  const reviewStartDate = DataRequirement.reqReviewStartDate || (latestHistory && latestHistory.reqReviewStartDate);
+  const reviewEndDate = DataRequirement.reqReviewEndDate || (latestHistory && latestHistory.reqReviewEndDate);
 
   return (
     <>
-      {DataRequirement?.requirementHistories && DataRequirement.requirementHistories.length > 0 ? (
+      {(DataRequirement && DataRequirement.requirementHistories && DataRequirement.requirementHistories.length > 0) ? (
         DataRequirement.requirementHistories.map((history, idx) => (
           <InputGroupPanel key={idx} headerTitle={`Former BRD Acceptance #${idx + 1}`}>
             <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"}>
