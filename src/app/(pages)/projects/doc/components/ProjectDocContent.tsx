@@ -22,9 +22,10 @@ import { radiusStyle } from "@/app/constants/applicationConstants";
 
 interface ProjectDocContentProps {
   project: ProjectDataResponse;
+  statusHistory?: any[];
 }
 
-export default function ProjectDocContent({ project }: ProjectDocContentProps) {
+export default function ProjectDocContent({ project, statusHistory }: ProjectDocContentProps) {
   const { colorMode } = useColorMode();
 
   const InfoRow = ({ label, value }: { label: string; value: string | number }) => (
@@ -120,6 +121,34 @@ export default function ProjectDocContent({ project }: ProjectDocContentProps) {
           </Box>
         )}
 
+
+        {/* Approval Users */}
+        {statusHistory && statusHistory.filter((h: any) => h.approvalNama && h.approvalNama.trim()).length > 0 && (
+          <Box mt={4}>
+            <Heading size="md" mb={4}>
+              Approval Users
+            </Heading>
+            <Table variant="simple" size="sm" border="1px" borderColor="gray.300">
+              <Thead bg="gray.50">
+                <Tr>
+                  <Th border="1px" borderColor="gray.300" fontWeight="bold" color="black">Name</Th>
+                  <Th border="1px" borderColor="gray.300" fontWeight="bold" color="black">Stage & Status</Th>
+                </Tr>
+              </Thead>
+              <Tbody>
+                {statusHistory
+                  .filter((history: any) => history.approvalNama && history.approvalNama.trim())
+                  .reverse()
+                  .map((history: any, idx: number) => (
+                    <Tr key={idx}>
+                      <Td border="1px" borderColor="gray.300">{history.approvalNama} ({history.approvalBy})</Td>
+                      <Td border="1px" borderColor="gray.300">Stage {idx + 1} - APPROVED</Td>
+                    </Tr>
+                  ))}
+              </Tbody>
+            </Table>
+          </Box>
+        )}
         {/* SDLC */}
         {(project.sdlcName || project.sdlcStageName) && (
           <Box>

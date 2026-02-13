@@ -249,7 +249,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Procurement",
         icon: TbContract,
-        link: "/projects-procurements",
+        link: "/projects-procurements?reqType=brd",
         role: ["admin"],
         menuID: "1",
         children: [],
