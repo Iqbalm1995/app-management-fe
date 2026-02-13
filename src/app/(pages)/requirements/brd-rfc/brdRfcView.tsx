@@ -1589,91 +1589,83 @@ export default function BRDRFCView() {
           </ModalHeader>
           <ModalCloseButton />
           <ModalBody py={6} px={6}>
-            <Grid templateColumns="repeat(2, 1fr)" gap={4}>
-              <Link href="/requirements/brd/register" onClick={onRegisterModalClose} style={{ width: "100%" }}>
-                <Box
-                  p={8}
-                  rounded={radiusStyle}
-                  bgGradient="linear(to-br, blue.50, blue.100)"
-                  border="2px solid"
-                  borderColor="blue.200"
-                  cursor="pointer"
-                  transition="all 0.3s"
-                  _hover={{
-                    bgGradient: "linear(to-br, blue.100, blue.200)",
-                    borderColor: "blue.500",
-                    transform: "translateY(-6px)",
-                    boxShadow: "0 12px 24px rgba(59, 130, 246, 0.3)"
-                  }}
-                  h="full"
-                  display="flex"
-                  flexDirection="column"
-                  justifyContent="space-between"
-                  alignItems="center"
-                  position="relative"
-                  overflow="hidden"
-                  _before={{
-                    content: '""',
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    bgGradient: "linear(135deg, rgba(255,255,255,0.5), rgba(255,255,255,0))",
-                    pointerEvents: "none"
-                  }}
-                >
-                  <Box fontSize="4xl" mb={4} color="blue.600" fontWeight="bold">
-                    BRD
-                  </Box>
-                  <Text fontSize="sm" color="blue.700" textAlign="center" fontWeight="500">
-                    Business Requirements Document
-                  </Text>
-                </Box>
-              </Link>
+            <HStack spacing={0} w="full">
+              {/* BRD Button */}
+              <Button
+                as={Link}
+                href="/requirements/brd/register"
+                onClick={onRegisterModalClose}
+                flex={1}
+                h="140px"
+                bg={colorMode === "light" ? "white" : "gray.700"}
+                border="2px solid"
+                borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                borderRightWidth="1px"
+                roundedLeft={radiusStyle}
+                roundedRight="none"
+                flexDirection="column"
+                gap={3}
+                transition="all 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
+                _hover={{
+                  bg: "secondary.500",
+                  borderColor: "secondary.500",
+                  transform: "translateY(-4px)",
+                  boxShadow: "0 0 20px 8px rgba(0, 119, 254, 0.4), 0 0 40px 12px rgba(0, 119, 254, 0.2), 0 0 60px 16px rgba(0, 119, 254, 0.1)",
+                  "& > *": {
+                    color: "white",
+                  },
+                }}
+                _active={{
+                  transform: "translateY(-2px)",
+                  boxShadow: "0 0 15px 6px rgba(0, 119, 254, 0.3), 0 0 30px 10px rgba(0, 119, 254, 0.15)",
+                }}
+              >
+                <Text fontSize="4xl" fontWeight="bold" color={colorMode === "light" ? "gray.700" : "white"}>
+                  BRD
+                </Text>
+                <Text fontSize="sm" color="gray.500" textAlign="center" px={2}>
+                  Business Requirements Document
+                </Text>
+              </Button>
 
-              <Link href="/requirements/rfc/register" onClick={onRegisterModalClose} style={{ width: "100%" }}>
-                <Box
-                  p={8}
-                  rounded={radiusStyle}
-                  bgGradient="linear(to-br, purple.50, purple.100)"
-                  border="2px solid"
-                  borderColor="purple.200"
-                  cursor="pointer"
-                  transition="all 0.3s"
-                  _hover={{
-                    bgGradient: "linear(to-br, purple.100, purple.200)",
-                    borderColor: "purple.500",
-                    transform: "translateY(-6px)",
-                    boxShadow: "0 12px 24px rgba(168, 85, 247, 0.3)"
-                  }}
-                  h="full"
-                  display="flex"
-                  flexDirection="column"
-                  justifyContent="space-between"
-                  alignItems="center"
-                  position="relative"
-                  overflow="hidden"
-                  _before={{
-                    content: '""',
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    bgGradient: "linear(135deg, rgba(255,255,255,0.5), rgba(255,255,255,0))",
-                    pointerEvents: "none"
-                  }}
-                >
-                  <Box fontSize="4xl" mb={4} color="purple.600" fontWeight="bold">
-                    RFC
-                  </Box>
-                  <Text fontSize="sm" color="purple.700" textAlign="center" fontWeight="500">
-                    Request for Change
-                  </Text>
-                </Box>
-              </Link>
-            </Grid>
+              {/* RFC Button */}
+              <Button
+                as={Link}
+                href="/requirements/rfc/register"
+                onClick={onRegisterModalClose}
+                flex={1}
+                h="140px"
+                bg={colorMode === "light" ? "white" : "gray.700"}
+                border="2px solid"
+                borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                borderLeftWidth="1px"
+                roundedRight={radiusStyle}
+                roundedLeft="none"
+                flexDirection="column"
+                gap={3}
+                transition="all 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
+                _hover={{
+                  bg: "secondary.500",
+                  borderColor: "secondary.500",
+                  transform: "translateY(-4px)",
+                  boxShadow: "0 0 20px 8px rgba(0, 119, 254, 0.4), 0 0 40px 12px rgba(0, 119, 254, 0.2), 0 0 60px 16px rgba(0, 119, 254, 0.1)",
+                  "& > *": {
+                    color: "white",
+                  },
+                }}
+                _active={{
+                  transform: "translateY(-2px)",
+                  boxShadow: "0 0 15px 6px rgba(0, 119, 254, 0.3), 0 0 30px 10px rgba(0, 119, 254, 0.15)",
+                }}
+              >
+                <Text fontSize="4xl" fontWeight="bold" color={colorMode === "light" ? "gray.700" : "white"}>
+                  RFC
+                </Text>
+                <Text fontSize="sm" color="gray.500" textAlign="center" px={2}>
+                  Request for Change
+                </Text>
+              </Button>
+            </HStack>
           </ModalBody>
         </ModalContent>
       </Modal>
