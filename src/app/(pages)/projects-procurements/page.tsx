@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   Badge,
@@ -118,6 +119,9 @@ const HeaderDataContent: HeaderContentProps = {
 };
 
 const ProjectManagerPage = () => {
+  const searchParams = useSearchParams();
+  const reqTypeParam = searchParams.get("reqType");
+  const requirementType = reqTypeParam?.toUpperCase() === "RFC" ? "RFC" : "BRD";
   useDocumentTitle("Projects Procurement");
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
@@ -682,7 +686,7 @@ const ProjectManagerPage = () => {
                               Refresh
                             </Button>
                             {(canMake || canReview) && (
-                              <Link href={`projects-procurements/register`}>
+                              <Link href={`projects-procurements/register?reqType=${requirementType.toLowerCase()}`}>
                                 <Button
                                   size={"md"}
                                   colorScheme={"secondary"}
