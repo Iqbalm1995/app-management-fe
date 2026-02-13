@@ -64,6 +64,10 @@ import {
 import { FiArrowRightCircle, FiFilter, FiX } from "react-icons/fi";
 import Link from "next/link";
 
+
+interface ModalRegisterProjectProps {
+  requirementType?: string;
+}
 const brdFilter: ListSearchByParamProps = {
   field: "requirementType",
   operator: "=",
@@ -71,7 +75,7 @@ const brdFilter: ListSearchByParamProps = {
   filterLabel: "Tipe",
 };
 
-const ModalRegisterProject = memo(() => {
+const ModalRegisterProject = memo(({ requirementType }: ModalRegisterProjectProps) => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
   const { ListUnregistProject: ListReq } = useRequirements();
@@ -94,9 +98,11 @@ const ModalRegisterProject = memo(() => {
   const [IsLoadingDivisionSelect, setIsLoadingDivisionSelect] = useState(false);
   const [OptionDivision, setOptionDivision] = useState<OptionListProps[]>([]);
   const [ParamFilter, setParamFilter] = useState<ListSearchByParamProps[]>([]);
-  const [SelectedTypeReq, setSelectedTypeReq] = useState<string>("BRD");
+  const [SelectedTypeReq, setSelectedTypeReq] = useState<string>(() => {
+    return requirementType?.toUpperCase() === "RFC" ? "RFC" : "BRD";
+  });
 
-  const delay = useCallback((ms: number) => 
+  const delay = useCallback((ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms)), []);
 
   const pagination = useMemo(
@@ -303,8 +309,8 @@ const ModalRegisterProject = memo(() => {
               <Text fontWeight={600}>
                 {info.row.original.reqInititateDate
                   ? stringToDateFormatedReverse(
-                      info.row.original.reqInititateDate
-                    )
+                    info.row.original.reqInititateDate
+                  )
                   : "-"}
               </Text>
             </Flex>
@@ -313,8 +319,8 @@ const ModalRegisterProject = memo(() => {
               <Text fontWeight={600}>
                 {info.row.original.reqAcceptedDate
                   ? stringToDateFormatedReverse(
-                      info.row.original.reqAcceptedDate
-                    )
+                    info.row.original.reqAcceptedDate
+                  )
                   : "-"}
               </Text>
             </Flex>
@@ -356,7 +362,7 @@ const ModalRegisterProject = memo(() => {
             <Flex fontSize={"small"} as={Stack} spacing={0}>
               <Text>Ditugaskan Ke :</Text>
               {Array.isArray(info.row.original.approvalDatas) &&
-              info.row.original.approvalDatas.length > 0 ? (
+                info.row.original.approvalDatas.length > 0 ? (
                 info.row.original.approvalDatas.map((x, idx) => (
                   <Text fontWeight={600} key={idx} fontSize="smaller">
                     {idx + 1}. {x.approverUserFirstName ?? "-"}{" "}
@@ -515,56 +521,43 @@ const ModalRegisterProject = memo(() => {
       field: "reqStatus",
       operator: "=",
       value: REQ_STATUS_APPROVED,
+      filterLabel: "Status",
+    };
+
+    const requirementTypeFilter: ListSearchByParamProps = {
+      field: "requirementType",
+      operator: "=",
+      value: requirementType?.toUpperCase() === "RFC" ? "RFC" : "BRD", // Use prop directly
       filterLabel: "Tipe",
     };
-    
+
     // Load division data
     if (OptionDivision.length <= 0) {
       GetDataDivision("", MAX_SIZE_TABLE);
     }
-    
-    // Add filter
-    const filterWhereData: ListSearchByParamProps[] = addParamFilterUpdate(
-      ParamFilter,
+
+    // Add both filters at once
+    let filterWhereData: ListSearchByParamProps[] = addParamFilterUpdate(
+      [],
       brdStatusApprove
     );
+    filterWhereData = addParamFilterUpdate(
+      filterWhereData,
+      requirementTypeFilter
+    );
+
+    console.log("Initial filters setup:", filterWhereData);
     setParamFilter(filterWhereData);
-  }, []);
+  }, [requirementType]); // Depend on requirementType prop
 
   useEffect(() => {
-    const brdFilterSelected: ListSearchByParamProps[] = [
-      {
-        field: "requirementType",
-        operator: "=",
-        value: SelectedTypeReq,
-        filterLabel: "Tipe",
-      },
-    ];
-    
-    const updatedFilters = brdFilterSelected.reduce(
-      (acc, filter) => addParamFilterUpdate(acc, filter),
-      ParamFilter
-    );
-    setParamFilter(updatedFilters);
-  }, [SelectedTypeReq]);
-
-  useEffect(() => {
-    const brdStatusApproveStatic: ListSearchByParamProps = {
-      field: "reqStatus",
-      operator: "=",
-      value: REQ_STATUS_APPROVED,
-      filterLabel: "Tipe",
-    };
-    const filterWhereData: ListSearchByParamProps[] = addParamFilter(
-      ParamFilter,
-      brdStatusApproveStatic
-    );
+    // Use ParamFilter directly - it already contains both status and requirement type filters
     if (DataAuth && DataAuth.team && tokenData) {
       const PayloadList: PaggingListPayload = {
         search: globalFilter,
         limit: pageSize,
         page: pageIndex,
-        filterWhere: filterWhereData,
+        filterWhere: ParamFilter,
         fieldOrder: ["createdAt"],
         orderDir: "desc",
       };
@@ -692,9 +685,12 @@ const ModalRegisterProject = memo(() => {
               <RadioGroup
                 id={"FilterReqType"}
                 onChange={(val) => {
-                  setSelectedTypeReq(val);
+                  if (!requirementType) { // Only allow changes if no prop is passed
+                    setSelectedTypeReq(val);
+                  }
                 }}
                 value={SelectedTypeReq}
+                isDisabled={!!requirementType} // Disable when prop is provided
               >
                 <Flex w={"full"} as={HStack} justifyContent={"end"}>
                   <Radio value={"BRD"}>BRD</Radio>
@@ -742,8 +738,8 @@ const ModalRegisterProject = memo(() => {
                                 {" "}
                                 {dt.field === "senderDivisionId"
                                   ? OptionDivision.find(
-                                      (opt) => opt.value === dt.value
-                                    )?.label || dt.value
+                                    (opt) => opt.value === dt.value
+                                  )?.label || dt.value
                                   : dt.value}
                               </Text>
                             </Text>
