@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -118,7 +118,7 @@ const HeaderDataContent: HeaderContentProps = {
   breadCrumb: ["Home", "Project", "Procurement"],
 };
 
-const ProjectManagerPage = () => {
+const ProjectManagerPageContent = () => {
   const searchParams = useSearchParams();
   const reqTypeParam = searchParams.get("reqType");
   const requirementType = reqTypeParam?.toUpperCase() === "RFC" ? "RFC" : "BRD";
@@ -1306,6 +1306,16 @@ const ProjectManagerPage = () => {
         </Grid>
       </Box>
     </LayoutAdmin>
+  );
+};
+
+ProjectManagerPageContent.displayName = "ProjectManagerPageContent";
+
+const ProjectManagerPage = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ProjectManagerPageContent />
+    </Suspense>
   );
 };
 

@@ -35,7 +35,8 @@ export default function ProjectDocView() {
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
 
-  const { GetDetailById } = useProjects();
+  const [statusHistory, setStatusHistory] = useState<any[]>([]);
+  const { GetDetailById, GetProjectStatusHistory } = useProjects();
 
   // Auth setup
   useEffect(() => {
@@ -88,6 +89,19 @@ export default function ProjectDocView() {
     fetchProject();
   }, [projectId, tokenData]);
 
+  // Load status history
+  // Load status history
+  useEffect(() => {
+    const fetchStatusHistory = async () => {
+      if (!projectId || !tokenData) return;
+      const response = await GetProjectStatusHistory(projectId, tokenData);
+      if (response?.statusCode === RES_CODE_OK && response.data) {
+        setStatusHistory(response.data);
+      } else {
+      }
+    };
+    fetchStatusHistory();
+  }, [projectId, tokenData, GetProjectStatusHistory]);
   const handlePrint = () => {
     window.print();
   };
@@ -108,7 +122,7 @@ export default function ProjectDocView() {
       const pageWidth = doc.internal.pageSize.getWidth();
       doc.text("LAMPIRAN I", pageWidth / 2, 15, { align: "center" });
       doc.text("FORMULIR REGISTRASI IT PROJECT", pageWidth / 2, 22, { align: "center" });
-      
+
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
       doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth / 2, 28, { align: "center" });
@@ -130,7 +144,7 @@ export default function ProjectDocView() {
           [{ content: "Progress", styles: { fontStyle: "bold" } }, `${DataProject.projectStatusPercentage || 0}%`],
           [{ content: "Duration", styles: { fontStyle: "bold" } }, `${DataProject.projectDurationDays || 0} days`],
         ],
-        styles: { 
+        styles: {
           fontSize: 9,
           cellPadding: 3,
           lineColor: [0, 0, 0],
@@ -163,7 +177,7 @@ export default function ProjectDocView() {
               : "-",
           ],
         ],
-        styles: { 
+        styles: {
           fontSize: 9,
           cellPadding: 3,
           lineColor: [0, 0, 0],
@@ -191,7 +205,7 @@ export default function ProjectDocView() {
           [{ content: "Managed By Group", styles: { fontStyle: "bold" } }, DataProject.proManageByGroupName || "-"],
           [{ content: "Managed By Team", styles: { fontStyle: "bold" } }, DataProject.proManageByTeamName || "-"],
         ],
-        styles: { 
+        styles: {
           fontSize: 9,
           cellPadding: 3,
           lineColor: [0, 0, 0],
@@ -220,7 +234,7 @@ export default function ProjectDocView() {
             [{ content: "Karakteristik Proyek", styles: { fontStyle: "bold" } }, DataProject.projectCharasteristicName || "-"],
             [{ content: "Sub-Characteristic", styles: { fontStyle: "bold" } }, DataProject.projectSubCharasteristicName || "-"],
           ],
-          styles: { 
+          styles: {
             fontSize: 9,
             cellPadding: 3,
             lineColor: [0, 0, 0],
@@ -235,142 +249,199 @@ export default function ProjectDocView() {
         });
 
         yPos = (doc as any).lastAutoTable.finalY + 5;
-      }
 
-      // SDLC Section
-      if (DataProject.sdlcName || DataProject.sdlcStageName) {
+        // Approval Users Section
+        if (statusHistory && statusHistory.filter((h: any) => h.approvalNama && h.approvalNama.trim()).length > 0) {
+          const approvalBody = statusHistory
+            .filter((history: any) => history.approvalNama && history.approvalNama.trim())
+            .reverse()
+            .map((history: any, idx: number) => [
+              { content: `${history.approvalNama} (${history.approvalBy})`, styles: { fontStyle: "bold" as const } },
+              `Stage ${idx + 1} - APPROVED`
+            ]);
+
+          if (approvalBody.length > 0) {
+            autoTable(doc, {
+              startY: yPos,
+              body: approvalBody,
+              styles: {
+                fontSize: 9,
+                cellPadding: 3,
+                lineColor: [0, 0, 0],
+                lineWidth: 0.1,
+              },
+              columnStyles: {
+                0: { cellWidth: 70 },
+                1: { cellWidth: 112 },
+              },
+              theme: "grid",
+              margin: { left: 14, right: 14 },
+            });
+
+            yPos = (doc as any).lastAutoTable.finalY + 5;
+          }
+        }
+
+        // SDLC Section
+        if (DataProject.sdlcName || DataProject.sdlcStageName) {
+          autoTable(doc, {
+            startY: yPos,
+            body: [
+              [{ content: "SDLC", styles: { fontStyle: "bold" } }, DataProject.sdlcName || "-"],
+              [{ content: "Current Stage", styles: { fontStyle: "bold" } }, DataProject.sdlcStageName || "-"],
+            ],
+            styles: {
+              fontSize: 9,
+              cellPadding: 3,
+              lineColor: [0, 0, 0],
+              lineWidth: 0.1,
+            },
+            columnStyles: {
+              0: { cellWidth: 70 },
+              1: { cellWidth: 112 },
+            },
+            theme: "grid",
+            margin: { left: 14, right: 14 },
+          });
+
+          yPos = (doc as any).lastAutoTable.finalY + 5;
+        }
+
+        // Team Members Section
+        if (DataProject.userAssignment && DataProject.userAssignment.length > 0) {
+          const teamData = DataProject.userAssignment.map((member, idx) => [
+            idx + 1,
+            member.userData?.nama || member.userId,
+            member.userId,
+            member.userAssignStatus || "-",
+          ]);
+
+          autoTable(doc, {
+            startY: yPos,
+            head: [[
+              { content: "No", styles: { fontStyle: "bold", halign: "center" } },
+              { content: "Name", styles: { fontStyle: "bold" } },
+              { content: "User ID", styles: { fontStyle: "bold" } },
+              { content: "Status", styles: { fontStyle: "bold" } },
+            ]],
+            body: teamData,
+            styles: {
+              fontSize: 9,
+              cellPadding: 3,
+              lineColor: [0, 0, 0],
+              lineWidth: 0.1,
+            },
+            headStyles: {
+              fillColor: [255, 255, 255],
+              textColor: [0, 0, 0],
+              fontStyle: "bold",
+              lineColor: [0, 0, 0],
+              lineWidth: 0.1,
+            },
+            columnStyles: {
+              0: { cellWidth: 12, halign: "center" },
+              1: { cellWidth: 60 },
+              2: { cellWidth: 50 },
+              3: { cellWidth: 60 },
+            },
+            theme: "grid",
+            margin: { left: 14, right: 14 },
+          });
+
+          yPos = (doc as any).lastAutoTable.finalY + 5;
+        }
+
+        // Requirement Information Section
+        if (DataProject.requirementData) {
+          autoTable(doc, {
+            startY: yPos,
+            body: [
+              [{ content: "Requirement Number", styles: { fontStyle: "bold" } }, DataProject.requirementData.reqNumber || "-"],
+              [{ content: "Requirement Type", styles: { fontStyle: "bold" } }, DataProject.requirementData.requirementType || "-"],
+              [{ content: "Requirement Status", styles: { fontStyle: "bold" } }, DataProject.requirementData.reqStatus || "-"],
+            ],
+            styles: {
+              fontSize: 9,
+              cellPadding: 3,
+              lineColor: [0, 0, 0],
+              lineWidth: 0.1,
+            },
+            columnStyles: {
+              0: { cellWidth: 70 },
+              1: { cellWidth: 112 },
+            },
+            theme: "grid",
+            margin: { left: 14, right: 14 },
+          });
+
+          yPos = (doc as any).lastAutoTable.finalY + 5;
+        }
+
+        // Work Programs Section
+        if (DataProject.workPrograms && DataProject.workPrograms.length > 0) {
+          const externalCount = DataProject.workPrograms.filter((wp) => wp.workProgramSource === "EXTERNAL").length;
+          const internalCount = DataProject.workPrograms.filter((wp) => wp.workProgramSource === "INTERNAL").length;
+
+          autoTable(doc, {
+            startY: yPos,
+            body: [
+              [{ content: "External Work Programs", styles: { fontStyle: "bold" } }, externalCount.toString()],
+              [{ content: "Internal Work Programs", styles: { fontStyle: "bold" } }, internalCount.toString()],
+              [{ content: "Total Work Programs", styles: { fontStyle: "bold" } }, DataProject.workPrograms.length.toString()],
+            ],
+            styles: {
+              fontSize: 9,
+              cellPadding: 3,
+              lineColor: [0, 0, 0],
+              lineWidth: 0.1,
+            },
+            columnStyles: {
+              0: { cellWidth: 70 },
+              1: { cellWidth: 112 },
+            },
+            theme: "grid",
+            margin: { left: 14, right: 14 },
+          });
+
+          yPos = (doc as any).lastAutoTable.finalY + 5;
+        }
+
+        // Description Section (if long text)
+        if (DataProject.projectDesc && DataProject.projectDesc.length > 50) {
+          autoTable(doc, {
+            startY: yPos,
+            body: [
+              [{ content: "Project Description", styles: { fontStyle: "bold" } }],
+              [DataProject.projectDesc],
+            ],
+            styles: {
+              fontSize: 9,
+              cellPadding: 3,
+              lineColor: [0, 0, 0],
+              lineWidth: 0.1,
+            },
+            theme: "grid",
+            margin: { left: 14, right: 14 },
+          });
+
+          yPos = (doc as any).lastAutoTable.finalY + 5;
+        }
+
+        // Footer Section
+        const currentDate = new Date().toLocaleDateString("id-ID", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        });
+
         autoTable(doc, {
           startY: yPos,
           body: [
-            [{ content: "SDLC", styles: { fontStyle: "bold" } }, DataProject.sdlcName || "-"],
-            [{ content: "Current Stage", styles: { fontStyle: "bold" } }, DataProject.sdlcStageName || "-"],
+            [{ content: `Bandung, ${currentDate}`, styles: { halign: "left" } }],
+            [{ content: "Generated by Project Management System", styles: { halign: "center", fontStyle: "italic" } }],
           ],
-          styles: { 
-            fontSize: 9,
-            cellPadding: 3,
-            lineColor: [0, 0, 0],
-            lineWidth: 0.1,
-          },
-          columnStyles: {
-            0: { cellWidth: 70 },
-            1: { cellWidth: 112 },
-          },
-          theme: "grid",
-          margin: { left: 14, right: 14 },
-        });
-
-        yPos = (doc as any).lastAutoTable.finalY + 5;
-      }
-
-      // Team Members Section
-      if (DataProject.userAssignment && DataProject.userAssignment.length > 0) {
-        const teamData = DataProject.userAssignment.map((member, idx) => [
-          idx + 1,
-          member.userData?.nama || member.userId,
-          member.userId,
-          member.userAssignStatus || "-",
-        ]);
-
-        autoTable(doc, {
-          startY: yPos,
-          head: [[
-            { content: "No", styles: { fontStyle: "bold", halign: "center" } },
-            { content: "Name", styles: { fontStyle: "bold" } },
-            { content: "User ID", styles: { fontStyle: "bold" } },
-            { content: "Status", styles: { fontStyle: "bold" } },
-          ]],
-          body: teamData,
-          styles: { 
-            fontSize: 9,
-            cellPadding: 3,
-            lineColor: [0, 0, 0],
-            lineWidth: 0.1,
-          },
-          headStyles: {
-            fillColor: [255, 255, 255],
-            textColor: [0, 0, 0],
-            fontStyle: "bold",
-            lineColor: [0, 0, 0],
-            lineWidth: 0.1,
-          },
-          columnStyles: {
-            0: { cellWidth: 12, halign: "center" },
-            1: { cellWidth: 60 },
-            2: { cellWidth: 50 },
-            3: { cellWidth: 60 },
-          },
-          theme: "grid",
-          margin: { left: 14, right: 14 },
-        });
-
-        yPos = (doc as any).lastAutoTable.finalY + 5;
-      }
-
-      // Requirement Information Section
-      if (DataProject.requirementData) {
-        autoTable(doc, {
-          startY: yPos,
-          body: [
-            [{ content: "Requirement Number", styles: { fontStyle: "bold" } }, DataProject.requirementData.reqNumber || "-"],
-            [{ content: "Requirement Type", styles: { fontStyle: "bold" } }, DataProject.requirementData.requirementType || "-"],
-            [{ content: "Requirement Status", styles: { fontStyle: "bold" } }, DataProject.requirementData.reqStatus || "-"],
-          ],
-          styles: { 
-            fontSize: 9,
-            cellPadding: 3,
-            lineColor: [0, 0, 0],
-            lineWidth: 0.1,
-          },
-          columnStyles: {
-            0: { cellWidth: 70 },
-            1: { cellWidth: 112 },
-          },
-          theme: "grid",
-          margin: { left: 14, right: 14 },
-        });
-
-        yPos = (doc as any).lastAutoTable.finalY + 5;
-      }
-
-      // Work Programs Section
-      if (DataProject.workPrograms && DataProject.workPrograms.length > 0) {
-        const externalCount = DataProject.workPrograms.filter((wp) => wp.workProgramSource === "EXTERNAL").length;
-        const internalCount = DataProject.workPrograms.filter((wp) => wp.workProgramSource === "INTERNAL").length;
-
-        autoTable(doc, {
-          startY: yPos,
-          body: [
-            [{ content: "External Work Programs", styles: { fontStyle: "bold" } }, externalCount.toString()],
-            [{ content: "Internal Work Programs", styles: { fontStyle: "bold" } }, internalCount.toString()],
-            [{ content: "Total Work Programs", styles: { fontStyle: "bold" } }, DataProject.workPrograms.length.toString()],
-          ],
-          styles: { 
-            fontSize: 9,
-            cellPadding: 3,
-            lineColor: [0, 0, 0],
-            lineWidth: 0.1,
-          },
-          columnStyles: {
-            0: { cellWidth: 70 },
-            1: { cellWidth: 112 },
-          },
-          theme: "grid",
-          margin: { left: 14, right: 14 },
-        });
-
-        yPos = (doc as any).lastAutoTable.finalY + 5;
-      }
-
-      // Description Section (if long text)
-      if (DataProject.projectDesc && DataProject.projectDesc.length > 50) {
-        autoTable(doc, {
-          startY: yPos,
-          body: [
-            [{ content: "Project Description", styles: { fontStyle: "bold" } }],
-            [DataProject.projectDesc],
-          ],
-          styles: { 
-            fontSize: 9,
+          styles: {
+            fontSize: 8,
             cellPadding: 3,
             lineColor: [0, 0, 0],
             lineWidth: 0.1,
@@ -379,39 +450,14 @@ export default function ProjectDocView() {
           margin: { left: 14, right: 14 },
         });
 
-        yPos = (doc as any).lastAutoTable.finalY + 5;
+        // Save PDF
+        doc.save(`Project_${DataProject.projectNo}_${Date.now()}.pdf`);
+
+        showToast({
+          description: "PDF exported successfully",
+          statusToast: "success",
+        });
       }
-
-      // Footer Section
-      const currentDate = new Date().toLocaleDateString("id-ID", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      });
-
-      autoTable(doc, {
-        startY: yPos,
-        body: [
-          [{ content: `Bandung, ${currentDate}`, styles: { halign: "left" } }],
-          [{ content: "Generated by Project Management System", styles: { halign: "center", fontStyle: "italic" } }],
-        ],
-        styles: { 
-          fontSize: 8,
-          cellPadding: 3,
-          lineColor: [0, 0, 0],
-          lineWidth: 0.1,
-        },
-        theme: "grid",
-        margin: { left: 14, right: 14 },
-      });
-
-      // Save PDF
-      doc.save(`Project_${DataProject.projectNo}_${Date.now()}.pdf`);
-
-      showToast({
-        description: "PDF exported successfully",
-        statusToast: "success",
-      });
     } catch (error) {
       console.error("PDF export error:", error);
       showToast({
@@ -485,7 +531,7 @@ export default function ProjectDocView() {
         </Card>
 
         {/* Document Content */}
-        <ProjectDocContent project={DataProject} />
+        <ProjectDocContent project={DataProject} statusHistory={statusHistory} />
       </Box>
 
       {/* Print Styles */}
