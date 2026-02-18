@@ -318,6 +318,11 @@ export interface ReqBacklogPayload {
   priority?: string | null;
   backlogHistories?: ReqBacklogPayload[];
   reffData?: BacklogDataResponse | null; // Parent backlog data for RFC
+  rfcBacklogChanges?: string | null;
+  rfcBacklogImportant?: string | null;
+  rfcBacklogImpactOthers?: string | null;
+  rfcPriorities?: string | null;
+  rfcPrioritiesIndex?: number | null;
 }
 
 export interface RequirementApprovalPayload {
@@ -432,6 +437,11 @@ export interface BacklogDataResponse {
   createdBy: string;
   updatedAt: string | null;
   updatedBy: string;
+  rfcBacklogChanges?: string | null;
+  rfcBacklogImportant?: string | null;
+  rfcBacklogImpactOthers?: string | null;
+  rfcPriorities?: string | null;
+  rfcPrioritiesIndex?: number | null;
   reffData?: BacklogDataResponse | null;
   backlogHistories?: BacklogHistoryDataResponse[];
 }
@@ -470,6 +480,11 @@ export interface BacklogHistoryDataResponse {
   updatedAt: string | null;
   updatedBy: string | null;
   deletedAt: string | null;
+  rfcBacklogChanges?: string | null;
+  rfcBacklogImportant?: string | null;
+  rfcBacklogImpactOthers?: string | null;
+  rfcPriorities?: string | null;
+  rfcPrioritiesIndex?: number | null;
 }
 
 export interface BacklogInsertPayload {
@@ -489,6 +504,11 @@ export interface BacklogInsertPayload {
   developmentStatus: string;
   reffId: string | null;
   reqId: string;
+  rfcBacklogChanges?: string | null;
+  rfcBacklogImportant?: string | null;
+  rfcBacklogImpactOthers?: string | null;
+  rfcPriorities?: string | null;
+  rfcPrioritiesIndex?: number | null;
 }
 
 export interface BacklogUpdatePayload {
@@ -513,6 +533,11 @@ export interface BacklogUpdatePayload {
   posOrder: number;
   version: string;
   isLive: string;
+  rfcBacklogChanges?: string | null;
+  rfcBacklogImportant?: string | null;
+  rfcBacklogImpactOthers?: string | null;
+  rfcPriorities?: string | null;
+  rfcPrioritiesIndex?: number | null;
 }
 
 export interface BacklogUpdateOrderPayload {

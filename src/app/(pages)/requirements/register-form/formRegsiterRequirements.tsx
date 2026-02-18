@@ -66,6 +66,7 @@ import {
   formatDateToYYYYMMDD,
   getCurrentQuarter,
   getPriorityFromMatrix,
+  getRfcPriorityWithIndex,
   getQuarterDateRange,
   getQuarterText,
   nomCompColor,
@@ -7986,6 +7987,10 @@ interface BacklogChangesData {
   urgency?: string;
   impact?: string;
   priority?: string;
+  rfcBacklogChanges?: string;
+  rfcBacklogImportant?: string;
+  rfcBacklogImpactOthers?: string;
+  rfcPriorities?: string;
 }
 
 const EmptyBacklogChangesData: BacklogChangesData = {
@@ -8027,6 +8032,10 @@ const EmptyBacklogChangesData: BacklogChangesData = {
   urgency: "LOW",
   impact: "LOW",
   priority: "LOW",
+  rfcBacklogChanges: "MAJOR",
+  rfcBacklogImportant: "NORMAL",
+  rfcBacklogImpactOthers: "SMALL",
+  rfcPriorities: "LOW",
 };
 
 // STEP 4 SECTION RFC
@@ -8229,6 +8238,11 @@ const Section4RFCView = ({
                 impact: dt.backlog.impact || "LOW",
                 priority: dt.backlog.priority || "LOW",
                 backlogHistories: [],
+                rfcBacklogChanges: dt.backlog.rfcBacklogChanges || "MAJOR",
+                rfcBacklogImportant: dt.backlog.rfcBacklogImportant || "NORMAL",
+                rfcBacklogImpactOthers: dt.backlog.rfcBacklogImpactOthers || "SMALL",
+                rfcPriorities: dt.backlog.rfcPriorities || "LOW",
+                rfcPrioritiesIndex: dt.backlog.rfcPrioritiesIndex || null,
               },
             ]
           : [];
@@ -8248,6 +8262,11 @@ const Section4RFCView = ({
         impact: dt.impact || "LOW",
         priority: dt.priority || "LOW",
         backlogHistories: backlogHistories,
+        rfcBacklogChanges: dt.rfcBacklogChanges || "MAJOR",
+        rfcBacklogImportant: dt.rfcBacklogImportant || "NORMAL",
+        rfcBacklogImpactOthers: dt.rfcBacklogImpactOthers || "SMALL",
+        rfcPriorities: dt.rfcPriorities || "LOW",
+        rfcPrioritiesIndex: null,
       };
     });
 
@@ -9286,27 +9305,23 @@ const Section4RFCView = ({
                       <FormControl>
                         <InputLayoutFull>
                           <FormLabel h={"full"} mt={2}>
-                            Urgency
+                            RFC Changes
                           </FormLabel>
                           <Stack spacing={0}>
                             <Select
-                              id={`backlogChangesUrgency-${index}`}
+                              id={`rfcBacklogChanges-${index}`}
                               options={[
-                                { label: "LOW", value: "LOW" },
-                                { label: "MEDIUM", value: "MEDIUM" },
-                                { label: "HIGH", value: "HIGH" },
+                                { label: "MAJOR", value: "MAJOR" },
+                                { label: "MINOR", value: "MINOR" },
+                                { label: "EMERGENCY", value: "EMERGENCY" },
                               ]}
                               value={{
-                                label: item.urgency || "LOW",
-                                value: item.urgency || "LOW",
+                                label: item.rfcBacklogChanges || "MAJOR",
+                                value: item.rfcBacklogChanges || "MAJOR",
                               }}
                               onChange={(e) => {
                                 const updated = [...BacklogChanges];
-                                updated[index].urgency = e?.value || "LOW";
-                                updated[index].priority = getPriorityFromMatrix(
-                                  updated[index].impact || "LOW",
-                                  e?.value || "LOW"
-                                );
+                                updated[index].rfcBacklogChanges = e?.value || "MAJOR";
                                 setBacklogChanges(updated);
                               }}
                             />
@@ -9316,27 +9331,29 @@ const Section4RFCView = ({
                       <FormControl>
                         <InputLayoutFull>
                           <FormLabel h={"full"} mt={2}>
-                            Impact
+                            RFC Important
                           </FormLabel>
                           <Stack spacing={0}>
                             <Select
-                              id={`backlogChangesImpact-${index}`}
+                              id={`rfcBacklogImportant-${index}`}
                               options={[
-                                { label: "LOW", value: "LOW" },
-                                { label: "MEDIUM", value: "MEDIUM" },
-                                { label: "HIGH", value: "HIGH" },
+                                { label: "NORMAL", value: "NORMAL" },
+                                { label: "IMPORTANT", value: "IMPORTANT" },
                               ]}
                               value={{
-                                label: item.impact || "LOW",
-                                value: item.impact || "LOW",
+                                label: item.rfcBacklogImportant || "NORMAL",
+                                value: item.rfcBacklogImportant || "NORMAL",
                               }}
                               onChange={(e) => {
                                 const updated = [...BacklogChanges];
-                                updated[index].impact = e?.value || "LOW";
-                                updated[index].priority = getPriorityFromMatrix(
-                                  e?.value || "LOW",
-                                  updated[index].urgency || "LOW"
+                                updated[index].rfcBacklogImportant = e?.value || "NORMAL";
+                                
+                                const result = getRfcPriorityWithIndex(
+                                  e?.value || "NORMAL",
+                                  updated[index].rfcBacklogImpactOthers || "SMALL"
                                 );
+                                updated[index].rfcPriorities = result.priority;
+                                
                                 setBacklogChanges(updated);
                               }}
                             />
@@ -9346,12 +9363,45 @@ const Section4RFCView = ({
                       <FormControl>
                         <InputLayoutFull>
                           <FormLabel h={"full"} mt={2}>
-                            Priority (Auto)
+                            RFC Impact Others
+                          </FormLabel>
+                          <Stack spacing={0}>
+                            <Select
+                              id={`rfcBacklogImpactOthers-${index}`}
+                              options={[
+                                { label: "SMALL", value: "SMALL" },
+                                { label: "LARGE", value: "LARGE" },
+                              ]}
+                              value={{
+                                label: item.rfcBacklogImpactOthers || "SMALL",
+                                value: item.rfcBacklogImpactOthers || "SMALL",
+                              }}
+                              onChange={(e) => {
+                                const updated = [...BacklogChanges];
+                                updated[index].rfcBacklogImpactOthers = e?.value || "SMALL";
+                                
+                                const result = getRfcPriorityWithIndex(
+                                  updated[index].rfcBacklogImportant || "NORMAL",
+                                  e?.value || "SMALL"
+                                );
+                                updated[index].rfcPriorities = result.priority;
+                                
+                                setBacklogChanges(updated);
+                              }}
+                            />
+                          </Stack>
+                        </InputLayoutFull>
+                      </FormControl>
+                      <FormControl>
+                        <InputLayoutFull>
+                          <FormLabel h={"full"} mt={2}>
+                            RFC Priority (Auto)
                           </FormLabel>
                           <Stack spacing={0}>
                             <Input
-                              value={item.priority || "LOW"}
+                              value={item.rfcPriorities || "LOW"}
                               isReadOnly
+                              isDisabled
                               bg={
                                 colorMode === "light" ? "gray.100" : "gray.700"
                               }

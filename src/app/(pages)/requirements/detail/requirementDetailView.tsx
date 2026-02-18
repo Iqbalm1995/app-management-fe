@@ -165,9 +165,17 @@ interface CrucialDataAlertDetailProps {
   pageMode: string;
 }
 
-const CrucialDataAlertDetail: React.FC<CrucialDataAlertDetailProps> = ({ requirementData, setActiveStep, requirementType, pageMode }) => {
-  const hasAppData = requirementData.appInitialCode && requirementData.appInitialCode.trim() !== "";
-  const hasBacklogData = requirementData.backlogCount && requirementData.backlogCount > 0;
+const CrucialDataAlertDetail: React.FC<CrucialDataAlertDetailProps> = ({
+  requirementData,
+  setActiveStep,
+  requirementType,
+  pageMode,
+}) => {
+  const hasAppData =
+    requirementData.appInitialCode &&
+    requirementData.appInitialCode.trim() !== "";
+  const hasBacklogData =
+    requirementData.backlogCount && requirementData.backlogCount > 0;
 
   // Only show if missing critical data
   if (hasAppData && hasBacklogData) {
@@ -186,7 +194,8 @@ const CrucialDataAlertDetail: React.FC<CrucialDataAlertDetailProps> = ({ require
           Data Penting Belum Lengkap!
         </AlertTitle>
         <AlertDescription fontSize="sm">
-          Requirement ini masih memerlukan data berikut untuk dapat digunakan dalam proyek:
+          Requirement ini masih memerlukan data berikut untuk dapat digunakan
+          dalam proyek:
           <VStack align="start" mt={2} spacing={1}>
             {missingItems.map((item, index) => (
               <HStack key={index} spacing={2}>
@@ -198,12 +207,12 @@ const CrucialDataAlertDetail: React.FC<CrucialDataAlertDetailProps> = ({ require
         </AlertDescription>
       </Box>
       {pageMode === "VIEW_DETAIL" ? (
-        <Link href={`/requirements/${requirementType.toLowerCase()}/register?id=${requirementData.id}`}>
-          <Button
-            colorScheme="orange"
-            size="sm"
-            leftIcon={<FiArrowRight />}
-          >
+        <Link
+          href={`/requirements/${requirementType.toLowerCase()}/register?id=${
+            requirementData.id
+          }`}
+        >
+          <Button colorScheme="orange" size="sm" leftIcon={<FiArrowRight />}>
             Lihat Data
           </Button>
         </Link>
@@ -226,7 +235,9 @@ interface ProjectsRelationSectionDetailProps {
   requirementId: string;
 }
 
-const ProjectsRelationSectionDetail: React.FC<ProjectsRelationSectionDetailProps> = ({ requirementId }) => {
+const ProjectsRelationSectionDetail: React.FC<
+  ProjectsRelationSectionDetailProps
+> = ({ requirementId }) => {
   const [projects, setProjects] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { GetProjectsByRequirementId } = useRequirements();
@@ -240,9 +251,16 @@ const ProjectsRelationSectionDetail: React.FC<ProjectsRelationSectionDetailProps
         const authData = localStorage.getItem("authData");
         const token = localStorage.getItem("tokenData");
         if (authData && token) {
-          const response = await GetProjectsByRequirementId(requirementId, token);
+          const response = await GetProjectsByRequirementId(
+            requirementId,
+            token
+          );
 
-          if (response && response.statusCode === RES_CODE_OK && response.data) {
+          if (
+            response &&
+            response.statusCode === RES_CODE_OK &&
+            response.data
+          ) {
             setProjects(response.data);
           }
         }
@@ -280,10 +298,13 @@ const ProjectsRelationSectionDetail: React.FC<ProjectsRelationSectionDetailProps
   }
 
   return (
-    <InputGroupPanel headerTitle={`Informasi Proyek Terkait (${projects.length} Proyek)`}>
+    <InputGroupPanel
+      headerTitle={`Informasi Proyek Terkait (${projects.length} Proyek)`}
+    >
       <VStack spacing={4} align="stretch">
         <Text fontSize="sm" color="gray.600">
-          Requirement ini telah terdaftar ke dalam {projects.length} proyek berikut:
+          Requirement ini telah terdaftar ke dalam {projects.length} proyek
+          berikut:
         </Text>
 
         {projects.map((project, index) => (
@@ -301,7 +322,11 @@ const ProjectsRelationSectionDetail: React.FC<ProjectsRelationSectionDetailProps
                   <Badge colorScheme="blue" variant="solid">
                     {project.projectNo}
                   </Badge>
-                  <Badge colorScheme={project.projectStatus === "RUNNING" ? "green" : "orange"}>
+                  <Badge
+                    colorScheme={
+                      project.projectStatus === "RUNNING" ? "green" : "orange"
+                    }
+                  >
                     {project.projectStatus}
                   </Badge>
                 </HStack>
@@ -376,7 +401,13 @@ function RequirementDetailView() {
     }
   };
 
-  const { GetDetailById, ListBacklog, ListReqMedia, ApproveRequirement, GetApprovalStatusChoices } = useRequirements();
+  const {
+    GetDetailById,
+    ListBacklog,
+    ListReqMedia,
+    ApproveRequirement,
+    GetApprovalStatusChoices,
+  } = useRequirements();
 
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
@@ -426,7 +457,8 @@ function RequirementDetailView() {
       if (accessDataStr) {
         try {
           const accessData = JSON.parse(accessDataStr);
-          const hasApprovePermission = accessData.aggregatedPermissions?.canApprove || false;
+          const hasApprovePermission =
+            accessData.aggregatedPermissions?.canApprove || false;
 
           if (!hasApprovePermission) {
             router.push("/forbidden");
@@ -625,14 +657,25 @@ function RequirementDetailView() {
           setDataRequirement(itemsData);
 
           setHeaderContentState({
-            titleName: `${reqType} Detail #${itemsData.isHaveMemo === "Y" ? itemsData.reqNumber : (itemsData.reqNarative && itemsData.reqNarative.length > 15 ? itemsData.reqNarative.substring(0, 15) + "..." : itemsData.reqNarative)}`,
+            titleName: `${reqType} Detail #${
+              itemsData.isHaveMemo === "Y"
+                ? itemsData.reqNumber
+                : itemsData.reqNarative && itemsData.reqNarative.length > 15
+                ? itemsData.reqNarative.substring(0, 15) + "..."
+                : itemsData.reqNarative
+            }`,
             breadCrumb: [
               "Home",
               "Requirements",
               reqType === "RFC" ? "RFC List" : "BRD List",
               "Detail",
             ],
-            titleTooltip: itemsData.isHaveMemo === "N" && itemsData.reqNarative && itemsData.reqNarative.length > 15 ? itemsData.reqNarative : undefined,
+            titleTooltip:
+              itemsData.isHaveMemo === "N" &&
+              itemsData.reqNarative &&
+              itemsData.reqNarative.length > 15
+                ? itemsData.reqNarative
+                : undefined,
           });
 
           // backlogs load
@@ -754,11 +797,11 @@ function RequirementDetailView() {
     },
     ...(!approvalMode
       ? [
-        {
-          title: reqType === "RFC" ? "Step 7" : "Step 6",
-          description: `${reqType} Acceptance`,
-        },
-      ]
+          {
+            title: reqType === "RFC" ? "Step 7" : "Step 6",
+            description: `${reqType} Acceptance`,
+          },
+        ]
       : []),
   ];
 
@@ -787,10 +830,16 @@ function RequirementDetailView() {
     null
   );
   const [ApprovalNote, setApprovalNote] = useState<string | null>(null);
-  const [availableStatuses, setAvailableStatuses] = useState<SysModuleStatusFlowResponse[]>([]);
+  const [availableStatuses, setAvailableStatuses] = useState<
+    SysModuleStatusFlowResponse[]
+  >([]);
   const [isLoadingStatuses, setIsLoadingStatuses] = useState(false);
   const [isSubmittingApproval, setIsSubmittingApproval] = useState(false);
-  const { isOpen: isApprovalModalOpen, onOpen: onApprovalModalOpen, onClose: onApprovalModalClose } = useDisclosure();
+  const {
+    isOpen: isApprovalModalOpen,
+    onOpen: onApprovalModalOpen,
+    onClose: onApprovalModalClose,
+  } = useDisclosure();
 
   // Load available statuses for approval
   useEffect(() => {
@@ -1002,7 +1051,11 @@ function RequirementDetailView() {
                       }}
                     >
                       {steps.map((step, index) => (
-                        <Step key={index} onClick={() => setActiveStep(index)} style={{ cursor: 'pointer' }}>
+                        <Step
+                          key={index}
+                          onClick={() => setActiveStep(index)}
+                          style={{ cursor: "pointer" }}
+                        >
                           <StepIndicator>
                             <StepStatus
                               complete={<StepNumber />}
@@ -1072,7 +1125,9 @@ function RequirementDetailView() {
 
                           {/* Projects Section - Only show when requirement is approved */}
                           {DataRequirement.reqStatus === "APPROVED" && (
-                            <ProjectsRelationSectionDetail requirementId={DataRequirement.id} />
+                            <ProjectsRelationSectionDetail
+                              requirementId={DataRequirement.id}
+                            />
                           )}
 
                           {/* Lock overlay */}
@@ -1150,8 +1205,8 @@ function RequirementDetailView() {
                                     ? "INTERNAL (BANK)"
                                     : DataRequirement.appTargetUsers ==
                                       "EXTERNAL"
-                                      ? "EXTERNAL (NASABAH)"
-                                      : "N/A"}
+                                    ? "EXTERNAL (NASABAH)"
+                                    : "N/A"}
                                 </Text>
                               </Stack>
                             </InputLayoutFull>
@@ -1164,7 +1219,7 @@ function RequirementDetailView() {
                               </FormLabel>
                               <Stack spacing={0} h={"full"}>
                                 {DataRequirement.appAccessFrontsiteDns ||
-                                  DataRequirement.appAccessBacksiteIp ? (
+                                DataRequirement.appAccessBacksiteIp ? (
                                   <>
                                     {DataRequirement.appAccessFrontsiteDns && (
                                       <Text>
@@ -1266,8 +1321,8 @@ function RequirementDetailView() {
                                       ? "N/A"
                                       : DataRequirement.appOperational24hrs ==
                                         "NO"
-                                        ? "TIDAK"
-                                        : "YA"}
+                                      ? "TIDAK"
+                                      : "YA"}
                                   </Text>
                                 </Text>
 
@@ -1288,24 +1343,24 @@ function RequirementDetailView() {
 
                                 {DataRequirement.appOperational24hrs !=
                                   "24-HOUR" && (
-                                    <Text>
-                                      Jam Buka :{" "}
-                                      <Text pl={2} as={"span"} fontWeight={600}>
-                                        {DataRequirement.appOperationalHourOpen ||
-                                          "N/A"}
-                                      </Text>
+                                  <Text>
+                                    Jam Buka :{" "}
+                                    <Text pl={2} as={"span"} fontWeight={600}>
+                                      {DataRequirement.appOperationalHourOpen ||
+                                        "N/A"}
                                     </Text>
-                                  )}
+                                  </Text>
+                                )}
                                 {DataRequirement.appOperational24hrs !=
                                   "24-HOUR" && (
-                                    <Text>
-                                      Jam Tutup :{" "}
-                                      <Text pl={2} as={"span"} fontWeight={600}>
-                                        {DataRequirement.appOperationalHourClosed ||
-                                          "N/A"}
-                                      </Text>
+                                  <Text>
+                                    Jam Tutup :{" "}
+                                    <Text pl={2} as={"span"} fontWeight={600}>
+                                      {DataRequirement.appOperationalHourClosed ||
+                                        "N/A"}
                                     </Text>
-                                  )}
+                                  </Text>
+                                )}
                               </Stack>
                             </InputLayoutFull>
                           </FormControl>
@@ -1319,9 +1374,9 @@ function RequirementDetailView() {
                                 <Text>
                                   {DataRequirement.appLiveTargetDate != null
                                     ? formatDateInputCustom(
-                                      DataRequirement.appLiveTargetDate,
-                                      "/"
-                                    )
+                                        DataRequirement.appLiveTargetDate,
+                                        "/"
+                                      )
                                     : "N/A"}
                                 </Text>
                               </Stack>
@@ -1338,8 +1393,8 @@ function RequirementDetailView() {
                                   {" "}
                                   {DataRequirement.appLiveTargetDate != null
                                     ? getQuarterText(
-                                      DataRequirement.appLiveTargetDate
-                                    )
+                                        DataRequirement.appLiveTargetDate
+                                      )
                                     : "N/A"}
                                 </Text>
                               </Stack>
@@ -1371,8 +1426,8 @@ function RequirementDetailView() {
                                   size="sm"
                                   leftIcon={<FiInfo />}
                                 >
-                                  Detail Scope of Work ({DataBacklogsRequirement.length}
-                                  )
+                                  Detail Scope of Work (
+                                  {DataBacklogsRequirement.length})
                                 </Button>
                               </Box>
                             </InputLayoutFull>
@@ -1479,109 +1534,148 @@ function RequirementDetailView() {
                               />
                             </InputGroupPanel>
 
-                            {canApprove && approvalMode && DataRequirement?.reqStatus === REQ_WAITING_APPROVAL && (
-                              <InputGroupPanel headerTitle={"Update Status"}>
-                                {DataRequirement?.isStatusFinal ? (
-                                  <Alert status="success" rounded="md">
-                                    <AlertIcon />
-                                    <VStack align="start" spacing={1}>
-                                      <Text fontWeight="bold">
-                                        Status Already Final
-                                      </Text>
-                                      <Text fontSize="sm">
-                                        Current Status: <Badge colorScheme="green">{DataRequirement.reqStatus}</Badge>
-                                      </Text>
-                                      <Text fontSize="sm" color="gray.600">
-                                        This requirement has reached a final status and cannot be changed.
-                                      </Text>
-                                    </VStack>
-                                  </Alert>
-                                ) : (
-                                  <Flex as={Stack} spacing={4}>
-                                    <FormControl>
-                                      <HStack spacing={4} align="center">
-                                        <FormLabel mb={0} minW="120px">Status Approval</FormLabel>
-                                        <RadioGroup
-                                          value={StatusRequirement || ""}
-                                          onChange={setStatusRequirement}
+                            {canApprove &&
+                              approvalMode &&
+                              DataRequirement?.reqStatus ===
+                                REQ_WAITING_APPROVAL && (
+                                <InputGroupPanel headerTitle={"Update Status"}>
+                                  {DataRequirement?.isStatusFinal ? (
+                                    <Alert status="success" rounded="md">
+                                      <AlertIcon />
+                                      <VStack align="start" spacing={1}>
+                                        <Text fontWeight="bold">
+                                          Status Already Final
+                                        </Text>
+                                        <Text fontSize="sm">
+                                          Current Status:{" "}
+                                          <Badge colorScheme="green">
+                                            {DataRequirement.reqStatus}
+                                          </Badge>
+                                        </Text>
+                                        <Text fontSize="sm" color="gray.600">
+                                          This requirement has reached a final
+                                          status and cannot be changed.
+                                        </Text>
+                                      </VStack>
+                                    </Alert>
+                                  ) : (
+                                    <Flex as={Stack} spacing={4}>
+                                      <FormControl>
+                                        <HStack spacing={4} align="center">
+                                          <FormLabel mb={0} minW="120px">
+                                            Status Approval
+                                          </FormLabel>
+                                          <RadioGroup
+                                            value={StatusRequirement || ""}
+                                            onChange={setStatusRequirement}
+                                          >
+                                            <HStack spacing={3}>
+                                              {isLoadingStatuses ? (
+                                                <Text
+                                                  fontSize="sm"
+                                                  color="gray.500"
+                                                >
+                                                  Loading statuses...
+                                                </Text>
+                                              ) : availableStatuses.length ===
+                                                0 ? (
+                                                <Text
+                                                  fontSize="sm"
+                                                  color="gray.500"
+                                                >
+                                                  No approval statuses available
+                                                </Text>
+                                              ) : (
+                                                availableStatuses.map(
+                                                  (status) => {
+                                                    const colorScheme =
+                                                      STATUS_COLORS[
+                                                        status.codeStatus as keyof typeof STATUS_COLORS
+                                                      ] || "gray";
+                                                    const isSelected =
+                                                      StatusRequirement ===
+                                                      status.codeStatus;
+                                                    return (
+                                                      <Box
+                                                        key={status.id}
+                                                        as="label"
+                                                        cursor="pointer"
+                                                        borderRadius="md"
+                                                        bg={`${colorScheme}.100`}
+                                                        px={3}
+                                                        py={2}
+                                                        onDoubleClick={() => {
+                                                          if (isSelected) {
+                                                            setStatusRequirement(
+                                                              ""
+                                                            );
+                                                          }
+                                                        }}
+                                                      >
+                                                        <Radio
+                                                          value={
+                                                            status.codeStatus
+                                                          }
+                                                          colorScheme="blackAlpha"
+                                                          sx={{
+                                                            "[data-checked]": {
+                                                              bg: "black",
+                                                              borderColor:
+                                                                "black",
+                                                            },
+                                                          }}
+                                                        >
+                                                          <Text
+                                                            fontSize="sm"
+                                                            fontWeight="bold"
+                                                            color={`${colorScheme}.700`}
+                                                          >
+                                                            {status.nameStatus}
+                                                          </Text>
+                                                        </Radio>
+                                                      </Box>
+                                                    );
+                                                  }
+                                                )
+                                              )}
+                                            </HStack>
+                                          </RadioGroup>
+                                        </HStack>
+                                      </FormControl>
+
+                                      <FormControl>
+                                        <HStack spacing={4} align="start">
+                                          <FormLabel mb={0} minW="120px">
+                                            Note Approval
+                                          </FormLabel>
+                                          <Textarea
+                                            value={ApprovalNote || ""}
+                                            onChange={(e) =>
+                                              setApprovalNote(e.target.value)
+                                            }
+                                            placeholder="Enter approval note (optional)"
+                                            rows={4}
+                                            flex="1"
+                                          />
+                                        </HStack>
+                                      </FormControl>
+
+                                      <Flex justifyContent="flex-end">
+                                        <Button
+                                          colorScheme="blue"
+                                          onClick={ActionApprovalChangeStatus}
+                                          isDisabled={
+                                            !StatusRequirement ||
+                                            isSubmittingApproval
+                                          }
                                         >
-                                          <HStack spacing={3}>
-                                            {isLoadingStatuses ? (
-                                              <Text fontSize="sm" color="gray.500">
-                                                Loading statuses...
-                                              </Text>
-                                            ) : availableStatuses.length === 0 ? (
-                                              <Text fontSize="sm" color="gray.500">
-                                                No approval statuses available
-                                              </Text>
-                                            ) : (
-                                              availableStatuses.map((status) => {
-                                                const colorScheme = STATUS_COLORS[status.codeStatus as keyof typeof STATUS_COLORS] || "gray";
-                                                const isSelected = StatusRequirement === status.codeStatus;
-                                                return (
-                                                  <Box
-                                                    key={status.id}
-                                                    as="label"
-                                                    cursor="pointer"
-                                                    borderRadius="md"
-                                                    bg={`${colorScheme}.100`}
-                                                    px={3}
-                                                    py={2}
-                                                    onDoubleClick={() => {
-                                                      if (isSelected) {
-                                                        setStatusRequirement("");
-                                                      }
-                                                    }}
-                                                  >
-                                                    <Radio
-                                                      value={status.codeStatus}
-                                                      colorScheme="blackAlpha"
-                                                      sx={{
-                                                        '[data-checked]': {
-                                                          bg: 'black',
-                                                          borderColor: 'black',
-                                                        }
-                                                      }}
-                                                    >
-                                                      <Text fontSize="sm" fontWeight="bold" color={`${colorScheme}.700`}>
-                                                        {status.nameStatus}
-                                                      </Text>
-                                                    </Radio>
-                                                  </Box>
-                                                );
-                                              })
-                                            )}
-                                          </HStack>
-                                        </RadioGroup>
-                                      </HStack>
-                                    </FormControl>
-
-                                    <FormControl>
-                                      <HStack spacing={4} align="start">
-                                        <FormLabel mb={0} minW="120px">Note Approval</FormLabel>
-                                        <Textarea
-                                          value={ApprovalNote || ""}
-                                          onChange={(e) => setApprovalNote(e.target.value)}
-                                          placeholder="Enter approval note (optional)"
-                                          rows={4}
-                                          flex="1"
-                                        />
-                                      </HStack>
-                                    </FormControl>
-
-                                    <Flex justifyContent="flex-end">
-                                      <Button
-                                        colorScheme="blue"
-                                        onClick={ActionApprovalChangeStatus}
-                                        isDisabled={!StatusRequirement || isSubmittingApproval}
-                                      >
-                                        Submit Approval
-                                      </Button>
+                                          Submit Approval
+                                        </Button>
+                                      </Flex>
                                     </Flex>
-                                  </Flex>
-                                )}
-                              </InputGroupPanel>
-                            )}
+                                  )}
+                                </InputGroupPanel>
+                              )}
                           </>
                         )}
                       </Flex>
@@ -1600,109 +1694,140 @@ function RequirementDetailView() {
                           />
                         </InputGroupPanel>
 
-                        {canApprove && approvalMode && DataRequirement?.reqStatus === REQ_WAITING_APPROVAL && (
-                          <InputGroupPanel headerTitle={"Update Status"}>
-                            {DataRequirement?.isStatusFinal ? (
-                              <Alert status="success" rounded="md">
-                                <AlertIcon />
-                                <VStack align="start" spacing={1}>
-                                  <Text fontWeight="bold">
-                                    Status Already Final
-                                  </Text>
-                                  <Text fontSize="sm">
-                                    Current Status: <Badge colorScheme="green">{DataRequirement.reqStatus}</Badge>
-                                  </Text>
-                                  <Text fontSize="sm" color="gray.600">
-                                    This requirement has reached a final status and cannot be changed.
-                                  </Text>
-                                </VStack>
-                              </Alert>
-                            ) : (
-                              <Flex as={Stack} spacing={4}>
-                                <FormControl>
-                                  <HStack spacing={4} align="center">
-                                    <FormLabel mb={0} minW="120px">Status Approval</FormLabel>
-                                    <RadioGroup
-                                      value={StatusRequirement || ""}
-                                      onChange={setStatusRequirement}
-                                    >
-                                      <HStack spacing={3}>
-                                        {isLoadingStatuses ? (
-                                          <Text fontSize="sm" color="gray.500">
-                                            Loading statuses...
-                                          </Text>
-                                        ) : availableStatuses.length === 0 ? (
-                                          <Text fontSize="sm" color="gray.500">
-                                            No approval statuses available
-                                          </Text>
-                                        ) : (
-                                          availableStatuses.map((status) => {
-                                            const colorScheme = STATUS_COLORS[status.codeStatus as keyof typeof STATUS_COLORS] || "gray";
-                                            const isSelected = StatusRequirement === status.codeStatus;
-                                            return (
-                                              <Box
-                                                key={status.id}
-                                                as="label"
-                                                cursor="pointer"
-                                                borderRadius="md"
-                                                bg={`${colorScheme}.100`}
-                                                px={3}
-                                                py={2}
-                                                onDoubleClick={() => {
-                                                  if (isSelected) {
-                                                    setStatusRequirement("");
-                                                  }
-                                                }}
-                                              >
-                                                <Radio
-                                                  value={status.codeStatus}
-                                                  colorScheme="blackAlpha"
-                                                  sx={{
-                                                    '[data-checked]': {
-                                                      bg: 'black',
-                                                      borderColor: 'black',
+                        {canApprove &&
+                          approvalMode &&
+                          DataRequirement?.reqStatus ===
+                            REQ_WAITING_APPROVAL && (
+                            <InputGroupPanel headerTitle={"Update Status"}>
+                              {DataRequirement?.isStatusFinal ? (
+                                <Alert status="success" rounded="md">
+                                  <AlertIcon />
+                                  <VStack align="start" spacing={1}>
+                                    <Text fontWeight="bold">
+                                      Status Already Final
+                                    </Text>
+                                    <Text fontSize="sm">
+                                      Current Status:{" "}
+                                      <Badge colorScheme="green">
+                                        {DataRequirement.reqStatus}
+                                      </Badge>
+                                    </Text>
+                                    <Text fontSize="sm" color="gray.600">
+                                      This requirement has reached a final
+                                      status and cannot be changed.
+                                    </Text>
+                                  </VStack>
+                                </Alert>
+                              ) : (
+                                <Flex as={Stack} spacing={4}>
+                                  <FormControl>
+                                    <HStack spacing={4} align="center">
+                                      <FormLabel mb={0} minW="120px">
+                                        Status Approval
+                                      </FormLabel>
+                                      <RadioGroup
+                                        value={StatusRequirement || ""}
+                                        onChange={setStatusRequirement}
+                                      >
+                                        <HStack spacing={3}>
+                                          {isLoadingStatuses ? (
+                                            <Text
+                                              fontSize="sm"
+                                              color="gray.500"
+                                            >
+                                              Loading statuses...
+                                            </Text>
+                                          ) : availableStatuses.length === 0 ? (
+                                            <Text
+                                              fontSize="sm"
+                                              color="gray.500"
+                                            >
+                                              No approval statuses available
+                                            </Text>
+                                          ) : (
+                                            availableStatuses.map((status) => {
+                                              const colorScheme =
+                                                STATUS_COLORS[
+                                                  status.codeStatus as keyof typeof STATUS_COLORS
+                                                ] || "gray";
+                                              const isSelected =
+                                                StatusRequirement ===
+                                                status.codeStatus;
+                                              return (
+                                                <Box
+                                                  key={status.id}
+                                                  as="label"
+                                                  cursor="pointer"
+                                                  borderRadius="md"
+                                                  bg={`${colorScheme}.100`}
+                                                  px={3}
+                                                  py={2}
+                                                  onDoubleClick={() => {
+                                                    if (isSelected) {
+                                                      setStatusRequirement("");
                                                     }
                                                   }}
                                                 >
-                                                  <Text fontSize="sm" fontWeight="bold" color={`${colorScheme}.700`}>
-                                                    {status.nameStatus}
-                                                  </Text>
-                                                </Radio>
-                                              </Box>
-                                            );
-                                          })
-                                        )}
-                                      </HStack>
-                                    </RadioGroup>
-                                  </HStack>
-                                </FormControl>
+                                                  <Radio
+                                                    value={status.codeStatus}
+                                                    colorScheme="blackAlpha"
+                                                    sx={{
+                                                      "[data-checked]": {
+                                                        bg: "black",
+                                                        borderColor: "black",
+                                                      },
+                                                    }}
+                                                  >
+                                                    <Text
+                                                      fontSize="sm"
+                                                      fontWeight="bold"
+                                                      color={`${colorScheme}.700`}
+                                                    >
+                                                      {status.nameStatus}
+                                                    </Text>
+                                                  </Radio>
+                                                </Box>
+                                              );
+                                            })
+                                          )}
+                                        </HStack>
+                                      </RadioGroup>
+                                    </HStack>
+                                  </FormControl>
 
-                                <FormControl>
-                                  <HStack spacing={4} align="start">
-                                    <FormLabel mb={0} minW="120px">Note Approval</FormLabel>
-                                    <Textarea
-                                      value={ApprovalNote || ""}
-                                      onChange={(e) => setApprovalNote(e.target.value)}
-                                      placeholder="Enter approval note (optional)"
-                                      rows={4}
-                                      flex="1"
-                                    />
-                                  </HStack>
-                                </FormControl>
+                                  <FormControl>
+                                    <HStack spacing={4} align="start">
+                                      <FormLabel mb={0} minW="120px">
+                                        Note Approval
+                                      </FormLabel>
+                                      <Textarea
+                                        value={ApprovalNote || ""}
+                                        onChange={(e) =>
+                                          setApprovalNote(e.target.value)
+                                        }
+                                        placeholder="Enter approval note (optional)"
+                                        rows={4}
+                                        flex="1"
+                                      />
+                                    </HStack>
+                                  </FormControl>
 
-                                <Flex justifyContent="flex-end">
-                                  <Button
-                                    colorScheme="blue"
-                                    onClick={ActionApprovalChangeStatus}
-                                    isDisabled={!StatusRequirement || isSubmittingApproval}
-                                  >
-                                    Submit Approval
-                                  </Button>
+                                  <Flex justifyContent="flex-end">
+                                    <Button
+                                      colorScheme="blue"
+                                      onClick={ActionApprovalChangeStatus}
+                                      isDisabled={
+                                        !StatusRequirement ||
+                                        isSubmittingApproval
+                                      }
+                                    >
+                                      Submit Approval
+                                    </Button>
+                                  </Flex>
                                 </Flex>
-                              </Flex>
-                            )}
-                          </InputGroupPanel>
-                        )}
+                              )}
+                            </InputGroupPanel>
+                          )}
                       </Flex>
                     )}
 
@@ -1733,7 +1858,9 @@ function RequirementDetailView() {
 
                         {/* Projects Section - Only show when requirement is approved */}
                         {DataRequirement.reqStatus === "APPROVED" && (
-                          <ProjectsRelationSectionDetail requirementId={DataRequirement.id} />
+                          <ProjectsRelationSectionDetail
+                            requirementId={DataRequirement.id}
+                          />
                         )}
 
                         <InputGroupPanel headerTitle={`Lampiran`}>
@@ -1825,7 +1952,12 @@ function RequirementDetailView() {
       )}
 
       {/* Approval Confirmation Modal */}
-      <Modal isOpen={isApprovalModalOpen} onClose={onApprovalModalClose} isCentered size="lg">
+      <Modal
+        isOpen={isApprovalModalOpen}
+        onClose={onApprovalModalClose}
+        isCentered
+        size="lg"
+      >
         <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
         <ModalContent mx={4}>
           <ModalHeader fontSize="lg" fontWeight="bold">
@@ -1855,7 +1987,9 @@ function RequirementDetailView() {
                       <Text fontSize="xs" color="gray.600" mb={1}>
                         Submitted by
                       </Text>
-                      <Text fontWeight="semibold">{DataRequirement?.assignedFromName || "-"}</Text>
+                      <Text fontWeight="semibold">
+                        {DataRequirement?.assignedFromName || "-"}
+                      </Text>
                     </Box>
                   )}
 
@@ -1866,12 +2000,18 @@ function RequirementDetailView() {
                       Approve Status
                     </Text>
                     <Badge
-                      colorScheme={STATUS_COLORS[StatusRequirement as keyof typeof STATUS_COLORS] || "blue"}
+                      colorScheme={
+                        STATUS_COLORS[
+                          StatusRequirement as keyof typeof STATUS_COLORS
+                        ] || "blue"
+                      }
                       fontSize="sm"
                       px={2}
                       py={1}
                     >
-                      {availableStatuses.find((s) => s.codeStatus === StatusRequirement)?.nameStatus || StatusRequirement}
+                      {availableStatuses.find(
+                        (s) => s.codeStatus === StatusRequirement
+                      )?.nameStatus || StatusRequirement}
                     </Badge>
                   </Box>
 
@@ -1901,14 +2041,20 @@ function RequirementDetailView() {
               <Alert status="info" rounded="md">
                 <AlertIcon />
                 <Text fontSize="sm">
-                  Are you sure you want to approve this requirement with the selected status?
+                  Are you sure you want to approve this requirement with the
+                  selected status?
                 </Text>
               </Alert>
             </VStack>
           </ModalBody>
 
           <ModalFooter>
-            <Button variant="ghost" colorScheme="red" onClick={onApprovalModalClose} mr={3}>
+            <Button
+              variant="ghost"
+              colorScheme="red"
+              onClick={onApprovalModalClose}
+              mr={3}
+            >
               Cancel
             </Button>
             <Button
@@ -1991,7 +2137,9 @@ const ReqInfoGeneralSectionView = ({
         <FormControl>
           <InputLayoutFull>
             <FormLabel h={"full"} mt={2}>
-              {DataRequirement.isHaveMemo == "Y" ? "Perihal" : "Perihal Sementara"}
+              {DataRequirement.isHaveMemo == "Y"
+                ? "Perihal"
+                : "Perihal Sementara"}
             </FormLabel>
             <Stack spacing={0} h={"full"}>
               {DataRequirement.isHaveMemo == "Y" ? (
@@ -2044,17 +2192,23 @@ const ReqInfoGeneralSectionView = ({
             </FormLabel>
             <Stack spacing={0} h={"full"}>
               <Text>
-                {DataRequirement.reqInititateDate != null && DataRequirement.reqAcceptedDate != null
+                {DataRequirement.reqInititateDate != null &&
+                DataRequirement.reqAcceptedDate != null
                   ? (() => {
-                    const startDate = new Date(DataRequirement.reqInititateDate);
-                    const endDate = new Date(DataRequirement.reqAcceptedDate);
-                    const diffMs = endDate.getTime() - startDate.getTime();
-                    const diffDays = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
-                    return `${diffDays} Hari Kalender`;
-                  })()
+                      const startDate = new Date(
+                        DataRequirement.reqInititateDate
+                      );
+                      const endDate = new Date(DataRequirement.reqAcceptedDate);
+                      const diffMs = endDate.getTime() - startDate.getTime();
+                      const diffDays = Math.max(
+                        1,
+                        Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+                      );
+                      return `${diffDays} Hari Kalender`;
+                    })()
                   : DataRequirement.reqDurationDay != null
-                    ? `${DataRequirement.reqDurationDay} Hari Kalender`
-                    : "N/A"}
+                  ? `${DataRequirement.reqDurationDay} Hari Kalender`
+                  : "N/A"}
               </Text>
             </Stack>
           </InputLayoutFull>
@@ -2070,8 +2224,8 @@ const ReqInfoGeneralSectionView = ({
                 {DataRequirement.isCarryOver == "Y"
                   ? "YA"
                   : DataRequirement.isCarryOver == "N"
-                    ? "TIDAK"
-                    : "N/A"}
+                  ? "TIDAK"
+                  : "N/A"}
               </Text>
             </Stack>
           </InputLayoutFull>
@@ -2113,8 +2267,9 @@ const ReqInfoPersonelSectionView = ({
             </FormLabel>
             <Stack spacing={0} h={"full"}>
               <Text>
-                {`${DataRequirement.assignedFromName || "N/A"} (${DataRequirement.assignedFromId || "N/A"
-                  })`}
+                {`${DataRequirement.assignedFromName || "N/A"} (${
+                  DataRequirement.assignedFromId || "N/A"
+                })`}
               </Text>
             </Stack>
           </InputLayoutFull>
@@ -2131,7 +2286,8 @@ const ReqInfoPersonelSectionView = ({
                   const grouped = DataRequirement.approvalDatas.reduce(
                     (acc, member) => {
                       const groupCode = member.groupCode || "UNREGISTERED";
-                      const groupName = member.groupName || "UNREGISTERED MEMBER GROUP";
+                      const groupName =
+                        member.groupName || "UNREGISTERED MEMBER GROUP";
 
                       if (!acc[groupCode]) {
                         acc[groupCode] = {
@@ -2142,27 +2298,37 @@ const ReqInfoPersonelSectionView = ({
                       acc[groupCode].members.push(member);
                       return acc;
                     },
-                    {} as Record<string, { groupName: string; members: typeof DataRequirement.approvalDatas }>
+                    {} as Record<
+                      string,
+                      {
+                        groupName: string;
+                        members: typeof DataRequirement.approvalDatas;
+                      }
+                    >
                   );
 
                   let memberIndex = 0;
-                  return Object.entries(grouped).map(([groupCode, { groupName, members }]) => (
-                    <Box key={groupCode} mb={3}>
-                      <Text fontWeight={600} fontSize="md" mb={2}>
-                        {groupName} ({members.length})
-                      </Text>
-                      <OrderedList start={memberIndex + 1}>
-                        {members.map((ua, idx) => {
-                          memberIndex++;
-                          return (
-                            <ListItem key={idx}>
-                              {`${ua.approverUserFirstName ?? "N/A"} (${ua.approverUserCode ?? "N/A"})`}
-                            </ListItem>
-                          );
-                        })}
-                      </OrderedList>
-                    </Box>
-                  ));
+                  return Object.entries(grouped).map(
+                    ([groupCode, { groupName, members }]) => (
+                      <Box key={groupCode} mb={3}>
+                        <Text fontWeight={600} fontSize="md" mb={2}>
+                          {groupName} ({members.length})
+                        </Text>
+                        <OrderedList start={memberIndex + 1}>
+                          {members.map((ua, idx) => {
+                            memberIndex++;
+                            return (
+                              <ListItem key={idx}>
+                                {`${ua.approverUserFirstName ?? "N/A"} (${
+                                  ua.approverUserCode ?? "N/A"
+                                })`}
+                              </ListItem>
+                            );
+                          })}
+                        </OrderedList>
+                      </Box>
+                    )
+                  );
                 })()
               ) : (
                 <Text color="gray.500" fontStyle="italic">
@@ -2652,8 +2818,8 @@ const ReqInfoSummaryBacklogsView = ({
                 {DataRequirement.appTargetUsers == "INTERNAL"
                   ? "INTERNAL (BANK)"
                   : DataRequirement.appTargetUsers == "EXTERNAL"
-                    ? "EXTERNAL (NASABAH)"
-                    : "N/A"}
+                  ? "EXTERNAL (NASABAH)"
+                  : "N/A"}
               </Text>
             </Stack>
           </InputLayoutFull>
@@ -2666,7 +2832,7 @@ const ReqInfoSummaryBacklogsView = ({
             </FormLabel>
             <Stack spacing={0} h={"full"}>
               {DataRequirement.appAccessFrontsiteDns ||
-                DataRequirement.appAccessBacksiteIp ? (
+              DataRequirement.appAccessBacksiteIp ? (
                 <>
                   {DataRequirement.appAccessFrontsiteDns && (
                     <Text>
@@ -2753,8 +2919,8 @@ const ReqInfoSummaryBacklogsView = ({
                   {DataRequirement.appOperational24hrs == null
                     ? "N/A"
                     : DataRequirement.appOperational24hrs == "NO"
-                      ? "TIDAK"
-                      : "YA"}
+                    ? "TIDAK"
+                    : "YA"}
                 </Text>
               </Text>
 
@@ -2800,9 +2966,9 @@ const ReqInfoSummaryBacklogsView = ({
               <Text>
                 {DataRequirement.appLiveTargetDate != null
                   ? formatDateInputCustom(
-                    DataRequirement.appLiveTargetDate,
-                    "/"
-                  )
+                      DataRequirement.appLiveTargetDate,
+                      "/"
+                    )
                   : "N/A"}
               </Text>
             </Stack>
@@ -2945,7 +3111,7 @@ const ReqInfoSummaryFileAttachmentsView = ({
       });
       return;
     }
-    window.open(url, '_blank');
+    window.open(url, "_blank");
   };
 
   const columnsData = useMemo<ColumnDef<MediaObjectResponse>[]>(
@@ -3046,17 +3212,17 @@ const ReqInfoSummaryFileAttachmentsView = ({
             </Button>
             {info.row.original.objectExtension.replace(".", "").trim() ==
               "pdf" && (
-                <Button
-                  size={"sm"}
-                  colorScheme={"blue"}
-                  onClick={() => {
-                    handleOpenPreview(info.row.original.objectFullPath || "");
-                  }}
-                  leftIcon={<FiEye />}
-                >
-                  Pratinjau
-                </Button>
-              )}
+              <Button
+                size={"sm"}
+                colorScheme={"blue"}
+                onClick={() => {
+                  handleOpenPreview(info.row.original.objectFullPath || "");
+                }}
+                leftIcon={<FiEye />}
+              >
+                Pratinjau
+              </Button>
+            )}
 
             {/* <Button
                 size={"sm"}
@@ -3140,7 +3306,9 @@ const ReqInfoSummaryFileAttachmentsView = ({
                     style={{ border: "none" }}
                   >
                     <iframe
-                      src={`https://docs.google.com/viewer?url=${encodeURIComponent(UrlFilePDF)}&embedded=true`}
+                      src={`https://docs.google.com/viewer?url=${encodeURIComponent(
+                        UrlFilePDF
+                      )}&embedded=true`}
                       width="100%"
                       height="600px"
                       style={{ border: "none" }}
@@ -3256,18 +3424,32 @@ const ReqInfoAcceptanceView = ({
   activeStep,
 }: ReqSectionProps) => {
   // Get latest history for review dates
-  const latestHistory = (DataRequirement && DataRequirement.requirementHistories && DataRequirement.requirementHistories.length > 0)
-    ? DataRequirement.requirementHistories[DataRequirement.requirementHistories.length - 1]
-    : null;
+  const latestHistory =
+    DataRequirement &&
+    DataRequirement.requirementHistories &&
+    DataRequirement.requirementHistories.length > 0
+      ? DataRequirement.requirementHistories[
+          DataRequirement.requirementHistories.length - 1
+        ]
+      : null;
 
-  const reviewStartDate = DataRequirement.reqReviewStartDate || (latestHistory && latestHistory.reqReviewStartDate);
-  const reviewEndDate = DataRequirement.reqReviewEndDate || (latestHistory && latestHistory.reqReviewEndDate);
+  const reviewStartDate =
+    DataRequirement.reqReviewStartDate ||
+    (latestHistory && latestHistory.reqReviewStartDate);
+  const reviewEndDate =
+    DataRequirement.reqReviewEndDate ||
+    (latestHistory && latestHistory.reqReviewEndDate);
 
   return (
     <>
-      {(DataRequirement && DataRequirement.requirementHistories && DataRequirement.requirementHistories.length > 0) ? (
+      {DataRequirement &&
+      DataRequirement.requirementHistories &&
+      DataRequirement.requirementHistories.length > 0 ? (
         DataRequirement.requirementHistories.map((history, idx) => (
-          <InputGroupPanel key={idx} headerTitle={`Former BRD Acceptance #${idx + 1}`}>
+          <InputGroupPanel
+            key={idx}
+            headerTitle={`Former BRD Acceptance #${idx + 1}`}
+          >
             <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"}>
               <GridItem colSpan={{ base: 12, sm: 12, md: 6, lg: 6 }} w={"full"}>
                 <Flex as={Stack} w={"full"} spacing={5}>
@@ -3279,7 +3461,9 @@ const ReqInfoAcceptanceView = ({
                       <Stack spacing={0} h={"full"}>
                         <Text>
                           {history.reqReviewStartDate != null
-                            ? formatDateTimeWithSecondsBE(history.reqReviewStartDate)
+                            ? formatDateTimeWithSecondsBE(
+                                history.reqReviewStartDate
+                              )
                             : "N/A"}
                         </Text>
                       </Stack>
@@ -3294,7 +3478,9 @@ const ReqInfoAcceptanceView = ({
                       <Stack spacing={0} h={"full"}>
                         <Text>
                           {history.reqReviewEndDate != null
-                            ? formatDateTimeWithSecondsBE(history.reqReviewEndDate)
+                            ? formatDateTimeWithSecondsBE(
+                                history.reqReviewEndDate
+                              )
                             : "N/A"}
                         </Text>
                       </Stack>
@@ -3308,29 +3494,39 @@ const ReqInfoAcceptanceView = ({
                       </FormLabel>
                       <Stack spacing={0} h={"full"}>
                         <Text fontWeight="bold">
-                          {history.reqReviewStartDate && history.reqReviewEndDate
+                          {history.reqReviewStartDate &&
+                          history.reqReviewEndDate
                             ? (() => {
-                              const diffMs = new Date(history.reqReviewEndDate).getTime() -
-                                new Date(history.reqReviewStartDate).getTime();
-                              const diffSeconds = Math.floor(diffMs / 1000);
-                              const diffMinutes = Math.floor(diffMs / (1000 * 60));
-                              const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-                              const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                                const diffMs =
+                                  new Date(history.reqReviewEndDate).getTime() -
+                                  new Date(
+                                    history.reqReviewStartDate
+                                  ).getTime();
+                                const diffSeconds = Math.floor(diffMs / 1000);
+                                const diffMinutes = Math.floor(
+                                  diffMs / (1000 * 60)
+                                );
+                                const diffHours = Math.floor(
+                                  diffMs / (1000 * 60 * 60)
+                                );
+                                const diffDays = Math.floor(
+                                  diffMs / (1000 * 60 * 60 * 24)
+                                );
 
-                              if (diffHours < 1) {
-                                const remainingSeconds = diffSeconds % 60;
-                                return `${diffMinutes} Menit ${remainingSeconds} Detik`;
-                              } else if (diffHours < 24) {
-                                const remainingMinutes = diffMinutes % 60;
-                                const remainingSeconds = diffSeconds % 60;
-                                return `${diffHours} Jam ${remainingMinutes} Menit ${remainingSeconds} Detik`;
-                              } else {
-                                const remainingHours = diffHours % 24;
-                                const remainingMinutes = diffMinutes % 60;
-                                const remainingSeconds = diffSeconds % 60;
-                                return `${diffDays} Hari ${remainingHours} Jam ${remainingMinutes} Menit ${remainingSeconds} Detik`;
-                              }
-                            })()
+                                if (diffHours < 1) {
+                                  const remainingSeconds = diffSeconds % 60;
+                                  return `${diffMinutes} Menit ${remainingSeconds} Detik`;
+                                } else if (diffHours < 24) {
+                                  const remainingMinutes = diffMinutes % 60;
+                                  const remainingSeconds = diffSeconds % 60;
+                                  return `${diffHours} Jam ${remainingMinutes} Menit ${remainingSeconds} Detik`;
+                                } else {
+                                  const remainingHours = diffHours % 24;
+                                  const remainingMinutes = diffMinutes % 60;
+                                  const remainingSeconds = diffSeconds % 60;
+                                  return `${diffDays} Hari ${remainingHours} Jam ${remainingMinutes} Menit ${remainingSeconds} Detik`;
+                                }
+                              })()
                             : "N/A"}
                         </Text>
                       </Stack>
@@ -3379,7 +3575,9 @@ const ReqInfoAcceptanceView = ({
         ))
       ) : (
         <InputGroupPanel headerTitle={"Former BRD Acceptance"}>
-          <Text color="gray.500" fontStyle="italic">Tidak ada data approval history</Text>
+          <Text color="gray.500" fontStyle="italic">
+            Tidak ada data approval history
+          </Text>
         </InputGroupPanel>
       )}
     </>
@@ -3406,9 +3604,10 @@ const RfcBacklogChangesView = ({
       {sortedBacklogs.length > 0 ? (
         sortedBacklogs.map((backlog, index) => {
           // Get latest history as Kondisi Eksisting
-          const latestHistory = backlog.backlogHistories && backlog.backlogHistories.length > 0
-            ? backlog.backlogHistories[backlog.backlogHistories.length - 1]
-            : null;
+          const latestHistory =
+            backlog.backlogHistories && backlog.backlogHistories.length > 0
+              ? backlog.backlogHistories[backlog.backlogHistories.length - 1]
+              : null;
 
           return (
             <Grid
@@ -3439,7 +3638,8 @@ const RfcBacklogChangesView = ({
                   borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
                   spacing={2}
                   boxShadow={"md"}
-                  minH={"280px"}
+                  // minH={"280px"}
+                  h={"full"}
                 >
                   <Flex w={"full"} as={HStack} justifyContent={"space-between"}>
                     <Heading as="h5" size="sm">
@@ -3483,7 +3683,7 @@ const RfcBacklogChangesView = ({
                     </InputLayoutFull>
                   </FormControl>
 
-                  <FormControl>
+                  {/* <FormControl>
                     <InputLayoutFull>
                       <FormLabel h={"full"} mt={2}>
                         Urgency
@@ -3492,9 +3692,9 @@ const RfcBacklogChangesView = ({
                         {latestHistory?.urgency || "LOW"}
                       </Badge>
                     </InputLayoutFull>
-                  </FormControl>
+                  </FormControl> */}
 
-                  <FormControl>
+                  {/* <FormControl>
                     <InputLayoutFull>
                       <FormLabel h={"full"} mt={2}>
                         Impact
@@ -3503,9 +3703,9 @@ const RfcBacklogChangesView = ({
                         {latestHistory?.impact || "LOW"}
                       </Badge>
                     </InputLayoutFull>
-                  </FormControl>
+                  </FormControl> */}
 
-                  <FormControl>
+                  {/* <FormControl>
                     <InputLayoutFull>
                       <FormLabel h={"full"} mt={2}>
                         Priority
@@ -3514,7 +3714,7 @@ const RfcBacklogChangesView = ({
                         {latestHistory?.priority || "LOW"}
                       </Badge>
                     </InputLayoutFull>
-                  </FormControl>
+                  </FormControl> */}
 
                   <FormControl>
                     <InputLayoutFull>
@@ -3526,6 +3726,50 @@ const RfcBacklogChangesView = ({
                       </Badge>
                     </InputLayoutFull>
                   </FormControl>
+
+                  {/* <FormControl>
+                    <InputLayoutFull>
+                      <FormLabel h={"full"} mt={2}>
+                        RFC Changes
+                      </FormLabel>
+                      <Badge colorScheme="blue">
+                        {latestHistory?.rfcBacklogChanges || "-"}
+                      </Badge>
+                    </InputLayoutFull>
+                  </FormControl> */}
+
+                  {/* <FormControl>
+                    <InputLayoutFull>
+                      <FormLabel h={"full"} mt={2}>
+                        RFC Important
+                      </FormLabel>
+                      <Badge colorScheme="cyan">
+                        {latestHistory?.rfcBacklogImportant || "-"}
+                      </Badge>
+                    </InputLayoutFull>
+                  </FormControl> */}
+
+                  {/* <FormControl>
+                    <InputLayoutFull>
+                      <FormLabel h={"full"} mt={2}>
+                        RFC Impact Others
+                      </FormLabel>
+                      <Badge colorScheme="teal">
+                        {latestHistory?.rfcBacklogImpactOthers || "-"}
+                      </Badge>
+                    </InputLayoutFull>
+                  </FormControl> */}
+
+                  {/* <FormControl>
+                    <InputLayoutFull>
+                      <FormLabel h={"full"} mt={2}>
+                        RFC Priority
+                      </FormLabel>
+                      <Badge colorScheme="pink">
+                        {latestHistory?.rfcPriorities || "-"}
+                      </Badge>
+                    </InputLayoutFull>
+                  </FormControl> */}
                 </Flex>
               </GridItem>
 
@@ -3584,7 +3828,7 @@ const RfcBacklogChangesView = ({
                     </InputLayoutFull>
                   </FormControl>
 
-                  <FormControl>
+                  {/* <FormControl>
                     <InputLayoutFull>
                       <FormLabel h={"full"} mt={2}>
                         Urgency
@@ -3593,20 +3837,18 @@ const RfcBacklogChangesView = ({
                         {backlog.urgency || "LOW"}
                       </Badge>
                     </InputLayoutFull>
-                  </FormControl>
+                  </FormControl> */}
 
-                  <FormControl>
+                  {/* <FormControl>
                     <InputLayoutFull>
                       <FormLabel h={"full"} mt={2}>
                         Impact
                       </FormLabel>
-                      <Badge colorScheme="red">
-                        {backlog.impact || "LOW"}
-                      </Badge>
+                      <Badge colorScheme="red">{backlog.impact || "LOW"}</Badge>
                     </InputLayoutFull>
-                  </FormControl>
+                  </FormControl> */}
 
-                  <FormControl>
+                  {/* <FormControl>
                     <InputLayoutFull>
                       <FormLabel h={"full"} mt={2}>
                         Priority
@@ -3615,7 +3857,7 @@ const RfcBacklogChangesView = ({
                         {backlog.priority || "LOW"}
                       </Badge>
                     </InputLayoutFull>
-                  </FormControl>
+                  </FormControl> */}
 
                   <FormControl>
                     <InputLayoutFull>
@@ -3624,6 +3866,50 @@ const RfcBacklogChangesView = ({
                       </FormLabel>
                       <Badge colorScheme="secondary">
                         {backlog.posOrder || 0}
+                      </Badge>
+                    </InputLayoutFull>
+                  </FormControl>
+
+                  <FormControl>
+                    <InputLayoutFull>
+                      <FormLabel h={"full"} mt={2}>
+                        RFC Changes
+                      </FormLabel>
+                      <Badge colorScheme="blue">
+                        {backlog.rfcBacklogChanges || "-"}
+                      </Badge>
+                    </InputLayoutFull>
+                  </FormControl>
+
+                  <FormControl>
+                    <InputLayoutFull>
+                      <FormLabel h={"full"} mt={2}>
+                        RFC Important
+                      </FormLabel>
+                      <Badge colorScheme="cyan">
+                        {backlog.rfcBacklogImportant || "-"}
+                      </Badge>
+                    </InputLayoutFull>
+                  </FormControl>
+
+                  <FormControl>
+                    <InputLayoutFull>
+                      <FormLabel h={"full"} mt={2}>
+                        RFC Impact Others
+                      </FormLabel>
+                      <Badge colorScheme="teal">
+                        {backlog.rfcBacklogImpactOthers || "-"}
+                      </Badge>
+                    </InputLayoutFull>
+                  </FormControl>
+
+                  <FormControl>
+                    <InputLayoutFull>
+                      <FormLabel h={"full"} mt={2}>
+                        RFC Priority
+                      </FormLabel>
+                      <Badge colorScheme="pink">
+                        {backlog.rfcPriorities || "-"}
                       </Badge>
                     </InputLayoutFull>
                   </FormControl>

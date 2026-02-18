@@ -1019,6 +1019,34 @@ export function getPriorityFromMatrix(impact: string, urgency: string): string {
   return "LOW";
 }
 
+export function getRfcPriorityIndex(rfcPriority?: string | null): number {
+  if (!rfcPriority) return 4;
+  
+  switch (rfcPriority.toUpperCase()) {
+    case "CRITICAL": return 1;
+    case "HIGH": return 2;
+    case "MEDIUM": return 3;
+    case "LOW": return 4;
+    default: return 4;
+  }
+}
+
+export function getRfcPriorityWithIndex(
+  rfcImportant: string,
+  rfcImpactOthers: string
+): { priority: string; index: number } {
+  if (rfcImportant === "IMPORTANT" && rfcImpactOthers === "LARGE") {
+    return { priority: "CRITICAL", index: 1 };
+  }
+  if (rfcImportant === "NORMAL" && rfcImpactOthers === "LARGE") {
+    return { priority: "HIGH", index: 2 };
+  }
+  if (rfcImportant === "IMPORTANT" && rfcImpactOthers === "SMALL") {
+    return { priority: "MEDIUM", index: 3 };
+  }
+  return { priority: "LOW", index: 4 };
+}
+
 export function priorityColor(label: string): string {
   const { colorMode } = useColorMode();
   if (label == "LOW") {
