@@ -3873,7 +3873,7 @@ const RfcBacklogChangesView = ({
                   <FormControl>
                     <InputLayoutFull>
                       <FormLabel h={"full"} mt={2}>
-                        RFC Changes
+                        Jenis Perubahan
                       </FormLabel>
                       <Badge colorScheme="blue">
                         {backlog.rfcBacklogChanges || "-"}
@@ -3884,7 +3884,7 @@ const RfcBacklogChangesView = ({
                   <FormControl>
                     <InputLayoutFull>
                       <FormLabel h={"full"} mt={2}>
-                        RFC Important
+                        Tingkat Kepentingan
                       </FormLabel>
                       <Badge colorScheme="cyan">
                         {backlog.rfcBacklogImportant || "-"}
@@ -3895,7 +3895,7 @@ const RfcBacklogChangesView = ({
                   <FormControl>
                     <InputLayoutFull>
                       <FormLabel h={"full"} mt={2}>
-                        RFC Impact Others
+                        Dampak Terhadap Sistem Lain
                       </FormLabel>
                       <Badge colorScheme="teal">
                         {backlog.rfcBacklogImpactOthers || "-"}
@@ -3906,7 +3906,7 @@ const RfcBacklogChangesView = ({
                   <FormControl>
                     <InputLayoutFull>
                       <FormLabel h={"full"} mt={2}>
-                        RFC Priority
+                        RFC Changes
                       </FormLabel>
                       <Badge colorScheme="pink">
                         {backlog.rfcPriorities || "-"}

@@ -38,7 +38,10 @@ interface BacklogsSectionProps {
   requirementType?: string | null;
 }
 
-export const BacklogsSection = ({ backlogList, requirementType }: BacklogsSectionProps) => {
+export const BacklogsSection = ({
+  backlogList,
+  requirementType,
+}: BacklogsSectionProps) => {
   const { colorMode } = useColorMode();
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 10;
@@ -51,20 +54,29 @@ export const BacklogsSection = ({ backlogList, requirementType }: BacklogsSectio
 
   const getPriorityColor = (priority: string) => {
     switch (priority?.toUpperCase()) {
-      case "CRITICAL": return "red";
-      case "HIGH": return "orange";
-      case "MEDIUM": return "yellow";
-      case "LOW": return "green";
-      default: return "gray";
+      case "CRITICAL":
+        return "red";
+      case "HIGH":
+        return "orange";
+      case "MEDIUM":
+        return "yellow";
+      case "LOW":
+        return "green";
+      default:
+        return "gray";
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status?.toUpperCase()) {
-      case "DONE": return "green";
-      case "IN_PROGRESS": return "blue";
-      case "TODO": return "gray";
-      default: return "gray";
+      case "DONE":
+        return "green";
+      case "IN_PROGRESS":
+        return "blue";
+      case "TODO":
+        return "gray";
+      default:
+        return "gray";
     }
   };
 
@@ -109,8 +121,8 @@ export const BacklogsSection = ({ backlogList, requirementType }: BacklogsSectio
         {isRfc ? (
           <RfcBacklogView backlogList={backlogList} colorMode={colorMode} />
         ) : (
-          <StandardBacklogView 
-            backlogList={backlogList} 
+          <StandardBacklogView
+            backlogList={backlogList}
             colorMode={colorMode}
             getPriorityColor={getPriorityColor}
             getStatusColor={getStatusColor}
@@ -135,14 +147,14 @@ interface StandardBacklogViewProps {
   itemsPerPage: number;
 }
 
-const StandardBacklogView = ({ 
-  backlogList, 
-  colorMode, 
-  getPriorityColor, 
+const StandardBacklogView = ({
+  backlogList,
+  colorMode,
+  getPriorityColor,
   getStatusColor,
   currentPage,
   setCurrentPage,
-  itemsPerPage
+  itemsPerPage,
 }: StandardBacklogViewProps) => {
   const totalPages = Math.ceil(backlogList.length / itemsPerPage);
   const startIndex = currentPage * itemsPerPage;
@@ -171,10 +183,14 @@ const StandardBacklogView = ({
                 }}
               >
                 <Td>
-                  <Text fontSize="sm" fontWeight="medium">{backlog.backlogName}</Text>
+                  <Text fontSize="sm" fontWeight="medium">
+                    {backlog.backlogName}
+                  </Text>
                 </Td>
                 <Td>
-                  <Text fontSize="sm" noOfLines={2}>{backlog.backlogDesc || "-"}</Text>
+                  <Text fontSize="sm" noOfLines={2}>
+                    {backlog.backlogDesc || "-"}
+                  </Text>
                 </Td>
                 <Td>
                   <Badge colorScheme="orange" fontSize="xs">
@@ -194,7 +210,6 @@ const StandardBacklogView = ({
                     {backlog.priority || "LOW"}
                   </Badge>
                 </Td>
-                
               </Tr>
             ))}
           </Tbody>
@@ -415,7 +430,7 @@ const RfcBacklogView = ({ backlogList, colorMode }: RfcBacklogViewProps) => {
                 <FormControl>
                   <InputLayoutFull>
                     <FormLabel h={"full"} mt={2}>
-                      RFC Changes
+                      Jenis Perubahan
                     </FormLabel>
                     <Badge colorScheme="blue">
                       {backlog.rfcBacklogChanges || "-"}
@@ -426,7 +441,7 @@ const RfcBacklogView = ({ backlogList, colorMode }: RfcBacklogViewProps) => {
                 <FormControl>
                   <InputLayoutFull>
                     <FormLabel h={"full"} mt={2}>
-                      RFC Important
+                      Tingkat Kepentingan
                     </FormLabel>
                     <Badge colorScheme="cyan">
                       {backlog.rfcBacklogImportant || "-"}
@@ -437,7 +452,7 @@ const RfcBacklogView = ({ backlogList, colorMode }: RfcBacklogViewProps) => {
                 <FormControl>
                   <InputLayoutFull>
                     <FormLabel h={"full"} mt={2}>
-                      RFC Impact Others
+                      Dampak Terhadap Sistem Lain
                     </FormLabel>
                     <Badge colorScheme="teal">
                       {backlog.rfcBacklogImpactOthers || "-"}
@@ -448,7 +463,7 @@ const RfcBacklogView = ({ backlogList, colorMode }: RfcBacklogViewProps) => {
                 <FormControl>
                   <InputLayoutFull>
                     <FormLabel h={"full"} mt={2}>
-                      RFC Priority
+                      Priority
                     </FormLabel>
                     <Badge colorScheme="pink">
                       {backlog.rfcPriorities || "-"}
