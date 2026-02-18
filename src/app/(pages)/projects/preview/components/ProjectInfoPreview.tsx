@@ -235,7 +235,8 @@ const ProjectInfoPreview = ({
       {backlogList && backlogList.length > 0 && (
         <BacklogsSection 
           backlogList={backlogList} 
-          backlogStats={backlogStats} 
+          backlogStats={backlogStats}
+          requirementType={DataProject?.requirementData?.requirementType}
         />
       )}
 
