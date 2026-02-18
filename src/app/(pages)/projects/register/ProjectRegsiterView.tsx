@@ -47,6 +47,7 @@ import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import {
   calculateDurationInDays,
   getPriorityFromMatrix,
+  getRfcPriorityWithIndex,
   priorityColor,
 } from "@/app/helper/MasterHelper";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
@@ -1039,6 +1040,9 @@ export default function ProjectRegisterView({
   const [bulkDeadline, setBulkDeadline] = useState<string>("");
   const [bulkUrgency, setBulkUrgency] = useState<string>("");
   const [bulkImpact, setBulkImpact] = useState<string>("");
+  const [bulkRfcChanges, setBulkRfcChanges] = useState<string>("");
+  const [bulkRfcImportant, setBulkRfcImportant] = useState<string>("");
+  const [bulkRfcImpactOthers, setBulkRfcImpactOthers] = useState<string>("");
 
   // Pagination state for selected backlogs
   const [selectedBacklogsPagination, setSelectedBacklogsPagination] =
@@ -1059,16 +1063,27 @@ export default function ProjectRegisterView({
     backlogId: string,
     updatedData: BacklogDataResponse
   ) => {
-    const prorityBacklog: string = getPriorityFromMatrix(
-      updatedData.impact,
-      updatedData.urgency
-    );
+    const isRfc = DataRequirement?.requirementType === "RFC";
+    
+    if (isRfc) {
+      // RFC priority calculation
+      const result = getRfcPriorityWithIndex(
+        updatedData.rfcBacklogImportant || "NORMAL",
+        updatedData.rfcBacklogImpactOthers || "SMALL"
+      );
+      updatedData.rfcPriorities = result.priority;
+    } else {
+      // BRD priority calculation
+      const prorityBacklog: string = getPriorityFromMatrix(
+        updatedData.impact,
+        updatedData.urgency
+      );
+      updatedData.priority = prorityBacklog;
+    }
 
     setDataBacklogsRequirement((prev) =>
       prev.map((item) =>
-        item.id === backlogId
-          ? { ...item, ...updatedData, priority: prorityBacklog }
-          : item
+        item.id === backlogId ? { ...item, ...updatedData } : item
       )
     );
   };
@@ -1089,6 +1104,8 @@ export default function ProjectRegisterView({
       }
     }
 
+    const isRfc = DataRequirement?.requirementType === "RFC";
+
     setDataBacklogsRequirement((prev) =>
       prev.map((item) => {
         // Only update backlogs that are currently displayed in selectedBacklogs table
@@ -1096,13 +1113,28 @@ export default function ProjectRegisterView({
 
         const updatedItem = { ...item };
         if (bulkDeadline) updatedItem.backlogEnddate = bulkDeadline;
-        if (bulkUrgency) updatedItem.urgency = bulkUrgency;
-        if (bulkImpact) updatedItem.impact = bulkImpact;
 
-        // Recalculate priority with updated values
-        const finalUrgency = bulkUrgency || item.urgency;
-        const finalImpact = bulkImpact || item.impact;
-        updatedItem.priority = getPriorityFromMatrix(finalImpact, finalUrgency);
+        if (isRfc) {
+          // RFC fields
+          if (bulkRfcChanges) updatedItem.rfcBacklogChanges = bulkRfcChanges;
+          if (bulkRfcImportant) updatedItem.rfcBacklogImportant = bulkRfcImportant;
+          if (bulkRfcImpactOthers) updatedItem.rfcBacklogImpactOthers = bulkRfcImpactOthers;
+
+          // Recalculate RFC priority
+          const finalImportant = bulkRfcImportant || item.rfcBacklogImportant || "NORMAL";
+          const finalImpactOthers = bulkRfcImpactOthers || item.rfcBacklogImpactOthers || "SMALL";
+          const result = getRfcPriorityWithIndex(finalImportant, finalImpactOthers);
+          updatedItem.rfcPriorities = result.priority;
+        } else {
+          // BRD fields
+          if (bulkUrgency) updatedItem.urgency = bulkUrgency;
+          if (bulkImpact) updatedItem.impact = bulkImpact;
+
+          // Recalculate BRD priority
+          const finalUrgency = bulkUrgency || item.urgency;
+          const finalImpact = bulkImpact || item.impact;
+          updatedItem.priority = getPriorityFromMatrix(finalImpact, finalUrgency);
+        }
 
         return updatedItem;
       })
@@ -1110,8 +1142,14 @@ export default function ProjectRegisterView({
 
     // Clear inputs after apply
     setBulkDeadline("");
-    setBulkUrgency("");
-    setBulkImpact("");
+    if (isRfc) {
+      setBulkRfcChanges("");
+      setBulkRfcImportant("");
+      setBulkRfcImpactOthers("");
+    } else {
+      setBulkUrgency("");
+      setBulkImpact("");
+    }
   };
 
   // Backlog selection handlers (memoized for performance)
@@ -1639,216 +1677,338 @@ export default function ProjectRegisterView({
   }, [tokenData]);
 
   const columnsData = useMemo<ColumnDef<BacklogDataResponse>[]>(
-    () => [
-      {
-        accessorKey: "numbData",
-        cell: (info) => (
-          <Flex justifyContent={"center"} alignItems="flex-start" h={"full"}>
-            <Text>{info.row.index + 1}.</Text>
-          </Flex>
-        ),
-        header: () => <Flex justifyContent={"center"}>No.</Flex>,
-        footer: (props) => props.column.id,
-        // Custom variable
-        meta: {
-          isFilterable: false,
-        } as ColumnMetaCustom,
-      },
-      {
-        accessorFn: (row) => row.backlogCode,
-        id: "backlogCode",
-        cell: (info) => (
-          <Flex
-            w={"full"}
-            h={"full"}
-            justifyContent={"center"}
-            alignItems={"start"}
-            as={Stack}
-            spacing={1}
-          >
-            <Flex as={Stack} spacing={2}>
-              <Flex as={Stack} spacing={0}>
-                <Text fontWeight={600}>{info.row.original.backlogName}</Text>
-                <Text fontSize={"smaller"} color={"gray.500"}>
-                  {/* #{info.row.original.backlogCode} */}
-                </Text>
+    () => {
+      const isRfc = DataRequirement?.requirementType === "RFC";
+      
+      const baseColumns: ColumnDef<BacklogDataResponse>[] = [
+        {
+          accessorKey: "numbData",
+          cell: (info) => (
+            <Flex justifyContent={"center"} alignItems="flex-start" h={"full"}>
+              <Text>{info.row.index + 1}.</Text>
+            </Flex>
+          ),
+          header: () => <Flex justifyContent={"center"}>No.</Flex>,
+          footer: (props) => props.column.id,
+          meta: {
+            isFilterable: false,
+          } as ColumnMetaCustom,
+        },
+        {
+          accessorFn: (row) => row.backlogCode,
+          id: "backlogCode",
+          cell: (info) => (
+            <Flex
+              w={"full"}
+              h={"full"}
+              justifyContent={"center"}
+              alignItems={"start"}
+              as={Stack}
+              spacing={1}
+            >
+              <Flex as={Stack} spacing={2}>
+                <Flex as={Stack} spacing={0}>
+                  <Text fontWeight={600}>{info.row.original.backlogName}</Text>
+                  <Text fontSize={"smaller"} color={"gray.500"}>
+                    {/* #{info.row.original.backlogCode} */}
+                  </Text>
+                </Flex>
               </Flex>
             </Flex>
-          </Flex>
-        ),
-        header: () => <span>Nama Scope</span>,
-        footer: (props) => props.column.id,
-        // Custom variable
-        meta: {
-          isFilterable: false,
-        } as ColumnMetaCustom,
-      },
-      {
-        accessorFn: (row) => row.backlogDesc,
-        id: "backlogDesc",
-        cell: (info) => (
-          <Flex
-            w={"full"}
-            h={"full"}
-            justifyContent={"center"}
-            alignItems={"start"}
-            as={Stack}
-            spacing={1}
-          >
-            <Flex as={Stack} spacing={2}>
-              <Text as={"p"}>{info.row.original.backlogDesc}</Text>
-            </Flex>
-          </Flex>
-        ),
-        header: () => <span>Deskripsi Scope</span>,
-        footer: (props) => props.column.id,
-        // Custom variable
-        meta: {
-          isFilterable: false,
-        } as ColumnMetaCustom,
-      },
-      {
-        accessorFn: (row) => row.backlogEnddate,
-        id: "backlogEnddate",
-        cell: (info) => (
-          <Flex
-            w={"full"}
-            h={"full"}
-            justifyContent={"center"}
-            alignItems={"start"}
-            as={Stack}
-            spacing={1}
-          >
-            <Flex as={Stack} spacing={2}>
-              <UpdateBacklogDateInput
-                idInput={`deadlineSet-${info.row.index}`}
-                fieldName="backlogEnddate"
-                dataSource={info.row.original}
-                dataInput={info.row.original.backlogEnddate}
-                updateBacklog={updateBacklog}
-                maxDate={DataRequirement?.appLiveTargetDate}
-              />
-            </Flex>
-          </Flex>
-        ),
-        header: () => <span>Deadline</span>,
-        footer: (props) => props.column.id,
-        // Custom variable
-        meta: {
-          isFilterable: false,
-        } as ColumnMetaCustom,
-      },
-      {
-        accessorFn: (row) => row.urgency,
-        id: "urgency",
-        cell: (info) => (
-          <Flex
-            w={"full"}
-            h={"full"}
-            justifyContent={"center"}
-            alignItems={"start"}
-            as={Stack}
-            spacing={1}
-          >
-            <Flex as={Stack} spacing={2}>
-              <UpdateUrgencyImpactInput
-                idInput={`urgencySet-${info.row.index}`}
-                fieldName={"urgency"}
-                dataSource={info.row.original}
-                dataInput={info.row.original.urgency}
-                updateBacklog={updateBacklog}
-                key={`urgencySet-${info.row.index}`}
-              />
-            </Flex>
-          </Flex>
-        ),
-        header: () => <span>Urgency</span>,
-        footer: (props) => props.column.id,
-        // Custom variable
-        meta: {
-          isFilterable: false,
-        } as ColumnMetaCustom,
-      },
-      {
-        accessorFn: (row) => row.impact,
-        id: "impact",
-        cell: (info) => (
-          <Flex
-            w={"full"}
-            h={"full"}
-            justifyContent={"center"}
-            alignItems={"start"}
-            as={Stack}
-            spacing={1}
-          >
-            <Flex as={Stack} spacing={2}>
-              <UpdateUrgencyImpactInput
-                idInput={`impactSet-${info.row.index}`}
-                fieldName={"impact"}
-                dataSource={info.row.original}
-                dataInput={info.row.original.impact}
-                updateBacklog={updateBacklog}
-                key={`impactSet-${info.row.index}`}
-              />
-            </Flex>
-          </Flex>
-        ),
-        header: () => <span>Impact</span>,
-        footer: (props) => props.column.id,
-        // Custom variable
-        meta: {
-          isFilterable: false,
-        } as ColumnMetaCustom,
-      },
-      {
-        accessorFn: (row) => row.priority,
-        id: "priority",
-        cell: (info) => (
-          <Flex
-            w={"full"}
-            h={"full"}
-            justifyContent={"center"}
-            alignItems={"start"}
-            as={Stack}
-            spacing={1}
-          >
-            <Flex as={Stack} spacing={2}>
-              <Text
-                fontWeight={600}
-                color={priorityColor(info.row.original.priority)}
-              >
-                {info.row.original.priority}
-              </Text>
-            </Flex>
-          </Flex>
-        ),
-        header: () => <span>Priority</span>,
-        footer: (props) => props.column.id,
-        // Custom variable
-        meta: {
-          isFilterable: false,
-        } as ColumnMetaCustom,
-      },
-      {
-        accessorFn: (row) => row.id,
-        id: "id",
-        cell: (info) => (
-          <Flex w={"full"} justifyContent={"center"}>
-            <AdditionalInfoUpdate
-              idInput={info.row.original.backlogCode}
-              dataSource={info.row.original}
-              updateBacklog={updateBacklog}
-            />
-          </Flex>
-        ),
-        header: () => <span>Additional</span>,
-        footer: (props) => props.column.id,
-        // Custom variable
-        meta: {
-          isFilterable: false,
+          ),
+          header: () => <span>Nama Scope</span>,
+          footer: (props) => props.column.id,
+          meta: {
+            isFilterable: false,
+          } as ColumnMetaCustom,
         },
-      },
-    ],
+        {
+          accessorFn: (row) => row.backlogDesc,
+          id: "backlogDesc",
+          cell: (info) => (
+            <Flex
+              w={"full"}
+              h={"full"}
+              justifyContent={"center"}
+              alignItems={"start"}
+              as={Stack}
+              spacing={1}
+            >
+              <Flex as={Stack} spacing={2}>
+                <Text as={"p"}>{info.row.original.backlogDesc}</Text>
+              </Flex>
+            </Flex>
+          ),
+          header: () => <span>Deskripsi Scope</span>,
+          footer: (props) => props.column.id,
+          meta: {
+            isFilterable: false,
+          } as ColumnMetaCustom,
+        },
+        {
+          accessorFn: (row) => row.backlogEnddate,
+          id: "backlogEnddate",
+          cell: (info) => (
+            <Flex
+              w={"full"}
+              h={"full"}
+              justifyContent={"center"}
+              alignItems={"start"}
+              as={Stack}
+              spacing={1}
+            >
+              <Flex as={Stack} spacing={2}>
+                <UpdateBacklogDateInput
+                  idInput={`deadlineSet-${info.row.index}`}
+                  fieldName="backlogEnddate"
+                  dataSource={info.row.original}
+                  dataInput={info.row.original.backlogEnddate}
+                  updateBacklog={updateBacklog}
+                  maxDate={DataRequirement?.appLiveTargetDate}
+                />
+              </Flex>
+            </Flex>
+          ),
+          header: () => <span>Deadline</span>,
+          footer: (props) => props.column.id,
+          meta: {
+            isFilterable: false,
+          } as ColumnMetaCustom,
+        },
+      ];
+
+      const priorityColumns: ColumnDef<BacklogDataResponse>[] = isRfc
+        ? [
+            {
+              accessorFn: (row) => row.rfcBacklogChanges,
+              id: "rfcBacklogChanges",
+              cell: (info) => (
+                <Flex
+                  w={"full"}
+                  h={"full"}
+                  justifyContent={"center"}
+                  alignItems={"start"}
+                  as={Stack}
+                  spacing={1}
+                >
+                  <Flex as={Stack} spacing={2}>
+                    <UpdateRfcFieldInput
+                      idInput={`rfcChanges-${info.row.index}`}
+                      fieldName="rfcBacklogChanges"
+                      dataSource={info.row.original}
+                      dataInput={info.row.original.rfcBacklogChanges || "MAJOR"}
+                      updateBacklog={updateBacklog}
+                    />
+                  </Flex>
+                </Flex>
+              ),
+              header: () => <span>RFC Changes</span>,
+              footer: (props) => props.column.id,
+              meta: {
+                isFilterable: false,
+              } as ColumnMetaCustom,
+            },
+            {
+              accessorFn: (row) => row.rfcBacklogImportant,
+              id: "rfcBacklogImportant",
+              cell: (info) => (
+                <Flex
+                  w={"full"}
+                  h={"full"}
+                  justifyContent={"center"}
+                  alignItems={"start"}
+                  as={Stack}
+                  spacing={1}
+                >
+                  <Flex as={Stack} spacing={2}>
+                    <UpdateRfcFieldInput
+                      idInput={`rfcImportant-${info.row.index}`}
+                      fieldName="rfcBacklogImportant"
+                      dataSource={info.row.original}
+                      dataInput={info.row.original.rfcBacklogImportant || "NORMAL"}
+                      updateBacklog={updateBacklog}
+                    />
+                  </Flex>
+                </Flex>
+              ),
+              header: () => <span>RFC Important</span>,
+              footer: (props) => props.column.id,
+              meta: {
+                isFilterable: false,
+              } as ColumnMetaCustom,
+            },
+            {
+              accessorFn: (row) => row.rfcBacklogImpactOthers,
+              id: "rfcBacklogImpactOthers",
+              cell: (info) => (
+                <Flex
+                  w={"full"}
+                  h={"full"}
+                  justifyContent={"center"}
+                  alignItems={"start"}
+                  as={Stack}
+                  spacing={1}
+                >
+                  <Flex as={Stack} spacing={2}>
+                    <UpdateRfcFieldInput
+                      idInput={`rfcImpactOthers-${info.row.index}`}
+                      fieldName="rfcBacklogImpactOthers"
+                      dataSource={info.row.original}
+                      dataInput={info.row.original.rfcBacklogImpactOthers || "SMALL"}
+                      updateBacklog={updateBacklog}
+                    />
+                  </Flex>
+                </Flex>
+              ),
+              header: () => <span>RFC Impact Others</span>,
+              footer: (props) => props.column.id,
+              meta: {
+                isFilterable: false,
+              } as ColumnMetaCustom,
+            },
+            {
+              accessorFn: (row) => row.rfcPriorities,
+              id: "rfcPriorities",
+              cell: (info) => (
+                <Flex
+                  w={"full"}
+                  h={"full"}
+                  justifyContent={"center"}
+                  alignItems={"start"}
+                  as={Stack}
+                  spacing={1}
+                >
+                  <Flex as={Stack} spacing={2}>
+                    <Text
+                      fontWeight={600}
+                      color={priorityColor(info.row.original.rfcPriorities || "LOW")}
+                    >
+                      {info.row.original.rfcPriorities || "LOW"}
+                    </Text>
+                  </Flex>
+                </Flex>
+              ),
+              header: () => <span>RFC Priority (Auto)</span>,
+              footer: (props) => props.column.id,
+              meta: {
+                isFilterable: false,
+              } as ColumnMetaCustom,
+            },
+          ]
+        : [
+            {
+              accessorFn: (row) => row.urgency,
+              id: "urgency",
+              cell: (info) => (
+                <Flex
+                  w={"full"}
+                  h={"full"}
+                  justifyContent={"center"}
+                  alignItems={"start"}
+                  as={Stack}
+                  spacing={1}
+                >
+                  <Flex as={Stack} spacing={2}>
+                    <UpdateUrgencyImpactInput
+                      idInput={`urgencySet-${info.row.index}`}
+                      fieldName={"urgency"}
+                      dataSource={info.row.original}
+                      dataInput={info.row.original.urgency}
+                      updateBacklog={updateBacklog}
+                      key={`urgencySet-${info.row.index}`}
+                    />
+                  </Flex>
+                </Flex>
+              ),
+              header: () => <span>Urgency</span>,
+              footer: (props) => props.column.id,
+              meta: {
+                isFilterable: false,
+              } as ColumnMetaCustom,
+            },
+            {
+              accessorFn: (row) => row.impact,
+              id: "impact",
+              cell: (info) => (
+                <Flex
+                  w={"full"}
+                  h={"full"}
+                  justifyContent={"center"}
+                  alignItems={"start"}
+                  as={Stack}
+                  spacing={1}
+                >
+                  <Flex as={Stack} spacing={2}>
+                    <UpdateUrgencyImpactInput
+                      idInput={`impactSet-${info.row.index}`}
+                      fieldName={"impact"}
+                      dataSource={info.row.original}
+                      dataInput={info.row.original.impact}
+                      updateBacklog={updateBacklog}
+                      key={`impactSet-${info.row.index}`}
+                    />
+                  </Flex>
+                </Flex>
+              ),
+              header: () => <span>Impact</span>,
+              footer: (props) => props.column.id,
+              meta: {
+                isFilterable: false,
+              } as ColumnMetaCustom,
+            },
+            {
+              accessorFn: (row) => row.priority,
+              id: "priority",
+              cell: (info) => (
+                <Flex
+                  w={"full"}
+                  h={"full"}
+                  justifyContent={"center"}
+                  alignItems={"start"}
+                  as={Stack}
+                  spacing={1}
+                >
+                  <Flex as={Stack} spacing={2}>
+                    <Text
+                      fontWeight={600}
+                      color={priorityColor(info.row.original.priority)}
+                    >
+                      {info.row.original.priority}
+                    </Text>
+                  </Flex>
+                </Flex>
+              ),
+              header: () => <span>Priority</span>,
+              footer: (props) => props.column.id,
+              meta: {
+                isFilterable: false,
+              } as ColumnMetaCustom,
+            },
+          ];
+
+      const additionalColumn: ColumnDef<BacklogDataResponse>[] = [
+        {
+          accessorFn: (row) => row.id,
+          id: "id",
+          cell: (info) => (
+            <Flex w={"full"} justifyContent={"center"}>
+              <AdditionalInfoUpdate
+                idInput={info.row.original.backlogCode}
+                dataSource={info.row.original}
+                updateBacklog={updateBacklog}
+              />
+            </Flex>
+          ),
+          header: () => <span>Additional</span>,
+          footer: (props) => props.column.id,
+          meta: {
+            isFilterable: false,
+          },
+        },
+      ];
+
+      return [...baseColumns, ...priorityColumns, ...additionalColumn];
+    },
     [colorMode, DataRequirement]
   );
 
@@ -5631,9 +5791,20 @@ export default function ProjectRegisterView({
                                           <Tr>
                                             <Th w="50px">Select</Th>
                                             <Th>Backlog Name</Th>
-                                            <Th>Priority</Th>
-                                            <Th>Urgency</Th>
-                                            <Th>Impact</Th>
+                                            {DataRequirement?.requirementType === "RFC" ? (
+                                              <>
+                                                <Th>RFC Priority</Th>
+                                                <Th>RFC Changes</Th>
+                                                <Th>RFC Important</Th>
+                                                <Th>RFC Impact Others</Th>
+                                              </>
+                                            ) : (
+                                              <>
+                                                <Th>Priority</Th>
+                                                <Th>Urgency</Th>
+                                                <Th>Impact</Th>
+                                              </>
+                                            )}
                                             <Th>Status</Th>
                                           </Tr>
                                         </Thead>
@@ -5653,17 +5824,36 @@ export default function ProjectRegisterView({
                                                 />
                                               </Td>
                                               <Td>{backlog.backlogName}</Td>
-                                              <Td>
-                                                <Badge
-                                                  colorScheme={priorityColor(
-                                                    backlog.priority
-                                                  )}
-                                                >
-                                                  {backlog.priority}
-                                                </Badge>
-                                              </Td>
-                                              <Td>{backlog.urgency}</Td>
-                                              <Td>{backlog.impact}</Td>
+                                              {DataRequirement?.requirementType === "RFC" ? (
+                                                <>
+                                                  <Td>
+                                                    <Badge
+                                                      colorScheme={priorityColor(
+                                                        backlog.rfcPriorities || "LOW"
+                                                      )}
+                                                    >
+                                                      {backlog.rfcPriorities || "LOW"}
+                                                    </Badge>
+                                                  </Td>
+                                                  <Td>{backlog.rfcBacklogChanges || "MAJOR"}</Td>
+                                                  <Td>{backlog.rfcBacklogImportant || "NORMAL"}</Td>
+                                                  <Td>{backlog.rfcBacklogImpactOthers || "SMALL"}</Td>
+                                                </>
+                                              ) : (
+                                                <>
+                                                  <Td>
+                                                    <Badge
+                                                      colorScheme={priorityColor(
+                                                        backlog.priority
+                                                      )}
+                                                    >
+                                                      {backlog.priority}
+                                                    </Badge>
+                                                  </Td>
+                                                  <Td>{backlog.urgency}</Td>
+                                                  <Td>{backlog.impact}</Td>
+                                                </>
+                                              )}
                                               <Td>{backlog.developmentStatus}</Td>
                                             </Tr>
                                           ))}
@@ -5707,38 +5897,88 @@ export default function ProjectRegisterView({
                                               size="sm"
                                             />
                                           </FormControl>
-                                          <FormControl>
-                                            <FormLabel fontSize="sm">Urgency</FormLabel>
-                                            <SelectC
-                                              value={bulkUrgency}
-                                              onChange={(e) => setBulkUrgency(e.target.value)}
-                                              size="sm"
-                                              placeholder="Select urgency"
-                                            >
-                                              <option value="LOW">Low</option>
-                                              <option value="MEDIUM">Medium</option>
-                                              <option value="HIGH">High</option>
-                                            </SelectC>
-                                          </FormControl>
-                                          <FormControl>
-                                            <FormLabel fontSize="sm">Impact</FormLabel>
-                                            <SelectC
-                                              value={bulkImpact}
-                                              onChange={(e) => setBulkImpact(e.target.value)}
-                                              size="sm"
-                                              placeholder="Select impact"
-                                            >
-                                              <option value="LOW">Low</option>
-                                              <option value="MEDIUM">Medium</option>
-                                              <option value="HIGH">High</option>
-                                            </SelectC>
-                                          </FormControl>
+                                          {DataRequirement?.requirementType === "RFC" ? (
+                                            <>
+                                              <FormControl>
+                                                <FormLabel fontSize="sm">RFC Changes</FormLabel>
+                                                <SelectC
+                                                  value={bulkRfcChanges}
+                                                  onChange={(e) => setBulkRfcChanges(e.target.value)}
+                                                  size="sm"
+                                                  placeholder="Select RFC changes"
+                                                >
+                                                  <option value="MAJOR">Major</option>
+                                                  <option value="MINOR">Minor</option>
+                                                  <option value="EMERGENCY">Emergency</option>
+                                                </SelectC>
+                                              </FormControl>
+                                              <FormControl>
+                                                <FormLabel fontSize="sm">RFC Important</FormLabel>
+                                                <SelectC
+                                                  value={bulkRfcImportant}
+                                                  onChange={(e) => setBulkRfcImportant(e.target.value)}
+                                                  size="sm"
+                                                  placeholder="Select importance"
+                                                >
+                                                  <option value="NORMAL">Normal</option>
+                                                  <option value="IMPORTANT">Important</option>
+                                                </SelectC>
+                                              </FormControl>
+                                              <FormControl>
+                                                <FormLabel fontSize="sm">RFC Impact Others</FormLabel>
+                                                <SelectC
+                                                  value={bulkRfcImpactOthers}
+                                                  onChange={(e) => setBulkRfcImpactOthers(e.target.value)}
+                                                  size="sm"
+                                                  placeholder="Select impact"
+                                                >
+                                                  <option value="SMALL">Small</option>
+                                                  <option value="LARGE">Large</option>
+                                                </SelectC>
+                                              </FormControl>
+                                            </>
+                                          ) : (
+                                            <>
+                                              <FormControl>
+                                                <FormLabel fontSize="sm">Urgency</FormLabel>
+                                                <SelectC
+                                                  value={bulkUrgency}
+                                                  onChange={(e) => setBulkUrgency(e.target.value)}
+                                                  size="sm"
+                                                  placeholder="Select urgency"
+                                                >
+                                                  <option value="LOW">Low</option>
+                                                  <option value="MEDIUM">Medium</option>
+                                                  <option value="HIGH">High</option>
+                                                </SelectC>
+                                              </FormControl>
+                                              <FormControl>
+                                                <FormLabel fontSize="sm">Impact</FormLabel>
+                                                <SelectC
+                                                  value={bulkImpact}
+                                                  onChange={(e) => setBulkImpact(e.target.value)}
+                                                  size="sm"
+                                                  placeholder="Select impact"
+                                                >
+                                                  <option value="LOW">Low</option>
+                                                  <option value="MEDIUM">Medium</option>
+                                                  <option value="HIGH">High</option>
+                                                </SelectC>
+                                              </FormControl>
+                                            </>
+                                          )}
                                         </Grid>
                                         <Button
                                           colorScheme="blue"
                                           size="sm"
                                           onClick={applyBulkToAllBacklogs}
-                                          isDisabled={!bulkDeadline && !bulkUrgency && !bulkImpact}
+                                          isDisabled={
+                                            !bulkDeadline && 
+                                            (DataRequirement?.requirementType === "RFC"
+                                              ? (!bulkRfcChanges && !bulkRfcImportant && !bulkRfcImpactOthers)
+                                              : (!bulkUrgency && !bulkImpact)
+                                            )
+                                          }
                                         >
                                           Apply to All
                                         </Button>
@@ -6399,6 +6639,78 @@ const UpdateUrgencyImpactInput = ({
     </SelectC>
   );
 };
+
+interface RfcFieldInputProps {
+  idInput: string;
+  fieldName: "rfcBacklogChanges" | "rfcBacklogImportant" | "rfcBacklogImpactOthers";
+  dataSource: BacklogDataResponse;
+  dataInput: string;
+  updateBacklog: (id: string, data: BacklogDataResponse) => void;
+}
+
+const UpdateRfcFieldInput = ({
+  idInput,
+  fieldName,
+  dataSource,
+  dataInput,
+  updateBacklog,
+}: RfcFieldInputProps) => {
+  const [optionValue, setOptionValue] = useState<string>(dataInput);
+  const [dataBacklog, setDataBacklog] = useState<BacklogDataResponse>(dataSource);
+
+  useEffect(() => {
+    setOptionValue(dataInput);
+    setDataBacklog(dataSource);
+  }, [dataInput, dataSource]);
+
+  const handleChange = (value: string) => {
+    setOptionValue(value);
+    const updatedBacklog = { ...dataBacklog, [fieldName]: value };
+    setDataBacklog(updatedBacklog);
+    updateBacklog(updatedBacklog.id, updatedBacklog);
+  };
+
+  const getOptions = () => {
+    switch (fieldName) {
+      case "rfcBacklogChanges":
+        return [
+          { value: "MAJOR", label: "Major" },
+          { value: "MINOR", label: "Minor" },
+          { value: "EMERGENCY", label: "Emergency" },
+        ];
+      case "rfcBacklogImportant":
+        return [
+          { value: "NORMAL", label: "Normal" },
+          { value: "IMPORTANT", label: "Important" },
+        ];
+      case "rfcBacklogImpactOthers":
+        return [
+          { value: "SMALL", label: "Small" },
+          { value: "LARGE", label: "Large" },
+        ];
+      default:
+        return [];
+    }
+  };
+
+  return (
+    <SelectC
+      id={idInput}
+      name={idInput}
+      value={optionValue}
+      onChange={(e) => handleChange(e.target.value)}
+      size="sm"
+      variant={"flushed"}
+    >
+      {getOptions().map((opt) => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
+    </SelectC>
+  );
+};
+
 
 interface BacklogDateInputProps {
   idInput: string;
