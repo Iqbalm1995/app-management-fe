@@ -129,9 +129,11 @@ const RequirementListChooseData = memo(
     const [ParamFilter, setParamFilter] = useState<ListSearchByParamProps[]>(
       []
     );
-    const [SelectedTypeReq, setSelectedTypeReq] = useState<string>(
-      requirementType ? requirementType.toUpperCase() : "BRD"
-    );
+    const [SelectedTypeReq, setSelectedTypeReq] = useState<string>(() => {
+      const reqType = requirementType ? requirementType.toUpperCase() : "BRD";
+      console.log("RequirementListChooseData - requirementType prop:", requirementType, "-> SelectedTypeReq:", reqType);
+      return reqType;
+    });
     const [HasRequirementMemo, setHasRequirementMemo] = useState<string>("");
 
     const delay = useCallback(
@@ -644,12 +646,19 @@ const RequirementListChooseData = memo(
       ]
     );
 
-    // Set Onload Filter For Constant Filter
+    // Set Onload Filter For Constant Filter - combines status and requirement type
     useEffect(() => {
       const brdStatusApprove: ListSearchByParamProps = {
         field: "reqStatus",
         operator: "=",
         value: REQ_STATUS_APPROVED,
+        filterLabel: "Status",
+      };
+
+      const requirementTypeFilter: ListSearchByParamProps = {
+        field: "requirementType",
+        operator: "=",
+        value: SelectedTypeReq,
         filterLabel: "Tipe",
       };
 
@@ -658,33 +667,25 @@ const RequirementListChooseData = memo(
         GetDataDivision("", MAX_SIZE_TABLE);
       }
 
-      // Add filter
-      const filterWhereData: ListSearchByParamProps[] = addParamFilterUpdate(
-        ParamFilter,
+      // Add both filters at once
+      let filterWhereData: ListSearchByParamProps[] = addParamFilterUpdate(
+        [],
         brdStatusApprove
       );
-      setParamFilter(filterWhereData);
-    }, []);
-
-    useEffect(() => {
-      const brdFilterSelected: ListSearchByParamProps[] = [
-        {
-          field: "requirementType",
-          operator: "=",
-          value: SelectedTypeReq,
-          filterLabel: "Tipe",
-        },
-      ];
-
-      const updatedFilters = brdFilterSelected.reduce(
-        (acc, filter) => addParamFilterUpdate(acc, filter),
-        ParamFilter
+      filterWhereData = addParamFilterUpdate(
+        filterWhereData,
+        requirementTypeFilter
       );
-      setParamFilter(updatedFilters);
+      
+      console.log("Initial filters setup:", filterWhereData);
+      setParamFilter(filterWhereData);
     }, [SelectedTypeReq]);
 
 
     useEffect(() => {
+      // Skip if ParamFilter is not initialized yet (empty)
+      if (ParamFilter.length === 0) return;
+      
       if (HasRequirementMemo === "") {
         // Remove memo filter when "Semua" is selected
         const filteredParams = ParamFilter.filter(f => f.field !== "isHaveMemo");
@@ -707,22 +708,13 @@ const RequirementListChooseData = memo(
       }
     }, [HasRequirementMemo]);
     useEffect(() => {
-      const brdStatusApproveStatic: ListSearchByParamProps = {
-        field: "reqStatus",
-        operator: "=",
-        value: REQ_STATUS_APPROVED,
-        filterLabel: "Tipe",
-      };
-      const filterWhereData: ListSearchByParamProps[] = addParamFilter(
-        ParamFilter,
-        brdStatusApproveStatic
-      );
-      if (DataAuth && DataAuth.team && tokenData) {
+      // Use ParamFilter directly - it already contains both status and requirement type filters
+      if (DataAuth && DataAuth.team && tokenData && ParamFilter.length > 0) {
         const PayloadList: PaggingListPayload = {
           search: globalFilter,
           limit: pageSize,
           page: pageIndex,
-          filterWhere: filterWhereData,
+          filterWhere: ParamFilter,
           fieldOrder: ["createdAt"],
           orderDir: "desc",
         };

@@ -543,9 +543,8 @@ export default function ProjectRegisterView({
     : PROJECT_ROUTES[PROJECT_TYPE_PROCUREMENT]; // Default fallback
 
   const backUrl = projectTypeRegister === PROJECT_TYPE_INTERNAL_DEVELOPMENT
-    ? (reqType === "RFC" ? `/projects-manager/?reqType=rfc` : `/projects-manager/`)
+    ? `/projects-manager/?reqType=${reqType?.toLowerCase() || 'brd'}`
     : (routeConfig?.back || "/projects-procurements");
-
   const GetOptionDataServ = async (
     groupCode: string,
     parentCode?: string | null
