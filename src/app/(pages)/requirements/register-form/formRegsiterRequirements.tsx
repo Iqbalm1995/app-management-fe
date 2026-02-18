@@ -1178,46 +1178,71 @@ function RegisterRequirementFormPage({
           if (hasInternal) setWorkProgramInt("1");
           if (hasExternal) setWorkProgramExt("1");
 
-          // Load division selections for each work program
+          // Load division and group selections for each work program
           const internalWPs: OptionDivisionDynamic[] = [];
           const externalWPs: OptionDivisionDynamic[] = [];
-          let internalIndex = 0;
-          let externalIndex = 0;
+          const internalGroups: OptionDivisionDynamic[] = [];
+          const externalGroups: OptionDivisionDynamic[] = [];
 
-          for (const wp of reqData.workPrograms) {
+          for (let i = 0; i < reqData.workPrograms.length; i++) {
+            const wp = reqData.workPrograms[i];
+
+            // Load division data
             const divisionData = await GetDataMasterOrg("", 1, [
               { field: "id", operator: "=", value: wp.divisionId },
             ]);
 
+            const divisionOption =
+              divisionData.length > 0
+                ? {
+                    label: `${divisionData[0].orgName}`,
+                    value: divisionData[0].id,
+                  }
+                : { label: "", value: "" };
+
+            // Load group data if groupId exists
+            if (wp.groupId) {
+              const groupData = await GetDataMasterOrg("", 1, [
+                { field: "id", operator: "=", value: wp.groupId },
+              ]);
+
+              if (groupData.length > 0) {
+                const groupOption = {
+                  label: `${groupData[0].orgName}`,
+                  value: groupData[0].id,
+                };
+
+                if (wp.workProgramSource === "INTERNAL") {
+                  internalGroups.push({
+                    indexData: i,
+                    OptionData: groupOption,
+                  });
+                } else {
+                  externalGroups.push({
+                    indexData: i,
+                    OptionData: groupOption,
+                  });
+                }
+              }
+            }
+
             if (wp.workProgramSource === "INTERNAL") {
               internalWPs.push({
-                indexData: internalIndex,
-                OptionData:
-                  divisionData.length > 0
-                    ? {
-                        label: `${divisionData[0].orgName}`,
-                        value: divisionData[0].id,
-                      }
-                    : { label: "", value: "" },
+                indexData: i,
+                OptionData: divisionOption,
               });
-              internalIndex++;
             } else {
               externalWPs.push({
-                indexData: externalIndex,
-                OptionData:
-                  divisionData.length > 0
-                    ? {
-                        label: `${divisionData[0].orgName}`,
-                        value: divisionData[0].id,
-                      }
-                    : { label: "", value: "" },
+                indexData: i,
+                OptionData: divisionOption,
               });
-              externalIndex++;
             }
           }
 
           setSelectedDivisionWPInternal(internalWPs);
           setSelectedDivisionWPExternal(externalWPs);
+          setSelectedGroupWPInternal(internalGroups);
+          setSelectedGroupWPExternal(externalGroups);
         }
 
         // Load selected app if appInitialCode exists
@@ -8240,7 +8265,8 @@ const Section4RFCView = ({
                 backlogHistories: [],
                 rfcBacklogChanges: dt.backlog.rfcBacklogChanges || "MAJOR",
                 rfcBacklogImportant: dt.backlog.rfcBacklogImportant || "NORMAL",
-                rfcBacklogImpactOthers: dt.backlog.rfcBacklogImpactOthers || "SMALL",
+                rfcBacklogImpactOthers:
+                  dt.backlog.rfcBacklogImpactOthers || "SMALL",
                 rfcPriorities: dt.backlog.rfcPriorities || "LOW",
                 rfcPrioritiesIndex: dt.backlog.rfcPrioritiesIndex || null,
               },
@@ -9305,7 +9331,7 @@ const Section4RFCView = ({
                       <FormControl>
                         <InputLayoutFull>
                           <FormLabel h={"full"} mt={2}>
-                            RFC Changes
+                            Jenis Perubahan
                           </FormLabel>
                           <Stack spacing={0}>
                             <Select
@@ -9321,7 +9347,8 @@ const Section4RFCView = ({
                               }}
                               onChange={(e) => {
                                 const updated = [...BacklogChanges];
-                                updated[index].rfcBacklogChanges = e?.value || "MAJOR";
+                                updated[index].rfcBacklogChanges =
+                                  e?.value || "MAJOR";
                                 setBacklogChanges(updated);
                               }}
                             />
@@ -9331,7 +9358,7 @@ const Section4RFCView = ({
                       <FormControl>
                         <InputLayoutFull>
                           <FormLabel h={"full"} mt={2}>
-                            RFC Important
+                            Tingkat Kepentingan
                           </FormLabel>
                           <Stack spacing={0}>
                             <Select
@@ -9346,14 +9373,16 @@ const Section4RFCView = ({
                               }}
                               onChange={(e) => {
                                 const updated = [...BacklogChanges];
-                                updated[index].rfcBacklogImportant = e?.value || "NORMAL";
-                                
+                                updated[index].rfcBacklogImportant =
+                                  e?.value || "NORMAL";
+
                                 const result = getRfcPriorityWithIndex(
                                   e?.value || "NORMAL",
-                                  updated[index].rfcBacklogImpactOthers || "SMALL"
+                                  updated[index].rfcBacklogImpactOthers ||
+                                    "SMALL"
                                 );
                                 updated[index].rfcPriorities = result.priority;
-                                
+
                                 setBacklogChanges(updated);
                               }}
                             />
@@ -9363,7 +9392,7 @@ const Section4RFCView = ({
                       <FormControl>
                         <InputLayoutFull>
                           <FormLabel h={"full"} mt={2}>
-                            RFC Impact Others
+                            Dampak Terhadap Sistem Lain
                           </FormLabel>
                           <Stack spacing={0}>
                             <Select
@@ -9378,14 +9407,16 @@ const Section4RFCView = ({
                               }}
                               onChange={(e) => {
                                 const updated = [...BacklogChanges];
-                                updated[index].rfcBacklogImpactOthers = e?.value || "SMALL";
-                                
+                                updated[index].rfcBacklogImpactOthers =
+                                  e?.value || "SMALL";
+
                                 const result = getRfcPriorityWithIndex(
-                                  updated[index].rfcBacklogImportant || "NORMAL",
+                                  updated[index].rfcBacklogImportant ||
+                                    "NORMAL",
                                   e?.value || "SMALL"
                                 );
                                 updated[index].rfcPriorities = result.priority;
-                                
+
                                 setBacklogChanges(updated);
                               }}
                             />
@@ -9395,7 +9426,7 @@ const Section4RFCView = ({
                       <FormControl>
                         <InputLayoutFull>
                           <FormLabel h={"full"} mt={2}>
-                            RFC Priority (Auto)
+                            Priority
                           </FormLabel>
                           <Stack spacing={0}>
                             <Input
