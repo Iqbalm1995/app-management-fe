@@ -1253,13 +1253,20 @@ function RegisterRequirementFormPage({
 
         // Load Work Programs if available
         if (reqData.workPrograms && reqData.workPrograms.length > 0) {
-          formik.setFieldValue("workPrograms", reqData.workPrograms);
+          // Sort work programs by createdAt ASC
+          const sortedWorkPrograms = [...reqData.workPrograms].sort((a, b) => {
+            const dateA = new Date(a.createdAt).getTime();
+            const dateB = new Date(b.createdAt).getTime();
+            return dateA - dateB;
+          });
+
+          formik.setFieldValue("workPrograms", sortedWorkPrograms);
 
           // Check if there are INTERNAL or EXTERNAL work programs
-          const hasInternal = reqData.workPrograms.some(
+          const hasInternal = sortedWorkPrograms.some(
             (wp) => wp.workProgramSource === "INTERNAL"
           );
-          const hasExternal = reqData.workPrograms.some(
+          const hasExternal = sortedWorkPrograms.some(
             (wp) => wp.workProgramSource === "EXTERNAL"
           );
 
@@ -1272,8 +1279,8 @@ function RegisterRequirementFormPage({
           const internalGroups: OptionDivisionDynamic[] = [];
           const externalGroups: OptionDivisionDynamic[] = [];
 
-          for (let i = 0; i < reqData.workPrograms.length; i++) {
-            const wp = reqData.workPrograms[i];
+          for (let i = 0; i < sortedWorkPrograms.length; i++) {
+            const wp = sortedWorkPrograms[i];
 
             // Load division data
             const divisionData = await GetDataMasterOrg("", 1, [
@@ -1400,6 +1407,11 @@ function RegisterRequirementFormPage({
                 priority: b.priority || "LOW",
                 backlogHistories: b.backlogHistories || [],
                 reffData: b.reffData, // Preserve reffData for RFC
+                rfcBacklogChanges: b.rfcBacklogChanges || null,
+                rfcBacklogImportant: b.rfcBacklogImportant || null,
+                rfcBacklogImpactOthers: b.rfcBacklogImpactOthers || null,
+                rfcPriorities: b.rfcPriorities || null,
+                rfcPrioritiesIndex: b.rfcPrioritiesIndex || null,
               };
             }
           );
@@ -1597,29 +1609,38 @@ function RegisterRequirementFormPage({
       requirementId: requirementId!,
       isSubmitSave: false,
       ...data,
-      backlogFeatures:
-        data.requirementType === "RFC"
-          ? data.backlogFeatures || []
-          : DataBackLogs.map((b) => ({
-              Id: b.backlogId || null,
-              ParentBacklogId: b.parentBacklogId,
-              BacklogName: b.backlogName,
-              BacklogDesc: b.backlogDesc,
-              Note: b.note,
-              PosOrder: b.posOrder,
-              Urgency: b.urgency || "LOW",
-              Impact: b.impact || "LOW",
-              Priority: b.priority || "LOW",
-              backlogId: b.backlogId || null,
-              parentBacklogId: b.parentBacklogId,
-              backlogName: b.backlogName,
-              backlogDesc: b.backlogDesc,
-              note: b.note,
-              posOrder: b.posOrder,
-              urgency: b.urgency || "LOW",
-              impact: b.impact || "LOW",
-              priority: b.priority || "LOW",
-            })),
+      backlogFeatures: DataBackLogs.map((b) => ({
+        Id: b.backlogId || null,
+        ParentBacklogId: b.parentBacklogId,
+        BacklogName: b.backlogName,
+        BacklogDesc: b.backlogDesc,
+        Note: b.note,
+        PosOrder: b.posOrder,
+        Urgency: b.urgency || "LOW",
+        Impact: b.impact || "LOW",
+        Priority: b.priority || "LOW",
+        RfcBacklogChanges: b.rfcBacklogChanges || null,
+        RfcBacklogImportant: b.rfcBacklogImportant || null,
+        RfcBacklogImpactOthers: b.rfcBacklogImpactOthers || null,
+        RfcPriorities: b.rfcPriorities || null,
+        RfcPrioritiesIndex: b.rfcPrioritiesIndex || null,
+        BacklogHistories: b.backlogHistories || [],
+        backlogId: b.backlogId || null,
+        parentBacklogId: b.parentBacklogId,
+        backlogName: b.backlogName,
+        backlogDesc: b.backlogDesc,
+        note: b.note,
+        posOrder: b.posOrder,
+        urgency: b.urgency || "LOW",
+        impact: b.impact || "LOW",
+        priority: b.priority || "LOW",
+        rfcBacklogChanges: b.rfcBacklogChanges || null,
+        rfcBacklogImportant: b.rfcBacklogImportant || null,
+        rfcBacklogImpactOthers: b.rfcBacklogImpactOthers || null,
+        rfcPriorities: b.rfcPriorities || null,
+        rfcPrioritiesIndex: b.rfcPrioritiesIndex || null,
+        backlogHistories: b.backlogHistories || [],
+      })),
       picAssignUsers: ChoosedMemberProjects.map((m) => ({
         Id: m.id || null,
         UserId: m.userId,
@@ -1741,70 +1762,38 @@ function RegisterRequirementFormPage({
       requirementId: requirementId!,
       isSubmitSave: true,
       ...data,
-      backlogFeatures:
-        data.requirementType === "RFC" &&
-        data.backlogFeatures &&
-        data.backlogFeatures.length > 0
-          ? data.backlogFeatures.map((b: any) => {
-              console.log("Mapping RFC backlog:", {
-                id: b.id,
-                backlogId: b.backlogId,
-                backlogName: b.backlogName,
-                urgency: b.urgency,
-                backlogHistories: b.backlogHistories,
-              });
-              return {
-                Id: b.id || null,
-                ParentBacklogId: b.parentBacklogId,
-                BacklogName: b.backlogName,
-                BacklogDesc: b.backlogDesc,
-                Note: b.note,
-                PosOrder: b.posOrder,
-                Urgency: b.urgency || "LOW",
-                Impact: b.impact || "LOW",
-                Priority: b.priority || "LOW",
-                RfcBacklogChanges: b.rfcBacklogChanges || "MAJOR",
-                RfcBacklogImportant: b.rfcBacklogImportant || "NORMAL",
-                RfcBacklogImpactOthers: b.rfcBacklogImpactOthers || "SMALL",
-                RfcPriorities: b.rfcPriorities || "LOW",
-                RfcPrioritiesIndex: b.rfcPrioritiesIndex || null,
-                BacklogHistories: b.backlogHistories || [],
-                parentBacklogId: b.parentBacklogId,
-                backlogName: b.backlogName,
-                backlogDesc: b.backlogDesc,
-                note: b.note,
-                posOrder: b.posOrder,
-                urgency: b.urgency || "LOW",
-                impact: b.impact || "LOW",
-                priority: b.priority || "LOW",
-                rfcBacklogChanges: b.rfcBacklogChanges || "MAJOR",
-                rfcBacklogImportant: b.rfcBacklogImportant || "NORMAL",
-                rfcBacklogImpactOthers: b.rfcBacklogImpactOthers || "SMALL",
-                rfcPriorities: b.rfcPriorities || "LOW",
-                rfcPrioritiesIndex: b.rfcPrioritiesIndex || null,
-                backlogHistories: b.backlogHistories || [],
-              };
-            })
-          : DataBackLogs.map((b) => ({
-              Id: b.backlogId || null,
-              ParentBacklogId: b.parentBacklogId,
-              BacklogName: b.backlogName,
-              BacklogDesc: b.backlogDesc,
-              Note: b.note,
-              PosOrder: b.posOrder,
-              Urgency: b.urgency || "LOW",
-              Impact: b.impact || "LOW",
-              Priority: b.priority || "LOW",
-              backlogId: b.backlogId || null,
-              parentBacklogId: b.parentBacklogId,
-              backlogName: b.backlogName,
-              backlogDesc: b.backlogDesc,
-              note: b.note,
-              posOrder: b.posOrder,
-              urgency: b.urgency || "LOW",
-              impact: b.impact || "LOW",
-              priority: b.priority || "LOW",
-            })),
+      backlogFeatures: DataBackLogs.map((b) => ({
+        Id: b.backlogId || null,
+        ParentBacklogId: b.parentBacklogId,
+        BacklogName: b.backlogName,
+        BacklogDesc: b.backlogDesc,
+        Note: b.note,
+        PosOrder: b.posOrder,
+        Urgency: b.urgency || "LOW",
+        Impact: b.impact || "LOW",
+        Priority: b.priority || "LOW",
+        RfcBacklogChanges: b.rfcBacklogChanges || null,
+        RfcBacklogImportant: b.rfcBacklogImportant || null,
+        RfcBacklogImpactOthers: b.rfcBacklogImpactOthers || null,
+        RfcPriorities: b.rfcPriorities || null,
+        RfcPrioritiesIndex: b.rfcPrioritiesIndex || null,
+        BacklogHistories: b.backlogHistories || [],
+        backlogId: b.backlogId || null,
+        parentBacklogId: b.parentBacklogId,
+        backlogName: b.backlogName,
+        backlogDesc: b.backlogDesc,
+        note: b.note,
+        posOrder: b.posOrder,
+        urgency: b.urgency || "LOW",
+        impact: b.impact || "LOW",
+        priority: b.priority || "LOW",
+        rfcBacklogChanges: b.rfcBacklogChanges || null,
+        rfcBacklogImportant: b.rfcBacklogImportant || null,
+        rfcBacklogImpactOthers: b.rfcBacklogImpactOthers || null,
+        rfcPriorities: b.rfcPriorities || null,
+        rfcPrioritiesIndex: b.rfcPrioritiesIndex || null,
+        backlogHistories: b.backlogHistories || [],
+      })),
       picAssignUsers: ChoosedMemberProjects.map((m) => ({
         Id: m.id || null,
         UserId: m.userId,
@@ -4991,9 +4980,11 @@ function RegisterRequirementFormPage({
                                                 IsLoadingGroupDivisionSelect
                                               }
                                               value={
-                                                SelectedGroupWPExternal.find(
+                                                OptionGroupDivision.find(
+                                                  (opt) => opt.value === formik.values.workPrograms[index].groupId
+                                                ) || SelectedGroupWPExternal.find(
                                                   (x) => x.indexData == index
-                                                )?.OptionData
+                                                )?.OptionData || null
                                               }
                                             />
 
@@ -5590,9 +5581,11 @@ function RegisterRequirementFormPage({
                                                 IsLoadingGroupDivisionSelect
                                               }
                                               value={
-                                                SelectedGroupWPInternal.find(
+                                                OptionGroupDivision.find(
+                                                  (opt) => opt.value === formik.values.workPrograms[index].groupId
+                                                ) || SelectedGroupWPInternal.find(
                                                   (x) => x.indexData == index
-                                                )?.OptionData
+                                                )?.OptionData || null
                                               }
                                             />
                                             <FormErrorMessage>
@@ -8292,6 +8285,11 @@ const Section4RFCView = ({
         updatedBy: "",
         reffData: b.reffData || null,
         backlogHistories: (b.backlogHistories || []) as any,
+        rfcBacklogChanges: b.rfcBacklogChanges || null,
+        rfcBacklogImportant: b.rfcBacklogImportant || null,
+        rfcBacklogImpactOthers: b.rfcBacklogImpactOthers || null,
+        rfcPriorities: b.rfcPriorities || null,
+        rfcPrioritiesIndex: b.rfcPrioritiesIndex || null,
       }));
       console.log("Populated BacklogApps from DataBackLogs:", backlogAppsData);
       setBacklogApps(backlogAppsData);
@@ -8348,6 +8346,10 @@ const Section4RFCView = ({
           urgency: b.urgency || "LOW",
           impact: b.impact || "LOW",
           priority: b.priority || "LOW",
+          rfcBacklogChanges: b.rfcBacklogChanges || "MAJOR",
+          rfcBacklogImportant: b.rfcBacklogImportant || "NORMAL",
+          rfcBacklogImpactOthers: b.rfcBacklogImpactOthers || "SMALL",
+          rfcPriorities: b.rfcPriorities || "LOW",
         };
       });
 
@@ -8434,6 +8436,31 @@ const Section4RFCView = ({
 
     // setBacklogData(updatedBacklogData);
   }, [BacklogChanges, DataBackLogs]);
+
+  // Sync BacklogChanges RFC fields back to DataBackLogs for RFC requirements
+  useEffect(() => {
+    if (type_req_param === "RFC" && BacklogChanges.length > 0 && DataBackLogs.length > 0) {
+      const updatedDataBackLogs = DataBackLogs.map((existingBacklog, index) => {
+        const correspondingChange = BacklogChanges[index];
+        if (!correspondingChange) return existingBacklog;
+
+        return {
+          ...existingBacklog,
+          rfcBacklogChanges: correspondingChange.rfcBacklogChanges || null,
+          rfcBacklogImportant: correspondingChange.rfcBacklogImportant || null,
+          rfcBacklogImpactOthers: correspondingChange.rfcBacklogImpactOthers || null,
+          rfcPriorities: correspondingChange.rfcPriorities || null,
+          urgency: correspondingChange.urgency || "LOW",
+          impact: correspondingChange.impact || "LOW",
+          priority: correspondingChange.priority || "LOW",
+        };
+      });
+
+      if (JSON.stringify(updatedDataBackLogs) !== JSON.stringify(DataBackLogs)) {
+        setDataBackLogs(updatedDataBackLogs);
+      }
+    }
+  }, [BacklogChanges, type_req_param]);
 
   const GetListBacklog = async (
     searchValue: string = "",

@@ -581,7 +581,7 @@ function RequirementDetailView() {
             value: req_id,
           },
         ],
-        fieldOrder: ["backlogName"],
+        fieldOrder: ["posOrder"],
         orderDir: "asc",
       };
 
@@ -2475,11 +2475,18 @@ const ReqInfoWorkProgramsView = ({
       DataRequirement.workPrograms != null &&
       DataRequirement.workPrograms.length > 0
     ) {
-      const internalWorkPrograms = DataRequirement.workPrograms
+      // Sort work programs by createdAt ASC
+      const sortedWorkPrograms = [...DataRequirement.workPrograms].sort((a, b) => {
+        const dateA = new Date(a.createdAt).getTime();
+        const dateB = new Date(b.createdAt).getTime();
+        return dateA - dateB;
+      });
+
+      const internalWorkPrograms = sortedWorkPrograms
         .map((item, index) => ({ ...item, originalIndex: index }))
         .filter((x) => x.workProgramSource === "INTERNAL");
 
-      const externalWorkPrograms = DataRequirement.workPrograms
+      const externalWorkPrograms = sortedWorkPrograms
         .map((item, index) => ({ ...item, originalIndex: index }))
         .filter((x) => x.workProgramSource === "EXTERNAL");
 
@@ -3594,9 +3601,9 @@ const RfcBacklogChangesView = ({
   DataBacklogs,
   colorMode,
 }: RfcBacklogChangesViewProps) => {
-  // Sort by posOrder descending
+  // Sort by posOrder ascending
   const sortedBacklogs = [...DataBacklogs].sort(
-    (a, b) => (b.posOrder || 0) - (a.posOrder || 0)
+    (a, b) => (a.posOrder || 0) - (b.posOrder || 0)
   );
 
   return (
