@@ -568,6 +568,11 @@ export function mapBacklogArrayToUpdatePayload(
     posOrder: data.posOrder,
     version: data.version,
     isLive: data.isLive,
+    rfcBacklogChanges: data.rfcBacklogChanges,
+    rfcBacklogImportant: data.rfcBacklogImportant,
+    rfcBacklogImpactOthers: data.rfcBacklogImpactOthers,
+    rfcPriorities: data.rfcPriorities,
+    rfcPrioritiesIndex: data.rfcPrioritiesIndex,
   }));
 }
 
