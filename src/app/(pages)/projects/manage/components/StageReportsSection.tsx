@@ -24,6 +24,7 @@ import useProjects from "@/app/services/useProjects";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { FiPlus, FiEdit2, FiTrash2, FiFileText } from "react-icons/fi";
 import StageReportFormModal from "./StageReportFormModal";
+import { formatDateWithLabels } from "@/app/helper/MasterHelper";
 
 interface StageReportsSectionProps {
   stageId: string;
@@ -63,10 +64,25 @@ const StageReportsSection = ({
     }
   }, [tokenData, stageId, page]);
 
+  useEffect(() => {
+    console.log("Reports state updated:", reports);
+    reports.forEach((report, index) => {
+      console.log(`Report ${index}:`, {
+        id: report.id,
+        note: report.reportNote,
+        startDate: report.reportStartDate,
+        endDate: report.reportEndDate,
+        startDateType: typeof report.reportStartDate,
+        endDateType: typeof report.reportEndDate,
+      });
+    });
+  }, [reports]);
+
   const loadReports = async () => {
     setIsLoading(true);
     const response = await ListProjectSdlcStageReports(stageId, page, pageSize, tokenData);
     if (response && response.statusCode === RES_CODE_OK && response.data) {
+      console.log("Reports data from API:", response.data);
       setReports(response.data);
     }
     setIsLoading(false);
@@ -204,6 +220,61 @@ const StageReportsSection = ({
                       </HStack>
 
                       <Text whiteSpace="pre-wrap">{report.reportNote}</Text>
+
+                      {(report.reportStartDate || report.reportEndDate) ? (
+                        <Box
+                          bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                          p={3}
+                          rounded="md"
+                          borderWidth="1px"
+                          borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                        >
+                          <VStack spacing={2} align="stretch" fontSize="sm">
+                            {report.reportStartDate && (
+                              <HStack spacing={2} flexWrap="wrap">
+                                <Text fontWeight="medium" minW="50px">Start:</Text>
+                                <Text>{new Date(report.reportStartDate).toLocaleDateString()}</Text>
+                                {(() => {
+                                  try {
+                                    const labels = formatDateWithLabels(report.reportStartDate);
+                                    return (
+                                      <>
+                                        <Badge colorScheme="blue" fontSize="xs">W{labels.week}</Badge>
+                                        <Badge colorScheme="purple" fontSize="xs">Q{labels.quarter}</Badge>
+                                        <Badge colorScheme="gray" fontSize="xs">{labels.year}</Badge>
+                                      </>
+                                    );
+                                  } catch (e) {
+                                    console.error("Error formatting start date:", e);
+                                    return null;
+                                  }
+                                })()}
+                              </HStack>
+                            )}
+                            {report.reportEndDate && (
+                              <HStack spacing={2} flexWrap="wrap">
+                                <Text fontWeight="medium" minW="50px">End:</Text>
+                                <Text>{new Date(report.reportEndDate).toLocaleDateString()}</Text>
+                                {(() => {
+                                  try {
+                                    const labels = formatDateWithLabels(report.reportEndDate);
+                                    return (
+                                      <>
+                                        <Badge colorScheme="blue" fontSize="xs">W{labels.week}</Badge>
+                                        <Badge colorScheme="purple" fontSize="xs">Q{labels.quarter}</Badge>
+                                        <Badge colorScheme="gray" fontSize="xs">{labels.year}</Badge>
+                                      </>
+                                    );
+                                  } catch (e) {
+                                    console.error("Error formatting end date:", e);
+                                    return null;
+                                  }
+                                })()}
+                              </HStack>
+                            )}
+                          </VStack>
+                        </Box>
+                      ) : null}
 
                       {report.tagsReport && (
                         <HStack spacing={2} flexWrap="wrap">

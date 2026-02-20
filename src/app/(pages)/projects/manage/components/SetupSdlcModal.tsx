@@ -33,6 +33,7 @@ import { radiusStyle, RES_CODE_OK } from "@/app/constants/applicationConstants";
 import useSdlcFlow, { SdlcFlowResponse } from "@/app/services/useSdlcFlow";
 import useSdlcFlowStage, { SdlcFlowStageResponse } from "@/app/services/useSdlcFlowStage";
 import useProjects from "@/app/services/useProjects";
+import { ConfirmationDialog } from "@/app/components/confirmationDialog";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { FiCheckCircle, FiLayers } from "react-icons/fi";
 
@@ -66,6 +67,7 @@ const SetupSdlcModal = ({
   const [isLoadingFlows, setIsLoadingFlows] = useState(false);
   const [isLoadingStages, setIsLoadingStages] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [openConfirmSetup, setOpenConfirmSetup] = useState(false);
 
   // Get token
   useEffect(() => {
@@ -200,7 +202,7 @@ const SetupSdlcModal = ({
     setSelectedStageIds(new Set(requiredStageIds));
   };
 
-  const handleSetup = async () => {
+  const handleOpenConfirmation = () => {
     if (!selectedFlowId) {
       showToast({
         description: "Please select an SDLC Flow",
@@ -217,6 +219,14 @@ const SetupSdlcModal = ({
       return;
     }
 
+    setOpenConfirmSetup(true);
+  };
+
+  const handleConfirmTrigger = (value: boolean) => {
+    setOpenConfirmSetup(value);
+  };
+
+  const handleConfirmSetup = async () => {
     setIsSubmitting(true);
 
     try {
@@ -478,7 +488,7 @@ const SetupSdlcModal = ({
             </Button>
             <Button
               colorScheme="secondary"
-              onClick={handleSetup}
+              onClick={handleOpenConfirmation}
               isLoading={isSubmitting}
               isDisabled={!selectedFlowId || selectedStageIds.size === 0}
               leftIcon={<FiCheckCircle />}
@@ -488,6 +498,14 @@ const SetupSdlcModal = ({
           </HStack>
         </ModalFooter>
       </ModalContent>
+
+      <ConfirmationDialog
+        isOpenTrigger={openConfirmSetup}
+        action={handleConfirmSetup}
+        trigger={handleConfirmTrigger}
+        questionMsg={`Are you sure you want to setup SDLC for this project?\n\nSelected Flow: ${selectedFlow?.sdlcName || 'N/A'}\nStages: ${selectedStageIds.size} stage(s)\n\nThis action will configure the project workflow and cannot be easily undone.`}
+        captionMsg="Setup SDLC"
+      />
     </Modal>
   );
 };

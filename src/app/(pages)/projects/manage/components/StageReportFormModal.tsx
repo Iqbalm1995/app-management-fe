@@ -18,11 +18,14 @@ import {
   useColorMode,
   Spinner,
   HStack,
+  Input,
+  Badge,
 } from "@chakra-ui/react";
 import { radiusStyle, RES_CODE_OK } from "@/app/constants/applicationConstants";
 import useProjects from "@/app/services/useProjects";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import InputTagsArea from "@/app/components/inputProps/InputMultiTagsArea";
+import { formatDateWithLabels } from "@/app/helper/MasterHelper";
 
 interface StageReportFormModalProps {
   isOpen: boolean;
@@ -53,6 +56,8 @@ const StageReportFormModal = ({
   const [reportNote, setReportNote] = useState("");
   const [tagsReport, setTagsReport] = useState("");
   const [statusLabel, setStatusLabel] = useState("In Progress");
+  const [reportStartDate, setReportStartDate] = useState("");
+  const [reportEndDate, setReportEndDate] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -82,6 +87,16 @@ const StageReportFormModal = ({
       setReportNote(response.data.reportNote);
       setTagsReport(response.data.tagsReport || "");
       setStatusLabel(response.data.statusLabel);
+      
+      // Convert ISO datetime to YYYY-MM-DD format for date input
+      if (response.data.reportStartDate) {
+        const startDate = new Date(response.data.reportStartDate);
+        setReportStartDate(startDate.toISOString().split('T')[0]);
+      }
+      if (response.data.reportEndDate) {
+        const endDate = new Date(response.data.reportEndDate);
+        setReportEndDate(endDate.toISOString().split('T')[0]);
+      }
     }
     setIsLoading(false);
   };
@@ -90,6 +105,8 @@ const StageReportFormModal = ({
     setReportNote("");
     setTagsReport("");
     setStatusLabel("In Progress");
+    setReportStartDate("");
+    setReportEndDate("");
   };
 
   const handleSubmit = async () => {
@@ -112,6 +129,8 @@ const StageReportFormModal = ({
             reportNote: reportNote.trim(),
             tagsReport: tagsReport.trim() || undefined,
             statusLabel,
+            reportStartDate: reportStartDate || undefined,
+            reportEndDate: reportEndDate || undefined,
           },
           tokenData
         );
@@ -123,6 +142,8 @@ const StageReportFormModal = ({
             reportNote: reportNote.trim(),
             tagsReport: tagsReport.trim() || undefined,
             statusLabel,
+            reportStartDate: reportStartDate || undefined,
+            reportEndDate: reportEndDate || undefined,
           },
           tokenData
         );
@@ -185,6 +206,56 @@ const StageReportFormModal = ({
                   <option value="Under Review">Under Review</option>
                   <option value="On Hold">On Hold</option>
                 </Select>
+              </FormControl>
+
+              <FormControl>
+                <FormLabel>Report Start Date</FormLabel>
+                <VStack spacing={2} align="stretch">
+                  <Input
+                    type="date"
+                    value={reportStartDate}
+                    onChange={(e) => setReportStartDate(e.target.value)}
+                  />
+                  {reportStartDate && (
+                    <HStack spacing={2} fontSize="sm">
+                      <Badge colorScheme="blue">
+                        W{formatDateWithLabels(reportStartDate).week}
+                      </Badge>
+                      <Badge colorScheme="purple">
+                        Q{formatDateWithLabels(reportStartDate).quarter}
+                      </Badge>
+                      <Badge colorScheme="gray">
+                        {formatDateWithLabels(reportStartDate).year}
+                      </Badge>
+                    </HStack>
+                  )}
+                </VStack>
+              </FormControl>
+
+              <FormControl>
+                <FormLabel>Report End Date</FormLabel>
+                <VStack spacing={2} align="stretch">
+                  <Input
+                    type="date"
+                    value={reportEndDate}
+                    onChange={(e) => setReportEndDate(e.target.value)}
+                    min={reportStartDate || undefined}
+                    isDisabled={!reportStartDate}
+                  />
+                  {reportEndDate && (
+                    <HStack spacing={2} fontSize="sm">
+                      <Badge colorScheme="blue">
+                        W{formatDateWithLabels(reportEndDate).week}
+                      </Badge>
+                      <Badge colorScheme="purple">
+                        Q{formatDateWithLabels(reportEndDate).quarter}
+                      </Badge>
+                      <Badge colorScheme="gray">
+                        {formatDateWithLabels(reportEndDate).year}
+                      </Badge>
+                    </HStack>
+                  )}
+                </VStack>
               </FormControl>
 
               <FormControl>
