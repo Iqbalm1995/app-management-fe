@@ -1054,7 +1054,7 @@ function WorkflowDetailView() {
                         leftIcon={<FiRefreshCcw />}
                         onClick={() => RefreshAction()}
                       >
-                        Muat Ulang
+                        Refresh
                       </Button>
                       <Button
                         size="md"
@@ -1124,7 +1124,7 @@ function WorkflowDetailView() {
                               w="200px"
                             >
                               {editingInline?.id === group.id &&
-                              editingInline?.field === "name" ? (
+                                editingInline?.field === "name" ? (
                                 <Input
                                   value={inlineValues.name}
                                   onChange={(e) =>
@@ -1192,7 +1192,7 @@ function WorkflowDetailView() {
                             {group.wfgDesc && (
                               <Text fontSize="sm" color="gray.500" flex={1}>
                                 {editingInline?.id === group.id &&
-                                editingInline?.field === "desc" ? (
+                                  editingInline?.field === "desc" ? (
                                   <Input
                                     value={inlineValues.desc}
                                     onChange={(e) =>
@@ -1284,18 +1284,18 @@ function WorkflowDetailView() {
                             </Button>
                             {(!group.workflowChild ||
                               group.workflowChild.length === 0) && (
-                              <Button
-                                size="xs"
-                                leftIcon={<FiTrash2 />}
-                                colorScheme="red"
-                                variant="ghost"
-                                onClick={() =>
-                                  deleteItem(group.id, group.wfgName)
-                                }
-                              >
-                                Delete
-                              </Button>
-                            )}
+                                <Button
+                                  size="xs"
+                                  leftIcon={<FiTrash2 />}
+                                  colorScheme="red"
+                                  variant="ghost"
+                                  onClick={() =>
+                                    deleteItem(group.id, group.wfgName)
+                                  }
+                                >
+                                  Delete
+                                </Button>
+                              )}
                           </HStack>
                         </HStack>
 
@@ -1362,7 +1362,7 @@ function WorkflowDetailView() {
                                         w="180px"
                                       >
                                         {editingInline?.id === child.id &&
-                                        editingInline?.field === "name" ? (
+                                          editingInline?.field === "name" ? (
                                           <Input
                                             value={inlineValues.name}
                                             onChange={(e) =>
@@ -1409,7 +1409,7 @@ function WorkflowDetailView() {
                                             </Text>
                                             {child.workflowChild &&
                                               child.workflowChild.length >
-                                                0 && (
+                                              0 && (
                                                 <Badge
                                                   colorScheme="green"
                                                   fontSize="xs"
@@ -1439,7 +1439,7 @@ function WorkflowDetailView() {
                                           flex={1}
                                         >
                                           {editingInline?.id === child.id &&
-                                          editingInline?.field === "desc" ? (
+                                            editingInline?.field === "desc" ? (
                                             <Input
                                               value={inlineValues.desc}
                                               onChange={(e) =>
@@ -1550,18 +1550,18 @@ function WorkflowDetailView() {
                                       </Button>
                                       {(!child.workflowChild ||
                                         child.workflowChild.length === 0) && (
-                                        <Button
-                                          size="xs"
-                                          leftIcon={<FiTrash2 />}
-                                          colorScheme="red"
-                                          variant="ghost"
-                                          onClick={() =>
-                                            deleteItem(child.id, child.wfgName)
-                                          }
-                                        >
-                                          Delete
-                                        </Button>
-                                      )}
+                                          <Button
+                                            size="xs"
+                                            leftIcon={<FiTrash2 />}
+                                            colorScheme="red"
+                                            variant="ghost"
+                                            onClick={() =>
+                                              deleteItem(child.id, child.wfgName)
+                                            }
+                                          >
+                                            Delete
+                                          </Button>
+                                        )}
                                     </HStack>
                                   </HStack>
 
@@ -1704,7 +1704,7 @@ function WorkflowDetailView() {
                                                 >
                                                   {editingInline?.id ===
                                                     grandChild.id &&
-                                                  editingInline?.field ===
+                                                    editingInline?.field ===
                                                     "name" ? (
                                                     <Input
                                                       value={inlineValues.name}
@@ -1747,7 +1747,7 @@ function WorkflowDetailView() {
                                                         _hover={{
                                                           bg:
                                                             colorMode ===
-                                                            "light"
+                                                              "light"
                                                               ? "gray.100"
                                                               : "gray.700",
                                                         }}
@@ -1781,7 +1781,7 @@ function WorkflowDetailView() {
                                                   >
                                                     {editingInline?.id ===
                                                       grandChild.id &&
-                                                    editingInline?.field ===
+                                                      editingInline?.field ===
                                                       "desc" ? (
                                                       <Input
                                                         value={
@@ -1827,7 +1827,7 @@ function WorkflowDetailView() {
                                                           _hover={{
                                                             bg:
                                                               colorMode ===
-                                                              "light"
+                                                                "light"
                                                                 ? "gray.100"
                                                                 : "gray.700",
                                                           }}
@@ -1888,7 +1888,7 @@ function WorkflowDetailView() {
                                                   isDisabled={
                                                     grandChildIdx ===
                                                     child.workflowChild.length -
-                                                      1
+                                                    1
                                                   }
                                                 >
                                                   <FiChevronDown />
