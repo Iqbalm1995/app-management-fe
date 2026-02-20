@@ -20,6 +20,7 @@ import {
   Heading,
   HStack,
   Icon,
+  Image,
   Text,
   useColorMode,
   VStack,
@@ -42,99 +43,6 @@ import {
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Welcome",
   breadCrumb: ["Home"],
-};
-
-// Animated Globe Component
-const AnimatedGlobe = () => {
-  const { colorMode } = useColorMode();
-
-  useEffect(() => {
-    const canvas = document.getElementById("globe-canvas") as HTMLCanvasElement;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    canvas.width = 400;
-    canvas.height = 400;
-
-    const centerX = 200;
-    const centerY = 200;
-    const radius = 150;
-    let rotation = 0;
-    let animationId: number;
-
-    // Generate points on sphere
-    const points: Array<{ x: number; y: number; z: number }> = [];
-    const numPoints = 600;
-
-    for (let i = 0; i < numPoints; i++) {
-      const theta = Math.random() * Math.PI * 2;
-      const phi = Math.acos(2 * Math.random() - 1);
-
-      points.push({
-        x: radius * Math.sin(phi) * Math.cos(theta),
-        y: radius * Math.sin(phi) * Math.sin(theta),
-        z: radius * Math.cos(phi),
-      });
-    }
-
-    const colors = { base: "39, 245, 211", glow: "255, 255, 255" };
-
-    // Function to draw triangle
-    const drawTriangle = (x: number, y: number, size: number) => {
-      const height = size * Math.sqrt(3);
-      ctx.beginPath();
-      ctx.moveTo(x, y - height / 2);
-      ctx.lineTo(x - size, y + height / 2);
-      ctx.lineTo(x + size, y + height / 2);
-      ctx.closePath();
-    };
-
-    // Animation loop
-    const animate = () => {
-      ctx.clearRect(0, 0, 400, 400);
-      rotation += 0.003;
-
-      points.forEach((point) => {
-        const cosR = Math.cos(rotation);
-        const sinR = Math.sin(rotation);
-        const rotatedX = point.x * cosR - point.z * sinR;
-        const rotatedZ = point.x * sinR + point.z * cosR;
-
-        if (rotatedZ > -45) {
-          const scale = 200 / (200 + rotatedZ);
-          const x2d = rotatedX * scale + centerX;
-          const y2d = point.y * scale + centerY;
-          const opacity = (rotatedZ + radius) / 300;
-          const size = scale * 2.5;
-
-          drawTriangle(x2d, y2d, size);
-          ctx.fillStyle = `rgba(${colors.base}, ${opacity * 0.7})`;
-          ctx.fill();
-        }
-      });
-
-      animationId = requestAnimationFrame(animate);
-    };
-
-    animate();
-
-    return () => cancelAnimationFrame(animationId);
-  }, [colorMode]);
-
-  return (
-    <Box
-      position="relative"
-      w="400px"
-      h="400px"
-      display="flex"
-      alignItems="center"
-      justifyContent="center"
-    >
-      <canvas id="globe-canvas" style={{ maxWidth: "100%", height: "auto" }} />
-    </Box>
-  );
 };
 
 // Animated Counter Component
@@ -460,12 +368,51 @@ function HomePageView() {
               )}
             </VStack>
 
-            {/* Right: Animated Globe */}
+            {/* Right: Glass Illustration */}
             <Box
-              display={{ base: "none", lg: "block" }}
+              display={{ base: "none", lg: "flex" }}
+              alignItems="center"
+              justifyContent="center"
               animation="fadeInUp 1s ease-out 0.4s backwards"
             >
-              <AnimatedGlobe />
+              <Box
+                position="relative"
+                w={{ lg: "450px", xl: "500px" }}
+                h={{ lg: "450px", xl: "500px" }}
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+              >
+                {/* Soft glow effect background */}
+                <Box
+                  position="absolute"
+                  w="120%"
+                  h="120%"
+                  borderRadius="50%"
+                  bg="linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(168, 85, 247, 0.08))"
+                  filter="blur(60px)"
+                  animation="pulse 4s ease-in-out infinite"
+                />
+                
+                {/* Main image with soft edges */}
+                <Image
+                  src="/img/glass.png"
+                  alt="Glass illustration"
+                  maxW="90%"
+                  h="auto"
+                  objectFit="contain"
+                  opacity="0.92"
+                  filter="drop-shadow(0 25px 50px rgba(0, 0, 0, 0.08)) blur(0.3px)"
+                  transition="all 0.5s ease"
+                  _hover={{
+                    transform: "scale(1.03) rotate(1deg)",
+                    opacity: "0.96",
+                  }}
+                  style={{
+                    animation: "float 6s ease-in-out infinite",
+                  }}
+                />
+              </Box>
             </Box>
           </Grid>
         </Container>
@@ -660,6 +607,17 @@ function HomePageView() {
           }
           50% {
             transform: translateY(-20px);
+          }
+        }
+        @keyframes pulse {
+          0%,
+          100% {
+            opacity: 0.6;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.8;
+            transform: scale(1.05);
           }
         }
         @keyframes fadeInScale {

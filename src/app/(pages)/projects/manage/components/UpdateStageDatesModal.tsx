@@ -31,7 +31,8 @@ import { radiusStyle, RES_CODE_OK } from "@/app/constants/applicationConstants";
 import { ProjectSdlcStageResponse, ProjectSdlcStageReportResponse } from "@/app/services/useProjects";
 import useProjects from "@/app/services/useProjects";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
-import { FiPlus, FiEdit2, FiTrash2, FiFileText } from "react-icons/fi";
+import { formatDateWithLabels } from "@/app/helper/MasterHelper";
+import { FiPlus, FiEdit2, FiTrash2, FiFileText, FiCheckCircle, FiAlertTriangle, FiInfo, FiX, FiCheck } from "react-icons/fi";
 import StageReportFormModal from "./StageReportFormModal";
 
 interface UpdateStageDatesModalProps {
@@ -55,6 +56,10 @@ const UpdateStageDatesModal = ({
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [openConfirmEndStage, setOpenConfirmEndStage] = useState(false);
+  const [openConfirmClearEndDate, setOpenConfirmClearEndDate] = useState(false);
+  const [isEndDateUnlocked, setIsEndDateUnlocked] = useState(false);
+  const [countdown, setCountdown] = useState(5);
 
   const [reports, setReports] = useState<ProjectSdlcStageReportResponse[]>([]);
   const [isLoadingReports, setIsLoadingReports] = useState(false);
@@ -74,6 +79,7 @@ const UpdateStageDatesModal = ({
     if (isOpen && stage) {
       setStartDate(stage.startDate ? stage.startDate.split("T")[0] : "");
       setEndDate(stage.endDate ? stage.endDate.split("T")[0] : "");
+      setIsEndDateUnlocked(!!stage.endDate);
       setPage(1);
       loadReports(1);
     }
@@ -83,8 +89,29 @@ const UpdateStageDatesModal = ({
   useEffect(() => {
     if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
       setEndDate("");
+      setIsEndDateUnlocked(false);
     }
   }, [startDate, endDate]);
+
+  // Countdown timer for confirmation modals
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (openConfirmEndStage || openConfirmClearEndDate) {
+      setCountdown(5);
+      timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [openConfirmEndStage, openConfirmClearEndDate]);
 
   const loadReports = async (pageNum: number = page) => {
     if (!tokenData || !stage) return;
@@ -113,9 +140,41 @@ const UpdateStageDatesModal = ({
   const handleClear = (field: "start" | "end") => {
     if (field === "start") {
       setStartDate("");
-    } else {
       setEndDate("");
+      setIsEndDateUnlocked(false);
+    } else {
+      handleOpenClearEndDateConfirm();
     }
+  };
+
+  const handleOpenEndStageConfirm = () => {
+    if (!startDate) {
+      showToast({
+        description: "Start date must be set first",
+        statusToast: "warning",
+      });
+      return;
+    }
+    setOpenConfirmEndStage(true);
+  };
+
+  const handleConfirmEndStage = () => {
+    setIsEndDateUnlocked(true);
+    const today = new Date().toISOString().split("T")[0];
+    setEndDate(today);
+    showToast({
+      description: "You can now set the end date for this stage",
+      statusToast: "info",
+    });
+  };
+
+  const handleOpenClearEndDateConfirm = () => {
+    setOpenConfirmClearEndDate(true);
+  };
+
+  const handleConfirmClearEndDate = () => {
+    setEndDate("");
+    setIsEndDateUnlocked(false);
   };
 
   const handleSave = async () => {
@@ -276,35 +335,76 @@ const UpdateStageDatesModal = ({
 
                   <FormControl>
                     <FormLabel>End Date</FormLabel>
-                    <VStack spacing={2} align="stretch">
+                    <VStack spacing={3} align="stretch">
+                      {/* End Stage Button */}
+                      {startDate && !isEndDateUnlocked && (
+                        <Card
+                          bg={colorMode === "light" ? "green.50" : "green.900"}
+                          borderColor={colorMode === "light" ? "green.200" : "green.700"}
+                          borderWidth="1px"
+                        >
+                          <CardBody>
+                            <VStack spacing={2} align="stretch">
+                              <Button
+                                leftIcon={<Icon as={FiCheckCircle} />}
+                                colorScheme="green"
+                                size="md"
+                                onClick={handleOpenEndStageConfirm}
+                              >
+                                End Stage - {stage.stageName}
+                              </Button>
+                              <Text fontSize="xs" color={colorMode === "light" ? "green.700" : "green.300"}>
+                                Click to mark this stage as complete and set end date
+                              </Text>
+                            </VStack>
+                          </CardBody>
+                        </Card>
+                      )}
+
+                      {/* Date Input */}
                       <Input
                         type="date"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
                         min={startDate || undefined}
-                        isDisabled={!startDate}
+                        isDisabled={!startDate || !isEndDateUnlocked}
                       />
-                      <HStack>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleSetCurrentDate("end")}
-                          isDisabled={!startDate}
-                        >
-                          Set Current Date
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleClear("end")}
-                          isDisabled={!startDate}
-                        >
-                          Clear
-                        </Button>
-                      </HStack>
+
+                      {/* Action Buttons */}
+                      {isEndDateUnlocked && (
+                        <HStack>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleSetCurrentDate("end")}
+                          >
+                            Set Current Date
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            colorScheme="red"
+                            onClick={() => handleClear("end")}
+                          >
+                            Clear
+                          </Button>
+                        </HStack>
+                      )}
+
+                      {/* Helper Text */}
                       {!startDate && (
                         <Text fontSize="xs" color="orange.500">
                           Start date must be set first
+                        </Text>
+                      )}
+                      {startDate && !isEndDateUnlocked && (
+                        <Text fontSize="xs" color="blue.500">
+                          Click "End Stage" button to mark this stage as complete
+                        </Text>
+                      )}
+                      {isEndDateUnlocked && (
+                        <Text fontSize="xs" color="green.500">
+                          ✓ Setting end date marks this stage as COMPLETE
                         </Text>
                       )}
                     </VStack>
@@ -392,6 +492,49 @@ const UpdateStageDatesModal = ({
                               {report.reportNote}
                             </Text>
 
+                            {(report.reportStartDate || report.reportEndDate) && (
+                              <Box
+                                bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                                p={2}
+                                rounded="md"
+                                borderWidth="1px"
+                                borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                              >
+                                <VStack spacing={1} align="stretch" fontSize="xs">
+                                  {report.reportStartDate && (
+                                    <HStack spacing={2} flexWrap="wrap">
+                                      <Text fontWeight="medium" minW="40px">Start:</Text>
+                                      <Text>{new Date(report.reportStartDate).toLocaleDateString()}</Text>
+                                      <Badge colorScheme="blue" fontSize="2xs">
+                                        W{formatDateWithLabels(report.reportStartDate).week}
+                                      </Badge>
+                                      <Badge colorScheme="purple" fontSize="2xs">
+                                        Q{formatDateWithLabels(report.reportStartDate).quarter}
+                                      </Badge>
+                                      <Badge colorScheme="gray" fontSize="2xs">
+                                        {formatDateWithLabels(report.reportStartDate).year}
+                                      </Badge>
+                                    </HStack>
+                                  )}
+                                  {report.reportEndDate && (
+                                    <HStack spacing={2} flexWrap="wrap">
+                                      <Text fontWeight="medium" minW="40px">End:</Text>
+                                      <Text>{new Date(report.reportEndDate).toLocaleDateString()}</Text>
+                                      <Badge colorScheme="blue" fontSize="2xs">
+                                        W{formatDateWithLabels(report.reportEndDate).week}
+                                      </Badge>
+                                      <Badge colorScheme="purple" fontSize="2xs">
+                                        Q{formatDateWithLabels(report.reportEndDate).quarter}
+                                      </Badge>
+                                      <Badge colorScheme="gray" fontSize="2xs">
+                                        {formatDateWithLabels(report.reportEndDate).year}
+                                      </Badge>
+                                    </HStack>
+                                  )}
+                                </VStack>
+                              </Box>
+                            )}
+
                             {report.tagsReport && (
                               <HStack spacing={1} flexWrap="wrap">
                                 {report.tagsReport.split(",").map((tag, i) => (
@@ -446,6 +589,157 @@ const UpdateStageDatesModal = ({
         reportId={editingReportId}
         onSuccess={handleReportFormSuccess}
       />
+
+      {/* End Stage Confirmation Modal */}
+      <Modal isOpen={openConfirmEndStage} onClose={() => setOpenConfirmEndStage(false)} isCentered>
+        <ModalOverlay bg="blackAlpha.500" backdropFilter="blur(8px)" />
+        <ModalContent rounded={radiusStyle}>
+          <ModalHeader bg="orange.500" color="white" roundedTop={radiusStyle}>
+            <HStack>
+              <Icon as={FiAlertTriangle} boxSize={5} />
+              <Text>End Stage - {stage.stageName}</Text>
+            </HStack>
+          </ModalHeader>
+          <ModalCloseButton color="white" />
+          <ModalBody py={6}>
+            <VStack spacing={4} align="stretch">
+              <HStack spacing={2} align="flex-start">
+                <Icon as={FiAlertTriangle} color="orange.500" boxSize={5} mt={0.5} />
+                <Box>
+                  <Text fontWeight="bold" color="orange.500">WARNING: End Stage Action</Text>
+                  <Text mt={2}>Are you sure you want to end this stage?</Text>
+                </Box>
+              </HStack>
+
+              <Card bg={colorMode === "light" ? "orange.50" : "orange.900"} borderColor="orange.200" borderWidth="1px">
+                <CardBody>
+                  <HStack spacing={2} align="flex-start">
+                    <Icon as={FiAlertTriangle} color="orange.500" boxSize={4} mt={0.5} />
+                    <Box>
+                      <Text fontWeight="bold" fontSize="sm">IMPORTANT:</Text>
+                      <Text fontSize="sm" mt={1}>
+                        Setting the end date will mark this stage as COMPLETE and will affect the SDLC progression tracking.
+                      </Text>
+                    </Box>
+                  </HStack>
+                </CardBody>
+              </Card>
+
+              <Box>
+                <HStack spacing={2} mb={2}>
+                  <Icon as={FiInfo} color="blue.500" />
+                  <Text fontWeight="bold" fontSize="sm">Stage Information:</Text>
+                </HStack>
+                <VStack align="stretch" spacing={1} pl={6}>
+                  <Text fontSize="sm">• Current Stage: {stage.stageName}</Text>
+                  <Text fontSize="sm">• Start Date: {startDate ? new Date(startDate).toLocaleDateString() : 'Not set'}</Text>
+                  <Text fontSize="sm">• End Date: Will be set to current date</Text>
+                </VStack>
+              </Box>
+
+              <HStack spacing={2} align="flex-start">
+                <Icon as={FiCheckCircle} color="green.500" boxSize={4} mt={0.5} />
+                <Text fontSize="sm">
+                  This action indicates that all work for this stage is finished and the stage is ready to be marked as complete.
+                </Text>
+              </HStack>
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <HStack spacing={3}>
+              <Button leftIcon={<FiX />} onClick={() => setOpenConfirmEndStage(false)}>
+                Close
+              </Button>
+              <Button
+                leftIcon={<FiCheck />}
+                colorScheme="orange"
+                onClick={() => {
+                  setOpenConfirmEndStage(false);
+                  handleConfirmEndStage();
+                }}
+                isDisabled={countdown > 0}
+              >
+                {countdown > 0 ? `Wait ${countdown}s` : `Yes, End Stage`}
+              </Button>
+            </HStack>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Clear End Date Confirmation Modal */}
+      <Modal isOpen={openConfirmClearEndDate} onClose={() => setOpenConfirmClearEndDate(false)} isCentered>
+        <ModalOverlay bg="blackAlpha.500" backdropFilter="blur(8px)" />
+        <ModalContent rounded={radiusStyle}>
+          <ModalHeader bg="orange.500" color="white" roundedTop={radiusStyle}>
+            <HStack>
+              <Icon as={FiAlertTriangle} boxSize={5} />
+              <Text>Clear End Date - {stage.stageName}</Text>
+            </HStack>
+          </ModalHeader>
+          <ModalCloseButton color="white" />
+          <ModalBody py={6}>
+            <VStack spacing={4} align="stretch">
+              <HStack spacing={2} align="flex-start">
+                <Icon as={FiAlertTriangle} color="orange.500" boxSize={5} mt={0.5} />
+                <Box>
+                  <Text fontWeight="bold" color="orange.500">WARNING: Clear End Date Action</Text>
+                  <Text mt={2}>Are you sure you want to clear the end date?</Text>
+                </Box>
+              </HStack>
+
+              <Card bg={colorMode === "light" ? "orange.50" : "orange.900"} borderColor="orange.200" borderWidth="1px">
+                <CardBody>
+                  <HStack spacing={2} align="flex-start">
+                    <Icon as={FiAlertTriangle} color="orange.500" boxSize={4} mt={0.5} />
+                    <Box>
+                      <Text fontWeight="bold" fontSize="sm">IMPORTANT:</Text>
+                      <Text fontSize="sm" mt={1}>
+                        Clearing the end date will mark this stage as INCOMPLETE and will update the SDLC progression tracking.
+                      </Text>
+                    </Box>
+                  </HStack>
+                </CardBody>
+              </Card>
+
+              <Box>
+                <HStack spacing={2} mb={2}>
+                  <Icon as={FiInfo} color="blue.500" />
+                  <Text fontWeight="bold" fontSize="sm">Stage Information:</Text>
+                </HStack>
+                <VStack align="stretch" spacing={1} pl={6}>
+                  <Text fontSize="sm">• Current Stage: {stage.stageName}</Text>
+                  <Text fontSize="sm">• Current End Date: {endDate ? new Date(endDate).toLocaleDateString() : 'Not set'}</Text>
+                </VStack>
+              </Box>
+
+              <HStack spacing={2} align="flex-start">
+                <Icon as={FiAlertTriangle} color="orange.500" boxSize={4} mt={0.5} />
+                <Text fontSize="sm">
+                  This action indicates that work for this stage is not yet finished and will revert the completion status.
+                </Text>
+              </HStack>
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <HStack spacing={3}>
+              <Button leftIcon={<FiX />} onClick={() => setOpenConfirmClearEndDate(false)}>
+                Close
+              </Button>
+              <Button
+                leftIcon={<FiCheck />}
+                colorScheme="orange"
+                onClick={() => {
+                  setOpenConfirmClearEndDate(false);
+                  handleConfirmClearEndDate();
+                }}
+                isDisabled={countdown > 0}
+              >
+                {countdown > 0 ? `Wait ${countdown}s` : `Yes, Clear End Date`}
+              </Button>
+            </HStack>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </>
   );
 };

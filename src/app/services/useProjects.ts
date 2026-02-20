@@ -263,6 +263,8 @@ export interface ProjectSdlcStageReportResponse {
   reportNote: string;
   tagsReport: string | null;
   statusLabel: string;
+  reportStartDate: string | null;
+  reportEndDate: string | null;
   createdAt: string;
   createdBy: string;
   updatedAt: string | null;
@@ -1160,6 +1162,8 @@ interface useProjectsServices {
       reportNote: string;
       tagsReport?: string;
       statusLabel: string;
+      reportStartDate?: string;
+      reportEndDate?: string;
     },
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
@@ -1170,6 +1174,8 @@ interface useProjectsServices {
       reportNote: string;
       tagsReport?: string;
       statusLabel: string;
+      reportStartDate?: string;
+      reportEndDate?: string;
     },
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;

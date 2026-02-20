@@ -925,6 +925,39 @@ export const getCurrentQuarter = () => {
   return Math.floor(currentMonth / 3) + 1; // Q1-Q4
 };
 
+export const getWeekNumber = (date: Date): number => {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+};
+
+export const getQuarterFromDate = (date: Date): number => {
+  const month = date.getMonth();
+  return Math.floor(month / 3) + 1;
+};
+
+export const formatDateWithLabels = (dateString: string): {
+  date: string;
+  week: number;
+  quarter: number;
+  year: number;
+} => {
+  const date = new Date(dateString);
+  const week = getWeekNumber(date);
+  const quarter = getQuarterFromDate(date);
+  const year = date.getFullYear();
+  const dateFormatted = date.toLocaleDateString();
+  
+  return {
+    date: dateFormatted,
+    week,
+    quarter,
+    year,
+  };
+};
+
 export const getQuarterDateRange = (year: number, quarter: number | "all") => {
   if (quarter === "all") {
     const startDate = new Date(Date.UTC(year, 0, 1));
