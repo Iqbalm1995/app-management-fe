@@ -6637,13 +6637,16 @@ const Section4BRDView = ({
       return;
     }
     setDataBackLogs((prev) =>
-      prev.filter((item) => {
-        // For new items, use localId; for existing items, use backlogId
-        const itemId = item.backlogId || item.localId;
-        return itemId !== backlogId;
-      })
+      prev
+        .filter((item) => {
+          const itemId = item.backlogId || item.localId;
+          return itemId !== backlogId;
+        })
+        .map((item, index) => ({
+          ...item,
+          posOrder: index + 1
+        }))
     );
-
     showToast({
       description: "Scope of Work dihapus",
       statusToast: "success",
