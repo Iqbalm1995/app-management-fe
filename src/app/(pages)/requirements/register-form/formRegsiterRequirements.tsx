@@ -564,6 +564,8 @@ function RegisterRequirementFormPage({
   const [tokenData, setTokenData] = useState<string>("");
   const perihalSementaraRef = useRef<HTMLTextAreaElement>(null);
   const perihalCursorPosRef = useRef<number | null>(null);
+  const perihalRef = useRef<HTMLTextAreaElement>(null);
+  const perihalMainCursorPosRef = useRef<number | null>(null);
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -1909,6 +1911,16 @@ function RegisterRequirementFormPage({
       );
     }
   }, [formik.values.reqNarative]);
+
+
+  useEffect(() => {
+    if (perihalRef.current && perihalMainCursorPosRef.current !== null) {
+      perihalRef.current.setSelectionRange(
+        perihalMainCursorPosRef.current,
+        perihalMainCursorPosRef.current
+      );
+    }
+  }, [formik.values.reqNarative]);
   useEffect(() => {
     if (namaLengkapRef.current && namaLengkapCursorPosRef.current !== null) {
       namaLengkapRef.current.setSelectionRange(
@@ -3110,10 +3122,10 @@ function RegisterRequirementFormPage({
                                     onChange={(e) => {
                                       const textarea =
                                         e.target as HTMLTextAreaElement;
-                                      e.target.value =
-                                        e.target.value.toUpperCase();
                                       perihalCursorPosRef.current =
                                         textarea.selectionStart;
+                                      e.target.value =
+                                        e.target.value.toUpperCase();
                                       formik.handleChange(e);
                                     }}
                                     value={formik.values.reqNarative ?? ""}
@@ -3366,8 +3378,13 @@ function RegisterRequirementFormPage({
                                 <Stack spacing={0} h={"full"}>
                                   <Textarea
                                     id="reqNarative"
+                                    ref={perihalRef}
                                     name="reqNarative"
                                     onChange={(e) => {
+                                      const textarea =
+                                        e.target as HTMLTextAreaElement;
+                                      perihalMainCursorPosRef.current =
+                                        textarea.selectionStart;
                                       e.target.value =
                                         e.target.value.toUpperCase();
                                       formik.handleChange(e);
