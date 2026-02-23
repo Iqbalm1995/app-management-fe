@@ -62,7 +62,7 @@ export default function PendingApproveView() {
   const { colorMode } = useColorMode();
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
-  const { GetWaitingApproval, List } = useProjects();
+  const { GetWaitingApproval, List, CanApproveProject } = useProjects();
   const { GetDetailById: GetRequirementDetail } = useRequirements();
   const { GetDetailByCode, GetStatusFlows } = useSysModuleGroup();
 
@@ -165,6 +165,7 @@ export default function PendingApproveView() {
   const [ApprovalStatusOptions, setApprovalStatusOptions] = useState<
     { code: string; name: string }[]
   >([]);
+  const [canApproveProjects, setCanApproveProjects] = useState<Set<string>>(new Set());
 
   const pagination = useMemo(
     () => ({
@@ -173,6 +174,25 @@ export default function PendingApproveView() {
     }),
     [pageIndex, pageSize]
   );
+
+  const checkApprovalPermissions = async (projects: ProjectDataResponse[]) => {
+    if (!tokenData) return;
+
+    const approvalChecks = projects.map(async (project) => {
+      const response = await CanApproveProject(project.id, tokenData);
+      return {
+        projectId: project.id,
+        canApprove: response?.statusCode === RES_CODE_OK && response.data
+      };
+    });
+
+    const results = await Promise.all(approvalChecks);
+    const approveableProjects = new Set(
+      results.filter(r => r.canApprove).map(r => r.projectId)
+    );
+
+    setCanApproveProjects(approveableProjects);
+  };
 
   const columnsData = useMemo<ColumnDef<ProjectDataResponse>[]>(
     () => [
@@ -391,30 +411,31 @@ export default function PendingApproveView() {
               >
                 Preview
               </Button>
-              {viewMode === "PENDING" && (
-                <Button
-                  leftIcon={<FiCheck />}
-                  bg="green.50"
-                  color="green.700"
-                  size="xs"
-                  py={4}
-                  fontSize="sm"
-                  w="full"
-                  _hover={{
-                    bg: "green.300",
-                    transform: "translateY(-2px)",
-                    boxShadow: "md",
-                  }}
-                  transition="all 0.2s"
-                  onClick={() => {
-                    router.push(
-                      `/projects/preview?projectId=${info.row.original.id}&approvalMode=true`
-                    );
-                  }}
-                >
-                  Approve
-                </Button>
-              )}
+              {viewMode === "PENDING" &&
+                canApproveProjects.has(info.row.original.id) && (
+                  <Button
+                    bg="green.50"
+                    color="green.700"
+                    size="xs"
+                    py={4}
+                    fontSize="sm"
+                    w="full"
+                    _hover={{
+                      bg: "green.300",
+                      transform: "translateY(-2px)",
+                      boxShadow: "md",
+                    }}
+                    transition="all 0.2s"
+                    leftIcon={<FiCheck />}
+                    onClick={() => {
+                      router.push(
+                        `/projects/preview?projectId=${info.row.original.id}&approvalMode=true`
+                      );
+                    }}
+                  >
+                    Approve
+                  </Button>
+                )}
             </VStack>
           </Flex>
         ),
@@ -425,7 +446,7 @@ export default function PendingApproveView() {
         } as ColumnMetaCustom,
       },
     ],
-    [pageIndex, pageSize, router, viewMode]
+    [pageIndex, pageSize, router, viewMode, canApproveProjects]
   );
 
   const table = useReactTable({
@@ -501,7 +522,7 @@ export default function PendingApproveView() {
       if (response.statusCode === RES_CODE_OK) {
         let dataList: ProjectDataResponse[] =
           response.data as ProjectDataResponse[];
-        
+
         // Fetch requirement data and work programs for projects (only if not already populated)
         dataList = await Promise.all(
           dataList.map(async (project) => {
@@ -524,7 +545,7 @@ export default function PendingApproveView() {
                 }
               }
             }
-            
+
             // If requirementData exists but reqNarative is missing, fetch it
             if (project.reqParentId && updatedProject.requirementData && !updatedProject.requirementData.reqNarative) {
               const reqResponse = await GetRequirementDetail(project.reqParentId, tokenData);
@@ -536,6 +557,11 @@ export default function PendingApproveView() {
             return updatedProject;
           })
         );
+
+        // Check approval permissions for pending projects
+        if (viewMode === "PENDING") {
+          checkApprovalPermissions(dataList);
+        }
 
         setDataProjects(dataList);
 
