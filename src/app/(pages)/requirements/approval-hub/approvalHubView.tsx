@@ -129,7 +129,7 @@ export default function ApprovalHubView() {
   );
 
   // View Mode State (BRD/RFC filter)
-  const [viewMode, setViewMode] = useState<"All" | "BRD" | "RFC">("All");
+  const [viewMode, setViewMode] = useState<"BRD" | "RFC">("BRD");
 
   // Filter State
   const [ParamFilter, setParamFilter] = useState<ListSearchByParamProps[]>([]);
@@ -244,18 +244,12 @@ export default function ApprovalHubView() {
       filterLabel: "Status",
     };
 
-    let filterWithType = [...ParamFilter];
-    
-    // Only add type filter if not "All"
-    if (viewMode !== "All") {
-      const typeFilter: ListSearchByParamProps = {
-        field: "requirementType",
-        operator: "=",
-        value: viewMode,
-        filterLabel: "Type",
-      };
-      filterWithType = [...filterWithType, typeFilter];
-    }
+    const typeFilter: ListSearchByParamProps = {
+      field: "requirementType",
+      operator: "=",
+      value: viewMode,
+      filterLabel: "Type",
+    };
 
     const orgGroupFilter: ListSearchByParamProps = {
       field: "reqManageByGroupCode",
@@ -264,7 +258,7 @@ export default function ApprovalHubView() {
       filterLabel: "Group",
     };
 
-    const filterWithStatusAndType = [...filterWithType, statusFilter, orgGroupFilter];
+    const filterWithStatusAndType = [...ParamFilter, statusFilter, typeFilter, orgGroupFilter];
 
     const PayloadList: PaggingListPayload = {
       search: "",
@@ -691,10 +685,20 @@ export default function ApprovalHubView() {
                   style={{ width: "100%" }}
                 >
                   <Button
-                    leftIcon={<FiEye />}
-                    colorScheme="purple"
                     size="xs"
+                    py={4}
+                    fontSize="sm"
                     w="full"
+                    bg="purple.50"
+                    color="purple.700"
+                    _hover={{
+                      bg: "purple.300",
+                      transform: "translateY(-2px)",
+                      boxShadow: "md",
+                    }}
+                    transition="all 0.2s"
+                    colorScheme="purple"
+                    leftIcon={<FiEye />}
                   >
                     Preview
                   </Button>
@@ -973,15 +977,6 @@ export default function ApprovalHubView() {
                       <HStack spacing={2} flexWrap="wrap">
                         <Button
                           size="sm"
-                          variant={viewMode === "All" ? "solid" : "ghost"}
-                          colorScheme="blue"
-                          onClick={() => setViewMode("All")}
-                          borderRadius="lg"
-                        >
-                          All
-                        </Button>
-                        <Button
-                          size="sm"
                           variant={viewMode === "BRD" ? "solid" : "ghost"}
                           colorScheme="blue"
                           onClick={() => setViewMode("BRD")}
@@ -1007,7 +1002,7 @@ export default function ApprovalHubView() {
                   >
                     {/* BUTTON ACTION */}
                     <Flex as={Wrap} justifyContent={"end"} alignItems={"center"} gap={2} px={0} w={"full"}>
-                      <Popover closeOnBlur={true} placement={"bottom"}>
+                      <Popover closeOnBlur={false} placement={"bottom"}>
                         <PopoverTrigger>
                           <Button size={"md"} leftIcon={<FiFilter />}>
                             Filter{" "}
@@ -1073,7 +1068,7 @@ export default function ApprovalHubView() {
                         leftIcon={<FiRefreshCcw />}
                         onClick={() => RefreshAction()}
                       >
-                        Muat Ulang
+                        Refresh
                       </Button>
                     </Flex>
                   </GridItem>
