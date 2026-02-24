@@ -2,8 +2,8 @@ module.exports = {
   apps: [
     {
       name: "app-management-fe",
-      script: "node_modules/next/dist/bin/next",
-      args: "start",
+      script: "./server.js",
+      cwd: ".next/standalone",
       exec_mode: "fork",
       instances: 1,
       env: {
