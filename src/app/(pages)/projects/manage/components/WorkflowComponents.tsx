@@ -640,14 +640,11 @@ export const WorkflowLevel2Box = ({
                                   <strong>Type:</strong> {item.documentType}
                                 </Text>
                                 <Text fontSize="xs">
-                                  <strong>Version:</strong>{" "}
-                                  {item.documentVersion}
+                                  <strong>Version:</strong> {item.documentVersion}
                                 </Text>
                                 <Text fontSize="xs">
                                   <strong>Date:</strong>{" "}
-                                  {new Date(
-                                    item.documentDate
-                                  ).toLocaleDateString()}
+                                  {new Date(item.documentDate).toLocaleDateString()}
                                 </Text>
                               </VStack>
                             </GridItem>
@@ -664,6 +661,7 @@ export const WorkflowLevel2Box = ({
                                 <Text fontSize="xs">
                                   <strong>Created By:</strong> {item.createdBy}
                                 </Text>
+
                                 {item.linkAttachment && (
                                   <Link
                                     href={item.linkAttachment}
@@ -677,6 +675,12 @@ export const WorkflowLevel2Box = ({
                               </VStack>
                             </GridItem>
                           </Grid>
+
+                          <Text fontSize="xs">
+                            <strong>File:</strong>{" "}
+                            {item.mediaObjectData ? "Available" : "Not Available"}
+                          </Text>
+
 
                           {/* Enhanced File Download Section */}
                           {item.mediaObjectData && (
@@ -704,7 +708,7 @@ export const WorkflowLevel2Box = ({
                                 >
                                   {renderFileIconSTR(
                                     item.mediaObjectData.objectExtension?.trim() ||
-                                      "file"
+                                    "file"
                                   )}
                                 </Box>
                                 <VStack align="start" spacing={1} flex="1">
@@ -789,8 +793,8 @@ export const WorkflowLevel2Box = ({
               </Box>
             </Flex>
           </ModalBody>
-        </ModalContent>
-      </Modal>
+        </ModalContent >
+      </Modal >
 
       <Box
         p={4}
@@ -934,7 +938,7 @@ export const WorkflowLevel2Box = ({
           </Table>
         </Flex>
       </Collapse>
-    </Box>
+    </Box >
   );
 };
 
@@ -1390,7 +1394,22 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
                     {formik.errors.DocumentVersion}
                   </FormErrorMessage>
                 </FormControl>
-
+                {/* Link Attachment */}
+                <FormControl isInvalid={!!formik.errors.LinkAttachment}>
+                  <FormLabel>Link Attachment (Opsional)</FormLabel>
+                  <Input
+                    id="LinkAttachment"
+                    name="LinkAttachment"
+                    placeholder="https://example.com/document"
+                    value={formik.values.LinkAttachment || ""}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    isDisabled={ActionLoading}
+                  />
+                  <FormErrorMessage>
+                    {formik.errors.LinkAttachment}
+                  </FormErrorMessage>
+                </FormControl>
                 <FormControl isInvalid={!!formik.errors.file} isRequired>
                   <FormLabel>Upload File</FormLabel>
                   <Input
@@ -1483,67 +1502,156 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
                         <AccordionIcon />
                       </AccordionButton>
                       <AccordionPanel pb={4}>
-                        {item.mediaObjectData && (
-                          <Box
-                            p={3}
-                            bg={colorMode === "light" ? "gray.50" : "gray.700"}
-                            rounded="md"
-                            border="1px"
-                            borderColor={
-                              colorMode === "light" ? "gray.200" : "gray.600"
-                            }
-                          >
-                            <HStack spacing={3}>
-                              <Box
-                                display="flex"
-                                justifyContent="center"
-                                alignItems="center"
-                                boxSize="40px"
-                              >
-                                {renderFileIconSTR(
-                                  item.mediaObjectData.objectExtension?.trim() ||
-                                    "file"
-                                )}
-                              </Box>
-                              <VStack align="start" spacing={1} flex="1">
-                                <Text
-                                  fontSize="sm"
-                                  fontWeight="medium"
-                                  noOfLines={1}
-                                >
-                                  {item.mediaObjectData.objectRawName ||
-                                    item.documentName}
+                        {/* Document Summary Section */}
+                        <Box
+                          p={3}
+                          bg={colorMode === "light" ? "blue.50" : "blue.900"}
+                          rounded="md"
+                          border="1px"
+                          borderColor={
+                            colorMode === "light" ? "blue.200" : "blue.700"
+                          }
+                          mb={3}
+                        >
+                          <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+                            <GridItem>
+                              <VStack align="start" spacing={1}>
+                                <Text fontSize="xs">
+                                  <strong>Nama Dokumen:</strong> {item.documentName}
                                 </Text>
-                                <HStack spacing={2}>
-                                  {item.mediaObjectData.objectExtension && (
-                                    <Badge colorScheme="gray" size="sm">
-                                      {item.mediaObjectData.objectExtension
-                                        .replace(".", "")
-                                        .toUpperCase()}
-                                    </Badge>
-                                  )}
-                                  {item.mediaObjectData.objectSize && (
-                                    <Badge colorScheme="blue" size="sm">
-                                      {formatKBMB(
-                                        item.mediaObjectData.objectSize
-                                      )}
-                                    </Badge>
-                                  )}
-                                </HStack>
+                                <Text fontSize="xs">
+                                  <strong>Nomor Dokumen:</strong> {item.documentNumber}
+                                </Text>
+                                <Text fontSize="xs">
+                                  <strong>Tanggal Dokumen:</strong>{" "}
+                                  {item.documentDate
+                                    ? new Date(item.documentDate).toLocaleDateString()
+                                    : "-"}
+                                </Text>
                               </VStack>
-                              <Button
-                                size="sm"
-                                colorScheme="green"
-                                leftIcon={<FiDownload />}
-                                as={Link}
-                                href={`${UrlEndpoint}${item.mediaObjectData.objectData}`}
-                                target="_blank"
-                              >
-                                Download
-                              </Button>
-                            </HStack>
-                          </Box>
-                        )}
+                            </GridItem>
+                            <GridItem>
+                              <VStack align="start" spacing={1}>
+                                <Text fontSize="xs">
+                                  <strong>Versi Dokumen:</strong> {item.documentVersion}
+                                </Text>
+                                <Text fontSize="xs">
+                                  <strong>Link Attachment:</strong>{" "}
+                                  {item.linkAttachment ? (
+                                    <a
+                                      href={item.linkAttachment}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      style={{
+                                        color: "#3182ce",
+                                        fontSize: "12px",
+                                        textDecoration: "underline"
+                                      }}
+                                    >
+                                      {item.linkAttachment}
+                                    </a>
+                                  ) : (
+                                    "-"
+                                  )}
+                                </Text>
+                                <Text fontSize="xs">
+                                  <strong>File:</strong>{" "}
+                                  {item.mediaObjectData ? "Available" : "Not Available"}
+                                </Text>
+                                {/* <Text fontSize="xs">
+                                  <strong>Status:</strong>{" "}
+                                  <Badge
+                                    colorScheme={index === 0 ? "green" : "red"}
+                                    size="sm"
+                                    px={2}
+                                    py={1}
+                                    borderRadius="md"
+                                    fontWeight="bold"
+                                  >
+                                    {index === 0 ? "Latest" : "Previous"}
+                                  </Badge>
+                                </Text> */}
+                              </VStack>
+                            </GridItem>
+                          </Grid>
+
+                          {/* Status - Full Width Highlight */}
+                          <Box mt={3} >
+                            <Badge
+                              colorScheme={index === 0 ? "green" : "red"}
+                              size="lg"
+                              px={6}
+                              py={2}
+                              borderRadius="md"
+                              fontWeight="bold"
+                              fontSize="sm"
+                              width="100%"
+                              textAlign="center"
+                              display="block"
+                            >
+                              {index === 0 ? "Latest Document" : "Previous Document"}
+                            </Badge>
+                          </Box>                        </Box>                        {item.mediaObjectData && (
+                            <Box
+                              p={3}
+                              bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                              rounded="md"
+                              border="1px"
+                              borderColor={
+                                colorMode === "light" ? "gray.200" : "gray.600"
+                              }
+                            >
+                              <HStack spacing={3}>
+                                <Box
+                                  display="flex"
+                                  justifyContent="center"
+                                  alignItems="center"
+                                  boxSize="40px"
+                                >
+                                  {renderFileIconSTR(
+                                    item.mediaObjectData.objectExtension?.trim() ||
+                                    "file"
+                                  )}
+                                </Box>
+                                <VStack align="start" spacing={1} flex="1">
+                                  <Text
+                                    fontSize="sm"
+                                    fontWeight="medium"
+                                    noOfLines={1}
+                                  >
+                                    {item.mediaObjectData.objectRawName ||
+                                      item.documentName}
+                                  </Text>
+                                  <HStack spacing={2}>
+                                    {item.mediaObjectData.objectExtension && (
+                                      <Badge colorScheme="gray" size="sm">
+                                        {item.mediaObjectData.objectExtension
+                                          .replace(".", "")
+                                          .toUpperCase()}
+                                      </Badge>
+                                    )}
+                                    {item.mediaObjectData.objectSize && (
+                                      <Badge colorScheme="blue" size="sm">
+                                        {formatKBMB(
+                                          item.mediaObjectData.objectSize
+                                        )}
+                                      </Badge>
+                                    )}
+                                  </HStack>
+                                </VStack>
+                                <Button
+                                  size="sm"
+                                  colorScheme="green"
+                                  leftIcon={<FiDownload />}
+                                  as={Link}
+                                  href={`${UrlEndpoint}${item.mediaObjectData.objectData}`}
+                                  target="_blank"
+                                >
+                                  Download
+                                </Button>
+                              </HStack>
+                            </Box>
+                          )}
                       </AccordionPanel>
                     </AccordionItem>
                   ))}
