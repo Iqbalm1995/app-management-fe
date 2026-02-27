@@ -129,14 +129,25 @@ export const WorkProgramsSection = ({ DataProject }: WorkProgramsSectionProps) =
                     </Thead>
                     <Tbody>
                       <Tr>
-                        <Td fontWeight="semibold" color={colorMode === "light" ? "blue.600" : "blue.300"}>
+                        <Td
+                          fontWeight="semibold"
+                          color={colorMode === "light" ? "gray.600" : "gray.400"}
+                        >
                           Rp. {program.workProgramBudget?.toLocaleString() || "0"}
                         </Td>
-                        <Td fontWeight="semibold" color={colorMode === "light" ? "green.600" : "green.300"}>
+
+                        <Td
+                          fontWeight="semibold"
+                          color={colorMode === "light" ? "red.600" : "red.300"}
+                        >
                           Rp. {program.workProgramReal?.toLocaleString() || "0"}
                         </Td>
+
                         <Td>
-                          <Text fontWeight="bold" color={getLeftoverColor(program.workProgramLeftovers || 0)}>
+                          <Text
+                            fontWeight="bold"
+                            color={colorMode === "light" ? "green.600" : "green.300"}
+                          >
                             Rp. {(program.workProgramLeftovers || 0).toLocaleString()}
                           </Text>
                         </Td>

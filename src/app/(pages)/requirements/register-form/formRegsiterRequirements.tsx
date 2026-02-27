@@ -1140,28 +1140,42 @@ function RegisterRequirementFormPage({
 
         // Load PIC Assign Users if available
         if (reqData.approvalDatas && reqData.approvalDatas.length > 0) {
-          const picUsers = reqData.approvalDatas.map(
-            (pic) =>
-            ({
-              id: pic.id,
-              userId: pic.approverUserCode,
-              nama: pic.approverUserFirstName,
-              email: pic.approverUserEmail,
-              phoneNumber: pic.approverUserPhoneNumber || "",
-              // Minimal required fields for UsersResponse
-              nrp: "",
-              nip: "",
-              teamId: "",
-              teamCode: "",
-              teamName: "",
-              userStatus: "ACTIVE",
-              createdAt: new Date().toISOString(),
-              createdBy: "",
-              team: null,
-              teamRole: null,
-            } as UsersResponse)
-          );
-          setChoosedMemberProjects(picUsers);
+          try {
+            // Fetch complete user data for each approverUserCode
+            const picUsersPromises = reqData.approvalDatas.map(async (pic) => {
+              const userData = await GetDataUser(pic.approverUserCode, 1);
+              return userData.length > 0 ? userData[0] : null;
+            });
+            
+            const picUsersResults = await Promise.all(picUsersPromises);
+            const validPicUsers = picUsersResults.filter(user => user !== null) as UsersResponse[];
+            
+            setChoosedMemberProjects(validPicUsers);
+          } catch (error) {
+            console.error("Error fetching PIC users data:", error);
+            // Fallback to original behavior if fetch fails
+            const picUsers = reqData.approvalDatas.map(
+              (pic) =>
+              ({
+                id: pic.id,
+                userId: pic.approverUserCode,
+                nama: pic.approverUserFirstName,
+                email: pic.approverUserEmail,
+                phoneNumber: pic.approverUserPhoneNumber || "",
+                nrp: "",
+                nip: "",
+                teamId: "",
+                teamCode: "",
+                teamName: "",
+                userStatus: "ACTIVE",
+                createdAt: new Date().toISOString(),
+                createdBy: "",
+                team: null,
+                teamRole: null,
+              } as UsersResponse)
+            );
+            setChoosedMemberProjects(picUsers);
+          }
         }
 
         // Load User PIC if available

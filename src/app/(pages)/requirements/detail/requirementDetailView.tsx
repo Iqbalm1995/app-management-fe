@@ -241,6 +241,7 @@ const ProjectsRelationSectionDetail: React.FC<
   const [projects, setProjects] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { GetProjectsByRequirementId } = useRequirements();
+  const { colorMode } = useColorMode();
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -302,7 +303,7 @@ const ProjectsRelationSectionDetail: React.FC<
       headerTitle={`Informasi Proyek Terkait (${projects.length} Proyek)`}
     >
       <VStack spacing={4} align="stretch">
-        <Text fontSize="sm" color="gray.600">
+        <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"}>
           Requirement ini telah terdaftar ke dalam {projects.length} proyek
           berikut:
         </Text>
@@ -312,9 +313,9 @@ const ProjectsRelationSectionDetail: React.FC<
             key={project.id}
             p={4}
             border="1px"
-            borderColor="gray.200"
+            borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
             borderRadius="md"
-            bg="gray.50"
+            bg={colorMode === "light" ? "gray.50" : "gray.700"}
           >
             <Flex justify="space-between" align="start">
               <VStack align="start" spacing={2} flex={1}>
@@ -333,10 +334,10 @@ const ProjectsRelationSectionDetail: React.FC<
                 <Text fontWeight="semibold" fontSize="md">
                   {project.projectName}
                 </Text>
-                <Text fontSize="sm" color="gray.600">
+                <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"}>
                   {project.projectDesc}
                 </Text>
-                <HStack spacing={4} fontSize="xs" color="gray.500">
+                <HStack spacing={4} fontSize="xs" color={colorMode === "light" ? "gray.500" : "gray.400"}>
                   <Text>Tipe: {project.projectType}</Text>
                   <Text>Kategori: {project.projectCategory}</Text>
                 </HStack>
@@ -772,8 +773,13 @@ function RequirementDetailView() {
   };
 
   // auto page backlog
+  // Sort data by posOrder for BRD table
+  const sortedDataBacklogs = [...DataBacklogsRequirement].sort(
+    (a, b) => (a.posOrder || 0) - (b.posOrder || 0)
+  );
+
   const tableBacklogs = useReactTable({
-    data: DataBacklogsRequirement,
+    data: sortedDataBacklogs,
     columns: columnsDataBacklogs,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -1959,7 +1965,7 @@ function RequirementDetailView() {
         size="lg"
       >
         <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
-        <ModalContent mx={4}>
+        <ModalContent mx={4} bg={colorMode === "light" ? "white" : "gray.800"}>
           <ModalHeader fontSize="lg" fontWeight="bold">
             <HStack spacing={2}>
               <FiCheckCircle />
@@ -1969,10 +1975,16 @@ function RequirementDetailView() {
           <ModalCloseButton />
           <ModalBody pb={6}>
             <VStack align="stretch" spacing={4}>
-              <Box bg="gray.50" p={4} rounded="md" borderWidth="1px">
+              <Box 
+                bg={colorMode === "light" ? "gray.50" : "gray.700"} 
+                p={4} 
+                rounded="md" 
+                borderWidth="1px"
+                borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+              >
                 <Stack spacing={3}>
                   <Box>
-                    <Text fontSize="xs" color="gray.600" mb={1}>
+                    <Text fontSize="xs" color={colorMode === "light" ? "gray.600" : "gray.400"} mb={1}>
                       Requirement
                     </Text>
                     <Text fontWeight="semibold">
@@ -1984,7 +1996,7 @@ function RequirementDetailView() {
 
                   {approvalMode && (
                     <Box>
-                      <Text fontSize="xs" color="gray.600" mb={1}>
+                      <Text fontSize="xs" color={colorMode === "light" ? "gray.600" : "gray.400"} mb={1}>
                         Submitted by
                       </Text>
                       <Text fontWeight="semibold">
@@ -1996,7 +2008,7 @@ function RequirementDetailView() {
                   <Divider />
 
                   <Box>
-                    <Text fontSize="xs" color="gray.600" mb={1}>
+                    <Text fontSize="xs" color={colorMode === "light" ? "gray.600" : "gray.400"} mb={1}>
                       Approve Status
                     </Text>
                     <Badge
@@ -2016,7 +2028,7 @@ function RequirementDetailView() {
                   </Box>
 
                   <Box>
-                    <Text fontSize="xs" color="gray.600" mb={1}>
+                    <Text fontSize="xs" color={colorMode === "light" ? "gray.600" : "gray.400"} mb={1}>
                       Approve By
                     </Text>
                     <Text fontWeight="semibold">{DataAuth?.nama || "-"}</Text>
@@ -2026,10 +2038,10 @@ function RequirementDetailView() {
                     <>
                       <Divider />
                       <Box>
-                        <Text fontSize="xs" color="gray.600" mb={1}>
+                        <Text fontSize="xs" color={colorMode === "light" ? "gray.600" : "gray.400"} mb={1}>
                           Note
                         </Text>
-                        <Text fontSize="sm" color="gray.700">
+                        <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
                           {ApprovalNote}
                         </Text>
                       </Box>
