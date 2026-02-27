@@ -139,6 +139,7 @@ const ProjectManagerPage = () => {
   // Data state
   const [DataProjects, setDataProjects] = useState<ProjectDataResponse[]>([]);
   const [RefreshData, setRefreshData] = useState<number>(0);
+  const [totalProjectsCount, setTotalProjectsCount] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
 
   // Table state
@@ -201,25 +202,27 @@ const ProjectManagerPage = () => {
   // Data fetching effect
   useEffect(() => {
     setIsEditMode(false);
-    // if (DataAuth && DataAuth.team) {
-    if (DataAuth) {
-      // Build filter conditions
+
+    if (DataAuth && DataAuth.team) {
       const filterWhere: ListSearchByParam[] = [];
 
-      // Add status filter if selected
       if (statusFilter.length > 0) {
         statusFilter.forEach((status: string) => {
           filterWhere.push({
             field: "projectStatus",
             operator: "=",
-            value: status, // Handle each status filter
+            value: status,
           });
         });
       }
 
       const PayloadList: PaggingListPayloadCustom = {
         search: globalFilter,
-        projectType: requirementType === "BRD" ? PROJECT_TYPE_INTERNAL_DEVELOPMENT : null,
+        projectType:
+          requirementType === "BRD"
+            ? PROJECT_TYPE_INTERNAL_DEVELOPMENT
+            : null,
+        teamId: DataAuth.team.id,
         requirementType: requirementType,
         limit: pageSize,
         page: pageIndex,
@@ -229,14 +232,21 @@ const ProjectManagerPage = () => {
       };
 
       setIsLoadingProcess(true);
+
       const GetDataList = async () => {
         try {
-          const requestData = await GetAssignedProjects(PayloadList, tokenData);
-          const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+          const requestData = await GetAssignedProjects(
+            PayloadList,
+            tokenData
+          );
+
+          const isErrorResponse =
+            requestData?.statusCode !== RES_CODE_OK;
 
           if (isErrorResponse || !requestData) {
             showToast({
-              description: requestData?.message || RES_GENERIC_ERROR_MSG,
+              description:
+                requestData?.message || RES_GENERIC_ERROR_MSG,
               statusToast: "error",
             });
             setIsLoadingProcess(false);
@@ -252,13 +262,17 @@ const ProjectManagerPage = () => {
             return;
           }
 
-          const itemsData: ProjectDataResponse[] =
+          const itemsData =
             requestData.data as ProjectDataResponse[];
-          const totalData: number = requestData.countTotal as number;
-          const totalPages: number =
-            totalData > 0 ? Math.ceil(totalData / pageSize) : -1;
+          const totalData =
+            requestData.countTotal as number;
+          const totalPages =
+            totalData > 0
+              ? Math.ceil(totalData / pageSize)
+              : -1;
 
           setDataProjects(itemsData);
+          setTotalProjectsCount(totalData);
           setTotalPageData(totalPages);
           setIsLoadingProcess(false);
         } catch (error) {
@@ -272,6 +286,12 @@ const ProjectManagerPage = () => {
       };
 
       GetDataList();
+    } else {
+      // ✅ sekarang ini valid
+      setDataProjects([]);
+      setTotalProjectsCount(0);
+      setTotalPageData(0);
+      setIsLoadingProcess(false);
     }
   }, [
     DataAuth,
@@ -328,6 +348,7 @@ const ProjectManagerPage = () => {
   const RefreshAction = useCallback(() => {
     setTotalPageData(0);
     setDataProjects([]);
+    setTotalProjectsCount(0);
     setRefreshData(RefreshData + 1);
   }, [RefreshData]);
 
@@ -537,6 +558,7 @@ const ProjectManagerPage = () => {
               setStatusFilter={setStatusFilter}
               DataProjects={DataProjects}
               colorMode={colorMode}
+              totalProjectsCount={totalProjectsCount}
             />
           </GridItem>
           <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 9 }} w={"full"}>
@@ -642,138 +664,138 @@ const ProjectManagerPage = () => {
                         w="full"
                       >
                         <CardBody p={{ base: 4, md: 6 }}>
-                        <VStack spacing={4} align="stretch">
-                          {/* Section Header */}
-                          <HStack spacing={3} align="center">
-                            <Box
-                              w={{ base: 8, md: 10 }}
-                              h={{ base: 8, md: 10 }}
-                              bg="purple.500"
-                              rounded="lg"
-                              display="flex"
-                              alignItems="center"
-                              justifyContent="center"
-                              color="white"
-                              fontSize={{ base: "sm", md: "md" }}
-                              flexShrink={0}
-                            >
-                              <Icon as={FiZap} boxSize={{ base: 4, md: 5 }} />
-                            </Box>
-                            <VStack align="start" spacing={0}>
-                              <Heading
-                                size={{ base: "sm", md: "md" }}
-                                color={
-                                  colorMode === "light" ? "gray.800" : "white"
-                                }
-                                lineHeight="1.2"
+                          <VStack spacing={4} align="stretch">
+                            {/* Section Header */}
+                            <HStack spacing={3} align="center">
+                              <Box
+                                w={{ base: 8, md: 10 }}
+                                h={{ base: 8, md: 10 }}
+                                bg="purple.500"
+                                rounded="lg"
+                                display="flex"
+                                alignItems="center"
+                                justifyContent="center"
+                                color="white"
+                                fontSize={{ base: "sm", md: "md" }}
+                                flexShrink={0}
                               >
-                                Last Working Projects
-                              </Heading>
-                              <Text
-                                fontSize={{ base: "xs", md: "sm" }}
-                                color={
-                                  colorMode === "light"
-                                    ? "gray.600"
-                                    : "gray.400"
-                                }
-                                lineHeight="1.3"
-                              >
-                                Recently active projects you've been working on
-                              </Text>
-                            </VStack>
-                          </HStack>
-
-                          {/* Last Working Projects List */}
-                          <VStack
-                            spacing={0}
-                            align="stretch"
-                            divider={<Divider />}
-                          >
-                            {DataProjects.slice(0, 3).map((project, index) => (
-                              <HStack
-                                key={`recent-${project.id}`}
-                                spacing={4}
-                                align="center"
-                                py={3}
-                                px={2}
-                                _hover={{
-                                  bg:
-                                    colorMode === "light"
-                                      ? "gray.50"
-                                      : "gray.700",
-                                }}
-                                transition="all 0.2s"
-                                cursor="pointer"
-                                onClick={() =>
-                                  (window.location.href = `/projects/manage?projectId=${project.id}`)
-                                }
-                              >
-                                {/* Project Number */}
-                                <Text
-                                  fontSize="sm"
-                                  fontWeight="bold"
-                                  color="purple.500"
-                                  minW="20px"
-                                  textAlign="center"
+                                <Icon as={FiZap} boxSize={{ base: 4, md: 5 }} />
+                              </Box>
+                              <VStack align="start" spacing={0}>
+                                <Heading
+                                  size={{ base: "sm", md: "md" }}
+                                  color={
+                                    colorMode === "light" ? "gray.800" : "white"
+                                  }
+                                  lineHeight="1.2"
                                 >
-                                  {index + 1}.
+                                  Last Working Projects
+                                </Heading>
+                                <Text
+                                  fontSize={{ base: "xs", md: "sm" }}
+                                  color={
+                                    colorMode === "light"
+                                      ? "gray.600"
+                                      : "gray.400"
+                                  }
+                                  lineHeight="1.3"
+                                >
+                                  Recently active projects you've been working on
                                 </Text>
+                              </VStack>
+                            </HStack>
 
-                                {/* Project Info */}
-                                <VStack align="start" spacing={0} flex={1}>
-                                  <HStack spacing={2} align="center">
+                            {/* Last Working Projects List */}
+                            <VStack
+                              spacing={0}
+                              align="stretch"
+                              divider={<Divider />}
+                            >
+                              {DataProjects.slice(0, 3).map((project, index) => (
+                                <HStack
+                                  key={`recent-${project.id}`}
+                                  spacing={4}
+                                  align="center"
+                                  py={3}
+                                  px={2}
+                                  _hover={{
+                                    bg:
+                                      colorMode === "light"
+                                        ? "gray.50"
+                                        : "gray.700",
+                                  }}
+                                  transition="all 0.2s"
+                                  cursor="pointer"
+                                  onClick={() =>
+                                    (window.location.href = `/projects/manage?projectId=${project.id}`)
+                                  }
+                                >
+                                  {/* Project Number */}
+                                  <Text
+                                    fontSize="sm"
+                                    fontWeight="bold"
+                                    color="purple.500"
+                                    minW="20px"
+                                    textAlign="center"
+                                  >
+                                    {index + 1}.
+                                  </Text>
+
+                                  {/* Project Info */}
+                                  <VStack align="start" spacing={0} flex={1}>
+                                    <HStack spacing={2} align="center">
+                                      <Text
+                                        fontSize="sm"
+                                        fontWeight="bold"
+                                        color={
+                                          colorMode === "light"
+                                            ? "gray.800"
+                                            : "white"
+                                        }
+                                      >
+                                        {project.projectName}
+                                      </Text>
+                                      <Badge
+                                        colorScheme="purple"
+                                        size="sm"
+                                        variant="subtle"
+                                      >
+                                        {project.projectCategory}
+                                      </Badge>
+                                    </HStack>
                                     <Text
-                                      fontSize="sm"
-                                      fontWeight="bold"
+                                      fontSize="xs"
                                       color={
                                         colorMode === "light"
-                                          ? "gray.800"
-                                          : "white"
+                                          ? "gray.500"
+                                          : "gray.400"
                                       }
+                                      noOfLines={1}
                                     >
-                                      {project.projectName}
+                                      {project.projectNo} |{" "}
+                                      {project.appsProject?.appName}
                                     </Text>
-                                    <Badge
-                                      colorScheme="purple"
-                                      size="sm"
-                                      variant="subtle"
-                                    >
-                                      {project.projectCategory}
-                                    </Badge>
-                                  </HStack>
-                                  <Text
-                                    fontSize="xs"
-                                    color={
-                                      colorMode === "light"
-                                        ? "gray.500"
-                                        : "gray.400"
-                                    }
-                                    noOfLines={1}
-                                  >
-                                    {project.projectNo} |{" "}
-                                    {project.appsProject?.appName}
-                                  </Text>
-                                </VStack>
+                                  </VStack>
 
-                                {/* Progress */}
-                                <HStack spacing={2} align="center" minW="60px">
-                                  <Text
-                                    fontSize="xs"
-                                    fontWeight="medium"
-                                    color="orange.600"
-                                  >
-                                    {project.projectStatusPercentage}%
-                                  </Text>
-                                  <Icon
-                                    as={FiTarget}
-                                    boxSize={4}
-                                    color="purple.500"
-                                  />
+                                  {/* Progress */}
+                                  <HStack spacing={2} align="center" minW="60px">
+                                    <Text
+                                      fontSize="xs"
+                                      fontWeight="medium"
+                                      color="orange.600"
+                                    >
+                                      {project.projectStatusPercentage}%
+                                    </Text>
+                                    <Icon
+                                      as={FiTarget}
+                                      boxSize={4}
+                                      color="purple.500"
+                                    />
+                                  </HStack>
                                 </HStack>
-                              </HStack>
-                            ))}
-                        </VStack>
-                        </VStack>
+                              ))}
+                            </VStack>
+                          </VStack>
                         </CardBody>
                       </Card>
                     )}
