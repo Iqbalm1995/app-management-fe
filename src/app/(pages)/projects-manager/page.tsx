@@ -89,6 +89,7 @@ import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useProjects, { ProjectDataResponse } from "@/app/services/useProjects";
+import useOrganization from "@/app/services/useOrganization";
 
 // Constants and Types
 import {
@@ -103,6 +104,8 @@ import {
 } from "@/app/constants/masterStatusConstants";
 import { StatusBadge } from "@/app/components/StatusBadge";
 import {
+  ApiGenericResponse,
+  PaggingListPayload,
   PaggingListPayloadCustom,
   ListSearchByParam,
 } from "@/app/types/masterTypes";
@@ -117,7 +120,8 @@ const ProjectManagerPage = () => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
   const { isAuthenticated, authData, goLogout } = useAuth();
-  const { GetAssignedProjects } = useProjects();
+  const { List, GetAssignedProjects } = useProjects();
+  const { GetDetailById: GetOrgDetailById } = useOrganization();
   const searchParams = useSearchParams();
 
   // Get requirementType from URL param, only use if it's RFC
@@ -135,6 +139,9 @@ const ProjectManagerPage = () => {
   const [tokenData, setTokenData] = useState<string>("");
   const [canMake, setCanMake] = useState<boolean>(false);
   const [canReview, setCanReview] = useState<boolean>(false);
+  const [isOrgTypeGroup, setIsOrgTypeGroup] = useState<boolean>(false);
+  const [isValidatingOrg, setIsValidatingOrg] = useState<boolean>(false);
+  const [hasValidated, setHasValidated] = useState<boolean>(false);
 
   // Data state
   const [DataProjects, setDataProjects] = useState<ProjectDataResponse[]>([]);
@@ -170,39 +177,153 @@ const ProjectManagerPage = () => {
   );
 
   // Auth setup effect
+  // Auth setup and validation effect - combined to avoid race conditions
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
-    const token: string = localStorage.getItem("tokenData") as string;
+    const token = localStorage.getItem("tokenData");
 
-    if (storedData) {
+    if (storedData && token) {
       const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
-      const UserData: AuthDataResponse =
-        StorageAuth.dataLogin as AuthDataResponse;
+      const UserData: AuthDataResponse = StorageAuth.dataLogin as AuthDataResponse;
+      
+      // Set auth data
       setDataAuth(UserData);
-    }
-
-    if (token) {
       setTokenData(token);
-    }
 
-    // Load permissions from accessData
-    const accessDataStr = localStorage.getItem("accessData");
-    if (accessDataStr) {
-      try {
-        const accessData = JSON.parse(accessDataStr);
-        setCanMake(accessData.aggregatedPermissions?.canMake || false);
-        setCanReview(accessData.aggregatedPermissions?.canReview || false);
-      } catch (error) {
-        console.error("Failed to parse accessData:", error);
+      // Load permissions from accessData
+      const accessDataStr = localStorage.getItem("accessData");
+      if (accessDataStr) {
+        try {
+          const accessData = JSON.parse(accessDataStr);
+          setCanMake(accessData.aggregatedPermissions?.canMake || false);
+          setCanReview(accessData.aggregatedPermissions?.canReview || false);
+        } catch (error) {
+          console.error("Failed to parse accessData:", error);
+        }
       }
+
+      // Check if user has orgGroupId
+      if (!UserData.team?.orgGroupId) {
+        // No orgGroupId - will use /list endpoint
+        console.log(`[AUTH] No orgGroupId, will use /list endpoint`);
+        setHasValidated(true);
+        return;
+      }
+
+      // Check cache
+      const orgValidationStr = localStorage.getItem("orgValidation");
+      if (orgValidationStr) {
+        try {
+          const orgValidation: {
+            isOrgTypeGroup: boolean;
+            orgGroupId: string;
+            validatedAt: number;
+          } = JSON.parse(orgValidationStr);
+
+          // Validate cache is for same orgGroupId
+          if (orgValidation.orgGroupId === UserData.team.orgGroupId) {
+            // Cache valid - use it
+            console.log(`[CACHE] Using cached orgType: isGroup=${orgValidation.isOrgTypeGroup}`);
+            setHasValidated(true);
+            return;
+          } else {
+            console.log(`[CACHE] orgGroupId mismatch, will re-validate`);
+          }
+        } catch (error) {
+          console.error("[ERROR] Failed to parse cache:", error);
+        }
+      }
+
+      // No cache or cache invalid - validate now
+      const orgGroupId = UserData.team.orgGroupId; // Capture value for validation
+      console.log(`[VALIDATION] Starting validation for orgGroupId: ${orgGroupId}`);
+
+      const validateOrgType = async () => {
+        try {
+          const orgData = await GetOrgDetailById(orgGroupId!, token);
+
+          if (orgData?.statusCode === RES_CODE_OK && orgData.data) {
+            const isGroup = orgData.data.orgType === "GROUP";
+
+            // Save to localStorage
+            const orgValidation = {
+              isOrgTypeGroup: isGroup,
+              orgGroupId: orgGroupId!,
+              validatedAt: Date.now(),
+            };
+            localStorage.setItem("orgValidation", JSON.stringify(orgValidation));
+
+            console.log(`[VALIDATION] OrgType: ${orgData.data.orgType}, isGroup: ${isGroup}, saved to cache`);
+          } else {
+            console.log(`[VALIDATION] API returned no data, will use /list endpoint`);
+          }
+        } catch (error) {
+          console.error("[ERROR] Validation failed:", error);
+        } finally {
+          // Always set hasValidated, even if API fails
+          setHasValidated(true);
+        }
+      };
+
+      validateOrgType();
     }
   }, []); // Empty dependency array - run only once on mount
 
+  // Wrapper function to conditionally use endpoint based on user team
+  const GetProjects = async (
+    payload: PaggingListPayloadCustom,
+    token: string
+  ): Promise<ApiGenericResponse<ProjectDataResponse[] | null> | null> => {
+    // Read decision from localStorage directly to avoid state timing issues
+    let useAssignedEndpoint = false;
+    
+    if (DataAuth?.team?.orgGroupId) {
+      const orgValidationStr = localStorage.getItem("orgValidation");
+      if (orgValidationStr) {
+        try {
+          const orgValidation: {
+            isOrgTypeGroup: boolean;
+            orgGroupId: string;
+            validatedAt: number;
+          } = JSON.parse(orgValidationStr);
+          
+          if (orgValidation.orgGroupId === DataAuth.team.orgGroupId) {
+            useAssignedEndpoint = orgValidation.isOrgTypeGroup;
+          }
+        } catch (error) {
+          console.error("[ERROR] Failed to read orgValidation:", error);
+        }
+      }
+    }
+    
+    console.log(`[DEBUG GetProjects] orgGroupId: ${DataAuth?.team?.orgGroupId}`);
+    console.log(`[DEBUG GetProjects] useAssignedEndpoint (from localStorage): ${useAssignedEndpoint}`);
+    
+    if (DataAuth?.team?.orgGroupId && useAssignedEndpoint) {
+      console.log(`[DEBUG GetProjects] Calling /assigned-projects`);
+      return await GetAssignedProjects(payload, token);
+    } else {
+      console.log(`[DEBUG GetProjects] Calling /list`);
+      const basicPayload: PaggingListPayload = {
+        search: payload.search,
+        limit: payload.limit,
+        page: payload.page,
+        filterWhere: payload.filterWhere,
+        fieldOrder: payload.fieldOrder,
+        orderDir: payload.orderDir,
+      };
+      return await List(basicPayload, token);
+    }
+  };
+
   // Data fetching effect
   useEffect(() => {
+    console.log(`[DEBUG DataFetch] DataAuth: ${!!DataAuth}, hasValidated: ${hasValidated}`);
+    
     setIsEditMode(false);
     // if (DataAuth && DataAuth.team) {
-    if (DataAuth) {
+    if (DataAuth && hasValidated) {
+      console.log(`[DEBUG DataFetch] Condition passed, fetching data...`);
       // Build filter conditions
       const filterWhere: ListSearchByParam[] = [];
 
@@ -231,7 +352,7 @@ const ProjectManagerPage = () => {
       setIsLoadingProcess(true);
       const GetDataList = async () => {
         try {
-          const requestData = await GetAssignedProjects(PayloadList, tokenData);
+          const requestData = await GetProjects(PayloadList, tokenData);
           const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
 
           if (isErrorResponse || !requestData) {
@@ -282,6 +403,8 @@ const ProjectManagerPage = () => {
     statusFilter,
     tokenData,
     requirementType,
+    isOrgTypeGroup,
+    hasValidated,
   ]);
 
   // Table configuration

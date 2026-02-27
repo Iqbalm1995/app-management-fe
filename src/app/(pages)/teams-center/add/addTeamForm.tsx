@@ -43,12 +43,13 @@ import {
   Divider,
   Avatar,
   Center,
+  Checkbox,
 } from "@chakra-ui/react";
 import { useFormik } from "formik";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { FaUsersRays, FaArrowLeft, FaImage } from "react-icons/fa6";
-import { FiCode, FiUsers } from "react-icons/fi";
+import { FiCode, FiUsers, FiStar } from "react-icons/fi";
 import * as Yup from "yup";
 import { Select } from "chakra-react-select";
 
@@ -80,6 +81,7 @@ function AddTeamViewPage() {
   const [DivisionOptions, setDivisionOptions] = useState<Array<{ label: string, value: string }>>([]);
   const [GroupOptions, setGroupOptions] = useState<Array<{ label: string, value: string }>>([]);
   const [SelectedGroup, setSelectedGroup] = useState<{ label: string, value: string } | null>(null);
+  const [isTopExecutive, setIsTopExecutive] = useState<boolean>(false);
 
 
 
@@ -242,9 +244,13 @@ function AddTeamViewPage() {
     teamDesc: Yup.string()
       .nullable()
       .max(500, "Description must not exceed 500 characters"),
-    orgGroupId: Yup.string().required("Organization group is required"),
+    orgGroupId: Yup.string(),
     isActive: Yup.string().required("Status is required"),
   });
+
+  const getValidationSchema = () => {
+    return ValidationSchema;
+  };
 
   const formik = useFormik<TeamInsertPayload>({
     initialValues: {
@@ -256,7 +262,7 @@ function AddTeamViewPage() {
       isActive: "ACTIVE",
       uploadPict: null,
     },
-    validationSchema: ValidationSchema,
+    validationSchema: getValidationSchema(),
     validateOnChange: true,
     validateOnBlur: true,
     onSubmit: async (values) => {
@@ -282,27 +288,60 @@ function AddTeamViewPage() {
       return;
     }
 
-    if (!values.orgGroupId) {
-      showToast({
-        description: "Organization group is required",
-        statusToast: "error",
-      });
-      return;
+    // Validate top executive requirements
+    if (isTopExecutive) {
+      if (!SelectedDirectorate || !SelectedDivision) {
+        showToast({
+          description: "Directorate and Division are required for top executive team",
+          statusToast: "error",
+        });
+        return;
+      }
     }
 
     try {
       setIsLoadingProcess(true);
 
+      let orgGroupCode = null;
+      let orgGroupId = null;
 
-      // Find selected organization to get the code
-      const selectedOrg = GroupData.find((org) => org.id === values.orgGroupId);
+      if (isTopExecutive) {
+        // For top executive, use division as group
+        const selectedDiv = DivisionData.find((div) => div.id === SelectedDivision?.value);
+        if (!selectedDiv) {
+          showToast({
+            description: "Please select a valid division",
+            statusToast: "error",
+          });
+          setIsLoadingProcess(false);
+          return;
+        }
+        orgGroupId = selectedDiv.id;
+        orgGroupCode = selectedDiv.orgCode;
+      } else if (values.orgGroupId) {
+        // Normal mode - use group if selected
+        const selectedOrg = GroupData.find((org) => org.id === values.orgGroupId);
 
-      if (!selectedOrg) {
-        showToast({
-          description: "Selected organization group not found",
-          statusToast: "error",
-        });
-        return;
+        if (!selectedOrg) {
+          showToast({
+            description: "Selected organization group not found",
+            statusToast: "error",
+          });
+          setIsLoadingProcess(false);
+          return;
+        }
+
+        if (!selectedOrg?.orgCode?.trim()) {
+          showToast({
+            description: "Organization code is missing",
+            statusToast: "error",
+          });
+          setIsLoadingProcess(false);
+          return;
+        }
+
+        orgGroupId = selectedOrg.id;
+        orgGroupCode = selectedOrg.orgCode.trim();
       }
 
       // Ensure no null/undefined values
@@ -311,14 +350,7 @@ function AddTeamViewPage() {
           description: "Initial Team is required",
           statusToast: "error",
         });
-        return;
-      }
-
-      if (!selectedOrg?.orgCode?.trim()) {
-        showToast({
-          description: "Organization code is missing",
-          statusToast: "error",
-        });
+        setIsLoadingProcess(false);
         return;
       }
 
@@ -328,8 +360,8 @@ function AddTeamViewPage() {
         teamDesc: values.teamDesc?.trim() || null,
         isActive: values.isActive,
         uploadPict: selectedImage,
-        orgGroupId: values.orgGroupId,
-        orgGroupCode: selectedOrg.orgCode.trim(),
+        orgGroupId: orgGroupId,
+        orgGroupCode: orgGroupCode,
       };
 
 
@@ -564,9 +596,34 @@ function AddTeamViewPage() {
                               Organization
                             </Heading>
 
-                            {/* Directorate Selection */}
+                            {/* Top Executive Toggle */}
                             <FormControl>
-                              <FormLabel fontWeight="semibold">Directorate</FormLabel>
+                              <Checkbox
+                                isChecked={isTopExecutive}
+                                onChange={(e) => {
+                                  setIsTopExecutive(e.target.checked);
+                                  if (e.target.checked) {
+                                    setSelectedGroup(null);
+                                    formik.setFieldValue("orgGroupId", "");
+                                  }
+                                }}
+                                colorScheme="yellow"
+                              >
+                                <HStack spacing={2}>
+                                  <Icon as={FiStar} color="yellow.500" />
+                                  <Text fontWeight="bold">Team As Top Group Executive</Text>
+                                </HStack>
+                              </Checkbox>
+                              <Text fontSize="xs" color="gray.500" mt={1}>
+                                Mark this team as a top-level executive team (requires Directorate and Division)
+                              </Text>
+                            </FormControl>
+
+                            {/* Directorate Selection */}
+                            <FormControl isRequired={isTopExecutive}>
+                              <FormLabel fontWeight="semibold">
+                                Directorate {isTopExecutive && <Text as="span" color="red.500">*</Text>}
+                              </FormLabel>
                               <Select
                                 id="directorateId"
                                 options={DirectorateOptions}
@@ -579,8 +636,10 @@ function AddTeamViewPage() {
                             </FormControl>
 
                             {/* Division Selection */}
-                            <FormControl>
-                              <FormLabel fontWeight="semibold">Division</FormLabel>
+                            <FormControl isRequired={isTopExecutive}>
+                              <FormLabel fontWeight="semibold">
+                                Division {isTopExecutive && <Text as="span" color="red.500">*</Text>}
+                              </FormLabel>
                               <Select
                                 id="divisionId"
                                 options={DivisionOptions}
@@ -619,37 +678,39 @@ function AddTeamViewPage() {
                               />
                             </FormControl>
 
-                            {/* Group Selection */}
-                            <FormControl
-                              isInvalid={!!(formik.errors.orgGroupId && formik.touched.orgGroupId)}
-                            >
-                              <FormLabel fontWeight="semibold">
-                                Organization Group
-                              </FormLabel>
-                              <Select
-                                id="orgGroupId"
-                                options={GroupOptions.filter(g => {
-                                  if (!SelectedDivision) return false;
-                                  const group = GroupData.find(gd => gd.id === g.value);
-                                  return group?.parentId === SelectedDivision.value;
-                                })}
-                                value={SelectedGroup}
-                                onChange={(e) => {
-                                  if (e) {
-                                    setSelectedGroup(e);
-                                    formik.setFieldValue("orgGroupId", e.value);
-                                  } else {
-                                    setSelectedGroup(null);
-                                    formik.setFieldValue("orgGroupId", "");
-                                  }
-                                }}
-                                placeholder="Select Group"
-                                isSearchable={true}
-                                isClearable={true}
-                                isDisabled={!SelectedDivision}
-                              />
-                              <FormErrorMessage>{formik.errors.orgGroupId}</FormErrorMessage>
-                            </FormControl>
+                            {/* Group Selection - Hidden when Top Executive */}
+                            {!isTopExecutive && (
+                              <FormControl
+                                isInvalid={!!(formik.errors.orgGroupId && formik.touched.orgGroupId)}
+                              >
+                                <FormLabel fontWeight="semibold">
+                                  Organization Group
+                                </FormLabel>
+                                <Select
+                                  id="orgGroupId"
+                                  options={GroupOptions.filter(g => {
+                                    if (!SelectedDivision) return false;
+                                    const group = GroupData.find(gd => gd.id === g.value);
+                                    return group?.parentId === SelectedDivision.value;
+                                  })}
+                                  value={SelectedGroup}
+                                  onChange={(e) => {
+                                    if (e) {
+                                      setSelectedGroup(e);
+                                      formik.setFieldValue("orgGroupId", e.value);
+                                    } else {
+                                      setSelectedGroup(null);
+                                      formik.setFieldValue("orgGroupId", "");
+                                    }
+                                  }}
+                                  placeholder="Select Group"
+                                  isSearchable={true}
+                                  isClearable={true}
+                                  isDisabled={!SelectedDivision}
+                                />
+                                <FormErrorMessage>{formik.errors.orgGroupId}</FormErrorMessage>
+                              </FormControl>
+                            )}
 
                           </VStack>
                         </CardBody>
@@ -734,7 +795,8 @@ function AddTeamViewPage() {
                           fontWeight="semibold"
                           isDisabled={
                             !formik.values.teamName.trim() ||
-                            !formik.values.orgGroupId ||
+                            (!isTopExecutive && !formik.values.orgGroupId) ||
+                            (isTopExecutive && (!SelectedDirectorate || !SelectedDivision)) ||
                             Object.keys(formik.errors).length > 0 ||
                             IsLoadingProcess
                           }
