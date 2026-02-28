@@ -120,6 +120,9 @@ const OverviewTab = ({ DataProject, onRefreshProject }: OverviewTabProps) => {
   // Check if project has SDLC setup
   const hasSdlcSetup = DataProject?.sdlcId != null;
 
+  // Check if project has requirement (for showing backlog statistics)
+  const hasRequirement = DataProject?.reqParentId != null;
+
   // Calculate SDLC progression
   const stageProgression = useMemo(() => {
     const totalStages = SdlcStages.length;
@@ -469,7 +472,8 @@ const OverviewTab = ({ DataProject, onRefreshProject }: OverviewTabProps) => {
                 )}
 
                 {/* 1. Backlog Statistics */}
-                {BacklogStats && (
+                {/* Hide for procurement projects without requirement */}
+                {BacklogStats && !(isProcurement && !hasRequirement) && (
                   <Card rounded={radiusStyle} shadow="md" bg={colorMode === "light" ? "white" : "gray.800"} borderWidth="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"}>
                     <CardBody>
                       <VStack spacing={4} align="stretch">

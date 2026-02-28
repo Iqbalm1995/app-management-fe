@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Modal,
   ModalOverlay,
@@ -68,6 +68,9 @@ const UpdateStageDatesModal = ({
   const [isReportFormOpen, setIsReportFormOpen] = useState(false);
   const [editingReportId, setEditingReportId] = useState<string | undefined>();
 
+  // Track if user manually unlocked end date (via "End Stage" button)
+  const hasManuallyUnlocked = useRef(false);
+
   useEffect(() => {
     const token = localStorage.getItem("tokenData") as string;
     if (token) {
@@ -79,7 +82,12 @@ const UpdateStageDatesModal = ({
     if (isOpen && stage) {
       setStartDate(stage.startDate ? stage.startDate.split("T")[0] : "");
       setEndDate(stage.endDate ? stage.endDate.split("T")[0] : "");
-      setIsEndDateUnlocked(!!stage.endDate);
+      
+      // Only reset isEndDateUnlocked if not manually unlocked by user
+      if (!hasManuallyUnlocked.current) {
+        setIsEndDateUnlocked(!!stage.endDate);
+      }
+      
       setPage(1);
       loadReports(1);
     }
@@ -89,7 +97,10 @@ const UpdateStageDatesModal = ({
   useEffect(() => {
     if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
       setEndDate("");
-      setIsEndDateUnlocked(false);
+      // Only reset unlock if not manually unlocked by user
+      if (!hasManuallyUnlocked.current) {
+        setIsEndDateUnlocked(false);
+      }
     }
   }, [startDate, endDate]);
 
@@ -159,6 +170,7 @@ const UpdateStageDatesModal = ({
   };
 
   const handleConfirmEndStage = () => {
+    hasManuallyUnlocked.current = true;
     setIsEndDateUnlocked(true);
     const today = new Date().toISOString().split("T")[0];
     setEndDate(today);
@@ -173,6 +185,7 @@ const UpdateStageDatesModal = ({
   };
 
   const handleConfirmClearEndDate = () => {
+    hasManuallyUnlocked.current = false;
     setEndDate("");
     setIsEndDateUnlocked(false);
   };
@@ -293,9 +306,14 @@ const UpdateStageDatesModal = ({
     return "gray";
   };
 
+  const handleClose = () => {
+    hasManuallyUnlocked.current = false;
+    onClose();
+  };
+
   return (
     <>
-      <Modal isOpen={isOpen} onClose={onClose} size="2xl" scrollBehavior="inside">
+      <Modal isOpen={isOpen} onClose={handleClose} size="2xl" scrollBehavior="inside">
         <ModalOverlay />
         <ModalContent rounded={radiusStyle}>
           <ModalHeader>Manage Stage - {stage.stageName}</ModalHeader>
