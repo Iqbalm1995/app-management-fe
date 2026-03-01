@@ -43,6 +43,11 @@ import {
   Text,
   useColorMode,
   VStack,
+  Spinner,
+  Heading,
+  Icon,
+  Divider,
+  Tooltip,
 } from "@chakra-ui/react";
 import {
   ColumnDef,
@@ -52,9 +57,42 @@ import {
 } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { FiEye, FiCheck, FiSearch, FiX, FiRefreshCw } from "react-icons/fi";
+import { FiEye, FiCheck, FiSearch, FiX, FiRefreshCw, FiClipboard, FiFileText, FiFilter, FiFolder } from "react-icons/fi";
 
 type ProjectViewMode = "PENDING" | "ALL";
+
+// Helper functions
+const getProjectTypeLabel = (type: string): string => {
+  const labels: Record<string, string> = {
+    "INTERNAL_DEVELOPMENT": "Internal Dev",
+    "PROCUREMENT": "Procurement",
+    "DEPLOYMENT": "Deployment"
+  };
+  return labels[type] || type;
+};
+
+const getProjectStatusColor = (status: string): string => {
+  const colors: Record<string, string> = {
+    "RUNNING": "blue",
+    "COMPLETED": "green",
+    "ON HOLD": "yellow",
+    "CANCELED": "red",
+    "CLOSED": "gray",
+    "INITIATING": "purple",
+    "TEMPORARY CLOSED": "orange"
+  };
+  return colors[status] || "gray";
+};
+
+const getApprovalStatusColor = (status: string): string => {
+  const colors: Record<string, string> = {
+    "PENDING": "orange",
+    "APPROVED": "green",
+    "REJECTED": "red",
+    "REVISION": "yellow"
+  };
+  return colors[status] || "gray";
+};
 
 export default function PendingApproveView() {
   const router = useRouter();
@@ -221,36 +259,34 @@ export default function PendingApproveView() {
             as={Stack}
             spacing={1}
           >
-            {/* Requirement Number */}
-            {info.row.original.requirementData && (
-              <Flex as={Stack} spacing={0}>
-                <Text fontSize="sm" color="gray.500">
+            {/* Requirement Number - Prominent */}
+            {info.row.original.requirementData?.reqNumber && (
+              <HStack spacing={2}>
+                <Icon as={FiFileText} boxSize={3} color="purple.500" />
+                <Text fontSize="sm" fontWeight={600} color="purple.600">
                   {info.row.original.requirementData.reqNumber}
                 </Text>
-              </Flex>
+              </HStack>
             )}
+            
             {/* Project Name */}
-            <Flex as={Stack} spacing={0}>
-              <Text fontWeight={600}>{info.row.original.projectName}</Text>
-            </Flex>
-            {/* Perihal/Narrative */}
-            <Flex as={Stack} spacing={0}>
-              <Text fontSize="xs" color="gray.600" noOfLines={2}>
-                {info.row.original.requirementData?.reqNarative || "N/A"}
-              </Text>
-            </Flex>
-            {/* Hidden - Project Code and Number */}
-            {/* <Flex as={Stack} spacing={0}>
-              <Text fontWeight={600}>{info.row.original.projectCode}</Text>
-              <Text>{info.row.original.projectName}</Text>
-            </Flex>
+            <Text fontWeight={600} fontSize="md">
+              {info.row.original.projectName}
+            </Text>
+            
+            {/* Project Number */}
             {info.row.original.projectNo && (
-              <Flex as={Stack} spacing={0}>
-                <Text fontSize="sm" color="gray.500">
-                  No: {info.row.original.projectNo}
-                </Text>
-              </Flex>
-            )} */}
+              <Text fontSize="xs" color="gray.500">
+                No: {info.row.original.projectNo}
+              </Text>
+            )}
+            
+            {/* Narrative */}
+            {info.row.original.requirementData?.reqNarative && (
+              <Text fontSize="xs" color="gray.600" noOfLines={2}>
+                {info.row.original.requirementData.reqNarative}
+              </Text>
+            )}
           </Flex>
         ),
         header: () => <span>Nama Project</span>,
@@ -272,16 +308,13 @@ export default function PendingApproveView() {
         accessorFn: (row) => row.projectType,
         id: "projectType",
         cell: (info) => (
-          <Flex
-            w={"full"}
-            h={"full"}
-            justifyContent={"center"}
-            alignItems={"start"}
-            as={Stack}
-            spacing={1}
-          >
+          <VStack align="start" spacing={1} w="full">
+            {/* Project Type */}
             <Badge
-              variant="solid"
+              fontSize="1em"
+              px={2}
+              py={1}
+              rounded="md"
               colorScheme={
                 info.row.original.projectType === "INTERNAL_DEVELOPMENT"
                   ? "blue"
@@ -289,62 +322,192 @@ export default function PendingApproveView() {
                     ? "green"
                     : "purple"
               }
-              fontSize={"small"}
-              rounded={radiusStyle}
-              px={4}
             >
-              {info.row.original.projectType}
+              {getProjectTypeLabel(info.row.original.projectType)}
             </Badge>
-            {info.row.original.requirementData?.requirementType && (
-              <Badge
-                variant="solid"
-                colorScheme="blue"
-                fontSize={"small"}
-                rounded={radiusStyle}
-                px={4}
-              >
-                {info.row.original.requirementData.requirementType}
+            
+            {/* Category */}
+            <Tooltip
+              label={info.row.original.projectCategory}
+              isDisabled={info.row.original.projectCategory.length <= 20}
+              hasArrow
+              placement="top"
+            >
+              <Badge fontSize="1em" px={2} py={1} rounded="md" variant="outline" colorScheme="gray">
+                {info.row.original.projectCategory.length > 20
+                  ? `${info.row.original.projectCategory.substring(0, 20)}...`
+                  : info.row.original.projectCategory}
               </Badge>
-            )}
-            <Badge
-              variant="outline"
-              colorScheme="gray"
-              fontSize={"small"}
-              rounded={radiusStyle}
-              px={4}
-            >
-              {info.row.original.projectCategory}
-            </Badge>
-          </Flex>
+            </Tooltip>
+          </VStack>
         ),
-        header: () => <span>Tipe</span>,
+        header: () => <span>Tipe Project</span>,
         footer: (props) => props.column.id,
         meta: {
           isFilterable: false,
         } as ColumnMetaCustom,
       },
       {
-        accessorFn: (row) => row.approvalStatus,
-        id: "approvalStatus",
+        accessorFn: (row) => row.requirementData?.requirementType,
+        id: "requirementType",
         cell: (info) => (
-          <Flex
-            w={"full"}
-            h={"full"}
-            justifyContent={"center"}
-            alignItems={"center"}
-          >
-            <Badge
-              variant="solid"
-              colorScheme="orange"
-              fontSize={"small"}
-              rounded={radiusStyle}
-              px={4}
-            >
-              {info.row.original.approvalStatus || "PENDING"}
-            </Badge>
-          </Flex>
+          <VStack align="start" spacing={1} w="full">
+            {/* Requirement Type */}
+            {info.row.original.requirementData?.requirementType ? (
+              <Badge fontSize="1em" px={2} py={1} rounded="md" colorScheme="purple">
+                {info.row.original.requirementData.requirementType}
+              </Badge>
+            ) : (
+              <Text fontSize="xs" color="gray.500">-</Text>
+            )}
+          </VStack>
         ),
-        header: () => <span>Status Approval</span>,
+        header: () => <span>Tipe Requirement</span>,
+        footer: (props) => props.column.id,
+        meta: {
+          isFilterable: false,
+        } as ColumnMetaCustom,
+      },
+      {
+        accessorFn: (row) => row.appsProject?.appName,
+        id: "appInfo",
+        cell: (info) => {
+          const app = info.row.original.appsProject;
+          const acquisition = info.row.original.projectAcquisitionName;
+          const characteristic = info.row.original.projectCharasteristicName;
+          const subChar = info.row.original.projectSubCharasteristicName;
+          
+          // Build tooltip content
+          const tooltipContent = (
+            <VStack align="start" spacing={1} fontSize="xs">
+              {app && (
+                <>
+                  <Text fontWeight="600">{app.appShortName}</Text>
+                  <Text>{app.appName}</Text>
+                </>
+              )}
+              {acquisition && <Text>Akuisisi: {acquisition}</Text>}
+              {characteristic && <Text>Karakteristik: {characteristic}</Text>}
+              {subChar && <Text>Sub-Karakteristik: {subChar}</Text>}
+            </VStack>
+          );
+          
+          return (
+            <Tooltip label={tooltipContent} hasArrow placement="top">
+              <HStack spacing={2} w="full">
+                {app && (
+                  <>
+                    <Box
+                      w={6}
+                      h={6}
+                      bg="blue.500"
+                      rounded="md"
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                      color="white"
+                      fontSize="xs"
+                      fontWeight="bold"
+                      flexShrink={0}
+                    >
+                      {app.appShortName?.substring(0, 2)}
+                    </Box>
+                    <Text fontSize="xs" fontWeight="600" noOfLines={1}>
+                      {app.appShortName}
+                    </Text>
+                  </>
+                )}
+              </HStack>
+            </Tooltip>
+          );
+        },
+        header: () => <span>Aplikasi</span>,
+        footer: (props) => props.column.id,
+        meta: {
+          isFilterable: false,
+        } as ColumnMetaCustom,
+      },
+      {
+        accessorFn: (row) => row.proOwnerDivisionName,
+        id: "organization",
+        cell: (info) => {
+          const ownerDiv = info.row.original.proOwnerDivisionName;
+          const ownerGrp = info.row.original.proOwnerGroupName;
+          const manageDiv = info.row.original.proManageByDivisionName;
+          const manageGrp = info.row.original.proManageByGroupName;
+          
+          // Build tooltip content
+          const tooltipContent = (
+            <VStack align="start" spacing={1} fontSize="xs">
+              {ownerDiv && <Text>Owner Div: {ownerDiv}</Text>}
+              {ownerGrp && <Text>Owner Grp: {ownerGrp}</Text>}
+              {manageDiv && <Text>Manage Div: {manageDiv}</Text>}
+              {manageGrp && <Text>Manage Grp: {manageGrp}</Text>}
+            </VStack>
+          );
+          
+          return (
+            <Tooltip label={tooltipContent} hasArrow placement="top">
+              <VStack align="start" spacing={0} w="full">
+                {ownerDiv && (
+                  <Text fontSize="xs" fontWeight="600" noOfLines={1}>
+                    {ownerDiv}
+                  </Text>
+                )}
+                {manageDiv && (
+                  <Text fontSize="2xs" color="gray.600" noOfLines={1}>
+                    Managed: {manageDiv}
+                  </Text>
+                )}
+              </VStack>
+            </Tooltip>
+          );
+        },
+        header: () => <span>Organisasi</span>,
+        footer: (props) => props.column.id,
+        meta: {
+          isFilterable: false,
+        } as ColumnMetaCustom,
+      },
+      {
+        accessorFn: (row) => row.projectStatus,
+        id: "status",
+        cell: (info) => (
+          <VStack align="start" spacing={2} w="full">
+            {/* Project Status */}
+            <VStack align="start" spacing={1}>
+              <Text fontSize="xs" fontWeight="600" color="gray.600">
+                Status Project:
+              </Text>
+              <Badge
+                fontSize="1em"
+                px={2}
+                py={1}
+                rounded="md"
+                colorScheme={getProjectStatusColor(info.row.original.projectStatus)}
+              >
+                {info.row.original.projectStatus}
+              </Badge>
+            </VStack>
+            
+            {/* Approval Status */}
+            <VStack align="start" spacing={1}>
+              <Text fontSize="xs" fontWeight="600" color="gray.600">
+                Status Approval:
+              </Text>
+              <Badge
+                fontSize="1em"
+                px={2}
+                py={1}
+                rounded="md"
+                colorScheme={getApprovalStatusColor(info.row.original.approvalStatus || "PENDING")}
+              >
+                {info.row.original.approvalStatus || "PENDING"}
+              </Badge>
+            </VStack>
+          </VStack>
+        ),
+        header: () => <span>Status</span>,
         footer: (props) => props.column.id,
         meta: {
           isFilterable: false,
@@ -352,27 +515,58 @@ export default function PendingApproveView() {
       },
       {
         accessorFn: (row) => row.createdAt,
-        id: "createdAt",
-        cell: (info) => (
-          <Flex
-            w={"full"}
-            h={"full"}
-            justifyContent={"center"}
-            alignItems={"start"}
-            as={Stack}
-            spacing={1}
-          >
-            <Flex fontSize={"small"} as={Stack} spacing={0}>
-              <Text>Dibuat :</Text>
-              <Text fontWeight={600}>
-                {info.row.original.createdAt
-                  ? stringToDateFormatedReverse(info.row.original.createdAt)
-                  : "-"}
-              </Text>
-            </Flex>
-          </Flex>
-        ),
-        header: () => <span>Tanggal</span>,
+        id: "additionalInfo",
+        cell: (info) => {
+          // Find creator in userAssignment
+          const creatorData = info.row.original.userAssignment?.find(
+            (assignment) => assignment.userId === info.row.original.createdBy
+          );
+          
+          return (
+            <VStack align="start" spacing={1} fontSize="xs" w="full">
+              {/* Register Date */}
+              {info.row.original.projectRegisterDate && (
+                <HStack spacing={1}>
+                  <Text fontWeight="600" color="gray.600">Terdaftar:</Text>
+                  <Text>
+                    {stringToDateFormatedReverse(info.row.original.projectRegisterDate)}
+                  </Text>
+                </HStack>
+              )}
+              
+              {/* Created Date */}
+              <HStack spacing={1}>
+                <Text fontWeight="600" color="gray.600">Dibuat:</Text>
+                <Text>
+                  {info.row.original.createdAt
+                    ? stringToDateFormatedReverse(info.row.original.createdAt)
+                    : "-"}
+                </Text>
+              </HStack>
+              
+              {/* Created By */}
+              {creatorData?.userData ? (
+                <VStack align="start" spacing={0}>
+                  <HStack spacing={1}>
+                    <Text fontWeight="600" color="gray.600">Oleh:</Text>
+                    <Text fontWeight="600">{creatorData.userData.nama}</Text>
+                  </HStack>
+                  {creatorData.userData.jabatan && (
+                    <Text fontSize="2xs" color="gray.500" pl={10} noOfLines={1}>
+                      {creatorData.userData.jabatan}
+                    </Text>
+                  )}
+                </VStack>
+              ) : (
+                <HStack spacing={1}>
+                  <Text fontWeight="600" color="gray.600">Oleh:</Text>
+                  <Text>{info.row.original.createdBy}</Text>
+                </HStack>
+              )}
+            </VStack>
+          );
+        },
+        header: () => <span>Info Tambahan</span>,
         footer: (props) => props.column.id,
         meta: {
           isFilterable: false,
@@ -621,89 +815,121 @@ export default function PendingApproveView() {
       />
 
       <Box p={4}>
-        <Card>
-          <CardHeader>
-            <Flex justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={4}>
-              <Text fontSize="lg" fontWeight="bold">
-                {viewMode === "PENDING" ? "Daftar Project Menunggu Persetujuan" : "Daftar Semua Project"}
-              </Text>
-              <ButtonGroup size="sm" isAttached variant="outline">
+        <Card rounded={radiusStyle} shadow="lg" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"}>
+          <CardBody p={6}>
+            {/* Section Header */}
+            <VStack spacing={6} align="stretch">
+              <HStack spacing={3} align="center">
+                <Box
+                  w={10}
+                  h={10}
+                  bg="blue.500"
+                  rounded="lg"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  color="white"
+                >
+                  <Icon as={FiClipboard} boxSize={5} />
+                </Box>
+                <VStack align="start" spacing={0}>
+                  <Heading size="md" color={colorMode === "light" ? "gray.800" : "white"}>
+                    {viewMode === "PENDING" ? "Pending Approval Projects" : "All Projects"}
+                  </Heading>
+                  <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"}>
+                    {DataProjects.length} projects found
+                    {viewMode === "PENDING" && " waiting for approval"}
+                  </Text>
+                </VStack>
+              </HStack>
+
+              {/* View Mode Toggle */}
+              <HStack spacing={1} bg={colorMode === "light" ? "gray.100" : "gray.700"} rounded="lg" p={1} w="fit-content">
                 <Button
+                  size="sm"
+                  variant={viewMode === "PENDING" ? "solid" : "ghost"}
                   colorScheme={viewMode === "PENDING" ? "blue" : "gray"}
                   onClick={() => setViewMode("PENDING")}
-                  fontWeight={viewMode === "PENDING" ? "bold" : "normal"}
+                  fontSize="sm"
+                  px={4}
                 >
                   Pending Approval
                 </Button>
                 <Button
+                  size="sm"
+                  variant={viewMode === "ALL" ? "solid" : "ghost"}
                   colorScheme={viewMode === "ALL" ? "blue" : "gray"}
                   onClick={() => setViewMode("ALL")}
-                  fontWeight={viewMode === "ALL" ? "bold" : "normal"}
+                  fontSize="sm"
+                  px={4}
                 >
                   All Projects
                 </Button>
-              </ButtonGroup>
-            </Flex>
-          </CardHeader>
-          <CardBody>
-            {/* Filters - Only show in ALL tab */}
-            {viewMode === "ALL" && (
-              <VStack spacing={4} align="stretch" mb={6}>
+              </HStack>
+
+              {/* Filters */}
+              <VStack spacing={4} align="stretch">
                 <Flex gap={4} wrap="wrap">
                   {/* Search Input */}
                   <InputGroup maxW="300px">
                     <InputLeftElement>
-                      <Search2Icon color="gray.400" />
+                      <Icon as={FiSearch} color="gray.400" />
                     </InputLeftElement>
                     <Input
                       placeholder="Search projects..."
                       value={globalFilter}
                       onChange={(e) => setGlobalFilter(e.target.value)}
                       onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+                      isDisabled={IsLoadingProcess}
                     />
                   </InputGroup>
 
-                  {/* Project Type Filter */}
-                  <Select
-                    placeholder="All Types"
-                    maxW="200px"
-                    value={FilterProjectType}
-                    onChange={(e) => setFilterProjectType(e.target.value)}
-                  >
-                    {ProjectTypeOptions.map((type) => (
-                      <option key={type} value={type}>
-                        {type}
-                      </option>
-                    ))}
-                  </Select>
+                  {/* Filters - Only show for ALL view */}
+                  {viewMode === "ALL" && (
+                    <>
+                      <Select
+                        placeholder="All Project Types"
+                        maxW="200px"
+                        value={FilterProjectType}
+                        onChange={(e) => setFilterProjectType(e.target.value)}
+                        isDisabled={IsLoadingProcess}
+                      >
+                        {ProjectTypeOptions.map((type) => (
+                          <option key={type} value={type}>
+                            {getProjectTypeLabel(type)}
+                          </option>
+                        ))}
+                      </Select>
 
-                  {/* Project Status Filter */}
-                  <Select
-                    placeholder="All Status"
-                    maxW="180px"
-                    value={FilterProjectStatus}
-                    onChange={(e) => setFilterProjectStatus(e.target.value)}
-                  >
-                    {ProjectStatusOptions.map((status) => (
-                      <option key={status} value={status}>
-                        {status}
-                      </option>
-                    ))}
-                  </Select>
+                      <Select
+                        placeholder="All Project Status"
+                        maxW="200px"
+                        value={FilterProjectStatus}
+                        onChange={(e) => setFilterProjectStatus(e.target.value)}
+                        isDisabled={IsLoadingProcess}
+                      >
+                        {ProjectStatusOptions.map((status) => (
+                          <option key={status} value={status}>
+                            {status}
+                          </option>
+                        ))}
+                      </Select>
 
-                  {/* Approval Status Filter */}
-                  <Select
-                    placeholder="All Approval Status"
-                    maxW="200px"
-                    value={FilterApprovalStatus}
-                    onChange={(e) => setFilterApprovalStatus(e.target.value)}
-                  >
-                    {ApprovalStatusOptions.map((status) => (
-                      <option key={status.code} value={status.code}>
-                        {status.name}
-                      </option>
-                    ))}
-                  </Select>
+                      <Select
+                        placeholder="All Approval Status"
+                        maxW="200px"
+                        value={FilterApprovalStatus}
+                        onChange={(e) => setFilterApprovalStatus(e.target.value)}
+                        isDisabled={IsLoadingProcess}
+                      >
+                        {ApprovalStatusOptions.map((opt) => (
+                          <option key={opt.code} value={opt.code}>
+                            {opt.name}
+                          </option>
+                        ))}
+                      </Select>
+                    </>
+                  )}
 
                   {/* Action Buttons */}
                   <Button
@@ -711,6 +937,7 @@ export default function PendingApproveView() {
                     onClick={handleSearch}
                     leftIcon={<FiSearch />}
                     size="sm"
+                    isLoading={IsLoadingProcess}
                   >
                     Search
                   </Button>
@@ -720,6 +947,7 @@ export default function PendingApproveView() {
                     onClick={handleClearFilters}
                     leftIcon={<FiX />}
                     size="sm"
+                    isDisabled={IsLoadingProcess}
                   >
                     Clear
                   </Button>
@@ -731,18 +959,114 @@ export default function PendingApproveView() {
                     onClick={refreshAction}
                     leftIcon={<FiRefreshCw />}
                     size="sm"
+                    isLoading={IsLoadingProcess}
                   >
                     Refresh
                   </Button>
                 </Flex>
-              </VStack>
-            )}
 
-            <TableComponentFull
-              table={table}
-              isLoading={IsLoadingProcess}
-              colorMode={colorMode}
-            />
+                {/* Active Filters Display */}
+                {(globalFilter || FilterProjectType || FilterProjectStatus || FilterApprovalStatus) && (
+                  <HStack spacing={2} flexWrap="wrap">
+                    <Text fontSize="sm" color="gray.600">Active filters:</Text>
+                    {globalFilter && (
+                      <Badge colorScheme="blue" variant="subtle" fontSize="xs">
+                        Search: "{globalFilter}"
+                      </Badge>
+                    )}
+                    {FilterProjectType && (
+                      <Badge colorScheme="blue" variant="subtle" fontSize="xs">
+                        Type: {getProjectTypeLabel(FilterProjectType)}
+                      </Badge>
+                    )}
+                    {FilterProjectStatus && (
+                      <Badge colorScheme="blue" variant="subtle" fontSize="xs">
+                        Status: {FilterProjectStatus}
+                      </Badge>
+                    )}
+                    {FilterApprovalStatus && (
+                      <Badge colorScheme="blue" variant="subtle" fontSize="xs">
+                        Approval: {ApprovalStatusOptions.find(o => o.code === FilterApprovalStatus)?.name}
+                      </Badge>
+                    )}
+                  </HStack>
+                )}
+              </VStack>
+
+              <Divider />
+
+              {/* Table with Loading States */}
+              {IsLoadingProcess && DataProjects.length === 0 ? (
+                <VStack spacing={6} py={16}>
+                  <Spinner size="xl" color="blue.500" thickness="4px" />
+                  <VStack spacing={2}>
+                    <Text fontSize="lg" fontWeight="medium" color={colorMode === "light" ? "gray.800" : "white"}>
+                      Loading Projects
+                    </Text>
+                    <Text fontSize="sm" color="gray.400">
+                      Please wait while we fetch {viewMode === "PENDING" ? "pending approval" : "all"} projects...
+                    </Text>
+                  </VStack>
+                </VStack>
+              ) : DataProjects.length === 0 ? (
+                <VStack spacing={8} py={20} textAlign="center">
+                  <Box
+                    w={24}
+                    h={24}
+                    bg={colorMode === "light" ? "gray.100" : "gray.700"}
+                    rounded="full"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                  >
+                    <Icon as={FiFolder} boxSize={12} color={colorMode === "light" ? "gray.400" : "gray.500"} />
+                  </Box>
+                  <VStack spacing={3}>
+                    <Heading size="lg" color={colorMode === "light" ? "gray.600" : "gray.400"}>
+                      {viewMode === "PENDING" ? "No Pending Approvals" : "No Projects Found"}
+                    </Heading>
+                    <Text color="gray.500" maxW="500px">
+                      {viewMode === "PENDING"
+                        ? "You don't have any projects waiting for approval."
+                        : globalFilter || FilterProjectType || FilterProjectStatus || FilterApprovalStatus
+                          ? "No projects match your current filters. Try adjusting your filters or clearing them."
+                          : "No projects available."}
+                    </Text>
+                  </VStack>
+                  {(globalFilter || FilterProjectType || FilterProjectStatus || FilterApprovalStatus) && (
+                    <Button variant="outline" onClick={handleClearFilters}>
+                      Clear All Filters
+                    </Button>
+                  )}
+                </VStack>
+              ) : (
+                <Box position="relative">
+                  <TableComponentFull table={table} colorMode={colorMode} />
+                  {IsLoadingProcess && DataProjects.length > 0 && (
+                    <Box
+                      position="absolute"
+                      top={0}
+                      left={0}
+                      right={0}
+                      bottom={0}
+                      bg={colorMode === "light" ? "whiteAlpha.800" : "blackAlpha.800"}
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                      zIndex={10}
+                      rounded={radiusStyle}
+                    >
+                      <VStack spacing={3}>
+                        <Spinner size="lg" color="blue.500" thickness="3px" />
+                        <Text fontSize="sm" fontWeight="medium" color={colorMode === "light" ? "gray.800" : "white"}>
+                          {globalFilter ? "Searching..." : "Loading..."}
+                        </Text>
+                      </VStack>
+                    </Box>
+                  )}
+                </Box>
+              )}
+            </VStack>
           </CardBody>
         </Card>
       </Box>
