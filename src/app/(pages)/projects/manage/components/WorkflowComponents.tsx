@@ -171,27 +171,26 @@ export const WorkflowLevel2Box = ({
 
     if (isErrorResponse || !requestData) {
       showToast({
-        description: requestData?.message || RES_GENERIC_ERROR_MSG,
+        description: requestData?.message || "Failed to save document",
         statusToast: "error",
       });
       setActionLoading(false);
       return;
-    } else {
-      console.log(requestData);
-
-      showToast({
-        description: "Creating new requirement data successfully",
-        statusToast: "success",
-      });
-
-      setActionLoading(false);
-      ModalForm.onClose();
-      if (onRefresh) {
-        onRefresh();
-      }
-      RefreshAction();
-      return;
     }
+
+    showToast({
+      description: "Document uploaded and saved successfully",
+      statusToast: "success",
+    });
+
+    setActionLoading(false);
+    ModalForm.onClose();
+    
+    if (onRefresh) {
+      onRefresh();
+    }
+    
+    RefreshAction();
   };
 
   const [IsLoadingWFV, setIsLoadingWFV] = useState(false);
@@ -742,7 +741,7 @@ export const WorkflowLevel2Box = ({
                                   colorScheme="green"
                                   leftIcon={<FiDownload />}
                                   as={Link}
-                                  href={`${UrlEndpoint}${item.mediaObjectData.objectData}`}
+                                  href={item.mediaObjectData.objectFullPath}
                                   target="_blank"
                                 >
                                   Download
@@ -1127,6 +1126,7 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
   const [ListProjectWFValue, setListProjectWFValue] = useState<
     ProjectWorkflowValueResponse[]
   >([]);
+  const [files, setFiles] = useState<File | null>(null);
 
   const UrlEndpoint: string = buildUrlPort(
     ENDPOINT_API_BASEURL_OBJECT,
@@ -1165,10 +1165,11 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
 
       if (requestData?.statusCode === RES_CODE_OK) {
         showToast({
-          description: "Creating new requirement data successfully",
+          description: "Document uploaded and saved successfully",
           statusToast: "success",
         });
         formik.resetForm();
+        setFiles(null);
         ModalForm.onClose();
         if (onRefresh) onRefresh();
       } else {
@@ -1417,6 +1418,7 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
                     accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
                     onChange={(e) => {
                       const file = e.target.files?.[0] || null;
+                      setFiles(file);
                       formik.setFieldValue("file", file);
                     }}
                     p={1}
@@ -1644,7 +1646,7 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
                                   colorScheme="green"
                                   leftIcon={<FiDownload />}
                                   as={Link}
-                                  href={`${UrlEndpoint}${item.mediaObjectData.objectData}`}
+                                  href={item.mediaObjectData.objectFullPath}
                                   target="_blank"
                                 >
                                   Download

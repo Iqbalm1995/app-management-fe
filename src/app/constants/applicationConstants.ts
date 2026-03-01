@@ -193,6 +193,7 @@ export const REQ_STATUS_REVIEW: string = "NEEDS REVIEW";
 
 // KEY MEDIA UPLOAD
 export const MEDIA_KEY_REQUIREMENT: string = "REQUIREMENT";
+export const MEDIA_KEY_PROJECT: string = "PROJECT";
 
 // REQ STATUS
 export const REQ_STATUS_ALL: string = "ALL";

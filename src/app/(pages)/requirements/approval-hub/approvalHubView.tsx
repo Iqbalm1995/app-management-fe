@@ -26,6 +26,10 @@ import {
   useColorMode,
   Wrap,
   Tooltip,
+  Input,
+  InputGroup,
+  InputLeftElement,
+  Spacer,
 } from "@chakra-ui/react";
 import {
   ColumnDef,
@@ -37,7 +41,8 @@ import {
   getFacetedUniqueValues,
   getFacetedMinMaxValues,
 } from "@tanstack/react-table";
-import { FiFilter, FiRefreshCcw, FiX, FiInfo, FiEye, FiEdit, FiCheck, FiAlertTriangle } from "react-icons/fi";
+import { FiFilter, FiRefreshCcw, FiX, FiInfo, FiEye, FiEdit, FiCheck, FiAlertTriangle, FiSearch } from "react-icons/fi";
+import { Search2Icon } from "@chakra-ui/icons";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import LayoutAdmin from "@/app/components/layoutAdmin";
@@ -135,6 +140,9 @@ export default function ApprovalHubView() {
   const [ParamFilter, setParamFilter] = useState<ListSearchByParamProps[]>([]);
   const [OptionDivision, setOptionDivision] = useState<OptionListProps[]>([]);
   const [IsLoadingDivisionSelect, setIsLoadingDivisionSelect] = useState(false);
+
+  // Search State
+  const [globalFilter, setGlobalFilter] = useState<string>("");
 
   const GetDataDivision = async (
     searchValue: string = "",
@@ -261,7 +269,7 @@ export default function ApprovalHubView() {
     const filterWithStatusAndType = [...ParamFilter, statusFilter, typeFilter, orgGroupFilter];
 
     const PayloadList: PaggingListPayload = {
-      search: "",
+      search: globalFilter,
       limit: pageSize,
       page: pageIndex,
       filterWhere: filterWithStatusAndType,
@@ -318,6 +326,24 @@ export default function ApprovalHubView() {
     setParamFilter(newFilters);
   };
 
+  const handleSearch = () => {
+    if (globalFilter.length > 0 && globalFilter.length < 3) {
+      showToast({
+        description: "Please enter at least 3 characters to search",
+        statusToast: "warning",
+      });
+      return;
+    }
+    setPagination({ pageIndex: 0, pageSize });
+    setRefreshData(RefreshData + 1);
+  };
+
+  const handleClearSearch = () => {
+    setGlobalFilter("");
+    setPagination({ pageIndex: 0, pageSize });
+    setTimeout(() => setRefreshData(RefreshData + 1), 100);
+  };
+
 
   const columnsData = useMemo<ColumnDef<RequirementsResponse>[]>(
     () => [
@@ -338,68 +364,44 @@ export default function ApprovalHubView() {
       {
         accessorFn: (row) => row.reqNarative,
         id: "reqNarative",
-        cell: (info) => (
-          <Flex
-            w={"full"}
-            h={"full"}
-            justifyContent={"center"}
-            alignItems={"start"}
-            as={Stack}
-            spacing={1}
-          >
-            <Flex
-              as={Stack}
-              w="full"
-              spacing={2}
-              display={info.row.original.isHaveMemo === "N" ? "flex" : "none"}
-            >
-              <Flex
-                as={HStack}
-                spacing={2}
-                color="red.500"
-                alignItems="center"
-                fontSize={"small"}
-              >
-                <FiAlertTriangle />
-                <Text>
-                  {info.row.original.requirementType} Belum ada Memo Pengantar
+        cell: (info) => {
+          const req = info.row.original;
+          const tooltipContent = (
+            <VStack align="start" spacing={1} fontSize="xs">
+              <Text fontWeight="600">{req.reqNumber}</Text>
+              <Text>{req.reqNarative}</Text>
+              <Text>Sender: {req.senderDivisionName}</Text>
+              <Text>Type: {req.requirementType}</Text>
+              {req.isCarryOver === "Y" && <Text>Status: CARRYOVER</Text>}
+              {req.isHaveMemo === "N" && (
+                <Text color="red.300">⚠ No Memo Attached</Text>
+              )}
+            </VStack>
+          );
+          
+          return (
+            <Tooltip label={tooltipContent} hasArrow placement="top">
+              <VStack align="start" spacing={0} w="full">
+                <HStack spacing={1}>
+                  {req.isHaveMemo === "N" && (
+                    <Box as={FiAlertTriangle} color="red.500" w={3} h={3} />
+                  )}
+                  <Text fontSize="xs" fontWeight="600" noOfLines={1}>
+                    {req.reqNumber}
+                  </Text>
+                  {req.isCarryOver === "Y" && (
+                    <Badge fontSize="1em" px={2} py={1} rounded="md" colorScheme="purple">
+                      CO
+                    </Badge>
+                  )}
+                </HStack>
+                <Text fontSize="2xs" color="gray.600" noOfLines={1}>
+                  {req.reqNarative}
                 </Text>
-              </Flex>
-              <Flex as={Stack} spacing={0}>
-                <Text>{info.row.original.reqNarative}</Text>
-              </Flex>
-            </Flex>
-            <Flex
-              as={Stack}
-              spacing={2}
-              display={info.row.original.isHaveMemo == "Y" ? "flex" : "none"}
-            >
-              <Flex as={Stack} spacing={0}>
-                <Text fontWeight={600}>{info.row.original.reqNumber}</Text>
-                <Text>{info.row.original.reqNarative}</Text>
-              </Flex>
-              <Flex as={Stack} spacing={0}>
-                <Text>Divisi Pengirim :</Text>
-                <Text fontWeight={600}>
-                  {info.row.original.senderDivisionName}
-                </Text>
-              </Flex>
-              <Flex pt={2}>
-                {info.row.original.isCarryOver == "Y" && (
-                  <Badge
-                    variant="solid"
-                    colorScheme="purple"
-                    fontSize={"small"}
-                    rounded={radiusStyle}
-                    px={4}
-                  >
-                    CARRYOVER
-                  </Badge>
-                )}
-              </Flex>
-            </Flex>
-          </Flex>
-        ),
+              </VStack>
+            </Tooltip>
+          );
+        },
         header: () => <span>Perihal</span>,
         footer: (props) => props.column.id,
         // Custom variable
@@ -427,47 +429,34 @@ export default function ApprovalHubView() {
       {
         accessorFn: (row) => row.reqInititateDate,
         id: "reqInititateDate",
-        cell: (info) => (
-          <Flex
-            w={"full"}
-            h={"full"}
-            justifyContent={"center"}
-            alignItems={"start"}
-            as={Stack}
-            spacing={1}
-          >
-            <Flex fontSize={"small"} as={Stack} spacing={0}>
-              <Text>Memo Dibuat :</Text>
-              <Text fontWeight={600}>
-                {info.row.original.reqInititateDate
-                  ? stringToDateFormatedReverse(
-                    info.row.original.reqInititateDate
-                  )
-                  : "-"}
-              </Text>
-            </Flex>
-            <Flex fontSize={"small"} as={Stack} spacing={0}>
-              <Text>Memo Diterima :</Text>
-              <Text fontWeight={600}>
-                {info.row.original.reqAcceptedDate
-                  ? stringToDateFormatedReverse(
-                    info.row.original.reqAcceptedDate
-                  )
-                  : "-"}
-              </Text>
-            </Flex>
-            <Flex fontSize={"small"} as={Stack} spacing={0}>
-              <Text>Ditugaskan Pada :</Text>
-              <Text fontWeight={600}>
-                {info.row.original.assignedToDate
-                  ? stringToDateFormatedReverse(
-                    info.row.original.assignedToDate
-                  )
-                  : "-"}
-              </Text>
-            </Flex>
-          </Flex>
-        ),
+        cell: (info) => {
+          const req = info.row.original;
+          const tooltipContent = (
+            <VStack align="start" spacing={1} fontSize="xs">
+              <Text>Memo Created: {req.reqInititateDate ? stringToDateFormatedReverse(req.reqInititateDate) : "-"}</Text>
+              <Text>Memo Received: {req.reqAcceptedDate ? stringToDateFormatedReverse(req.reqAcceptedDate) : "-"}</Text>
+              <Text>Assigned: {req.assignedToDate ? stringToDateFormatedReverse(req.assignedToDate) : "-"}</Text>
+              <Text>Duration: {req.reqDurationDay} days</Text>
+            </VStack>
+          );
+          
+          return (
+            <Tooltip label={tooltipContent} hasArrow placement="top">
+              <VStack align="start" spacing={0} w="full">
+                {req.assignedToDate && (
+                  <Text fontSize="xs" fontWeight="600" noOfLines={1}>
+                    {stringToDateFormatedReverse(req.assignedToDate)}
+                  </Text>
+                )}
+                {req.reqInititateDate && (
+                  <Text fontSize="2xs" color="gray.600" noOfLines={1}>
+                    Created: {stringToDateFormatedReverse(req.reqInititateDate)}
+                  </Text>
+                )}
+              </VStack>
+            </Tooltip>
+          );
+        },
         header: () => <span>Tanggal</span>,
         footer: (props) => props.column.id,
         // Custom variable
@@ -501,50 +490,45 @@ export default function ApprovalHubView() {
       {
         accessorFn: (row) => row.assignedFromName,
         id: "assigned",
-        cell: (info) => (
-          <Flex w={"full"} justifyContent={"center"} as={Stack} spacing={1}>
-            <Flex fontSize={"small"} as={Stack} spacing={0}>
-              <Text>Ditugaskan Oleh :</Text>
-              <Text fontWeight={600} fontSize={"smaller"}>
-                {info.row.original.assignedFromName || "-"}
-              </Text>
-            </Flex>
-            <Flex fontSize={"small"} as={Stack} spacing={0}>
-              <Text>Ditugaskan Ke :</Text>
-              {info.row.original.approvalDatas?.length ? (
-                <>
-                  {info.row.original.approvalDatas.slice(0, 3).map((x, idx) => (
-                    <Text fontWeight={600} key={idx} fontSize="smaller">
-                      {idx + 1}. {x.approverUserFirstName} {x.approverUserLastnameName}
-                    </Text>
-                  ))}
-                  {info.row.original.approvalDatas.length > 3 && (
-                    <Tooltip
-                      label={
-                        <VStack align="start" spacing={1}>
-                          {info.row.original.approvalDatas.slice(3).map((x, idx) => (
-                            <Text key={idx} fontSize="xs">
-                              {idx + 4}. {x.approverUserFirstName} {x.approverUserLastnameName}
-                            </Text>
-                          ))}
-                        </VStack>
-                      }
-                      placement="top"
-                    >
-                      <Text fontWeight={600} fontSize="smaller" color="gray.600" cursor="pointer">
-                        ... +{info.row.original.approvalDatas.length - 3} more
-                      </Text>
-                    </Tooltip>
-                  )}
-                </>
+        cell: (info) => {
+          const req = info.row.original;
+          const approvers = req.approvalDatas || [];
+          const firstApprover = approvers[0];
+          const moreCount = approvers.length - 1;
+          
+          const tooltipContent = (
+            <VStack align="start" spacing={1} fontSize="xs">
+              <Text fontWeight="600">Assigned From:</Text>
+              <Text>{req.assignedFromName || "-"}</Text>
+              <Text fontWeight="600" pt={1}>Assigned To:</Text>
+              {approvers.length > 0 ? (
+                approvers.map((x, idx) => (
+                  <Text key={idx}>
+                    {idx + 1}. {x.approverUserFirstName} {x.approverUserLastnameName}
+                  </Text>
+                ))
               ) : (
-                <Text fontWeight={600} fontSize="smaller" color="gray.500">
-                  -
-                </Text>
+                <Text>-</Text>
               )}
-            </Flex>
-          </Flex>
-        ),
+            </VStack>
+          );
+          
+          return (
+            <Tooltip label={tooltipContent} hasArrow placement="top">
+              <VStack align="start" spacing={0} w="full">
+                <Text fontSize="xs" fontWeight="600" noOfLines={1}>
+                  {req.assignedFromName || "-"}
+                </Text>
+                {firstApprover && (
+                  <Text fontSize="2xs" color="gray.600" noOfLines={1}>
+                    To: {firstApprover.approverUserFirstName}
+                    {moreCount > 0 && ` +${moreCount}`}
+                  </Text>
+                )}
+              </VStack>
+            </Tooltip>
+          );
+        },
         header: () => <span>Penugasan</span>,
         footer: (props) => props.column.id,
         // Custom variable
@@ -565,40 +549,31 @@ export default function ApprovalHubView() {
       {
         accessorFn: (row) => row.appInitialName,
         id: "appInitialName",
-        cell: (info) => (
-          <Flex
-            w={"full"}
-            h={"full"}
-            justifyContent={"center"}
-            alignItems={"start"}
-            as={Stack}
-            spacing={1}
-          >
-            <Flex as={Stack} spacing={2}>
-              <Flex as={Stack} spacing={0}>
-                {info?.row?.original?.appInitialCode &&
-                  info.row.original.appInitialCode.trim() !== "" ? (
-                  <>
-                    <Text fontWeight={600}>
-                      ({info.row.original.appInitialCode})
-                    </Text>
-                    <Text fontWeight={600}>
-                      {info.row.original.appInitialName}
-                    </Text>
-                  </>
-                ) : (
-                  <Text
-                    color="gray.500"
-                    fontStyle="italic"
-                    fontSize={"x-small"}
-                  >
-                    Aplikasi Belum Disematkan
-                  </Text>
-                )}
-              </Flex>
-            </Flex>
-          </Flex>
-        ),
+        cell: (info) => {
+          const req = info.row.original;
+          const hasApp = req.appInitialCode && req.appInitialCode.trim() !== "";
+          
+          if (!hasApp) {
+            return (
+              <Text fontSize="xs" color="gray.400">-</Text>
+            );
+          }
+          
+          const tooltipContent = (
+            <VStack align="start" spacing={1} fontSize="xs">
+              <Text fontWeight="600">{req.appInitialCode}</Text>
+              <Text>{req.appInitialName}</Text>
+            </VStack>
+          );
+          
+          return (
+            <Tooltip label={tooltipContent} hasArrow placement="top">
+              <Text fontSize="xs" fontWeight="600" noOfLines={1}>
+                {req.appInitialCode}
+              </Text>
+            </Tooltip>
+          );
+        },
         header: () => <span>Aplikasi</span>,
         footer: (props) => props.column.id,
         // Custom variable
@@ -625,33 +600,33 @@ export default function ApprovalHubView() {
       {
         accessorFn: (row) => row.reqStatus,
         id: "reqStatus",
-        cell: (info) => (
-          <Flex
-            w={"full"}
-            h={"full"}
-            justifyContent={"center"}
-            alignItems={"start"}
-            as={Stack}
-            spacing={1}
-          >
-            <Flex fontSize={"small"} as={Stack} spacing={1}>
-              {info.row.original.reqStatus ? (
-                <LabelMaster
-                  groupLabel={GROUP_CONST_BRD_STATUS}
-                  labelName={info.row.original.reqStatus}
-                />
-              ) : (
-                "-"
-              )}
-            </Flex>
-            <Text>
-              Next Step :
-              <Text as="span" fontWeight="bold" pl={1}>
-                {info.row.original.nextStep}
-              </Text>
-            </Text>
-          </Flex>
-        ),
+        cell: (info) => {
+          const req = info.row.original;
+          const tooltipContent = (
+            <VStack align="start" spacing={1} fontSize="xs">
+              <Text>Status: {req.reqStatus}</Text>
+              <Text>Next Step: {req.nextStep}</Text>
+            </VStack>
+          );
+          
+          return (
+            <Tooltip label={tooltipContent} hasArrow placement="top">
+              <VStack align="start" spacing={1} w="full">
+                {req.reqStatus && (
+                  <LabelMaster
+                    groupLabel={GROUP_CONST_BRD_STATUS}
+                    labelName={req.reqStatus}
+                  />
+                )}
+                {req.nextStep && (
+                  <Text fontSize="2xs" color="gray.600" noOfLines={1}>
+                    Next: {req.nextStep}
+                  </Text>
+                )}
+              </VStack>
+            </Tooltip>
+          );
+        },
         header: () => <span>Status</span>,
         footer: (props) => props.column.id,
         // Custom variable
@@ -966,45 +941,39 @@ export default function ApprovalHubView() {
               </Heading>
             </CardHeader>
             <CardBody pt={2}>
-              <Flex w={"full"} as={Stack} spacing={2}>
-                {/* FILTER DATA */}
-                <Grid templateColumns="repeat(2, 1fr)" gap={5} w={"full"}>
-                  <GridItem
-                    colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }}
-                    w={"full"}
-                  >
+              <Flex w={"full"} as={Stack} spacing={4}>
+                {/* FILTER AND SEARCH */}
+                <VStack spacing={4} align="stretch">
+                  {/* Row 1: View Mode Toggle & Action Buttons */}
+                  <Flex gap={4} wrap="wrap" align="center">
                     <HStack spacing={2}>
-                      <HStack spacing={2} flexWrap="wrap">
-                        <Button
-                          size="sm"
-                          variant={viewMode === "BRD" ? "solid" : "ghost"}
-                          colorScheme="blue"
-                          onClick={() => setViewMode("BRD")}
-                          borderRadius="lg"
-                        >
-                          BRD
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant={viewMode === "RFC" ? "solid" : "ghost"}
-                          colorScheme="blue"
-                          onClick={() => setViewMode("RFC")}
-                          borderRadius="lg"
-                        >
-                          RFC
-                        </Button>
-                      </HStack>
+                      <Button
+                        size="sm"
+                        variant={viewMode === "BRD" ? "solid" : "ghost"}
+                        colorScheme="blue"
+                        onClick={() => setViewMode("BRD")}
+                        borderRadius="lg"
+                      >
+                        BRD
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={viewMode === "RFC" ? "solid" : "ghost"}
+                        colorScheme="blue"
+                        onClick={() => setViewMode("RFC")}
+                        borderRadius="lg"
+                      >
+                        RFC
+                      </Button>
                     </HStack>
-                  </GridItem>
-                  <GridItem
-                    colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }}
-                    w={"full"}
-                  >
-                    {/* BUTTON ACTION */}
-                    <Flex as={Wrap} justifyContent={"end"} alignItems={"center"} gap={2} px={0} w={"full"}>
+
+                    <Spacer />
+
+                    {/* Action Buttons */}
+                    <HStack spacing={2}>
                       <Popover closeOnBlur={false} placement={"bottom"}>
                         <PopoverTrigger>
-                          <Button size={"md"} leftIcon={<FiFilter />}>
+                          <Button size={"sm"} leftIcon={<FiFilter />}>
                             Filter{" "}
                             <Flex
                               as={"span"}
@@ -1064,15 +1033,52 @@ export default function ApprovalHubView() {
                         </Portal>
                       </Popover>
                       <Button
-                        size={"md"}
+                        size={"sm"}
                         leftIcon={<FiRefreshCcw />}
                         onClick={() => RefreshAction()}
                       >
                         Refresh
                       </Button>
-                    </Flex>
-                  </GridItem>
-                </Grid>
+                    </HStack>
+                  </Flex>
+
+                  {/* Row 2: Search Input */}
+                  <Flex gap={4} wrap="wrap" align="center">
+                    <InputGroup maxW="400px" size="sm">
+                      <InputLeftElement>
+                        <Search2Icon color="gray.400" />
+                      </InputLeftElement>
+                      <Input
+                        placeholder="Search requirements (min 3 characters)..."
+                        value={globalFilter}
+                        onChange={(e) => setGlobalFilter(e.target.value)}
+                        onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+                        isDisabled={IsLoadingProcess}
+                        size="sm"
+                      />
+                    </InputGroup>
+
+                    <Button
+                      colorScheme="blue"
+                      onClick={handleSearch}
+                      leftIcon={<FiSearch />}
+                      size="sm"
+                      isLoading={IsLoadingProcess}
+                    >
+                      Search
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      onClick={handleClearSearch}
+                      leftIcon={<FiX />}
+                      size="sm"
+                      isDisabled={IsLoadingProcess || !globalFilter}
+                    >
+                      Clear Search
+                    </Button>
+                  </Flex>
+                </VStack>
                 {IsLoadingProcess ? (
                   <LoadingMiniSignature />
                 ) : (

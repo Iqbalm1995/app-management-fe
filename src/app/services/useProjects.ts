@@ -3839,16 +3839,16 @@ const useProjects = (): useProjectsServices => {
     formData.append("DocumentDate", payload.DocumentDate);
     formData.append("DocumentVersion", payload.DocumentVersion);
 
-    if (payload.file) {
-      formData.append("file", payload.file);
-    }
-
     if (payload.ReffParentId) {
       formData.append("ReffParentId", payload.ReffParentId);
     }
 
     if (payload.LinkAttachment) {
       formData.append("LinkAttachment", payload.LinkAttachment);
+    }
+
+    if (payload.file) {
+      formData.append("file", payload.file);
     }
 
     try {
@@ -3859,7 +3859,7 @@ const useProjects = (): useProjectsServices => {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
-        timeout: 300000, // 5 minutes for file uploads
+        timeout: 300000, // 5 minutes for file upload
       });
       setIsLoading(false);
       return response.data;
@@ -3868,7 +3868,7 @@ const useProjects = (): useProjectsServices => {
       if (axios.isAxiosError(err)) {
         const errorResponse = handleAxiosError(err);
         setError(
-          err.response?.data?.message || "An error occurred during login."
+          err.response?.data?.message || "An error occurred during operation."
         );
         return errorResponse;
       } else {
