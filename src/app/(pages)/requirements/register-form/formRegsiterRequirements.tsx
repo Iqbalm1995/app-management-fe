@@ -1138,10 +1138,10 @@ function RegisterRequirementFormPage({
               const userData = await GetDataUser(pic.approverUserCode, 1);
               return userData.length > 0 ? userData[0] : null;
             });
-            
+
             const picUsersResults = await Promise.all(picUsersPromises);
             const validPicUsers = picUsersResults.filter(user => user !== null) as UsersResponse[];
-            
+
             setChoosedMemberProjects(validPicUsers);
           } catch (error) {
             console.error("Error fetching PIC users data:", error);
@@ -1488,7 +1488,7 @@ function RegisterRequirementFormPage({
             LinkUrl: link.url,
             LinkTitle: link.title,
           };
-          
+
           const uploadResult = await InsertMediaObjectByKey(linkPayload, tokenData);
           if (uploadResult?.statusCode !== RES_CODE_OK) {
             showToast({
@@ -6153,8 +6153,8 @@ function RegisterRequirementFormPage({
                                       </Td>
                                       <Td>
                                         <Text>
-                                          {file.type === "link" 
-                                            ? "-" 
+                                          {file.type === "link"
+                                            ? "-"
                                             : `${((file.size || 0) / 1024).toFixed(2)} KB`
                                           }
                                         </Text>
@@ -6308,7 +6308,7 @@ function RegisterRequirementFormPage({
                         {/* Add External Link Section */}
                         <Divider my={4} />
                         <Text fontWeight={600}>Tambah Link Eksternal</Text>
-                        
+
                         <Flex
                           w={"full"}
                           p={4}
@@ -6322,7 +6322,7 @@ function RegisterRequirementFormPage({
                           <FormControl>
                             <FormLabel fontSize="sm">URL</FormLabel>
                             <Input
-                              placeholder="https://drive.google.com/..."
+                              placeholder="https://bjbdrive/drive/example"
                               value={linkForm.url}
                               onChange={(e) =>
                                 setLinkForm({ ...linkForm, url: e.target.value })
@@ -6334,7 +6334,7 @@ function RegisterRequirementFormPage({
                           <FormControl>
                             <FormLabel fontSize="sm">Title</FormLabel>
                             <Input
-                              placeholder="Google Drive Document"
+                              placeholder="Link Drive Document"
                               value={linkForm.title}
                               onChange={(e) =>
                                 setLinkForm({ ...linkForm, title: e.target.value })
@@ -7315,8 +7315,8 @@ const Section4BRDView = ({
         >
           <ModalHeader>{`${FormMode == "Add" ? "Tambah" : "Ubah"
             } Scope of Work`}</ModalHeader>
-          <ModalCloseButton 
-            color={"red.500"} 
+          <ModalCloseButton
+            color={"red.500"}
             bg={"red.50"}
             _hover={{ bg: "red.100" }}
             rounded={"md"}
