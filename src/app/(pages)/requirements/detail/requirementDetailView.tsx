@@ -1871,7 +1871,7 @@ function RequirementDetailView() {
                         )}
 
                         <InputGroupPanel headerTitle={`Lampiran`}>
-                          <ReqInfoSummaryFileAttachmentsViewSimple
+                          <ReqInfoSummaryFileAttachmentsView
                             DataRequirement={DataRequirement}
                             DataAttachment={DataFileReq}
                             steps={steps}
@@ -3158,7 +3158,7 @@ const ReqInfoSummaryFileAttachmentsView = ({
               >
                 <FiExternalLink size={24} color="#3182CE" />
               </Box>
-            ) : [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg"].some(
+            ) : info.row.original.objectExtension && [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg"].some(
               (ext) =>
                 info.row.original.objectExtension
                   .trim()
@@ -3181,7 +3181,7 @@ const ReqInfoSummaryFileAttachmentsView = ({
                 alignItems="center"
                 boxSize="50px"
               >
-                {renderFileIconSTR(info.row.original.objectExtension.trim())}
+                {renderFileIconSTR(info.row.original.objectExtension?.trim() || "")}
               </Box>
             )}
           </Flex>
@@ -3257,7 +3257,7 @@ const ReqInfoSummaryFileAttachmentsView = ({
                 >
                   Unduh
                 </Button>
-                {info.row.original.objectExtension.replace(".", "").trim() ==
+                {info.row.original.objectExtension?.replace(".", "").trim() ==
                   "pdf" && (
                   <Button
                     size={"sm"}
@@ -3402,7 +3402,7 @@ const ReqInfoSummaryFileAttachmentsViewSimple = ({
             as={HStack}
             spacing={3}
           >
-            {[".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg"].some(
+            {info.row.original.objectExtension && [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg"].some(
               (ext) =>
                 info.row.original.objectExtension
                   .trim()
@@ -3416,7 +3416,6 @@ const ReqInfoSummaryFileAttachmentsViewSimple = ({
                   name: info.row.original.objectRawName,
                   src: info.row.original.objectFullPath,
                   extension: info.row.original.objectExtension.trim(),
-                  // size:info.row.original.objectSize
                 }}
               />
             ) : (
@@ -3426,7 +3425,7 @@ const ReqInfoSummaryFileAttachmentsViewSimple = ({
                 alignItems="center"
                 boxSize="50px"
               >
-                {renderFileIconSTR(info.row.original.objectExtension.trim())}
+                {renderFileIconSTR(info.row.original.objectExtension?.trim() || "")}
               </Box>
             )}
             <Text fontWeight={600}>{info.row.original.objectRawName}</Text>
