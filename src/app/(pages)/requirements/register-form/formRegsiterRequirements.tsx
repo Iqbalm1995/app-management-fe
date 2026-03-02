@@ -1126,8 +1126,19 @@ function RegisterRequirementFormPage({
           appHightAvailability: reqData.appHightAvailability || "Y",
           appIntegrationOthersApps: reqData.appIntegrationOthersApps,
           note: reqData.note,
+          reqManageByDirectorateId: reqData.reqManageByDirectorateId,
+          reqManageByDivisionId: reqData.reqManageByDivisionId,
+          reqManageByGroupId: reqData.reqManageByGroupId,
         });
         // Store initial app code for validation
+
+        // Set default IT values when null (for both new and imported projects)
+        if (!reqData.reqManageByDirectorateId) {
+          formik.setFieldValue("reqManageByDirectorateId", DIRECTORATE_ID_IT_BJB);
+        }
+        if (!reqData.reqManageByDivisionId) {
+          formik.setFieldValue("reqManageByDivisionId", DIVISION_ID_IT_BJB);
+        }
         setInitialAppCode(reqData.appInitialCode || null);
 
         // Load PIC Assign Users if available
@@ -4299,9 +4310,7 @@ function RegisterRequirementFormPage({
                                           }
                                         }}
                                         placeholder={"Pilih Grup"}
-                                        isDisabled={
-                                          !formik.values.reqManageByDivisionId
-                                        }
+                                        isDisabled={false}
                                         value={OrganizationData.filter(
                                           (f) =>
                                             f.orgType ==
