@@ -361,9 +361,10 @@ const FormSchema = yup.object().shape({
 interface UploadedFileItem {
   id: string;
   name: string;
-  extension: string;
-  size: number;
+  extension: string | null;
+  size: number | null;
   url: string;
+  type?: "file" | "link";  // NEW: to distinguish file vs link
 }
 
 // Crucial data alert component
@@ -960,9 +961,10 @@ function RegisterRequirementFormPage({
     const requestData = await InsertReq(payload, tokenData);
     const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
 
-    if (files.length <= 0 && data.isHaveMemo !== "N") {
+    const totalAttachments = files.length + pendingLinks.length;
+    if (totalAttachments <= 0 && data.isHaveMemo !== "N") {
       showToast({
-        description: `upload files must be uploaded, at least one.`,
+        description: `Please upload at least one file or add one link.`,
         statusToast: "warning",
       });
       setActionLoading(false);
@@ -981,18 +983,7 @@ function RegisterRequirementFormPage({
 
       const itemsKey: string = requestData.data as string;
       if (itemsKey != null && itemsKey.length > 0) {
-        if (files.length > 0) {
-          for (const file of files) {
-            const DataUploads: InsertMediaObjectByKeyPayload = {
-              KeyData: MEDIA_KEY_REQUIREMENT,
-              KeyId: itemsKey,
-              file: file,
-            };
-
-            // send upload files
-            await AddMediaObjServ(DataUploads);
-          }
-        }
+        await uploadFilesForDraft(itemsKey);
       } else {
         showToast({
           description: `Error getting Requirement ID`,
@@ -1030,7 +1021,8 @@ function RegisterRequirementFormPage({
           name: file.objectRawName,
           extension: file.objectExtension,
           size: file.objectSize,
-          url: file.objectFullPath,
+          url: file.objectFullPath || file.objectData,
+          type: file.objectName === "EXTERNAL_LINK" ? "link" : "file",  // NEW: detect type
         }))
       );
     }
@@ -1464,48 +1456,59 @@ function RegisterRequirementFormPage({
   };
 
   const uploadFilesForDraft = async (reqId: string) => {
-    console.log("uploadFilesForDraft called with reqId:", reqId);
-    console.log("files array length:", files.length);
-    console.log("files array:", files);
+    const hasFiles = files.length > 0;
+    const hasLinks = pendingLinks.length > 0;
 
-    if (files.length > 0) {
+    // Upload files
+    if (hasFiles) {
       for (const file of files) {
-        console.log(
-          "Processing file:",
-          file.name,
-          "size:",
-          file.size,
-          "type:",
-          file.type
-        );
-        // Only upload if it's a valid File object with size
         if (file instanceof File && file.size > 0) {
           try {
-            console.log("Uploading file:", file.name);
             const DataUploads: InsertMediaObjectByKeyPayload = {
               KeyData: MEDIA_KEY_REQUIREMENT,
               KeyId: reqId,
               file: file,
             };
-            const uploadResult = await AddMediaObjServ(DataUploads);
-            if (!uploadResult) {
-              console.error("Failed to upload file:", file.name);
-              // Error toast already shown in AddMediaObjServ
-            } else {
-              console.log("Successfully uploaded file:", file.name);
-            }
+            await AddMediaObjServ(DataUploads);
           } catch (error) {
             console.error("Error uploading file:", file.name, error);
           }
-        } else {
-          console.warn("Skipping invalid file:", file);
         }
       }
       setFiles([]);
-      console.log("Loading uploaded files...");
+    }
+
+    // Upload links
+    if (hasLinks) {
+      for (const link of pendingLinks) {
+        try {
+          const linkPayload: InsertMediaObjectByKeyPayload = {
+            KeyData: MEDIA_KEY_REQUIREMENT,
+            KeyId: reqId,
+            LinkUrl: link.url,
+            LinkTitle: link.title,
+          };
+          
+          const uploadResult = await InsertMediaObjectByKey(linkPayload, tokenData);
+          if (uploadResult?.statusCode !== RES_CODE_OK) {
+            showToast({
+              description: `Failed to add link: ${link.title}`,
+              statusToast: "error",
+            });
+          }
+        } catch (error) {
+          showToast({
+            description: `Error uploading link: ${link.title}`,
+            statusToast: "error",
+          });
+        }
+      }
+      setPendingLinks([]);
+    }
+
+    // Reload all uploaded items
+    if (hasFiles || hasLinks) {
       await loadUploadedFiles(reqId);
-    } else {
-      console.log("No files to upload");
     }
   };
 
@@ -1768,10 +1771,10 @@ function RegisterRequirementFormPage({
   };
 
   const SubmitDraftRequirement = async (data: RequirementsInsertPayload) => {
-    const totalFiles = uploadedFiles.length + files.length;
-    if (totalFiles <= 0 && data.isHaveMemo !== "N") {
+    const totalAttachments = uploadedFiles.length + files.length + pendingLinks.length;
+    if (totalAttachments <= 0 && data.isHaveMemo !== "N") {
       showToast({
-        description: `Upload files must be uploaded, at least one.`,
+        description: `Please upload at least one file or add one link.`,
         statusToast: "warning",
       });
       setActionLoading(false);
@@ -2033,10 +2036,10 @@ function RegisterRequirementFormPage({
       });
       return;
     }
-    const totalFiles = uploadedFiles.length + files.length;
-    if (totalFiles === 0 && data.isHaveMemo !== "N") {
+    const totalAttachments = uploadedFiles.length + files.length + pendingLinks.length;
+    if (totalAttachments === 0 && data.isHaveMemo !== "N") {
       showToast({
-        description: "File upload attachments, cannot be empty.",
+        description: "Please upload at least one file or add one link.",
         statusToast: "warning",
       });
       return;
@@ -2104,10 +2107,10 @@ function RegisterRequirementFormPage({
       return;
     }
 
-    const totalFiles = uploadedFiles.length + files.length;
-    if (totalFiles <= 0 && formik.values.isHaveMemo !== "N") {
+    const totalAttachments = uploadedFiles.length + files.length + pendingLinks.length;
+    if (totalAttachments <= 0 && formik.values.isHaveMemo !== "N") {
       showToast({
-        description: `Upload files must be uploaded, at least one.`,
+        description: `Please upload at least one file or add one link.`,
         statusToast: "warning",
       });
       return;
@@ -2704,6 +2707,10 @@ function RegisterRequirementFormPage({
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFileItem[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
 
+  // Link state management
+  const [pendingLinks, setPendingLinks] = useState<Array<{ id: string; url: string; title: string }>>([]);
+  const [linkForm, setLinkForm] = useState({ url: "", title: "" });
+
   const { getRootProps, getInputProps } = useDropzone({
     accept: {
       "image/*": [], // Accept all images
@@ -2719,13 +2726,45 @@ function RegisterRequirementFormPage({
 
   const handleUpload = () => {
     // Old upload logic - replaced by uploadFilesForDraft
-    // const fileDetails = files.map((file) => {
-    //   const [name, extension] = file.name.split(".");
-    //   return { name, extension, size: file.size, file };
-    // });
-    // const formData = new FormData();
-    // console.log("Form Data Payload:", formData);
-    // console.log("Uploaded Files:", fileDetails);
+  };
+
+  // Link management functions
+  const handleAddLink = () => {
+    if (!linkForm.url || !linkForm.title) {
+      showToast({
+        description: "URL and Title are required",
+        statusToast: "error",
+      });
+      return;
+    }
+
+    // Validate URL format
+    try {
+      new URL(linkForm.url);
+    } catch {
+      showToast({
+        description: "Invalid URL format",
+        statusToast: "error",
+      });
+      return;
+    }
+
+    const newLink = {
+      id: Date.now().toString(),
+      url: linkForm.url,
+      title: linkForm.title,
+    };
+
+    setPendingLinks([...pendingLinks, newLink]);
+    setLinkForm({ url: "", title: "" });
+    showToast({
+      description: "Link added successfully",
+      statusToast: "success",
+    });
+  };
+
+  const handleRemoveLink = (id: string) => {
+    setPendingLinks(pendingLinks.filter((link) => link.id !== id));
   };
 
   useEffect(() => {
@@ -6073,7 +6112,7 @@ function RegisterRequirementFormPage({
                         <Text fontWeight={600}>Unggah Lampiran</Text>
                         <Divider />
 
-                        {/* Uploaded Files (from backend) */}
+                        {/* Uploaded Files and Links (from backend) */}
                         {uploadedFiles.length > 0 && (
                           <Flex w={"full"} direction={"column"} gap={3}>
                             <Text
@@ -6081,7 +6120,7 @@ function RegisterRequirementFormPage({
                               fontSize={"sm"}
                               color={"green.600"}
                             >
-                              File Terunggah ({uploadedFiles.length})
+                              Lampiran Terunggah ({uploadedFiles.length})
                             </Text>
                             <Flex
                               w={"full"}
@@ -6093,7 +6132,8 @@ function RegisterRequirementFormPage({
                               <Table variant="simple" size="sm" w="full">
                                 <Thead>
                                   <Tr>
-                                    <Th>File Name</Th>
+                                    <Th>Type</Th>
+                                    <Th>Name</Th>
                                     <Th>Size</Th>
                                     <Th isNumeric>Actions</Th>
                                   </Tr>
@@ -6102,24 +6142,44 @@ function RegisterRequirementFormPage({
                                   {uploadedFiles.map((file) => (
                                     <Tr key={file.id}>
                                       <Td>
+                                        {file.type === "link" ? (
+                                          <Badge colorScheme="blue">Link</Badge>
+                                        ) : (
+                                          <Badge colorScheme="green">File</Badge>
+                                        )}
+                                      </Td>
+                                      <Td>
                                         <Text>{file.name}</Text>
                                       </Td>
                                       <Td>
                                         <Text>
-                                          {(file.size / 1024).toFixed(2)} KB
+                                          {file.type === "link" 
+                                            ? "-" 
+                                            : `${((file.size || 0) / 1024).toFixed(2)} KB`
+                                          }
                                         </Text>
                                       </Td>
                                       <Td isNumeric>
-                                        <IconButton
-                                          aria-label="Delete file"
-                                          icon={<FaRegTrashCan />}
-                                          colorScheme="red"
-                                          size="sm"
-                                          onClick={() =>
-                                            handleDeleteUploadedFile(file.id)
-                                          }
-                                          variant="ghost"
-                                        />
+                                        <HStack spacing={2} justify="flex-end">
+                                          {file.type === "link" && (
+                                            <IconButton
+                                              aria-label="Open link"
+                                              icon={<FiExternalLink />}
+                                              colorScheme="blue"
+                                              size="sm"
+                                              onClick={() => window.open(file.url, "_blank")}
+                                              variant="ghost"
+                                            />
+                                          )}
+                                          <IconButton
+                                            aria-label="Delete"
+                                            icon={<FaRegTrashCan />}
+                                            colorScheme="red"
+                                            size="sm"
+                                            onClick={() => handleDeleteUploadedFile(file.id)}
+                                            variant="ghost"
+                                          />
+                                        </HStack>
                                       </Td>
                                     </Tr>
                                   ))}
@@ -6243,13 +6303,109 @@ function RegisterRequirementFormPage({
                           {/* <Button colorScheme="blue" onClick={handleUpload}>
                             Upload Files
                           </Button> */}
-                          {/* <Button
-                            colorScheme="gray"
-                            onClick={handleResetListUpload}
-                          >
-                            Clear Upload
-                          </Button> */}
                         </Flex>
+
+                        {/* Add External Link Section */}
+                        <Divider my={4} />
+                        <Text fontWeight={600}>Tambah Link Eksternal</Text>
+                        
+                        <Flex
+                          w={"full"}
+                          p={4}
+                          border={"1px"}
+                          borderColor={"blue.200"}
+                          rounded={radiusStyle}
+                          bg={"blue.50"}
+                          direction={"column"}
+                          gap={3}
+                        >
+                          <FormControl>
+                            <FormLabel fontSize="sm">URL</FormLabel>
+                            <Input
+                              placeholder="https://drive.google.com/..."
+                              value={linkForm.url}
+                              onChange={(e) =>
+                                setLinkForm({ ...linkForm, url: e.target.value })
+                              }
+                              bg="white"
+                            />
+                          </FormControl>
+
+                          <FormControl>
+                            <FormLabel fontSize="sm">Title</FormLabel>
+                            <Input
+                              placeholder="Google Drive Document"
+                              value={linkForm.title}
+                              onChange={(e) =>
+                                setLinkForm({ ...linkForm, title: e.target.value })
+                              }
+                              bg="white"
+                            />
+                          </FormControl>
+
+                          <Button
+                            colorScheme="blue"
+                            size="sm"
+                            onClick={handleAddLink}
+                            alignSelf="flex-end"
+                          >
+                            Add Link
+                          </Button>
+                        </Flex>
+
+                        {/* Pending Links */}
+                        {pendingLinks.length > 0 && (
+                          <Flex w={"full"} direction={"column"} gap={3}>
+                            <Text
+                              fontWeight={600}
+                              fontSize={"sm"}
+                              color={"blue.600"}
+                            >
+                              Link Menunggu Unggah ({pendingLinks.length})
+                            </Text>
+                            <Flex
+                              w={"full"}
+                              p={4}
+                              border={"1px"}
+                              borderColor={"blue.200"}
+                              rounded={radiusStyle}
+                            >
+                              <Table variant="simple" size="sm" w="full">
+                                <Thead>
+                                  <Tr>
+                                    <Th>Title</Th>
+                                    <Th>URL</Th>
+                                    <Th isNumeric>Actions</Th>
+                                  </Tr>
+                                </Thead>
+                                <Tbody>
+                                  {pendingLinks.map((link) => (
+                                    <Tr key={link.id}>
+                                      <Td>
+                                        <Text>{link.title}</Text>
+                                      </Td>
+                                      <Td>
+                                        <Text noOfLines={1} fontSize="xs">
+                                          {link.url}
+                                        </Text>
+                                      </Td>
+                                      <Td isNumeric>
+                                        <IconButton
+                                          aria-label="Remove link"
+                                          icon={<FaRegTrashCan />}
+                                          colorScheme="red"
+                                          size="sm"
+                                          onClick={() => handleRemoveLink(link.id)}
+                                          variant="ghost"
+                                        />
+                                      </Td>
+                                    </Tr>
+                                  ))}
+                                </Tbody>
+                              </Table>
+                            </Flex>
+                          </Flex>
+                        )}
                       </Flex>
                     )}
 
@@ -6677,7 +6833,10 @@ const Section4BRDView = ({
       statusToast: "success",
     });
 
-    ModalForm.onClose();
+    // Clear form for next entry
+    setTextBackLogName("");
+    setTextBackLogDesc("");
+    setTextBackLogId(null);
     setFormMode("Add");
   };
   const removeBacklog = (backlogId: string | undefined | null) => {
@@ -7141,7 +7300,7 @@ const Section4BRDView = ({
     <Flex as={Stack} w={"full"} spacing={5}>
       {/* MODAL HERE */}
       <Modal
-        size={"xl"}
+        size={"6xl"}
         isOpen={ModalForm.isOpen}
         isCentered
         onClose={ModalForm.onClose}
@@ -7156,90 +7315,184 @@ const Section4BRDView = ({
         >
           <ModalHeader>{`${FormMode == "Add" ? "Tambah" : "Ubah"
             } Scope of Work`}</ModalHeader>
-          <ModalCloseButton color={"red.500"} />
+          <ModalCloseButton 
+            color={"red.500"} 
+            bg={"red.50"}
+            _hover={{ bg: "red.100" }}
+            rounded={"md"}
+            size={"lg"}
+          />
           <ModalBody w={"full"}>
-            <Flex as={Stack} w={"full"}>
-              <FormControl>
-                <FormLabel>Nama Scope of Work</FormLabel>
-                <Input
-                  ref={backlogNameInputRef}
-                  id="backlogFeatureName"
-                  name="backlogFeatureName"
-                  type="text"
-                  onChange={(e) => {
-                    const input = e.target as HTMLInputElement;
-                    cursorPosRef.current = input.selectionStart;
-                    const upper = input.value.toUpperCase();
-                    setTextBackLogName(upper);
-                  }}
-                  value={TextBackLogName}
-                  placeholder={`Nama Scope of Work`}
-                  minLength={3}
-                  maxLength={200}
-                  isDisabled={ActionLoading}
-                />
-              </FormControl>
-              <FormControl>
-                <FormLabel>Deskripsi</FormLabel>
-                <Textarea
-                  id="backlogFeatureDesc"
-                  name="backlogFeatureDesc"
-                  onChange={(e) => setTextBackLogDesc(e.target.value)}
-                  value={TextBackLogDesc}
-                  placeholder={`Deskripsi Scope of Work`}
-                  maxLength={300}
-                  isDisabled={ActionLoading}
-                />
-              </FormControl>
+            <Grid templateColumns="repeat(2, 1fr)" gap={6}>
+              {/* LEFT COLUMN - Form */}
+              <GridItem>
+                <Flex as={Stack} w={"full"}>
+                  <FormControl>
+                    <FormLabel>Nama Scope of Work</FormLabel>
+                    <Input
+                      ref={backlogNameInputRef}
+                      id="backlogFeatureName"
+                      name="backlogFeatureName"
+                      type="text"
+                      onChange={(e) => {
+                        const input = e.target as HTMLInputElement;
+                        cursorPosRef.current = input.selectionStart;
+                        const upper = input.value.toUpperCase();
+                        setTextBackLogName(upper);
+                      }}
+                      value={TextBackLogName}
+                      placeholder={`Nama Scope of Work`}
+                      minLength={3}
+                      maxLength={200}
+                      isDisabled={ActionLoading}
+                    />
+                  </FormControl>
+                  <FormControl>
+                    <FormLabel>Deskripsi</FormLabel>
+                    <Textarea
+                      id="backlogFeatureDesc"
+                      name="backlogFeatureDesc"
+                      onChange={(e) => setTextBackLogDesc(e.target.value)}
+                      value={TextBackLogDesc}
+                      placeholder={`Deskripsi Scope of Work`}
+                      maxLength={300}
+                      isDisabled={ActionLoading}
+                    />
+                  </FormControl>
 
-              <Button
-                mt={2}
-                w={"full"}
-                size={"lg"}
-                leftIcon={<FiPlusCircle />}
-                colorScheme={"secondary"}
-                onClick={() => handleSaveBacklog()}
-                isDisabled={ActionLoading || !TextBackLogName.trim()}
-              >
-                {FormMode == "Add" ? "Tambah" : "Ubah"} Scope of Work
-              </Button>
+                  <Button
+                    mt={2}
+                    w={"full"}
+                    size={"lg"}
+                    leftIcon={<FiPlusCircle />}
+                    colorScheme={"secondary"}
+                    onClick={() => handleSaveBacklog()}
+                    isDisabled={ActionLoading || !TextBackLogName.trim()}
+                  >
+                    {FormMode == "Add" ? "Tambah" : "Ubah"} Scope of Work
+                  </Button>
 
-              <Divider py={1} />
-              <Text fontSize={"smaller"}>Tambah Cepat</Text>
-              <FormControl>
-                <FormLabel>Rekomendasi Scope of Work Umum</FormLabel>
-                <Flex as={Wrap} w={"full"}>
-                  {FeatureRecomentionsBacklogs.map((item, index) => {
-                    if (
-                      DataBackLogs.some(
-                        (x) => x.backlogName === item.featureName
-                      )
-                    ) {
-                      return null; // Skip if already exists
-                    } else {
-                      return (
-                        <Tag
-                          key={index}
-                          borderRadius="full"
-                          colorScheme="secondary"
-                          variant={"solid"}
-                          onClick={() => {
-                            setTextBackLogName(item.featureName);
-                            setTextBackLogDesc(item.featureDescription || "");
-                          }}
-                          px={3}
-                          cursor={"pointer"}
-                          _hover={{ bg: "secondary.700", color: "white" }}
-                        >
-                          <FiPlus />
-                          <TagLabel pl={1}>{item.featureName}</TagLabel>
-                        </Tag>
-                      );
-                    }
-                  })}
+                  <Divider py={1} />
+                  <Text fontSize={"smaller"}>Tambah Cepat</Text>
+                  <FormControl>
+                    <FormLabel>Rekomendasi Scope of Work Umum</FormLabel>
+                    <Flex as={Wrap} w={"full"}>
+                      {FeatureRecomentionsBacklogs.map((item, index) => {
+                        if (
+                          DataBackLogs.some(
+                            (x) => x.backlogName === item.featureName
+                          )
+                        ) {
+                          return null;
+                        } else {
+                          return (
+                            <Tag
+                              key={index}
+                              borderRadius="full"
+                              colorScheme="secondary"
+                              variant={"solid"}
+                              onClick={() => {
+                                setTextBackLogName(item.featureName);
+                                setTextBackLogDesc(item.featureDescription || "");
+                              }}
+                              px={3}
+                              cursor={"pointer"}
+                              _hover={{ bg: "secondary.700", color: "white" }}
+                            >
+                              <FiPlus />
+                              <TagLabel pl={1}>{item.featureName}</TagLabel>
+                            </Tag>
+                          );
+                        }
+                      })}
+                    </Flex>
+                  </FormControl>
                 </Flex>
-              </FormControl>
-            </Flex>
+              </GridItem>
+
+              {/* RIGHT COLUMN - Backlog List */}
+              <GridItem>
+                <Flex as={Stack} w={"full"} h={"full"}>
+                  <Text fontWeight={600} fontSize={"md"}>
+                    Daftar Scope of Work
+                  </Text>
+                  <Box
+                    border={"1px"}
+                    borderColor={colorMode == "light" ? "gray.200" : "gray.600"}
+                    rounded={radiusStyle}
+                    maxH={"500px"}
+                    overflowY={"auto"}
+                  >
+                    {DataBackLogs.length === 0 ? (
+                      <Flex
+                        h={"200px"}
+                        align={"center"}
+                        justify={"center"}
+                        direction={"column"}
+                      >
+                        <Text color={"gray.400"}>Belum ada Scope of Work</Text>
+                        <Text fontSize={"sm"} color={"gray.400"}>
+                          Tambahkan dari form di sebelah kiri
+                        </Text>
+                      </Flex>
+                    ) : (
+                      <Table size={"sm"} variant={"simple"}>
+                        <Thead>
+                          <Tr>
+                            <Th w={"60px"}>No</Th>
+                            <Th>Nama</Th>
+                            <Th w={"100px"} textAlign={"center"}>
+                              Aksi
+                            </Th>
+                          </Tr>
+                        </Thead>
+                        <Tbody>
+                          {DataBackLogs.map((backlog, index) => (
+                            <Tr key={backlog.localId || backlog.backlogId}>
+                              <Td>{index + 1}</Td>
+                              <Td>
+                                <Text noOfLines={1}>{backlog.backlogName}</Text>
+                              </Td>
+                              <Td>
+                                <HStack spacing={1} justify={"center"}>
+                                  <IconButton
+                                    aria-label="Edit"
+                                    size={"xs"}
+                                    colorScheme={"teal"}
+                                    variant={"ghost"}
+                                    icon={<FaEdit />}
+                                    onClick={() =>
+                                      logBacklog(
+                                        backlog.backlogId || backlog.localId
+                                      )
+                                    }
+                                  />
+                                  <IconButton
+                                    aria-label="Delete"
+                                    size={"xs"}
+                                    colorScheme={"red"}
+                                    variant={"ghost"}
+                                    icon={<FaTrash />}
+                                    onClick={() =>
+                                      removeBacklog(
+                                        backlog.backlogId || backlog.localId
+                                      )
+                                    }
+                                  />
+                                </HStack>
+                              </Td>
+                            </Tr>
+                          ))}
+                        </Tbody>
+                      </Table>
+                    )}
+                  </Box>
+                  <Text fontSize={"sm"} color={"gray.500"}>
+                    Total: {DataBackLogs.length} item{DataBackLogs.length !== 1 ? "s" : ""}
+                  </Text>
+                </Flex>
+              </GridItem>
+            </Grid>
           </ModalBody>
           <ModalFooter></ModalFooter>
         </ModalContent>

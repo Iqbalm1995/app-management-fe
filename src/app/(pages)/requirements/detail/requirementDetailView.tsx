@@ -150,6 +150,7 @@ import {
   FiFileText,
   FiInfo,
   FiRefreshCcw,
+  FiExternalLink,
 } from "react-icons/fi";
 
 const HeaderDataContent: HeaderContentProps = {
@@ -3148,7 +3149,16 @@ const ReqInfoSummaryFileAttachmentsView = ({
         id: "objectData",
         cell: (info) => (
           <Flex justifyContent={"center"}>
-            {[".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg"].some(
+            {info.row.original.objectName === "EXTERNAL_LINK" ? (
+              <Box
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                boxSize="50px"
+              >
+                <FiExternalLink size={24} color="#3182CE" />
+              </Box>
+            ) : [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg"].some(
               (ext) =>
                 info.row.original.objectExtension
                   .trim()
@@ -3162,7 +3172,6 @@ const ReqInfoSummaryFileAttachmentsView = ({
                   name: info.row.original.objectRawName,
                   src: info.row.original.objectFullPath,
                   extension: info.row.original.objectExtension.trim(),
-                  // size:info.row.original.objectSize
                 }}
               />
             ) : (
@@ -3198,7 +3207,11 @@ const ReqInfoSummaryFileAttachmentsView = ({
         accessorFn: (row) => row.objectSize,
         id: "objectSize",
         cell: (info) => (
-          <Text fontWeight={500}>{info.row.original.objectSize} KB</Text>
+          <Text fontWeight={500}>
+            {info.row.original.objectName === "EXTERNAL_LINK"
+              ? "-"
+              : `${info.row.original.objectSize} KB`}
+          </Text>
         ),
         header: () => <span>Ukuran</span>,
         footer: (props) => props.column.id,
@@ -3208,7 +3221,9 @@ const ReqInfoSummaryFileAttachmentsView = ({
         id: "objectExtension",
         cell: (info) => (
           <Text fontWeight={500}>
-            {info.row.original.objectExtension.replace(".", "")}
+            {info.row.original.objectName === "EXTERNAL_LINK"
+              ? "Link"
+              : info.row.original.objectExtension.replace(".", "")}
           </Text>
         ),
         header: () => <span>Tipe</span>,
@@ -3219,38 +3234,44 @@ const ReqInfoSummaryFileAttachmentsView = ({
         id: "id",
         cell: (info) => (
           <Flex w={"full"} as={Wrap} justifyContent={"start"}>
-            <Button
-              size={"sm"}
-              colorScheme={"blue"}
-              leftIcon={<FiDownload />}
-              onClick={() =>
-                handleDownloadFile(info.row.original.objectFullPath || "")
-              }
-            >
-              Unduh
-            </Button>
-            {info.row.original.objectExtension.replace(".", "").trim() ==
-              "pdf" && (
+            {info.row.original.objectName === "EXTERNAL_LINK" ? (
               <Button
                 size={"sm"}
                 colorScheme={"blue"}
-                onClick={() => {
-                  handleOpenPreview(info.row.original.objectFullPath || "");
-                }}
-                leftIcon={<FiEye />}
+                leftIcon={<FiExternalLink />}
+                onClick={() =>
+                  handleDownloadFile(info.row.original.objectData || "")
+                }
               >
-                Pratinjau
+                Buka Link
               </Button>
+            ) : (
+              <>
+                <Button
+                  size={"sm"}
+                  colorScheme={"blue"}
+                  leftIcon={<FiDownload />}
+                  onClick={() =>
+                    handleDownloadFile(info.row.original.objectFullPath || "")
+                  }
+                >
+                  Unduh
+                </Button>
+                {info.row.original.objectExtension.replace(".", "").trim() ==
+                  "pdf" && (
+                  <Button
+                    size={"sm"}
+                    colorScheme={"blue"}
+                    onClick={() => {
+                      handleOpenPreview(info.row.original.objectFullPath || "");
+                    }}
+                    leftIcon={<FiEye />}
+                  >
+                    Pratinjau
+                  </Button>
+                )}
+              </>
             )}
-
-            {/* <Button
-                size={"sm"}
-                colorScheme={"red"}
-                onClick={() => handleConfirmDeleteData(info.row.original)}
-                isLoading={ActionLoading}
-              >
-                <FiTrash2 />
-              </Button> */}
           </Flex>
         ),
         header: () => (
