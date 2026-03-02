@@ -268,19 +268,19 @@ export default function PendingApproveView() {
                 </Text>
               </HStack>
             )}
-            
+
             {/* Project Name */}
             <Text fontWeight={600} fontSize="md">
               {info.row.original.projectName}
             </Text>
-            
+
             {/* Project Number */}
             {info.row.original.projectNo && (
               <Text fontSize="xs" color="gray.500">
-                No: {info.row.original.projectNo}
+                No. Pro: {info.row.original.projectNo}
               </Text>
             )}
-            
+
             {/* Narrative */}
             {info.row.original.requirementData?.reqNarative && (
               <Text fontSize="xs" color="gray.600" noOfLines={2}>
@@ -325,7 +325,7 @@ export default function PendingApproveView() {
             >
               {getProjectTypeLabel(info.row.original.projectType)}
             </Badge>
-            
+
             {/* Category */}
             <Tooltip
               label={info.row.original.projectCategory}
@@ -333,7 +333,14 @@ export default function PendingApproveView() {
               hasArrow
               placement="top"
             >
-              <Badge fontSize="1em" px={2} py={1} rounded="md" variant="outline" colorScheme="gray">
+              <Badge
+                fontSize="1em"
+                px={2}
+                py={1}
+                rounded="md"
+                variant="outline"
+                colorScheme="gray"
+              >
                 {info.row.original.projectCategory.length > 20
                   ? `${info.row.original.projectCategory.substring(0, 20)}...`
                   : info.row.original.projectCategory}
@@ -354,11 +361,19 @@ export default function PendingApproveView() {
           <VStack align="start" spacing={1} w="full">
             {/* Requirement Type */}
             {info.row.original.requirementData?.requirementType ? (
-              <Badge fontSize="1em" px={2} py={1} rounded="md" colorScheme="purple">
+              <Badge
+                fontSize="1em"
+                px={2}
+                py={1}
+                rounded="md"
+                colorScheme="purple"
+              >
                 {info.row.original.requirementData.requirementType}
               </Badge>
             ) : (
-              <Text fontSize="xs" color="gray.500">-</Text>
+              <Text fontSize="xs" color="gray.500">
+                -
+              </Text>
             )}
           </VStack>
         ),
@@ -376,7 +391,7 @@ export default function PendingApproveView() {
           const acquisition = info.row.original.projectAcquisitionName;
           const characteristic = info.row.original.projectCharasteristicName;
           const subChar = info.row.original.projectSubCharasteristicName;
-          
+
           // Build tooltip content
           const tooltipContent = (
             <VStack align="start" spacing={1} fontSize="xs">
@@ -391,7 +406,7 @@ export default function PendingApproveView() {
               {subChar && <Text>Sub-Karakteristik: {subChar}</Text>}
             </VStack>
           );
-          
+
           return (
             <Tooltip label={tooltipContent} hasArrow placement="top">
               <HStack spacing={2} w="full">
@@ -435,7 +450,7 @@ export default function PendingApproveView() {
           const ownerGrp = info.row.original.proOwnerGroupName;
           const manageDiv = info.row.original.proManageByDivisionName;
           const manageGrp = info.row.original.proManageByGroupName;
-          
+
           // Build tooltip content
           const tooltipContent = (
             <VStack align="start" spacing={1} fontSize="xs">
@@ -445,7 +460,7 @@ export default function PendingApproveView() {
               {manageGrp && <Text>Manage Grp: {manageGrp}</Text>}
             </VStack>
           );
-          
+
           return (
             <Tooltip label={tooltipContent} hasArrow placement="top">
               <VStack align="start" spacing={0} w="full">
@@ -484,12 +499,14 @@ export default function PendingApproveView() {
                 px={2}
                 py={1}
                 rounded="md"
-                colorScheme={getProjectStatusColor(info.row.original.projectStatus)}
+                colorScheme={getProjectStatusColor(
+                  info.row.original.projectStatus,
+                )}
               >
                 {info.row.original.projectStatus}
               </Badge>
             </VStack>
-            
+
             {/* Approval Status */}
             <VStack align="start" spacing={1}>
               <Text fontSize="xs" fontWeight="600" color="gray.600">
@@ -500,7 +517,9 @@ export default function PendingApproveView() {
                 px={2}
                 py={1}
                 rounded="md"
-                colorScheme={getApprovalStatusColor(info.row.original.approvalStatus || "PENDING")}
+                colorScheme={getApprovalStatusColor(
+                  info.row.original.approvalStatus || "PENDING",
+                )}
               >
                 {info.row.original.approvalStatus || "PENDING"}
               </Badge>
@@ -519,36 +538,44 @@ export default function PendingApproveView() {
         cell: (info) => {
           // Find creator in userAssignment
           const creatorData = info.row.original.userAssignment?.find(
-            (assignment) => assignment.userId === info.row.original.createdBy
+            (assignment) => assignment.userId === info.row.original.createdBy,
           );
-          
+
           return (
             <VStack align="start" spacing={1} fontSize="xs" w="full">
               {/* Register Date */}
               {info.row.original.projectRegisterDate && (
                 <HStack spacing={1}>
-                  <Text fontWeight="600" color="gray.600">Terdaftar:</Text>
+                  <Text fontWeight="600" color="gray.600">
+                    Tgl. Registrasi:
+                  </Text>
                   <Text>
-                    {stringToDateFormatedReverse(info.row.original.projectRegisterDate)}
+                    {stringToDateFormatedReverse(
+                      info.row.original.projectRegisterDate,
+                    )}
                   </Text>
                 </HStack>
               )}
-              
+
               {/* Created Date */}
               <HStack spacing={1}>
-                <Text fontWeight="600" color="gray.600">Dibuat:</Text>
+                <Text fontWeight="600" color="gray.600">
+                  Tgl. Pengajuan:
+                </Text>
                 <Text>
                   {info.row.original.createdAt
                     ? stringToDateFormatedReverse(info.row.original.createdAt)
                     : "-"}
                 </Text>
               </HStack>
-              
+
               {/* Created By */}
               {creatorData?.userData ? (
                 <VStack align="start" spacing={0}>
                   <HStack spacing={1}>
-                    <Text fontWeight="600" color="gray.600">Oleh:</Text>
+                    <Text fontWeight="600" color="gray.600">
+                      Oleh:
+                    </Text>
                     <Text fontWeight="600">{creatorData.userData.nama}</Text>
                   </HStack>
                   {creatorData.userData.jabatan && (
@@ -559,7 +586,9 @@ export default function PendingApproveView() {
                 </VStack>
               ) : (
                 <HStack spacing={1}>
-                  <Text fontWeight="600" color="gray.600">Oleh:</Text>
+                  <Text fontWeight="600" color="gray.600">
+                    Oleh:
+                  </Text>
                   <Text>{info.row.original.createdBy}</Text>
                 </HStack>
               )}
@@ -599,7 +628,7 @@ export default function PendingApproveView() {
                 leftIcon={<FiEye />}
                 onClick={() => {
                   router.push(
-                    `/projects/preview?projectId=${info.row.original.id}`
+                    `/projects/preview?projectId=${info.row.original.id}`,
                   );
                 }}
               >
@@ -623,7 +652,7 @@ export default function PendingApproveView() {
                     leftIcon={<FiCheck />}
                     onClick={() => {
                       router.push(
-                        `/projects/preview?projectId=${info.row.original.id}&approvalMode=true`
+                        `/projects/preview?projectId=${info.row.original.id}&approvalMode=true`,
                       );
                     }}
                   >
@@ -640,7 +669,7 @@ export default function PendingApproveView() {
         } as ColumnMetaCustom,
       },
     ],
-    [pageIndex, pageSize, router, viewMode, canApproveProjects]
+    [pageIndex, pageSize, router, viewMode, canApproveProjects],
   );
 
   const table = useReactTable({
