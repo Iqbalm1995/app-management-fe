@@ -4050,27 +4050,25 @@ function ProjectWorkspaceView({
 
       // Step 3: Load backlogs
       setLoadingStep("backlogs");
-      if (projectResponse.data?.reqParentId) {
-        const backlogPayload: PaggingListPayload = {
-          search: "",
-          limit: 100,
-          page: 0,
-          filterWhere: [
-            {
-              field: "reqId",
-              operator: "=",
-              value: projectResponse.data.reqParentId,
-            },
-          ],
-          fieldOrder: ["backlogName"],
-          orderDir: "asc",
-        };
+      const backlogPayload: PaggingListPayload = {
+        search: "",
+        limit: 100,
+        page: 0,
+        filterWhere: [
+          {
+            field: "projectId",
+            operator: "=",
+            value: projectId,
+          },
+        ],
+        fieldOrder: ["backlogName"],
+        orderDir: "asc",
+      };
 
-        const backlogResponse = await ListBacklog(backlogPayload, tokenData);
+      const backlogResponse = await ListBacklog(backlogPayload, tokenData);
 
-        if (backlogResponse?.statusCode === RES_CODE_OK) {
-          setDataBacklogs(backlogResponse.data as BacklogDataResponse[]);
-        }
+      if (backlogResponse?.statusCode === RES_CODE_OK) {
+        setDataBacklogs(backlogResponse.data as BacklogDataResponse[]);
       }
 
       await delay(200);
