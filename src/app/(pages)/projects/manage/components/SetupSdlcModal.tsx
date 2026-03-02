@@ -147,7 +147,7 @@ const SetupSdlcModal = ({
 
       if (response?.statusCode === RES_CODE_OK && response.data) {
         setFlowStages(response.data);
-        
+
         // Set selected flow details
         const flow = sdlcFlows.find((f) => f.id === flowId);
         setSelectedFlow(flow || null);
@@ -313,7 +313,7 @@ const SetupSdlcModal = ({
               >
                 {sdlcFlows.map((flow) => (
                   <option key={flow.id} value={flow.id}>
-                    {flow.sdlcName} ({flow.sdlcCode})
+                    {flow.sdlcName}
                   </option>
                 ))}
               </Select>
@@ -407,7 +407,7 @@ const SetupSdlcModal = ({
                     {flowStages.map((stage, index) => {
                       const isRequired = stage.isRequired === "Y";
                       const isChecked = selectedStageIds.has(stage.id);
-                      
+
                       return (
                         <HStack
                           key={stage.id}
@@ -419,8 +419,8 @@ const SetupSdlcModal = ({
                             isChecked
                               ? "secondary.500"
                               : colorMode === "light"
-                              ? "gray.200"
-                              : "gray.600"
+                                ? "gray.200"
+                                : "gray.600"
                           }
                           _hover={{
                             shadow: "sm",
