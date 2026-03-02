@@ -566,7 +566,7 @@ export default function ProjectRegisterView({
         },
       ],
       fieldOrder: ["createdAt"],
-      orderDir: "desc",
+      orderDir: "asc",
     };
 
     const requestData = await ListConstantData(PayloadList, tokenData);
@@ -1063,7 +1063,7 @@ export default function ProjectRegisterView({
     updatedData: BacklogDataResponse
   ) => {
     const isRfc = DataRequirement?.requirementType === "RFC";
-    
+
     if (isRfc) {
       // RFC priority calculation
       const result = getRfcPriorityWithIndex(
@@ -1678,7 +1678,7 @@ export default function ProjectRegisterView({
   const columnsData = useMemo<ColumnDef<BacklogDataResponse>[]>(
     () => {
       const isRfc = DataRequirement?.requirementType === "RFC";
-      
+
       const baseColumns: ColumnDef<BacklogDataResponse>[] = [
         {
           accessorKey: "numbData",
@@ -1778,218 +1778,218 @@ export default function ProjectRegisterView({
 
       const priorityColumns: ColumnDef<BacklogDataResponse>[] = isRfc
         ? [
-            {
-              accessorFn: (row) => row.rfcBacklogChanges,
-              id: "rfcBacklogChanges",
-              cell: (info) => (
-                <Flex
-                  w={"full"}
-                  h={"full"}
-                  justifyContent={"center"}
-                  alignItems={"start"}
-                  as={Stack}
-                  spacing={1}
-                >
-                  <Flex as={Stack} spacing={2}>
-                    <UpdateRfcFieldInput
-                      idInput={`rfcChanges-${info.row.index}`}
-                      fieldName="rfcBacklogChanges"
-                      dataSource={info.row.original}
-                      dataInput={info.row.original.rfcBacklogChanges || "MAJOR"}
-                      updateBacklog={updateBacklog}
-                    />
-                  </Flex>
+          {
+            accessorFn: (row) => row.rfcBacklogChanges,
+            id: "rfcBacklogChanges",
+            cell: (info) => (
+              <Flex
+                w={"full"}
+                h={"full"}
+                justifyContent={"center"}
+                alignItems={"start"}
+                as={Stack}
+                spacing={1}
+              >
+                <Flex as={Stack} spacing={2}>
+                  <UpdateRfcFieldInput
+                    idInput={`rfcChanges-${info.row.index}`}
+                    fieldName="rfcBacklogChanges"
+                    dataSource={info.row.original}
+                    dataInput={info.row.original.rfcBacklogChanges || "MAJOR"}
+                    updateBacklog={updateBacklog}
+                  />
                 </Flex>
-              ),
-              header: () => <span>Jenis Perubahan</span>,
-              footer: (props) => props.column.id,
-              meta: {
-                isFilterable: false,
-              } as ColumnMetaCustom,
-            },
-            {
-              accessorFn: (row) => row.rfcBacklogImportant,
-              id: "rfcBacklogImportant",
-              cell: (info) => (
-                <Flex
-                  w={"full"}
-                  h={"full"}
-                  justifyContent={"center"}
-                  alignItems={"start"}
-                  as={Stack}
-                  spacing={1}
-                >
-                  <Flex as={Stack} spacing={2}>
-                    <UpdateRfcFieldInput
-                      idInput={`rfcImportant-${info.row.index}`}
-                      fieldName="rfcBacklogImportant"
-                      dataSource={info.row.original}
-                      dataInput={
-                        info.row.original.rfcBacklogImportant || "NORMAL"
-                      }
-                      updateBacklog={updateBacklog}
-                    />
-                  </Flex>
+              </Flex>
+            ),
+            header: () => <span>Jenis Perubahan</span>,
+            footer: (props) => props.column.id,
+            meta: {
+              isFilterable: false,
+            } as ColumnMetaCustom,
+          },
+          {
+            accessorFn: (row) => row.rfcBacklogImportant,
+            id: "rfcBacklogImportant",
+            cell: (info) => (
+              <Flex
+                w={"full"}
+                h={"full"}
+                justifyContent={"center"}
+                alignItems={"start"}
+                as={Stack}
+                spacing={1}
+              >
+                <Flex as={Stack} spacing={2}>
+                  <UpdateRfcFieldInput
+                    idInput={`rfcImportant-${info.row.index}`}
+                    fieldName="rfcBacklogImportant"
+                    dataSource={info.row.original}
+                    dataInput={
+                      info.row.original.rfcBacklogImportant || "NORMAL"
+                    }
+                    updateBacklog={updateBacklog}
+                  />
                 </Flex>
-              ),
-              header: () => <span>Tingkat Kepentingan</span>,
-              footer: (props) => props.column.id,
-              meta: {
-                isFilterable: false,
-              } as ColumnMetaCustom,
-            },
-            {
-              accessorFn: (row) => row.rfcBacklogImpactOthers,
-              id: "rfcBacklogImpactOthers",
-              cell: (info) => (
-                <Flex
-                  w={"full"}
-                  h={"full"}
-                  justifyContent={"center"}
-                  alignItems={"start"}
-                  as={Stack}
-                  spacing={1}
-                >
-                  <Flex as={Stack} spacing={2}>
-                    <UpdateRfcFieldInput
-                      idInput={`rfcImpactOthers-${info.row.index}`}
-                      fieldName="rfcBacklogImpactOthers"
-                      dataSource={info.row.original}
-                      dataInput={
-                        info.row.original.rfcBacklogImpactOthers || "SMALL"
-                      }
-                      updateBacklog={updateBacklog}
-                    />
-                  </Flex>
+              </Flex>
+            ),
+            header: () => <span>Tingkat Kepentingan</span>,
+            footer: (props) => props.column.id,
+            meta: {
+              isFilterable: false,
+            } as ColumnMetaCustom,
+          },
+          {
+            accessorFn: (row) => row.rfcBacklogImpactOthers,
+            id: "rfcBacklogImpactOthers",
+            cell: (info) => (
+              <Flex
+                w={"full"}
+                h={"full"}
+                justifyContent={"center"}
+                alignItems={"start"}
+                as={Stack}
+                spacing={1}
+              >
+                <Flex as={Stack} spacing={2}>
+                  <UpdateRfcFieldInput
+                    idInput={`rfcImpactOthers-${info.row.index}`}
+                    fieldName="rfcBacklogImpactOthers"
+                    dataSource={info.row.original}
+                    dataInput={
+                      info.row.original.rfcBacklogImpactOthers || "SMALL"
+                    }
+                    updateBacklog={updateBacklog}
+                  />
                 </Flex>
-              ),
-              header: () => <span>Dampak Terhadap Sistem Lain</span>,
-              footer: (props) => props.column.id,
-              meta: {
-                isFilterable: false,
-              } as ColumnMetaCustom,
-            },
-            {
-              accessorFn: (row) => row.rfcPriorities,
-              id: "rfcPriorities",
-              cell: (info) => (
-                <Flex
-                  w={"full"}
-                  h={"full"}
-                  justifyContent={"center"}
-                  alignItems={"start"}
-                  as={Stack}
-                  spacing={1}
-                >
-                  <Flex as={Stack} spacing={2}>
-                    <Text
-                      fontWeight={600}
-                      color={priorityColor(
-                        info.row.original.rfcPriorities || "LOW"
-                      )}
-                    >
-                      {info.row.original.rfcPriorities || "LOW"}
-                    </Text>
-                  </Flex>
+              </Flex>
+            ),
+            header: () => <span>Dampak Terhadap Sistem Lain</span>,
+            footer: (props) => props.column.id,
+            meta: {
+              isFilterable: false,
+            } as ColumnMetaCustom,
+          },
+          {
+            accessorFn: (row) => row.rfcPriorities,
+            id: "rfcPriorities",
+            cell: (info) => (
+              <Flex
+                w={"full"}
+                h={"full"}
+                justifyContent={"center"}
+                alignItems={"start"}
+                as={Stack}
+                spacing={1}
+              >
+                <Flex as={Stack} spacing={2}>
+                  <Text
+                    fontWeight={600}
+                    color={priorityColor(
+                      info.row.original.rfcPriorities || "LOW"
+                    )}
+                  >
+                    {info.row.original.rfcPriorities || "LOW"}
+                  </Text>
                 </Flex>
-              ),
-              header: () => <span>Priority</span>,
-              footer: (props) => props.column.id,
-              meta: {
-                isFilterable: false,
-              } as ColumnMetaCustom,
-            },
-          ]
+              </Flex>
+            ),
+            header: () => <span>Priority</span>,
+            footer: (props) => props.column.id,
+            meta: {
+              isFilterable: false,
+            } as ColumnMetaCustom,
+          },
+        ]
         : [
-            {
-              accessorFn: (row) => row.urgency,
-              id: "urgency",
-              cell: (info) => (
-                <Flex
-                  w={"full"}
-                  h={"full"}
-                  justifyContent={"center"}
-                  alignItems={"start"}
-                  as={Stack}
-                  spacing={1}
-                >
-                  <Flex as={Stack} spacing={2}>
-                    <UpdateUrgencyImpactInput
-                      idInput={`urgencySet-${info.row.index}`}
-                      fieldName={"urgency"}
-                      dataSource={info.row.original}
-                      dataInput={info.row.original.urgency}
-                      updateBacklog={updateBacklog}
-                      key={`urgencySet-${info.row.index}`}
-                    />
-                  </Flex>
+          {
+            accessorFn: (row) => row.urgency,
+            id: "urgency",
+            cell: (info) => (
+              <Flex
+                w={"full"}
+                h={"full"}
+                justifyContent={"center"}
+                alignItems={"start"}
+                as={Stack}
+                spacing={1}
+              >
+                <Flex as={Stack} spacing={2}>
+                  <UpdateUrgencyImpactInput
+                    idInput={`urgencySet-${info.row.index}`}
+                    fieldName={"urgency"}
+                    dataSource={info.row.original}
+                    dataInput={info.row.original.urgency}
+                    updateBacklog={updateBacklog}
+                    key={`urgencySet-${info.row.index}`}
+                  />
                 </Flex>
-              ),
-              header: () => <span>Urgency</span>,
-              footer: (props) => props.column.id,
-              meta: {
-                isFilterable: false,
-              } as ColumnMetaCustom,
-            },
-            {
-              accessorFn: (row) => row.impact,
-              id: "impact",
-              cell: (info) => (
-                <Flex
-                  w={"full"}
-                  h={"full"}
-                  justifyContent={"center"}
-                  alignItems={"start"}
-                  as={Stack}
-                  spacing={1}
-                >
-                  <Flex as={Stack} spacing={2}>
-                    <UpdateUrgencyImpactInput
-                      idInput={`impactSet-${info.row.index}`}
-                      fieldName={"impact"}
-                      dataSource={info.row.original}
-                      dataInput={info.row.original.impact}
-                      updateBacklog={updateBacklog}
-                      key={`impactSet-${info.row.index}`}
-                    />
-                  </Flex>
+              </Flex>
+            ),
+            header: () => <span>Urgency</span>,
+            footer: (props) => props.column.id,
+            meta: {
+              isFilterable: false,
+            } as ColumnMetaCustom,
+          },
+          {
+            accessorFn: (row) => row.impact,
+            id: "impact",
+            cell: (info) => (
+              <Flex
+                w={"full"}
+                h={"full"}
+                justifyContent={"center"}
+                alignItems={"start"}
+                as={Stack}
+                spacing={1}
+              >
+                <Flex as={Stack} spacing={2}>
+                  <UpdateUrgencyImpactInput
+                    idInput={`impactSet-${info.row.index}`}
+                    fieldName={"impact"}
+                    dataSource={info.row.original}
+                    dataInput={info.row.original.impact}
+                    updateBacklog={updateBacklog}
+                    key={`impactSet-${info.row.index}`}
+                  />
                 </Flex>
-              ),
-              header: () => <span>Impact</span>,
-              footer: (props) => props.column.id,
-              meta: {
-                isFilterable: false,
-              } as ColumnMetaCustom,
-            },
-            {
-              accessorFn: (row) => row.priority,
-              id: "priority",
-              cell: (info) => (
-                <Flex
-                  w={"full"}
-                  h={"full"}
-                  justifyContent={"center"}
-                  alignItems={"start"}
-                  as={Stack}
-                  spacing={1}
-                >
-                  <Flex as={Stack} spacing={2}>
-                    <Text
-                      fontWeight={600}
-                      color={priorityColor(info.row.original.priority)}
-                    >
-                      {info.row.original.priority}
-                    </Text>
-                  </Flex>
+              </Flex>
+            ),
+            header: () => <span>Impact</span>,
+            footer: (props) => props.column.id,
+            meta: {
+              isFilterable: false,
+            } as ColumnMetaCustom,
+          },
+          {
+            accessorFn: (row) => row.priority,
+            id: "priority",
+            cell: (info) => (
+              <Flex
+                w={"full"}
+                h={"full"}
+                justifyContent={"center"}
+                alignItems={"start"}
+                as={Stack}
+                spacing={1}
+              >
+                <Flex as={Stack} spacing={2}>
+                  <Text
+                    fontWeight={600}
+                    color={priorityColor(info.row.original.priority)}
+                  >
+                    {info.row.original.priority}
+                  </Text>
                 </Flex>
-              ),
-              header: () => <span>Priority</span>,
-              footer: (props) => props.column.id,
-              meta: {
-                isFilterable: false,
-              } as ColumnMetaCustom,
-            },
-          ];
+              </Flex>
+            ),
+            header: () => <span>Priority</span>,
+            footer: (props) => props.column.id,
+            meta: {
+              isFilterable: false,
+            } as ColumnMetaCustom,
+          },
+        ];
 
       const additionalColumn: ColumnDef<BacklogDataResponse>[] = [
         {
@@ -2692,7 +2692,7 @@ export default function ProjectRegisterView({
             w={"full"}
             display={
               projectTypeRegister == PROJECT_TYPE_PROCUREMENT &&
-              IsHaveMemo == "N"
+                IsHaveMemo == "N"
                 ? "none"
                 : "box"
             }
@@ -2748,7 +2748,7 @@ export default function ProjectRegisterView({
                             >
                               {DataRequirement
                                 ? DataRequirement.reqNarative.toUpperCase() +
-                                  " "
+                                " "
                                 : "NO REQUIREMENT REFERENCE "}
                             </Text>
                           </Link>
@@ -2769,12 +2769,12 @@ export default function ProjectRegisterView({
                           Tanggal Memo Diterima:{" "}
                           {DataRequirement && DataRequirement.reqAcceptedDate
                             ? new Date(
-                                DataRequirement.reqAcceptedDate
-                              ).toLocaleDateString("id-ID", {
-                                day: "2-digit",
-                                month: "long",
-                                year: "numeric",
-                              })
+                              DataRequirement.reqAcceptedDate
+                            ).toLocaleDateString("id-ID", {
+                              day: "2-digit",
+                              month: "long",
+                              year: "numeric",
+                            })
                             : "-"}
                         </Text>
                         <Text fontSize="sm" color="gray.300">
@@ -2806,12 +2806,12 @@ export default function ProjectRegisterView({
                             >
                               {DataRequirement.appLiveTargetDate
                                 ? new Date(
-                                    DataRequirement.appLiveTargetDate
-                                  ).toLocaleDateString("id-ID", {
-                                    day: "2-digit",
-                                    month: "long",
-                                    year: "numeric",
-                                  })
+                                  DataRequirement.appLiveTargetDate
+                                ).toLocaleDateString("id-ID", {
+                                  day: "2-digit",
+                                  month: "long",
+                                  year: "numeric",
+                                })
                                 : "-"}
                             </Text>
                             <Tooltip
@@ -2895,7 +2895,7 @@ export default function ProjectRegisterView({
                         fontWeight="bold"
                         fontSize={
                           ApplicationData &&
-                          ApplicationData.appShortName.length > 3
+                            ApplicationData.appShortName.length > 3
                             ? "small"
                             : "x-large"
                         }
@@ -2984,7 +2984,7 @@ export default function ProjectRegisterView({
                                       }
                                     >
                                       {projectTypeRegister !=
-                                      PROJECT_TYPE_PROCUREMENT
+                                        PROJECT_TYPE_PROCUREMENT
                                         ? "Belum"
                                         : "Tidak (Dikhususkan untuk IT)"}
                                     </Radio>
@@ -3004,7 +3004,7 @@ export default function ProjectRegisterView({
                           isRequired={IsHaveMemo == "Y"}
                           display={
                             projectTypeRegister == PROJECT_TYPE_PROCUREMENT &&
-                            IsHaveMemo == "N"
+                              IsHaveMemo == "N"
                               ? "none"
                               : "flex"
                           }
@@ -3221,7 +3221,7 @@ export default function ProjectRegisterView({
                                 placeholder={`Nama Project`}
                                 minLength={3}
                                 maxLength={200}
-                                // isDisabled={ActionLoading}
+                              // isDisabled={ActionLoading}
                               />
                               <FormErrorMessage>
                                 {formik.errors.projectName}
@@ -3289,9 +3289,9 @@ export default function ProjectRegisterView({
                                       value={OrganizationData.filter(
                                         (f) =>
                                           f.orgType ==
-                                            ORG_CATEGORY_KEY_DIRECTORATE &&
+                                          ORG_CATEGORY_KEY_DIRECTORATE &&
                                           f.id ==
-                                            formik.values.proOwnerDirectorateId
+                                          formik.values.proOwnerDirectorateId
                                       ).map((d) => ({
                                         label: d.orgName,
                                         value: d.id,
@@ -3422,7 +3422,7 @@ export default function ProjectRegisterView({
                                         ? true
                                         : false
                                     }
-                                    // isRequired
+                                  // isRequired
                                   >
                                     <FormLabel h={"full"}>Grup</FormLabel>
 
@@ -3432,7 +3432,7 @@ export default function ProjectRegisterView({
                                         (f) =>
                                           f.orgType == ORG_CATEGORY_KEY_GROUP &&
                                           f.parentId ==
-                                            formik.values.proOwnerDivisionId
+                                          formik.values.proOwnerDivisionId
                                       ).map((d) => ({
                                         label: d.orgName,
                                         value: d.id,
@@ -3612,7 +3612,7 @@ export default function ProjectRegisterView({
                                 defaultValue={formik.values.projectDesc ?? ""}
                                 placeholder={`Deskripsi`}
                                 maxLength={300}
-                                // isDisabled={ActionLoading}
+                              // isDisabled={ActionLoading}
                               />
                               <FormErrorMessage>
                                 {formik.errors.projectDesc}
@@ -3639,7 +3639,7 @@ export default function ProjectRegisterView({
                                 type="date"
                                 onChange={formik.handleChange}
                                 value={formik.values.projectRegisterDate}
-                                // isDisabled={ActionLoading}
+                              // isDisabled={ActionLoading}
                               />
                               <FormErrorMessage>
                                 {formik.errors.projectRegisterDate}
@@ -3665,7 +3665,7 @@ export default function ProjectRegisterView({
                                 defaultValue={formik.values.note ?? ""}
                                 placeholder={`Perihal`}
                                 maxLength={300}
-                                // isDisabled={ActionLoading}
+                              // isDisabled={ActionLoading}
                               />
                               <FormErrorMessage>
                                 {formik.errors.note}
@@ -4032,10 +4032,10 @@ export default function ProjectRegisterView({
                                             value={OrganizationData.filter(
                                               (f) =>
                                                 f.orgType ==
-                                                  ORG_CATEGORY_KEY_DIRECTORATE &&
+                                                ORG_CATEGORY_KEY_DIRECTORATE &&
                                                 f.id ==
-                                                  formik.values
-                                                    .proManageByDirectorateId
+                                                formik.values
+                                                  .proManageByDirectorateId
                                             ).map((d) => ({
                                               label: d.orgName,
                                               value: d.id,
@@ -4144,10 +4144,10 @@ export default function ProjectRegisterView({
                                             value={OrganizationData.filter(
                                               (f) =>
                                                 f.orgType ==
-                                                  ORG_CATEGORY_KEY_DIVISION &&
+                                                ORG_CATEGORY_KEY_DIVISION &&
                                                 f.id ==
-                                                  formik.values
-                                                    .proManageByDivisionId
+                                                formik.values
+                                                  .proManageByDivisionId
                                             ).map((d) => ({
                                               label: d.orgName,
                                               value: d.id,
@@ -4178,7 +4178,7 @@ export default function ProjectRegisterView({
                                               ? true
                                               : false
                                           }
-                                          // isRequired
+                                        // isRequired
                                         >
                                           <FormLabel h={"full"} mt={2}>
                                             Grup
@@ -4189,7 +4189,9 @@ export default function ProjectRegisterView({
                                             options={OrganizationData.filter(
                                               (f) =>
                                                 f.orgType ==
-                                                ORG_CATEGORY_KEY_GROUP
+                                                ORG_CATEGORY_KEY_GROUP &&
+                                                f.parentId ==
+                                                formik.values.proManageByDivisionId
                                             ).map((d) => ({
                                               label: d.orgName,
                                               value: d.id,
@@ -4218,10 +4220,10 @@ export default function ProjectRegisterView({
                                             value={OrganizationData.filter(
                                               (f) =>
                                                 f.orgType ==
-                                                  ORG_CATEGORY_KEY_GROUP &&
+                                                ORG_CATEGORY_KEY_GROUP &&
                                                 f.id ==
-                                                  formik.values
-                                                    .proManageByGroupId
+                                                formik.values
+                                                  .proManageByGroupId
                                             ).map((d) => ({
                                               label: d.orgName,
                                               value: d.id,
@@ -4281,10 +4283,10 @@ export default function ProjectRegisterView({
                                 leftover < 0
                                   ? "red.500"
                                   : leftover > 0
-                                  ? "green.500"
-                                  : colorMode === "light"
-                                  ? "black"
-                                  : "white";
+                                    ? "green.500"
+                                    : colorMode === "light"
+                                      ? "black"
+                                      : "white";
 
                               return (
                                 <Flex w={"full"} as={Stack} key={index}>
@@ -4336,9 +4338,9 @@ export default function ProjectRegisterView({
                                                 typeof formik.errors
                                                   .workPrograms?.[index] ===
                                                   "object" &&
-                                                formik.errors.workPrograms?.[
-                                                  index
-                                                ]?.divisionId
+                                                  formik.errors.workPrograms?.[
+                                                    index
+                                                  ]?.divisionId
                                                   ? true
                                                   : false
                                               }
@@ -4387,11 +4389,11 @@ export default function ProjectRegisterView({
                                                   value={OrganizationData.filter(
                                                     (f) =>
                                                       f.orgType ==
-                                                        ORG_CATEGORY_KEY_DIRECTORATE &&
+                                                      ORG_CATEGORY_KEY_DIRECTORATE &&
                                                       f.id ==
-                                                        formik.values
-                                                          .workPrograms[index]
-                                                          .directorateId
+                                                      formik.values
+                                                        .workPrograms[index]
+                                                        .directorateId
                                                   ).map((d) => ({
                                                     label: d.orgName,
                                                     value: d.id,
@@ -4424,9 +4426,9 @@ export default function ProjectRegisterView({
                                                 typeof formik.errors
                                                   .workPrograms?.[index] ===
                                                   "object" &&
-                                                formik.errors.workPrograms?.[
-                                                  index
-                                                ]?.divisionId
+                                                  formik.errors.workPrograms?.[
+                                                    index
+                                                  ]?.divisionId
                                                   ? true
                                                   : false
                                               }
@@ -4444,11 +4446,11 @@ export default function ProjectRegisterView({
                                                 options={OrganizationData.filter(
                                                   (f) =>
                                                     f.orgType ==
-                                                      ORG_CATEGORY_KEY_DIVISION &&
+                                                    ORG_CATEGORY_KEY_DIVISION &&
                                                     f.parentId ==
-                                                      formik.values
-                                                        .workPrograms[index]
-                                                        .directorateId
+                                                    formik.values
+                                                      .workPrograms[index]
+                                                      .directorateId
                                                 ).map((d) => ({
                                                   label: d.orgName,
                                                   value: d.id,
@@ -4475,11 +4477,11 @@ export default function ProjectRegisterView({
                                                 value={OrganizationData.filter(
                                                   (f) =>
                                                     f.orgType ==
-                                                      ORG_CATEGORY_KEY_DIVISION &&
+                                                    ORG_CATEGORY_KEY_DIVISION &&
                                                     f.id ==
-                                                      formik.values
-                                                        .workPrograms[index]
-                                                        .divisionId
+                                                    formik.values
+                                                      .workPrograms[index]
+                                                      .divisionId
                                                 ).map((d) => ({
                                                   label: d.orgName,
                                                   value: d.id,
@@ -4511,9 +4513,9 @@ export default function ProjectRegisterView({
                                                 typeof formik.errors
                                                   .workPrograms?.[index] ===
                                                   "object" &&
-                                                formik.errors.workPrograms?.[
-                                                  index
-                                                ]?.groupId
+                                                  formik.errors.workPrograms?.[
+                                                    index
+                                                  ]?.groupId
                                                   ? true
                                                   : false
                                               }
@@ -4530,11 +4532,11 @@ export default function ProjectRegisterView({
                                                 options={OrganizationData.filter(
                                                   (f) =>
                                                     f.orgType ==
-                                                      ORG_CATEGORY_KEY_GROUP &&
+                                                    ORG_CATEGORY_KEY_GROUP &&
                                                     f.parentId ==
-                                                      formik.values
-                                                        .workPrograms[index]
-                                                        .divisionId
+                                                    formik.values
+                                                      .workPrograms[index]
+                                                      .divisionId
                                                 ).map((d) => ({
                                                   label: d.orgName,
                                                   value: d.id,
@@ -4564,11 +4566,11 @@ export default function ProjectRegisterView({
                                                 value={OrganizationData.filter(
                                                   (f) =>
                                                     f.orgType ==
-                                                      ORG_CATEGORY_KEY_GROUP &&
+                                                    ORG_CATEGORY_KEY_GROUP &&
                                                     f.id ==
-                                                      formik.values
-                                                        .workPrograms[index]
-                                                        .groupId
+                                                    formik.values
+                                                      .workPrograms[index]
+                                                      .groupId
                                                 ).map((d) => ({
                                                   label: d.orgName,
                                                   value: d.id,
@@ -4596,8 +4598,8 @@ export default function ProjectRegisterView({
                                       typeof formik.errors.workPrograms?.[
                                         index
                                       ] === "object" &&
-                                      formik.errors.workPrograms?.[index]
-                                        ?.workProgramCode
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramCode
                                         ? true
                                         : false
                                     }
@@ -4647,8 +4649,8 @@ export default function ProjectRegisterView({
                                       typeof formik.errors.workPrograms?.[
                                         index
                                       ] === "object" &&
-                                      formik.errors.workPrograms?.[index]
-                                        ?.workProgramName
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramName
                                         ? true
                                         : false
                                     }
@@ -4698,8 +4700,8 @@ export default function ProjectRegisterView({
                                       typeof formik.errors.workPrograms?.[
                                         index
                                       ] === "object" &&
-                                      formik.errors.workPrograms?.[index]
-                                        ?.workProgramAccName
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramAccName
                                         ? true
                                         : false
                                     }
@@ -4749,8 +4751,8 @@ export default function ProjectRegisterView({
                                       typeof formik.errors.workPrograms?.[
                                         index
                                       ] === "object" &&
-                                      formik.errors.workPrograms?.[index]
-                                        ?.workProgramAccNumber
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramAccNumber
                                         ? true
                                         : false
                                     }
@@ -4805,8 +4807,8 @@ export default function ProjectRegisterView({
                                       typeof formik.errors.workPrograms?.[
                                         index
                                       ] === "object" &&
-                                      formik.errors.workPrograms?.[index]
-                                        ?.workProgramAccCc
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramAccCc
                                         ? true
                                         : false
                                     }
@@ -4860,8 +4862,8 @@ export default function ProjectRegisterView({
                                       typeof formik.errors.workPrograms?.[
                                         index
                                       ] === "object" &&
-                                      formik.errors.workPrograms?.[index]
-                                        ?.workProgramBudget
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramBudget
                                         ? true
                                         : false
                                     }
@@ -4902,8 +4904,8 @@ export default function ProjectRegisterView({
                                       typeof formik.errors.workPrograms?.[
                                         index
                                       ] === "object" &&
-                                      formik.errors.workPrograms?.[index]
-                                        ?.workProgramReal
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramReal
                                         ? true
                                         : false
                                     }
@@ -5015,10 +5017,10 @@ export default function ProjectRegisterView({
                                 leftover < 0
                                   ? "red.500"
                                   : leftover > 0
-                                  ? "green.500"
-                                  : colorMode === "light"
-                                  ? "black"
-                                  : "white";
+                                    ? "green.500"
+                                    : colorMode === "light"
+                                      ? "black"
+                                      : "white";
                               return (
                                 <Flex w={"full"} as={Stack} key={index}>
                                   <Divider key={index} />
@@ -5069,9 +5071,9 @@ export default function ProjectRegisterView({
                                                 typeof formik.errors
                                                   .workPrograms?.[index] ===
                                                   "object" &&
-                                                formik.errors.workPrograms?.[
-                                                  index
-                                                ]?.directorateId
+                                                  formik.errors.workPrograms?.[
+                                                    index
+                                                  ]?.directorateId
                                                   ? true
                                                   : false
                                               }
@@ -5099,11 +5101,11 @@ export default function ProjectRegisterView({
                                                 value={OrganizationData.filter(
                                                   (f) =>
                                                     f.orgType ==
-                                                      ORG_CATEGORY_KEY_DIRECTORATE &&
+                                                    ORG_CATEGORY_KEY_DIRECTORATE &&
                                                     f.id ==
-                                                      formik.values
-                                                        .workPrograms[index]
-                                                        .directorateId
+                                                    formik.values
+                                                      .workPrograms[index]
+                                                      .directorateId
                                                 ).map((d) => ({
                                                   label: d.orgName,
                                                   value: d.id,
@@ -5135,9 +5137,9 @@ export default function ProjectRegisterView({
                                                 typeof formik.errors
                                                   .workPrograms?.[index] ===
                                                   "object" &&
-                                                formik.errors.workPrograms?.[
-                                                  index
-                                                ]?.divisionId
+                                                  formik.errors.workPrograms?.[
+                                                    index
+                                                  ]?.divisionId
                                                   ? true
                                                   : false
                                               }
@@ -5152,11 +5154,11 @@ export default function ProjectRegisterView({
                                                 options={OrganizationData.filter(
                                                   (f) =>
                                                     f.orgType ==
-                                                      ORG_CATEGORY_KEY_DIVISION &&
+                                                    ORG_CATEGORY_KEY_DIVISION &&
                                                     f.parentId ==
-                                                      formik.values
-                                                        .workPrograms[index]
-                                                        .directorateId
+                                                    formik.values
+                                                      .workPrograms[index]
+                                                      .directorateId
                                                 ).map((d) => ({
                                                   label: d.orgName,
                                                   value: d.id,
@@ -5168,11 +5170,11 @@ export default function ProjectRegisterView({
                                                 value={OrganizationData.filter(
                                                   (f) =>
                                                     f.orgType ==
-                                                      ORG_CATEGORY_KEY_DIVISION &&
+                                                    ORG_CATEGORY_KEY_DIVISION &&
                                                     f.id ==
-                                                      formik.values
-                                                        .workPrograms[index]
-                                                        .divisionId
+                                                    formik.values
+                                                      .workPrograms[index]
+                                                      .divisionId
                                                 ).map((d) => ({
                                                   label: d.orgName,
                                                   value: d.id,
@@ -5204,9 +5206,9 @@ export default function ProjectRegisterView({
                                                 typeof formik.errors
                                                   .workPrograms?.[index] ===
                                                   "object" &&
-                                                formik.errors.workPrograms?.[
-                                                  index
-                                                ]?.groupId
+                                                  formik.errors.workPrograms?.[
+                                                    index
+                                                  ]?.groupId
                                                   ? true
                                                   : false
                                               }
@@ -5220,11 +5222,11 @@ export default function ProjectRegisterView({
                                                 options={OrganizationData.filter(
                                                   (f) =>
                                                     f.orgType ==
-                                                      ORG_CATEGORY_KEY_GROUP &&
+                                                    ORG_CATEGORY_KEY_GROUP &&
                                                     f.parentId ==
-                                                      formik.values
-                                                        .workPrograms[index]
-                                                        .divisionId
+                                                    formik.values
+                                                      .workPrograms[index]
+                                                      .divisionId
                                                 ).map((d) => ({
                                                   label: d.orgName,
                                                   value: d.id,
@@ -5256,11 +5258,11 @@ export default function ProjectRegisterView({
                                                 value={OrganizationData.filter(
                                                   (f) =>
                                                     f.orgType ==
-                                                      ORG_CATEGORY_KEY_GROUP &&
+                                                    ORG_CATEGORY_KEY_GROUP &&
                                                     f.id ==
-                                                      formik.values
-                                                        .workPrograms[index]
-                                                        .groupId
+                                                    formik.values
+                                                      .workPrograms[index]
+                                                      .groupId
                                                 ).map((d) => ({
                                                   label: d.orgName,
                                                   value: d.id,
@@ -5288,8 +5290,8 @@ export default function ProjectRegisterView({
                                       typeof formik.errors.workPrograms?.[
                                         index
                                       ] === "object" &&
-                                      formik.errors.workPrograms?.[index]
-                                        ?.workProgramCode
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramCode
                                         ? true
                                         : false
                                     }
@@ -5339,8 +5341,8 @@ export default function ProjectRegisterView({
                                       typeof formik.errors.workPrograms?.[
                                         index
                                       ] === "object" &&
-                                      formik.errors.workPrograms?.[index]
-                                        ?.workProgramName
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramName
                                         ? true
                                         : false
                                     }
@@ -5390,8 +5392,8 @@ export default function ProjectRegisterView({
                                       typeof formik.errors.workPrograms?.[
                                         index
                                       ] === "object" &&
-                                      formik.errors.workPrograms?.[index]
-                                        ?.workProgramAccName
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramAccName
                                         ? true
                                         : false
                                     }
@@ -5441,8 +5443,8 @@ export default function ProjectRegisterView({
                                       typeof formik.errors.workPrograms?.[
                                         index
                                       ] === "object" &&
-                                      formik.errors.workPrograms?.[index]
-                                        ?.workProgramAccNumber
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramAccNumber
                                         ? true
                                         : false
                                     }
@@ -5497,8 +5499,8 @@ export default function ProjectRegisterView({
                                       typeof formik.errors.workPrograms?.[
                                         index
                                       ] === "object" &&
-                                      formik.errors.workPrograms?.[index]
-                                        ?.workProgramAccCc
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramAccCc
                                         ? true
                                         : false
                                     }
@@ -5552,8 +5554,8 @@ export default function ProjectRegisterView({
                                       typeof formik.errors.workPrograms?.[
                                         index
                                       ] === "object" &&
-                                      formik.errors.workPrograms?.[index]
-                                        ?.workProgramBudget
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramBudget
                                         ? true
                                         : false
                                     }
@@ -5594,8 +5596,8 @@ export default function ProjectRegisterView({
                                       typeof formik.errors.workPrograms?.[
                                         index
                                       ] === "object" &&
-                                      formik.errors.workPrograms?.[index]
-                                        ?.workProgramReal
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramReal
                                         ? true
                                         : false
                                     }
@@ -5681,416 +5683,416 @@ export default function ProjectRegisterView({
                       {/* FOR TYPE PROJECT REGISTER INTERNAL DEVELOPMENT */}
                       {projectTypeRegister ==
                         PROJECT_TYPE_INTERNAL_DEVELOPMENT && (
-                        <>
-                          {IsLoadingProcess ? (
-                            <LoadingMiniSignature />
-                          ) : (
-                            <VStack spacing={6} align="stretch" w="full">
-                              {/* Section 1: Already Assigned Backlogs */}
-                              {assignedBacklogs.length > 0 && (
-                                <Card rounded={radiusStyle}>
-                                  <CardHeader>
-                                    <Heading size="md">
-                                      Already Assigned to Other Projects
-                                    </Heading>
-                                    <Text fontSize="sm" color="gray.500">
-                                      These backlogs are already assigned and
-                                      cannot be selected
-                                    </Text>
-                                  </CardHeader>
-                                  <CardBody>
-                                    <Table size="sm" variant="simple">
-                                      <Thead>
-                                        <Tr>
-                                          <Th>Backlog Name</Th>
-                                          <Th>Priority</Th>
-                                          <Th>Status</Th>
-                                          <Th>Project ID</Th>
-                                        </Tr>
-                                      </Thead>
-                                      <Tbody>
-                                        {assignedBacklogs.map((backlog) => (
-                                          <Tr key={backlog.id} opacity={0.6}>
-                                            <Td>{backlog.backlogName}</Td>
-                                            <Td>
-                                              <Badge
-                                                colorScheme={priorityColor(
-                                                  backlog.priority
-                                                )}
-                                              >
-                                                {backlog.priority}
-                                              </Badge>
-                                            </Td>
-                                            <Td>{backlog.developmentStatus}</Td>
-                                            <Td>
-                                              <Text
-                                                fontSize="xs"
-                                                color="gray.500"
-                                              >
-                                                {backlog.projectId}
-                                              </Text>
-                                            </Td>
-                                          </Tr>
-                                        ))}
-                                      </Tbody>
-                                    </Table>
-                                  </CardBody>
-                                </Card>
-                              )}
-
-                              {/* Section 2: Available Backlogs (Can Select) */}
-                              <Card rounded={radiusStyle}>
-                                <CardHeader>
-                                  <HStack justify="space-between">
-                                    <Box>
+                          <>
+                            {IsLoadingProcess ? (
+                              <LoadingMiniSignature />
+                            ) : (
+                              <VStack spacing={6} align="stretch" w="full">
+                                {/* Section 1: Already Assigned Backlogs */}
+                                {assignedBacklogs.length > 0 && (
+                                  <Card rounded={radiusStyle}>
+                                    <CardHeader>
                                       <Heading size="md">
-                                        Available Backlogs
+                                        Already Assigned to Other Projects
                                       </Heading>
                                       <Text fontSize="sm" color="gray.500">
-                                        Select backlogs to include in this
-                                        project
+                                        These backlogs are already assigned and
+                                        cannot be selected
                                       </Text>
-                                    </Box>
-                                    <HStack spacing={3}>
-                                      <Input
-                                        type="text"
-                                        placeholder="Search backlogs..."
-                                        bg={
-                                          colorMode === "light"
-                                            ? "white"
-                                            : "gray.800"
-                                        }
-                                        size="sm"
-                                        onChange={(e) =>
-                                          setAvailableBacklogsFilter(
-                                            e.target.value
-                                          )
-                                        }
-                                        value={availableBacklogsFilter}
-                                        w="250px"
-                                      />
-                                      <Checkbox
-                                        isChecked={
-                                          availableBacklogs.length > 0 &&
-                                          selectedBacklogIds.length ===
+                                    </CardHeader>
+                                    <CardBody>
+                                      <Table size="sm" variant="simple">
+                                        <Thead>
+                                          <Tr>
+                                            <Th>Backlog Name</Th>
+                                            <Th>Priority</Th>
+                                            <Th>Status</Th>
+                                            <Th>Project ID</Th>
+                                          </Tr>
+                                        </Thead>
+                                        <Tbody>
+                                          {assignedBacklogs.map((backlog) => (
+                                            <Tr key={backlog.id} opacity={0.6}>
+                                              <Td>{backlog.backlogName}</Td>
+                                              <Td>
+                                                <Badge
+                                                  colorScheme={priorityColor(
+                                                    backlog.priority
+                                                  )}
+                                                >
+                                                  {backlog.priority}
+                                                </Badge>
+                                              </Td>
+                                              <Td>{backlog.developmentStatus}</Td>
+                                              <Td>
+                                                <Text
+                                                  fontSize="xs"
+                                                  color="gray.500"
+                                                >
+                                                  {backlog.projectId}
+                                                </Text>
+                                              </Td>
+                                            </Tr>
+                                          ))}
+                                        </Tbody>
+                                      </Table>
+                                    </CardBody>
+                                  </Card>
+                                )}
+
+                                {/* Section 2: Available Backlogs (Can Select) */}
+                                <Card rounded={radiusStyle}>
+                                  <CardHeader>
+                                    <HStack justify="space-between">
+                                      <Box>
+                                        <Heading size="md">
+                                          Available Backlogs
+                                        </Heading>
+                                        <Text fontSize="sm" color="gray.500">
+                                          Select backlogs to include in this
+                                          project
+                                        </Text>
+                                      </Box>
+                                      <HStack spacing={3}>
+                                        <Input
+                                          type="text"
+                                          placeholder="Search backlogs..."
+                                          bg={
+                                            colorMode === "light"
+                                              ? "white"
+                                              : "gray.800"
+                                          }
+                                          size="sm"
+                                          onChange={(e) =>
+                                            setAvailableBacklogsFilter(
+                                              e.target.value
+                                            )
+                                          }
+                                          value={availableBacklogsFilter}
+                                          w="250px"
+                                        />
+                                        <Checkbox
+                                          isChecked={
+                                            availableBacklogs.length > 0 &&
+                                            selectedBacklogIds.length ===
                                             availableBacklogs.length
-                                        }
-                                        isIndeterminate={
-                                          selectedBacklogIds.length > 0 &&
-                                          selectedBacklogIds.length <
+                                          }
+                                          isIndeterminate={
+                                            selectedBacklogIds.length > 0 &&
+                                            selectedBacklogIds.length <
                                             availableBacklogs.length
-                                        }
-                                        onChange={(e) =>
-                                          toggleAllAvailableBacklogs(
-                                            e.target.checked
-                                          )
-                                        }
-                                      >
-                                        Select All
-                                      </Checkbox>
+                                          }
+                                          onChange={(e) =>
+                                            toggleAllAvailableBacklogs(
+                                              e.target.checked
+                                            )
+                                          }
+                                        >
+                                          Select All
+                                        </Checkbox>
+                                      </HStack>
                                     </HStack>
-                                  </HStack>
-                                </CardHeader>{" "}
-                                <CardBody>
-                                  {availableBacklogs.length === 0 ? (
-                                    <Text
-                                      color="gray.500"
-                                      textAlign="center"
-                                      py={4}
-                                    >
-                                      {availableBacklogsFilter
-                                        ? `No backlogs found matching "${availableBacklogsFilter}"`
-                                        : "No available backlogs to select"}
-                                    </Text>
-                                  ) : (
-                                    <Table size="sm" variant="simple">
-                                      <Thead>
-                                        <Tr>
-                                          <Th w="50px">Select</Th>
-                                          <Th>Backlog Name</Th>
-                                          {DataRequirement?.requirementType ===
-                                          "RFC" ? (
-                                            <>
-                                              <Th>Priorities</Th>
-                                              <Th>Jenis Perubahan</Th>
-                                              <Th>Tingkat Kepentingan</Th>
-                                              <Th>
-                                                Dampak Terhadap Sistem Lain
-                                              </Th>
-                                            </>
-                                          ) : (
-                                            <>
-                                              <Th>Priority</Th>
-                                              <Th>Urgency</Th>
-                                              <Th>Impact</Th>
-                                            </>
-                                          )}
-                                          <Th>Status</Th>
-                                        </Tr>
-                                      </Thead>
-                                      <Tbody>
-                                        {availableBacklogs.map((backlog) => (
-                                          <Tr key={backlog.id}>
-                                            <Td>
-                                              <Checkbox
-                                                isChecked={selectedBacklogIds.includes(
-                                                  backlog.id
-                                                )}
-                                                onChange={() =>
-                                                  toggleBacklogSelection(
-                                                    backlog.id
-                                                  )
-                                                }
-                                              />
-                                            </Td>
-                                            <Td>{backlog.backlogName}</Td>
+                                  </CardHeader>{" "}
+                                  <CardBody>
+                                    {availableBacklogs.length === 0 ? (
+                                      <Text
+                                        color="gray.500"
+                                        textAlign="center"
+                                        py={4}
+                                      >
+                                        {availableBacklogsFilter
+                                          ? `No backlogs found matching "${availableBacklogsFilter}"`
+                                          : "No available backlogs to select"}
+                                      </Text>
+                                    ) : (
+                                      <Table size="sm" variant="simple">
+                                        <Thead>
+                                          <Tr>
+                                            <Th w="50px">Select</Th>
+                                            <Th>Backlog Name</Th>
                                             {DataRequirement?.requirementType ===
-                                            "RFC" ? (
+                                              "RFC" ? (
                                               <>
-                                                <Td>
-                                                  <Badge
-                                                    colorScheme={priorityColor(
-                                                      backlog.rfcPriorities ||
-                                                        "LOW"
-                                                    )}
-                                                  >
-                                                    {backlog.rfcPriorities ||
-                                                      "LOW"}
-                                                  </Badge>
-                                                </Td>
-                                                <Td>
-                                                  {backlog.rfcBacklogChanges ||
-                                                    "MAJOR"}
-                                                </Td>
-                                                <Td>
-                                                  {backlog.rfcBacklogImportant ||
-                                                    "NORMAL"}
-                                                </Td>
-                                                <Td>
-                                                  {backlog.rfcBacklogImpactOthers ||
-                                                    "SMALL"}
-                                                </Td>
+                                                <Th>Priorities</Th>
+                                                <Th>Jenis Perubahan</Th>
+                                                <Th>Tingkat Kepentingan</Th>
+                                                <Th>
+                                                  Dampak Terhadap Sistem Lain
+                                                </Th>
                                               </>
                                             ) : (
                                               <>
-                                                <Td>
-                                                  <Badge
-                                                    colorScheme={priorityColor(
-                                                      backlog.priority
-                                                    )}
-                                                  >
-                                                    {backlog.priority}
-                                                  </Badge>
-                                                </Td>
-                                                <Td>{backlog.urgency}</Td>
-                                                <Td>{backlog.impact}</Td>
+                                                <Th>Priority</Th>
+                                                <Th>Urgency</Th>
+                                                <Th>Impact</Th>
                                               </>
                                             )}
-                                            <Td>{backlog.developmentStatus}</Td>
+                                            <Th>Status</Th>
                                           </Tr>
-                                        ))}
-                                      </Tbody>
-                                    </Table>
-                                  )}
-                                </CardBody>
-                              </Card>
-
-                              {/* Section 3: Selected Backlogs (Editable) */}
-                              {selectedBacklogs.length > 0 && (
-                                <Card
-                                  rounded={radiusStyle}
-                                  borderColor="blue.500"
-                                  borderWidth="2px"
-                                >
-                                  <CardHeader>
-                                    <Heading size="md">
-                                      Selected Backlogs (
-                                      {selectedBacklogs.length})
-                                    </Heading>
-                                    <Text fontSize="sm" color="gray.500">
-                                      Edit details for selected backlogs that
-                                      will be included in this project
-                                    </Text>
-                                  </CardHeader>
-                                  <Divider />
-
-                                  {/* Bulk Apply Section */}
-                                  <CardBody>
-                                    <VStack spacing={4} align="stretch" mb={6}>
-                                      <Heading size="sm">
-                                        Apply to All Backlogs
-                                      </Heading>
-                                      <Grid
-                                        templateColumns="repeat(auto-fit, minmax(200px, 1fr))"
-                                        gap={4}
-                                      >
-                                        <FormControl>
-                                          <FormLabel fontSize="sm">
-                                            Deadline
-                                          </FormLabel>
-                                          <Input
-                                            type="date"
-                                            value={bulkDeadline}
-                                            onChange={(e) =>
-                                              setBulkDeadline(e.target.value)
-                                            }
-                                            max={
-                                              DataRequirement?.appLiveTargetDate ??
-                                              undefined
-                                            }
-                                            size="sm"
-                                          />
-                                        </FormControl>
-                                        {DataRequirement?.requirementType ===
-                                        "RFC" ? (
-                                          <>
-                                            <FormControl>
-                                              <FormLabel fontSize="sm">
-                                                Jenis Perubahan
-                                              </FormLabel>
-                                              <SelectC
-                                                value={bulkRfcChanges}
-                                                onChange={(e) =>
-                                                  setBulkRfcChanges(
-                                                    e.target.value
-                                                  )
-                                                }
-                                                size="sm"
-                                                placeholder="Select Jenis Perubahan"
-                                              >
-                                                <option value="MAJOR">
-                                                  Major
-                                                </option>
-                                                <option value="MINOR">
-                                                  Minor
-                                                </option>
-                                                <option value="EMERGENCY">
-                                                  Emergency
-                                                </option>
-                                              </SelectC>
-                                            </FormControl>
-                                            <FormControl>
-                                              <FormLabel fontSize="sm">
-                                                Tingkat Kepentingan
-                                              </FormLabel>
-                                              <SelectC
-                                                value={bulkRfcImportant}
-                                                onChange={(e) =>
-                                                  setBulkRfcImportant(
-                                                    e.target.value
-                                                  )
-                                                }
-                                                size="sm"
-                                                placeholder="Select Tingkat Kepentingan"
-                                              >
-                                                <option value="NORMAL">
-                                                  Normal
-                                                </option>
-                                                <option value="IMPORTANT">
-                                                  Important
-                                                </option>
-                                              </SelectC>
-                                            </FormControl>
-                                            <FormControl>
-                                              <FormLabel fontSize="sm">
-                                                Dampak Terhadap Sistem Lain
-                                              </FormLabel>
-                                              <SelectC
-                                                value={bulkRfcImpactOthers}
-                                                onChange={(e) =>
-                                                  setBulkRfcImpactOthers(
-                                                    e.target.value
-                                                  )
-                                                }
-                                                size="sm"
-                                                placeholder="Select Dampak Terhadap Sistem Lain"
-                                              >
-                                                <option value="SMALL">
-                                                  Small
-                                                </option>
-                                                <option value="LARGE">
-                                                  Large
-                                                </option>
-                                              </SelectC>
-                                            </FormControl>
-                                          </>
-                                        ) : (
-                                          <>
-                                            <FormControl>
-                                              <FormLabel fontSize="sm">
-                                                Urgency
-                                              </FormLabel>
-                                              <SelectC
-                                                value={bulkUrgency}
-                                                onChange={(e) =>
-                                                  setBulkUrgency(e.target.value)
-                                                }
-                                                size="sm"
-                                                placeholder="Select urgency"
-                                              >
-                                                <option value="LOW">Low</option>
-                                                <option value="MEDIUM">
-                                                  Medium
-                                                </option>
-                                                <option value="HIGH">
-                                                  High
-                                                </option>
-                                              </SelectC>
-                                            </FormControl>
-                                            <FormControl>
-                                              <FormLabel fontSize="sm">
-                                                Impact
-                                              </FormLabel>
-                                              <SelectC
-                                                value={bulkImpact}
-                                                onChange={(e) =>
-                                                  setBulkImpact(e.target.value)
-                                                }
-                                                size="sm"
-                                                placeholder="Select impact"
-                                              >
-                                                <option value="LOW">Low</option>
-                                                <option value="MEDIUM">
-                                                  Medium
-                                                </option>
-                                                <option value="HIGH">
-                                                  High
-                                                </option>
-                                              </SelectC>
-                                            </FormControl>
-                                          </>
-                                        )}
-                                      </Grid>
-                                      <Button
-                                        colorScheme="blue"
-                                        size="sm"
-                                        onClick={applyBulkToAllBacklogs}
-                                        isDisabled={
-                                          !bulkDeadline &&
-                                          (DataRequirement?.requirementType ===
-                                          "RFC"
-                                            ? !bulkRfcChanges &&
-                                              !bulkRfcImportant &&
-                                              !bulkRfcImpactOthers
-                                            : !bulkUrgency && !bulkImpact)
-                                        }
-                                      >
-                                        Apply to All
-                                      </Button>
-                                    </VStack>
-                                    <Divider mb={6} />
-
-                                    <TableComponentWithFilterCTX
-                                      table={selectedBacklogsTable}
-                                      handleFilterChange={handleFilterChange}
-                                    />
+                                        </Thead>
+                                        <Tbody>
+                                          {availableBacklogs.map((backlog) => (
+                                            <Tr key={backlog.id}>
+                                              <Td>
+                                                <Checkbox
+                                                  isChecked={selectedBacklogIds.includes(
+                                                    backlog.id
+                                                  )}
+                                                  onChange={() =>
+                                                    toggleBacklogSelection(
+                                                      backlog.id
+                                                    )
+                                                  }
+                                                />
+                                              </Td>
+                                              <Td>{backlog.backlogName}</Td>
+                                              {DataRequirement?.requirementType ===
+                                                "RFC" ? (
+                                                <>
+                                                  <Td>
+                                                    <Badge
+                                                      colorScheme={priorityColor(
+                                                        backlog.rfcPriorities ||
+                                                        "LOW"
+                                                      )}
+                                                    >
+                                                      {backlog.rfcPriorities ||
+                                                        "LOW"}
+                                                    </Badge>
+                                                  </Td>
+                                                  <Td>
+                                                    {backlog.rfcBacklogChanges ||
+                                                      "MAJOR"}
+                                                  </Td>
+                                                  <Td>
+                                                    {backlog.rfcBacklogImportant ||
+                                                      "NORMAL"}
+                                                  </Td>
+                                                  <Td>
+                                                    {backlog.rfcBacklogImpactOthers ||
+                                                      "SMALL"}
+                                                  </Td>
+                                                </>
+                                              ) : (
+                                                <>
+                                                  <Td>
+                                                    <Badge
+                                                      colorScheme={priorityColor(
+                                                        backlog.priority
+                                                      )}
+                                                    >
+                                                      {backlog.priority}
+                                                    </Badge>
+                                                  </Td>
+                                                  <Td>{backlog.urgency}</Td>
+                                                  <Td>{backlog.impact}</Td>
+                                                </>
+                                              )}
+                                              <Td>{backlog.developmentStatus}</Td>
+                                            </Tr>
+                                          ))}
+                                        </Tbody>
+                                      </Table>
+                                    )}
                                   </CardBody>
                                 </Card>
-                              )}
-                            </VStack>
-                          )}
-                        </>
-                      )}
+
+                                {/* Section 3: Selected Backlogs (Editable) */}
+                                {selectedBacklogs.length > 0 && (
+                                  <Card
+                                    rounded={radiusStyle}
+                                    borderColor="blue.500"
+                                    borderWidth="2px"
+                                  >
+                                    <CardHeader>
+                                      <Heading size="md">
+                                        Selected Backlogs (
+                                        {selectedBacklogs.length})
+                                      </Heading>
+                                      <Text fontSize="sm" color="gray.500">
+                                        Edit details for selected backlogs that
+                                        will be included in this project
+                                      </Text>
+                                    </CardHeader>
+                                    <Divider />
+
+                                    {/* Bulk Apply Section */}
+                                    <CardBody>
+                                      <VStack spacing={4} align="stretch" mb={6}>
+                                        <Heading size="sm">
+                                          Apply to All Backlogs
+                                        </Heading>
+                                        <Grid
+                                          templateColumns="repeat(auto-fit, minmax(200px, 1fr))"
+                                          gap={4}
+                                        >
+                                          <FormControl>
+                                            <FormLabel fontSize="sm">
+                                              Deadline
+                                            </FormLabel>
+                                            <Input
+                                              type="date"
+                                              value={bulkDeadline}
+                                              onChange={(e) =>
+                                                setBulkDeadline(e.target.value)
+                                              }
+                                              max={
+                                                DataRequirement?.appLiveTargetDate ??
+                                                undefined
+                                              }
+                                              size="sm"
+                                            />
+                                          </FormControl>
+                                          {DataRequirement?.requirementType ===
+                                            "RFC" ? (
+                                            <>
+                                              <FormControl>
+                                                <FormLabel fontSize="sm">
+                                                  Jenis Perubahan
+                                                </FormLabel>
+                                                <SelectC
+                                                  value={bulkRfcChanges}
+                                                  onChange={(e) =>
+                                                    setBulkRfcChanges(
+                                                      e.target.value
+                                                    )
+                                                  }
+                                                  size="sm"
+                                                  placeholder="Select Jenis Perubahan"
+                                                >
+                                                  <option value="MAJOR">
+                                                    Major
+                                                  </option>
+                                                  <option value="MINOR">
+                                                    Minor
+                                                  </option>
+                                                  <option value="EMERGENCY">
+                                                    Emergency
+                                                  </option>
+                                                </SelectC>
+                                              </FormControl>
+                                              <FormControl>
+                                                <FormLabel fontSize="sm">
+                                                  Tingkat Kepentingan
+                                                </FormLabel>
+                                                <SelectC
+                                                  value={bulkRfcImportant}
+                                                  onChange={(e) =>
+                                                    setBulkRfcImportant(
+                                                      e.target.value
+                                                    )
+                                                  }
+                                                  size="sm"
+                                                  placeholder="Select Tingkat Kepentingan"
+                                                >
+                                                  <option value="NORMAL">
+                                                    Normal
+                                                  </option>
+                                                  <option value="IMPORTANT">
+                                                    Important
+                                                  </option>
+                                                </SelectC>
+                                              </FormControl>
+                                              <FormControl>
+                                                <FormLabel fontSize="sm">
+                                                  Dampak Terhadap Sistem Lain
+                                                </FormLabel>
+                                                <SelectC
+                                                  value={bulkRfcImpactOthers}
+                                                  onChange={(e) =>
+                                                    setBulkRfcImpactOthers(
+                                                      e.target.value
+                                                    )
+                                                  }
+                                                  size="sm"
+                                                  placeholder="Select Dampak Terhadap Sistem Lain"
+                                                >
+                                                  <option value="SMALL">
+                                                    Small
+                                                  </option>
+                                                  <option value="LARGE">
+                                                    Large
+                                                  </option>
+                                                </SelectC>
+                                              </FormControl>
+                                            </>
+                                          ) : (
+                                            <>
+                                              <FormControl>
+                                                <FormLabel fontSize="sm">
+                                                  Urgency
+                                                </FormLabel>
+                                                <SelectC
+                                                  value={bulkUrgency}
+                                                  onChange={(e) =>
+                                                    setBulkUrgency(e.target.value)
+                                                  }
+                                                  size="sm"
+                                                  placeholder="Select urgency"
+                                                >
+                                                  <option value="LOW">Low</option>
+                                                  <option value="MEDIUM">
+                                                    Medium
+                                                  </option>
+                                                  <option value="HIGH">
+                                                    High
+                                                  </option>
+                                                </SelectC>
+                                              </FormControl>
+                                              <FormControl>
+                                                <FormLabel fontSize="sm">
+                                                  Impact
+                                                </FormLabel>
+                                                <SelectC
+                                                  value={bulkImpact}
+                                                  onChange={(e) =>
+                                                    setBulkImpact(e.target.value)
+                                                  }
+                                                  size="sm"
+                                                  placeholder="Select impact"
+                                                >
+                                                  <option value="LOW">Low</option>
+                                                  <option value="MEDIUM">
+                                                    Medium
+                                                  </option>
+                                                  <option value="HIGH">
+                                                    High
+                                                  </option>
+                                                </SelectC>
+                                              </FormControl>
+                                            </>
+                                          )}
+                                        </Grid>
+                                        <Button
+                                          colorScheme="blue"
+                                          size="sm"
+                                          onClick={applyBulkToAllBacklogs}
+                                          isDisabled={
+                                            !bulkDeadline &&
+                                            (DataRequirement?.requirementType ===
+                                              "RFC"
+                                              ? !bulkRfcChanges &&
+                                              !bulkRfcImportant &&
+                                              !bulkRfcImpactOthers
+                                              : !bulkUrgency && !bulkImpact)
+                                          }
+                                        >
+                                          Apply to All
+                                        </Button>
+                                      </VStack>
+                                      <Divider mb={6} />
+
+                                      <TableComponentWithFilterCTX
+                                        table={selectedBacklogsTable}
+                                        handleFilterChange={handleFilterChange}
+                                      />
+                                    </CardBody>
+                                  </Card>
+                                )}
+                              </VStack>
+                            )}
+                          </>
+                        )}
 
                       {/* FOR TYPE PROJECT REGISTER PROCUREMENT */}
                       {projectTypeRegister == PROJECT_TYPE_PROCUREMENT && (
@@ -6143,24 +6145,24 @@ export default function ProjectRegisterView({
 
                                     {selectedWorkflowProcurementsIds.size >
                                       0 && (
-                                      <Box
-                                        mt={4}
-                                        p={3}
-                                        bg="blue.50"
-                                        rounded="md"
-                                        w="full"
-                                      >
-                                        <Text
-                                          fontSize="sm"
-                                          fontWeight="medium"
-                                          color="blue.800"
+                                        <Box
+                                          mt={4}
+                                          p={3}
+                                          bg="blue.50"
+                                          rounded="md"
+                                          w="full"
                                         >
-                                          Selected:{" "}
-                                          {selectedWorkflowProcurementsIds.size}{" "}
-                                          workflow(s)
-                                        </Text>
-                                      </Box>
-                                    )}
+                                          <Text
+                                            fontSize="sm"
+                                            fontWeight="medium"
+                                            color="blue.800"
+                                          >
+                                            Selected:{" "}
+                                            {selectedWorkflowProcurementsIds.size}{" "}
+                                            workflow(s)
+                                          </Text>
+                                        </Box>
+                                      )}
                                   </>
                                 )}
                               </Flex>
@@ -6233,7 +6235,7 @@ export default function ProjectRegisterView({
                                     </HStack>
                                     <Flex as={Stack} w={"full"}>
                                       {DataWorkflowPresetsProcurements.length >
-                                      0 ? (
+                                        0 ? (
                                         <VStack align="start" spacing={1}>
                                           {DataWorkflowPresetsProcurements.map(
                                             (preset) => (
@@ -6245,7 +6247,7 @@ export default function ProjectRegisterView({
                                                 alignItems={"center"}
                                                 bgColor={
                                                   selectedPresetProcurement?.id ===
-                                                  preset.id
+                                                    preset.id
                                                     ? "secondary.100"
                                                     : "transparent"
                                                 }
@@ -6267,17 +6269,17 @@ export default function ProjectRegisterView({
                                                     <Text
                                                       fontWeight={
                                                         selectedPresetProcurement?.id ===
-                                                        preset.id
+                                                          preset.id
                                                           ? 600
                                                           : 500
                                                       }
                                                       color={
                                                         selectedPresetProcurement?.id ===
-                                                        preset.id
+                                                          preset.id
                                                           ? "gray.900"
                                                           : colorMode == "light"
-                                                          ? "gray.900"
-                                                          : "white"
+                                                            ? "gray.900"
+                                                            : "white"
                                                       }
                                                     >
                                                       {preset.wfPresetName}
@@ -6297,7 +6299,7 @@ export default function ProjectRegisterView({
                                                   variant={"solid"}
                                                   colorScheme={
                                                     selectedPresetProcurement?.id ===
-                                                    preset.id
+                                                      preset.id
                                                       ? "red"
                                                       : "secondary"
                                                   }
@@ -6309,7 +6311,7 @@ export default function ProjectRegisterView({
                                                   }
                                                 >
                                                   {selectedPresetProcurement?.id ===
-                                                  preset.id ? (
+                                                    preset.id ? (
                                                     <FiMinus />
                                                   ) : (
                                                     <FiPlus />
@@ -6455,7 +6457,7 @@ export default function ProjectRegisterView({
                                         <VStack
                                           align="start"
                                           spacing={1}
-                                          // px={2}
+                                        // px={2}
                                         >
                                           {DataWorkflowPresets.map((preset) => (
                                             <Flex
@@ -6487,17 +6489,17 @@ export default function ProjectRegisterView({
                                                   <Text
                                                     fontWeight={
                                                       selectedPreset?.id ===
-                                                      preset.id
+                                                        preset.id
                                                         ? 600
                                                         : 500
                                                     }
                                                     color={
                                                       selectedPreset?.id ===
-                                                      preset.id
+                                                        preset.id
                                                         ? "gray.900"
                                                         : colorMode == "light"
-                                                        ? "gray.900"
-                                                        : "white"
+                                                          ? "gray.900"
+                                                          : "white"
                                                     }
                                                   >
                                                     {preset.wfPresetName}
@@ -6522,7 +6524,7 @@ export default function ProjectRegisterView({
                                                   variant={"solid"}
                                                   colorScheme={
                                                     selectedPreset?.id ===
-                                                    preset.id
+                                                      preset.id
                                                       ? "red"
                                                       : "secondary"
                                                   }
@@ -6537,7 +6539,7 @@ export default function ProjectRegisterView({
                                                   }
                                                 >
                                                   {selectedPreset?.id ===
-                                                  preset.id ? (
+                                                    preset.id ? (
                                                     <FiMinus />
                                                   ) : (
                                                     <FiPlus />

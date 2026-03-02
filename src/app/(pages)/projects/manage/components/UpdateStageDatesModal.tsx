@@ -82,12 +82,12 @@ const UpdateStageDatesModal = ({
     if (isOpen && stage) {
       setStartDate(stage.startDate ? stage.startDate.split("T")[0] : "");
       setEndDate(stage.endDate ? stage.endDate.split("T")[0] : "");
-      
+
       // Only reset isEndDateUnlocked if not manually unlocked by user
       if (!hasManuallyUnlocked.current) {
         setIsEndDateUnlocked(!!stage.endDate);
       }
-      
+
       setPage(1);
       loadReports(1);
     }

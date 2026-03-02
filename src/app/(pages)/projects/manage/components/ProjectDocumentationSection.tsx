@@ -33,7 +33,7 @@ import {
   Icon,
   Stack,
 } from "@chakra-ui/react";
-import { FiRefreshCcw, FiSettings, FiPlus, FiMinus } from "react-icons/fi";
+import { FiRefreshCcw, FiSettings, FiPlus, FiMinus, FiAlertTriangle, FiInfo, FiX, FiCheck } from "react-icons/fi";
 import { BsLightningChargeFill } from "react-icons/bs";
 import { FaCircle } from "react-icons/fa";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
@@ -118,9 +118,24 @@ const ProjectDocumentationSection = ({
   const [workflowPresets, setWorkflowPresets] = useState<WorkflowPresetResponse[]>([]);
   const [selectedPreset, setSelectedPreset] = useState<WorkflowPresetResponse | null>(null);
   const [isConfirmWorkflowOpen, setIsConfirmWorkflowOpen] = useState(false);
+  const [countdown, setCountdown] = useState(5);
   const cancelWorkflowRef = React.useRef<any>(null);
   const [isAssigning, setIsAssigning] = useState(false);
 
+
+  // Countdown timer for confirmation modal
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isConfirmWorkflowOpen) {
+      setCountdown(5);
+      timer = setInterval(() => {
+        setCountdown((prev) => prev <= 1 ? 0 : prev - 1);
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [isConfirmWorkflowOpen]);
   const RefreshAction = () => {
     setRefreshData((prev) => prev + 1);
   };
@@ -128,7 +143,7 @@ const ProjectDocumentationSection = ({
   // Load workflow groups and presets
   const loadWorkflowData = async () => {
     if (!DataProject) return;
-    
+
     setIsLoadingWorkflows(true);
     try {
       // Determine workflow category based on project type
@@ -642,8 +657,8 @@ const ProjectDocumentationSection = ({
                                           selectedPreset?.id === preset.id
                                             ? "gray.900"
                                             : colorMode === "light"
-                                            ? "gray.900"
-                                            : "white"
+                                              ? "gray.900"
+                                              : "white"
                                         }
                                       >
                                         {preset.wfPresetName}
@@ -717,33 +732,75 @@ const ProjectDocumentationSection = ({
         </ModalContent>
       </Modal>
 
-      {/* Confirmation Dialog */}
-      <AlertDialog
-        isOpen={isConfirmWorkflowOpen}
-        leastDestructiveRef={cancelWorkflowRef}
-        onClose={() => setIsConfirmWorkflowOpen(false)}
-      >
-        <AlertDialogOverlay>
-          <AlertDialogContent>
-            <AlertDialogHeader fontSize="lg" fontWeight="bold">
-              Assign Work Stages
-            </AlertDialogHeader>
-            <AlertDialogBody>
-              Are you sure you want to assign {selectedWorkflowIds.size} work stage(s) to this project?
-              This will set up the documentation workflow structure.
-            </AlertDialogBody>
-            <AlertDialogFooter>
-              <Button ref={cancelWorkflowRef} onClick={() => setIsConfirmWorkflowOpen(false)}>
+      {/* Confirmation Modal with Countdown */}
+      <Modal isOpen={isConfirmWorkflowOpen} onClose={() => setIsConfirmWorkflowOpen(false)} isCentered>
+        <ModalOverlay bg="blackAlpha.500" backdropFilter="blur(8px)" />
+        <ModalContent rounded={radiusStyle}>
+          <ModalHeader bg="orange.500" color="white" roundedTop={radiusStyle}>
+            <HStack>
+              <Icon as={FiAlertTriangle} boxSize={5} />
+              <Text>Assign Work Stages</Text>
+            </HStack>
+          </ModalHeader>
+          <ModalCloseButton color="white" />
+          <ModalBody py={6}>
+            <VStack spacing={4} align="stretch">
+              <HStack spacing={2} align="flex-start">
+                <Icon as={FiAlertTriangle} color="orange.500" boxSize={5} mt={0.5} />
+                <Box>
+                  <Text fontWeight="bold" color="orange.500">WARNING: Assign Work Stages</Text>
+                  <Text mt={2}>Are you sure you want to assign {selectedWorkflowIds.size} work stage(s)?</Text>
+                </Box>
+              </HStack>
+
+              <Card bg={colorMode === "light" ? "orange.50" : "orange.900"} borderColor="orange.200" borderWidth="1px">
+                <CardBody>
+                  <HStack spacing={2} align="flex-start">
+                    <Icon as={FiAlertTriangle} color="orange.500" boxSize={4} mt={0.5} />
+                    <Box>
+                      <Text fontWeight="bold" fontSize="sm">IMPORTANT:</Text>
+                      <Text fontSize="sm" mt={1}>
+                        This will set up the documentation workflow structure and cannot be easily undone.
+                      </Text>
+                    </Box>
+                  </HStack>
+                </CardBody>
+              </Card>
+
+              <Box>
+                <HStack spacing={2} mb={2}>
+                  <Icon as={FiInfo} color="blue.500" />
+                  <Text fontWeight="bold" fontSize="sm">Assignment Details:</Text>
+                </HStack>
+                <VStack align="stretch" spacing={1} pl={6}>
+                  <Text fontSize="sm">• Project: {DataProject?.projectName}</Text>
+                  <Text fontSize="sm">• Work Stages: {selectedWorkflowIds.size} selected</Text>
+                  <Text fontSize="sm">• Type: Documentation Workflow</Text>
+                </VStack>
+              </Box>
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <HStack spacing={3}>
+              <Button leftIcon={<FiX />} onClick={() => setIsConfirmWorkflowOpen(false)}>
                 Cancel
               </Button>
-              <Button colorScheme="blue" onClick={confirmAssignWorkflows} ml={3} isLoading={isAssigning}>
-                Confirm
+              <Button
+                leftIcon={<FiCheck />}
+                colorScheme="orange"
+                onClick={() => {
+                  setIsConfirmWorkflowOpen(false);
+                  confirmAssignWorkflows();
+                }}
+                isDisabled={countdown > 0}
+              >
+                {countdown > 0 ? `Wait ${countdown}s` : `Yes, Assign Work Stages`}
               </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialogOverlay>
-      </AlertDialog>
-    </VStack>
+            </HStack>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    </VStack >
   );
 };
 

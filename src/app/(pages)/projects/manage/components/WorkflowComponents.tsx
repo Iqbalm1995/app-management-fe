@@ -258,11 +258,11 @@ export const WorkflowLevel2Box = ({
 
     setActionLoading(false);
     ModalForm.onClose();
-    
+
     if (onRefresh) {
       onRefresh();
     }
-    
+
     RefreshAction();
   };
 
@@ -668,7 +668,7 @@ export const WorkflowLevel2Box = ({
                         <Input
                           id="LinkAttachment"
                           name="LinkAttachment"
-                          placeholder="https://example.com/document.pdf"
+                          placeholder="https://bjbdrive/drive/example"
                           value={formik.values.LinkAttachment || ""}
                           onChange={formik.handleChange}
                           onBlur={formik.handleBlur}
@@ -1784,7 +1784,7 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
                       <Input
                         id="LinkAttachment"
                         name="LinkAttachment"
-                        placeholder="https://example.com/document.pdf"
+                        placeholder="https://bjbdrive/drive/example"
                         value={formik.values.LinkAttachment || ""}
                         onChange={formik.handleChange}
                         onBlur={formik.handleBlur}
