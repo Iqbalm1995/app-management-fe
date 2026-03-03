@@ -1,5 +1,6 @@
 "use client";
 
+import { InfoOutlineIcon } from "@chakra-ui/icons";
 import { ConfirmationDialog } from "@/app/components/confirmationDialog";
 import {
   HeaderContent,
@@ -6239,13 +6240,21 @@ export default function ProjectRegisterView({
                                         spacing={0}
                                         flex={1}
                                       >
-                                        <Text
-                                          fontSize="lg"
-                                          fontWeight="bold"
-                                          color={"secondary.500"}
-                                        >
-                                          Procurement Stage Preset
-                                        </Text>
+                                        <HStack spacing={3}>
+                                          <Text
+                                            fontSize="lg"
+                                            fontWeight="bold"
+                                            color={"secondary.500"}
+                                          >
+                                            Procurement Stages
+                                          </Text>
+                                          <Tooltip
+                                            label="Procurement Stages akan digunakan untuk pemenuhan progress pengadaan"
+                                            fontSize="sm"
+                                          >
+                                            <InfoOutlineIcon color="blue.500" boxSize={3} />
+                                          </Tooltip>
+                                        </HStack>
                                         <Text
                                           fontSize="sm"
                                           color={
@@ -6462,8 +6471,14 @@ export default function ProjectRegisterView({
                                             fontWeight="bold"
                                             color={"secondary.500"}
                                           >
-                                            Work Stage Preset
+                                            Work Stages
                                           </Text>
+                                          <Tooltip
+                                            label="Work Stages akan digunakan untuk pemenuhan progress"
+                                            fontSize="sm"
+                                          >
+                                            <InfoOutlineIcon color="blue.500" boxSize={3} />
+                                          </Tooltip>
                                         </HStack>
                                         <Text
                                           fontSize="sm"
@@ -6475,8 +6490,8 @@ export default function ProjectRegisterView({
                                           lineHeight={1.2}
                                         >
                                           Select workflow stages preset related
-                                          project work stage
                                         </Text>
+
                                       </VStack>
                                     </HStack>
                                     <Flex as={Stack} w={"full"}>
