@@ -826,7 +826,7 @@ const FeatureBacklogsView = ({
                 <MenuItem
                   icon={<BsKanban />}
                   as={Link}
-                  href={`/workspace/project?projectId=${DataProject?.id}&backlogId=${info.row.original.id}`}
+                  href={`/workspace/project?projectId=${DataProject?.id}&backlogId=${info.row.original.id}&from=projects-manage`}
                 >
                   Go To Kanban
                 </MenuItem>
