@@ -12,6 +12,7 @@ import useProjects, {
   ProjectDeadlineStatsResponse,
   ProjectSdlcStageResponse,
 } from "@/app/services/useProjects";
+import useRequirements, { RequirementsResponse } from "@/app/services/useRequirements";
 import {
   TabPanel,
   useColorMode,
@@ -82,6 +83,7 @@ const OverviewTab = ({ DataProject, onRefreshProject }: OverviewTabProps) => {
     UpdateProjectProgressionAndStatus,
     GetProjectSdlcStages,
   } = useProjects();
+  const { GetDetailById: GetRequirementDetailById } = useRequirements();
 
   // Auth Setup
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -113,6 +115,7 @@ const OverviewTab = ({ DataProject, onRefreshProject }: OverviewTabProps) => {
   const [SdlcStages, setSdlcStages] = useState<ProjectSdlcStageResponse[]>([]);
   const [IsLoadingStats, setIsLoadingStats] = useState(false);
   const [IsUpdatingProgression, setIsUpdatingProgression] = useState(false);
+  const [RequirementData, setRequirementData] = useState<RequirementsResponse | null>(null);
 
   // Check if project is procurement type
   const isProcurement = DataProject?.projectType === PROJECT_TYPE_PROCUREMENT;
@@ -188,6 +191,28 @@ const OverviewTab = ({ DataProject, onRefreshProject }: OverviewTabProps) => {
       fetchAllStats();
     }
   }, [DataAuth, DataProject, tokenData]);
+
+  // Fetch requirement data
+  useEffect(() => {
+    const fetchRequirementData = async () => {
+      if (DataProject?.reqParentId && tokenData) {
+        try {
+          const response = await GetRequirementDetailById(
+            DataProject.reqParentId,
+            tokenData
+          );
+          if (response && response.statusCode === RES_CODE_OK) {
+            setRequirementData(response.data);
+          }
+        } catch (error) {
+          console.error("Error fetching requirement data:", error);
+        }
+      }
+    };
+
+    fetchRequirementData();
+  }, [DataProject?.reqParentId, tokenData]);
+
   const handleUpdateProgression = async () => {
     if (!DataProject || !tokenData) return;
 
@@ -298,7 +323,8 @@ const OverviewTab = ({ DataProject, onRefreshProject }: OverviewTabProps) => {
         ) : (
           <>
             {/* Imported Project Alert */}
-            {DataProject?.isImported === "Y" && (
+            {DataProject?.isImported === "Y" && 
+             !(RequirementData && RequirementData.isHaveMemo === "Y") && (
               <Alert
                 status="warning"
                 variant="subtle"
