@@ -7422,6 +7422,21 @@ const Section4BRDView = ({
               {/* RIGHT COLUMN - Backlog List */}
               <GridItem>
                 <Flex as={Stack} w={"full"} h={"full"}>
+                  <Box
+                    bg={colorMode === "light" ? "blue.50" : "blue.900"}
+                    border="1px"
+                    borderColor={colorMode === "light" ? "blue.200" : "blue.700"}
+                    rounded={radiusStyle}
+                    p={3}
+                    mb={3}
+                  >
+                    <HStack spacing={2}>
+                      <Icon as={FiInfo} color="blue.500" boxSize={4} />
+                      <Text fontSize="sm" color={colorMode === "light" ? "blue.700" : "blue.300"}>
+                        Scope of Work akan menjadi <strong>backlog</strong> project
+                      </Text>
+                    </HStack>
+                  </Box>
                   <Text fontWeight={600} fontSize={"md"}>
                     Daftar Scope of Work
                   </Text>
