@@ -131,9 +131,11 @@ import Link from "next/link";
 import { redirect, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
+  FiAlertTriangle,
   FiArrowLeft,
   FiArrowRight,
   FiBriefcase,
+  FiCheck,
   FiCheckCircle,
   FiExternalLink,
   FiInfo,
@@ -792,24 +794,6 @@ function FormRegisterProjectView() {
 
   // GetServiceListBacklog
   // Countdown timer for submit confirmation
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (openConfirmSaveDialog) {
-      setSubmitCountdown(5);
-      timer = setInterval(() => {
-        setSubmitCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => {
-      if (timer) clearInterval(timer);
-    };
-  }, [openConfirmSaveDialog]);
   const [IsloadingBacklogs, setIsloadingBacklogs] = useState(false);
   const [DataBacklogsRequirement, setDataBacklogsRequirement] = useState<
     BacklogDataResponse[]
@@ -1310,6 +1294,26 @@ function FormRegisterProjectView() {
   const [submitCountdown, setSubmitCountdown] = useState(5);
   const [questionMsgDialog, setQuestionMsgDialog] = useState<string>("");
   const [captionDialog, setCaptionDialog] = useState<string>("");
+
+  // Countdown timer for submit confirmation
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (openConfirmSaveDialog) {
+      setSubmitCountdown(5);
+      timer = setInterval(() => {
+        setSubmitCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [openConfirmSaveDialog]);
 
   const handleConfirmSaveData = (data: ProjectInsertPayload) => {
     setCaptionDialog("Submit Project Data");
