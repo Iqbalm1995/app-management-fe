@@ -419,7 +419,7 @@ const ModalRegisterProject = memo(({ requirementType }: ModalRegisterProjectProp
             </Flex>
           </Flex>
         ),
-        header: () => <span>Aplikasi</span>,
+        header: () => <span>Product</span>,
         footer: (props) => props.column.id,
         meta: {
           isFilterable: true,
@@ -429,14 +429,14 @@ const ModalRegisterProject = memo(({ requirementType }: ModalRegisterProjectProp
               operator: "like",
               value: "",
               filterType: "text",
-              filterLabel: "Inisial Aplikasi",
+              filterLabel: "Inisial Product",
             },
             {
               field: "appInitialName",
               operator: "like",
               value: "",
               filterType: "text",
-              filterLabel: "Nama Aplikasi",
+              filterLabel: "Nama Product",
             },
           ],
         } as ColumnMetaCustom,

@@ -96,7 +96,7 @@ const ModalRegisterProject = memo(() => {
   const [ParamFilter, setParamFilter] = useState<ListSearchByParamProps[]>([]);
   const [SelectedTypeReq, setSelectedTypeReq] = useState<string>("BRD");
 
-  const delay = useCallback((ms: number) => 
+  const delay = useCallback((ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms)), []);
 
   const pagination = useMemo(
@@ -303,8 +303,8 @@ const ModalRegisterProject = memo(() => {
               <Text fontWeight={600}>
                 {info.row.original.reqInititateDate
                   ? stringToDateFormatedReverse(
-                      info.row.original.reqInititateDate
-                    )
+                    info.row.original.reqInititateDate
+                  )
                   : "-"}
               </Text>
             </Flex>
@@ -313,8 +313,8 @@ const ModalRegisterProject = memo(() => {
               <Text fontWeight={600}>
                 {info.row.original.reqAcceptedDate
                   ? stringToDateFormatedReverse(
-                      info.row.original.reqAcceptedDate
-                    )
+                    info.row.original.reqAcceptedDate
+                  )
                   : "-"}
               </Text>
             </Flex>
@@ -356,7 +356,7 @@ const ModalRegisterProject = memo(() => {
             <Flex fontSize={"small"} as={Stack} spacing={0}>
               <Text>Ditugaskan Ke :</Text>
               {Array.isArray(info.row.original.approvalDatas) &&
-              info.row.original.approvalDatas.length > 0 ? (
+                info.row.original.approvalDatas.length > 0 ? (
                 info.row.original.approvalDatas.map((x, idx) => (
                   <Text fontWeight={600} key={idx} fontSize="smaller">
                     {idx + 1}. {x.approverUserFirstName ?? "-"}{" "}
@@ -413,7 +413,7 @@ const ModalRegisterProject = memo(() => {
             </Flex>
           </Flex>
         ),
-        header: () => <span>Aplikasi</span>,
+        header: () => <span>Product</span>,
         footer: (props) => props.column.id,
         meta: {
           isFilterable: true,
@@ -423,14 +423,14 @@ const ModalRegisterProject = memo(() => {
               operator: "like",
               value: "",
               filterType: "text",
-              filterLabel: "Inisial Aplikasi",
+              filterLabel: "Inisial Product",
             },
             {
               field: "appInitialName",
               operator: "like",
               value: "",
               filterType: "text",
-              filterLabel: "Nama Aplikasi",
+              filterLabel: "Nama Product",
             },
           ],
         } as ColumnMetaCustom,
@@ -517,12 +517,12 @@ const ModalRegisterProject = memo(() => {
       value: REQ_STATUS_APPROVED,
       filterLabel: "Tipe",
     };
-    
+
     // Load division data
     if (OptionDivision.length <= 0) {
       GetDataDivision("", MAX_SIZE_TABLE);
     }
-    
+
     // Add filter
     const filterWhereData: ListSearchByParamProps[] = addParamFilterUpdate(
       ParamFilter,
@@ -540,7 +540,7 @@ const ModalRegisterProject = memo(() => {
         filterLabel: "Tipe",
       },
     ];
-    
+
     const updatedFilters = brdFilterSelected.reduce(
       (acc, filter) => addParamFilterUpdate(acc, filter),
       ParamFilter
@@ -742,8 +742,8 @@ const ModalRegisterProject = memo(() => {
                                 {" "}
                                 {dt.field === "senderDivisionId"
                                   ? OptionDivision.find(
-                                      (opt) => opt.value === dt.value
-                                    )?.label || dt.value
+                                    (opt) => opt.value === dt.value
+                                  )?.label || dt.value
                                   : dt.value}
                               </Text>
                             </Text>

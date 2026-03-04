@@ -411,7 +411,10 @@ const TeamTab = ({ DataProject, canMake }: TeamTabProps) => {
   // Filter users based on search - combine available and existing members
   const allUsers = [
     ...availableUsers,
-    ...projectMembers.map((m) => m.userData),
+    // Only include ACTIVE project members in modal selection
+    ...projectMembers
+      .filter(m => m.userAssignStatus === "ACTIVE")
+      .map((m) => m.userData),
   ];
   const uniqueUsers = allUsers.filter(
     (user, index, self) => index === self.findIndex((u) => u?.id === user?.id)
