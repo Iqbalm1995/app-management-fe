@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { HeaderContentProps } from "@/app/components/headerContent";
 import LayoutAdminWorkspace from "@/app/components/layoutAdminWorkspace";
 import {
@@ -247,7 +247,7 @@ interface TaskCardProps {
   isCompactView?: boolean;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({
+const TaskCard = React.memo<TaskCardProps>(({
   task,
   onEdit,
   onDelete,
@@ -3805,7 +3805,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
       </Modal>
     </>
   );
-};
+});
 
 // Kanban Column Component
 interface KanbanColumnProps {
@@ -3823,7 +3823,7 @@ interface KanbanColumnProps {
   isCompactView?: boolean;
 }
 
-const KanbanColumn: React.FC<KanbanColumnProps> = ({
+const KanbanColumn = React.memo<KanbanColumnProps>(({
   board,
   tasks,
   onTaskDrop,
@@ -4010,7 +4010,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
       </div>
     </Card>
   );
-};
+});
 
 // Main Project Workspace Component with comprehensive features
 interface ProjectWorkspaceViewProps {
@@ -4222,34 +4222,16 @@ function ProjectWorkspaceView({
     }
   };
 
-  // Consolidated initialization function
+  // Consolidated initialization function - optimized with parallel fetching
   const initializeKanban = async () => {
     if (!DataAuth || !projectId || !tokenData) return;
 
     try {
       setIsInitializing(true);
       setLoadingStep("init");
-      await delay(300);
-
-      // Step 1: Load project details
-      setLoadingStep("project");
-      const projectResponse = await GetProjectDetail(projectId, tokenData);
-
-      if (projectResponse?.statusCode === 404) {
-        router.push("/not-found");
-        return;
-      }
-
-      if (projectResponse?.statusCode === RES_CODE_OK) {
-        setDataProject(projectResponse.data as ProjectDataResponse);
-      } else {
-        throw new Error(projectResponse?.message || "Failed to load project");
-      }
-
       await delay(200);
 
-      // Step 2: Load board configuration
-      setLoadingStep("boards");
+      // Prepare payloads
       const boardPayload: PaggingListPayloadCustom = {
         search: "",
         limit: 100,
@@ -4259,20 +4241,6 @@ function ProjectWorkspaceView({
         orderDir: "asc",
       };
 
-      const boardResponse = await GetMasterBoardTasks(boardPayload, tokenData);
-
-      if (boardResponse?.statusCode === RES_CODE_OK) {
-        setDataBoard(boardResponse.data as MasterBoardTaskResponse[]);
-      } else {
-        throw new Error(
-          boardResponse?.message || "Failed to load board configuration",
-        );
-      }
-
-      await delay(200);
-
-      // Step 3: Load backlogs
-      setLoadingStep("backlogs");
       const backlogPayload: PaggingListPayload = {
         search: "",
         limit: 100,
@@ -4288,16 +4256,6 @@ function ProjectWorkspaceView({
         orderDir: "asc",
       };
 
-      const backlogResponse = await ListBacklog(backlogPayload, tokenData);
-
-      if (backlogResponse?.statusCode === RES_CODE_OK) {
-        setDataBacklogs(backlogResponse.data as BacklogDataResponse[]);
-      }
-
-      await delay(200);
-
-      // Step 4: Load tasks
-      setLoadingStep("tasks");
       const taskPayload: PaggingListPayloadCustom = {
         search: "",
         limit: 1000,
@@ -4310,8 +4268,58 @@ function ProjectWorkspaceView({
         orderDir: "asc",
       };
 
-      const taskResponse = await ListTasksPaged(taskPayload, tokenData);
+      // Show loading progress
+      setLoadingStep("project");
+      await delay(200);
+      
+      // Fetch all data in parallel
+      const [projectResponse, boardResponse, backlogResponse, taskResponse] = 
+        await Promise.all([
+          GetProjectDetail(projectId, tokenData),
+          GetMasterBoardTasks(boardPayload, tokenData),
+          ListBacklog(backlogPayload, tokenData),
+          ListTasksPaged(taskPayload, tokenData),
+        ]);
 
+      // Update loading step
+      setLoadingStep("boards");
+      await delay(200);
+
+      // Handle project response
+      if (projectResponse?.statusCode === 404) {
+        router.push("/not-found");
+        return;
+      }
+
+      if (projectResponse?.statusCode === RES_CODE_OK) {
+        setDataProject(projectResponse.data as ProjectDataResponse);
+      } else {
+        throw new Error(projectResponse?.message || "Failed to load project");
+      }
+
+      // Update loading step
+      setLoadingStep("backlogs");
+      await delay(200);
+
+      // Handle board response
+      if (boardResponse?.statusCode === RES_CODE_OK) {
+        setDataBoard(boardResponse.data as MasterBoardTaskResponse[]);
+      } else {
+        throw new Error(
+          boardResponse?.message || "Failed to load board configuration",
+        );
+      }
+
+      // Update loading step
+      setLoadingStep("tasks");
+      await delay(200);
+
+      // Handle backlog response
+      if (backlogResponse?.statusCode === RES_CODE_OK) {
+        setDataBacklogs(backlogResponse.data as BacklogDataResponse[]);
+      }
+
+      // Handle task response
       if (taskResponse?.statusCode === RES_CODE_OK) {
         setDataTasks(taskResponse.data as TaskViewModel[]);
         setLastUpdated(new Date());
@@ -4319,11 +4327,8 @@ function ProjectWorkspaceView({
         throw new Error(taskResponse?.message || "Failed to load tasks");
       }
 
-      await delay(300);
-
-      // Step 5: Ready
       setLoadingStep("ready");
-      await delay(500);
+      await delay(200);
     } catch (error: any) {
       console.error("Error initializing kanban:", error);
       showToast({
@@ -4891,52 +4896,62 @@ function ProjectWorkspaceView({
     });
   };
 
-  // Get tasks for specific board with filtering
+  // Get tasks for specific board with filtering - memoized for performance
+  const filteredTasksByBoard = useMemo(() => {
+    const result: Record<string, TaskViewModel[]> = {};
+    
+    DataBoard.forEach(board => {
+      // Filter tasks by boardName from master board
+      let filteredTasks = DataTasks.filter(
+        (task) => task.boardName === board.boardName,
+      );
+
+      // Apply search filter
+      if (searchTerm) {
+        filteredTasks = filteredTasks.filter(
+          (task) =>
+            task.taskName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (task.taskDesc &&
+              task.taskDesc.toLowerCase().includes(searchTerm.toLowerCase())),
+        );
+      }
+
+      // Apply priority filter
+      if (filterPriority) {
+        filteredTasks = filteredTasks.filter(
+          (task) => task.taskPriority === filterPriority,
+        );
+      }
+
+      // Apply backlog filter
+      if (filterBacklog) {
+        filteredTasks = filteredTasks.filter(
+          (task) => task.backlogId === filterBacklog,
+        );
+      }
+
+      // Apply "My Tasks Only" filter
+      if (showMyTasksOnly && DataAuth) {
+        filteredTasks = filteredTasks.filter((task) =>
+          task.assignUsers.some((user) => user.userId === DataAuth.userId),
+        );
+      }
+
+      // Apply completed tasks filter
+      if (!showCompletedTasks) {
+        filteredTasks = filteredTasks.filter(
+          (task) => task.percentageStatus < 100,
+        );
+      }
+
+      result[board.boardName] = filteredTasks.sort((a, b) => a.indexTask - b.indexTask);
+    });
+    
+    return result;
+  }, [DataTasks, DataBoard, searchTerm, filterPriority, filterBacklog, showMyTasksOnly, showCompletedTasks, DataAuth]);
+
   const getTasksForBoard = (boardName: string) => {
-    // Filter tasks by boardName from master board
-    let filteredTasks = DataTasks.filter(
-      (task) => task.boardName === boardName,
-    );
-
-    // Apply search filter
-    if (searchTerm) {
-      filteredTasks = filteredTasks.filter(
-        (task) =>
-          task.taskName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (task.taskDesc &&
-            task.taskDesc.toLowerCase().includes(searchTerm.toLowerCase())),
-      );
-    }
-
-    // Apply priority filter
-    if (filterPriority) {
-      filteredTasks = filteredTasks.filter(
-        (task) => task.taskPriority === filterPriority,
-      );
-    }
-
-    // Apply backlog filter
-    if (filterBacklog) {
-      filteredTasks = filteredTasks.filter(
-        (task) => task.backlogId === filterBacklog,
-      );
-    }
-
-    // Apply "My Tasks Only" filter
-    if (showMyTasksOnly && DataAuth) {
-      filteredTasks = filteredTasks.filter((task) =>
-        task.assignUsers.some((user) => user.userId === DataAuth.userId),
-      );
-    }
-
-    // Apply completed tasks filter
-    if (!showCompletedTasks) {
-      filteredTasks = filteredTasks.filter(
-        (task) => task.percentageStatus < 100,
-      );
-    }
-
-    return filteredTasks.sort((a, b) => a.indexTask - b.indexTask);
+    return filteredTasksByBoard[boardName] || [];
   };
 
   // Get project statistics
