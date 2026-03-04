@@ -4493,28 +4493,31 @@ function ProjectWorkspaceView({
 
   // Handle Task Drop with dynamic board loading from task's backlog
   const handleTaskDrop = async (taskId: string, targetBoardName: string) => {
+    // 1. Find the task being moved
+    const taskToMove = DataTasks.find((task) => task.id === taskId);
+    if (!taskToMove) {
+      showToast({
+        description: "Task not found",
+        statusToast: "error",
+      });
+      return;
+    }
+
+    // Save original task for rollback
+    const originalTask = { ...taskToMove };
+
+    console.log(
+      "Moving task:",
+      taskToMove.taskName,
+      "to board:",
+      targetBoardName,
+    );
+    console.log("Task backlogId:", taskToMove.backlogId);
+
     try {
       setIsLoadingProcess(true);
 
-      // 1. Find the task being moved
-      const taskToMove = DataTasks.find((task) => task.id === taskId);
-      if (!taskToMove) {
-        showToast({
-          description: "Task not found",
-          statusToast: "error",
-        });
-        return;
-      }
-
-      console.log(
-        "Moving task:",
-        taskToMove.taskName,
-        "to board:",
-        targetBoardName,
-      );
-      console.log("Task backlogId:", taskToMove.backlogId);
-
-      // 2. Load task boards from the task's backlog using v1/Task/list-task-board
+      // 2. Load task boards from the task's backlog
       const taskBoardResponse = await ListTasksBoard(
         taskToMove.backlogId!,
         tokenData,
@@ -4525,10 +4528,10 @@ function ProjectWorkspaceView({
           description: "Failed to load task board configuration from backlog",
           statusToast: "error",
         });
+        setIsLoadingProcess(false);
         return;
       }
 
-      // The API returns boards directly in data array, not { boards: [], tasks: [] }
       const taskBoards = taskBoardResponse.data as TaskBoardViewModel[];
 
       console.log(
@@ -4536,7 +4539,7 @@ function ProjectWorkspaceView({
         taskBoards.map((b) => b.boardName),
       );
 
-      // 3. Find target board by matching boardName in the task's backlog boards
+      // 3. Find target board
       const targetBoard = taskBoards.find(
         (board) => board.boardName === targetBoardName,
       );
@@ -4550,12 +4553,13 @@ function ProjectWorkspaceView({
           description: `Target board "${targetBoardName}" not found in task's backlog configuration`,
           statusToast: "error",
         });
+        setIsLoadingProcess(false);
         return;
       }
 
       console.log("Found target board:", targetBoard);
 
-      // 4. Calculate new index for the task
+      // 4. Calculate new index
       const tasksInTargetBoard = DataTasks.filter(
         (task) =>
           task.boardName === targetBoardName &&
@@ -4566,10 +4570,27 @@ function ProjectWorkspaceView({
           ? Math.max(...tasksInTargetBoard.map((t) => t.indexTask)) + 10
           : 10;
 
-      // 5. Update task with target board data from backlog task board
+      // 5. OPTIMISTIC UPDATE - Update state immediately
+      const optimisticTasks = DataTasks.map((task) => {
+        if (task.id === taskId) {
+          return {
+            ...task,
+            boardName: targetBoardName,
+            indexTask: newIndex,
+            indexStage: targetBoard.indexStage,
+          };
+        }
+        return task;
+      });
+
+      setDataTasks(optimisticTasks);
+      setRecentlyMovedTaskId(taskId);
+      setIsLoadingProcess(false);
+
+      // 6. Call API in background
       const payload: TaskMovePayload = {
         id: taskId,
-        boardId: targetBoard.id, // ✅ From backlog task board
+        boardId: targetBoard.id,
         indexTask: newIndex,
         indexStage: targetBoard.indexStage,
       };
@@ -4579,29 +4600,33 @@ function ProjectWorkspaceView({
       const response = await MoveTask(payload, tokenData);
 
       if (response?.statusCode === RES_CODE_OK) {
-        // Set recently moved task for visual feedback
-        setRecentlyMovedTaskId(taskId);
-
-        // Clear the highlight after 2 seconds
-        setTimeout(() => {
-          setRecentlyMovedTaskId(null);
-        }, 2000);
-
-        setRefreshData((prev) => prev + 1);
+        // Success - task already in correct position
         showToast({
           description: `Task moved to ${targetBoard.boardName}`,
           statusToast: "success",
         });
+
+        // Clear highlight after 2 seconds
+        setTimeout(() => {
+          setRecentlyMovedTaskId(null);
+        }, 2000);
       } else {
-        showToast({
-          description: response?.message || "Failed to move task",
-          statusToast: "error",
-        });
+        // API failed - rollback to original position
+        throw new Error(response?.message || "Failed to move task");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error moving task:", error);
+
+      // ROLLBACK - Restore original task position
+      const rolledBackTasks = DataTasks.map((task) =>
+        task.id === taskId ? originalTask : task
+      );
+
+      setDataTasks(rolledBackTasks);
+      setRecentlyMovedTaskId(null);
+
       showToast({
-        description: "An error occurred while moving task",
+        description: error.message || "An error occurred while moving task",
         statusToast: "error",
       });
     } finally {
@@ -4933,7 +4958,7 @@ function ProjectWorkspaceView({
       // Apply "My Tasks Only" filter
       if (showMyTasksOnly && DataAuth) {
         filteredTasks = filteredTasks.filter((task) =>
-          task.assignUsers.some((user) => user.userId === DataAuth.userId),
+          task.assignUsers?.some((user) => user.userId === DataAuth.userId),
         );
       }
 
