@@ -750,7 +750,7 @@ export default function BRDRFCView() {
               operator: "like",
               value: "",
               filterType: "text",
-              filterLabel: "Nama Aplikasi",
+              filterLabel: "Nama Product",
             },
           ],
         } as ColumnMetaCustom,
