@@ -144,15 +144,15 @@ export default function AppPickerModalForm({
 
   const handleAppSelect = (app: ApplicationMasterResponse) => {
     // Prevent selection of "OTHER" applications
-    if (app.appCode?.toUpperCase().includes('OTHER') || 
-        app.appShortName?.toUpperCase().includes('OTHER')) {
+    if (app.appCode?.toUpperCase().includes('OTHER') ||
+      app.appShortName?.toUpperCase().includes('OTHER')) {
       showToast({
         description: "Aplikasi dengan kategori 'OTHER' tidak dapat dipilih untuk requirement ini.",
         statusToast: "warning",
       });
       return;
     }
-    
+
     onAppSelect(app);
   };
 
@@ -163,7 +163,7 @@ export default function AppPickerModalForm({
         bg={colorMode === "light" ? "white" : "gray.800"}
         borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
       >
-        <ModalHeader>Pilih Aplikasi</ModalHeader>
+        <ModalHeader>Pilih Product</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
           <VStack spacing={4} align="stretch">
@@ -172,7 +172,7 @@ export default function AppPickerModalForm({
                 <FiSearch color="gray.300" />
               </InputLeftElement>
               <Input
-                placeholder="Cari aplikasi..."
+                placeholder="Cari product..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -187,9 +187,9 @@ export default function AppPickerModalForm({
                 <>
                   <SimpleGrid columns={{ base: 2, md: 3, lg: 4 }} spacing={4}>
                     {apps.map((app) => {
-                      const isOtherApp = app.appCode?.toUpperCase().includes('OTHER') || 
-                                        app.appShortName?.toUpperCase().includes('OTHER');
-                      
+                      const isOtherApp = app.appCode?.toUpperCase().includes('OTHER') ||
+                        app.appShortName?.toUpperCase().includes('OTHER');
+
                       return (
                         <Card
                           key={app.id}
@@ -203,80 +203,80 @@ export default function AppPickerModalForm({
                                 ? "blue.50"
                                 : "blue.900"
                               : colorMode === "light"
-                              ? "white"
-                              : "gray.700"
+                                ? "white"
+                                : "gray.700"
                           }
                           borderColor={
                             isOtherApp
                               ? "red.300"
                               : selectedApp?.id === app.id
-                              ? "blue.500"
-                              : colorMode === "light"
-                              ? "gray.200"
-                              : "gray.600"
+                                ? "blue.500"
+                                : colorMode === "light"
+                                  ? "gray.200"
+                                  : "gray.600"
                           }
                           borderWidth="2px"
                           _hover={
                             isOtherApp
                               ? {}
                               : {
-                                  borderColor: "blue.400",
-                                  transform: "translateY(-2px)",
-                                  shadow: "lg",
-                                }
+                                borderColor: "blue.400",
+                                transform: "translateY(-2px)",
+                                shadow: "lg",
+                              }
                           }
                           transition="all 0.2s"
                         >
-                        <CardBody p={4}>
-                          <VStack spacing={3}>
-                            <Box position="relative">
-                              <Avatar
-                                name={app.appName}
-                                size="lg"
-                                bg="blue.500"
-                                color="white"
-                              />
-                              {selectedApp?.id === app.id && (
-                                <Box
-                                  position="absolute"
-                                  top="-2px"
-                                  right="-2px"
-                                  bg="green.500"
-                                  rounded="full"
-                                  p={1}
+                          <CardBody p={4}>
+                            <VStack spacing={3}>
+                              <Box position="relative">
+                                <Avatar
+                                  name={app.appName}
+                                  size="lg"
+                                  bg="blue.500"
+                                  color="white"
+                                />
+                                {selectedApp?.id === app.id && (
+                                  <Box
+                                    position="absolute"
+                                    top="-2px"
+                                    right="-2px"
+                                    bg="green.500"
+                                    rounded="full"
+                                    p={1}
+                                  >
+                                    <FiCheckCircle color="white" size={16} />
+                                  </Box>
+                                )}
+                              </Box>
+                              <VStack spacing={1} textAlign="center">
+                                <Text
+                                  fontWeight="bold"
+                                  fontSize="sm"
+                                  noOfLines={2}
+                                  color={
+                                    colorMode === "light" ? "gray.800" : "white"
+                                  }
                                 >
-                                  <FiCheckCircle color="white" size={16} />
-                                </Box>
-                              )}
-                            </Box>
-                            <VStack spacing={1} textAlign="center">
-                              <Text
-                                fontWeight="bold"
-                                fontSize="sm"
-                                noOfLines={2}
-                                color={
-                                  colorMode === "light" ? "gray.800" : "white"
-                                }
-                              >
-                                {app.appName}
-                              </Text>
-                              <Badge
-                                colorScheme={
-                                  app.appsStatus === "ACTIVE" ? "green" : "gray"
-                                }
-                                size="sm"
-                              >
-                                {app.appsStatus}
-                              </Badge>
-                              {isOtherApp && (
-                                <Badge colorScheme="red" size="sm">
-                                  Tidak dapat dipilih
+                                  {app.appName}
+                                </Text>
+                                <Badge
+                                  colorScheme={
+                                    app.appsStatus === "ACTIVE" ? "green" : "gray"
+                                  }
+                                  size="sm"
+                                >
+                                  {app.appsStatus}
                                 </Badge>
-                              )}
+                                {isOtherApp && (
+                                  <Badge colorScheme="red" size="sm">
+                                    Tidak dapat dipilih
+                                  </Badge>
+                                )}
+                              </VStack>
                             </VStack>
-                          </VStack>
-                        </CardBody>
-                      </Card>
+                          </CardBody>
+                        </Card>
                       );
                     })}
                   </SimpleGrid>
@@ -333,7 +333,7 @@ export default function AppPickerModalForm({
             onClick={() => selectedApp && onAppSelect(selectedApp)}
             isDisabled={!selectedApp}
           >
-            Pilih Aplikasi
+            Pilih Product
           </Button>
         </ModalFooter>
       </ModalContent>
