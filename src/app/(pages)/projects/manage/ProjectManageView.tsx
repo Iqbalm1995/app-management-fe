@@ -417,7 +417,10 @@ export default function ProjectManageView() {
                     />
                     <DetailsTab DataProject={DataProject} />
                     {showWorkstageTab && (
-                      <WorkstageProcurementTab DataProject={DataProject} />
+                      <WorkstageProcurementTab 
+                        DataProject={DataProject} 
+                        onRefreshProject={refreshProjectDetail}
+                      />
                     )}
                     {showFeaturesTab && (
                       <FeaturesTab DataProject={DataProject} />

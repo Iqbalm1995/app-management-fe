@@ -1124,6 +1124,11 @@ interface useProjectsServices {
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
 
+  AssignProcurementStagesToProject: (
+    payload: { projectId: string; workflowIds: string[] },
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+
   SetupProjectSdlc: (
     projectId: string,
     sdlcFlowId: string,
@@ -4099,6 +4104,46 @@ const useProjects = (): useProjectsServices => {
     }
   };
 
+  const AssignProcurementStagesToProject = async (
+    payload: { projectId: string; workflowIds: string[] },
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/Projects/assign-procurement-stages";
+    try {
+      const response = await axiosInstance.post<ApiGenericResponse<string>>(
+        `${UrlEndpoint}${PathEndpoint}`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
   const SetupProjectSdlc = async (
     projectId: string,
     sdlcFlowId: string,
@@ -4461,6 +4506,7 @@ const useProjects = (): useProjectsServices => {
 
     AssignBacklogsToProject,
     AssignWorkflowsToProject,
+    AssignProcurementStagesToProject,
 
     ListProjectWorkflow,
     ListProjectWorkflowValue,

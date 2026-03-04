@@ -858,6 +858,11 @@ const FeatureBacklogsView = ({
             operator: "=",
             value: DataProject.id,
           },
+          {
+            field: "procurementWorkflowId",
+            operator: "is null",
+            value: "",
+          },
         ],
         fieldOrder: ["createdAt"],
         orderDir: "asc",
