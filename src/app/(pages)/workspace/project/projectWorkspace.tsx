@@ -229,7 +229,7 @@ declare global {
     moveProjectTaskFunction?: (
       taskId: string,
       boardId: string,
-      index?: number
+      index?: number,
     ) => Promise<boolean>;
   }
 }
@@ -244,6 +244,7 @@ interface TaskCardProps {
   isRecentlyMoved?: boolean;
   DataProject?: ProjectDataResponse | null;
   DataBacklogs?: BacklogDataResponse[];
+  isCompactView?: boolean;
 }
 
 const TaskCard: React.FC<TaskCardProps> = ({
@@ -255,6 +256,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
   isRecentlyMoved = false,
   DataProject,
   DataBacklogs = [],
+  isCompactView = false,
 }) => {
   const { colorMode } = useColorMode();
   const showToast = useToastHelper();
@@ -305,6 +307,13 @@ const TaskCard: React.FC<TaskCardProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
 
+  // Task item inline editing
+  const [editingTaskItemId, setEditingTaskItemId] = useState<string | null>(
+    null,
+  );
+  const [editedTaskItemName, setEditedTaskItemName] = useState("");
+  const taskItemInputRef = useRef<HTMLInputElement>(null);
+
   // Comments state management
   const [taskComments, setTaskComments] = useState<TaskCommentResponse[]>([]);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
@@ -326,7 +335,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
   // Delete comment state
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(
-    null
+    null,
   );
 
   // User assignment states and handlers
@@ -347,7 +356,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
   // Get user data for assignment
   const GetDataUser = async (
     searchValue: string,
-    limit: number = 3
+    limit: number = 3,
   ): Promise<UsersResponse[]> => {
     const PayloadList: PaggingListPayload = {
       search: searchValue,
@@ -383,7 +392,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
         (user) =>
           user.nama.toLowerCase().includes(textSearch.toLowerCase()) ||
           user.nip?.toLowerCase().includes(textSearch.toLowerCase()) ||
-          user.email.toLowerCase().includes(textSearch.toLowerCase())
+          user.email.toLowerCase().includes(textSearch.toLowerCase()),
       );
       setDataUsers(filtered);
     } else {
@@ -397,7 +406,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
   const handleRemoveUserAssign = (id: string) => {
     const updatedProjects = ChoosedMemberProjects.filter(
-      (project) => project.id !== id
+      (project) => project.id !== id,
     );
     setChoosedMemberProjects(updatedProjects);
   };
@@ -406,7 +415,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
     if (!DataAuth) return;
 
     const isAlreadyAssigned = ChoosedMemberProjects.find(
-      (user) => user.id === DataAuth.id
+      (user) => user.id === DataAuth.id,
     );
 
     if (isAlreadyAssigned) return;
@@ -526,7 +535,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
   // Handle updating task dates
   const updateTaskDates = async (
     startDate: string | null,
-    endDate: string | null
+    endDate: string | null,
   ) => {
     if (!detailedTask) return;
 
@@ -700,7 +709,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
   // Related tasks state
   const [relatedTasks, setRelatedTasks] = useState<TaskViewModel[]>([]);
   const [searchTasksResults, setSearchTasksResults] = useState<TaskViewModel[]>(
-    []
+    [],
   );
   const [searchTaskTerm, setSearchTaskTerm] = useState("");
   const [isLoadingRelatedTasks, setIsLoadingRelatedTasks] = useState(false);
@@ -1091,12 +1100,12 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
       if (response?.statusCode === RES_CODE_OK) {
         const updatedItems = taskItems.map((item) =>
-          item.id === itemId ? { ...item, isDone: newStatus } : item
+          item.id === itemId ? { ...item, isDone: newStatus } : item,
         );
         setTaskItems(updatedItems);
 
         const completedCount = updatedItems.filter(
-          (item) => item.isDone === "Y"
+          (item) => item.isDone === "Y",
         ).length;
         const percentage =
           updatedItems.length > 0
@@ -1104,7 +1113,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
             : 0;
 
         setDetailedTask((prev) =>
-          prev ? { ...prev, percentageStatus: percentage } : null
+          prev ? { ...prev, percentageStatus: percentage } : null,
         );
         onUpdateTask(detailedTask.id, { percentageStatus: percentage });
       } else {
@@ -1198,17 +1207,40 @@ const TaskCard: React.FC<TaskCardProps> = ({
     }
   };
 
-  // Handle editing a task item
-  const handleEditTaskItem = async (itemId: string, newName: string) => {
-    if (!detailedTask || !newName.trim()) return;
+  // Handle starting to edit task item
+  const handleStartEditTaskItem = (itemId: string, currentName: string) => {
+    setEditedTaskItemName(currentName);
+    setEditingTaskItemId(itemId);
+    setTimeout(() => {
+      if (taskItemInputRef.current) {
+        taskItemInputRef.current.focus();
+        taskItemInputRef.current.select();
+      }
+    }, 0);
+  };
 
+  // Handle saving task item
+  const handleSaveTaskItem = async (itemId: string) => {
+    if (!editedTaskItemName.trim()) {
+      showToast({
+        description: "Task item name cannot be empty",
+        statusToast: "warning",
+      });
+      setEditingTaskItemId(null);
+      return;
+    }
+
+    const taskItem = taskItems.find((item) => item.id === itemId);
+    if (!taskItem || editedTaskItemName.trim() === taskItem.taskItemName) {
+      setEditingTaskItemId(null);
+      return;
+    }
+
+    setTogglingItemId(itemId);
     try {
-      const taskItem = taskItems.find((item) => item.id === itemId);
-      if (!taskItem) return;
-
       const updatePayload: TaskItemUpdatePayload = {
         id: itemId,
-        taskItemName: newName.trim(),
+        taskItemName: editedTaskItemName.trim(),
         isDone: taskItem.isDone,
       };
 
@@ -1218,12 +1250,12 @@ const TaskCard: React.FC<TaskCardProps> = ({
         setTaskItems((prevItems) =>
           prevItems.map((item) =>
             item.id === itemId
-              ? { ...item, taskItemName: newName.trim() }
-              : item
-          )
+              ? { ...item, taskItemName: editedTaskItemName.trim() }
+              : item,
+          ),
         );
 
-        onRefreshTasks(); // Refresh tasks data
+        onRefreshTasks();
         showToast({
           description: "Task item updated successfully",
           statusToast: "success",
@@ -1240,6 +1272,26 @@ const TaskCard: React.FC<TaskCardProps> = ({
         description: "An error occurred while updating task item",
         statusToast: "error",
       });
+    } finally {
+      setTogglingItemId(null);
+      setEditingTaskItemId(null);
+    }
+  };
+
+  // Handle canceling task item edit
+  const handleCancelEditTaskItem = () => {
+    setEditingTaskItemId(null);
+    setEditedTaskItemName("");
+  };
+
+  // Handle keyboard shortcuts for task item edit
+  const handleTaskItemKeyDown = (e: React.KeyboardEvent, itemId: string) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSaveTaskItem(itemId);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      handleCancelEditTaskItem();
     }
   };
 
@@ -1247,7 +1299,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
   const loadTaskComments = async (
     taskId: string,
     page: number = 0,
-    append: boolean = false
+    append: boolean = false,
   ) => {
     if (!taskId) return;
 
@@ -1378,8 +1430,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
           prev.map((comment) =>
             comment.id === commentId
               ? { ...comment, comCaptions: editedCommentText.trim() }
-              : comment
-          )
+              : comment,
+          ),
         );
 
         setEditingCommentId(null);
@@ -1410,7 +1462,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
   // Delete a comment with confirmation
   const handleDeleteComment = async (commentId: string) => {
     const confirmed = window.confirm(
-      "Are you sure you want to delete this comment? This action cannot be undone."
+      "Are you sure you want to delete this comment? This action cannot be undone.",
     );
     if (!confirmed) return;
 
@@ -1421,7 +1473,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
       if (response?.statusCode === RES_CODE_OK) {
         setTaskComments((prev) =>
-          prev.filter((comment) => comment.id !== commentId)
+          prev.filter((comment) => comment.id !== commentId),
         );
 
         onRefreshTasks(); // Refresh tasks data
@@ -1674,69 +1726,100 @@ const TaskCard: React.FC<TaskCardProps> = ({
             }
           />
 
-          <CardBody px={4} py={3}>
-            <VStack align="start" spacing={3}>
+          <CardBody px={4} py={isCompactView ? 2 : 3}>
+            <VStack align="start" spacing={isCompactView ? 1 : 3}>
               {/* Header with Priority and Menu */}
               <HStack w="full" justify="space-between" align="start">
-                <Badge
-                  size="sm"
-                  rounded="full"
-                  px={3}
-                  py={1}
-                  colorScheme={
-                    task.taskPriority === "HIGH" ||
+                <HStack spacing={2}>
+                  <Badge
+                    size="sm"
+                    rounded="full"
+                    px={3}
+                    py={1}
+                    colorScheme={
+                      task.taskPriority === "HIGH" ||
                       task.taskPriority === "CRITICAL"
-                      ? "red"
-                      : task.taskPriority === "MEDIUM"
-                        ? "orange"
-                        : "green"
-                  }
-                  variant="subtle"
-                >
-                  {task.taskPriority}
-                </Badge>
+                        ? "red"
+                        : task.taskPriority === "MEDIUM"
+                          ? "orange"
+                          : "green"
+                    }
+                    variant="subtle"
+                  >
+                    {task.taskPriority}
+                  </Badge>
+                  {isCompactView && (
+                    <Text fontSize="xs" color="gray.500" fontFamily="mono">
+                      #{task.id.slice(-6)}
+                    </Text>
+                  )}
+                </HStack>
 
-                {/* Task ID */}
-                <Text fontSize="xs" color="gray.500" fontFamily="mono">
-                  #{task.id.slice(-6)}
-                </Text>
+                <HStack spacing={2}>
+                  {isCompactView && task.percentageStatus > 0 && (
+                    <Text fontSize="xs" fontWeight="bold" color="gray.600">
+                      {task.percentageStatus}%
+                    </Text>
+                  )}
+                  {!isCompactView && (
+                    <Text fontSize="xs" color="gray.500" fontFamily="mono">
+                      #{task.id.slice(-6)}
+                    </Text>
+                  )}
+                </HStack>
               </HStack>
 
               {/* Backlog Info and Deadline */}
-              <HStack w="full" justify="space-between" align="center" spacing={2}>
-                {task.backlogId && DataBacklogs.length > 0 && (
-                  <HStack spacing={2}>
-                    <Icon as={FiList} color="secondary.500" boxSize={3} />
-                    <Text fontSize="xs" color="secondary.600" fontWeight="medium">
-                      {DataBacklogs.find((b) => b.id === task.backlogId)
-                        ?.backlogName || "Unknown"}
-                    </Text>
-                  </HStack>
-                )}
-                {task.backlogId && DataBacklogs.find(b => b.id === task.backlogId)?.backlogEnddate && (
-                  <HStack spacing={1} whiteSpace="nowrap">
-                    <Icon as={FiClock} color="red.500" boxSize={3} />
-                    <Text fontSize="xs" color="red.600" fontWeight="medium">
-                      {formatDateDDMMYYYY(DataBacklogs.find(b => b.id === task.backlogId)!.backlogEnddate!)}
-                    </Text>
-                  </HStack>
-                )}
-              </HStack>
+              {!isCompactView && (
+                <HStack
+                  w="full"
+                  justify="space-between"
+                  align="center"
+                  spacing={2}
+                >
+                  {task.backlogId && DataBacklogs.length > 0 && (
+                    <HStack spacing={2}>
+                      <Icon as={FiList} color="secondary.500" boxSize={3} />
+                      <Text
+                        fontSize="xs"
+                        color="secondary.600"
+                        fontWeight="medium"
+                      >
+                        {DataBacklogs.find((b) => b.id === task.backlogId)
+                          ?.backlogName || "Unknown"}
+                      </Text>
+                    </HStack>
+                  )}
+                  {task.backlogId &&
+                    DataBacklogs.find((b) => b.id === task.backlogId)
+                      ?.backlogEnddate && (
+                      <HStack spacing={1} whiteSpace="nowrap">
+                        <Icon as={FiClock} color="red.500" boxSize={3} />
+                        <Text fontSize="xs" color="red.600" fontWeight="medium">
+                          {formatDateDDMMYYYY(
+                            DataBacklogs.find((b) => b.id === task.backlogId)!
+                              .backlogEnddate!,
+                          )}
+                        </Text>
+                      </HStack>
+                    )}
+                </HStack>
+              )}
 
               {/* Task Title */}
               <Text
                 fontWeight="600"
-                fontSize="md"
+                fontSize={isCompactView ? "sm" : "md"}
                 lineHeight="1.3"
                 color={colorMode === "light" ? "gray.800" : "white"}
-                noOfLines={2}
+                noOfLines={isCompactView ? 1 : 2}
                 w="full"
               >
                 {task.taskName}
               </Text>
 
               {/* Description */}
-              {task.taskDesc && (
+              {!isCompactView && task.taskDesc && (
                 <Text
                   fontSize="sm"
                   color="gray.600"
@@ -1748,7 +1831,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
               )}
 
               {/* Progress Bar */}
-              {task.percentageStatus > 0 && (
+              {!isCompactView && task.percentageStatus > 0 && (
                 <Box w="full">
                   <HStack justify="space-between" mb={1}>
                     <Text fontSize="xs" color="gray.500" fontWeight="medium">
@@ -1823,7 +1906,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                             <Text key={index} fontSize="xs">
                               {user.nama}
                             </Text>
-                          )
+                          ),
                         )}
                       </VStack>
                     }
@@ -1847,34 +1930,42 @@ const TaskCard: React.FC<TaskCardProps> = ({
               </HStack>
 
               {/* Start Date and End Date */}
-              <HStack spacing={2} w="full" justify="space-between">
-                {task.startDate && (
-                  <HStack spacing={2}>
-                    <Icon as={FiPlay} color="green.500" boxSize={3} />
-                    <Text fontSize="xs" color="green.600" fontWeight="medium">
-                      Start Date : {formatDateDDMMYYYY(task.startDate)}
-                    </Text>
-                  </HStack>
-                )}
-                {task.endDate && (
-                  <HStack spacing={2}>
-                    <Icon as={FiFlag} color="orange.500" boxSize={3} />
-                    <Text fontSize="xs" color="orange.600" fontWeight="medium">
-                      End Date : {formatDateDDMMYYYY(task.endDate)}
-                    </Text>
-                  </HStack>
-                )}
-              </HStack>
+              {!isCompactView && (
+                <HStack spacing={2} w="full" justify="space-between">
+                  {task.startDate && (
+                    <HStack spacing={2}>
+                      <Icon as={FiPlay} color="green.500" boxSize={3} />
+                      <Text fontSize="xs" color="green.600" fontWeight="medium">
+                        Start Date : {formatDateDDMMYYYY(task.startDate)}
+                      </Text>
+                    </HStack>
+                  )}
+                  {task.endDate && (
+                    <HStack spacing={2}>
+                      <Icon as={FiFlag} color="orange.500" boxSize={3} />
+                      <Text
+                        fontSize="xs"
+                        color="orange.600"
+                        fontWeight="medium"
+                      >
+                        End Date : {formatDateDDMMYYYY(task.endDate)}
+                      </Text>
+                    </HStack>
+                  )}
+                </HStack>
+              )}
 
               {/* Last Updated */}
-              <HStack spacing={2} w="full">
-                <Icon as={FiRefreshCcw} color="gray.400" boxSize={3} />
-                <Text fontSize="xs" color="gray.500">
-                  {task.updatedAt
-                    ? `Updated ${convertToCustomDateFormat(task.updatedAt)}`
-                    : `Created ${convertToCustomDateFormat(task.createdAt)}`}
-                </Text>
-              </HStack>
+              {!isCompactView && (
+                <HStack spacing={2} w="full">
+                  <Icon as={FiRefreshCcw} color="gray.400" boxSize={3} />
+                  <Text fontSize="xs" color="gray.500">
+                    {task.updatedAt
+                      ? `Updated ${convertToCustomDateFormat(task.updatedAt)}`
+                      : `Created ${convertToCustomDateFormat(task.createdAt)}`}
+                  </Text>
+                </HStack>
+              )}
             </VStack>
           </CardBody>
           {task.percentageStatus < 100 &&
@@ -2101,7 +2192,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                         endDate.setHours(0, 0, 0, 0);
                         const diffTime = endDate.getTime() - now.getTime();
                         const diffDays = Math.floor(
-                          diffTime / (1000 * 60 * 60 * 24)
+                          diffTime / (1000 * 60 * 60 * 24),
                         );
 
                         if (diffDays < 0) {
@@ -2154,7 +2245,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                       alignItems="center"
                       justifyContent="start"
                       spacing={2}
-                      color={"gray.700"}
+                      color={colorMode === "light" ? "gray.700" : "gray.300"}
                     >
                       <FiCircle size={16} />
                       {/* Editable Task Name */}
@@ -2188,7 +2279,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
                           spacing={2}
                           onClick={handleEditName}
                           cursor="pointer"
-                          _hover={{ bg: "gray.50" }}
+                          _hover={{
+                            bg: colorMode === "light" ? "gray.50" : "gray.700",
+                          }}
                           p={1}
                           borderRadius="md"
                           transition="all 0.2s"
@@ -2296,7 +2389,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                           setSearchUserInput("");
                           const projectMembers =
                             DataProject?.userAssignment?.map(
-                              (assignment) => assignment.userData
+                              (assignment) => assignment.userData,
                             ) || [];
                           setDataUsers(projectMembers);
                           onAssignModalOpen();
@@ -2330,7 +2423,13 @@ const TaskCard: React.FC<TaskCardProps> = ({
                             top="2"
                           />
                         )}
-                        <Text fontSize="xs" color="gray.500" mt={1}>
+                        <Text
+                          fontSize="xs"
+                          color={
+                            colorMode === "light" ? "gray.500" : "gray.400"
+                          }
+                          mt={1}
+                        >
                           Press Ctrl+Enter to save, Esc to cancel
                         </Text>
                       </Box>
@@ -2339,7 +2438,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
                         w="full"
                         onClick={handleEditDesc}
                         cursor="pointer"
-                        _hover={{ bg: "gray.50" }}
+                        _hover={{
+                          bg: colorMode === "light" ? "gray.50" : "gray.700",
+                        }}
                         p={2}
                         borderRadius="md"
                         transition="all 0.2s"
@@ -2373,7 +2474,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                         justifyContent="space-between"
                         as={HStack}
                         spacing={2}
-                        color={"gray.700"}
+                        color={colorMode === "light" ? "gray.700" : "gray.300"}
                         mb={2}
                       >
                         <HStack>
@@ -2401,7 +2502,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
                           alignItems="start"
                           as={VStack}
                           spacing={2}
-                          color="gray.700"
+                          color={
+                            colorMode === "light" ? "gray.700" : "gray.300"
+                          }
                           px={4}
                         >
                           {taskItems.map((item) => (
@@ -2412,7 +2515,12 @@ const TaskCard: React.FC<TaskCardProps> = ({
                               py={1}
                               px={1}
                               borderRadius="md"
-                              _hover={{ bg: "gray.50" }}
+                              _hover={{
+                                bg:
+                                  colorMode === "light"
+                                    ? "gray.50"
+                                    : "gray.700",
+                              }}
                               opacity={togglingItemId ? 0.6 : 1}
                             >
                               {togglingItemId === item.id ? (
@@ -2423,29 +2531,54 @@ const TaskCard: React.FC<TaskCardProps> = ({
                                   onChange={() =>
                                     handleToggleTaskItem(
                                       item.id,
-                                      item.isDone === "Y" ? "N" : "Y"
+                                      item.isDone === "Y" ? "N" : "Y",
                                     )
                                   }
                                   colorScheme={
                                     item.isDone === "Y" ? "green" : "blue"
                                   }
-                                  isDisabled={togglingItemId !== null}
+                                  isDisabled={
+                                    togglingItemId !== null ||
+                                    editingTaskItemId === item.id
+                                  }
                                   mr={2}
                                 />
                               )}
-                              <Text
-                                as={item.isDone === "Y" ? "s" : "span"}
-                                color={
-                                  item.isDone === "Y" ? "gray.500" : "inherit"
-                                }
-                                flex="1"
-                                cursor="pointer"
-                                onClick={() =>
-                                  handleEditTaskItem(item.id, item.taskItemName)
-                                }
-                              >
-                                {item.taskItemName}
-                              </Text>
+                              {editingTaskItemId === item.id ? (
+                                <Input
+                                  ref={taskItemInputRef}
+                                  value={editedTaskItemName}
+                                  onChange={(e) =>
+                                    setEditedTaskItemName(e.target.value)
+                                  }
+                                  onBlur={() => handleSaveTaskItem(item.id)}
+                                  onKeyDown={(e) =>
+                                    handleTaskItemKeyDown(e, item.id)
+                                  }
+                                  size="sm"
+                                  variant="flushed"
+                                  isDisabled={togglingItemId === item.id}
+                                  autoFocus
+                                  flex="1"
+                                />
+                              ) : (
+                                <Text
+                                  as={item.isDone === "Y" ? "s" : "span"}
+                                  color={
+                                    item.isDone === "Y" ? "gray.500" : "inherit"
+                                  }
+                                  flex="1"
+                                  cursor="pointer"
+                                  onClick={() =>
+                                    handleStartEditTaskItem(
+                                      item.id,
+                                      item.taskItemName,
+                                    )
+                                  }
+                                >
+                                  {item.taskItemName}
+                                </Text>
+                              )}
                               <IconButton
                                 aria-label="Delete task item"
                                 icon={<DeleteIcon />}
@@ -2453,13 +2586,18 @@ const TaskCard: React.FC<TaskCardProps> = ({
                                 variant="ghost"
                                 colorScheme="red"
                                 onClick={() => handleDeleteTaskItem(item.id)}
+                                isDisabled={editingTaskItemId === item.id}
                               />
                             </Flex>
                           ))}
                         </Flex>
                       ) : (
                         <Box px={4} py={2}>
-                          <Text color="gray.500">
+                          <Text
+                            color={
+                              colorMode === "light" ? "gray.500" : "gray.400"
+                            }
+                          >
                             No subtasks yet. Add one below.
                           </Text>
                         </Box>
@@ -2476,7 +2614,10 @@ const TaskCard: React.FC<TaskCardProps> = ({
                                 setNewTaskItemName(e.target.value)
                               }
                               onKeyDown={(e) => {
-                                if (e.key === "Enter" && newTaskItemName.trim()) {
+                                if (
+                                  e.key === "Enter" &&
+                                  newTaskItemName.trim()
+                                ) {
                                   e.preventDefault();
                                   handleAddTaskItem(e as any);
                                 }
@@ -2509,7 +2650,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                       alignItems="center"
                       as={HStack}
                       spacing={2}
-                      color={"gray.700"}
+                      color={colorMode === "light" ? "gray.700" : "gray.300"}
                     >
                       <Flex as={HStack} spacing={2} alignItems="center">
                         <FaCommentDots size={16} />
@@ -2640,7 +2781,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
                               </Text>
                               <Text
                                 fontSize={12}
-                                color="gray.500"
+                                color={
+                                  colorMode === "light"
+                                    ? "gray.500"
+                                    : "gray.400"
+                                }
                                 alignSelf="center"
                               >
                                 {convertToCustomDateFormat(comment.createdAt)}
@@ -2649,50 +2794,50 @@ const TaskCard: React.FC<TaskCardProps> = ({
                             {/* Show menu only if user owns the comment */}
                             {getCurrentUser()?.id ===
                               comment.userCreated.id && (
-                                <Menu>
-                                  <MenuButton
-                                    as={Button}
-                                    size="sm"
-                                    variant="ghost"
-                                    isLoading={deletingCommentId === comment.id}
-                                    isDisabled={isUpdatingComment}
+                              <Menu>
+                                <MenuButton
+                                  as={Button}
+                                  size="sm"
+                                  variant="ghost"
+                                  isLoading={deletingCommentId === comment.id}
+                                  isDisabled={isUpdatingComment}
+                                >
+                                  <FaEllipsisVertical />
+                                </MenuButton>
+                                <MenuList>
+                                  <MenuItem
+                                    icon={<FaEdit />}
+                                    onClick={() =>
+                                      handleStartEditComment(
+                                        comment.id,
+                                        comment.comCaptions || "",
+                                      )
+                                    }
+                                    isDisabled={
+                                      editingCommentId === comment.id ||
+                                      isUpdatingComment ||
+                                      deletingCommentId === comment.id
+                                    }
                                   >
-                                    <FaEllipsisVertical />
-                                  </MenuButton>
-                                  <MenuList>
-                                    <MenuItem
-                                      icon={<FaEdit />}
-                                      onClick={() =>
-                                        handleStartEditComment(
-                                          comment.id,
-                                          comment.comCaptions || ""
-                                        )
-                                      }
-                                      isDisabled={
-                                        editingCommentId === comment.id ||
-                                        isUpdatingComment ||
-                                        deletingCommentId === comment.id
-                                      }
-                                    >
-                                      Edit Comment
-                                    </MenuItem>
-                                    <MenuItem
-                                      icon={<FaTrash />}
-                                      color="red.500"
-                                      onClick={() =>
-                                        handleDeleteComment(comment.id)
-                                      }
-                                      isDisabled={
-                                        editingCommentId === comment.id ||
-                                        isUpdatingComment ||
-                                        deletingCommentId === comment.id
-                                      }
-                                    >
-                                      Delete Comment
-                                    </MenuItem>
-                                  </MenuList>
-                                </Menu>
-                              )}
+                                    Edit Comment
+                                  </MenuItem>
+                                  <MenuItem
+                                    icon={<FaTrash />}
+                                    color="red.500"
+                                    onClick={() =>
+                                      handleDeleteComment(comment.id)
+                                    }
+                                    isDisabled={
+                                      editingCommentId === comment.id ||
+                                      isUpdatingComment ||
+                                      deletingCommentId === comment.id
+                                    }
+                                  >
+                                    Delete Comment
+                                  </MenuItem>
+                                </MenuList>
+                              </Menu>
+                            )}
                           </Flex>
 
                           {/* Comment text or edit input */}
@@ -2722,7 +2867,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
                               />
                               <Text
                                 fontSize="xs"
-                                color="gray.500"
+                                color={
+                                  colorMode === "light"
+                                    ? "gray.500"
+                                    : "gray.400"
+                                }
                                 textAlign="right"
                               >
                                 Press Ctrl+Enter to save, Esc to cancel
@@ -2779,7 +2928,12 @@ const TaskCard: React.FC<TaskCardProps> = ({
                     {/* No Comments Message */}
                     {!isLoadingComments && taskComments.length === 0 && (
                       <Flex w="full" justifyContent="center" py={4}>
-                        <Text color="gray.500" fontSize="sm">
+                        <Text
+                          color={
+                            colorMode === "light" ? "gray.500" : "gray.400"
+                          }
+                          fontSize="sm"
+                        >
                           No comments yet. Be the first to comment!
                         </Text>
                       </Flex>
@@ -2802,7 +2956,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                       justifyContent="start"
                       as={HStack}
                       spacing={2}
-                      color={"gray.700"}
+                      color={colorMode === "light" ? "gray.700" : "gray.300"}
                     >
                       <FaCog size={16} />
                       <Text fontWeight={600} fontSize={18}>
@@ -2812,17 +2966,23 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
                     {/* Assignees */}
                     <Box w="full">
-                      <Text fontSize="sm" color="gray.500" mb={1}>
+                      <Text
+                        fontSize="sm"
+                        color={colorMode === "light" ? "gray.500" : "gray.400"}
+                        mb={1}
+                      >
                         Assigned To
                       </Text>
                       {ChoosedMemberProjects &&
-                        ChoosedMemberProjects.length > 0 ? (
+                      ChoosedMemberProjects.length > 0 ? (
                         <Wrap>
                           {ChoosedMemberProjects.map((user) => (
                             <WrapItem key={user.id}>
                               <HStack
                                 p={2}
-                                bg="gray.50"
+                                bg={
+                                  colorMode === "light" ? "gray.50" : "gray.700"
+                                }
                                 borderRadius="full"
                                 spacing={2}
                               >
@@ -2845,7 +3005,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
                     {/* Backlog Information */}
                     <Box w="full">
-                      <Text fontSize="sm" color="gray.500" mb={2}>
+                      <Text
+                        fontSize="sm"
+                        color={colorMode === "light" ? "gray.500" : "gray.400"}
+                        mb={2}
+                      >
                         Backlog
                       </Text>
                       {detailedTask?.backlogId ? (
@@ -2863,7 +3027,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                           >
                             {DataBacklogs.find(
                               (b: BacklogDataResponse) =>
-                                b.id === detailedTask.backlogId
+                                b.id === detailedTask.backlogId,
                             )?.backlogName || "Unknown Backlog"}
                           </Text>
                         </Box>
@@ -2877,7 +3041,12 @@ const TaskCard: React.FC<TaskCardProps> = ({
                     {/* Related Tasks */}
                     <Box w="full">
                       <HStack justify="space-between" mb={2}>
-                        <Text fontSize="sm" color="gray.500">
+                        <Text
+                          fontSize="sm"
+                          color={
+                            colorMode === "light" ? "gray.500" : "gray.400"
+                          }
+                        >
                           Related Tasks
                         </Text>
                         <Button
@@ -2950,7 +3119,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                                           Project:
                                         </Text>
                                         {relTask.projectNo &&
-                                          relTask.projectName ? (
+                                        relTask.projectName ? (
                                           <Tooltip
                                             label={`${relTask.projectNo} - ${relTask.projectName}`}
                                             placement="top"
@@ -2989,7 +3158,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                                         <Text>
                                           {relTask.backlogName ||
                                             DataBacklogs.find(
-                                              (b) => b.id === relTask.backlogId
+                                              (b) => b.id === relTask.backlogId,
                                             )?.backlogName ||
                                             relTask.backlogId}
                                         </Text>
@@ -3049,7 +3218,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
                     {/* Dates */}
                     <Box w="full">
-                      <Text fontSize="sm" color="gray.500" mb={1}>
+                      <Text
+                        fontSize="sm"
+                        color={colorMode === "light" ? "gray.500" : "gray.400"}
+                        mb={1}
+                      >
                         Timeline
                       </Text>
                       <VStack align="start" spacing={2}>
@@ -3082,7 +3255,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
                     {/* Progress */}
                     <Box w="full">
-                      <Text fontSize="sm" color="gray.500" mb={1}>
+                      <Text
+                        fontSize="sm"
+                        color={colorMode === "light" ? "gray.500" : "gray.400"}
+                        mb={1}
+                      >
                         Progress
                       </Text>
                       <HStack spacing={2}>
@@ -3102,7 +3279,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
                     {/* Created Info */}
                     <Box w="full">
-                      <Text fontSize="sm" color="gray.500" mb={1}>
+                      <Text
+                        fontSize="sm"
+                        color={colorMode === "light" ? "gray.500" : "gray.400"}
+                        mb={1}
+                      >
                         Dibuat Oleh
                       </Text>
 
@@ -3124,7 +3305,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
                           Unknown
                         </Text>
                       )}
-                      <Text fontSize="xs" color="gray.500" mt={1}>
+                      <Text
+                        fontSize="xs"
+                        color={colorMode === "light" ? "gray.500" : "gray.400"}
+                        mt={1}
+                      >
                         {detailedTask &&
                           new Date(detailedTask.createdAt).toLocaleString()}
                       </Text>
@@ -3139,7 +3324,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                         w={"full"}
                         colorScheme={
                           detailedTask?.isArchived != null &&
-                            detailedTask?.isArchived == "Y"
+                          detailedTask?.isArchived == "Y"
                             ? "teal"
                             : "red"
                         }
@@ -3147,7 +3332,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                           <Icon
                             as={
                               detailedTask?.isArchived != null &&
-                                detailedTask?.isArchived == "Y"
+                              detailedTask?.isArchived == "Y"
                                 ? FiRotateCcw
                                 : FiArchive
                             }
@@ -3159,7 +3344,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                         isLoading={isArchiving}
                       >
                         {detailedTask?.isArchived != null &&
-                          detailedTask?.isArchived == "Y"
+                        detailedTask?.isArchived == "Y"
                           ? "Restore"
                           : "Archive"}
                       </Button>
@@ -3179,7 +3364,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                       justifyContent="start"
                       as={HStack}
                       spacing={2}
-                      color={"gray.700"}
+                      color={colorMode === "light" ? "gray.700" : "gray.300"}
                     >
                       <FaCog size={16} />
                       <Text fontWeight={600} fontSize={18}>
@@ -3259,17 +3444,27 @@ const TaskCard: React.FC<TaskCardProps> = ({
                       <VStack spacing={2} w="full" align="stretch" pb={2}>
                         {DataUsers.map((user) => {
                           const isAlreadyAssigned = ChoosedMemberProjects.find(
-                            (assignedUser) => assignedUser.id === user.id
+                            (assignedUser) => assignedUser.id === user.id,
                           );
                           return (
                             <HStack
                               key={user.id}
                               p={3}
                               border="1px solid"
-                              borderColor="gray.200"
+                              borderColor={
+                                colorMode === "light" ? "gray.200" : "gray.600"
+                              }
                               borderRadius={radiusStyle}
                               justify="space-between"
-                              bg={isAlreadyAssigned ? "gray.50" : "white"}
+                              bg={
+                                isAlreadyAssigned
+                                  ? colorMode === "light"
+                                    ? "gray.50"
+                                    : "gray.700"
+                                  : colorMode === "light"
+                                    ? "white"
+                                    : "gray.800"
+                              }
                             >
                               <HStack spacing={3}>
                                 <Avatar
@@ -3304,7 +3499,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
                         })}
                       </VStack>
                     ) : (
-                      <Text color="gray.500" textAlign="center" py={4}>
+                      <Text
+                        color={colorMode === "light" ? "gray.500" : "gray.400"}
+                        textAlign="center"
+                        py={4}
+                      >
                         No members found
                       </Text>
                     )}
@@ -3328,7 +3527,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                         isDisabled={
                           !DataAuth ||
                           ChoosedMemberProjects.some(
-                            (user) => user.id === DataAuth?.id
+                            (user) => user.id === DataAuth?.id,
                           )
                         }
                       >
@@ -3382,7 +3581,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
                         ))}
                       </VStack>
                     ) : (
-                      <Text color="gray.500" textAlign="center" py={4}>
+                      <Text
+                        color={colorMode === "light" ? "gray.500" : "gray.400"}
+                        textAlign="center"
+                        py={4}
+                      >
                         No users selected
                       </Text>
                     )}
@@ -3439,7 +3642,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                   {searchTasksResults
                     .filter((task) => task.id !== detailedTask?.id)
                     .filter(
-                      (task) => !relatedTasks.some((rt) => rt.id === task.id)
+                      (task) => !relatedTasks.some((rt) => rt.id === task.id),
                     )
                     .map((task) => (
                       <Box
@@ -3483,7 +3686,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
                               align="start"
                               spacing={1}
                               fontSize="xs"
-                              color="gray.600"
+                              color={
+                                colorMode === "light" ? "gray.600" : "gray.400"
+                              }
                             >
                               {task.projectId && (
                                 <HStack spacing={1}>
@@ -3523,7 +3728,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                                   <Text>
                                     {task.backlogName ||
                                       DataBacklogs.find(
-                                        (b) => b.id === task.backlogId
+                                        (b) => b.id === task.backlogId,
                                       )?.backlogName ||
                                       task.backlogId}
                                   </Text>
@@ -3570,15 +3775,27 @@ const TaskCard: React.FC<TaskCardProps> = ({
                     ))}
                 </VStack>
               ) : searchTaskTerm.length > 0 && searchTaskTerm.length < 3 ? (
-                <Text color="gray.500" textAlign="center" py={4}>
+                <Text
+                  color={colorMode === "light" ? "gray.500" : "gray.400"}
+                  textAlign="center"
+                  py={4}
+                >
                   Type at least 3 characters to search
                 </Text>
               ) : searchTaskTerm.length >= 3 ? (
-                <Text color="gray.500" textAlign="center" py={4}>
+                <Text
+                  color={colorMode === "light" ? "gray.500" : "gray.400"}
+                  textAlign="center"
+                  py={4}
+                >
                   No tasks found. Try a different search term.
                 </Text>
               ) : (
-                <Text color="gray.500" textAlign="center" py={4}>
+                <Text
+                  color={colorMode === "light" ? "gray.500" : "gray.400"}
+                  textAlign="center"
+                  py={4}
+                >
                   Enter at least 3 characters to search for tasks
                 </Text>
               )}
@@ -3603,6 +3820,7 @@ interface KanbanColumnProps {
   recentlyMovedTaskId?: string | null;
   DataProject?: ProjectDataResponse | null;
   DataBacklogs?: BacklogDataResponse[];
+  isCompactView?: boolean;
 }
 
 const KanbanColumn: React.FC<KanbanColumnProps> = ({
@@ -3617,6 +3835,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
   recentlyMovedTaskId,
   DataProject,
   DataBacklogs = [],
+  isCompactView = false,
 }) => {
   const { colorMode } = useColorMode();
   const [newTaskName, setNewTaskName] = useState("");
@@ -3672,10 +3891,10 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
   const getCompletionStats = () => {
     const total = tasks.length;
     const completed = tasks.filter(
-      (task) => task.percentageStatus === 100
+      (task) => task.percentageStatus === 100,
     ).length;
     const inProgress = tasks.filter(
-      (task) => task.percentageStatus > 0 && task.percentageStatus < 100
+      (task) => task.percentageStatus > 0 && task.percentageStatus < 100,
     ).length;
 
     return { total, completed, inProgress };
@@ -3746,6 +3965,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
                 isRecentlyMoved={recentlyMovedTaskId === task.id}
                 DataProject={DataProject}
                 DataBacklogs={DataBacklogs}
+                isCompactView={isCompactView}
               />
             ))}
 
@@ -3849,7 +4069,7 @@ function ProjectWorkspaceView({
 
   // Data States
   const [DataProject, setDataProject] = useState<ProjectDataResponse | null>(
-    null
+    null,
   );
   const [DataBoard, setDataBoard] = useState<MasterBoardTaskResponse[]>([]);
   const [DataTasks, setDataTasks] = useState<TaskViewModel[]>([]);
@@ -3871,7 +4091,7 @@ function ProjectWorkspaceView({
 
   // Track recently moved task for visual feedback
   const [recentlyMovedTaskId, setRecentlyMovedTaskId] = useState<string | null>(
-    null
+    null,
   );
 
   // Track drop preview position for visual feedback during drag
@@ -3916,11 +4136,14 @@ function ProjectWorkspaceView({
   const [filterBacklog, setFilterBacklog] = useState<string>("");
   const [filterAssignee, setFilterAssignee] = useState<string>("");
   const [showCompletedTasks, setShowCompletedTasks] = useState(true);
+  const [showMyTasksOnly, setShowMyTasksOnly] = useState(false);
+  const [isCompactView, setIsCompactView] = useState(false);
 
   // API Hooks
   const { GetDetailById: GetProjectDetail } = useProjects();
   const { List: GetMasterBoardTasks } = useMasterBoardTask();
-  const { ListBacklog, GetDetailById: GetRequirementDetail } = useRequirements();
+  const { ListBacklog, GetDetailById: GetRequirementDetail } =
+    useRequirements();
   const {
     ListTasksBoard,
     ListTasksBoardPaged,
@@ -4042,7 +4265,7 @@ function ProjectWorkspaceView({
         setDataBoard(boardResponse.data as MasterBoardTaskResponse[]);
       } else {
         throw new Error(
-          boardResponse?.message || "Failed to load board configuration"
+          boardResponse?.message || "Failed to load board configuration",
         );
       }
 
@@ -4130,7 +4353,7 @@ function ProjectWorkspaceView({
   useEffect(() => {
     if (projectId && backlogIdFromUrl && DataBacklogs.length > 0) {
       const backlogExists = DataBacklogs.some(
-        (backlog) => backlog.id === backlogIdFromUrl
+        (backlog) => backlog.id === backlogIdFromUrl,
       );
 
       if (backlogExists) {
@@ -4145,10 +4368,13 @@ function ProjectWorkspaceView({
   useEffect(() => {
     if (DataProject?.reqParentId && tokenData) {
       const LoadRequirementData = async () => {
-        const response = await GetRequirementDetail(DataProject.reqParentId!, tokenData);
+        const response = await GetRequirementDetail(
+          DataProject.reqParentId!,
+          tokenData,
+        );
         if (response?.statusCode === RES_CODE_OK && response.data) {
           setDataProject((prev) =>
-            prev ? { ...prev, requirementData: response.data as any } : null
+            prev ? { ...prev, requirementData: response.data as any } : null,
           );
         }
       };
@@ -4279,14 +4505,14 @@ function ProjectWorkspaceView({
         "Moving task:",
         taskToMove.taskName,
         "to board:",
-        targetBoardName
+        targetBoardName,
       );
       console.log("Task backlogId:", taskToMove.backlogId);
 
       // 2. Load task boards from the task's backlog using v1/Task/list-task-board
       const taskBoardResponse = await ListTasksBoard(
         taskToMove.backlogId!,
-        tokenData
+        tokenData,
       );
 
       if (taskBoardResponse?.statusCode !== RES_CODE_OK) {
@@ -4302,17 +4528,17 @@ function ProjectWorkspaceView({
 
       console.log(
         "Loaded task boards from backlog:",
-        taskBoards.map((b) => b.boardName)
+        taskBoards.map((b) => b.boardName),
       );
 
       // 3. Find target board by matching boardName in the task's backlog boards
       const targetBoard = taskBoards.find(
-        (board) => board.boardName === targetBoardName
+        (board) => board.boardName === targetBoardName,
       );
       if (!targetBoard) {
         console.error(
           "Available boards:",
-          taskBoards.map((b) => b.boardName)
+          taskBoards.map((b) => b.boardName),
         );
         console.error("Looking for board:", targetBoardName);
         showToast({
@@ -4328,7 +4554,7 @@ function ProjectWorkspaceView({
       const tasksInTargetBoard = DataTasks.filter(
         (task) =>
           task.boardName === targetBoardName &&
-          task.backlogId === taskToMove.backlogId
+          task.backlogId === taskToMove.backlogId,
       );
       const newIndex =
         tasksInTargetBoard.length > 0
@@ -4381,7 +4607,7 @@ function ProjectWorkspaceView({
   // Handle Add Task
   const handleAddTask = (boardName: string) => {
     const targetBoard = DataBoard.find(
-      (board) => board.boardName === boardName
+      (board) => board.boardName === boardName,
     );
 
     setSelectedTask(null);
@@ -4417,7 +4643,7 @@ function ProjectWorkspaceView({
   // Handle Update Task (for inline edits)
   const handleUpdateTask = async (
     taskId: string,
-    updates: Partial<TaskViewModel>
+    updates: Partial<TaskViewModel>,
   ) => {
     try {
       setIsAutoSaving(true);
@@ -4445,8 +4671,8 @@ function ProjectWorkspaceView({
         // Update local state immediately for better UX
         setDataTasks((prevTasks) =>
           prevTasks.map((task) =>
-            task.id === taskId ? { ...task, ...updates } : task
-          )
+            task.id === taskId ? { ...task, ...updates } : task,
+          ),
         );
 
         showToast({
@@ -4540,7 +4766,7 @@ function ProjectWorkspaceView({
         const tasksInBoard = DataTasks.filter(
           (task) =>
             task.boardName === taskForm.boardName &&
-            task.backlogId === taskForm.backlogId
+            task.backlogId === taskForm.backlogId,
         );
         let actualBoardId =
           tasksInBoard.length > 0 ? tasksInBoard[0].boardId : "";
@@ -4562,7 +4788,7 @@ function ProjectWorkspaceView({
 
           const boardResponse = await ListTasksBoardPaged(
             boardPayload,
-            tokenData
+            tokenData,
           );
 
           if (
@@ -4580,7 +4806,7 @@ function ProjectWorkspaceView({
             };
             const genResponse = await GenerateKanbanBoard(
               genPayload,
-              tokenData
+              tokenData,
             );
 
             if (genResponse?.statusCode !== RES_CODE_OK) {
@@ -4596,7 +4822,7 @@ function ProjectWorkspaceView({
             await new Promise((resolve) => setTimeout(resolve, 500));
             const newBoardResponse = await ListTasksBoardPaged(
               boardPayload,
-              tokenData
+              tokenData,
             );
             if (
               newBoardResponse?.statusCode === RES_CODE_OK &&
@@ -4669,7 +4895,7 @@ function ProjectWorkspaceView({
   const getTasksForBoard = (boardName: string) => {
     // Filter tasks by boardName from master board
     let filteredTasks = DataTasks.filter(
-      (task) => task.boardName === boardName
+      (task) => task.boardName === boardName,
     );
 
     // Apply search filter
@@ -4678,28 +4904,35 @@ function ProjectWorkspaceView({
         (task) =>
           task.taskName.toLowerCase().includes(searchTerm.toLowerCase()) ||
           (task.taskDesc &&
-            task.taskDesc.toLowerCase().includes(searchTerm.toLowerCase()))
+            task.taskDesc.toLowerCase().includes(searchTerm.toLowerCase())),
       );
     }
 
     // Apply priority filter
     if (filterPriority) {
       filteredTasks = filteredTasks.filter(
-        (task) => task.taskPriority === filterPriority
+        (task) => task.taskPriority === filterPriority,
       );
     }
 
     // Apply backlog filter
     if (filterBacklog) {
       filteredTasks = filteredTasks.filter(
-        (task) => task.backlogId === filterBacklog
+        (task) => task.backlogId === filterBacklog,
+      );
+    }
+
+    // Apply "My Tasks Only" filter
+    if (showMyTasksOnly && DataAuth) {
+      filteredTasks = filteredTasks.filter((task) =>
+        task.assignUsers.some((user) => user.userId === DataAuth.userId),
       );
     }
 
     // Apply completed tasks filter
     if (!showCompletedTasks) {
       filteredTasks = filteredTasks.filter(
-        (task) => task.percentageStatus < 100
+        (task) => task.percentageStatus < 100,
       );
     }
 
@@ -4711,19 +4944,19 @@ function ProjectWorkspaceView({
     const totalTasks = DataTasks.length;
 
     const todoTasks = DataTasks.filter(
-      (task) => task.boardName?.toUpperCase() === "TO DO"
+      (task) => task.boardName?.toUpperCase() === "TO DO",
     ).length;
 
     const inProgressTasks = DataTasks.filter(
-      (task) => task.boardName?.toUpperCase() === "IN PROGRESS"
+      (task) => task.boardName?.toUpperCase() === "IN PROGRESS",
     ).length;
 
     const inReviewTasks = DataTasks.filter(
-      (task) => task.boardName?.toUpperCase() === "IN REVIEW"
+      (task) => task.boardName?.toUpperCase() === "IN REVIEW",
     ).length;
 
     const completedTasks = DataTasks.filter(
-      (task) => task.boardName?.toUpperCase() === "DONE"
+      (task) => task.boardName?.toUpperCase() === "DONE",
     ).length;
 
     const completionPercentage =
@@ -4995,8 +5228,8 @@ function ProjectWorkspaceView({
                 {loadingStep === "tasks" ? (
                   <Spinner size="sm" color="blue.500" />
                 ) : ["init", "project", "boards", "backlogs"].includes(
-                  loadingStep
-                ) ? (
+                    loadingStep,
+                  ) ? (
                   <Icon as={FiCircle} color="gray.300" boxSize={5} />
                 ) : (
                   <Icon as={FiCheckCircle} color="green.500" boxSize={5} />
@@ -5007,8 +5240,8 @@ function ProjectWorkspaceView({
                     loadingStep === "tasks"
                       ? "blue.500"
                       : ["init", "project", "boards", "backlogs"].includes(
-                        loadingStep
-                      )
+                            loadingStep,
+                          )
                         ? "gray.400"
                         : "gray.500"
                   }
@@ -5152,10 +5385,17 @@ function ProjectWorkspaceView({
                           {DataProject?.projectName || "Project Workspace"}
                         </Heading>
 
-                        <HStack spacing={3} fontSize="sm" color="gray.600" wrap="wrap">
+                        <HStack
+                          spacing={3}
+                          fontSize="sm"
+                          color="gray.600"
+                          wrap="wrap"
+                        >
                           <HStack spacing={1}>
                             <Text fontWeight="500">Memo No:</Text>
-                            <Text>{DataProject?.requirementData?.reqNumber || "-"}</Text>
+                            <Text>
+                              {DataProject?.requirementData?.reqNumber || "-"}
+                            </Text>
                           </HStack>
                           <HStack spacing={1}>
                             <Text fontWeight="500">Project No:</Text>
@@ -5163,11 +5403,15 @@ function ProjectWorkspaceView({
                           </HStack>
                           <HStack spacing={1}>
                             <Text fontWeight="500">Inisiator:</Text>
-                            <Text>{DataProject?.proOwnerDivisionName || "-"}</Text>
+                            <Text>
+                              {DataProject?.proOwnerDivisionName || "-"}
+                            </Text>
                           </HStack>
                           <HStack spacing={1}>
                             <Text fontWeight="500">Pengelola:</Text>
-                            <Text>{DataProject?.proManageByDivisionName || "-"}</Text>
+                            <Text>
+                              {DataProject?.proManageByDivisionName || "-"}
+                            </Text>
                           </HStack>
                         </HStack>
 
@@ -5297,11 +5541,21 @@ function ProjectWorkspaceView({
                       <>
                         <Divider orientation="vertical" h="20px" />
                         <HStack spacing={1}>
-                          <Text fontSize="xs" fontWeight="medium" color="gray.600">
+                          <Text
+                            fontSize="xs"
+                            fontWeight="medium"
+                            color="gray.600"
+                          >
                             Target Live:
                           </Text>
-                          <Text fontSize="xs" color="blue.600" fontWeight="bold">
-                            {formatDateDDMMYYYY(DataProject.requirementData.appLiveTargetDate)}
+                          <Text
+                            fontSize="xs"
+                            color="blue.600"
+                            fontWeight="bold"
+                          >
+                            {formatDateDDMMYYYY(
+                              DataProject.requirementData.appLiveTargetDate,
+                            )}
                           </Text>
                         </HStack>
                       </>
@@ -5379,8 +5633,12 @@ function ProjectWorkspaceView({
                         Deadline:
                       </Text>
                       <Text fontSize="sm" color="blue.600" fontWeight="medium">
-                        {DataBacklogs.find(b => b.id === filterBacklog)?.backlogEnddate
-                          ? formatDateDDMMYYYY(DataBacklogs.find(b => b.id === filterBacklog)!.backlogEnddate!)
+                        {DataBacklogs.find((b) => b.id === filterBacklog)
+                          ?.backlogEnddate
+                          ? formatDateDDMMYYYY(
+                              DataBacklogs.find((b) => b.id === filterBacklog)!
+                                .backlogEnddate!,
+                            )
                           : "-"}
                       </Text>
                     </HStack>
@@ -5389,11 +5647,26 @@ function ProjectWorkspaceView({
                     isChecked={showCompletedTasks}
                     onChange={(e) => setShowCompletedTasks(e.target.checked)}
                     colorScheme="secondary"
-                    size="sm"
+                    size="md"
                   >
-                    <Text fontSize="sm">Show completed</Text>
+                    <Text fontSize="md">Show completed</Text>
                   </Checkbox>
-
+                  <Checkbox
+                    isChecked={showMyTasksOnly}
+                    onChange={(e) => setShowMyTasksOnly(e.target.checked)}
+                    colorScheme="blue"
+                    size="md"
+                  >
+                    <Text fontSize="md">My tasks only</Text>
+                  </Checkbox>
+                  <Checkbox
+                    isChecked={isCompactView}
+                    onChange={(e) => setIsCompactView(e.target.checked)}
+                    colorScheme="purple"
+                    size="md"
+                  >
+                    <Text fontSize="md">Compact view</Text>
+                  </Checkbox>
                 </HStack>
 
                 <Button
@@ -5472,6 +5745,7 @@ function ProjectWorkspaceView({
                         recentlyMovedTaskId={recentlyMovedTaskId}
                         DataProject={DataProject}
                         DataBacklogs={DataBacklogs}
+                        isCompactView={isCompactView}
                       />
                     </GridItem>
                   ))}
@@ -5685,13 +5959,14 @@ function ProjectWorkspaceView({
                     <TaskCard
                       key={task.id}
                       task={task}
-                      onEdit={() => { }}
-                      onDelete={() => { }}
-                      onUpdateTask={() => { }}
-                      onRefreshTasks={() => { }}
+                      onEdit={() => {}}
+                      onDelete={() => {}}
+                      onUpdateTask={() => {}}
+                      onRefreshTasks={() => {}}
                       isRecentlyMoved={false}
                       DataProject={DataProject}
                       DataBacklogs={DataBacklogs}
+                      isCompactView={isCompactView}
                     />
                   ))}
                 </VStack>
