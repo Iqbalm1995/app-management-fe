@@ -208,6 +208,7 @@ import {
   FiChevronUp,
   FiCornerDownLeft,
   FiExternalLink,
+  FiFile,
   FiInfo,
   FiLock,
   FiMinusCircle,
@@ -218,6 +219,7 @@ import {
   FiSave,
   FiX,
   FiXCircle,
+  FiSend,
 } from "react-icons/fi";
 import * as yup from "yup";
 import { Select } from "chakra-react-select";
@@ -3028,22 +3030,7 @@ function RegisterRequirementFormPage({
                   {isEditMode ? "Update Draft" : "Save Draft"}
                 </Button>
               )}
-              {isEditMode &&
-                isReviewMode &&
-                (requirementStatus === REQ_STATUS_NEED_REVIEW ||
-                  requirementStatus === REQ_STATUS_IN_PROGRESS_REVIEW) && (
-                  <Button
-                    colorScheme={"orange"}
-                    leftIcon={<FiSave />}
-                    onClick={onApprovalRequestOpen}
-                    isLoading={ActionLoading}
-                    isDisabled={activeStep !== steps.length - 1}
-                    px={8}
-                    size={"lg"}
-                  >
-                    Approval Request
-                  </Button>
-                )}
+
               <Button
                 colorScheme={"green"}
                 leftIcon={<FiSave />}
@@ -3055,8 +3042,25 @@ function RegisterRequirementFormPage({
               >
                 {isEditMode && requirementStatus === "APPROVED"
                   ? "Update"
-                  : "Submit"}
+                  : "Save"}
               </Button>
+
+              {isEditMode &&
+                isReviewMode &&
+                (requirementStatus === REQ_STATUS_NEED_REVIEW ||
+                  requirementStatus === REQ_STATUS_IN_PROGRESS_REVIEW) && (
+                  <Button
+                    colorScheme={"orange"}
+                    leftIcon={<FiSend />}
+                    onClick={onApprovalRequestOpen}
+                    isLoading={ActionLoading}
+                    isDisabled={activeStep !== steps.length - 1}
+                    px={8}
+                    size={"lg"}
+                  >
+                    Approval Request
+                  </Button>
+                )}
             </Flex>
           </GridItem>
           <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 12 }} w={"full"}>

@@ -781,6 +781,18 @@ export default function PendingApproveView() {
           })
         );
 
+        // Filter for WAITING APPROVAL 1 stage only
+        if (viewMode === "PENDING" && DataAuth?.team?.orgGroupId) {
+          const userGroupId = DataAuth.team.orgGroupId;
+          dataList = dataList.filter(project => {
+            if (project.approvalStatus === "WAITING APPROVAL 1") {
+              return project.proOwnerGroupId === userGroupId || 
+                     project.proManageByGroupId === userGroupId;
+            }
+            return true;
+          });
+        }
+
         // Check approval permissions for pending projects
         if (viewMode === "PENDING") {
           checkApprovalPermissions(dataList);
@@ -834,7 +846,7 @@ export default function PendingApproveView() {
     FilterProjectType,
     FilterProjectStatus,
     FilterApprovalStatus,
-  ]);
+    DataAuth,  ]);
 
   return (
     <LayoutAdmin>
