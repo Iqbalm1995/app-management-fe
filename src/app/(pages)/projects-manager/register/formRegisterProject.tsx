@@ -1,6 +1,6 @@
 "use client";
 
-import { ConfirmationDialog } from "@/app/components/confirmationDialog";
+
 import {
   HeaderContent,
   HeaderContentProps,
@@ -131,9 +131,11 @@ import Link from "next/link";
 import { redirect, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
+  FiAlertTriangle,
   FiArrowLeft,
   FiArrowRight,
   FiBriefcase,
+  FiCheck,
   FiCheckCircle,
   FiExternalLink,
   FiInfo,
@@ -791,6 +793,7 @@ function FormRegisterProjectView() {
   }, [DataAuth, RefreshData, ReqId]);
 
   // GetServiceListBacklog
+  // Countdown timer for submit confirmation
   const [IsloadingBacklogs, setIsloadingBacklogs] = useState(false);
   const [DataBacklogsRequirement, setDataBacklogsRequirement] = useState<
     BacklogDataResponse[]
@@ -1288,13 +1291,34 @@ function FormRegisterProjectView() {
 
   // confirmation save data
   const [openConfirmSaveDialog, setOpenConfirmSaveDialog] = useState(false);
+  const [submitCountdown, setSubmitCountdown] = useState(5);
   const [questionMsgDialog, setQuestionMsgDialog] = useState<string>("");
   const [captionDialog, setCaptionDialog] = useState<string>("");
 
+  // Countdown timer for submit confirmation
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (openConfirmSaveDialog) {
+      setSubmitCountdown(5);
+      timer = setInterval(() => {
+        setSubmitCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [openConfirmSaveDialog]);
+
   const handleConfirmSaveData = (data: ProjectInsertPayload) => {
-    setCaptionDialog("Konfirmasi Simpan");
+    setCaptionDialog("Submit Project Data");
     setQuestionMsgDialog(
-      `Apakah ada yakin akan submit data Project "${formik.values.projectName}"?`
+      `Are you sure you want to submit project data "${formik.values.projectName}"?`
     );
     setOpenConfirmSaveDialog(true);
   };
@@ -1430,14 +1454,73 @@ function FormRegisterProjectView() {
         breadCrumb={HeaderDataContent.breadCrumb}
       />
 
-      <ConfirmationDialog
-        key={"confirmSaveData"}
-        isOpenTrigger={openConfirmSaveDialog}
-        action={handleSaveData}
-        trigger={handleDialogSaveTrigger}
-        questionMsg={questionMsgDialog}
-        captionMsg={captionDialog}
-      />
+      {/* Submit Data Confirmation Modal */}
+      <Modal
+        isOpen={openConfirmSaveDialog}
+        onClose={() => setOpenConfirmSaveDialog(false)}
+        isCentered
+      >
+        <ModalOverlay bg="blackAlpha.500" backdropFilter="blur(8px)" />
+        <ModalContent rounded={radiusStyle}>
+          <ModalHeader bg="orange.500" color="white" roundedTop={radiusStyle}>
+            <HStack>
+              <Icon as={FiAlertTriangle} boxSize={5} />
+              <Text>Submit Project Data</Text>
+            </HStack>
+          </ModalHeader>
+          <ModalCloseButton color="white" />
+          <ModalBody py={6}>
+            <VStack spacing={4} align="stretch">
+              <HStack spacing={2} align="flex-start">
+                <Icon as={FiAlertTriangle} color="orange.500" boxSize={5} mt={0.5} />
+                <Box>
+                  <Text fontWeight="bold" color="orange.500">WARNING: Submit Data Action</Text>
+                  <Text mt={2}>{questionMsgDialog}</Text>
+                </Box>
+              </HStack>
+
+              <Card bg={colorMode === "light" ? "orange.50" : "orange.900"} borderColor="orange.200" borderWidth="1px">
+                <CardBody>
+                  <HStack spacing={2} align="flex-start">
+                    <Icon as={FiAlertTriangle} color="orange.500" boxSize={4} mt={0.5} />
+                    <Box>
+                      <Text fontWeight="bold" fontSize="sm">IMPORTANT:</Text>
+                      <Text fontSize="sm" mt={1}>
+                        Once submitted, this project data will be saved and processed. This action cannot be undone.
+                      </Text>
+                    </Box>
+                  </HStack>
+                </CardBody>
+              </Card>
+
+              <HStack spacing={2} align="flex-start">
+                <Icon as={FiCheckCircle} color="green.500" boxSize={4} mt={0.5} />
+                <Text fontSize="sm">
+                  This action will save your project data and initiate the workflow process.
+                </Text>
+              </HStack>
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <HStack spacing={3}>
+              <Button leftIcon={<FiX />} onClick={() => setOpenConfirmSaveDialog(false)}>
+                Cancel
+              </Button>
+              <Button
+                leftIcon={<FiCheck />}
+                colorScheme="orange"
+                onClick={async () => {
+                  setOpenConfirmSaveDialog(false);
+                  await handleSaveData();
+                }}
+                isDisabled={submitCountdown > 0}
+              >
+                {submitCountdown > 0 ? `Wait ${submitCountdown}s` : `Submit Data`}
+              </Button>
+            </HStack>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
       {/* <form onSubmit={formik.handleSubmit} onReset={formik.handleReset}> */}
       {/* Requirement Validation */}
@@ -1610,7 +1693,7 @@ function FormRegisterProjectView() {
                       <FormControl id="initialAppReqName">
                         <InputLayoutFull>
                           <FormLabel h={"full"} mt={2}>
-                            Nama Aplikasi
+                            Nama Product
                           </FormLabel>
                           <Stack spacing={0} h={"full"}>
                             <Input
@@ -1618,7 +1701,7 @@ function FormRegisterProjectView() {
                               name="initialAppReqName"
                               type="text"
                               value={DataRequirement?.appInitialName || ""}
-                              placeholder={`Nama Aplikasi`}
+                              placeholder={`Nama Product`}
                               minLength={3}
                               maxLength={200}
                               // isDisabled={true}

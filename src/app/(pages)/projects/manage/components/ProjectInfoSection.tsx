@@ -694,7 +694,8 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                 <CardBody p={6}>
                   {RequirementData ? (
                     <VStack spacing={6} align="stretch">
-                      {DataProject.isImported === "Y" && (
+                      {DataProject.isImported === "Y" && 
+                       !(RequirementData && RequirementData.isHaveMemo === "Y") && (
                         <Alert
                           status="error"
                           variant="left-accent"
@@ -718,6 +719,34 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                               </Button>
                             </Link>
                           )}
+                        </Alert>
+                      )}
+                      {RequirementData && (
+                        <Alert
+                          status="info"
+                          variant="left-accent"
+                          rounded="lg"
+                          bg={colorMode === "light" ? "blue.50" : "blue.900"}
+                          borderColor={colorMode === "light" ? "blue.200" : "blue.700"}
+                        >
+                          <AlertIcon />
+                          <Box flex="1">
+                            <AlertTitle fontSize="sm" fontWeight="bold">
+                              Requirement Information
+                            </AlertTitle>
+                            <AlertDescription fontSize="xs">
+                              View complete requirement details and documentation.
+                            </AlertDescription>
+                          </Box>
+                          <Link 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            href={`/requirements/detail?reqId=${RequirementData.id}&type=${RequirementData.requirementType}`}
+                          >
+                            <Button size="xs" colorScheme="blue" variant="solid">
+                              View Requirement
+                            </Button>
+                          </Link>
                         </Alert>
                       )}
                       {/* Requirement Details */}

@@ -46,7 +46,9 @@ export interface InsertMediaObjectPayload {
 export interface InsertMediaObjectByKeyPayload {
   KeyData: string;
   KeyId: string;
-  file: File;
+  file?: File;  // Optional now
+  LinkUrl?: string;  // NEW: For links
+  LinkTitle?: string;  // NEW: For links
 }
 
 interface useMediaObjectServices {
@@ -267,11 +269,20 @@ const useMediaObject = (): useMediaObjectServices => {
     );
     const PathEndpoint: string = "/v1/MediaObjects/uploadFileByKey";
 
-    // Create FormData and append payload fields
     const formData = new FormData();
     formData.append("KeyData", payload.KeyData);
     formData.append("KeyId", payload.KeyId);
-    formData.append("file", payload.file);
+    
+    if (payload.file) {
+      formData.append("file", payload.file);
+    }
+    
+    if (payload.LinkUrl) {
+      formData.append("LinkUrl", payload.LinkUrl);
+    }
+    if (payload.LinkTitle) {
+      formData.append("LinkTitle", payload.LinkTitle);
+    }
 
     try {
       const response = await axiosInstance.post<
@@ -281,7 +292,7 @@ const useMediaObject = (): useMediaObjectServices => {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
-        timeout: 300000, // 5 minutes for file uploads
+        timeout: 300000,
       });
       setIsLoading(false);
       return response.data;

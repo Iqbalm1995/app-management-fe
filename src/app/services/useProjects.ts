@@ -1124,6 +1124,11 @@ interface useProjectsServices {
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
 
+  AssignProcurementStagesToProject: (
+    payload: { projectId: string; workflowIds: string[] },
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+
   SetupProjectSdlc: (
     projectId: string,
     sdlcFlowId: string,
@@ -3839,16 +3844,16 @@ const useProjects = (): useProjectsServices => {
     formData.append("DocumentDate", payload.DocumentDate);
     formData.append("DocumentVersion", payload.DocumentVersion);
 
-    if (payload.file) {
-      formData.append("file", payload.file);
-    }
-
     if (payload.ReffParentId) {
       formData.append("ReffParentId", payload.ReffParentId);
     }
 
     if (payload.LinkAttachment) {
       formData.append("LinkAttachment", payload.LinkAttachment);
+    }
+
+    if (payload.file) {
+      formData.append("file", payload.file);
     }
 
     try {
@@ -3859,7 +3864,7 @@ const useProjects = (): useProjectsServices => {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
-        timeout: 300000, // 5 minutes for file uploads
+        timeout: 300000, // 5 minutes for file upload
       });
       setIsLoading(false);
       return response.data;
@@ -3868,7 +3873,7 @@ const useProjects = (): useProjectsServices => {
       if (axios.isAxiosError(err)) {
         const errorResponse = handleAxiosError(err);
         setError(
-          err.response?.data?.message || "An error occurred during login."
+          err.response?.data?.message || "An error occurred during operation."
         );
         return errorResponse;
       } else {
@@ -4070,6 +4075,46 @@ const useProjects = (): useProjectsServices => {
       ENDPOINT_PORT_BASIC
     );
     const PathEndpoint: string = "/v1/Projects/assign-workflows";
+    try {
+      const response = await axiosInstance.post<ApiGenericResponse<string>>(
+        `${UrlEndpoint}${PathEndpoint}`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const AssignProcurementStagesToProject = async (
+    payload: { projectId: string; workflowIds: string[] },
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/Projects/assign-procurement-stages";
     try {
       const response = await axiosInstance.post<ApiGenericResponse<string>>(
         `${UrlEndpoint}${PathEndpoint}`,
@@ -4461,6 +4506,7 @@ const useProjects = (): useProjectsServices => {
 
     AssignBacklogsToProject,
     AssignWorkflowsToProject,
+    AssignProcurementStagesToProject,
 
     ListProjectWorkflow,
     ListProjectWorkflowValue,

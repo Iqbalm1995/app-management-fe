@@ -54,6 +54,7 @@ import {
   FormLabel,
   FormErrorMessage,
   Select,
+  Checkbox,
   AlertDialog,
   AlertDialogBody,
   AlertDialogFooter,
@@ -81,19 +82,22 @@ import {
   FiSave,
   FiX,
   FiPlus,
+  FiStar,
 } from "react-icons/fi";
 
-type TeamDetailViewProps = object
+type TeamDetailViewProps = object;
 
 interface TeamFormValues {
   teamName: string;
   teamCode: string;
   teamDesc: string;
+  directorateId: string;
+  divisionId: string;
   orgGroupId: string;
   isActive: string;
 }
 
-function TeamDetailView({ }: TeamDetailViewProps) {
+function TeamDetailView({}: TeamDetailViewProps) {
   const { colorMode } = useColorMode();
   const showToast = useToastHelper();
   const router = useRouter();
@@ -136,6 +140,8 @@ function TeamDetailView({ }: TeamDetailViewProps) {
   const [selectedDirectorate, setSelectedDirectorate] = useState<string>("");
   const [selectedDivision, setSelectedDivision] = useState<string>("");
   const [selectedGroup, setSelectedGroup] = useState<string>("");
+  const [isTopExecutive, setIsTopExecutive] = useState<boolean>(false);
+  const isInitialLoadRef = useRef<boolean>(true);
 
   // Confirmation dialog state
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -157,7 +163,9 @@ function TeamDetailView({ }: TeamDetailViewProps) {
   const [isAddingMember, setIsAddingMember] = useState(false);
   const [searchUser, setSearchUser] = useState<string>("");
   const [filteredUsers, setFilteredUsers] = useState<UsersResponse[]>([]);
-  const [specializations, setSpecializations] = useState<SpecializationResponse[]>([]);
+  const [specializations, setSpecializations] = useState<
+    SpecializationResponse[]
+  >([]);
   const [selectedRoleId, setSelectedRoleId] = useState<string>("");
 
   // Header content
@@ -175,9 +183,14 @@ function TeamDetailView({ }: TeamDetailViewProps) {
       .max(100, "Maximum 100 characters"),
     teamCode: Yup.string().required("Team code is required"),
     teamDesc: Yup.string().max(500, "Maximum 500 characters"),
-    orgGroupId: Yup.string().required("Organization group is required"),
+    orgGroupId: Yup.string(),
     isActive: Yup.string().required("Status is required"),
   });
+
+  // Conditional validation for top executive
+  const getValidationSchema = () => {
+    return ValidationSchema;
+  };
 
   // Formik setup
   const formik = useFormik({
@@ -185,10 +198,12 @@ function TeamDetailView({ }: TeamDetailViewProps) {
       teamName: "",
       teamCode: "",
       teamDesc: "",
+      directorateId: "",
+      divisionId: "",
       orgGroupId: "",
       isActive: "ACTIVE",
     },
-    validationSchema: ValidationSchema,
+    validationSchema: getValidationSchema(),
     validateOnChange: false,
     validateOnBlur: false,
     onSubmit: async (values) => {
@@ -227,16 +242,32 @@ function TeamDetailView({ }: TeamDetailViewProps) {
         teamName: TeamData.teamName,
         teamCode: TeamData.teamCode,
         teamDesc: TeamData.teamDesc || "",
-        orgGroupId: TeamData.group?.id || TeamData.orgGroupId, // Use group.id if available
+        directorateId: TeamData.directorate?.id || "",
+        divisionId: TeamData.division?.id || "",
+        orgGroupId: TeamData.group?.id || TeamData.orgGroupId || "",
         isActive: TeamData.isActive,
       });
     }
   }, [TeamData]);
 
-  // Initialize selections when entering edit mode and data is available
+  // Sync formik directorateId with state variable
+  useEffect(() => {
+    if (formik.values.directorateId && formik.values.directorateId !== selectedDirectorate) {
+      setSelectedDirectorate(formik.values.directorateId);
+    }
+  }, [formik.values.directorateId]);
+
+  // Sync formik divisionId with state variable
+  useEffect(() => {
+    if (formik.values.divisionId && formik.values.divisionId !== selectedDivision) {
+      setSelectedDivision(formik.values.divisionId);
+    }
+  }, [formik.values.divisionId]);
+
+  // Initialize selections when data is available
   useEffect(() => {
     if (
-      isEditMode &&
+      isInitialLoadRef.current &&
       TeamData &&
       DirectorateData.length > 0 &&
       DivisionData.length > 0 &&
@@ -251,24 +282,12 @@ function TeamDetailView({ }: TeamDetailViewProps) {
       if (TeamData.group?.id) {
         setSelectedGroup(TeamData.group.id);
       }
+      // Set flag to false after state updates complete
+      setTimeout(() => {
+        isInitialLoadRef.current = false;
+      }, 0);
     }
-  }, [isEditMode, TeamData, DirectorateData, DivisionData, GroupData]);
-
-  // Reset division and group when directorate changes
-  useEffect(() => {
-    if (selectedDirectorate !== "") {
-      setSelectedDivision("");
-      setSelectedGroup("");
-      formik.setFieldValue("orgGroupId", "");
-    }
-  }, [selectedDirectorate]);
-
-  // Reset group when division changes
-  useEffect(() => {
-    if (selectedDivision !== "") {
-      formik.setFieldValue("orgGroupId", "");
-    }
-  }, [selectedDivision]);
+  }, [TeamData, DirectorateData, DivisionData, GroupData]);
 
   // Update form value when selectedGroup changes
   useEffect(() => {
@@ -276,6 +295,13 @@ function TeamDetailView({ }: TeamDetailViewProps) {
       formik.setFieldValue("orgGroupId", selectedGroup);
     }
   }, [selectedGroup]);
+
+  // Check if team is top executive after data is loaded
+  useEffect(() => {
+    if (TeamData) {
+      setIsTopExecutive(TeamData.isTopExecutive);
+    }
+  }, [TeamData]);
 
   const GetTeamData = async () => {
     if (!teamId || !tokenData) return;
@@ -385,10 +411,22 @@ function TeamDetailView({ }: TeamDetailViewProps) {
       const divisionFilter: ListSearchByParam[] = [
         { field: "orgType", operator: "=" as const, value: "DIVISION" },
         ...(selectedDirectorate
-          ? [{ field: "parentId", operator: "=" as const, value: selectedDirectorate }]
+          ? [
+              {
+                field: "parentId",
+                operator: "=" as const,
+                value: selectedDirectorate,
+              },
+            ]
           : TeamData?.directorate?.id
-            ? [{ field: "parentId", operator: "=" as const, value: TeamData.directorate.id }]
-            : []),
+          ? [
+              {
+                field: "parentId",
+                operator: "=" as const,
+                value: TeamData.directorate.id,
+              },
+            ]
+          : []),
       ];
       const PayloadDivision: PaggingListPayload = {
         search: "",
@@ -414,10 +452,22 @@ function TeamDetailView({ }: TeamDetailViewProps) {
       const groupFilter: ListSearchByParam[] = [
         { field: "orgType", operator: "=" as const, value: "GROUP" },
         ...(selectedDivision
-          ? [{ field: "parentId", operator: "=" as const, value: selectedDivision }]
+          ? [
+              {
+                field: "parentId",
+                operator: "=" as const,
+                value: selectedDivision,
+              },
+            ]
           : TeamData?.division?.id
-            ? [{ field: "parentId", operator: "=" as const, value: TeamData.division.id }]
-            : []),
+          ? [
+              {
+                field: "parentId",
+                operator: "=" as const,
+                value: TeamData.division.id,
+              },
+            ]
+          : []),
       ];
       const PayloadGroup: PaggingListPayload = {
         search: "",
@@ -428,15 +478,39 @@ function TeamDetailView({ }: TeamDetailViewProps) {
         filterWhere: groupFilter,
       };
 
-      const groupResponse = await ListOrganizations(
-        PayloadGroup,
-        tokenData
-      );
+      const groupResponse = await ListOrganizations(PayloadGroup, tokenData);
       if (groupResponse?.statusCode === RES_CODE_OK && groupResponse.data) {
         setGroupData(groupResponse.data as OrganizationResponse[]);
       }
     } catch (error) {
       console.error("Error loading organization data:", error);
+    }
+  };
+
+  const LoadGroupsForDivision = async () => {
+    if (!tokenData || !selectedDivision) return;
+
+    try {
+      const groupFilter: ListSearchByParam[] = [
+        { field: "orgType", operator: "=" as const, value: "GROUP" },
+        { field: "parentId", operator: "=" as const, value: selectedDivision },
+      ];
+
+      const PayloadGroup: PaggingListPayload = {
+        search: "",
+        limit: 999999,
+        page: 0,
+        fieldOrder: ["orgName"],
+        orderDir: "asc",
+        filterWhere: groupFilter,
+      };
+
+      const groupResponse = await ListOrganizations(PayloadGroup, tokenData);
+      if (groupResponse?.statusCode === RES_CODE_OK && groupResponse.data) {
+        setGroupData(groupResponse.data as OrganizationResponse[]);
+      }
+    } catch (error) {
+      console.error("Error loading groups:", error);
     }
   };
 
@@ -446,17 +520,55 @@ function TeamDetailView({ }: TeamDetailViewProps) {
     try {
       setIsUpdating(true);
 
-      // Find selected group to get orgGroupCode
-      const selectedGroup = GroupData.find(
-        (group) => group.id === values.orgGroupId
-      );
+      // Validate top executive requirements
+      if (isTopExecutive) {
+        if (!selectedDirectorate || !selectedDivision) {
+          showToast({
+            description:
+              "Directorate and Division are required for top executive team",
+            statusToast: "error",
+          });
+          setIsUpdating(false);
+          return;
+        }
+      }
 
-      if (!selectedGroup) {
-        showToast({
-          description: "Please select a valid organization group",
-          statusToast: "error",
-        });
-        return;
+      // Find selected group/division to get orgGroupCode
+      let orgGroupCode = null;
+      let orgGroupId = null;
+
+      if (isTopExecutive) {
+        // For top executive, use division as group
+        const selectedDiv = DivisionData.find(
+          (div) => div.id === selectedDivision
+        );
+
+        if (!selectedDiv) {
+          showToast({
+            description: "Please select a valid division",
+            statusToast: "error",
+          });
+          setIsUpdating(false);
+          return;
+        }
+        orgGroupId = selectedDiv.id;
+        orgGroupCode = selectedDiv.orgCode;
+      } else if (values.orgGroupId) {
+        // Normal mode - use group if selected
+        const selectedGroup = GroupData.find(
+          (group) => group.id === values.orgGroupId
+        );
+
+        if (!selectedGroup) {
+          showToast({
+            description: "Please select a valid organization group",
+            statusToast: "error",
+          });
+          setIsUpdating(false);
+          return;
+        }
+        orgGroupId = selectedGroup.id;
+        orgGroupCode = selectedGroup.orgCode;
       }
 
       // Build payload using TeamUpdatePayload interface
@@ -468,8 +580,8 @@ function TeamDetailView({ }: TeamDetailViewProps) {
         isActive: values.isActive || "ACTIVE",
         uploadPict: null,
         deletePict: false,
-        orgGroupId: values.orgGroupId,
-        orgGroupCode: selectedGroup.orgCode,
+        orgGroupId: orgGroupId,
+        orgGroupCode: orgGroupCode,
       };
 
       // Use UpdateTeams service function
@@ -539,10 +651,10 @@ function TeamDetailView({ }: TeamDetailViewProps) {
 
       const response = await ListUsers(payload, tokenData);
       if (response?.statusCode === RES_CODE_OK && response.data) {
-        // Filter out users who are already team members
+        // Filter out users who are already team members or have a team assigned
         const currentMemberIds = MembersData.map((member) => member.id);
         const available = response.data.filter(
-          (user) => !currentMemberIds.includes(user.id)
+          (user) => !currentMemberIds.includes(user.id) && user.team === null
         );
         setAvailableUsers(available);
         setFilteredUsers(available);
@@ -602,8 +714,9 @@ function TeamDetailView({ }: TeamDetailViewProps) {
           const userName =
             availableUsers.find((u) => u.id === userId)?.nama || "User";
           showToast({
-            description: `Failed to add ${userName}: ${response?.message || RES_GENERIC_ERROR_MSG
-              }`,
+            description: `Failed to add ${userName}: ${
+              response?.message || RES_GENERIC_ERROR_MSG
+            }`,
             statusToast: "error",
           });
           continue;
@@ -640,7 +753,8 @@ function TeamDetailView({ }: TeamDetailViewProps) {
 
     try {
       // Get a default specialization ID if available, otherwise use placeholder
-      const defaultRoleId = specializations.length > 0 ? specializations[0].id : "default-role";
+      const defaultRoleId =
+        specializations.length > 0 ? specializations[0].id : "default-role";
       const payload = {
         userId: memberToRemove.id,
         teamId: teamId,
@@ -678,19 +792,20 @@ function TeamDetailView({ }: TeamDetailViewProps) {
 
   // Reload divisions when directorate changes
   useEffect(() => {
-    if (selectedDirectorate) {
+    if (!isInitialLoadRef.current && selectedDirectorate) {
       setSelectedDivision("");
       setSelectedGroup("");
-      setSelectedGroup("");
+      formik.setFieldValue("orgGroupId", "");
       LoadGroupData();
     }
   }, [selectedDirectorate]);
 
   // Reload groups when division changes
   useEffect(() => {
-    if (selectedDivision) {
+    if (!isInitialLoadRef.current && selectedDivision) {
       setSelectedGroup("");
-      LoadGroupData();
+      formik.setFieldValue("orgGroupId", "");
+      LoadGroupsForDivision();
     }
   }, [selectedDivision]);
 
@@ -717,7 +832,9 @@ function TeamDetailView({ }: TeamDetailViewProps) {
         teamName: TeamData.teamName,
         teamCode: TeamData.teamCode,
         teamDesc: TeamData.teamDesc || "",
-        orgGroupId: TeamData.group?.id || TeamData.orgGroupId, // Use group.id if available
+        directorateId: TeamData.directorate?.id || "",
+        divisionId: TeamData.division?.id || "",
+        orgGroupId: TeamData.group?.id || TeamData.orgGroupId || "",
         isActive: TeamData.isActive,
       });
     }
@@ -793,7 +910,16 @@ function TeamDetailView({ }: TeamDetailViewProps) {
                   <Avatar
                     size="2xl"
                     name={TeamData.teamCode}
-                    src={TeamData.teamPict ? buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC) + "/upload/team_pict/" + TeamData.teamPict : undefined}
+                    src={
+                      TeamData.teamPict
+                        ? buildUrlPort(
+                            ENDPOINT_API_BASEURL,
+                            ENDPOINT_PORT_BASIC
+                          ) +
+                          "/upload/team_pict/" +
+                          TeamData.teamPict
+                        : undefined
+                    }
                     bg="secondary.500"
                     color="white"
                     fontSize="3xl"
@@ -858,6 +984,25 @@ function TeamDetailView({ }: TeamDetailViewProps) {
                       >
                         {TeamData.isActive.toLowerCase()}
                       </Badge>
+                      {isTopExecutive && (
+                        <Badge
+                          colorScheme="yellow"
+                          variant="solid"
+                          px={3}
+                          py={1}
+                          rounded="full"
+                          fontSize="xs"
+                          fontWeight="bold"
+                          textTransform="uppercase"
+                          display="flex"
+                          alignItems="center"
+                          gap={1}
+                          shadow="md"
+                        >
+                          <Icon as={FiStar} boxSize={3} />
+                          TOP EXECUTIVE
+                        </Badge>
+                      )}
                     </HStack>
                   </VStack>
 
@@ -1042,6 +1187,26 @@ function TeamDetailView({ }: TeamDetailViewProps) {
                 <CardBody p={8}>
                   {isEditMode ? (
                     <VStack spacing={6} align="stretch">
+                      <Box
+                        w={"full"}
+                        h={"350px"}
+                        borderRadius={"3xl"}
+                        bg={"gray.300"}
+                        overflowY={"auto"}
+                        fontSize={"x-small"}
+                      >
+                        <pre>{JSON.stringify(TeamData, null, 2)}</pre>
+                      </Box>
+                      <Box
+                        w={"full"}
+                        h={"350px"}
+                        borderRadius={"3xl"}
+                        bg={"gray.300"}
+                        overflowY={"auto"}
+                        fontSize={"x-small"}
+                      >
+                        <pre>{JSON.stringify(formik.values, null, 2)}</pre>
+                      </Box>
                       <FormControl isInvalid={!!formik.errors.teamName}>
                         <FormLabel
                           fontWeight="bold"
@@ -1136,21 +1301,126 @@ function TeamDetailView({ }: TeamDetailViewProps) {
                         </FormErrorMessage>
                       </FormControl>
 
-                      {/* Directorate Selection */}
+                      {/* Top Executive Toggle */}
                       <FormControl>
+                        <Box
+                          p={4}
+                          bg={
+                            isTopExecutive
+                              ? colorMode === "light"
+                                ? "secondary.50"
+                                : "secondary.900"
+                              : colorMode === "light"
+                              ? "gray.50"
+                              : "gray.700"
+                          }
+                          border="2px"
+                          borderColor={
+                            isTopExecutive
+                              ? "secondary.500"
+                              : colorMode === "light"
+                              ? "gray.200"
+                              : "gray.600"
+                          }
+                          rounded="xl"
+                          shadow={isTopExecutive ? "md" : "sm"}
+                          transition="all 0.2s"
+                          _hover={{
+                            shadow: "lg",
+                            transform: "translateY(-1px)",
+                          }}
+                        >
+                          <Checkbox
+                            isChecked={isTopExecutive}
+                            onChange={(e) => {
+                              setIsTopExecutive(e.target.checked);
+                              if (e.target.checked) {
+                                formik.setFieldValue("orgGroupId", "");
+                              }
+                            }}
+                            colorScheme="secondary"
+                            size="lg"
+                          >
+                            <HStack spacing={2}>
+                              <Icon
+                                as={FiStar}
+                                color={
+                                  isTopExecutive
+                                    ? "secondary.500"
+                                    : "gray.400"
+                                }
+                                boxSize={5}
+                              />
+                              <Text
+                                fontWeight="bold"
+                                color={
+                                  isTopExecutive
+                                    ? colorMode === "light"
+                                      ? "secondary.700"
+                                      : "secondary.300"
+                                    : colorMode === "light"
+                                    ? "gray.700"
+                                    : "gray.300"
+                                }
+                              >
+                                Team As Top Group Executive
+                              </Text>
+                              {isTopExecutive && (
+                                <Badge
+                                  colorScheme="secondary"
+                                  variant="solid"
+                                  fontSize="2xs"
+                                  px={2}
+                                  py={0.5}
+                                  rounded="full"
+                                >
+                                  ACTIVE
+                                </Badge>
+                              )}
+                            </HStack>
+                          </Checkbox>
+                          <Text
+                            fontSize="xs"
+                            color={
+                              isTopExecutive
+                                ? colorMode === "light"
+                                  ? "secondary.600"
+                                  : "secondary.400"
+                                : "gray.500"
+                            }
+                            mt={2}
+                            ml={6}
+                          >
+                            Mark this team as a top-level executive team
+                            (requires Directorate and Division)
+                          </Text>
+                        </Box>
+                      </FormControl>
+
+                      {/* Directorate Selection */}
+                      <FormControl isRequired={isTopExecutive}>
                         <FormLabel
                           fontWeight="bold"
                           color={
                             colorMode === "light" ? "gray.700" : "gray.300"
                           }
                         >
-                          Directorate
+                          Directorate{" "}
+                          {isTopExecutive && (
+                            <Text as="span" color="red.500">
+                              *
+                            </Text>
+                          )}
                         </FormLabel>
                         <Select
                           value={selectedDirectorate}
-                          onChange={(e) =>
-                            setSelectedDirectorate(e.target.value)
-                          }
+                          onChange={(e) => {
+                            setSelectedDirectorate(e.target.value);
+                            formik.setFieldValue(
+                              "directorateId",
+                              e.target.value
+                            );
+                          }}
                           placeholder="Select directorate"
                           bg={colorMode === "light" ? "white" : "gray.700"}
                           border="2px"
@@ -1173,18 +1443,26 @@ function TeamDetailView({ }: TeamDetailViewProps) {
                       </FormControl>
 
                       {/* Division Selection */}
-                      <FormControl>
+                      <FormControl isRequired={isTopExecutive}>
                         <FormLabel
                           fontWeight="bold"
                           color={
                             colorMode === "light" ? "gray.700" : "gray.300"
                           }
                         >
-                          Division
+                          Division{" "}
+                          {isTopExecutive && (
+                            <Text as="span" color="red.500">
+                              *
+                            </Text>
+                          )}
                         </FormLabel>
                         <Select
                           value={selectedDivision}
-                          onChange={(e) => setSelectedDivision(e.target.value)}
+                          onChange={(e) => {
+                            setSelectedDivision(e.target.value);
+                            formik.setFieldValue("divisionId", e.target.value);
+                          }}
                           placeholder="Select division"
                           bg={colorMode === "light" ? "white" : "gray.700"}
                           border="2px"
@@ -1199,6 +1477,8 @@ function TeamDetailView({ }: TeamDetailViewProps) {
                           }}
                         >
                           {DivisionData.filter((division) => {
+                            // Always include selected division
+                            if (selectedDivision === division.id) return true;
                             // Always include current team's division
                             if (TeamData?.division?.id === division.id)
                               return true;
@@ -1214,49 +1494,49 @@ function TeamDetailView({ }: TeamDetailViewProps) {
                         </Select>
                       </FormControl>
 
-                      <FormControl isInvalid={!!formik.errors.orgGroupId}>
-                        <FormLabel
-                          fontWeight="bold"
-                          color={
-                            colorMode === "light" ? "gray.700" : "gray.300"
-                          }
-                        >
-                          Group
-                        </FormLabel>
-                        <Select
-                          name="orgGroupId"
-                          value={formik.values.orgGroupId}
-                          onChange={formik.handleChange}
-                          placeholder="Select organization group"
-                          bg={colorMode === "light" ? "white" : "gray.700"}
-                          border="2px"
-                          borderColor={
-                            colorMode === "light" ? "gray.200" : "gray.600"
-                          }
-                          rounded="xl"
-                          _focus={{
-                            borderColor: "secondary.500",
-                            shadow:
-                              "0 0 0 1px var(--chakra-colors-secondary-500)",
-                          }}
-                        >
-                          {GroupData.filter((group) => {
-                            // Always include current team's group
-                            if (TeamData?.group?.id === group.id) return true;
-                            // Filter by selected division
-                            return selectedDivision
-                              ? group.parentId === selectedDivision
-                              : false;
-                          }).map((group) => (
-                            <option key={group.id} value={group.id}>
-                              {group.orgName} ({group.orgCode})
-                            </option>
-                          ))}
-                        </Select>
-                        <FormErrorMessage>
-                          {formik.errors.orgGroupId}
-                        </FormErrorMessage>
-                      </FormControl>
+                      {/* Group - Hidden when Top Executive */}
+                      {!isTopExecutive && (
+                        <FormControl>
+                          <FormLabel
+                            fontWeight="bold"
+                            color={
+                              colorMode === "light" ? "gray.700" : "gray.300"
+                            }
+                          >
+                            Group
+                          </FormLabel>
+                          <Select
+                            name="orgGroupId"
+                            value={formik.values.orgGroupId}
+                            onChange={formik.handleChange}
+                            placeholder="Select organization group"
+                            bg={colorMode === "light" ? "white" : "gray.700"}
+                            border="2px"
+                            borderColor={
+                              colorMode === "light" ? "gray.200" : "gray.600"
+                            }
+                            rounded="xl"
+                            _focus={{
+                              borderColor: "secondary.500",
+                              shadow:
+                                "0 0 0 1px var(--chakra-colors-secondary-500)",
+                            }}
+                          >
+                            {GroupData.filter((group) => {
+                              // Always include current team's group
+                              if (TeamData?.group?.id === group.id) return true;
+                              // Filter by selected division
+                              return selectedDivision
+                                ? group.parentId === selectedDivision
+                                : false;
+                            }).map((group) => (
+                              <option key={group.id} value={group.id}>
+                                {group.orgName} ({group.orgCode})
+                              </option>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      )}
 
                       <FormControl isInvalid={!!formik.errors.isActive}>
                         <FormLabel
@@ -1994,7 +2274,7 @@ function TeamDetailView({ }: TeamDetailViewProps) {
                   >
                     {searchUser
                       ? "No users found matching your search"
-                      : "No available users to add"}
+                      : "No users without team assignments available"}
                   </Text>
                 ) : (
                   <VStack spacing={0} align="stretch">
@@ -2010,8 +2290,8 @@ function TeamDetailView({ }: TeamDetailViewProps) {
                             bg: isSelected
                               ? "secondary.200"
                               : colorMode === "light"
-                                ? "gray.100"
-                                : "gray.600",
+                              ? "gray.100"
+                              : "gray.600",
                           }}
                           onClick={() => {
                             if (isSelected) {

@@ -55,8 +55,6 @@ import {
   radiusStyle,
   MAX_SIZE_TABLE,
   WorkStageProcurementId,
-  WorkflowProjectDevelopmentId,
-  WorkflowProjectProcurementId,
   PROJECT_TYPE_PROCUREMENT,
 } from "@/app/constants/applicationConstants";
 import { PaggingListPayload } from "@/app/types/masterTypes";
@@ -64,16 +62,18 @@ import LoadingMiniSignature from "@/app/components/loadingMini";
 import { DynamicWorkflowBox } from "./WorkflowComponents";
 import { colorProgression } from "@/app/helper/MasterHelper";
 
-interface ProjectDocumentationSectionProps {
+interface ProjectProcurementSectionProps {
   DataProject: ProjectDataResponse | null;
+  onAssignSuccess?: () => void;
 }
 
-const ProjectDocumentationSection = ({
+const ProjectProcurementSection = ({
   DataProject,
-}: ProjectDocumentationSectionProps) => {
+  onAssignSuccess,
+}: ProjectProcurementSectionProps) => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
-  const { ListProjectWorkflow, AssignWorkflowsToProject } = useProjects();
+  const { ListProjectWorkflowBacklog, AssignProcurementStagesToProject } = useProjects();
   const { ListWorkflowGroups } = useWorkflow();
   const { ListWorkflowPreset, GetWorkflowPresetById } = useWorkflowPreset();
 
@@ -146,11 +146,6 @@ const ProjectDocumentationSection = ({
 
     setIsLoadingWorkflows(true);
     try {
-      // Determine workflow category based on project type
-      const workflowCategoryId = DataProject.projectType === PROJECT_TYPE_PROCUREMENT
-        ? WorkflowProjectProcurementId
-        : WorkflowProjectDevelopmentId;
-
       // Load workflow groups
       const workflowPayload: PaggingListPayload = {
         limit: MAX_SIZE_TABLE,
@@ -159,7 +154,7 @@ const ProjectDocumentationSection = ({
         filterWhere: [
           { field: "parentId", operator: "=", value: "" },
           { field: "wfgLevel", operator: "=", value: "1" },
-          { field: "wfgCategoryId", operator: "=", value: workflowCategoryId },
+          { field: "wfgCategoryId", operator: "=", value: WorkStageProcurementId },
         ],
         fieldOrder: ["wfgOrder"],
         orderDir: "asc",
@@ -175,7 +170,7 @@ const ProjectDocumentationSection = ({
         page: 0,
         search: "",
         filterWhere: [
-          { field: "wfCategoryId", operator: "=", value: workflowCategoryId },
+          { field: "wfCategoryId", operator: "=", value: WorkStageProcurementId },
         ],
         fieldOrder: ["wfPresetName"],
         orderDir: "asc",
@@ -294,22 +289,22 @@ const ProjectDocumentationSection = ({
     setIsConfirmWorkflowOpen(false);
     setIsAssigning(true);
     try {
-      const response = await AssignWorkflowsToProject(
+      const response = await AssignProcurementStagesToProject(
         { projectId: DataProject!.id, workflowIds: Array.from(selectedWorkflowIds) },
         tokenData
       );
 
       if (response?.statusCode === RES_CODE_OK) {
-        showToast({ description: response.message || "Workflows assigned successfully", statusToast: "success" });
+        showToast({ description: response.message || "Procurement stages assigned successfully", statusToast: "success" });
         setIsWorkflowModalOpen(false);
         setSelectedWorkflowIds(new Set());
         setSelectedPreset(null);
-        RefreshAction();
+        onAssignSuccess?.();
       } else {
-        showToast({ description: response?.message || "Failed to assign workflows", statusToast: "error" });
+        showToast({ description: response?.message || "Failed to assign procurement stages", statusToast: "error" });
       }
     } catch (error) {
-      showToast({ description: "Error assigning workflows", statusToast: "error" });
+      showToast({ description: "Error assigning procurement stages", statusToast: "error" });
     } finally {
       setIsAssigning(false);
     }
@@ -368,7 +363,7 @@ const ProjectDocumentationSection = ({
     if (DataAuth && DataProject) {
       setIsLoadingProcess(true);
       const GetWorkflowData = async () => {
-        const requestData = await ListProjectWorkflow(
+        const requestData = await ListProjectWorkflowBacklog(
           DataProject.id,
           tokenData
         );
@@ -421,14 +416,14 @@ const ProjectDocumentationSection = ({
             size="lg"
             color={colorMode === "light" ? "gray.800" : "white"}
           >
-            Project Documentation
+            Project Procurement Stages
           </Heading>
           <Text color="gray.600" fontSize="sm">
-            Manage project documentation as workflow stage project
+            Manage project procurement stages as workflow
           </Text>
         </VStack>
         <HStack spacing={3}>
-          {DataProject?.isImported === "Y" && (!DataWorkflow || DataWorkflow.length === 0) && (
+          {DataProject?.projectType === PROJECT_TYPE_PROCUREMENT && (!DataWorkflow || DataWorkflow.length === 0) && (
             <Button
               size="sm"
               leftIcon={<FiSettings />}
@@ -440,7 +435,7 @@ const ProjectDocumentationSection = ({
               }}
               isLoading={IsLoadingProcess}
             >
-              Set Work Stages for Documentations
+              Set Procurement Stages
             </Button>
           )}
           <Button
@@ -549,12 +544,12 @@ const ProjectDocumentationSection = ({
                     borderColor={colorMode === "light" ? "gray.100" : "gray.900"}
                   >
                     <Flex as={Stack} w="full">
-                      <Heading size="md">Choose Work Stages</Heading>
+                      <Heading size="md">Choose Work Stages for Procurement</Heading>
                       <Text
                         fontSize="sm"
                         color={colorMode === "light" ? "gray.500" : "gray.400"}
                       >
-                        Select workflow stages for this project
+                        Select workflow stages for procurement
                       </Text>
                     </Flex>
                     {workflowGroups.length === 0 ? (
@@ -605,7 +600,7 @@ const ProjectDocumentationSection = ({
                                 fontWeight="bold"
                                 color="secondary.500"
                               >
-                                Work Stage Preset
+                                Procurement Stages
                               </Text>
                             </HStack>
                             <Text
@@ -617,7 +612,7 @@ const ProjectDocumentationSection = ({
                               }
                               lineHeight={1.2}
                             >
-                              Select workflow stages preset related project work stage
+                              Select procurement stages preset
                             </Text>
                           </VStack>
                         </HStack>
@@ -804,4 +799,4 @@ const ProjectDocumentationSection = ({
   );
 };
 
-export default ProjectDocumentationSection;
+export default ProjectProcurementSection;

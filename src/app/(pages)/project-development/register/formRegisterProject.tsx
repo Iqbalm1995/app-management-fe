@@ -1414,7 +1414,7 @@ function FormRegisterProjectView() {
                     <FormControl id="initialAppReqName">
                       <InputLayoutFull>
                         <FormLabel h={"full"} mt={2}>
-                          Nama Aplikasi
+                          Nama Product
                         </FormLabel>
                         <Stack spacing={0} h={"full"}>
                           <Input
@@ -1422,7 +1422,7 @@ function FormRegisterProjectView() {
                             name="initialAppReqName"
                             type="text"
                             value={DataRequirement?.appInitialName || ""}
-                            placeholder={`Nama Aplikasi`}
+                            placeholder={`Nama Product`}
                             minLength={3}
                             maxLength={200}
                             // isDisabled={true}

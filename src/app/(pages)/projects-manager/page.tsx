@@ -89,6 +89,7 @@ import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useProjects, { ProjectDataResponse } from "@/app/services/useProjects";
+import useOrganization from "@/app/services/useOrganization";
 
 // Constants and Types
 import {
@@ -103,6 +104,8 @@ import {
 } from "@/app/constants/masterStatusConstants";
 import { StatusBadge } from "@/app/components/StatusBadge";
 import {
+  ApiGenericResponse,
+  PaggingListPayload,
   PaggingListPayloadCustom,
   ListSearchByParam,
 } from "@/app/types/masterTypes";
@@ -117,7 +120,8 @@ const ProjectManagerPage = () => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
   const { isAuthenticated, authData, goLogout } = useAuth();
-  const { GetAssignedProjects } = useProjects();
+  const { List, GetAssignedProjects } = useProjects();
+  const { GetDetailById: GetOrgDetailById } = useOrganization();
   const searchParams = useSearchParams();
 
   // Get requirementType from URL param, only use if it's RFC
@@ -135,10 +139,14 @@ const ProjectManagerPage = () => {
   const [tokenData, setTokenData] = useState<string>("");
   const [canMake, setCanMake] = useState<boolean>(false);
   const [canReview, setCanReview] = useState<boolean>(false);
+  const [isOrgTypeGroup, setIsOrgTypeGroup] = useState<boolean>(false);
+  const [isValidatingOrg, setIsValidatingOrg] = useState<boolean>(false);
+  const [hasValidated, setHasValidated] = useState<boolean>(false);
 
   // Data state
   const [DataProjects, setDataProjects] = useState<ProjectDataResponse[]>([]);
   const [RefreshData, setRefreshData] = useState<number>(0);
+  const [totalProjectsCount, setTotalProjectsCount] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
 
   // Table state
@@ -170,56 +178,173 @@ const ProjectManagerPage = () => {
   );
 
   // Auth setup effect
+  // Auth setup and validation effect - combined to avoid race conditions
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
-    const token: string = localStorage.getItem("tokenData") as string;
+    const token = localStorage.getItem("tokenData");
 
-    if (storedData) {
+    if (storedData && token) {
       const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
-      const UserData: AuthDataResponse =
-        StorageAuth.dataLogin as AuthDataResponse;
+      const UserData: AuthDataResponse = StorageAuth.dataLogin as AuthDataResponse;
+      
+      // Set auth data
       setDataAuth(UserData);
-    }
-
-    if (token) {
       setTokenData(token);
-    }
 
-    // Load permissions from accessData
-    const accessDataStr = localStorage.getItem("accessData");
-    if (accessDataStr) {
-      try {
-        const accessData = JSON.parse(accessDataStr);
-        setCanMake(accessData.aggregatedPermissions?.canMake || false);
-        setCanReview(accessData.aggregatedPermissions?.canReview || false);
-      } catch (error) {
-        console.error("Failed to parse accessData:", error);
+      // Load permissions from accessData
+      const accessDataStr = localStorage.getItem("accessData");
+      if (accessDataStr) {
+        try {
+          const accessData = JSON.parse(accessDataStr);
+          setCanMake(accessData.aggregatedPermissions?.canMake || false);
+          setCanReview(accessData.aggregatedPermissions?.canReview || false);
+        } catch (error) {
+          console.error("Failed to parse accessData:", error);
+        }
       }
+
+      // Check if user has orgGroupId
+      if (!UserData.team?.orgGroupId) {
+        // No orgGroupId - will use /list endpoint
+        console.log(`[AUTH] No orgGroupId, will use /list endpoint`);
+        setHasValidated(true);
+        return;
+      }
+
+      // Check cache
+      const orgValidationStr = localStorage.getItem("orgValidation");
+      if (orgValidationStr) {
+        try {
+          const orgValidation: {
+            isOrgTypeGroup: boolean;
+            orgGroupId: string;
+            validatedAt: number;
+          } = JSON.parse(orgValidationStr);
+
+          // Validate cache is for same orgGroupId
+          if (orgValidation.orgGroupId === UserData.team.orgGroupId) {
+            // Cache valid - use it
+            console.log(`[CACHE] Using cached orgType: isGroup=${orgValidation.isOrgTypeGroup}`);
+            setHasValidated(true);
+            return;
+          } else {
+            console.log(`[CACHE] orgGroupId mismatch, will re-validate`);
+          }
+        } catch (error) {
+          console.error("[ERROR] Failed to parse cache:", error);
+        }
+      }
+
+      // No cache or cache invalid - validate now
+      const orgGroupId = UserData.team.orgGroupId; // Capture value for validation
+      console.log(`[VALIDATION] Starting validation for orgGroupId: ${orgGroupId}`);
+
+      const validateOrgType = async () => {
+        try {
+          const orgData = await GetOrgDetailById(orgGroupId!, token);
+
+          if (orgData?.statusCode === RES_CODE_OK && orgData.data) {
+            const isGroup = orgData.data.orgType === "GROUP";
+
+            // Save to localStorage
+            const orgValidation = {
+              isOrgTypeGroup: isGroup,
+              orgGroupId: orgGroupId!,
+              validatedAt: Date.now(),
+            };
+            localStorage.setItem("orgValidation", JSON.stringify(orgValidation));
+
+            console.log(`[VALIDATION] OrgType: ${orgData.data.orgType}, isGroup: ${isGroup}, saved to cache`);
+          } else {
+            console.log(`[VALIDATION] API returned no data, will use /list endpoint`);
+          }
+        } catch (error) {
+          console.error("[ERROR] Validation failed:", error);
+        } finally {
+          // Always set hasValidated, even if API fails
+          setHasValidated(true);
+        }
+      };
+
+      validateOrgType();
     }
   }, []); // Empty dependency array - run only once on mount
 
+  // Wrapper function to conditionally use endpoint based on user team
+  const GetProjects = async (
+    payload: PaggingListPayloadCustom,
+    token: string
+  ): Promise<ApiGenericResponse<ProjectDataResponse[] | null> | null> => {
+    // Read decision from localStorage directly to avoid state timing issues
+    let useAssignedEndpoint = false;
+    
+    if (DataAuth?.team?.orgGroupId) {
+      const orgValidationStr = localStorage.getItem("orgValidation");
+      if (orgValidationStr) {
+        try {
+          const orgValidation: {
+            isOrgTypeGroup: boolean;
+            orgGroupId: string;
+            validatedAt: number;
+          } = JSON.parse(orgValidationStr);
+          
+          if (orgValidation.orgGroupId === DataAuth.team.orgGroupId) {
+            useAssignedEndpoint = orgValidation.isOrgTypeGroup;
+          }
+        } catch (error) {
+          console.error("[ERROR] Failed to read orgValidation:", error);
+        }
+      }
+    }
+    
+    console.log(`[DEBUG GetProjects] orgGroupId: ${DataAuth?.team?.orgGroupId}`);
+    console.log(`[DEBUG GetProjects] useAssignedEndpoint (from localStorage): ${useAssignedEndpoint}`);
+    
+    if (DataAuth?.team?.orgGroupId && useAssignedEndpoint) {
+      console.log(`[DEBUG GetProjects] Calling /assigned-projects`);
+      return await GetAssignedProjects(payload, token);
+    } else {
+      console.log(`[DEBUG GetProjects] Calling /list`);
+      const basicPayload: PaggingListPayload = {
+        search: payload.search,
+        limit: payload.limit,
+        page: payload.page,
+        filterWhere: payload.filterWhere,
+        fieldOrder: payload.fieldOrder,
+        orderDir: payload.orderDir,
+      };
+      return await List(basicPayload, token);
+    }
+  };
+
   // Data fetching effect
   useEffect(() => {
+    console.log(`[DEBUG DataFetch] DataAuth: ${!!DataAuth}, hasValidated: ${hasValidated}`);
+    
     setIsEditMode(false);
     // if (DataAuth && DataAuth.team) {
-    if (DataAuth) {
+    if (DataAuth && hasValidated) {
+      console.log(`[DEBUG DataFetch] Condition passed, fetching data...`);
       // Build filter conditions
       const filterWhere: ListSearchByParam[] = [];
 
-      // Add status filter if selected
       if (statusFilter.length > 0) {
         statusFilter.forEach((status: string) => {
           filterWhere.push({
             field: "projectStatus",
             operator: "=",
-            value: status, // Handle each status filter
+            value: status,
           });
         });
       }
 
       const PayloadList: PaggingListPayloadCustom = {
         search: globalFilter,
-        projectType: requirementType === "BRD" ? PROJECT_TYPE_INTERNAL_DEVELOPMENT : null,
+        projectType:
+          requirementType === "BRD"
+            ? PROJECT_TYPE_INTERNAL_DEVELOPMENT
+            : null,
+        teamId: DataAuth.team?.id,
         requirementType: requirementType,
         limit: pageSize,
         page: pageIndex,
@@ -229,14 +354,16 @@ const ProjectManagerPage = () => {
       };
 
       setIsLoadingProcess(true);
+
       const GetDataList = async () => {
         try {
-          const requestData = await GetAssignedProjects(PayloadList, tokenData);
+          const requestData = await GetProjects(PayloadList, tokenData);
           const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
 
           if (isErrorResponse || !requestData) {
             showToast({
-              description: requestData?.message || RES_GENERIC_ERROR_MSG,
+              description:
+                requestData?.message || RES_GENERIC_ERROR_MSG,
               statusToast: "error",
             });
             setIsLoadingProcess(false);
@@ -252,13 +379,17 @@ const ProjectManagerPage = () => {
             return;
           }
 
-          const itemsData: ProjectDataResponse[] =
+          const itemsData =
             requestData.data as ProjectDataResponse[];
-          const totalData: number = requestData.countTotal as number;
-          const totalPages: number =
-            totalData > 0 ? Math.ceil(totalData / pageSize) : -1;
+          const totalData =
+            requestData.countTotal as number;
+          const totalPages =
+            totalData > 0
+              ? Math.ceil(totalData / pageSize)
+              : -1;
 
           setDataProjects(itemsData);
+          setTotalProjectsCount(totalData);
           setTotalPageData(totalPages);
           setIsLoadingProcess(false);
         } catch (error) {
@@ -272,6 +403,12 @@ const ProjectManagerPage = () => {
       };
 
       GetDataList();
+    } else {
+      // ✅ sekarang ini valid
+      setDataProjects([]);
+      setTotalProjectsCount(0);
+      setTotalPageData(0);
+      setIsLoadingProcess(false);
     }
   }, [
     DataAuth,
@@ -282,6 +419,8 @@ const ProjectManagerPage = () => {
     statusFilter,
     tokenData,
     requirementType,
+    isOrgTypeGroup,
+    hasValidated,
   ]);
 
   // Table configuration
@@ -328,6 +467,7 @@ const ProjectManagerPage = () => {
   const RefreshAction = useCallback(() => {
     setTotalPageData(0);
     setDataProjects([]);
+    setTotalProjectsCount(0);
     setRefreshData(RefreshData + 1);
   }, [RefreshData]);
 
@@ -537,6 +677,7 @@ const ProjectManagerPage = () => {
               setStatusFilter={setStatusFilter}
               DataProjects={DataProjects}
               colorMode={colorMode}
+              totalProjectsCount={totalProjectsCount}
             />
           </GridItem>
           <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 9 }} w={"full"}>
@@ -642,138 +783,138 @@ const ProjectManagerPage = () => {
                         w="full"
                       >
                         <CardBody p={{ base: 4, md: 6 }}>
-                        <VStack spacing={4} align="stretch">
-                          {/* Section Header */}
-                          <HStack spacing={3} align="center">
-                            <Box
-                              w={{ base: 8, md: 10 }}
-                              h={{ base: 8, md: 10 }}
-                              bg="purple.500"
-                              rounded="lg"
-                              display="flex"
-                              alignItems="center"
-                              justifyContent="center"
-                              color="white"
-                              fontSize={{ base: "sm", md: "md" }}
-                              flexShrink={0}
-                            >
-                              <Icon as={FiZap} boxSize={{ base: 4, md: 5 }} />
-                            </Box>
-                            <VStack align="start" spacing={0}>
-                              <Heading
-                                size={{ base: "sm", md: "md" }}
-                                color={
-                                  colorMode === "light" ? "gray.800" : "white"
-                                }
-                                lineHeight="1.2"
+                          <VStack spacing={4} align="stretch">
+                            {/* Section Header */}
+                            <HStack spacing={3} align="center">
+                              <Box
+                                w={{ base: 8, md: 10 }}
+                                h={{ base: 8, md: 10 }}
+                                bg="purple.500"
+                                rounded="lg"
+                                display="flex"
+                                alignItems="center"
+                                justifyContent="center"
+                                color="white"
+                                fontSize={{ base: "sm", md: "md" }}
+                                flexShrink={0}
                               >
-                                Last Working Projects
-                              </Heading>
-                              <Text
-                                fontSize={{ base: "xs", md: "sm" }}
-                                color={
-                                  colorMode === "light"
-                                    ? "gray.600"
-                                    : "gray.400"
-                                }
-                                lineHeight="1.3"
-                              >
-                                Recently active projects you've been working on
-                              </Text>
-                            </VStack>
-                          </HStack>
-
-                          {/* Last Working Projects List */}
-                          <VStack
-                            spacing={0}
-                            align="stretch"
-                            divider={<Divider />}
-                          >
-                            {DataProjects.slice(0, 3).map((project, index) => (
-                              <HStack
-                                key={`recent-${project.id}`}
-                                spacing={4}
-                                align="center"
-                                py={3}
-                                px={2}
-                                _hover={{
-                                  bg:
-                                    colorMode === "light"
-                                      ? "gray.50"
-                                      : "gray.700",
-                                }}
-                                transition="all 0.2s"
-                                cursor="pointer"
-                                onClick={() =>
-                                  (window.location.href = `/projects/manage?projectId=${project.id}`)
-                                }
-                              >
-                                {/* Project Number */}
-                                <Text
-                                  fontSize="sm"
-                                  fontWeight="bold"
-                                  color="purple.500"
-                                  minW="20px"
-                                  textAlign="center"
+                                <Icon as={FiZap} boxSize={{ base: 4, md: 5 }} />
+                              </Box>
+                              <VStack align="start" spacing={0}>
+                                <Heading
+                                  size={{ base: "sm", md: "md" }}
+                                  color={
+                                    colorMode === "light" ? "gray.800" : "white"
+                                  }
+                                  lineHeight="1.2"
                                 >
-                                  {index + 1}.
+                                  Last Working Projects
+                                </Heading>
+                                <Text
+                                  fontSize={{ base: "xs", md: "sm" }}
+                                  color={
+                                    colorMode === "light"
+                                      ? "gray.600"
+                                      : "gray.400"
+                                  }
+                                  lineHeight="1.3"
+                                >
+                                  Recently active projects you've been working on
                                 </Text>
+                              </VStack>
+                            </HStack>
 
-                                {/* Project Info */}
-                                <VStack align="start" spacing={0} flex={1}>
-                                  <HStack spacing={2} align="center">
+                            {/* Last Working Projects List */}
+                            <VStack
+                              spacing={0}
+                              align="stretch"
+                              divider={<Divider />}
+                            >
+                              {DataProjects.slice(0, 3).map((project, index) => (
+                                <HStack
+                                  key={`recent-${project.id}`}
+                                  spacing={4}
+                                  align="center"
+                                  py={3}
+                                  px={2}
+                                  _hover={{
+                                    bg:
+                                      colorMode === "light"
+                                        ? "gray.50"
+                                        : "gray.700",
+                                  }}
+                                  transition="all 0.2s"
+                                  cursor="pointer"
+                                  onClick={() =>
+                                    (window.location.href = `/projects/manage?projectId=${project.id}`)
+                                  }
+                                >
+                                  {/* Project Number */}
+                                  <Text
+                                    fontSize="sm"
+                                    fontWeight="bold"
+                                    color="purple.500"
+                                    minW="20px"
+                                    textAlign="center"
+                                  >
+                                    {index + 1}.
+                                  </Text>
+
+                                  {/* Project Info */}
+                                  <VStack align="start" spacing={0} flex={1}>
+                                    <HStack spacing={2} align="center">
+                                      <Text
+                                        fontSize="sm"
+                                        fontWeight="bold"
+                                        color={
+                                          colorMode === "light"
+                                            ? "gray.800"
+                                            : "white"
+                                        }
+                                      >
+                                        {project.projectName}
+                                      </Text>
+                                      <Badge
+                                        colorScheme="purple"
+                                        size="sm"
+                                        variant="subtle"
+                                      >
+                                        {project.projectCategory}
+                                      </Badge>
+                                    </HStack>
                                     <Text
-                                      fontSize="sm"
-                                      fontWeight="bold"
+                                      fontSize="xs"
                                       color={
                                         colorMode === "light"
-                                          ? "gray.800"
-                                          : "white"
+                                          ? "gray.500"
+                                          : "gray.400"
                                       }
+                                      noOfLines={1}
                                     >
-                                      {project.projectName}
+                                      {project.projectNo} |{" "}
+                                      {project.appsProject?.appName}
                                     </Text>
-                                    <Badge
-                                      colorScheme="purple"
-                                      size="sm"
-                                      variant="subtle"
-                                    >
-                                      {project.projectCategory}
-                                    </Badge>
-                                  </HStack>
-                                  <Text
-                                    fontSize="xs"
-                                    color={
-                                      colorMode === "light"
-                                        ? "gray.500"
-                                        : "gray.400"
-                                    }
-                                    noOfLines={1}
-                                  >
-                                    {project.projectNo} |{" "}
-                                    {project.appsProject?.appName}
-                                  </Text>
-                                </VStack>
+                                  </VStack>
 
-                                {/* Progress */}
-                                <HStack spacing={2} align="center" minW="60px">
-                                  <Text
-                                    fontSize="xs"
-                                    fontWeight="medium"
-                                    color="orange.600"
-                                  >
-                                    {project.projectStatusPercentage}%
-                                  </Text>
-                                  <Icon
-                                    as={FiTarget}
-                                    boxSize={4}
-                                    color="purple.500"
-                                  />
+                                  {/* Progress */}
+                                  <HStack spacing={2} align="center" minW="60px">
+                                    <Text
+                                      fontSize="xs"
+                                      fontWeight="medium"
+                                      color="orange.600"
+                                    >
+                                      {project.projectStatusPercentage}%
+                                    </Text>
+                                    <Icon
+                                      as={FiTarget}
+                                      boxSize={4}
+                                      color="purple.500"
+                                    />
+                                  </HStack>
                                 </HStack>
-                              </HStack>
-                            ))}
-                        </VStack>
-                        </VStack>
+                              ))}
+                            </VStack>
+                          </VStack>
                         </CardBody>
                       </Card>
                     )}

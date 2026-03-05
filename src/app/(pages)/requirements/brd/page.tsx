@@ -609,14 +609,14 @@ function ReuirementsBRDPage() {
                     fontStyle="italic"
                     fontSize={"x-small"}
                   >
-                    Aplikasi Belum Disematkan
+                    Product Belum Disematkan
                   </Text>
                 )}
               </Flex>
             </Flex>
           </Flex>
         ),
-        header: () => <span>Aplikasi</span>,
+        header: () => <span>Product</span>,
         footer: (props) => props.column.id,
         // Custom variable
         meta: {
@@ -627,14 +627,14 @@ function ReuirementsBRDPage() {
               operator: "like",
               value: "",
               filterType: "text",
-              filterLabel: "Inisial Aplikasi",
+              filterLabel: "Inisial Product",
             },
             {
               field: "appInitialName",
               operator: "like",
               value: "",
               filterType: "text",
-              filterLabel: "Nama Aplikasi",
+              filterLabel: "Nama Product",
             },
           ],
         } as ColumnMetaCustom,

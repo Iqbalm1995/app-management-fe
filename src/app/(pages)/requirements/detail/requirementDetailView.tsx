@@ -150,6 +150,7 @@ import {
   FiFileText,
   FiInfo,
   FiRefreshCcw,
+  FiExternalLink,
 } from "react-icons/fi";
 
 const HeaderDataContent: HeaderContentProps = {
@@ -208,9 +209,8 @@ const CrucialDataAlertDetail: React.FC<CrucialDataAlertDetailProps> = ({
       </Box>
       {pageMode === "VIEW_DETAIL" ? (
         <Link
-          href={`/requirements/${requirementType.toLowerCase()}/register?id=${
-            requirementData.id
-          }`}
+          href={`/requirements/${requirementType.toLowerCase()}/register?id=${requirementData.id
+            }`}
         >
           <Button colorScheme="orange" size="sm" leftIcon={<FiArrowRight />}>
             Lihat Data
@@ -241,6 +241,7 @@ const ProjectsRelationSectionDetail: React.FC<
   const [projects, setProjects] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { GetProjectsByRequirementId } = useRequirements();
+  const { colorMode } = useColorMode();
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -302,7 +303,7 @@ const ProjectsRelationSectionDetail: React.FC<
       headerTitle={`Informasi Proyek Terkait (${projects.length} Proyek)`}
     >
       <VStack spacing={4} align="stretch">
-        <Text fontSize="sm" color="gray.600">
+        <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"}>
           Requirement ini telah terdaftar ke dalam {projects.length} proyek
           berikut:
         </Text>
@@ -312,9 +313,9 @@ const ProjectsRelationSectionDetail: React.FC<
             key={project.id}
             p={4}
             border="1px"
-            borderColor="gray.200"
+            borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
             borderRadius="md"
-            bg="gray.50"
+            bg={colorMode === "light" ? "gray.50" : "gray.700"}
           >
             <Flex justify="space-between" align="start">
               <VStack align="start" spacing={2} flex={1}>
@@ -333,10 +334,10 @@ const ProjectsRelationSectionDetail: React.FC<
                 <Text fontWeight="semibold" fontSize="md">
                   {project.projectName}
                 </Text>
-                <Text fontSize="sm" color="gray.600">
+                <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"}>
                   {project.projectDesc}
                 </Text>
-                <HStack spacing={4} fontSize="xs" color="gray.500">
+                <HStack spacing={4} fontSize="xs" color={colorMode === "light" ? "gray.500" : "gray.400"}>
                   <Text>Tipe: {project.projectType}</Text>
                   <Text>Kategori: {project.projectCategory}</Text>
                 </HStack>
@@ -657,13 +658,12 @@ function RequirementDetailView() {
           setDataRequirement(itemsData);
 
           setHeaderContentState({
-            titleName: `${reqType} Detail #${
-              itemsData.isHaveMemo === "Y"
-                ? itemsData.reqNumber
-                : itemsData.reqNarative && itemsData.reqNarative.length > 15
+            titleName: `${reqType} Detail #${itemsData.isHaveMemo === "Y"
+              ? itemsData.reqNumber
+              : itemsData.reqNarative && itemsData.reqNarative.length > 15
                 ? itemsData.reqNarative.substring(0, 15) + "..."
                 : itemsData.reqNarative
-            }`,
+              }`,
             breadCrumb: [
               "Home",
               "Requirements",
@@ -672,8 +672,8 @@ function RequirementDetailView() {
             ],
             titleTooltip:
               itemsData.isHaveMemo === "N" &&
-              itemsData.reqNarative &&
-              itemsData.reqNarative.length > 15
+                itemsData.reqNarative &&
+                itemsData.reqNarative.length > 15
                 ? itemsData.reqNarative
                 : undefined,
           });
@@ -772,8 +772,13 @@ function RequirementDetailView() {
   };
 
   // auto page backlog
+  // Sort data by posOrder for BRD table
+  const sortedDataBacklogs = [...DataBacklogsRequirement].sort(
+    (a, b) => (a.posOrder || 0) - (b.posOrder || 0)
+  );
+
   const tableBacklogs = useReactTable({
-    data: DataBacklogsRequirement,
+    data: sortedDataBacklogs,
     columns: columnsDataBacklogs,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -797,11 +802,11 @@ function RequirementDetailView() {
     },
     ...(!approvalMode
       ? [
-          {
-            title: reqType === "RFC" ? "Step 7" : "Step 6",
-            description: `${reqType} Acceptance`,
-          },
-        ]
+        {
+          title: reqType === "RFC" ? "Step 7" : "Step 6",
+          description: `${reqType} Acceptance`,
+        },
+      ]
       : []),
   ];
 
@@ -1171,7 +1176,7 @@ function RequirementDetailView() {
                           <FormControl>
                             <InputLayoutFull>
                               <FormLabel h={"full"} mt={2}>
-                                Inisial Aplikasi
+                                Inisial Product
                               </FormLabel>
                               <Stack spacing={0} h={"full"}>
                                 <Text>
@@ -1184,7 +1189,7 @@ function RequirementDetailView() {
                           <FormControl>
                             <InputLayoutFull>
                               <FormLabel h={"full"} mt={2}>
-                                Nama Aplikasi
+                                Nama Product
                               </FormLabel>
                               <Stack spacing={0} h={"full"}>
                                 <Text>
@@ -1205,8 +1210,8 @@ function RequirementDetailView() {
                                     ? "INTERNAL (BANK)"
                                     : DataRequirement.appTargetUsers ==
                                       "EXTERNAL"
-                                    ? "EXTERNAL (NASABAH)"
-                                    : "N/A"}
+                                      ? "EXTERNAL (NASABAH)"
+                                      : "N/A"}
                                 </Text>
                               </Stack>
                             </InputLayoutFull>
@@ -1219,7 +1224,7 @@ function RequirementDetailView() {
                               </FormLabel>
                               <Stack spacing={0} h={"full"}>
                                 {DataRequirement.appAccessFrontsiteDns ||
-                                DataRequirement.appAccessBacksiteIp ? (
+                                  DataRequirement.appAccessBacksiteIp ? (
                                   <>
                                     {DataRequirement.appAccessFrontsiteDns && (
                                       <Text>
@@ -1321,8 +1326,8 @@ function RequirementDetailView() {
                                       ? "N/A"
                                       : DataRequirement.appOperational24hrs ==
                                         "NO"
-                                      ? "TIDAK"
-                                      : "YA"}
+                                        ? "TIDAK"
+                                        : "YA"}
                                   </Text>
                                 </Text>
 
@@ -1343,24 +1348,24 @@ function RequirementDetailView() {
 
                                 {DataRequirement.appOperational24hrs !=
                                   "24-HOUR" && (
-                                  <Text>
-                                    Jam Buka :{" "}
-                                    <Text pl={2} as={"span"} fontWeight={600}>
-                                      {DataRequirement.appOperationalHourOpen ||
-                                        "N/A"}
+                                    <Text>
+                                      Jam Buka :{" "}
+                                      <Text pl={2} as={"span"} fontWeight={600}>
+                                        {DataRequirement.appOperationalHourOpen ||
+                                          "N/A"}
+                                      </Text>
                                     </Text>
-                                  </Text>
-                                )}
+                                  )}
                                 {DataRequirement.appOperational24hrs !=
                                   "24-HOUR" && (
-                                  <Text>
-                                    Jam Tutup :{" "}
-                                    <Text pl={2} as={"span"} fontWeight={600}>
-                                      {DataRequirement.appOperationalHourClosed ||
-                                        "N/A"}
+                                    <Text>
+                                      Jam Tutup :{" "}
+                                      <Text pl={2} as={"span"} fontWeight={600}>
+                                        {DataRequirement.appOperationalHourClosed ||
+                                          "N/A"}
+                                      </Text>
                                     </Text>
-                                  </Text>
-                                )}
+                                  )}
                               </Stack>
                             </InputLayoutFull>
                           </FormControl>
@@ -1374,9 +1379,9 @@ function RequirementDetailView() {
                                 <Text>
                                   {DataRequirement.appLiveTargetDate != null
                                     ? formatDateInputCustom(
-                                        DataRequirement.appLiveTargetDate,
-                                        "/"
-                                      )
+                                      DataRequirement.appLiveTargetDate,
+                                      "/"
+                                    )
                                     : "N/A"}
                                 </Text>
                               </Stack>
@@ -1393,8 +1398,8 @@ function RequirementDetailView() {
                                   {" "}
                                   {DataRequirement.appLiveTargetDate != null
                                     ? getQuarterText(
-                                        DataRequirement.appLiveTargetDate
-                                      )
+                                      DataRequirement.appLiveTargetDate
+                                    )
                                     : "N/A"}
                                 </Text>
                               </Stack>
@@ -1537,7 +1542,7 @@ function RequirementDetailView() {
                             {canApprove &&
                               approvalMode &&
                               DataRequirement?.reqStatus ===
-                                REQ_WAITING_APPROVAL && (
+                              REQ_WAITING_APPROVAL && (
                                 <InputGroupPanel headerTitle={"Update Status"}>
                                   {DataRequirement?.isStatusFinal ? (
                                     <Alert status="success" rounded="md">
@@ -1590,7 +1595,7 @@ function RequirementDetailView() {
                                                   (status) => {
                                                     const colorScheme =
                                                       STATUS_COLORS[
-                                                        status.codeStatus as keyof typeof STATUS_COLORS
+                                                      status.codeStatus as keyof typeof STATUS_COLORS
                                                       ] || "gray";
                                                     const isSelected =
                                                       StatusRequirement ===
@@ -1697,7 +1702,7 @@ function RequirementDetailView() {
                         {canApprove &&
                           approvalMode &&
                           DataRequirement?.reqStatus ===
-                            REQ_WAITING_APPROVAL && (
+                          REQ_WAITING_APPROVAL && (
                             <InputGroupPanel headerTitle={"Update Status"}>
                               {DataRequirement?.isStatusFinal ? (
                                 <Alert status="success" rounded="md">
@@ -1748,7 +1753,7 @@ function RequirementDetailView() {
                                             availableStatuses.map((status) => {
                                               const colorScheme =
                                                 STATUS_COLORS[
-                                                  status.codeStatus as keyof typeof STATUS_COLORS
+                                                status.codeStatus as keyof typeof STATUS_COLORS
                                                 ] || "gray";
                                               const isSelected =
                                                 StatusRequirement ===
@@ -1864,7 +1869,7 @@ function RequirementDetailView() {
                         )}
 
                         <InputGroupPanel headerTitle={`Lampiran`}>
-                          <ReqInfoSummaryFileAttachmentsViewSimple
+                          <ReqInfoSummaryFileAttachmentsView
                             DataRequirement={DataRequirement}
                             DataAttachment={DataFileReq}
                             steps={steps}
@@ -1959,7 +1964,7 @@ function RequirementDetailView() {
         size="lg"
       >
         <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
-        <ModalContent mx={4}>
+        <ModalContent mx={4} bg={colorMode === "light" ? "white" : "gray.800"}>
           <ModalHeader fontSize="lg" fontWeight="bold">
             <HStack spacing={2}>
               <FiCheckCircle />
@@ -1969,10 +1974,16 @@ function RequirementDetailView() {
           <ModalCloseButton />
           <ModalBody pb={6}>
             <VStack align="stretch" spacing={4}>
-              <Box bg="gray.50" p={4} rounded="md" borderWidth="1px">
+              <Box
+                bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                p={4}
+                rounded="md"
+                borderWidth="1px"
+                borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+              >
                 <Stack spacing={3}>
                   <Box>
-                    <Text fontSize="xs" color="gray.600" mb={1}>
+                    <Text fontSize="xs" color={colorMode === "light" ? "gray.600" : "gray.400"} mb={1}>
                       Requirement
                     </Text>
                     <Text fontWeight="semibold">
@@ -1984,7 +1995,7 @@ function RequirementDetailView() {
 
                   {approvalMode && (
                     <Box>
-                      <Text fontSize="xs" color="gray.600" mb={1}>
+                      <Text fontSize="xs" color={colorMode === "light" ? "gray.600" : "gray.400"} mb={1}>
                         Submitted by
                       </Text>
                       <Text fontWeight="semibold">
@@ -1996,13 +2007,13 @@ function RequirementDetailView() {
                   <Divider />
 
                   <Box>
-                    <Text fontSize="xs" color="gray.600" mb={1}>
+                    <Text fontSize="xs" color={colorMode === "light" ? "gray.600" : "gray.400"} mb={1}>
                       Approve Status
                     </Text>
                     <Badge
                       colorScheme={
                         STATUS_COLORS[
-                          StatusRequirement as keyof typeof STATUS_COLORS
+                        StatusRequirement as keyof typeof STATUS_COLORS
                         ] || "blue"
                       }
                       fontSize="sm"
@@ -2016,7 +2027,7 @@ function RequirementDetailView() {
                   </Box>
 
                   <Box>
-                    <Text fontSize="xs" color="gray.600" mb={1}>
+                    <Text fontSize="xs" color={colorMode === "light" ? "gray.600" : "gray.400"} mb={1}>
                       Approve By
                     </Text>
                     <Text fontWeight="semibold">{DataAuth?.nama || "-"}</Text>
@@ -2026,10 +2037,10 @@ function RequirementDetailView() {
                     <>
                       <Divider />
                       <Box>
-                        <Text fontSize="xs" color="gray.600" mb={1}>
+                        <Text fontSize="xs" color={colorMode === "light" ? "gray.600" : "gray.400"} mb={1}>
                           Note
                         </Text>
-                        <Text fontSize="sm" color="gray.700">
+                        <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
                           {ApprovalNote}
                         </Text>
                       </Box>
@@ -2193,22 +2204,22 @@ const ReqInfoGeneralSectionView = ({
             <Stack spacing={0} h={"full"}>
               <Text>
                 {DataRequirement.reqInititateDate != null &&
-                DataRequirement.reqAcceptedDate != null
+                  DataRequirement.reqAcceptedDate != null
                   ? (() => {
-                      const startDate = new Date(
-                        DataRequirement.reqInititateDate
-                      );
-                      const endDate = new Date(DataRequirement.reqAcceptedDate);
-                      const diffMs = endDate.getTime() - startDate.getTime();
-                      const diffDays = Math.max(
-                        1,
-                        Math.ceil(diffMs / (1000 * 60 * 60 * 24))
-                      );
-                      return `${diffDays} Hari Kalender`;
-                    })()
+                    const startDate = new Date(
+                      DataRequirement.reqInititateDate
+                    );
+                    const endDate = new Date(DataRequirement.reqAcceptedDate);
+                    const diffMs = endDate.getTime() - startDate.getTime();
+                    const diffDays = Math.max(
+                      1,
+                      Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+                    );
+                    return `${diffDays} Hari Kalender`;
+                  })()
                   : DataRequirement.reqDurationDay != null
-                  ? `${DataRequirement.reqDurationDay} Hari Kalender`
-                  : "N/A"}
+                    ? `${DataRequirement.reqDurationDay} Hari Kalender`
+                    : "N/A"}
               </Text>
             </Stack>
           </InputLayoutFull>
@@ -2224,8 +2235,8 @@ const ReqInfoGeneralSectionView = ({
                 {DataRequirement.isCarryOver == "Y"
                   ? "YA"
                   : DataRequirement.isCarryOver == "N"
-                  ? "TIDAK"
-                  : "N/A"}
+                    ? "TIDAK"
+                    : "N/A"}
               </Text>
             </Stack>
           </InputLayoutFull>
@@ -2267,9 +2278,8 @@ const ReqInfoPersonelSectionView = ({
             </FormLabel>
             <Stack spacing={0} h={"full"}>
               <Text>
-                {`${DataRequirement.assignedFromName || "N/A"} (${
-                  DataRequirement.assignedFromId || "N/A"
-                })`}
+                {`${DataRequirement.assignedFromName || "N/A"} (${DataRequirement.assignedFromId || "N/A"
+                  })`}
               </Text>
             </Stack>
           </InputLayoutFull>
@@ -2319,9 +2329,8 @@ const ReqInfoPersonelSectionView = ({
                             memberIndex++;
                             return (
                               <ListItem key={idx}>
-                                {`${ua.approverUserFirstName ?? "N/A"} (${
-                                  ua.approverUserCode ?? "N/A"
-                                })`}
+                                {`${ua.approverUserFirstName ?? "N/A"} (${ua.approverUserCode ?? "N/A"
+                                  })`}
                               </ListItem>
                             );
                           })}
@@ -2807,7 +2816,7 @@ const ReqInfoSummaryBacklogsView = ({
         <FormControl>
           <InputLayoutFull>
             <FormLabel h={"full"} mt={2}>
-              Inisial Aplikasi
+              Inisial Product
             </FormLabel>
             <Stack spacing={0} h={"full"}>
               <Text>{DataRequirement.appInitialCode || "N/A"}</Text>
@@ -2825,8 +2834,8 @@ const ReqInfoSummaryBacklogsView = ({
                 {DataRequirement.appTargetUsers == "INTERNAL"
                   ? "INTERNAL (BANK)"
                   : DataRequirement.appTargetUsers == "EXTERNAL"
-                  ? "EXTERNAL (NASABAH)"
-                  : "N/A"}
+                    ? "EXTERNAL (NASABAH)"
+                    : "N/A"}
               </Text>
             </Stack>
           </InputLayoutFull>
@@ -2839,7 +2848,7 @@ const ReqInfoSummaryBacklogsView = ({
             </FormLabel>
             <Stack spacing={0} h={"full"}>
               {DataRequirement.appAccessFrontsiteDns ||
-              DataRequirement.appAccessBacksiteIp ? (
+                DataRequirement.appAccessBacksiteIp ? (
                 <>
                   {DataRequirement.appAccessFrontsiteDns && (
                     <Text>
@@ -2926,8 +2935,8 @@ const ReqInfoSummaryBacklogsView = ({
                   {DataRequirement.appOperational24hrs == null
                     ? "N/A"
                     : DataRequirement.appOperational24hrs == "NO"
-                    ? "TIDAK"
-                    : "YA"}
+                      ? "TIDAK"
+                      : "YA"}
                 </Text>
               </Text>
 
@@ -2973,9 +2982,9 @@ const ReqInfoSummaryBacklogsView = ({
               <Text>
                 {DataRequirement.appLiveTargetDate != null
                   ? formatDateInputCustom(
-                      DataRequirement.appLiveTargetDate,
-                      "/"
-                    )
+                    DataRequirement.appLiveTargetDate,
+                    "/"
+                  )
                   : "N/A"}
               </Text>
             </Stack>
@@ -3136,7 +3145,16 @@ const ReqInfoSummaryFileAttachmentsView = ({
         id: "objectData",
         cell: (info) => (
           <Flex justifyContent={"center"}>
-            {[".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg"].some(
+            {info.row.original.objectName === "EXTERNAL_LINK" ? (
+              <Box
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                boxSize="50px"
+              >
+                <FiExternalLink size={24} color="#3182CE" />
+              </Box>
+            ) : info.row.original.objectExtension && [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg"].some(
               (ext) =>
                 info.row.original.objectExtension
                   .trim()
@@ -3150,7 +3168,6 @@ const ReqInfoSummaryFileAttachmentsView = ({
                   name: info.row.original.objectRawName,
                   src: info.row.original.objectFullPath,
                   extension: info.row.original.objectExtension.trim(),
-                  // size:info.row.original.objectSize
                 }}
               />
             ) : (
@@ -3160,7 +3177,7 @@ const ReqInfoSummaryFileAttachmentsView = ({
                 alignItems="center"
                 boxSize="50px"
               >
-                {renderFileIconSTR(info.row.original.objectExtension.trim())}
+                {renderFileIconSTR(info.row.original.objectExtension?.trim() || "")}
               </Box>
             )}
           </Flex>
@@ -3186,7 +3203,11 @@ const ReqInfoSummaryFileAttachmentsView = ({
         accessorFn: (row) => row.objectSize,
         id: "objectSize",
         cell: (info) => (
-          <Text fontWeight={500}>{info.row.original.objectSize} KB</Text>
+          <Text fontWeight={500}>
+            {info.row.original.objectName === "EXTERNAL_LINK"
+              ? "-"
+              : `${info.row.original.objectSize} KB`}
+          </Text>
         ),
         header: () => <span>Ukuran</span>,
         footer: (props) => props.column.id,
@@ -3196,7 +3217,9 @@ const ReqInfoSummaryFileAttachmentsView = ({
         id: "objectExtension",
         cell: (info) => (
           <Text fontWeight={500}>
-            {info.row.original.objectExtension.replace(".", "")}
+            {info.row.original.objectName === "EXTERNAL_LINK"
+              ? "Link"
+              : info.row.original.objectExtension.replace(".", "")}
           </Text>
         ),
         header: () => <span>Tipe</span>,
@@ -3207,38 +3230,44 @@ const ReqInfoSummaryFileAttachmentsView = ({
         id: "id",
         cell: (info) => (
           <Flex w={"full"} as={Wrap} justifyContent={"start"}>
-            <Button
-              size={"sm"}
-              colorScheme={"blue"}
-              leftIcon={<FiDownload />}
-              onClick={() =>
-                handleDownloadFile(info.row.original.objectFullPath || "")
-              }
-            >
-              Unduh
-            </Button>
-            {info.row.original.objectExtension.replace(".", "").trim() ==
-              "pdf" && (
+            {info.row.original.objectName === "EXTERNAL_LINK" ? (
               <Button
                 size={"sm"}
                 colorScheme={"blue"}
-                onClick={() => {
-                  handleOpenPreview(info.row.original.objectFullPath || "");
-                }}
-                leftIcon={<FiEye />}
+                leftIcon={<FiExternalLink />}
+                onClick={() =>
+                  handleDownloadFile(info.row.original.objectData || "")
+                }
               >
-                Pratinjau
+                Buka Link
               </Button>
+            ) : (
+              <>
+                <Button
+                  size={"sm"}
+                  colorScheme={"blue"}
+                  leftIcon={<FiDownload />}
+                  onClick={() =>
+                    handleDownloadFile(info.row.original.objectFullPath || "")
+                  }
+                >
+                  Unduh
+                </Button>
+                {info.row.original.objectExtension?.replace(".", "").trim() ==
+                  "pdf" && (
+                    <Button
+                      size={"sm"}
+                      colorScheme={"blue"}
+                      onClick={() => {
+                        handleOpenPreview(info.row.original.objectFullPath || "");
+                      }}
+                      leftIcon={<FiEye />}
+                    >
+                      Pratinjau
+                    </Button>
+                  )}
+              </>
             )}
-
-            {/* <Button
-                size={"sm"}
-                colorScheme={"red"}
-                onClick={() => handleConfirmDeleteData(info.row.original)}
-                isLoading={ActionLoading}
-              >
-                <FiTrash2 />
-              </Button> */}
           </Flex>
         ),
         header: () => (
@@ -3369,7 +3398,7 @@ const ReqInfoSummaryFileAttachmentsViewSimple = ({
             as={HStack}
             spacing={3}
           >
-            {[".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg"].some(
+            {info.row.original.objectExtension && [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg"].some(
               (ext) =>
                 info.row.original.objectExtension
                   .trim()
@@ -3383,7 +3412,6 @@ const ReqInfoSummaryFileAttachmentsViewSimple = ({
                   name: info.row.original.objectRawName,
                   src: info.row.original.objectFullPath,
                   extension: info.row.original.objectExtension.trim(),
-                  // size:info.row.original.objectSize
                 }}
               />
             ) : (
@@ -3393,7 +3421,7 @@ const ReqInfoSummaryFileAttachmentsViewSimple = ({
                 alignItems="center"
                 boxSize="50px"
               >
-                {renderFileIconSTR(info.row.original.objectExtension.trim())}
+                {renderFileIconSTR(info.row.original.objectExtension?.trim() || "")}
               </Box>
             )}
             <Text fontWeight={600}>{info.row.original.objectRawName}</Text>
@@ -3433,11 +3461,11 @@ const ReqInfoAcceptanceView = ({
   // Get latest history for review dates
   const latestHistory =
     DataRequirement &&
-    DataRequirement.requirementHistories &&
-    DataRequirement.requirementHistories.length > 0
+      DataRequirement.requirementHistories &&
+      DataRequirement.requirementHistories.length > 0
       ? DataRequirement.requirementHistories[
-          DataRequirement.requirementHistories.length - 1
-        ]
+      DataRequirement.requirementHistories.length - 1
+      ]
       : null;
 
   const reviewStartDate =
@@ -3450,8 +3478,8 @@ const ReqInfoAcceptanceView = ({
   return (
     <>
       {DataRequirement &&
-      DataRequirement.requirementHistories &&
-      DataRequirement.requirementHistories.length > 0 ? (
+        DataRequirement.requirementHistories &&
+        DataRequirement.requirementHistories.length > 0 ? (
         DataRequirement.requirementHistories.map((history, idx) => (
           <InputGroupPanel
             key={idx}
@@ -3469,8 +3497,8 @@ const ReqInfoAcceptanceView = ({
                         <Text>
                           {history.reqReviewStartDate != null
                             ? formatDateTimeWithSecondsBE(
-                                history.reqReviewStartDate
-                              )
+                              history.reqReviewStartDate
+                            )
                             : "N/A"}
                         </Text>
                       </Stack>
@@ -3486,8 +3514,8 @@ const ReqInfoAcceptanceView = ({
                         <Text>
                           {history.reqReviewEndDate != null
                             ? formatDateTimeWithSecondsBE(
-                                history.reqReviewEndDate
-                              )
+                              history.reqReviewEndDate
+                            )
                             : "N/A"}
                         </Text>
                       </Stack>
@@ -3502,38 +3530,38 @@ const ReqInfoAcceptanceView = ({
                       <Stack spacing={0} h={"full"}>
                         <Text fontWeight="bold">
                           {history.reqReviewStartDate &&
-                          history.reqReviewEndDate
+                            history.reqReviewEndDate
                             ? (() => {
-                                const diffMs =
-                                  new Date(history.reqReviewEndDate).getTime() -
-                                  new Date(
-                                    history.reqReviewStartDate
-                                  ).getTime();
-                                const diffSeconds = Math.floor(diffMs / 1000);
-                                const diffMinutes = Math.floor(
-                                  diffMs / (1000 * 60)
-                                );
-                                const diffHours = Math.floor(
-                                  diffMs / (1000 * 60 * 60)
-                                );
-                                const diffDays = Math.floor(
-                                  diffMs / (1000 * 60 * 60 * 24)
-                                );
+                              const diffMs =
+                                new Date(history.reqReviewEndDate).getTime() -
+                                new Date(
+                                  history.reqReviewStartDate
+                                ).getTime();
+                              const diffSeconds = Math.floor(diffMs / 1000);
+                              const diffMinutes = Math.floor(
+                                diffMs / (1000 * 60)
+                              );
+                              const diffHours = Math.floor(
+                                diffMs / (1000 * 60 * 60)
+                              );
+                              const diffDays = Math.floor(
+                                diffMs / (1000 * 60 * 60 * 24)
+                              );
 
-                                if (diffHours < 1) {
-                                  const remainingSeconds = diffSeconds % 60;
-                                  return `${diffMinutes} Menit ${remainingSeconds} Detik`;
-                                } else if (diffHours < 24) {
-                                  const remainingMinutes = diffMinutes % 60;
-                                  const remainingSeconds = diffSeconds % 60;
-                                  return `${diffHours} Jam ${remainingMinutes} Menit ${remainingSeconds} Detik`;
-                                } else {
-                                  const remainingHours = diffHours % 24;
-                                  const remainingMinutes = diffMinutes % 60;
-                                  const remainingSeconds = diffSeconds % 60;
-                                  return `${diffDays} Hari ${remainingHours} Jam ${remainingMinutes} Menit ${remainingSeconds} Detik`;
-                                }
-                              })()
+                              if (diffHours < 1) {
+                                const remainingSeconds = diffSeconds % 60;
+                                return `${diffMinutes} Menit ${remainingSeconds} Detik`;
+                              } else if (diffHours < 24) {
+                                const remainingMinutes = diffMinutes % 60;
+                                const remainingSeconds = diffSeconds % 60;
+                                return `${diffHours} Jam ${remainingMinutes} Menit ${remainingSeconds} Detik`;
+                              } else {
+                                const remainingHours = diffHours % 24;
+                                const remainingMinutes = diffMinutes % 60;
+                                const remainingSeconds = diffSeconds % 60;
+                                return `${diffDays} Hari ${remainingHours} Jam ${remainingMinutes} Menit ${remainingSeconds} Detik`;
+                              }
+                            })()
                             : "N/A"}
                         </Text>
                       </Stack>

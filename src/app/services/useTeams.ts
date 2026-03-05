@@ -31,6 +31,7 @@ export interface TeamsResponse {
   orgGroupId: string;
   orgGroupCode: string;
   memberCount: number;
+  isTopExecutive: boolean;
   directorate: TeamOrganization;
   division: TeamOrganization;
   group: TeamOrganization;
@@ -58,8 +59,8 @@ export interface TeamInsertPayload {
   teamDesc: string | null;
   isActive: string;
   uploadPict: File | null;
-  orgGroupId: string;
-  orgGroupCode: string;
+  orgGroupId: string | null;
+  orgGroupCode: string | null;
 }
 
 export interface TeamUpdatePayload {
@@ -70,8 +71,8 @@ export interface TeamUpdatePayload {
   isActive: string;
   uploadPict: File | null;
   deletePict: boolean;
-  orgGroupId: string;
-  orgGroupCode: string;
+  orgGroupId: string | null;
+  orgGroupCode: string | null;
 }
 
 export interface TeamMemberPayload {
@@ -363,8 +364,14 @@ const useTeams = (): useTeamsServices => {
       formData.append("uploadPict", payload.uploadPict);
     }
 
-    formData.append("orgGroupId", payload.orgGroupId);
-    formData.append("orgGroupCode", payload.orgGroupCode);
+    // Only append if orgGroupId is not null
+    if (payload.orgGroupId !== null && payload.orgGroupId !== undefined) {
+      formData.append("orgGroupId", payload.orgGroupId);
+    }
+    // Only append if orgGroupCode is not null
+    if (payload.orgGroupCode !== null && payload.orgGroupCode !== undefined) {
+      formData.append("orgGroupCode", payload.orgGroupCode);
+    }
 
     try {
       const response = await axiosInstance.post<
@@ -430,8 +437,14 @@ const useTeams = (): useTeamsServices => {
     // Boolean field handling - convert to string
     formData.append("deletePict", payload.deletePict.toString());
 
-    formData.append("orgGroupId", payload.orgGroupId);
-    formData.append("orgGroupCode", payload.orgGroupCode);
+    // Only append if orgGroupId is not null
+    if (payload.orgGroupId !== null && payload.orgGroupId !== undefined) {
+      formData.append("orgGroupId", payload.orgGroupId);
+    }
+    // Only append if orgGroupCode is not null
+    if (payload.orgGroupCode !== null && payload.orgGroupCode !== undefined) {
+      formData.append("orgGroupCode", payload.orgGroupCode);
+    }
 
     try {
       const response = await axiosInstance.post<

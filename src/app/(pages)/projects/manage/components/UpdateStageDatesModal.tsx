@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Modal,
   ModalOverlay,
@@ -68,6 +68,9 @@ const UpdateStageDatesModal = ({
   const [isReportFormOpen, setIsReportFormOpen] = useState(false);
   const [editingReportId, setEditingReportId] = useState<string | undefined>();
 
+  // Track if user manually unlocked end date (via "End Stage" button)
+  const hasManuallyUnlocked = useRef(false);
+
   useEffect(() => {
     const token = localStorage.getItem("tokenData") as string;
     if (token) {
@@ -79,7 +82,12 @@ const UpdateStageDatesModal = ({
     if (isOpen && stage) {
       setStartDate(stage.startDate ? stage.startDate.split("T")[0] : "");
       setEndDate(stage.endDate ? stage.endDate.split("T")[0] : "");
-      setIsEndDateUnlocked(!!stage.endDate);
+
+      // Only reset isEndDateUnlocked if not manually unlocked by user
+      if (!hasManuallyUnlocked.current) {
+        setIsEndDateUnlocked(!!stage.endDate);
+      }
+
       setPage(1);
       loadReports(1);
     }
@@ -89,7 +97,10 @@ const UpdateStageDatesModal = ({
   useEffect(() => {
     if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
       setEndDate("");
-      setIsEndDateUnlocked(false);
+      // Only reset unlock if not manually unlocked by user
+      if (!hasManuallyUnlocked.current) {
+        setIsEndDateUnlocked(false);
+      }
     }
   }, [startDate, endDate]);
 
@@ -159,6 +170,7 @@ const UpdateStageDatesModal = ({
   };
 
   const handleConfirmEndStage = () => {
+    hasManuallyUnlocked.current = true;
     setIsEndDateUnlocked(true);
     const today = new Date().toISOString().split("T")[0];
     setEndDate(today);
@@ -173,6 +185,7 @@ const UpdateStageDatesModal = ({
   };
 
   const handleConfirmClearEndDate = () => {
+    hasManuallyUnlocked.current = false;
     setEndDate("");
     setIsEndDateUnlocked(false);
   };
@@ -293,9 +306,14 @@ const UpdateStageDatesModal = ({
     return "gray";
   };
 
+  const handleClose = () => {
+    hasManuallyUnlocked.current = false;
+    onClose();
+  };
+
   return (
     <>
-      <Modal isOpen={isOpen} onClose={onClose} size="2xl" scrollBehavior="inside">
+      <Modal isOpen={isOpen} onClose={handleClose} size="4xl" scrollBehavior="inside">
         <ModalOverlay />
         <ModalContent rounded={radiusStyle}>
           <ModalHeader>Manage Stage - {stage.stageName}</ModalHeader>
@@ -303,109 +321,84 @@ const UpdateStageDatesModal = ({
           <ModalBody>
             <VStack spacing={6} align="stretch">
               {/* Date Management Section */}
-              <Box>
-                <Heading size="sm" mb={4}>Stage Dates</Heading>
+              <Box
+                bg={colorMode === "light" ? "gray.50" : "gray.800"}
+                p={5}
+                rounded={radiusStyle}
+                borderWidth="1px"
+                borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+              >
+                <HStack mb={4}>
+                  <Icon as={FiCheckCircle} boxSize={5} color="blue.500" />
+                  <Heading size="sm">Stage Dates</Heading>
+                </HStack>
                 <VStack spacing={4} align="stretch">
                   <FormControl>
                     <FormLabel>Start Date</FormLabel>
-                    <VStack spacing={2} align="stretch">
+                    <HStack>
                       <Input
                         type="date"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
                       />
-                      <HStack>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleSetCurrentDate("start")}
-                        >
-                          Set Current Date
-                        </Button>
-                        <Button
+                      {startDate && (
+                        <IconButton
+                          aria-label="Clear start date"
+                          icon={<FiX />}
                           size="sm"
                           variant="ghost"
                           onClick={() => handleClear("start")}
-                        >
-                          Clear
-                        </Button>
-                      </HStack>
-                    </VStack>
+                        />
+                      )}
+                    </HStack>
                   </FormControl>
 
                   <FormControl>
                     <FormLabel>End Date</FormLabel>
-                    <VStack spacing={3} align="stretch">
-                      {/* End Stage Button */}
-                      {startDate && !isEndDateUnlocked && (
-                        <Card
-                          bg={colorMode === "light" ? "green.50" : "green.900"}
-                          borderColor={colorMode === "light" ? "green.200" : "green.700"}
-                          borderWidth="1px"
-                        >
-                          <CardBody>
-                            <VStack spacing={2} align="stretch">
-                              <Button
-                                leftIcon={<Icon as={FiCheckCircle} />}
-                                colorScheme="green"
-                                size="md"
-                                onClick={handleOpenEndStageConfirm}
-                              >
-                                End Stage - {stage.stageName}
-                              </Button>
-                              <Text fontSize="xs" color={colorMode === "light" ? "green.700" : "green.300"}>
-                                Click to mark this stage as complete and set end date
-                              </Text>
-                            </VStack>
-                          </CardBody>
-                        </Card>
-                      )}
-
-                      {/* Date Input */}
-                      <Input
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        min={startDate || undefined}
-                        isDisabled={!startDate || !isEndDateUnlocked}
-                      />
-
-                      {/* Action Buttons */}
-                      {isEndDateUnlocked && (
-                        <HStack>
+                    <VStack spacing={2} align="stretch">
+                      <HStack>
+                        <Input
+                          type="date"
+                          value={endDate}
+                          onChange={(e) => setEndDate(e.target.value)}
+                          min={startDate || undefined}
+                          isDisabled={!startDate || !isEndDateUnlocked}
+                        />
+                        {startDate && !isEndDateUnlocked && (
                           <Button
+                            leftIcon={<Icon as={FiCheckCircle} />}
+                            colorScheme="green"
                             size="sm"
-                            variant="outline"
-                            onClick={() => handleSetCurrentDate("end")}
+                            onClick={handleOpenEndStageConfirm}
+                            flexShrink={0}
                           >
-                            Set Current Date
+                            End Stage
                           </Button>
-                          <Button
+                        )}
+                        {isEndDateUnlocked && endDate && (
+                          <IconButton
+                            aria-label="Clear end date"
+                            icon={<FiX />}
                             size="sm"
                             variant="ghost"
                             colorScheme="red"
                             onClick={() => handleClear("end")}
-                          >
-                            Clear
-                          </Button>
-                        </HStack>
-                      )}
+                          />
+                        )}
+                      </HStack>
 
                       {/* Helper Text */}
                       {!startDate && (
-                        <Text fontSize="xs" color="orange.500">
-                          Start date must be set first
-                        </Text>
+                        <HStack spacing={1} fontSize="xs" color="orange.500">
+                          <Icon as={FiAlertTriangle} boxSize={3} />
+                          <Text>Start date must be set first</Text>
+                        </HStack>
                       )}
                       {startDate && !isEndDateUnlocked && (
-                        <Text fontSize="xs" color="blue.500">
-                          Click "End Stage" button to mark this stage as complete
-                        </Text>
-                      )}
-                      {isEndDateUnlocked && (
-                        <Text fontSize="xs" color="green.500">
-                          ✓ Setting end date marks this stage as COMPLETE
-                        </Text>
+                        <HStack spacing={1} fontSize="xs" color="blue.500">
+                          <Icon as={FiInfo} boxSize={3} />
+                          <Text>Click "End Stage" to mark this stage as complete</Text>
+                        </HStack>
                       )}
                     </VStack>
                   </FormControl>
@@ -414,6 +407,7 @@ const UpdateStageDatesModal = ({
                     colorScheme="blue"
                     onClick={handleSave}
                     isLoading={isSubmitting}
+                    size="md"
                   >
                     Save Changes
                   </Button>
@@ -423,11 +417,22 @@ const UpdateStageDatesModal = ({
               <Divider />
 
               {/* Reports Section */}
-              <Box>
+              <Box
+                bg={colorMode === "light" ? "gray.50" : "gray.800"}
+                p={5}
+                rounded={radiusStyle}
+                borderWidth="1px"
+                borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+              >
                 <HStack justify="space-between" mb={4}>
                   <HStack>
-                    <Icon as={FiFileText} boxSize={5} />
+                    <Icon as={FiFileText} boxSize={5} color="blue.500" />
                     <Heading size="sm">Stage Reports</Heading>
+                    {reports.length > 0 && (
+                      <Badge colorScheme="blue" fontSize="xs">
+                        {reports.length}
+                      </Badge>
+                    )}
                   </HStack>
                   <Button
                     leftIcon={<FiPlus />}
@@ -447,9 +452,11 @@ const UpdateStageDatesModal = ({
                 ) : reports.length === 0 ? (
                   <Box textAlign="center" py={8}>
                     <Icon as={FiFileText} boxSize={10} color="gray.400" mb={3} />
-                    <Text color="gray.500" fontSize="sm">No reports yet</Text>
+                    <Text color="gray.500" fontSize="sm" mb={2}>No reports yet</Text>
+                    <Text color="gray.400" fontSize="xs" mb={4}>
+                      Track progress, blockers, and milestones
+                    </Text>
                     <Button
-                      mt={3}
                       leftIcon={<FiPlus />}
                       colorScheme="blue"
                       variant="outline"
@@ -462,8 +469,8 @@ const UpdateStageDatesModal = ({
                 ) : (
                   <VStack spacing={3} align="stretch">
                     {reports.map((report) => (
-                      <Card key={report.id} variant="outline" size="sm">
-                        <CardBody>
+                      <Card key={report.id} variant="outline" size="sm" rounded={radiusStyle}>
+                        <CardBody py={3}>
                           <VStack align="stretch" spacing={2}>
                             <HStack justify="space-between" align="start">
                               <Badge colorScheme={getStatusColor(report.statusLabel)} fontSize="xs">
@@ -488,65 +495,42 @@ const UpdateStageDatesModal = ({
                               </HStack>
                             </HStack>
 
-                            <Text fontSize="sm" whiteSpace="pre-wrap" noOfLines={3}>
+                            <Text fontSize="sm" whiteSpace="pre-wrap" noOfLines={2}>
                               {report.reportNote}
                             </Text>
 
                             {(report.reportStartDate || report.reportEndDate) && (
-                              <Box
-                                bg={colorMode === "light" ? "gray.50" : "gray.700"}
-                                p={2}
-                                rounded="md"
-                                borderWidth="1px"
-                                borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
-                              >
-                                <VStack spacing={1} align="stretch" fontSize="xs">
-                                  {report.reportStartDate && (
-                                    <HStack spacing={2} flexWrap="wrap">
-                                      <Text fontWeight="medium" minW="40px">Start:</Text>
-                                      <Text>{new Date(report.reportStartDate).toLocaleDateString()}</Text>
-                                      <Badge colorScheme="blue" fontSize="2xs">
-                                        W{formatDateWithLabels(report.reportStartDate).week}
-                                      </Badge>
-                                      <Badge colorScheme="purple" fontSize="2xs">
-                                        Q{formatDateWithLabels(report.reportStartDate).quarter}
-                                      </Badge>
-                                      <Badge colorScheme="gray" fontSize="2xs">
-                                        {formatDateWithLabels(report.reportStartDate).year}
-                                      </Badge>
-                                    </HStack>
-                                  )}
-                                  {report.reportEndDate && (
-                                    <HStack spacing={2} flexWrap="wrap">
-                                      <Text fontWeight="medium" minW="40px">End:</Text>
-                                      <Text>{new Date(report.reportEndDate).toLocaleDateString()}</Text>
-                                      <Badge colorScheme="blue" fontSize="2xs">
-                                        W{formatDateWithLabels(report.reportEndDate).week}
-                                      </Badge>
-                                      <Badge colorScheme="purple" fontSize="2xs">
-                                        Q{formatDateWithLabels(report.reportEndDate).quarter}
-                                      </Badge>
-                                      <Badge colorScheme="gray" fontSize="2xs">
-                                        {formatDateWithLabels(report.reportEndDate).year}
-                                      </Badge>
-                                    </HStack>
-                                  )}
-                                </VStack>
-                              </Box>
+                              <HStack spacing={2} fontSize="xs" color="gray.600" flexWrap="wrap">
+                                <Icon as={FiCheckCircle} boxSize={3} />
+                                {report.reportStartDate && report.reportEndDate ? (
+                                  <Text>
+                                    {new Date(report.reportStartDate).toLocaleDateString()} - {new Date(report.reportEndDate).toLocaleDateString()}
+                                  </Text>
+                                ) : report.reportStartDate ? (
+                                  <Text>Started: {new Date(report.reportStartDate).toLocaleDateString()}</Text>
+                                ) : report.reportEndDate ? (
+                                  <Text>Due: {new Date(report.reportEndDate).toLocaleDateString()}</Text>
+                                ) : null}
+                              </HStack>
                             )}
 
                             {report.tagsReport && (
                               <HStack spacing={1} flexWrap="wrap">
-                                {report.tagsReport.split(",").map((tag, i) => (
-                                  <Badge key={i} variant="subtle" colorScheme="gray" fontSize="xs">
+                                {report.tagsReport.split(",").slice(0, 3).map((tag, i) => (
+                                  <Badge key={i} variant="subtle" colorScheme="gray" fontSize="2xs">
                                     {tag.trim()}
                                   </Badge>
                                 ))}
+                                {report.tagsReport.split(",").length > 3 && (
+                                  <Badge variant="subtle" colorScheme="gray" fontSize="2xs">
+                                    +{report.tagsReport.split(",").length - 3}
+                                  </Badge>
+                                )}
                               </HStack>
                             )}
 
                             <HStack justify="space-between" fontSize="xs" color="gray.500">
-                              <Text>By: {report.createdByName}</Text>
+                              <Text>{report.createdByName}</Text>
                               <Text>{formatDate(report.createdAt)}</Text>
                             </HStack>
                           </VStack>

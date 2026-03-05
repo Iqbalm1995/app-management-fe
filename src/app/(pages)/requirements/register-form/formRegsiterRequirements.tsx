@@ -199,13 +199,16 @@ import React, {
   useState,
 } from "react";
 import {
+  FiAlertTriangle,
   FiArrowLeft,
   FiArrowRight,
+  FiCheck,
   FiCheckCircle,
   FiChevronDown,
   FiChevronUp,
   FiCornerDownLeft,
   FiExternalLink,
+  FiFile,
   FiInfo,
   FiLock,
   FiMinusCircle,
@@ -214,7 +217,9 @@ import {
   FiPlusSquare,
   FiRefreshCcw,
   FiSave,
+  FiX,
   FiXCircle,
+  FiSend,
 } from "react-icons/fi";
 import * as yup from "yup";
 import { Select } from "chakra-react-select";
@@ -269,7 +274,7 @@ const FormSchema = yup.object().shape({
     .of(
       yup.object({
         // userId: yup.string().required("User ID is required"), // Commented for future use
-      })
+      }),
     )
     .required(),
 
@@ -305,7 +310,7 @@ const FormSchema = yup.object().shape({
         workProgramBudget: yup.number().required(),
         workProgramReal: yup.number().required(),
         workProgramLeftovers: yup.number().required(),
-      })
+      }),
     )
     .required(),
 
@@ -353,7 +358,7 @@ const FormSchema = yup.object().shape({
         parentBacklogId: yup.string().nullable(),
         backlogName: yup.string().required("Backlog name is required"),
         backlogDesc: yup.string().nullable(),
-      })
+      }),
     )
     .required(),
 });
@@ -361,9 +366,10 @@ const FormSchema = yup.object().shape({
 interface UploadedFileItem {
   id: string;
   name: string;
-  extension: string;
-  size: number;
+  extension: string | null;
+  size: number | null;
   url: string;
+  type?: "file" | "link"; // NEW: to distinguish file vs link
 }
 
 // Crucial data alert component
@@ -445,7 +451,7 @@ const ProjectsRelationSection: React.FC<ProjectsRelationSectionProps> = ({
         if (authData && token) {
           const response = await GetProjectsByRequirementId(
             requirementId,
-            token
+            token,
           );
 
           if (
@@ -585,7 +591,7 @@ function RegisterRequirementFormPage({
   const { InsertMediaObjectByKey, DeleteMediaObject } = useMediaObject();
   const [requirementId, setRequirementId] = useState<string | null>(null);
   const [requirementStatus, setRequirementStatus] = useState<string | null>(
-    null
+    null,
   );
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [isReviewMode, setIsReviewMode] = useState<boolean>(false);
@@ -600,6 +606,7 @@ function RegisterRequirementFormPage({
     onClose: onApprovalRequestClose,
   } = useDisclosure();
   const cancelApprovalRequestRef = useRef<any>(null);
+  const [approvalCountdown, setApprovalCountdown] = useState(5);
   const [selectedApp, setSelectedApp] =
     useState<ApplicationMasterResponse | null>(null);
   const [hasProjects, setHasProjects] = useState<boolean>(false);
@@ -764,6 +771,26 @@ function RegisterRequirementFormPage({
   }, [DataAuth, requirementId]);
   // End SetUp auth data on current page
 
+  // Countdown timer for approval request confirmation
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isApprovalRequestOpen) {
+      setApprovalCountdown(5);
+      timer = setInterval(() => {
+        setApprovalCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [isApprovalRequestOpen]);
+
   const GetOptionDataServ = async (key: string): Promise<OptionListProps[]> => {
     const PayloadList: PaggingListPayload = {
       search: "",
@@ -832,7 +859,7 @@ function RegisterRequirementFormPage({
   };
 
   const AddMediaObjServ = async (
-    data: InsertMediaObjectByKeyPayload
+    data: InsertMediaObjectByKeyPayload,
   ): Promise<boolean> => {
     const requestData = await InsertMediaObjectByKey(data, tokenData);
     const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
@@ -960,9 +987,10 @@ function RegisterRequirementFormPage({
     const requestData = await InsertReq(payload, tokenData);
     const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
 
-    if (files.length <= 0 && data.isHaveMemo !== "N") {
+    const totalAttachments = files.length + pendingLinks.length;
+    if (totalAttachments <= 0 && data.isHaveMemo !== "N") {
       showToast({
-        description: `upload files must be uploaded, at least one.`,
+        description: `Please upload at least one file or add one link.`,
         statusToast: "warning",
       });
       setActionLoading(false);
@@ -981,18 +1009,7 @@ function RegisterRequirementFormPage({
 
       const itemsKey: string = requestData.data as string;
       if (itemsKey != null && itemsKey.length > 0) {
-        if (files.length > 0) {
-          for (const file of files) {
-            const DataUploads: InsertMediaObjectByKeyPayload = {
-              KeyData: MEDIA_KEY_REQUIREMENT,
-              KeyId: itemsKey,
-              file: file,
-            };
-
-            // send upload files
-            await AddMediaObjServ(DataUploads);
-          }
-        }
+        await uploadFilesForDraft(itemsKey);
       } else {
         showToast({
           description: `Error getting Requirement ID`,
@@ -1030,8 +1047,9 @@ function RegisterRequirementFormPage({
           name: file.objectRawName,
           extension: file.objectExtension,
           size: file.objectSize,
-          url: file.objectFullPath,
-        }))
+          url: file.objectFullPath || file.objectData,
+          type: file.objectName === "EXTERNAL_LINK" ? "link" : "file", // NEW: detect type
+        })),
       );
     }
   };
@@ -1134,34 +1152,64 @@ function RegisterRequirementFormPage({
           appHightAvailability: reqData.appHightAvailability || "Y",
           appIntegrationOthersApps: reqData.appIntegrationOthersApps,
           note: reqData.note,
+          reqManageByDirectorateId: reqData.reqManageByDirectorateId,
+          reqManageByDivisionId: reqData.reqManageByDivisionId,
+          reqManageByGroupId: reqData.reqManageByGroupId,
         });
         // Store initial app code for validation
+
+        // Set default IT values when null (for both new and imported projects)
+        if (!reqData.reqManageByDirectorateId) {
+          formik.setFieldValue(
+            "reqManageByDirectorateId",
+            DIRECTORATE_ID_IT_BJB,
+          );
+        }
+        if (!reqData.reqManageByDivisionId) {
+          formik.setFieldValue("reqManageByDivisionId", DIVISION_ID_IT_BJB);
+        }
         setInitialAppCode(reqData.appInitialCode || null);
 
         // Load PIC Assign Users if available
         if (reqData.approvalDatas && reqData.approvalDatas.length > 0) {
-          const picUsers = reqData.approvalDatas.map(
-            (pic) =>
-            ({
-              id: pic.id,
-              userId: pic.approverUserCode,
-              nama: pic.approverUserFirstName,
-              email: pic.approverUserEmail,
-              phoneNumber: pic.approverUserPhoneNumber || "",
-              // Minimal required fields for UsersResponse
-              nrp: "",
-              nip: "",
-              teamId: "",
-              teamCode: "",
-              teamName: "",
-              userStatus: "ACTIVE",
-              createdAt: new Date().toISOString(),
-              createdBy: "",
-              team: null,
-              teamRole: null,
-            } as UsersResponse)
-          );
-          setChoosedMemberProjects(picUsers);
+          try {
+            // Fetch complete user data for each approverUserCode
+            const picUsersPromises = reqData.approvalDatas.map(async (pic) => {
+              const userData = await GetDataUser(pic.approverUserCode, 1);
+              return userData.length > 0 ? userData[0] : null;
+            });
+
+            const picUsersResults = await Promise.all(picUsersPromises);
+            const validPicUsers = picUsersResults.filter(
+              (user) => user !== null,
+            ) as UsersResponse[];
+
+            setChoosedMemberProjects(validPicUsers);
+          } catch (error) {
+            console.error("Error fetching PIC users data:", error);
+            // Fallback to original behavior if fetch fails
+            const picUsers = reqData.approvalDatas.map(
+              (pic) =>
+                ({
+                  id: pic.id,
+                  userId: pic.approverUserCode,
+                  nama: pic.approverUserFirstName,
+                  email: pic.approverUserEmail,
+                  phoneNumber: pic.approverUserPhoneNumber || "",
+                  nrp: "",
+                  nip: "",
+                  teamId: "",
+                  teamCode: "",
+                  teamName: "",
+                  userStatus: "ACTIVE",
+                  createdAt: new Date().toISOString(),
+                  createdBy: "",
+                  team: null,
+                  teamRole: null,
+                }) as UsersResponse,
+            );
+            setChoosedMemberProjects(picUsers);
+          }
         }
 
         // Load User PIC if available
@@ -1173,7 +1221,7 @@ function RegisterRequirementFormPage({
               "Loaded PIC user:",
               picUser,
               "userPicId:",
-              reqData.userPicId
+              reqData.userPicId,
             );
             setPICUser(reqData.userPicId);
           } else {
@@ -1209,7 +1257,7 @@ function RegisterRequirementFormPage({
         if (reqData.assignedFromId) {
           const assignedFromUserData = await GetDataUser(
             reqData.assignedFromId,
-            1
+            1,
           );
           if (assignedFromUserData.length > 0) {
             setDataUsersAssignedFrom(assignedFromUserData);
@@ -1247,19 +1295,19 @@ function RegisterRequirementFormPage({
         if (reqData.reqManageByDirectorateId) {
           formik.setFieldValue(
             "reqManageByDirectorateId",
-            reqData.reqManageByDirectorateId
+            reqData.reqManageByDirectorateId,
           );
         }
         if (reqData.reqManageByDivisionId) {
           formik.setFieldValue(
             "reqManageByDivisionId",
-            reqData.reqManageByDivisionId
+            reqData.reqManageByDivisionId,
           );
         }
         if (reqData.reqManageByGroupId) {
           formik.setFieldValue(
             "reqManageByGroupId",
-            reqData.reqManageByGroupId
+            reqData.reqManageByGroupId,
           );
         }
 
@@ -1276,10 +1324,10 @@ function RegisterRequirementFormPage({
 
           // Check if there are INTERNAL or EXTERNAL work programs
           const hasInternal = sortedWorkPrograms.some(
-            (wp) => wp.workProgramSource === "INTERNAL"
+            (wp) => wp.workProgramSource === "INTERNAL",
           );
           const hasExternal = sortedWorkPrograms.some(
-            (wp) => wp.workProgramSource === "EXTERNAL"
+            (wp) => wp.workProgramSource === "EXTERNAL",
           );
 
           if (hasInternal) setWorkProgramInt("1");
@@ -1401,11 +1449,11 @@ function RegisterRequirementFormPage({
               console.log(`Backlog ${index} full object:`, b);
               console.log(
                 `Backlog ${index} backlogHistories:`,
-                b.backlogHistories
+                b.backlogHistories,
               );
               console.log(
                 `Backlog ${index} backlogHistories length:`,
-                b.backlogHistories?.length
+                b.backlogHistories?.length,
               );
               return {
                 backlogId: b.id,
@@ -1425,12 +1473,12 @@ function RegisterRequirementFormPage({
                 rfcPriorities: b.rfcPriorities || null,
                 rfcPrioritiesIndex: b.rfcPrioritiesIndex || null,
               };
-            }
+            },
           );
           console.log("Loaded backlogs:", backlogs);
           console.log(
             "Loaded backlogs[0].backlogHistories:",
-            backlogs[0]?.backlogHistories
+            backlogs[0]?.backlogHistories,
           );
           setDataBackLogs(backlogs);
         }
@@ -1450,48 +1498,62 @@ function RegisterRequirementFormPage({
   };
 
   const uploadFilesForDraft = async (reqId: string) => {
-    console.log("uploadFilesForDraft called with reqId:", reqId);
-    console.log("files array length:", files.length);
-    console.log("files array:", files);
+    const hasFiles = files.length > 0;
+    const hasLinks = pendingLinks.length > 0;
 
-    if (files.length > 0) {
+    // Upload files
+    if (hasFiles) {
       for (const file of files) {
-        console.log(
-          "Processing file:",
-          file.name,
-          "size:",
-          file.size,
-          "type:",
-          file.type
-        );
-        // Only upload if it's a valid File object with size
         if (file instanceof File && file.size > 0) {
           try {
-            console.log("Uploading file:", file.name);
             const DataUploads: InsertMediaObjectByKeyPayload = {
               KeyData: MEDIA_KEY_REQUIREMENT,
               KeyId: reqId,
               file: file,
             };
-            const uploadResult = await AddMediaObjServ(DataUploads);
-            if (!uploadResult) {
-              console.error("Failed to upload file:", file.name);
-              // Error toast already shown in AddMediaObjServ
-            } else {
-              console.log("Successfully uploaded file:", file.name);
-            }
+            await AddMediaObjServ(DataUploads);
           } catch (error) {
             console.error("Error uploading file:", file.name, error);
           }
-        } else {
-          console.warn("Skipping invalid file:", file);
         }
       }
       setFiles([]);
-      console.log("Loading uploaded files...");
+    }
+
+    // Upload links
+    if (hasLinks) {
+      for (const link of pendingLinks) {
+        try {
+          const linkPayload: InsertMediaObjectByKeyPayload = {
+            KeyData: MEDIA_KEY_REQUIREMENT,
+            KeyId: reqId,
+            LinkUrl: link.url,
+            LinkTitle: link.title,
+          };
+
+          const uploadResult = await InsertMediaObjectByKey(
+            linkPayload,
+            tokenData,
+          );
+          if (uploadResult?.statusCode !== RES_CODE_OK) {
+            showToast({
+              description: `Failed to add link: ${link.title}`,
+              statusToast: "error",
+            });
+          }
+        } catch (error) {
+          showToast({
+            description: `Error uploading link: ${link.title}`,
+            statusToast: "error",
+          });
+        }
+      }
+      setPendingLinks([]);
+    }
+
+    // Reload all uploaded items
+    if (hasFiles || hasLinks) {
       await loadUploadedFiles(reqId);
-    } else {
-      console.log("No files to upload");
     }
   };
 
@@ -1598,7 +1660,7 @@ function RegisterRequirementFormPage({
   const UpdateDraftRequirement = async (data: RequirementsInsertPayload) => {
     console.log(
       "UpdateDraftRequirement - ChoosedMemberProjects:",
-      ChoosedMemberProjects
+      ChoosedMemberProjects,
     );
     console.log("UpdateDraftRequirement - DataBackLogs:", DataBackLogs);
 
@@ -1608,12 +1670,12 @@ function RegisterRequirementFormPage({
     }));
     console.log(
       "UpdateDraftRequirement - PICAssignUsers payload:",
-      picAssignUsersPayload
+      picAssignUsersPayload,
     );
     console.log(
       "UpdateDraftRequirement - RFC check:",
       data.requirementType,
-      data.backlogFeatures?.length
+      data.backlogFeatures?.length,
     );
 
     const { backlogFeatures, ...dataWithoutBacklog } = data;
@@ -1691,12 +1753,12 @@ function RegisterRequirementFormPage({
 
     console.log(
       "UpdateDraftRequirement - Payload backlogFeatures:",
-      payload.backlogFeatures
+      payload.backlogFeatures,
     );
 
     console.log(
       "UpdateDraftRequirement - Full payload:",
-      JSON.stringify(payload, null, 2)
+      JSON.stringify(payload, null, 2),
     );
     const requestData = await RegisterUpdate(payload, tokenData);
     const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
@@ -1739,7 +1801,7 @@ function RegisterRequirementFormPage({
           backlogDesc: b.backlogDesc,
           note: null,
           posOrder: index + 1,
-        })
+        }),
       );
       setDataBackLogs(backlogs);
     }
@@ -1754,10 +1816,11 @@ function RegisterRequirementFormPage({
   };
 
   const SubmitDraftRequirement = async (data: RequirementsInsertPayload) => {
-    const totalFiles = uploadedFiles.length + files.length;
-    if (totalFiles <= 0 && data.isHaveMemo !== "N") {
+    const totalAttachments =
+      uploadedFiles.length + files.length + pendingLinks.length;
+    if (totalAttachments <= 0 && data.isHaveMemo !== "N") {
       showToast({
-        description: `Upload files must be uploaded, at least one.`,
+        description: `Please upload at least one file or add one link.`,
         statusToast: "warning",
       });
       setActionLoading(false);
@@ -1766,7 +1829,7 @@ function RegisterRequirementFormPage({
 
     console.log(
       "SubmitDraftRequirement - data.backlogFeatures:",
-      data.backlogFeatures
+      data.backlogFeatures,
     );
     console.log("SubmitDraftRequirement - DataBackLogs:", DataBackLogs);
 
@@ -1917,17 +1980,16 @@ function RegisterRequirementFormPage({
     if (perihalSementaraRef.current && perihalCursorPosRef.current !== null) {
       perihalSementaraRef.current.setSelectionRange(
         perihalCursorPosRef.current,
-        perihalCursorPosRef.current
+        perihalCursorPosRef.current,
       );
     }
   }, [formik.values.reqNarative]);
-
 
   useEffect(() => {
     if (perihalRef.current && perihalMainCursorPosRef.current !== null) {
       perihalRef.current.setSelectionRange(
         perihalMainCursorPosRef.current,
-        perihalMainCursorPosRef.current
+        perihalMainCursorPosRef.current,
       );
     }
   }, [formik.values.reqNarative]);
@@ -1935,7 +1997,7 @@ function RegisterRequirementFormPage({
     if (namaLengkapRef.current && namaLengkapCursorPosRef.current !== null) {
       namaLengkapRef.current.setSelectionRange(
         namaLengkapCursorPosRef.current,
-        namaLengkapCursorPosRef.current
+        namaLengkapCursorPosRef.current,
       );
     }
   }, [formik.values.userPicName]);
@@ -1943,7 +2005,7 @@ function RegisterRequirementFormPage({
     if (nomorMemoRef.current && nomorMemoCursorPosRef.current !== null) {
       nomorMemoRef.current.setSelectionRange(
         nomorMemoCursorPosRef.current,
-        nomorMemoCursorPosRef.current
+        nomorMemoCursorPosRef.current,
       );
     }
   }, [formik.values.reqNumber]);
@@ -1983,7 +2045,7 @@ function RegisterRequirementFormPage({
 
   const logMissingRequiredFields = (
     values: Record<string, any>,
-    schema: yup.ObjectSchema<any>
+    schema: yup.ObjectSchema<any>,
   ) => {
     const schemaDesc = schema.describe();
 
@@ -2019,10 +2081,11 @@ function RegisterRequirementFormPage({
       });
       return;
     }
-    const totalFiles = uploadedFiles.length + files.length;
-    if (totalFiles === 0 && data.isHaveMemo !== "N") {
+    const totalAttachments =
+      uploadedFiles.length + files.length + pendingLinks.length;
+    if (totalAttachments === 0 && data.isHaveMemo !== "N") {
       showToast({
-        description: "File upload attachments, cannot be empty.",
+        description: "Please upload at least one file or add one link.",
         statusToast: "warning",
       });
       return;
@@ -2033,7 +2096,7 @@ function RegisterRequirementFormPage({
       `Apakah ada yakin akan submit data "${formik.values.isHaveMemo == "Y"
         ? formik.values.reqNumber
         : formik.values.reqNarative || type_req_param + " Tanpa Memo"
-      }"?`
+      }"?`,
     );
     setOpenConfirmSaveDialog(true);
   };
@@ -2090,10 +2153,11 @@ function RegisterRequirementFormPage({
       return;
     }
 
-    const totalFiles = uploadedFiles.length + files.length;
-    if (totalFiles <= 0 && formik.values.isHaveMemo !== "N") {
+    const totalAttachments =
+      uploadedFiles.length + files.length + pendingLinks.length;
+    if (totalAttachments <= 0 && formik.values.isHaveMemo !== "N") {
       showToast({
-        description: `Upload files must be uploaded, at least one.`,
+        description: `Please upload at least one file or add one link.`,
         statusToast: "warning",
       });
       return;
@@ -2249,7 +2313,7 @@ function RegisterRequirementFormPage({
 
   const GetDataUser = async (
     searchValue: string,
-    limit: number = 1
+    limit: number = 1,
   ): Promise<UsersResponse[]> => {
     const PayloadList: PaggingListPayload = {
       search: searchValue,
@@ -2290,7 +2354,7 @@ function RegisterRequirementFormPage({
   };
 
   const [DataDivisions, setDataDivisions] = useState<OrganizationResponse[]>(
-    []
+    [],
   );
   const [OrganizationData, setOrganizationData] = useState<
     OrganizationResponse[]
@@ -2310,7 +2374,7 @@ function RegisterRequirementFormPage({
       // Update formik
       formik.setFieldValue(
         "involvedDivisionIds",
-        newList.map((d) => d.id)
+        newList.map((d) => d.id),
       );
     } else {
       showToast({
@@ -2367,7 +2431,7 @@ function RegisterRequirementFormPage({
       | "searchAssignedFromUser"
       | "searchAssignedToUser"
       | "searchPICUser"
-      | "clear"
+      | "clear",
   ) => {
     if (key == "clear") {
       handleCleanDataUser();
@@ -2404,7 +2468,7 @@ function RegisterRequirementFormPage({
     const mappedPayload: PICAssignUserPayload[] = ChoosedMemberProjects.map(
       (user) => ({
         userId: user.userId,
-      })
+      }),
     );
 
     formik.setFieldValue("picAssignUsers", mappedPayload);
@@ -2428,7 +2492,7 @@ function RegisterRequirementFormPage({
   };
   const handleRemoveUserAssign = (id: string) => {
     const updatedProjects = ChoosedMemberProjects.filter(
-      (project) => project.id !== id
+      (project) => project.id !== id,
     );
     setChoosedMemberProjects(updatedProjects);
     setDataUsers([]);
@@ -2449,7 +2513,7 @@ function RegisterRequirementFormPage({
   const GetDataMasterOrg = async (
     searchValue: string = "",
     limit: number = 1,
-    whereData: ListSearchByParam[]
+    whereData: ListSearchByParam[],
   ): Promise<OrganizationResponse[]> => {
     const PayloadList: PaggingListPayload = {
       search: searchValue,
@@ -2524,7 +2588,7 @@ function RegisterRequirementFormPage({
   const [IsLoadingDirectorateSelect, setIsLoadingDirectorateSelect] =
     useState(false);
   const [OptionDirectorate, setOptionDirectorate] = useState<OptionListProps[]>(
-    []
+    [],
   );
 
   const LoadDataDirectorate = async () => {
@@ -2541,7 +2605,7 @@ function RegisterRequirementFormPage({
       const dataDivision = await GetDataMasterOrg(
         "",
         MAX_SIZE_TABLE,
-        whereParam
+        whereParam,
       );
 
       const mapOptionData: OptionListProps[] = dataDivision.map((d) => ({
@@ -2602,7 +2666,7 @@ function RegisterRequirementFormPage({
       const dataDivision = await GetDataMasterOrg(
         "",
         MAX_SIZE_TABLE,
-        whereParam
+        whereParam,
       );
 
       const mapOptionData: OptionListProps[] = dataDivision.map((d) => ({
@@ -2663,7 +2727,7 @@ function RegisterRequirementFormPage({
       const dataDivision = await GetDataMasterOrg(
         "",
         MAX_SIZE_TABLE,
-        whereParam
+        whereParam,
       );
 
       const mapOptionData: OptionListProps[] = dataDivision.map((d) => ({
@@ -2690,6 +2754,12 @@ function RegisterRequirementFormPage({
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFileItem[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
 
+  // Link state management
+  const [pendingLinks, setPendingLinks] = useState<
+    Array<{ id: string; url: string; title: string }>
+  >([]);
+  const [linkForm, setLinkForm] = useState({ url: "", title: "" });
+
   const { getRootProps, getInputProps } = useDropzone({
     accept: {
       "image/*": [], // Accept all images
@@ -2705,13 +2775,45 @@ function RegisterRequirementFormPage({
 
   const handleUpload = () => {
     // Old upload logic - replaced by uploadFilesForDraft
-    // const fileDetails = files.map((file) => {
-    //   const [name, extension] = file.name.split(".");
-    //   return { name, extension, size: file.size, file };
-    // });
-    // const formData = new FormData();
-    // console.log("Form Data Payload:", formData);
-    // console.log("Uploaded Files:", fileDetails);
+  };
+
+  // Link management functions
+  const handleAddLink = () => {
+    if (!linkForm.url || !linkForm.title) {
+      showToast({
+        description: "URL and Title are required",
+        statusToast: "error",
+      });
+      return;
+    }
+
+    // Validate URL format
+    try {
+      new URL(linkForm.url);
+    } catch {
+      showToast({
+        description: "Invalid URL format",
+        statusToast: "error",
+      });
+      return;
+    }
+
+    const newLink = {
+      id: Date.now().toString(),
+      url: linkForm.url,
+      title: linkForm.title,
+    };
+
+    setPendingLinks([...pendingLinks, newLink]);
+    setLinkForm({ url: "", title: "" });
+    showToast({
+      description: "Link added successfully",
+      statusToast: "success",
+    });
+  };
+
+  const handleRemoveLink = (id: string) => {
+    setPendingLinks(pendingLinks.filter((link) => link.id !== id));
   };
 
   useEffect(() => {
@@ -2729,10 +2831,10 @@ function RegisterRequirementFormPage({
 
   const handleRemoveFile = (indexToRemove: number) => {
     setFiles((prevFiles) =>
-      prevFiles.filter((_, idx) => idx !== indexToRemove)
+      prevFiles.filter((_, idx) => idx !== indexToRemove),
     );
     setPreviews((prevPreviews) =>
-      prevPreviews.filter((_, idx) => idx !== indexToRemove)
+      prevPreviews.filter((_, idx) => idx !== indexToRemove),
     );
   };
 
@@ -2786,7 +2888,7 @@ function RegisterRequirementFormPage({
       console.log("EXTERNAL");
     } else {
       const filtered = formik.values.workPrograms.filter(
-        (x) => x.workProgramSource !== "EXTERNAL"
+        (x) => x.workProgramSource !== "EXTERNAL",
       );
       formik.setFieldValue("workPrograms", filtered);
     }
@@ -2799,7 +2901,7 @@ function RegisterRequirementFormPage({
       console.log("INTERNAL");
     } else {
       const filtered = formik.values.workPrograms.filter(
-        (p) => p.workProgramSource !== "INTERNAL"
+        (p) => p.workProgramSource !== "INTERNAL",
       );
       formik.setFieldValue("workPrograms", filtered);
     }
@@ -2849,17 +2951,17 @@ function RegisterRequirementFormPage({
     updated.splice(index, 1);
 
     setSelectedDivisionWPInternal((prev) =>
-      prev.filter((item) => item.indexData !== index)
+      prev.filter((item) => item.indexData !== index),
     );
     setSelectedGroupWPInternal((prev) =>
-      prev.filter((item) => item.indexData !== index)
+      prev.filter((item) => item.indexData !== index),
     );
 
     setSelectedDivisionWPExternal((prev) =>
-      prev.filter((item) => item.indexData !== index)
+      prev.filter((item) => item.indexData !== index),
     );
     setSelectedGroupWPExternal((prev) =>
-      prev.filter((item) => item.indexData !== index)
+      prev.filter((item) => item.indexData !== index),
     );
 
     formik.setFieldValue("workPrograms", updated);
@@ -2928,22 +3030,7 @@ function RegisterRequirementFormPage({
                   {isEditMode ? "Update Draft" : "Save Draft"}
                 </Button>
               )}
-              {isEditMode &&
-                isReviewMode &&
-                (requirementStatus === REQ_STATUS_NEED_REVIEW ||
-                  requirementStatus === REQ_STATUS_IN_PROGRESS_REVIEW) && (
-                  <Button
-                    colorScheme={"orange"}
-                    leftIcon={<FiSave />}
-                    onClick={onApprovalRequestOpen}
-                    isLoading={ActionLoading}
-                    isDisabled={activeStep !== steps.length - 1}
-                    px={8}
-                    size={"lg"}
-                  >
-                    Approval Request
-                  </Button>
-                )}
+
               <Button
                 colorScheme={"green"}
                 leftIcon={<FiSave />}
@@ -2955,8 +3042,25 @@ function RegisterRequirementFormPage({
               >
                 {isEditMode && requirementStatus === "APPROVED"
                   ? "Update"
-                  : "Submit"}
+                  : "Save"}
               </Button>
+
+              {isEditMode &&
+                isReviewMode &&
+                (requirementStatus === REQ_STATUS_NEED_REVIEW ||
+                  requirementStatus === REQ_STATUS_IN_PROGRESS_REVIEW) && (
+                  <Button
+                    colorScheme={"orange"}
+                    leftIcon={<FiSend />}
+                    onClick={onApprovalRequestOpen}
+                    isLoading={ActionLoading}
+                    isDisabled={activeStep !== steps.length - 1}
+                    px={8}
+                    size={"lg"}
+                  >
+                    Approval Request
+                  </Button>
+                )}
             </Flex>
           </GridItem>
           <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 12 }} w={"full"}>
@@ -3070,33 +3174,33 @@ function RegisterRequirementFormPage({
                                         // set rest value if the choosed not have memo
                                         formik.setFieldValue(
                                           "reffParentId",
-                                          null
+                                          null,
                                         );
                                         setSelectedDivision(null);
                                         formik.setFieldValue(
                                           "senderDivisionId",
-                                          null
+                                          null,
                                         );
                                         formik.setFieldValue(
                                           "senderDivisionCode",
-                                          null
+                                          null,
                                         );
                                         formik.setFieldValue(
                                           "senderDivisionName",
-                                          null
+                                          null,
                                         );
                                         formik.setFieldValue("reqNumber", "-");
                                         formik.setFieldValue(
                                           "reqInititateDate",
-                                          null
+                                          null,
                                         );
                                         formik.setFieldValue(
                                           "reqAcceptedDate",
-                                          null
+                                          null,
                                         );
                                         formik.setFieldValue(
                                           "isCarryOver",
-                                          "N"
+                                          "N",
                                         );
                                       }
                                     }}
@@ -3222,7 +3326,7 @@ function RegisterRequirementFormPage({
                                               (x) =>
                                                 x.value ==
                                                 formik.values
-                                                  .senderDirectorateId
+                                                  .senderDirectorateId,
                                             )}
                                             isDisabled={true}
                                           />
@@ -3270,7 +3374,7 @@ function RegisterRequirementFormPage({
                                                 await GetDataMasterOrg(
                                                   "",
                                                   MAX_SIZE_TABLE,
-                                                  whereParam
+                                                  whereParam,
                                                 );
                                               const mapOptionData: OptionListProps[] =
                                                 dataDivision.map((d) => ({
@@ -3287,10 +3391,10 @@ function RegisterRequirementFormPage({
                                                 };
                                                 handleSelectedCustom(
                                                   selected,
-                                                  "senderDivisionId"
+                                                  "senderDivisionId",
                                                 );
                                                 setSelectedDivisionSender(
-                                                  selected
+                                                  selected,
                                                 );
                                                 setSelectedDivision(selected);
 
@@ -3306,7 +3410,7 @@ function RegisterRequirementFormPage({
                                                   await GetDataMasterOrg(
                                                     "",
                                                     1,
-                                                    whereParam
+                                                    whereParam,
                                                   );
                                                 if (
                                                   divisionData.length > 0 &&
@@ -3314,15 +3418,15 @@ function RegisterRequirementFormPage({
                                                 ) {
                                                   formik.setFieldValue(
                                                     "senderDirectorateId",
-                                                    divisionData[0].parentId
+                                                    divisionData[0].parentId,
                                                   );
                                                 }
                                               } else {
                                                 handleUnSelectedCustom(
-                                                  "senderDivisionId"
+                                                  "senderDivisionId",
                                                 );
                                                 handleUnSelectedCustom(
-                                                  "senderDirectorateId"
+                                                  "senderDirectorateId",
                                                 );
                                                 setSelectedDivisionSender(null);
                                                 setSelectedDivision(null);
@@ -3349,7 +3453,12 @@ function RegisterRequirementFormPage({
 
                             <FormControl
                               id="reqNumber"
-                              isInvalid={!!(formik.touched.reqNumber && formik.errors.reqNumber)}
+                              isInvalid={
+                                !!(
+                                  formik.touched.reqNumber &&
+                                  formik.errors.reqNumber
+                                )
+                              }
                               isRequired={formik.values.isHaveMemo === "Y"}
                             >
                               <InputLayout>
@@ -3362,20 +3471,29 @@ function RegisterRequirementFormPage({
                                     id="reqNumber"
                                     ref={nomorMemoRef}
                                     onChange={(e) => {
-                                      const input = e.target as HTMLInputElement;
+                                      const input =
+                                        e.target as HTMLInputElement;
 
                                       // simpan posisi cursor
-                                      nomorMemoCursorPosRef.current = input.selectionStart;
+                                      nomorMemoCursorPosRef.current =
+                                        input.selectionStart;
 
                                       // uppercase
-                                      const uppercased = input.value.toUpperCase();
-                                      formik.setFieldValue("reqNumber", uppercased);
+                                      const uppercased =
+                                        input.value.toUpperCase();
+                                      formik.setFieldValue(
+                                        "reqNumber",
+                                        uppercased,
+                                      );
                                     }}
                                     value={formik.values.reqNumber ?? ""}
                                     placeholder="0000/XXX-XXX/X/YYYY"
                                     minLength={3}
                                     maxLength={22}
-                                    isDisabled={ActionLoading || formik.values.isHaveMemo === "N"}
+                                    isDisabled={
+                                      ActionLoading ||
+                                      formik.values.isHaveMemo === "N"
+                                    }
                                   />
 
                                   <FormErrorMessage>
@@ -3445,7 +3563,7 @@ function RegisterRequirementFormPage({
                                     pattern="\d{4}-\d{2}-\d{2}"
                                     onChange={formik.handleChange}
                                     onInput={(
-                                      e: React.FormEvent<HTMLInputElement>
+                                      e: React.FormEvent<HTMLInputElement>,
                                     ) => {
                                       const input = e.currentTarget;
                                       const value = input.value;
@@ -3486,7 +3604,7 @@ function RegisterRequirementFormPage({
                                     pattern="\d{4}-\d{2}-\d{2}"
                                     onChange={formik.handleChange}
                                     onInput={(
-                                      e: React.FormEvent<HTMLInputElement>
+                                      e: React.FormEvent<HTMLInputElement>,
                                     ) => {
                                       const input = e.currentTarget;
                                       const value = input.value;
@@ -3514,7 +3632,7 @@ function RegisterRequirementFormPage({
                                   formik.values.reqInititateDate ||
                                   new Date().toISOString(),
                                   formik.values.reqAcceptedDate ||
-                                  new Date().toISOString()
+                                  new Date().toISOString(),
                                 ) < 0
                               }
                             >
@@ -3528,7 +3646,7 @@ function RegisterRequirementFormPage({
                                       formik.values.reqInititateDate ||
                                       new Date().toISOString(),
                                       formik.values.reqAcceptedDate ||
-                                      new Date().toISOString()
+                                      new Date().toISOString(),
                                     )}{" "}
                                     Hari Kalendar
                                   </Text>
@@ -3537,7 +3655,7 @@ function RegisterRequirementFormPage({
                                       formik.values.reqInititateDate ||
                                       new Date().toISOString(),
                                       formik.values.reqAcceptedDate ||
-                                      new Date().toISOString()
+                                      new Date().toISOString(),
                                     ) < 0 && "Durasi tidak boleh negatif"}
                                   </FormErrorMessage>
                                 </Stack>
@@ -3573,7 +3691,7 @@ function RegisterRequirementFormPage({
                                     onChange={(e) => {
                                       formik.setFieldValue(
                                         "isCarryOver",
-                                        e.target.checked ? "Y" : "N"
+                                        e.target.checked ? "Y" : "N",
                                       );
                                     }}
                                     isDisabled={
@@ -3627,7 +3745,7 @@ function RegisterRequirementFormPage({
                                   pattern="\d{4}-\d{2}-\d{2}"
                                   onChange={formik.handleChange}
                                   onInput={(
-                                    e: React.FormEvent<HTMLInputElement>
+                                    e: React.FormEvent<HTMLInputElement>,
                                   ) => {
                                     const input = e.currentTarget;
                                     const value = input.value;
@@ -3713,7 +3831,7 @@ function RegisterRequirementFormPage({
                                   {DataUsers.map((dt, index) => {
                                     const availableData =
                                       ChoosedMemberProjects.find(
-                                        (x) => x.id === dt.id
+                                        (x) => x.id === dt.id,
                                       );
                                     return (
                                       <Flex
@@ -3881,7 +3999,7 @@ function RegisterRequirementFormPage({
                                                 };
                                               }
                                               acc[groupCode].members.push(
-                                                member
+                                                member,
                                               );
                                               return acc;
                                             },
@@ -3891,7 +4009,7 @@ function RegisterRequirementFormPage({
                                                 groupName: string;
                                                 members: typeof ChoosedMemberProjects;
                                               }
-                                            >
+                                            >,
                                           );
 
                                         let memberIndex = 1;
@@ -3996,7 +4114,7 @@ function RegisterRequirementFormPage({
                                                             size={"sm"}
                                                             onClick={() =>
                                                               handleRemoveUserAssign(
-                                                                dt.id
+                                                                dt.id,
                                                               )
                                                             }
                                                             leftIcon={
@@ -4012,7 +4130,7 @@ function RegisterRequirementFormPage({
                                                 })}
                                               </Stack>
                                             </Box>
-                                          )
+                                          ),
                                         );
                                       })()}
                                     </Flex>
@@ -4077,7 +4195,7 @@ function RegisterRequirementFormPage({
                                         options={OrganizationData.filter(
                                           (f) =>
                                             f.orgType ==
-                                            ORG_CATEGORY_KEY_DIRECTORATE
+                                            ORG_CATEGORY_KEY_DIRECTORATE,
                                         ).map((d) => ({
                                           label: d.orgName,
                                           value: d.id,
@@ -4088,12 +4206,12 @@ function RegisterRequirementFormPage({
                                           if (e) {
                                             formik.setFieldValue(
                                               "reqManageByDirectorateId",
-                                              e.value
+                                              e.value,
                                             );
                                           } else {
                                             formik.setFieldValue(
                                               "reqManageByDirectorateId",
-                                              null
+                                              null,
                                             );
                                           }
                                         }}
@@ -4104,7 +4222,7 @@ function RegisterRequirementFormPage({
                                             ORG_CATEGORY_KEY_DIRECTORATE &&
                                             f.id ==
                                             formik.values
-                                              .reqManageByDirectorateId
+                                              .reqManageByDirectorateId,
                                         ).map((d) => ({
                                           label: d.orgName,
                                           value: d.id,
@@ -4141,7 +4259,7 @@ function RegisterRequirementFormPage({
                                         options={OrganizationData.filter(
                                           (f) =>
                                             f.orgType ==
-                                            ORG_CATEGORY_KEY_DIVISION
+                                            ORG_CATEGORY_KEY_DIVISION,
                                         ).map((d) => ({
                                           label: d.orgName,
                                           value: d.id,
@@ -4152,13 +4270,13 @@ function RegisterRequirementFormPage({
                                           if (e) {
                                             formik.setFieldValue(
                                               "reqManageByDivisionId",
-                                              e.value
+                                              e.value,
                                             );
 
                                             // Auto-fill direktorat from division's parentId
                                             const selectedDiv =
                                               OrganizationData.find(
-                                                (org) => org.id === e.value
+                                                (org) => org.id === e.value,
                                               );
                                             if (
                                               selectedDiv &&
@@ -4166,17 +4284,17 @@ function RegisterRequirementFormPage({
                                             ) {
                                               formik.setFieldValue(
                                                 "reqManageByDirectorateId",
-                                                selectedDiv.parentId
+                                                selectedDiv.parentId,
                                               );
                                             }
                                           } else {
                                             formik.setFieldValue(
                                               "reqManageByDivisionId",
-                                              null
+                                              null,
                                             );
                                             formik.setFieldValue(
                                               "reqManageByDirectorateId",
-                                              null
+                                              null,
                                             );
                                           }
                                         }}
@@ -4187,7 +4305,7 @@ function RegisterRequirementFormPage({
                                             ORG_CATEGORY_KEY_DIVISION &&
                                             f.id ==
                                             formik.values
-                                              .reqManageByDivisionId
+                                              .reqManageByDivisionId,
                                         ).map((d) => ({
                                           label: d.orgName,
                                           value: d.id,
@@ -4226,7 +4344,7 @@ function RegisterRequirementFormPage({
                                             ORG_CATEGORY_KEY_GROUP &&
                                             f.parentId ==
                                             formik.values
-                                              .reqManageByDivisionId
+                                              .reqManageByDivisionId,
                                         ).map((d) => ({
                                           label: d.orgName,
                                           value: d.id,
@@ -4236,25 +4354,23 @@ function RegisterRequirementFormPage({
                                           if (e) {
                                             formik.setFieldValue(
                                               "reqManageByGroupId",
-                                              e.value
+                                              e.value,
                                             );
                                           } else {
                                             formik.setFieldValue(
                                               "reqManageByGroupId",
-                                              null
+                                              null,
                                             );
                                           }
                                         }}
                                         placeholder={"Pilih Grup"}
-                                        isDisabled={
-                                          !formik.values.reqManageByDivisionId
-                                        }
+                                        isDisabled={false}
                                         value={OrganizationData.filter(
                                           (f) =>
                                             f.orgType ==
                                             ORG_CATEGORY_KEY_GROUP &&
                                             f.id ==
-                                            formik.values.reqManageByGroupId
+                                            formik.values.reqManageByGroupId,
                                         ).map((d) => ({
                                           label: d.orgName,
                                           value: d.id,
@@ -4404,11 +4520,11 @@ function RegisterRequirementFormPage({
                                   onChange={(e) => {
                                     const onlyNums = e.target.value.replace(
                                       /[^0-9]/g,
-                                      ""
+                                      "",
                                     );
                                     formik.setFieldValue(
                                       `userPicContanct`,
-                                      onlyNums
+                                      onlyNums,
                                     );
                                   }}
                                   value={formik.values.userPicContanct || "08"}
@@ -4505,7 +4621,7 @@ function RegisterRequirementFormPage({
                                         value={OptionDirectorate.find(
                                           (x) =>
                                             x.value ==
-                                            formik.values.userPicDirectorateId
+                                            formik.values.userPicDirectorateId,
                                         )}
                                         isDisabled={true}
                                       />
@@ -4549,7 +4665,7 @@ function RegisterRequirementFormPage({
                                             await GetDataMasterOrg(
                                               "",
                                               MAX_SIZE_TABLE,
-                                              whereParam
+                                              whereParam,
                                             );
                                           const mapOptionData: OptionListProps[] =
                                             dataDivision.map((d) => ({
@@ -4566,7 +4682,7 @@ function RegisterRequirementFormPage({
                                             };
                                             handleSelectedCustom(
                                               selected,
-                                              "userPicDivisionId"
+                                              "userPicDivisionId",
                                             );
                                             setSelectedDivisionPIC(selected);
 
@@ -4582,7 +4698,7 @@ function RegisterRequirementFormPage({
                                               await GetDataMasterOrg(
                                                 "",
                                                 1,
-                                                whereParam
+                                                whereParam,
                                               );
                                             if (
                                               divisionData.length > 0 &&
@@ -4590,24 +4706,24 @@ function RegisterRequirementFormPage({
                                             ) {
                                               formik.setFieldValue(
                                                 "userPicDirectorateId",
-                                                divisionData[0].parentId
+                                                divisionData[0].parentId,
                                               );
                                             }
 
                                             formik.setFieldValue(
                                               "userPicGroupId",
-                                              null
+                                              null,
                                             );
                                             setSelectedGroupOrgPIC(null);
                                           } else {
                                             handleUnSelectedCustom(
-                                              "userPicDivisionId"
+                                              "userPicDivisionId",
                                             );
                                             handleUnSelectedCustom(
-                                              "userPicDirectorateId"
+                                              "userPicDirectorateId",
                                             );
                                             handleUnSelectedCustom(
-                                              "userPicGroupId"
+                                              "userPicGroupId",
                                             );
                                             setSelectedDivisionPIC(null);
                                             setSelectedGroupOrgPIC(null);
@@ -4650,7 +4766,7 @@ function RegisterRequirementFormPage({
                                           setOptionGroupDivision([]);
                                           await LoadDataGroupOrgCustom(
                                             formik.values.userPicDivisionId ||
-                                            ""
+                                            "",
                                           );
                                         }}
                                         onChange={(e) => {
@@ -4661,12 +4777,12 @@ function RegisterRequirementFormPage({
                                             };
                                             handleSelectedCustom(
                                               selected,
-                                              "userPicGroupId"
+                                              "userPicGroupId",
                                             );
                                             setSelectedGroupOrgPIC(selected);
                                           } else {
                                             handleUnSelectedCustom(
-                                              "userPicGroupId"
+                                              "userPicGroupId",
                                             );
                                             setSelectedGroupOrgPIC(null);
                                           }
@@ -4784,7 +4900,7 @@ function RegisterRequirementFormPage({
                                                     x.value ==
                                                     formik.values.workPrograms[
                                                       index
-                                                    ].directorateId
+                                                    ].directorateId,
                                                 )?.label || ""
                                               }
                                             />
@@ -4832,7 +4948,7 @@ function RegisterRequirementFormPage({
                                                   await GetDataMasterOrg(
                                                     "",
                                                     MAX_SIZE_TABLE,
-                                                    whereParam
+                                                    whereParam,
                                                   );
                                                 const mapOptionData: OptionListProps[] =
                                                   dataDivision.map((d) => ({
@@ -4840,7 +4956,7 @@ function RegisterRequirementFormPage({
                                                     value: d.id,
                                                   }));
                                                 setOptionDivision(
-                                                  mapOptionData
+                                                  mapOptionData,
                                                 );
                                               }}
                                               onChange={async (e) => {
@@ -4852,7 +4968,7 @@ function RegisterRequirementFormPage({
 
                                                   handleSelectedCustom(
                                                     selected,
-                                                    `workPrograms[${index}].divisionId`
+                                                    `workPrograms[${index}].divisionId`,
                                                   );
                                                   setSelectedDivisionWPExternal(
                                                     (prev) => [
@@ -4861,7 +4977,7 @@ function RegisterRequirementFormPage({
                                                         indexData: index,
                                                         OptionData: selected,
                                                       },
-                                                    ]
+                                                    ],
                                                   );
 
                                                   const whereParam: ListSearchByParam[] =
@@ -4876,7 +4992,7 @@ function RegisterRequirementFormPage({
                                                     await GetDataMasterOrg(
                                                       "",
                                                       1,
-                                                      whereParam
+                                                      whereParam,
                                                     );
                                                   if (
                                                     divisionData.length > 0 &&
@@ -4884,47 +5000,47 @@ function RegisterRequirementFormPage({
                                                   ) {
                                                     formik.setFieldValue(
                                                       `workPrograms[${index}].directorateId`,
-                                                      divisionData[0].parentId
+                                                      divisionData[0].parentId,
                                                     );
                                                   }
 
                                                   formik.setFieldValue(
                                                     `workPrograms[${index}].groupId`,
-                                                    null
+                                                    null,
                                                   );
                                                   setSelectedGroupWPExternal(
                                                     (prev) =>
                                                       prev.filter(
                                                         (item) =>
                                                           item.indexData !==
-                                                          index
-                                                      )
+                                                          index,
+                                                      ),
                                                   );
                                                 } else {
                                                   handleUnSelectedCustom(
-                                                    `workPrograms[${index}].divisionId`
+                                                    `workPrograms[${index}].divisionId`,
                                                   );
                                                   handleUnSelectedCustom(
-                                                    `workPrograms[${index}].directorateId`
+                                                    `workPrograms[${index}].directorateId`,
                                                   );
                                                   handleUnSelectedCustom(
-                                                    `workPrograms[${index}].groupId`
+                                                    `workPrograms[${index}].groupId`,
                                                   );
                                                   setSelectedDivisionWPExternal(
                                                     (prev) =>
                                                       prev.filter(
                                                         (item) =>
                                                           item.indexData !==
-                                                          index
-                                                      )
+                                                          index,
+                                                      ),
                                                   );
                                                   setSelectedGroupWPExternal(
                                                     (prev) =>
                                                       prev.filter(
                                                         (item) =>
                                                           item.indexData !==
-                                                          index
-                                                      )
+                                                          index,
+                                                      ),
                                                   );
                                                 }
                                               }}
@@ -4935,7 +5051,7 @@ function RegisterRequirementFormPage({
                                               }
                                               value={
                                                 SelectedDivisionWPExternal.find(
-                                                  (x) => x.indexData == index
+                                                  (x) => x.indexData == index,
                                                 )?.OptionData
                                               }
                                             />
@@ -4973,7 +5089,7 @@ function RegisterRequirementFormPage({
                                                 await LoadDataGroupOrgCustom(
                                                   formik.values.workPrograms[
                                                     index
-                                                  ].divisionId || ""
+                                                  ].divisionId || "",
                                                 );
                                               }}
                                               onChange={(e) => {
@@ -4985,7 +5101,7 @@ function RegisterRequirementFormPage({
 
                                                   handleSelectedCustom(
                                                     selected,
-                                                    `workPrograms[${index}].groupId`
+                                                    `workPrograms[${index}].groupId`,
                                                   );
                                                   setSelectedGroupWPExternal(
                                                     (prev) => [
@@ -4994,19 +5110,19 @@ function RegisterRequirementFormPage({
                                                         indexData: index,
                                                         OptionData: selected,
                                                       },
-                                                    ]
+                                                    ],
                                                   );
                                                 } else {
                                                   handleUnSelectedCustom(
-                                                    `workPrograms[${index}].groupId`
+                                                    `workPrograms[${index}].groupId`,
                                                   );
                                                   setSelectedGroupWPExternal(
                                                     (prev) =>
                                                       prev.filter(
                                                         (item) =>
                                                           item.indexData !==
-                                                          index
-                                                      )
+                                                          index,
+                                                      ),
                                                   );
                                                 }
                                               }}
@@ -5019,10 +5135,16 @@ function RegisterRequirementFormPage({
                                               }
                                               value={
                                                 OptionGroupDivision.find(
-                                                  (opt) => opt.value === formik.values.workPrograms[index].groupId
-                                                ) || SelectedGroupWPExternal.find(
-                                                  (x) => x.indexData == index
-                                                )?.OptionData || null
+                                                  (opt) =>
+                                                    opt.value ===
+                                                    formik.values.workPrograms[
+                                                      index
+                                                    ].groupId,
+                                                ) ||
+                                                SelectedGroupWPExternal.find(
+                                                  (x) => x.indexData == index,
+                                                )?.OptionData ||
+                                                null
                                               }
                                             />
 
@@ -5058,14 +5180,14 @@ function RegisterRequirementFormPage({
                                           Kode Program Kerja
                                         </FormLabel>
                                         <Stack spacing={0} h={"full"}>
-                                          <VersionCodeInput
+                                          <Input
                                             id={`workProgramCodeEx-${index}`}
                                             name={`workProgramCodeEx-${index}`}
                                             type="text"
-                                            onChange={(val) =>
+                                            onChange={(e) =>
                                               formik.setFieldValue(
                                                 `workPrograms[${index}].workProgramCode`,
-                                                val
+                                                e.target.value,
                                               )
                                             }
                                             value={
@@ -5074,8 +5196,8 @@ function RegisterRequirementFormPage({
                                             }
                                             placeholder={`0.0.0.0`}
                                             minLength={3}
+                                            maxLength={15}
                                             isDisabled={ActionLoading}
-                                            useDoubleDigits={false}
                                           />
                                           <FormErrorMessage>
                                             {typeof formik.errors
@@ -5114,7 +5236,7 @@ function RegisterRequirementFormPage({
                                             onChange={(e) =>
                                               formik.setFieldValue(
                                                 `workPrograms[${index}].workProgramName`,
-                                                e.target.value
+                                                e.target.value,
                                               )
                                             }
                                             value={
@@ -5164,7 +5286,7 @@ function RegisterRequirementFormPage({
                                                 e.target.value.toUpperCase();
                                               formik.setFieldValue(
                                                 `workPrograms[${index}].workProgramAccName`,
-                                                upper
+                                                upper,
                                               );
                                             }}
                                             value={
@@ -5213,11 +5335,11 @@ function RegisterRequirementFormPage({
                                               const onlyNums =
                                                 e.target.value.replace(
                                                   /[^0-9]/g,
-                                                  ""
+                                                  "",
                                                 );
                                               formik.setFieldValue(
                                                 `workPrograms[${index}].workProgramAccNumber`,
-                                                onlyNums
+                                                onlyNums,
                                               );
                                             }}
                                             value={
@@ -5266,11 +5388,11 @@ function RegisterRequirementFormPage({
                                               const raw =
                                                 e.target.value.replace(
                                                   /\D/g,
-                                                  ""
+                                                  "",
                                                 ); // remove non-digits
                                               formik.setFieldValue(
                                                 `workPrograms[${index}].workProgramAccCc`,
-                                                raw
+                                                raw,
                                               );
                                             }}
                                             value={
@@ -5496,7 +5618,7 @@ function RegisterRequirementFormPage({
                                                     x.value ==
                                                     formik.values.workPrograms[
                                                       index
-                                                    ].directorateId
+                                                    ].directorateId,
                                                 )?.label || ""
                                               }
                                             />
@@ -5537,7 +5659,7 @@ function RegisterRequirementFormPage({
                                               }
                                               value={
                                                 SelectedDivisionWPInternal.find(
-                                                  (x) => x.indexData == index
+                                                  (x) => x.indexData == index,
                                                 )?.OptionData
                                               }
                                             />
@@ -5574,7 +5696,7 @@ function RegisterRequirementFormPage({
                                                 await LoadDataGroupOrgCustom(
                                                   formik.values.workPrograms[
                                                     index
-                                                  ].divisionId || ""
+                                                  ].divisionId || "",
                                                 );
                                               }}
                                               onChange={(e) => {
@@ -5586,7 +5708,7 @@ function RegisterRequirementFormPage({
 
                                                   handleSelectedCustom(
                                                     selected,
-                                                    `workPrograms[${index}].groupId`
+                                                    `workPrograms[${index}].groupId`,
                                                   );
                                                   setSelectedGroupWPInternal(
                                                     (prev) => [
@@ -5595,19 +5717,19 @@ function RegisterRequirementFormPage({
                                                         indexData: index,
                                                         OptionData: selected,
                                                       },
-                                                    ]
+                                                    ],
                                                   );
                                                 } else {
                                                   handleUnSelectedCustom(
-                                                    `workPrograms[${index}].groupId`
+                                                    `workPrograms[${index}].groupId`,
                                                   );
                                                   setSelectedGroupWPInternal(
                                                     (prev) =>
                                                       prev.filter(
                                                         (item) =>
                                                           item.indexData !==
-                                                          index
-                                                      )
+                                                          index,
+                                                      ),
                                                   );
                                                 }
                                               }}
@@ -5620,10 +5742,16 @@ function RegisterRequirementFormPage({
                                               }
                                               value={
                                                 OptionGroupDivision.find(
-                                                  (opt) => opt.value === formik.values.workPrograms[index].groupId
-                                                ) || SelectedGroupWPInternal.find(
-                                                  (x) => x.indexData == index
-                                                )?.OptionData || null
+                                                  (opt) =>
+                                                    opt.value ===
+                                                    formik.values.workPrograms[
+                                                      index
+                                                    ].groupId,
+                                                ) ||
+                                                SelectedGroupWPInternal.find(
+                                                  (x) => x.indexData == index,
+                                                )?.OptionData ||
+                                                null
                                               }
                                             />
                                             <FormErrorMessage>
@@ -5657,14 +5785,14 @@ function RegisterRequirementFormPage({
                                           Kode Program Kerja
                                         </FormLabel>
                                         <Stack spacing={0} h={"full"}>
-                                          <VersionCodeInput
+                                          <Input
                                             id={`workProgramCodeIT-${index}`}
                                             name={`workProgramCodeIT-${index}`}
                                             type="text"
-                                            onChange={(val) =>
+                                            onChange={(e) =>
                                               formik.setFieldValue(
                                                 `workPrograms[${index}].workProgramCode`,
-                                                val
+                                                e.target.value,
                                               )
                                             }
                                             value={
@@ -5673,8 +5801,8 @@ function RegisterRequirementFormPage({
                                             }
                                             placeholder={`0.0.0.0`}
                                             minLength={3}
+                                            maxLength={15}
                                             isDisabled={ActionLoading}
-                                            useDoubleDigits={false}
                                           />
                                           <FormErrorMessage>
                                             {typeof formik.errors
@@ -5713,7 +5841,7 @@ function RegisterRequirementFormPage({
                                             onChange={(e) =>
                                               formik.setFieldValue(
                                                 `workPrograms[${index}].workProgramName`,
-                                                e.target.value
+                                                e.target.value,
                                               )
                                             }
                                             value={
@@ -5763,7 +5891,7 @@ function RegisterRequirementFormPage({
                                                 e.target.value.toUpperCase();
                                               formik.setFieldValue(
                                                 `workPrograms[${index}].workProgramAccName`,
-                                                upper
+                                                upper,
                                               );
                                             }}
                                             value={
@@ -5812,11 +5940,11 @@ function RegisterRequirementFormPage({
                                               const onlyNums =
                                                 e.target.value.replace(
                                                   /[^0-9]/g,
-                                                  ""
+                                                  "",
                                                 );
                                               formik.setFieldValue(
                                                 `workPrograms[${index}].workProgramAccNumber`,
-                                                onlyNums
+                                                onlyNums,
                                               );
                                             }}
                                             value={
@@ -5865,11 +5993,11 @@ function RegisterRequirementFormPage({
                                               const raw =
                                                 e.target.value.replace(
                                                   /\D/g,
-                                                  ""
+                                                  "",
                                                 ); // remove non-digits
                                               formik.setFieldValue(
                                                 `workPrograms[${index}].workProgramAccCc`,
-                                                raw
+                                                raw,
                                               );
                                             }}
                                             value={
@@ -6059,7 +6187,7 @@ function RegisterRequirementFormPage({
                         <Text fontWeight={600}>Unggah Lampiran</Text>
                         <Divider />
 
-                        {/* Uploaded Files (from backend) */}
+                        {/* Uploaded Files and Links (from backend) */}
                         {uploadedFiles.length > 0 && (
                           <Flex w={"full"} direction={"column"} gap={3}>
                             <Text
@@ -6067,7 +6195,7 @@ function RegisterRequirementFormPage({
                               fontSize={"sm"}
                               color={"green.600"}
                             >
-                              File Terunggah ({uploadedFiles.length})
+                              Lampiran Terunggah ({uploadedFiles.length})
                             </Text>
                             <Flex
                               w={"full"}
@@ -6079,7 +6207,8 @@ function RegisterRequirementFormPage({
                               <Table variant="simple" size="sm" w="full">
                                 <Thead>
                                   <Tr>
-                                    <Th>File Name</Th>
+                                    <Th>Type</Th>
+                                    <Th>Name</Th>
                                     <Th>Size</Th>
                                     <Th isNumeric>Actions</Th>
                                   </Tr>
@@ -6088,24 +6217,49 @@ function RegisterRequirementFormPage({
                                   {uploadedFiles.map((file) => (
                                     <Tr key={file.id}>
                                       <Td>
+                                        {file.type === "link" ? (
+                                          <Badge colorScheme="blue">Link</Badge>
+                                        ) : (
+                                          <Badge colorScheme="green">
+                                            File
+                                          </Badge>
+                                        )}
+                                      </Td>
+                                      <Td>
                                         <Text>{file.name}</Text>
                                       </Td>
                                       <Td>
                                         <Text>
-                                          {(file.size / 1024).toFixed(2)} KB
+                                          {file.type === "link"
+                                            ? "-"
+                                            : `${((file.size || 0) / 1024).toFixed(2)} KB`}
                                         </Text>
                                       </Td>
                                       <Td isNumeric>
-                                        <IconButton
-                                          aria-label="Delete file"
-                                          icon={<FaRegTrashCan />}
-                                          colorScheme="red"
-                                          size="sm"
-                                          onClick={() =>
-                                            handleDeleteUploadedFile(file.id)
-                                          }
-                                          variant="ghost"
-                                        />
+                                        <HStack spacing={2} justify="flex-end">
+                                          {file.type === "link" && (
+                                            <IconButton
+                                              aria-label="Open link"
+                                              icon={<FiExternalLink />}
+                                              colorScheme="blue"
+                                              size="sm"
+                                              onClick={() =>
+                                                window.open(file.url, "_blank")
+                                              }
+                                              variant="ghost"
+                                            />
+                                          )}
+                                          <IconButton
+                                            aria-label="Delete"
+                                            icon={<FaRegTrashCan />}
+                                            colorScheme="red"
+                                            size="sm"
+                                            onClick={() =>
+                                              handleDeleteUploadedFile(file.id)
+                                            }
+                                            variant="ghost"
+                                          />
+                                        </HStack>
                                       </Td>
                                     </Tr>
                                   ))}
@@ -6180,7 +6334,7 @@ function RegisterRequirementFormPage({
                                           rounded="md"
                                           onLoad={() =>
                                             URL.revokeObjectURL(
-                                              URL.createObjectURL(file)
+                                              URL.createObjectURL(file),
                                             )
                                           }
                                         />
@@ -6229,13 +6383,117 @@ function RegisterRequirementFormPage({
                           {/* <Button colorScheme="blue" onClick={handleUpload}>
                             Upload Files
                           </Button> */}
-                          {/* <Button
-                            colorScheme="gray"
-                            onClick={handleResetListUpload}
-                          >
-                            Clear Upload
-                          </Button> */}
                         </Flex>
+
+                        {/* Add External Link Section */}
+                        <Divider my={4} />
+                        <Text fontWeight={600}>Tambah Link Eksternal</Text>
+
+                        <Flex
+                          w={"full"}
+                          p={4}
+                          border={"1px"}
+                          borderColor={"blue.200"}
+                          rounded={radiusStyle}
+                          bg={"blue.50"}
+                          direction={"column"}
+                          gap={3}
+                        >
+                          <FormControl>
+                            <FormLabel fontSize="sm">URL</FormLabel>
+                            <Input
+                              placeholder="https://bjbdrive/drive/example"
+                              value={linkForm.url}
+                              onChange={(e) =>
+                                setLinkForm({
+                                  ...linkForm,
+                                  url: e.target.value,
+                                })
+                              }
+                              bg="white"
+                            />
+                          </FormControl>
+
+                          <FormControl>
+                            <FormLabel fontSize="sm">Title</FormLabel>
+                            <Input
+                              placeholder="Link Drive Document"
+                              value={linkForm.title}
+                              onChange={(e) =>
+                                setLinkForm({
+                                  ...linkForm,
+                                  title: e.target.value,
+                                })
+                              }
+                              bg="white"
+                            />
+                          </FormControl>
+
+                          <Button
+                            colorScheme="blue"
+                            size="sm"
+                            onClick={handleAddLink}
+                            alignSelf="flex-end"
+                          >
+                            Add Link
+                          </Button>
+                        </Flex>
+
+                        {/* Pending Links */}
+                        {pendingLinks.length > 0 && (
+                          <Flex w={"full"} direction={"column"} gap={3}>
+                            <Text
+                              fontWeight={600}
+                              fontSize={"sm"}
+                              color={"blue.600"}
+                            >
+                              Link Menunggu Unggah ({pendingLinks.length})
+                            </Text>
+                            <Flex
+                              w={"full"}
+                              p={4}
+                              border={"1px"}
+                              borderColor={"blue.200"}
+                              rounded={radiusStyle}
+                            >
+                              <Table variant="simple" size="sm" w="full">
+                                <Thead>
+                                  <Tr>
+                                    <Th>Title</Th>
+                                    <Th>URL</Th>
+                                    <Th isNumeric>Actions</Th>
+                                  </Tr>
+                                </Thead>
+                                <Tbody>
+                                  {pendingLinks.map((link) => (
+                                    <Tr key={link.id}>
+                                      <Td>
+                                        <Text>{link.title}</Text>
+                                      </Td>
+                                      <Td>
+                                        <Text noOfLines={1} fontSize="xs">
+                                          {link.url}
+                                        </Text>
+                                      </Td>
+                                      <Td isNumeric>
+                                        <IconButton
+                                          aria-label="Remove link"
+                                          icon={<FaRegTrashCan />}
+                                          colorScheme="red"
+                                          size="sm"
+                                          onClick={() =>
+                                            handleRemoveLink(link.id)
+                                          }
+                                          variant="ghost"
+                                        />
+                                      </Td>
+                                    </Tr>
+                                  ))}
+                                </Tbody>
+                              </Table>
+                            </Flex>
+                          </Flex>
+                        )}
                       </Flex>
                     )}
 
@@ -6283,49 +6541,75 @@ function RegisterRequirementFormPage({
       </form>
 
       {/* Approval Request Confirmation Modal */}
-      <AlertDialog
+      {/* Approval Request Confirmation Modal */}
+      <Modal
         isOpen={isApprovalRequestOpen}
         onClose={onApprovalRequestClose}
-        leastDestructiveRef={cancelApprovalRequestRef}
         isCentered
       >
-        <AlertDialogOverlay bg="blackAlpha.300" backdropFilter="blur(10px)">
-          <AlertDialogContent mx={4}>
-            <AlertDialogHeader fontSize="lg" fontWeight="bold" pb={2}>
-              <HStack spacing={2}>
-                <FiCheckCircle />
-                <Text>Send Approval Request?</Text>
+        <ModalOverlay bg="blackAlpha.500" backdropFilter="blur(8px)" />
+        <ModalContent rounded={radiusStyle}>
+          <ModalHeader bg="orange.500" color="white" roundedTop={radiusStyle}>
+            <HStack>
+              <Icon as={FiAlertTriangle} boxSize={5} />
+              <Text>Send Approval Request</Text>
+            </HStack>
+          </ModalHeader>
+          <ModalCloseButton color="white" />
+          <ModalBody py={6}>
+            <VStack spacing={4} align="stretch">
+              <HStack spacing={2} align="flex-start">
+                <Icon as={FiAlertTriangle} color="orange.500" boxSize={5} mt={0.5} />
+                <Box>
+                  <Text fontWeight="bold" color="orange.500">WARNING: Approval Request Action</Text>
+                  <Text mt={2}>Are you sure you want to send this requirement for approval?</Text>
+                </Box>
               </HStack>
-            </AlertDialogHeader>
-            <AlertDialogBody py={4}>
-              Are you sure you want to send this requirement for approval?
-            </AlertDialogBody>
-            <AlertDialogFooter pt={4}>
-              <Button
-                ref={cancelApprovalRequestRef}
-                onClick={onApprovalRequestClose}
-                colorScheme="red"
-                variant="ghost"
-              >
+
+              <Card bg={colorMode === "light" ? "orange.50" : "orange.900"} borderColor="orange.200" borderWidth="1px">
+                <CardBody>
+                  <HStack spacing={2} align="flex-start">
+                    <Icon as={FiAlertTriangle} color="orange.500" boxSize={4} mt={0.5} />
+                    <Box>
+                      <Text fontWeight="bold" fontSize="sm">IMPORTANT:</Text>
+                      <Text fontSize="sm" mt={1}>
+                        Once submitted, the <strong>Scope of Work</strong> cannot be edited once it has been approved.
+                      </Text>
+                    </Box>
+                  </HStack>
+                </CardBody>
+              </Card>
+
+              <HStack spacing={2} align="flex-start">
+                <Icon as={FiCheckCircle} color="green.500" boxSize={4} mt={0.5} />
+                <Text fontSize="sm">
+                  This action will initiate the formal approval process for your requirement submission.
+                </Text>
+              </HStack>
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <HStack spacing={3}>
+              <Button leftIcon={<FiX />} onClick={onApprovalRequestClose}>
                 Cancel
               </Button>
               <Button
+                leftIcon={<FiCheck />}
                 colorScheme="orange"
-                leftIcon={<FiSave />}
                 onClick={async () => {
                   onApprovalRequestClose();
                   await handleRequestApproval();
                 }}
-                ml={3}
+                isDisabled={approvalCountdown > 0}
               >
-                Send Request
+                {approvalCountdown > 0 ? `Wait ${approvalCountdown}s` : `Send Request`}
               </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialogOverlay>
-      </AlertDialog>
+            </HStack>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </LayoutAdmin>
-  );
+  )
 }
 
 interface AppicationShowCaseProps {
@@ -6438,7 +6722,7 @@ const Section4BRDView = ({
   const [FormMode, setFormMode] = useState<"Add" | "Edit">("Add");
   const movePriority = (backlogId: string, direction: "up" | "down") => {
     const currentIndex = DataBackLogs.findIndex(
-      (item) => item.backlogId === backlogId || item.localId === backlogId
+      (item) => item.backlogId === backlogId || item.localId === backlogId,
     );
     if (currentIndex === -1) return;
 
@@ -6484,7 +6768,7 @@ const Section4BRDView = ({
                 onClick={() =>
                   movePriority(
                     (info.row.original.localId || info.row.original.backlogId)!,
-                    "up"
+                    "up",
                   )
                 }
                 isDisabled={info.row.original.posOrder === 1}
@@ -6500,7 +6784,7 @@ const Section4BRDView = ({
                 onClick={() =>
                   movePriority(
                     (info.row.original.localId || info.row.original.backlogId)!,
-                    "down"
+                    "down",
                   )
                 }
                 isDisabled={info.row.original.posOrder === DataBackLogs.length}
@@ -6541,7 +6825,7 @@ const Section4BRDView = ({
               variant="ghost"
               onClick={() =>
                 logBacklog(
-                  info.row.original.backlogId || info.row.original.localId
+                  info.row.original.backlogId || info.row.original.localId,
                 )
               }
             >
@@ -6553,7 +6837,7 @@ const Section4BRDView = ({
               variant="ghost"
               onClick={() =>
                 removeBacklog(
-                  info.row.original.backlogId || info.row.original.localId
+                  info.row.original.backlogId || info.row.original.localId,
                 )
               }
             >
@@ -6565,7 +6849,7 @@ const Section4BRDView = ({
         footer: (props) => props.column.id,
       },
     ],
-    [DataBackLogs]
+    [DataBackLogs],
   );
   const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -6576,7 +6860,7 @@ const Section4BRDView = ({
       pageIndex,
       pageSize,
     }),
-    [pageIndex, pageSize]
+    [pageIndex, pageSize],
   );
 
   const table = useReactTable({
@@ -6605,7 +6889,7 @@ const Section4BRDView = ({
     if (backlogNameInputRef.current && cursorPosRef.current !== null) {
       backlogNameInputRef.current.setSelectionRange(
         cursorPosRef.current,
-        cursorPosRef.current
+        cursorPosRef.current,
       );
     }
   }, [TextBackLogName]);
@@ -6622,7 +6906,7 @@ const Section4BRDView = ({
     };
 
     const isDuplicate = DataBackLogs.some(
-      (x) => x.backlogName.toLowerCase() === name.toLowerCase()
+      (x) => x.backlogName.toLowerCase() === name.toLowerCase(),
     );
 
     if (isDuplicate) {
@@ -6654,8 +6938,8 @@ const Section4BRDView = ({
       prev.map((item) =>
         item.backlogId === backlogId || item.localId === backlogId
           ? { ...item, ...updatedData }
-          : item
-      )
+          : item,
+      ),
     );
 
     showToast({
@@ -6663,7 +6947,10 @@ const Section4BRDView = ({
       statusToast: "success",
     });
 
-    ModalForm.onClose();
+    // Clear form for next entry
+    setTextBackLogName("");
+    setTextBackLogDesc("");
+    setTextBackLogId(null);
     setFormMode("Add");
   };
   const removeBacklog = (backlogId: string | undefined | null) => {
@@ -6682,8 +6969,8 @@ const Section4BRDView = ({
         })
         .map((item, index) => ({
           ...item,
-          posOrder: index + 1
-        }))
+          posOrder: index + 1,
+        })),
     );
     showToast({
       description: "Scope of Work dihapus",
@@ -6711,7 +6998,7 @@ const Section4BRDView = ({
         return;
       }
       const currentItem = DataBackLogs.find(
-        (x) => x.backlogId === TextBackLogId || x.localId === TextBackLogId
+        (x) => x.backlogId === TextBackLogId || x.localId === TextBackLogId,
       );
 
       updateBacklog(TextBackLogId, {
@@ -6762,7 +7049,7 @@ const Section4BRDView = ({
         ...item,
         // Keep backlogId if it exists (for editing), otherwise set to null (for new)
         backlogId: item.backlogId || null,
-      }))
+      })),
     );
   }, [DataBackLogs]);
 
@@ -6790,15 +7077,15 @@ const Section4BRDView = ({
       }
       formik.setFieldValue(
         "appAccessFrontsiteDns",
-        selectedApp.appAccessFrontsiteDns
+        selectedApp.appAccessFrontsiteDns,
       );
       formik.setFieldValue(
         "appAccessFrontsiteIp",
-        selectedApp.appAccessFrontsiteIp
+        selectedApp.appAccessFrontsiteIp,
       );
       formik.setFieldValue(
         "appAccessBacksiteDns",
-        selectedApp.appAccessBacksiteDns
+        selectedApp.appAccessBacksiteDns,
       );
 
       if (selectedApp.appAccessBacksiteIp) {
@@ -6806,7 +7093,7 @@ const Section4BRDView = ({
       }
       formik.setFieldValue(
         "appAccessBacksiteIp",
-        selectedApp.appAccessBacksiteIp
+        selectedApp.appAccessBacksiteIp,
       );
 
       if (selectedApp.appTypes) {
@@ -6816,12 +7103,12 @@ const Section4BRDView = ({
       formik.setFieldValue("appRelatedness", selectedApp.appRelatedness);
       formik.setFieldValue(
         "appRelatednessDesc",
-        selectedApp.appRelatednessDesc
+        selectedApp.appRelatednessDesc,
       );
       formik.setFieldValue("appTransactionals", selectedApp.appTransactionals);
       formik.setFieldValue(
         "appOperational24hrs",
-        selectedApp.appOperational24hrs
+        selectedApp.appOperational24hrs,
       );
 
       if (selectedApp.appOperationalDays) {
@@ -6829,15 +7116,15 @@ const Section4BRDView = ({
       }
       formik.setFieldValue(
         "appOperationalDays",
-        selectedApp.appOperationalDays
+        selectedApp.appOperationalDays,
       );
       formik.setFieldValue(
         "appOperationalHourOpen",
-        selectedApp.appOperationalHourOpen
+        selectedApp.appOperationalHourOpen,
       );
       formik.setFieldValue(
         "appOperationalHourClosed",
-        selectedApp.appOperationalHourClosed
+        selectedApp.appOperationalHourClosed,
       );
 
       if (selectedApp.appEnvLocations) {
@@ -6846,23 +7133,23 @@ const Section4BRDView = ({
       formik.setFieldValue("appEnvLocations", selectedApp.appEnvLocations);
       formik.setFieldValue(
         "appEnvLocationsOthers",
-        selectedApp.appEnvLocationsOthers
+        selectedApp.appEnvLocationsOthers,
       );
       formik.setFieldValue("appPrivateAuth", selectedApp.appPrivateAuth);
       formik.setFieldValue(
         "appHightAvailability",
-        selectedApp.appHightAvailability
+        selectedApp.appHightAvailability,
       );
       formik.setFieldValue(
         "appIntegrationOthersApps",
-        selectedApp.appIntegrationOthersApps
+        selectedApp.appIntegrationOthersApps,
       );
     }
   }, [selectedApp]);
 
   const GetDataApplications = async (
     searchValue: string = "",
-    limit: number = 1
+    limit: number = 1,
   ) => {
     const PayloadList: PaggingListPayload = {
       search: searchValue,
@@ -6968,11 +7255,11 @@ const Section4BRDView = ({
       formik.setFieldValue("appOperationalDays", data.appOperationalDays);
       formik.setFieldValue(
         "appOperationalHourOpen",
-        data.appOperationalHourOpen
+        data.appOperationalHourOpen,
       );
       formik.setFieldValue(
         "appOperationalHourClosed",
-        data.appOperationalHourClosed
+        data.appOperationalHourClosed,
       );
       formik.setFieldValue("appLiveTargetDate", null);
 
@@ -6982,7 +7269,7 @@ const Section4BRDView = ({
       formik.setFieldValue("appHightAvailability", data.appHightAvailability);
       formik.setFieldValue(
         "appIntegrationOthersApps",
-        data.appIntegrationOthersApps
+        data.appIntegrationOthersApps,
       );
 
       setSelectedAppsTypes(data.appTypes || "");
@@ -7031,7 +7318,7 @@ const Section4BRDView = ({
     }
 
     setSelectedAppsTypes(
-      updatedList.join(", ") + (updatedList.length > 0 ? "," : "")
+      updatedList.join(", ") + (updatedList.length > 0 ? "," : ""),
     );
   };
   const hasOtherAppsTypes = SelectedAppsTypes.split(",")
@@ -7063,7 +7350,7 @@ const Section4BRDView = ({
     }
 
     setSelectedAppsEnvLoc(
-      updatedList.join(", ") + (updatedList.length > 0 ? "," : "")
+      updatedList.join(", ") + (updatedList.length > 0 ? "," : ""),
     );
   };
   const hasOtherEnvLocTypes = SelectedAppsEnvLoc.split(",")
@@ -7127,7 +7414,7 @@ const Section4BRDView = ({
     <Flex as={Stack} w={"full"} spacing={5}>
       {/* MODAL HERE */}
       <Modal
-        size={"xl"}
+        size={"6xl"}
         isOpen={ModalForm.isOpen}
         isCentered
         onClose={ModalForm.onClose}
@@ -7142,90 +7429,202 @@ const Section4BRDView = ({
         >
           <ModalHeader>{`${FormMode == "Add" ? "Tambah" : "Ubah"
             } Scope of Work`}</ModalHeader>
-          <ModalCloseButton color={"red.500"} />
+          <ModalCloseButton
+            color={"red.500"}
+            bg={"red.50"}
+            _hover={{ bg: "red.100" }}
+            rounded={"md"}
+            size={"lg"}
+          />
           <ModalBody w={"full"}>
-            <Flex as={Stack} w={"full"}>
-              <FormControl>
-                <FormLabel>Nama Scope of Work</FormLabel>
-                <Input
-                  ref={backlogNameInputRef}
-                  id="backlogFeatureName"
-                  name="backlogFeatureName"
-                  type="text"
-                  onChange={(e) => {
-                    const input = e.target as HTMLInputElement;
-                    cursorPosRef.current = input.selectionStart;
-                    const upper = input.value.toUpperCase();
-                    setTextBackLogName(upper);
-                  }}
-                  value={TextBackLogName}
-                  placeholder={`Nama Scope of Work`}
-                  minLength={3}
-                  maxLength={200}
-                  isDisabled={ActionLoading}
-                />
-              </FormControl>
-              <FormControl>
-                <FormLabel>Deskripsi</FormLabel>
-                <Textarea
-                  id="backlogFeatureDesc"
-                  name="backlogFeatureDesc"
-                  onChange={(e) => setTextBackLogDesc(e.target.value)}
-                  value={TextBackLogDesc}
-                  placeholder={`Deskripsi Scope of Work`}
-                  maxLength={300}
-                  isDisabled={ActionLoading}
-                />
-              </FormControl>
+            <Grid templateColumns="repeat(2, 1fr)" gap={6}>
+              {/* LEFT COLUMN - Form */}
+              <GridItem>
+                <Flex as={Stack} w={"full"}>
+                  <FormControl>
+                    <FormLabel>Nama Scope of Work</FormLabel>
+                    <Input
+                      ref={backlogNameInputRef}
+                      id="backlogFeatureName"
+                      name="backlogFeatureName"
+                      type="text"
+                      onChange={(e) => {
+                        const input = e.target as HTMLInputElement;
+                        cursorPosRef.current = input.selectionStart;
+                        const upper = input.value.toUpperCase();
+                        setTextBackLogName(upper);
+                      }}
+                      value={TextBackLogName}
+                      placeholder={`Nama Scope of Work`}
+                      minLength={3}
+                      maxLength={200}
+                      isDisabled={ActionLoading}
+                    />
+                  </FormControl>
+                  <FormControl>
+                    <FormLabel>Deskripsi</FormLabel>
+                    <Textarea
+                      id="backlogFeatureDesc"
+                      name="backlogFeatureDesc"
+                      onChange={(e) => setTextBackLogDesc(e.target.value)}
+                      value={TextBackLogDesc}
+                      placeholder={`Deskripsi Scope of Work`}
+                      maxLength={300}
+                      isDisabled={ActionLoading}
+                    />
+                  </FormControl>
 
-              <Button
-                mt={2}
-                w={"full"}
-                size={"lg"}
-                leftIcon={<FiPlusCircle />}
-                colorScheme={"secondary"}
-                onClick={() => handleSaveBacklog()}
-                isDisabled={ActionLoading || !TextBackLogName.trim()}
-              >
-                {FormMode == "Add" ? "Tambah" : "Ubah"} Scope of Work
-              </Button>
+                  <Button
+                    mt={2}
+                    w={"full"}
+                    size={"lg"}
+                    leftIcon={<FiPlusCircle />}
+                    colorScheme={"secondary"}
+                    onClick={() => handleSaveBacklog()}
+                    isDisabled={ActionLoading || !TextBackLogName.trim()}
+                  >
+                    {FormMode == "Add" ? "Tambah" : "Ubah"} Scope of Work
+                  </Button>
 
-              <Divider py={1} />
-              <Text fontSize={"smaller"}>Tambah Cepat</Text>
-              <FormControl>
-                <FormLabel>Rekomendasi Scope of Work Umum</FormLabel>
-                <Flex as={Wrap} w={"full"}>
-                  {FeatureRecomentionsBacklogs.map((item, index) => {
-                    if (
-                      DataBackLogs.some(
-                        (x) => x.backlogName === item.featureName
-                      )
-                    ) {
-                      return null; // Skip if already exists
-                    } else {
-                      return (
-                        <Tag
-                          key={index}
-                          borderRadius="full"
-                          colorScheme="secondary"
-                          variant={"solid"}
-                          onClick={() => {
-                            setTextBackLogName(item.featureName);
-                            setTextBackLogDesc(item.featureDescription || "");
-                          }}
-                          px={3}
-                          cursor={"pointer"}
-                          _hover={{ bg: "secondary.700", color: "white" }}
-                        >
-                          <FiPlus />
-                          <TagLabel pl={1}>{item.featureName}</TagLabel>
-                        </Tag>
-                      );
-                    }
-                  })}
+                  <Divider py={1} />
+                  <Text fontSize={"smaller"}>Tambah Cepat</Text>
+                  <FormControl>
+                    <FormLabel>Rekomendasi Scope of Work Umum</FormLabel>
+                    <Flex as={Wrap} w={"full"}>
+                      {FeatureRecomentionsBacklogs.map((item, index) => {
+                        if (
+                          DataBackLogs.some(
+                            (x) => x.backlogName === item.featureName,
+                          )
+                        ) {
+                          return null;
+                        } else {
+                          return (
+                            <Tag
+                              key={index}
+                              borderRadius="full"
+                              colorScheme="secondary"
+                              variant={"solid"}
+                              onClick={() => {
+                                setTextBackLogName(item.featureName);
+                                setTextBackLogDesc(
+                                  item.featureDescription || "",
+                                );
+                              }}
+                              px={3}
+                              cursor={"pointer"}
+                              _hover={{ bg: "secondary.700", color: "white" }}
+                            >
+                              <FiPlus />
+                              <TagLabel pl={1}>{item.featureName}</TagLabel>
+                            </Tag>
+                          );
+                        }
+                      })}
+                    </Flex>
+                  </FormControl>
                 </Flex>
-              </FormControl>
-            </Flex>
+              </GridItem>
+
+              {/* RIGHT COLUMN - Backlog List */}
+              <GridItem>
+                <Flex as={Stack} w={"full"} h={"full"}>
+                  <Box
+                    bg={colorMode === "light" ? "blue.50" : "blue.900"}
+                    border="1px"
+                    borderColor={colorMode === "light" ? "blue.200" : "blue.700"}
+                    rounded={radiusStyle}
+                    p={3}
+                    mb={3}
+                  >
+                    <HStack spacing={2}>
+                      <Icon as={FiInfo} color="blue.500" boxSize={4} />
+                      <Text fontSize="sm" color={colorMode === "light" ? "blue.700" : "blue.300"}>
+                        Scope of Work akan menjadi <strong>backlog</strong> project
+                      </Text>
+                    </HStack>
+                  </Box>
+                  <Text fontWeight={600} fontSize={"md"}>
+                    Daftar Scope of Work
+                  </Text>
+                  <Box
+                    border={"1px"}
+                    borderColor={colorMode == "light" ? "gray.200" : "gray.600"}
+                    rounded={radiusStyle}
+                    maxH={"500px"}
+                    overflowY={"auto"}
+                  >
+                    {DataBackLogs.length === 0 ? (
+                      <Flex
+                        h={"200px"}
+                        align={"center"}
+                        justify={"center"}
+                        direction={"column"}
+                      >
+                        <Text color={"gray.400"}>Belum ada Scope of Work</Text>
+                        <Text fontSize={"sm"} color={"gray.400"}>
+                          Tambahkan dari form di sebelah kiri
+                        </Text>
+                      </Flex>
+                    ) : (
+                      <Table size={"sm"} variant={"simple"}>
+                        <Thead>
+                          <Tr>
+                            <Th w={"60px"}>No</Th>
+                            <Th>Nama</Th>
+                            <Th w={"100px"} textAlign={"center"}>
+                              Aksi
+                            </Th>
+                          </Tr>
+                        </Thead>
+                        <Tbody>
+                          {DataBackLogs.map((backlog, index) => (
+                            <Tr key={backlog.localId || backlog.backlogId}>
+                              <Td>{index + 1}</Td>
+                              <Td>
+                                <Text noOfLines={1}>{backlog.backlogName}</Text>
+                              </Td>
+                              <Td>
+                                <HStack spacing={1} justify={"center"}>
+                                  <IconButton
+                                    aria-label="Edit"
+                                    size={"xs"}
+                                    colorScheme={"teal"}
+                                    variant={"ghost"}
+                                    icon={<FaEdit />}
+                                    onClick={() =>
+                                      logBacklog(
+                                        backlog.backlogId || backlog.localId,
+                                      )
+                                    }
+                                  />
+                                  <IconButton
+                                    aria-label="Delete"
+                                    size={"xs"}
+                                    colorScheme={"red"}
+                                    variant={"ghost"}
+                                    icon={<FaTrash />}
+                                    onClick={() =>
+                                      removeBacklog(
+                                        backlog.backlogId || backlog.localId,
+                                      )
+                                    }
+                                  />
+                                </HStack>
+                              </Td>
+                            </Tr>
+                          ))}
+                        </Tbody>
+                      </Table>
+                    )}
+                  </Box>
+                  <Text fontSize={"sm"} color={"gray.500"}>
+                    Total: {DataBackLogs.length} item
+                    {DataBackLogs.length !== 1 ? "s" : ""}
+                  </Text>
+                </Flex>
+              </GridItem>
+            </Grid>
           </ModalBody>
           <ModalFooter></ModalFooter>
         </ModalContent>
@@ -7241,7 +7640,7 @@ const Section4BRDView = ({
           >
             <InputLayout>
               <FormLabel h={"full"} mt={2}>
-                Inisial Aplikasi
+                Inisial Product
               </FormLabel>
               <Stack spacing={0} h={"full"}>
                 <Flex
@@ -7268,7 +7667,7 @@ const Section4BRDView = ({
                     onClick={() => ModalAppPicker.onOpen()}
                     isDisabled={ActionLoading || isAppSelectionDisabled()}
                   >
-                    Pilih Aplikasi
+                    Pilih Product
                   </Button>
                   {isAppSelectionDisabled() && (
                     <Text fontSize="sm" color="orange.500" mt={1}>
@@ -7457,7 +7856,7 @@ const Section4BRDView = ({
                         let updatedList: string[];
                         if (currentList.includes("EXTERNAL")) {
                           updatedList = currentList.filter(
-                            (item: string) => item !== "EXTERNAL"
+                            (item: string) => item !== "EXTERNAL",
                           );
                         } else {
                           updatedList = [...currentList, "EXTERNAL"];
@@ -7486,7 +7885,7 @@ const Section4BRDView = ({
                         let updatedList: string[];
                         if (currentList.includes("INTERNAL")) {
                           updatedList = currentList.filter(
-                            (item: string) => item !== "INTERNAL"
+                            (item: string) => item !== "INTERNAL",
                           );
                         } else {
                           updatedList = [...currentList, "INTERNAL"];
@@ -7740,7 +8139,7 @@ const Section4BRDView = ({
                     if (val === APP_OPERATIONAL_OPTIONS[0]) {
                       formik.setFieldValue(
                         "appOperationalDays",
-                        fullDay.join(", ")
+                        fullDay.join(", "),
                       );
                       formik.setFieldValue("appOperationalHourOpen", "");
                       formik.setFieldValue("appOperationalHourClosed", "");
@@ -7796,7 +8195,7 @@ const Section4BRDView = ({
                                 formik.values.appOperationalHourOpen
                                   ? formik.values.appOperationalHourOpen.slice(
                                     0,
-                                    5
+                                    5,
                                   ) // ensure HH:mm
                                   : ""
                               }
@@ -7826,7 +8225,7 @@ const Section4BRDView = ({
                                 formik.values.appOperationalHourClosed
                                   ? formik.values.appOperationalHourClosed.slice(
                                     0,
-                                    5
+                                    5,
                                   ) // ensure HH:mm
                                   : ""
                               }
@@ -8243,7 +8642,7 @@ const Section4RFCView = ({
 
   const movePriority = (backlogId: string, direction: "up" | "down") => {
     const currentIndex = DataBackLogs.findIndex(
-      (item) => item.backlogId === backlogId || item.localId === backlogId
+      (item) => item.backlogId === backlogId || item.localId === backlogId,
     );
     if (currentIndex === -1) return;
 
@@ -8276,11 +8675,11 @@ const Section4RFCView = ({
   // NEW BACKLOG RFC
 
   const [BacklogChanges, setBacklogChanges] = useState<BacklogChangesData[]>(
-    []
+    [],
   );
   const [BacklogApps, setBacklogApps] = useState<BacklogDataResponse[]>([]);
   const [BacklogAppsOption, setBacklogAppsOption] = useState<OptionListProps[]>(
-    []
+    [],
   );
 
   // Populate BacklogApps from DataBackLogs when draft is loaded (for RFC)
@@ -8395,7 +8794,7 @@ const Section4RFCView = ({
 
       console.log(
         "Populated BacklogChanges from BacklogApps (edit mode):",
-        backlogChangesData
+        backlogChangesData,
       );
       setBacklogChanges(backlogChangesData);
     }
@@ -8456,7 +8855,7 @@ const Section4RFCView = ({
 
     // Sort by posOrder
     const sortedBacklogData = updatedBacklogData.sort(
-      (a, b) => a.posOrder - b.posOrder
+      (a, b) => a.posOrder - b.posOrder,
     );
     console.log("Converted to formik.backlogFeatures:", sortedBacklogData);
     console.log(
@@ -8470,7 +8869,7 @@ const Section4RFCView = ({
         impact: b.impact,
         priority: b.priority,
         backlogHistories: b.backlogHistories,
-      }))
+      })),
     );
     formik.setFieldValue("backlogFeatures", sortedBacklogData);
 
@@ -8479,7 +8878,11 @@ const Section4RFCView = ({
 
   // Sync BacklogChanges RFC fields back to DataBackLogs for RFC requirements
   useEffect(() => {
-    if (type_req_param === "RFC" && BacklogChanges.length > 0 && DataBackLogs.length > 0) {
+    if (
+      type_req_param === "RFC" &&
+      BacklogChanges.length > 0 &&
+      DataBackLogs.length > 0
+    ) {
       const updatedDataBackLogs = DataBackLogs.map((existingBacklog, index) => {
         const correspondingChange = BacklogChanges[index];
         if (!correspondingChange) return existingBacklog;
@@ -8488,7 +8891,8 @@ const Section4RFCView = ({
           ...existingBacklog,
           rfcBacklogChanges: correspondingChange.rfcBacklogChanges || null,
           rfcBacklogImportant: correspondingChange.rfcBacklogImportant || null,
-          rfcBacklogImpactOthers: correspondingChange.rfcBacklogImpactOthers || null,
+          rfcBacklogImpactOthers:
+            correspondingChange.rfcBacklogImpactOthers || null,
           rfcPriorities: correspondingChange.rfcPriorities || null,
           urgency: correspondingChange.urgency || "LOW",
           impact: correspondingChange.impact || "LOW",
@@ -8496,7 +8900,9 @@ const Section4RFCView = ({
         };
       });
 
-      if (JSON.stringify(updatedDataBackLogs) !== JSON.stringify(DataBackLogs)) {
+      if (
+        JSON.stringify(updatedDataBackLogs) !== JSON.stringify(DataBackLogs)
+      ) {
         setDataBackLogs(updatedDataBackLogs);
       }
     }
@@ -8505,7 +8911,7 @@ const Section4RFCView = ({
   const GetListBacklog = async (
     searchValue: string = "",
     limit: number = 1,
-    whereData: ListSearchByParam[]
+    whereData: ListSearchByParam[],
   ) => {
     const PayloadList: PaggingListPayload = {
       search: searchValue,
@@ -8582,15 +8988,15 @@ const Section4RFCView = ({
       }
       formik.setFieldValue(
         "appAccessFrontsiteDns",
-        selectedApp.appAccessFrontsiteDns
+        selectedApp.appAccessFrontsiteDns,
       );
       formik.setFieldValue(
         "appAccessFrontsiteIp",
-        selectedApp.appAccessFrontsiteIp
+        selectedApp.appAccessFrontsiteIp,
       );
       formik.setFieldValue(
         "appAccessBacksiteDns",
-        selectedApp.appAccessBacksiteDns
+        selectedApp.appAccessBacksiteDns,
       );
 
       if (selectedApp.appAccessBacksiteIp) {
@@ -8598,7 +9004,7 @@ const Section4RFCView = ({
       }
       formik.setFieldValue(
         "appAccessBacksiteIp",
-        selectedApp.appAccessBacksiteIp
+        selectedApp.appAccessBacksiteIp,
       );
 
       if (selectedApp.appTypes) {
@@ -8608,12 +9014,12 @@ const Section4RFCView = ({
       formik.setFieldValue("appRelatedness", selectedApp.appRelatedness);
       formik.setFieldValue(
         "appRelatednessDesc",
-        selectedApp.appRelatednessDesc
+        selectedApp.appRelatednessDesc,
       );
       formik.setFieldValue("appTransactionals", selectedApp.appTransactionals);
       formik.setFieldValue(
         "appOperational24hrs",
-        selectedApp.appOperational24hrs
+        selectedApp.appOperational24hrs,
       );
 
       if (selectedApp.appOperationalDays) {
@@ -8621,15 +9027,15 @@ const Section4RFCView = ({
       }
       formik.setFieldValue(
         "appOperationalDays",
-        selectedApp.appOperationalDays
+        selectedApp.appOperationalDays,
       );
       formik.setFieldValue(
         "appOperationalHourOpen",
-        selectedApp.appOperationalHourOpen
+        selectedApp.appOperationalHourOpen,
       );
       formik.setFieldValue(
         "appOperationalHourClosed",
-        selectedApp.appOperationalHourClosed
+        selectedApp.appOperationalHourClosed,
       );
 
       if (selectedApp.appEnvLocations) {
@@ -8638,16 +9044,16 @@ const Section4RFCView = ({
       formik.setFieldValue("appEnvLocations", selectedApp.appEnvLocations);
       formik.setFieldValue(
         "appEnvLocationsOthers",
-        selectedApp.appEnvLocationsOthers
+        selectedApp.appEnvLocationsOthers,
       );
       formik.setFieldValue("appPrivateAuth", selectedApp.appPrivateAuth);
       formik.setFieldValue(
         "appHightAvailability",
-        selectedApp.appHightAvailability
+        selectedApp.appHightAvailability,
       );
       formik.setFieldValue(
         "appIntegrationOthersApps",
-        selectedApp.appIntegrationOthersApps
+        selectedApp.appIntegrationOthersApps,
       );
     }
   }, [selectedApp]);
@@ -8659,7 +9065,7 @@ const Section4RFCView = ({
       if (ApplicationExistingChoosed && tokenData) {
         console.log(
           "Loading backlog options for app:",
-          ApplicationExistingChoosed.id
+          ApplicationExistingChoosed.id,
         );
 
         // For RFC, don't load existing backlogs - start with empty array
@@ -8692,7 +9098,7 @@ const Section4RFCView = ({
 
   const GetDataApplications = async (
     searchValue: string = "",
-    limit: number = 1
+    limit: number = 1,
   ) => {
     const PayloadList: PaggingListPayload = {
       search: searchValue,
@@ -8834,7 +9240,7 @@ const Section4RFCView = ({
     formik.setFieldValue("appOperationalHourOpen", data.appOperationalHourOpen);
     formik.setFieldValue(
       "appOperationalHourClosed",
-      data.appOperationalHourClosed
+      data.appOperationalHourClosed,
     );
     formik.setFieldValue("appLiveTargetDate", null);
 
@@ -8844,7 +9250,7 @@ const Section4RFCView = ({
     formik.setFieldValue("appHightAvailability", data.appHightAvailability);
     formik.setFieldValue(
       "appIntegrationOthersApps",
-      data.appIntegrationOthersApps
+      data.appIntegrationOthersApps,
     );
 
     setSelectedAppsTypes(data.appTypes || "");
@@ -8874,7 +9280,7 @@ const Section4RFCView = ({
 
   const handleBacklogChange = (
     selectedOption: OptionListProps | null,
-    index: number
+    index: number,
   ) => {
     if (!selectedOption?.value) return;
 
@@ -8900,14 +9306,14 @@ const Section4RFCView = ({
                 posOrder: 1,
               },
             }
-            : item
-        )
+            : item,
+        ),
       );
       return;
     }
 
     const choosedFeature = BacklogApps.find(
-      (x) => x.id === selectedOption.value
+      (x) => x.id === selectedOption.value,
     );
 
     if (!choosedFeature) return;
@@ -8925,8 +9331,8 @@ const Section4RFCView = ({
               posOrder: 1,
             },
           }
-          : item
-      )
+          : item,
+      ),
     );
   };
 
@@ -8974,7 +9380,7 @@ const Section4RFCView = ({
     }
 
     setSelectedAppsTypes(
-      updatedList.join(", ") + (updatedList.length > 0 ? "," : "")
+      updatedList.join(", ") + (updatedList.length > 0 ? "," : ""),
     );
   };
 
@@ -9007,7 +9413,7 @@ const Section4RFCView = ({
     }
 
     setSelectedAppsEnvLoc(
-      updatedList.join(", ") + (updatedList.length > 0 ? "," : "")
+      updatedList.join(", ") + (updatedList.length > 0 ? "," : ""),
     );
   };
 
@@ -9052,7 +9458,7 @@ const Section4RFCView = ({
   const [MediaAksesIntranet, setMediaAksesIntranet] = useState(false);
   // Sort DataBackLogs by posOrder
   const sortedDataBackLogs = [...DataBackLogs].sort(
-    (a, b) => a.posOrder - b.posOrder
+    (a, b) => a.posOrder - b.posOrder,
   );
 
   return (
@@ -9068,7 +9474,7 @@ const Section4RFCView = ({
           >
             <InputLayoutFull>
               <FormLabel h={"full"} mt={2}>
-                Cari Aplikasi Eksisting
+                Cari Product Eksisting
               </FormLabel>
               <Stack spacing={0} h={"full"}>
                 <HStack spacing={2}>
@@ -9090,7 +9496,7 @@ const Section4RFCView = ({
                     onClick={() => ModalAppPicker.onOpen()}
                     isDisabled={ActionLoading || isAppSelectionDisabled()}
                   >
-                    Pilih Aplikasi
+                    Pilih Product
                   </Button>
                   {isAppSelectionDisabled() && (
                     <Text fontSize="sm" color="orange.500" mt={1}>
@@ -9275,7 +9681,7 @@ const Section4RFCView = ({
                                     ...item,
                                     showKondisiEksisting: e.target.checked,
                                   }
-                                  : item
+                                  : item,
                               );
                               setBacklogChanges(updated);
                             }}
@@ -9562,7 +9968,7 @@ const Section4RFCView = ({
                                 const result = getRfcPriorityWithIndex(
                                   e?.value || "NORMAL",
                                   updated[index].rfcBacklogImpactOthers ||
-                                  "SMALL"
+                                  "SMALL",
                                 );
                                 updated[index].rfcPriorities = result.priority;
 
@@ -9596,7 +10002,7 @@ const Section4RFCView = ({
                                 const result = getRfcPriorityWithIndex(
                                   updated[index].rfcBacklogImportant ||
                                   "NORMAL",
-                                  e?.value || "SMALL"
+                                  e?.value || "SMALL",
                                 );
                                 updated[index].rfcPriorities = result.priority;
 
@@ -9706,7 +10112,7 @@ const Section4RFCView = ({
                         let updatedList: string[];
                         if (currentList.includes("EXTERNAL")) {
                           updatedList = currentList.filter(
-                            (item: string) => item !== "EXTERNAL"
+                            (item: string) => item !== "EXTERNAL",
                           );
                         } else {
                           updatedList = [...currentList, "EXTERNAL"];
@@ -9735,7 +10141,7 @@ const Section4RFCView = ({
                         let updatedList: string[];
                         if (currentList.includes("INTERNAL")) {
                           updatedList = currentList.filter(
-                            (item: string) => item !== "INTERNAL"
+                            (item: string) => item !== "INTERNAL",
                           );
                         } else {
                           updatedList = [...currentList, "INTERNAL"];
@@ -9989,7 +10395,7 @@ const Section4RFCView = ({
                     if (val === APP_OPERATIONAL_OPTIONS[0]) {
                       formik.setFieldValue(
                         "appOperationalDays",
-                        fullDay.join(", ")
+                        fullDay.join(", "),
                       );
                       formik.setFieldValue("appOperationalHourOpen", "");
                       formik.setFieldValue("appOperationalHourClosed", "");
@@ -10045,7 +10451,7 @@ const Section4RFCView = ({
                                 formik.values.appOperationalHourOpen
                                   ? formik.values.appOperationalHourOpen.slice(
                                     0,
-                                    5
+                                    5,
                                   ) // ensure HH:mm
                                   : ""
                               }
@@ -10075,7 +10481,7 @@ const Section4RFCView = ({
                                 formik.values.appOperationalHourClosed
                                   ? formik.values.appOperationalHourClosed.slice(
                                     0,
-                                    5
+                                    5,
                                   ) // ensure HH:mm
                                   : ""
                               }
