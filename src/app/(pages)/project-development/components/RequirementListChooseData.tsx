@@ -486,7 +486,7 @@ const RequirementListChooseData = memo(
               </Flex>
             </Flex>
           ),
-          header: () => <span>Aplikasi</span>,
+          header: () => <span>Product</span>,
           footer: (props) => props.column.id,
           meta: {
             isFilterable: true,
@@ -496,14 +496,14 @@ const RequirementListChooseData = memo(
                 operator: "like",
                 value: "",
                 filterType: "text",
-                filterLabel: "Inisial Aplikasi",
+                filterLabel: "Inisial Product",
               },
               {
                 field: "appInitialName",
                 operator: "like",
                 value: "",
                 filterType: "text",
-                filterLabel: "Nama Aplikasi",
+                filterLabel: "Nama Product",
               },
             ],
           } as ColumnMetaCustom,
@@ -676,7 +676,7 @@ const RequirementListChooseData = memo(
         filterWhereData,
         requirementTypeFilter
       );
-      
+
       console.log("Initial filters setup:", filterWhereData);
       setParamFilter(filterWhereData);
     }, [SelectedTypeReq]);
@@ -685,7 +685,7 @@ const RequirementListChooseData = memo(
     useEffect(() => {
       // Skip if ParamFilter is not initialized yet (empty)
       if (ParamFilter.length === 0) return;
-      
+
       if (HasRequirementMemo === "") {
         // Remove memo filter when "Semua" is selected
         const filteredParams = ParamFilter.filter(f => f.field !== "isHaveMemo");

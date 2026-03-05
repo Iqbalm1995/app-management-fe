@@ -378,7 +378,7 @@ export default function ApprovalHubView() {
               )}
             </VStack>
           );
-          
+
           return (
             <Tooltip label={tooltipContent} hasArrow placement="top">
               <VStack align="start" spacing={0} w="full">
@@ -439,7 +439,7 @@ export default function ApprovalHubView() {
               <Text>Duration: {req.reqDurationDay} days</Text>
             </VStack>
           );
-          
+
           return (
             <Tooltip label={tooltipContent} hasArrow placement="top">
               <VStack align="start" spacing={0} w="full">
@@ -495,7 +495,7 @@ export default function ApprovalHubView() {
           const approvers = req.approvalDatas || [];
           const firstApprover = approvers[0];
           const moreCount = approvers.length - 1;
-          
+
           const tooltipContent = (
             <VStack align="start" spacing={1} fontSize="xs">
               <Text fontWeight="600">Assigned From:</Text>
@@ -512,7 +512,7 @@ export default function ApprovalHubView() {
               )}
             </VStack>
           );
-          
+
           return (
             <Tooltip label={tooltipContent} hasArrow placement="top">
               <VStack align="start" spacing={0} w="full">
@@ -552,20 +552,20 @@ export default function ApprovalHubView() {
         cell: (info) => {
           const req = info.row.original;
           const hasApp = req.appInitialCode && req.appInitialCode.trim() !== "";
-          
+
           if (!hasApp) {
             return (
               <Text fontSize="xs" color="gray.400">-</Text>
             );
           }
-          
+
           const tooltipContent = (
             <VStack align="start" spacing={1} fontSize="xs">
               <Text fontWeight="600">{req.appInitialCode}</Text>
               <Text>{req.appInitialName}</Text>
             </VStack>
           );
-          
+
           return (
             <Tooltip label={tooltipContent} hasArrow placement="top">
               <Text fontSize="xs" fontWeight="600" noOfLines={1}>
@@ -574,7 +574,7 @@ export default function ApprovalHubView() {
             </Tooltip>
           );
         },
-        header: () => <span>Aplikasi</span>,
+        header: () => <span>Product</span>,
         footer: (props) => props.column.id,
         // Custom variable
         meta: {
@@ -585,14 +585,14 @@ export default function ApprovalHubView() {
               operator: "like",
               value: "",
               filterType: "text",
-              filterLabel: "Inisial Aplikasi",
+              filterLabel: "Inisial Product",
             },
             {
               field: "appInitialName",
               operator: "like",
               value: "",
               filterType: "text",
-              filterLabel: "Nama Aplikasi",
+              filterLabel: "Nama Product",
             },
           ],
         } as ColumnMetaCustom,
@@ -608,7 +608,7 @@ export default function ApprovalHubView() {
               <Text>Next Step: {req.nextStep}</Text>
             </VStack>
           );
-          
+
           return (
             <Tooltip label={tooltipContent} hasArrow placement="top">
               <VStack align="start" spacing={1} w="full">
