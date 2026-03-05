@@ -248,6 +248,34 @@ export default function BRDRFCView() {
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
   const [canMake, setCanMake] = useState<boolean>(false);
+  
+  // Scroll State
+  const [isTableHovered, setIsTableHovered] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleNativeWheel = (e: WheelEvent) => {
+      if (!isTableHovered) return;
+      
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      
+      const hasHorizontalScroll = container.scrollWidth > container.clientWidth;
+      if (hasHorizontalScroll) {
+        container.scrollLeft += e.deltaY > 0 ? 100 : -100;
+      }
+    };
+
+    container.addEventListener('wheel', handleNativeWheel, { passive: false });
+    
+    return () => {
+      container.removeEventListener('wheel', handleNativeWheel);
+    };
+  }, [isTableHovered]);
   const [canReview, setCanReview] = useState<boolean>(false);
   const [canApprove, setCanApprove] = useState<boolean>(false);
   const delay = (ms: number) =>
@@ -1502,10 +1530,18 @@ export default function BRDRFCView() {
                 ) : (
                   // <TableComponentFull table={table} />
                   // TABLE NEW DESIGN
-                  <TableComponentWithFilterCTX
+                  <Box overflowX="auto" w="full" ref={scrollContainerRef}>
+                    <Box 
+                      minW="1400px"
+                      onMouseEnter={() => setIsTableHovered(true)}
+                      onMouseLeave={() => setIsTableHovered(false)}
+                    >
+                      <TableComponentWithFilterCTX
                     table={table}
                     handleFilterChange={handleFilterChange}
-                  />
+                      />
+                    </Box>
+                  </Box>
                 )}
               </Flex>
             </CardBody>

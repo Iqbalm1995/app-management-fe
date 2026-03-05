@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import {
   Box,
   Card,
@@ -143,7 +143,33 @@ export default function ApprovalHubView() {
 
   // Search State
   const [globalFilter, setGlobalFilter] = useState<string>("");
+  // Scroll State
+  const [isTableHovered, setIsTableHovered] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleNativeWheel = (e: WheelEvent) => {
+      if (!isTableHovered) return;
+      
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      
+      const hasHorizontalScroll = container.scrollWidth > container.clientWidth;
+      if (hasHorizontalScroll) {
+        container.scrollLeft += e.deltaY > 0 ? 100 : -100;
+      }
+    };
+
+    container.addEventListener('wheel', handleNativeWheel, { passive: false });
+    
+    return () => {
+      container.removeEventListener('wheel', handleNativeWheel);
+    };
+  }, [isTableHovered]);
   const GetDataDivision = async (
     searchValue: string = "",
     limit: number = 1
@@ -1082,11 +1108,18 @@ export default function ApprovalHubView() {
                 {IsLoadingProcess ? (
                   <LoadingMiniSignature />
                 ) : (
-                  <TableComponentWithFilterCTX
+                  <Box overflowX="auto" w="full" ref={scrollContainerRef}>
+                    <Box 
+                      minW="1400px"
+                      onMouseEnter={() => setIsTableHovered(true)}
+                      onMouseLeave={() => setIsTableHovered(false)}
+                    >
+                      <TableComponentWithFilterCTX
                     table={table}
                     handleFilterChange={handleFilterChange}
                   />
-                )}
+                    </Box>
+                  </Box>                )}
               </Flex>
             </CardBody>
           </Card>
