@@ -193,6 +193,10 @@ export const dynamicRoutePatterns: DynamicRoutePattern[] = [
     pattern: "/master-data/authorize-groups/detail",
     baseMenu: "/master-data/authorize-groups",
   },
+  {
+    pattern: "/master-data/sequences-config",
+    baseMenu: "/master-data/sequences-config",
+  },
 
   // Menus
   {
