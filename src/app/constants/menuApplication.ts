@@ -79,6 +79,7 @@ import {
   TbListDetails,
   TbMoodShare,
   TbNavigationShare,
+  TbNumbers,
   TbProgressCheck,
   TbServerCog,
   TbSettingsCog,
@@ -953,7 +954,7 @@ export const LinkItems: LinkItemProps[] = [
     name: "System Parameters",
     icon: TbSettingsCog, // general system/settings icon
     link: "/coming-soon",
-    isPro: true,
+    isPro: false,
 
     role: ["admin"],
     menuID: "1",
@@ -1006,6 +1007,16 @@ export const LinkItems: LinkItemProps[] = [
         role: ["admin"],
         menuID: "1",
         isPro: true,
+        children: [],
+      },
+      {
+        name: "Sequences Config",
+        icon: TbNumbers,
+        link: "/master-data/sequences-config",
+
+        role: ["admin"],
+        menuID: "1",
+        isPro: false,
         children: [],
       },
     ],
@@ -1140,7 +1151,7 @@ export const LinkItems: LinkItemProps[] = [
     name: "Audit Trail",
     icon: RxActivityLog,
     link: "/audit-trail",
-    isPro: true,
+    isPro: false,
     role: ["admin"],
     menuID: "1",
     children: [],
