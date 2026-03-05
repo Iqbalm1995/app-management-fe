@@ -9,7 +9,7 @@
     "copy:standalone": "node scripts/copy-standalone.js",
     "copy:ecosystem": "node scripts/copy-ecosystem.js",
     "clean:cache": "node scripts/clean-cache.js",
-    "start": "next start -p 8998",
+    "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
