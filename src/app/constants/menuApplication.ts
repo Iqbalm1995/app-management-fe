@@ -25,6 +25,8 @@ import {
   FiUpload,
   FiUsers,
   FiAward,
+  FiCheckCircle,
+  FiCodepen,
 } from "react-icons/fi";
 import { GrHelpBook } from "react-icons/gr";
 import {
@@ -737,6 +739,24 @@ export const LinkItems: LinkItemProps[] = [
         menuID: "1",
         children: [],
       },
+      {
+        name: "Master Certification",
+        icon: TbChartInfographic,
+        link: "/master-data/certification",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Master Programming Language",
+        icon: TbSettingsCog,
+        link: "/master-data/masterLanguage",
+        isPro: true,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
     ],
   },
   {
@@ -751,7 +771,6 @@ export const LinkItems: LinkItemProps[] = [
         name: "Master Menu",
         icon: TiThMenuOutline,
         link: "/master-data/menus",
-
         role: ["admin"],
         menuID: "1",
 
