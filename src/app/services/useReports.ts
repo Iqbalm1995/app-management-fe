@@ -273,6 +273,8 @@ const useReports = (): useReportsServices => {
         item.projectName || '-',
         item.projectCategory || '-',
         item.projectType || '-',
+        // Requirement Type or Pengadaan Internal IT
+        item.requirement?.requirementType || (item.projectType === 'PROCUREMENT' ? 'Pengadaan Internal IT' : '-'),
         item.projectCharasteristicName || '-',
         item.projectSubCharasteristicName || '-',
         item.proOwnerDivisionName || '-',
@@ -292,7 +294,7 @@ const useReports = (): useReportsServices => {
 
       // Add table
       autoTable(doc, {
-        head: [['No.', 'Project No', 'Project Name', 'Category', 'Type', 'Characteristic', 'Sub Characteristic', 'Owner Div', 'Owner Group', 'Manage Div', 'PIC Name', 'PIC Contact', 'Target Date', 'Status', 'Progress', 'Duration', 'Register Date', 'Ext Programs', 'Int Programs', 'Team Size']],
+        head: [['No.', 'Project No', 'Project Name', 'Category', 'Type', 'Req Type', 'Characteristic', 'Sub Characteristic', 'Owner Div', 'Owner Group', 'Manage Div', 'PIC Name', 'PIC Contact', 'Target Date', 'Status', 'Progress', 'Duration', 'Register Date', 'Ext Programs', 'Int Programs', 'Team Size']],
         body: tableData,
         startY: 35,
         styles: { fontSize: 6 },
@@ -303,21 +305,22 @@ const useReports = (): useReportsServices => {
           2: { cellWidth: 25 },  // Project Name
           3: { cellWidth: 12 },  // Category
           4: { cellWidth: 12 },  // Type
-          5: { cellWidth: 15 },  // Characteristic
-          6: { cellWidth: 15 },  // Sub Characteristic
-          7: { cellWidth: 15 },  // Owner Div
-          8: { cellWidth: 12 },  // Owner Group
-          9: { cellWidth: 12 },  // Manage Div
-          10: { cellWidth: 15 }, // PIC Name
-          11: { cellWidth: 12 }, // PIC Contact
-          12: { cellWidth: 12 }, // Target Date
-          13: { cellWidth: 10 }, // Status
-          14: { cellWidth: 8 },  // Progress
-          15: { cellWidth: 10 }, // Duration
-          16: { cellWidth: 12 }, // Register Date
-          17: { cellWidth: 8 },  // Ext Programs
-          18: { cellWidth: 8 },  // Int Programs
-          19: { cellWidth: 8 }   // Team Size
+          5: { cellWidth: 12 },  // Req Type
+          6: { cellWidth: 15 },  // Characteristic
+          7: { cellWidth: 15 },  // Sub Characteristic
+          8: { cellWidth: 15 },  // Owner Div
+          9: { cellWidth: 12 },  // Owner Group
+          10: { cellWidth: 12 }, // Manage Div
+          11: { cellWidth: 15 }, // PIC Name
+          12: { cellWidth: 12 }, // PIC Contact
+          13: { cellWidth: 12 }, // Target Date
+          14: { cellWidth: 10 }, // Status
+          15: { cellWidth: 8 },  // Progress
+          16: { cellWidth: 10 }, // Duration
+          17: { cellWidth: 12 }, // Register Date
+          18: { cellWidth: 8 },  // Ext Programs
+          19: { cellWidth: 8 },  // Int Programs
+          20: { cellWidth: 8 }   // Team Size
         }
       });
 
