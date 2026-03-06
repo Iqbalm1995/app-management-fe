@@ -274,9 +274,14 @@ function ProjectPortfolioReportPage() {
             <Text fontSize="xs" color="gray.500">
               {info.row.original.projectCategory} | {info.row.original.projectType}
             </Text>
-            {info.row.original.projectDesc && (
-              <Text fontSize="xs" color="gray.400" noOfLines={2}>
-                {info.row.original.projectDesc}
+            {info.row.original.requirement?.requirementType && (
+              <Text fontSize="xs" color="blue.500">
+                Requirement Type: {info.row.original.requirement.requirementType}
+              </Text>
+            )}
+            {info.row.original.projectType === "PROCUREMENT" && !info.row.original.requirement && (
+              <Text fontSize="xs" color="orange.500">
+                Pengadaan Internal IT
               </Text>
             )}
           </Flex>

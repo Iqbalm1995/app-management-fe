@@ -430,7 +430,7 @@ export const LinkItems: LinkItemProps[] = [
         icon: BiSolidReport,
         link: "/reports/project-portfolio",
         role: ["admin"],
-        isPro: true,
+        isPro: false,
         menuID: "1",
         children: [],
       },
