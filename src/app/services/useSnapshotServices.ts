@@ -221,6 +221,16 @@ export interface SnapshotProjectActivePortofolioResponse {
   capturedBy: string;
 }
 
+export interface SnapshotProjectClosePortofolioResponse {
+  message: string;
+  snapshotTime: string;
+  yearPeriod: string;
+  quartalPeriod: string;
+  monthPeriod: string;
+  projectCount: number;
+  capturedBy: string;
+}
+
 export interface useSnapshotServicesServices {
   projectSummary: (token: string) => Promise<ApiGenericResponse<SnapshotProjectSummaryResponse> | null>;
   projectCharacteristic: (token: string) => Promise<ApiGenericResponse<SnapshotProjectCharacteristicResponse> | null>;
@@ -255,6 +265,7 @@ export interface useSnapshotServicesServices {
   getRequirementMemoSummaryDashboard: (payload: DashboardFilterRequest, token: string) => Promise<ApiGenericResponse<RequirementMemoSummaryDashboardResponse[]> | null>;
   // Project active portfolio methods
   projectActivePortofolio: (token: string) => Promise<ApiGenericResponse<SnapshotProjectActivePortofolioResponse> | null>;
+  projectClosePortofolio: (token: string) => Promise<ApiGenericResponse<SnapshotProjectClosePortofolioResponse> | null>;
   isLoading: boolean;
   error: string | null;
 }
@@ -367,6 +378,7 @@ const useSnapshotServices = (): useSnapshotServicesServices => {
     getRequirementMemoSummaryDashboard: (payload: DashboardFilterRequest, token: string) => callDashboard<RequirementMemoSummaryDashboardResponse[]>('dashboard/requirement-memo-summary', payload, token),
     // Project active portfolio methods
     projectActivePortofolio: (token: string) => callSnapshot<SnapshotProjectActivePortofolioResponse>('snapshot/project-active-portfolio', token),
+    projectClosePortofolio: (token: string) => callSnapshot<SnapshotProjectClosePortofolioResponse>('snapshot/project-close-portfolio', token),
     isLoading,
     error,
   };

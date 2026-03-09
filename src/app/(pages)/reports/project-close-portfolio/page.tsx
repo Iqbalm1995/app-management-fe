@@ -26,7 +26,7 @@ import {
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useReports, {
-  ProjectActivePortofolioListResponse,
+  ProjectClosePortofolioListResponse,
 } from "@/app/services/useReports";
 import useSnapshotServices from "@/app/services/useSnapshotServices";
 import {
@@ -82,18 +82,18 @@ import { useRouter } from "next/navigation";
 import SdlcReportModal from "./components/SdlcReportModal";
 
 const HeaderDataContent: HeaderContentProps = {
-  titleName: "Project Active Portfolio Report",
-  breadCrumb: ["Home", "Reports", "Project Active Portfolio"],
+  titleName: "Project Close Portfolio Report",
+  breadCrumb: ["Home", "Reports", "Project Close Portfolio"],
 };
 
-function ProjectActivePortfolioReportPage() {
+function ProjectClosePortfolioReportPage() {
   // SetUp auth data on current page
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
-  const { ListProjectActivePortofolio, ExportProjectActivePortofolioExcel, ExportProjectActivePortofolioListExcel, isLoading: reportLoading } = useReports();
-  const { projectActivePortofolio, isLoading: snapshotLoading } = useSnapshotServices();
+  const { ListProjectClosePortofolio, ExportProjectClosePortofolioListExcel, isLoading: reportLoading } = useReports();
+  const { projectClosePortofolio, isLoading: snapshotLoading } = useSnapshotServices();
   const router = useRouter();
   const { isOpen: isSdlcModalOpen, onOpen: onSdlcModalOpen, onClose: onSdlcModalClose } = useDisclosure();
   const { isOpen: isCautionModalOpen, onOpen: onCautionModalOpen, onClose: onCautionModalClose } = useDisclosure();
@@ -120,7 +120,7 @@ function ProjectActivePortfolioReportPage() {
   }, [DataAuth]);
   // End SetUp auth data on current page
 
-  const [DataReport, setDataReport] = useState<ProjectActivePortofolioListResponse[]>([]);
+  const [DataReport, setDataReport] = useState<ProjectClosePortofolioListResponse[]>([]);
   const [RefreshData, setRefreshData] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
 
@@ -171,7 +171,7 @@ function ProjectActivePortfolioReportPage() {
     }
 
     try {
-      const result = await projectActivePortofolio(tokenData);
+      const result = await projectClosePortofolio(tokenData);
       
       if (result?.statusCode === RES_CODE_OK) {
         showToast({
@@ -248,13 +248,13 @@ function ProjectActivePortfolioReportPage() {
     };
 
     try {
-      const blob = await ExportProjectActivePortofolioListExcel(finalExportPayload as any, tokenData);
+      const blob = await ExportProjectClosePortofolioListExcel(finalExportPayload as any, tokenData);
       
       if (blob) {
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `Project_Active_Portfolio_${new Date().toISOString().split('T')[0]}.xlsx`;
+        link.download = `Project_Close_Portfolio_${new Date().toISOString().split('T')[0]}.xlsx`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -304,7 +304,7 @@ function ProjectActivePortfolioReportPage() {
     };
 
     try {
-      const blob = await ExportProjectActivePortofolioExcel(exportPayload, tokenData);
+      const blob = await ExportProjectClosePortofolioListExcel(exportPayload, tokenData);
       
       if (blob) {
         const url = window.URL.createObjectURL(blob);
@@ -338,7 +338,7 @@ function ProjectActivePortfolioReportPage() {
   };
 
   // Column definitions
-  const columnsData = useMemo<ColumnDef<ProjectActivePortofolioListResponse>[]>(
+  const columnsData = useMemo<ColumnDef<ProjectClosePortofolioListResponse>[]>(
     () => [
       {
         accessorKey: "numbData",
@@ -954,7 +954,7 @@ function ProjectActivePortfolioReportPage() {
 
       setIsLoadingProcess(true);
       try {
-        const response = await ListProjectActivePortofolio(backendPayload as any, tokenData);
+        const response = await ListProjectClosePortofolio(backendPayload as any, tokenData);
         const isErrorResponse = response?.statusCode !== RES_CODE_OK;
 
         if (isErrorResponse || !response) {
@@ -975,7 +975,7 @@ function ProjectActivePortfolioReportPage() {
           return;
         }
 
-        const itemsData: ProjectActivePortofolioListResponse[] = response.data as ProjectActivePortofolioListResponse[];
+        const itemsData: ProjectClosePortofolioListResponse[] = response.data as ProjectClosePortofolioListResponse[];
         const totalData: number = response.countTotal as number;
         const totalPages: number = totalData > 0 ? Math.ceil(totalData / pageSize) : -1;
         
@@ -1230,4 +1230,4 @@ function ProjectActivePortfolioReportPage() {
   );
 }
 
-export default ProjectActivePortfolioReportPage;
+export default ProjectClosePortfolioReportPage;
