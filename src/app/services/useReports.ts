@@ -81,6 +81,47 @@ export interface ReportProjectPortofolioDataResponse {
   workPrograms: RequirementWorkProgramDataResponse[];
 }
 
+export interface ProjectActivePortofolioListResponse {
+  id: string;
+  timeCapture: string;
+  monthPeriod: string;
+  yearPeriod: string;
+  quartalPeriod: string;
+  projectId: string;
+  reqNumber?: string | null;
+  reqNarative?: string | null;
+  reqDate?: string | null;
+  reqAcceptedDate?: string | null;
+  projectNo: string;
+  projectName: string;
+  projectRegisterDate: string;
+  projectApprovedDate?: string | null;
+  projectType: string;
+  projectCategory?: string | null;
+  projectSubCategory?: string | null;
+  projectOwnerDirectorateName?: string | null;
+  projectOwnerDivisionName?: string | null;
+  projectOwnerGroupName?: string | null;
+  projectManageByDirectorateName?: string | null;
+  projectManageByDivisionName?: string | null;
+  projectManageByGroupName?: string | null;
+  reqUserPicName?: string | null;
+  reqUserPicContanct?: string | null;
+  reqUserPicEmail?: string | null;
+  projectStatus: string;
+  projectStatusPercentage: number;
+  proSdlcStageNameActive?: string | null;
+  appShortName?: string | null;
+  appName?: string | null;
+  proAssigns?: string | null;
+  workProgramExternalCode?: string | null;
+  workProgramExternalName?: string | null;
+  workProgramExternalBudget?: string | null;
+  workProgramInternalCode?: string | null;
+  workProgramInternalName?: string | null;
+  workProgramInternalBudget?: string | null;
+}
+
 interface useReportsServices {
   ListReportProjectPortofolio: (
     payload: PaggingListPayloadCustom,
@@ -96,6 +137,12 @@ interface useReportsServices {
     payload: PaggingListPayloadCustom,
     token: string
   ) => Promise<Blob | null>;
+  ListProjectActivePortofolio: (
+    payload: PaggingListPayloadCustom,
+    token: string
+  ) => Promise<ApiGenericResponse<
+    ProjectActivePortofolioListResponse[] | null
+  > | null>;
 
   isLoading: boolean;
   error: string | null;
@@ -338,10 +385,54 @@ const useReports = (): useReportsServices => {
     }
   };
 
+  const ListProjectActivePortofolio = async (
+    payload: PaggingListPayloadCustom,
+    token: string
+  ): Promise<ApiGenericResponse<
+    ProjectActivePortofolioListResponse[] | null
+  > | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/Report/list-project-active-portfolio";
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<ProjectActivePortofolioListResponse[]>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during request."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
   return {
     ListReportProjectPortofolio,
     ExportProjectPortofolioExcel,
     ExportProjectPortofolioPDF,
+    ListProjectActivePortofolio,
 
     isLoading,
     error,

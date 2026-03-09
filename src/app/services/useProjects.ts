@@ -273,6 +273,18 @@ export interface ProjectSdlcStageReportResponse {
   stageName: string;
 }
 
+export interface ProjectSdlcStageWithReportsResponse {
+  id: string;
+  stageName: string;
+  stageCode?: string;
+  stagePosOrder: number;
+  stageTriggerStatus: string;
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+  reports: ProjectSdlcStageReportResponse[];
+}
+
 export interface ProjectStatusHistoryResponse {
   id: string;
   projectId: string;
@@ -1154,6 +1166,11 @@ interface useProjectsServices {
     pageSize: number,
     token: string
   ) => Promise<ApiGenericResponse<ProjectSdlcStageReportResponse[] | null> | null>;
+
+  GetProjectSdlcStagesWithReports: (
+    projectId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<ProjectSdlcStageWithReportsResponse[] | null> | null>;
 
   GetProjectSdlcStageReportById: (
     id: string,
@@ -4289,6 +4306,30 @@ const useProjects = (): useProjectsServices => {
     }
   };
 
+  const GetProjectSdlcStagesWithReports = async (
+    projectId: string,
+    token: string
+  ): Promise<ApiGenericResponse<ProjectSdlcStageWithReportsResponse[] | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+
+    const UrlEndpoint = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    const PathEndpoint = `/v1/Projects/sdlc-stages-with-reports/${projectId}`;
+
+    try {
+      const response = await axiosInstance.get<ApiGenericResponse<ProjectSdlcStageWithReportsResponse[]>>(
+        `${UrlEndpoint}${PathEndpoint}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (error: any) {
+      setIsLoading(false);
+      setError(error.message);
+      return null;
+    }
+  };
+
   const GetProjectSdlcStageReportById = async (
     id: string,
     token: string
@@ -4517,6 +4558,7 @@ const useProjects = (): useProjectsServices => {
     GetProjectSdlcStages,
     UpdateProjectSdlcStageDates,
     ListProjectSdlcStageReports,
+    GetProjectSdlcStagesWithReports,
     GetProjectSdlcStageReportById,
     InsertProjectSdlcStageReport,
     UpdateProjectSdlcStageReport,

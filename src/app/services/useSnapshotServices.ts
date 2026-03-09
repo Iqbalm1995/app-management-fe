@@ -211,6 +211,16 @@ export interface SnapshotRequirementMemoSummaryResponse {
   totalRecordsProcessed: number;
 }
 
+export interface SnapshotProjectActivePortofolioResponse {
+  message: string;
+  snapshotTime: string;
+  yearPeriod: string;
+  quartalPeriod: string;
+  monthPeriod: string;
+  projectCount: number;
+  capturedBy: string;
+}
+
 export interface useSnapshotServicesServices {
   projectSummary: (token: string) => Promise<ApiGenericResponse<SnapshotProjectSummaryResponse> | null>;
   projectCharacteristic: (token: string) => Promise<ApiGenericResponse<SnapshotProjectCharacteristicResponse> | null>;
@@ -243,6 +253,8 @@ export interface useSnapshotServicesServices {
   getRequirementSummaryDashboard: (payload: DashboardFilterRequest, token: string) => Promise<ApiGenericResponse<RequirementSummaryDashboardResponse[]> | null>;
   getRequirementDivisionSenderDashboard: (payload: DashboardFilterRequest, token: string) => Promise<ApiGenericResponse<RequirementDivisionSenderDashboardResponse[]> | null>;
   getRequirementMemoSummaryDashboard: (payload: DashboardFilterRequest, token: string) => Promise<ApiGenericResponse<RequirementMemoSummaryDashboardResponse[]> | null>;
+  // Project active portfolio methods
+  projectActivePortofolio: (token: string) => Promise<ApiGenericResponse<SnapshotProjectActivePortofolioResponse> | null>;
   isLoading: boolean;
   error: string | null;
 }
@@ -353,6 +365,8 @@ const useSnapshotServices = (): useSnapshotServicesServices => {
     getRequirementSummaryDashboard: (payload: DashboardFilterRequest, token: string) => callDashboard<RequirementSummaryDashboardResponse[]>('dashboard/requirement-summary', payload, token),
     getRequirementDivisionSenderDashboard: (payload: DashboardFilterRequest, token: string) => callDashboard<RequirementDivisionSenderDashboardResponse[]>('dashboard/requirement-division-sender', payload, token),
     getRequirementMemoSummaryDashboard: (payload: DashboardFilterRequest, token: string) => callDashboard<RequirementMemoSummaryDashboardResponse[]>('dashboard/requirement-memo-summary', payload, token),
+    // Project active portfolio methods
+    projectActivePortofolio: (token: string) => callSnapshot<SnapshotProjectActivePortofolioResponse>('snapshot/project-active-portfolio', token),
     isLoading,
     error,
   };

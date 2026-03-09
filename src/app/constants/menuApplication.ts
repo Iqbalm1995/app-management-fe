@@ -434,6 +434,16 @@ export const LinkItems: LinkItemProps[] = [
         menuID: "1",
         children: [],
       },
+      {
+        name: "Projects Active List Report",
+        icon: TbListDetails,
+        iconName: "TbListDetails",
+        link: "/reports/project-active-portfolio",
+        role: ["admin"],
+        isPro: false,
+        menuID: "1",
+        children: [],
+      },
       // {
       //   name: "Application & Feature",
       //   icon: RiApps2AiLine,
