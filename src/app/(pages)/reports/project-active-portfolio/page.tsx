@@ -54,6 +54,15 @@ import {
   Wrap,
   WrapItem,
   useDisclosure,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  ModalCloseButton,
+  Alert,
+  AlertIcon,
 } from "@chakra-ui/react";
 import {
   ColumnDef,
@@ -67,6 +76,7 @@ import {
 } from "@tanstack/react-table";
 import React, { useEffect, useMemo, useState } from "react";
 import { FiRefreshCcw, FiCamera } from "react-icons/fi";
+import { FaFileExcel } from "react-icons/fa";
 import { TbListDetails } from "react-icons/tb";
 import { useRouter } from "next/navigation";
 import SdlcReportModal from "./components/SdlcReportModal";
@@ -82,12 +92,14 @@ function ProjectActivePortfolioReportPage() {
   const { colorMode } = useColorMode();
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
-  const { ListProjectActivePortofolio, isLoading: reportLoading } = useReports();
+  const { ListProjectActivePortofolio, ExportProjectActivePortofolioExcel, isLoading: reportLoading } = useReports();
   const { projectActivePortofolio, isLoading: snapshotLoading } = useSnapshotServices();
   const router = useRouter();
   const { isOpen: isSdlcModalOpen, onOpen: onSdlcModalOpen, onClose: onSdlcModalClose } = useDisclosure();
+  const { isOpen: isCautionModalOpen, onOpen: onCautionModalOpen, onClose: onCautionModalClose } = useDisclosure();
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
   const [selectedProjectName, setSelectedProjectName] = useState<string>("");
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
@@ -139,12 +151,14 @@ function ProjectActivePortfolioReportPage() {
 
   const handleFilterChange = (newFilters: ListSearchByParamProps[]) => {
     setParamFilter(newFilters);
+    setPagination({ pageIndex: 0, pageSize });
   };
 
   const RefreshAction = () => {
     setTotalPageData(0);
     setDataReport([]);
     setRefreshData(RefreshData + 1);
+    setPagination({ pageIndex: 0, pageSize });
   };
 
   const CreateSnapshot = async () => {
@@ -185,6 +199,67 @@ function ProjectActivePortfolioReportPage() {
     setSelectedProjectId(projectId);
     setSelectedProjectName(projectName);
     onSdlcModalOpen();
+  };
+
+  // Handle Excel Export
+  const handleExportToExcel = () => {
+    onCautionModalOpen();
+  };
+
+  const confirmExportToExcel = async () => {
+    onCautionModalClose();
+    setIsExporting(true);
+
+    if (!DataAuth || !tokenData) {
+      showToast({
+        description: "Authentication required",
+        statusToast: "error",
+      });
+      setIsExporting(false);
+      return;
+    }
+
+    const exportPayload: PaggingListPayloadCustom = {
+      search: globalFilter,
+      limit: -1, // Get all records
+      page: 0,
+      filterWhere: ParamFilter,
+      fieldOrder: ["projectRegisterDate"],
+      orderDir: "desc",
+    };
+
+    try {
+      const blob = await ExportProjectActivePortofolioExcel(exportPayload, tokenData);
+      
+      if (blob) {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Project_Active_Portfolio_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        showToast({
+          description: "Excel file exported successfully",
+          statusToast: "success",
+        });
+      } else {
+        showToast({
+          description: "No data to export",
+          statusToast: "warning",
+        });
+      }
+    } catch (error) {
+      console.error("Export error:", error);
+      showToast({
+        description: "Failed to export Excel file",
+        statusToast: "error",
+      });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   // Column definitions
@@ -848,12 +923,24 @@ function ProjectActivePortfolioReportPage() {
   return (
     <LayoutAdmin>
       <HeaderContent {...HeaderDataContent} />
-      
+
       <Card borderRadius={radiusStyle} mb={4}>
         <CardHeader>
           <Flex justify="space-between" align="center">
             <Heading size="md">Project Active Portfolio</Heading>
             <HStack spacing={3}>
+              <Button
+                leftIcon={<FaFileExcel />}
+                colorScheme="green"
+                variant="outline"
+                size="sm"
+                onClick={handleExportToExcel}
+                isDisabled={DataReport.length === 0 || isExporting}
+                isLoading={isExporting}
+                loadingText="Exporting..."
+              >
+                Export Excel
+              </Button>
               <Button
                 leftIcon={<FiCamera />}
                 colorScheme="green"
@@ -877,44 +964,72 @@ function ProjectActivePortfolioReportPage() {
             </HStack>
           </Flex>
         </CardHeader>
-        
+
         <CardBody>
-          <Grid templateColumns="repeat(4, 1fr)" gap={4} mb={4}>
+          <Grid templateColumns="repeat(5, 1fr)" gap={4} mb={4}>
             <GridItem>
-              <Text fontSize="sm" mb={2}>Project Type</Text>
+              <Text fontSize="md" mb={2}>
+                Search
+              </Text>
+              <Input
+                placeholder="Search projects..."
+                size="md"
+                value={globalFilter}
+                onChange={(e) => {
+                  setGlobalFilter(e.target.value);
+                  setPagination({ pageIndex: 0, pageSize });
+                }}
+                rounded={radiusStyle}
+              />
+            </GridItem>
+
+            <GridItem>
+              <Text fontSize="md" mb={2}>
+                Project Type
+              </Text>
               <Select
                 placeholder="All Types"
-                size="sm"
+                size="md"
                 value={FilterProjectType}
                 onChange={(e) => {
                   setFilterProjectType(e.target.value);
-                  const newFilters = addParamFilterUpdate(
-                    ParamFilter,
-                    { field: "projectType", value: e.target.value, operator: "=", filterLabel: "Project Type" }
-                  );
+                  const newFilters = addParamFilterUpdate(ParamFilter, {
+                    field: "projectType",
+                    value: e.target.value,
+                    operator: "=",
+                    filterLabel: "Project Type",
+                  });
                   handleFilterChange(newFilters);
                 }}
+                rounded={radiusStyle}
               >
-                <option value={PROJECT_TYPE_INTERNAL_DEVELOPMENT}>Internal Development</option>
+                <option value={PROJECT_TYPE_INTERNAL_DEVELOPMENT}>
+                  Internal Development
+                </option>
                 <option value={PROJECT_TYPE_PROCUREMENT}>Procurement</option>
                 <option value="RFC">RFC</option>
               </Select>
             </GridItem>
-            
+
             <GridItem>
-              <Text fontSize="sm" mb={2}>Project Status</Text>
+              <Text fontSize="md" mb={2}>
+                Project Status
+              </Text>
               <Select
                 placeholder="All Status"
-                size="sm"
+                size="md"
                 value={FilterProjectStatus}
                 onChange={(e) => {
                   setFilterProjectStatus(e.target.value);
-                  const newFilters = addParamFilterUpdate(
-                    ParamFilter,
-                    { field: "projectStatus", value: e.target.value, operator: "=", filterLabel: "Project Status" }
-                  );
+                  const newFilters = addParamFilterUpdate(ParamFilter, {
+                    field: "projectStatus",
+                    value: e.target.value,
+                    operator: "=",
+                    filterLabel: "Project Status",
+                  });
                   handleFilterChange(newFilters);
                 }}
+                rounded={radiusStyle}
               >
                 <option value="INITIATING">Initiating</option>
                 <option value="RUNNING">Running</option>
@@ -923,42 +1038,57 @@ function ProjectActivePortfolioReportPage() {
                 <option value="ON HOLD">On Hold</option>
               </Select>
             </GridItem>
-            
+
             <GridItem>
-              <Text fontSize="sm" mb={2}>Year</Text>
+              <Text fontSize="md" mb={2}>
+                Year
+              </Text>
               <Select
                 placeholder="All Years"
-                size="sm"
+                size="md"
                 value={FilterYear}
                 onChange={(e) => {
                   setFilterYear(e.target.value);
-                  const newFilters = addParamFilterUpdate(
-                    ParamFilter,
-                    { field: "yearPeriod", value: e.target.value, operator: "=", filterLabel: "Year" }
-                  );
+                  const newFilters = addParamFilterUpdate(ParamFilter, {
+                    field: "yearPeriod",
+                    value: e.target.value,
+                    operator: "=",
+                    filterLabel: "Year",
+                  });
                   handleFilterChange(newFilters);
                 }}
+                rounded={radiusStyle}
               >
-                {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(year => (
-                  <option key={year} value={year.toString()}>{year}</option>
+                {Array.from(
+                  { length: 5 },
+                  (_, i) => new Date().getFullYear() - 2 + i,
+                ).map((year) => (
+                  <option key={year} value={year.toString()}>
+                    {year}
+                  </option>
                 ))}
               </Select>
             </GridItem>
-            
+
             <GridItem>
-              <Text fontSize="sm" mb={2}>Quarter</Text>
+              <Text fontSize="md" mb={2}>
+                Quarter
+              </Text>
               <Select
                 placeholder="All Quarters"
-                size="sm"
+                size="md"
                 value={FilterQuarter}
                 onChange={(e) => {
                   setFilterQuarter(e.target.value);
-                  const newFilters = addParamFilterUpdate(
-                    ParamFilter,
-                    { field: "quartalPeriod", value: e.target.value, operator: "=", filterLabel: "Quarter" }
-                  );
+                  const newFilters = addParamFilterUpdate(ParamFilter, {
+                    field: "quartalPeriod",
+                    value: e.target.value,
+                    operator: "=",
+                    filterLabel: "Quarter",
+                  });
                   handleFilterChange(newFilters);
                 }}
+                rounded={radiusStyle}
               >
                 <option value="1">Q1</option>
                 <option value="2">Q2</option>
@@ -989,6 +1119,38 @@ function ProjectActivePortfolioReportPage() {
         projectId={selectedProjectId}
         projectName={selectedProjectName}
       />
+
+      {/* Export Caution Modal */}
+      <Modal isOpen={isCautionModalOpen} onClose={onCautionModalClose} size="md">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Export Confirmation</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <Alert status="warning" mb={4}>
+              <AlertIcon />
+              This export may take some time to process due to the large amount of data.
+            </Alert>
+            <Text>
+              Are you sure you want to export all project active portfolio data to Excel? 
+              This will include all current filters and may generate a large file.
+            </Text>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="ghost" mr={3} onClick={onCautionModalClose}>
+              Cancel
+            </Button>
+            <Button 
+              colorScheme="green" 
+              onClick={confirmExportToExcel}
+              isLoading={isExporting}
+              loadingText="Exporting..."
+            >
+              Export Excel
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </LayoutAdmin>
   );
 }

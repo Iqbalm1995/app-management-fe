@@ -120,6 +120,8 @@ export interface ProjectActivePortofolioListResponse {
   workProgramInternalCode?: string | null;
   workProgramInternalName?: string | null;
   workProgramInternalBudget?: string | null;
+  proSdlcStagePercentage: number;
+  requirementType?: string | null;
 }
 
 interface useReportsServices {
@@ -143,6 +145,11 @@ interface useReportsServices {
   ) => Promise<ApiGenericResponse<
     ProjectActivePortofolioListResponse[] | null
   > | null>;
+
+  ExportProjectActivePortofolioExcel: (
+    payload: PaggingListPayloadCustom,
+    token: string
+  ) => Promise<Blob | null>;
 
   isLoading: boolean;
   error: string | null;
@@ -428,11 +435,120 @@ const useReports = (): useReportsServices => {
     }
   };
 
+  const ExportProjectActivePortofolioExcel = async (
+    payload: PaggingListPayloadCustom,
+    token: string
+  ): Promise<Blob | null> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Get all data for export
+      const listPayload = {
+        ...payload,
+        limit: -1, // Get all data
+        page: 0
+      };
+
+      const response = await ListProjectActivePortofolio(listPayload, token);
+      
+      if (response?.statusCode !== RES_CODE_OK || !response.data) {
+        setError("Failed to fetch data for export");
+        setIsLoading(false);
+        return null;
+      }
+
+      // Import xlsx dynamically
+      const XLSX = await import('xlsx');
+      
+      // Transform data for Excel export with group headers
+      const excelData = response.data.map((item: ProjectActivePortofolioListResponse, index: number) => ({
+        'No.': index + 1,
+        
+        // Requirements Group
+        'Req Number': item.reqNumber || '-',
+        'Narrative': item.reqNarative || '-',
+        'Memo Date': item.reqDate ? new Date(item.reqDate).toLocaleDateString() : '-',
+        'Memo Receive Date': item.reqAcceptedDate ? new Date(item.reqAcceptedDate).toLocaleDateString() : '-',
+        'Requirement Type': item.requirementType || '-',
+        
+        // Project Group
+        'Project Number': item.projectNo || '-',
+        'Project Name': item.projectName || '-',
+        'Project Register Date': item.projectRegisterDate ? new Date(item.projectRegisterDate).toLocaleDateString() : '-',
+        'Approved Date': item.projectApprovedDate ? new Date(item.projectApprovedDate).toLocaleDateString() : '-',
+        'Project Type': item.projectType || '-',
+        'Project Characteristic Name': item.projectCategory || '-',
+        'Project Sub Characteristic Name': item.projectSubCategory || '-',
+        
+        // Owner Group
+        'Owner Directorate Name': item.projectOwnerDirectorateName || '-',
+        'Owner Division Name': item.projectOwnerDivisionName || '-',
+        'Owner Group Name': item.projectOwnerGroupName || '-',
+        'Manage By Directorate Name': item.projectManageByDirectorateName || '-',
+        'Manage By Division Name': item.projectManageByDivisionName || '-',
+        'Manage By Group Name': item.projectManageByGroupName || '-',
+        
+        // PIC Owner Group
+        'Req PIC Owner Name': item.reqUserPicName || '-',
+        'Req PIC Owner Phone': item.reqUserPicContanct || '-',
+        'Req PIC Owner Email': item.reqUserPicEmail || '-',
+        
+        // Proker User (External) Group
+        'External Work Program Code': item.workProgramExternalCode || '-',
+        'External Work Program Name': item.workProgramExternalName || '-',
+        'External Work Program Budget': item.workProgramExternalBudget || '-',
+        
+        // Proker IT (Internal) Group
+        'Internal Work Program Code': item.workProgramInternalCode || '-',
+        'Internal Work Program Name': item.workProgramInternalName || '-',
+        'Internal Work Program Budget': item.workProgramInternalBudget || '-',
+        
+        // Project Status Group
+        'Project Status': item.projectStatus || '-',
+        'Project Progression': `${item.projectStatusPercentage || 0}%`,
+        
+        // SDLC Status Group
+        'SDLC Current Active Status': item.proSdlcStageNameActive || '-',
+        'SDLC Progression': `${item.proSdlcStagePercentage || 0}%`,
+        
+        // Team Assign Group
+        'Project Assign NAMA': item.proAssigns || '-',
+      }));
+
+      // Create workbook and worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(excelData);
+      
+      // Auto-size columns
+      const colWidths = Object.keys(excelData[0] || {}).map(key => ({
+        wch: Math.max(key.length, 15)
+      }));
+      ws['!cols'] = colWidths;
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Project Active Portfolio');
+      
+      // Generate Excel file as blob
+      const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      
+      setIsLoading(false);
+      return blob;
+
+    } catch (error) {
+      console.error("Export service error:", error);
+      setIsLoading(false);
+      setError("Failed to export Excel file");
+      return null;
+    }
+  };
+
   return {
     ListReportProjectPortofolio,
     ExportProjectPortofolioExcel,
     ExportProjectPortofolioPDF,
     ListProjectActivePortofolio,
+    ExportProjectActivePortofolioExcel,
 
     isLoading,
     error,
