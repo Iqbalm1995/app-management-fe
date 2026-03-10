@@ -26,11 +26,14 @@ import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useReports, {
   ReportProjectPortofolioDataResponse,
 } from "@/app/services/useReports";
+import { PROJECT_STATUS_OPTIONS } from "@/app/constants/masterStatusConstants";
+import useOrganization, { OrganizationResponse } from "@/app/services/useOrganization";
 import {
   addParamFilterUpdate,
   ColumnMetaCustom,
   ListSearchByParamProps,
   PaggingListPayloadCustom,
+  PaggingListPayload,
 } from "@/app/types/masterTypes";
 import {
   Badge,
@@ -77,6 +80,7 @@ function ProjectPortfolioReportPage() {
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
   const { ListReportProjectPortofolio, ExportProjectPortofolioExcel, ExportProjectPortofolioPDF, isLoading: exportLoading } = useReports();
+  const { List: ListOrganization } = useOrganization();
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
@@ -95,6 +99,32 @@ function ProjectPortfolioReportPage() {
       setTokenData(token);
     }
   }, [DataAuth]);
+
+  // Load organization groups
+  useEffect(() => {
+    const loadGroups = async () => {
+      if (!tokenData) return;
+      
+      try {
+        const response = await ListOrganization({
+          search: "",
+          limit: 1000,
+          page: 0,
+          filterWhere: [],
+          fieldOrder: ["orgName"],
+          orderDir: "asc"
+        } as PaggingListPayload, tokenData);
+        if (response?.statusCode === RES_CODE_OK && response.data) {
+          // Show all organizations, let user choose GROUP types
+          setGroupOptions(response.data);
+        }
+      } catch (error) {
+        console.error("Failed to load groups:", error);
+      }
+    };
+
+    loadGroups();
+  }, [tokenData]);
   // End SetUp auth data on current page
 
   const [DataReport, setDataReport] = useState<ReportProjectPortofolioDataResponse[]>([]);
@@ -117,14 +147,16 @@ function ProjectPortfolioReportPage() {
   );
 
   const [ParamFilter, setParamFilter] = useState<ListSearchByParamProps[]>([]);
+  const [FilterProjectStatus, setFilterProjectStatus] = useState<string>("");
+  const [FilterManageGroup, setFilterManageGroup] = useState<string>("");
+  const [FilterProjectType, setFilterProjectType] = useState<string>("");
+  const [GroupOptions, setGroupOptions] = useState<OrganizationResponse[]>([]);
 
   // Quarterly filter
   const currentYear = new Date().getFullYear();
   const currentQuarter = getCurrentQuarter();
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
-  const [selectedQuarter, setSelectedQuarter] = useState<number | "all">(
-    currentQuarter
-  );
+  const [selectedQuarter, setSelectedQuarter] = useState<number | "all">("all");
   const [StartDateFilter, setStartDateFilter] = useState<Date>(new Date());
   const [EndDateFilter, setEndDateFilter] = useState<Date>(new Date());
 
@@ -802,6 +834,126 @@ function ProjectPortfolioReportPage() {
                     )}
                   </Flex>
                 </GridItem>
+                <GridItem colSpan={{ base: 12, lg: 4 }}>
+                  <Flex alignItems={"center"} gap={3}>
+                    <Text fontWeight={600} minW="fit-content">
+                      Search:
+                    </Text>
+                    <Input
+                      placeholder="Search projects..."
+                      value={globalFilter ?? ""}
+                      onChange={(e) => setGlobalFilter(e.target.value)}
+                      size="md"
+                      bgColor={colorMode == "light" ? "white" : "gray.800"}
+                    />
+                  </Flex>
+                </GridItem>
+                <GridItem colSpan={{ base: 12, lg: 3 }}>
+                  <Flex alignItems={"center"} gap={3}>
+                    <Text fontWeight={600} minW="fit-content">
+                      Status:
+                    </Text>
+                    <Select
+                      placeholder="All Status"
+                      value={FilterProjectStatus}
+                      onChange={(e) => {
+                        setFilterProjectStatus(e.target.value);
+                        const newFilters = addParamFilterUpdate(ParamFilter, {
+                          field: "projectStatus",
+                          value: e.target.value,
+                          operator: "=",
+                          filterLabel: "Project Status",
+                        });
+                        handleFilterChange(newFilters);
+                      }}
+                      size="md"
+                      bgColor={colorMode == "light" ? "white" : "gray.800"}
+                    >
+                      {PROJECT_STATUS_OPTIONS.map((status) => (
+                        <option key={status.value} value={status.value}>
+                          {status.label}
+                        </option>
+                      ))}
+                    </Select>
+                  </Flex>
+                </GridItem>
+                <GridItem colSpan={{ base: 12, lg: 3 }}>
+                  <Flex alignItems={"center"} gap={3}>
+                    <Text fontWeight={600} minW="fit-content">
+                      Manage Group:
+                    </Text>
+                    <Select
+                      placeholder="All Groups"
+                      value={FilterManageGroup}
+                      onChange={(e) => {
+                        setFilterManageGroup(e.target.value);
+                        const newFilters = addParamFilterUpdate(ParamFilter, {
+                          field: "proManageByGroupName",
+                          value: e.target.value,
+                          operator: "=",
+                          filterLabel: "Manage Group",
+                        });
+                        handleFilterChange(newFilters);
+                      }}
+                      size="md"
+                      bgColor={colorMode == "light" ? "white" : "gray.800"}
+                    >
+                      {GroupOptions.map((group) => (
+                        <option key={group.id} value={group.orgName}>
+                          {group.orgName} ({group.orgType})
+                        </option>
+                      ))}
+                    </Select>
+                  </Flex>
+                </GridItem>
+                <GridItem colSpan={{ base: 12, lg: 3 }}>
+                  <Flex alignItems={"center"} gap={3}>
+                    <Text fontWeight={600} minW="fit-content">
+                      Type:
+                    </Text>
+                    <Select
+                      placeholder="All Types"
+                      value={FilterProjectType}
+                      onChange={(e) => {
+                        setFilterProjectType(e.target.value);
+                        let newFilters = ParamFilter;
+                        
+                        if (e.target.value === "RFC") {
+                          // For RFC, we need to filter by requirement type
+                          newFilters = addParamFilterUpdate(ParamFilter, {
+                            field: "requirement.requirementType",
+                            value: "RFC",
+                            operator: "=",
+                            filterLabel: "Project Type RFC",
+                          });
+                        } else if (e.target.value) {
+                          // For other types, filter by projectType
+                          newFilters = addParamFilterUpdate(ParamFilter, {
+                            field: "projectType",
+                            value: e.target.value,
+                            operator: "=",
+                            filterLabel: "Project Type",
+                          });
+                        } else {
+                          // Remove project type filters when "All Types" selected
+                          newFilters = ParamFilter.filter(
+                            f => f.field !== "projectType" && f.field !== "requirement.requirementType"
+                          );
+                        }
+                        
+                        handleFilterChange(newFilters);
+                      }}
+                      size="md"
+                      bgColor={colorMode == "light" ? "white" : "gray.800"}
+                    >
+                      <option value="INTERNAL DEVELOPMENT">Internal Development</option>
+                      <option value="PROCUREMENT">Procurement</option>
+                      <option value="RFC">RFC</option>
+                    </Select>
+                  </Flex>
+                </GridItem>
+              </Grid>
+              <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"} mt={3}>
                 <GridItem colSpan={{ base: 12, lg: 4 }}>
                   <Flex alignItems={"center"} gap={3}>
                     <Text fontWeight={600} minW="fit-content">

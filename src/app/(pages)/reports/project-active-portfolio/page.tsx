@@ -29,6 +29,7 @@ import useReports, {
   ProjectActivePortofolioListResponse,
 } from "@/app/services/useReports";
 import useSnapshotServices from "@/app/services/useSnapshotServices";
+import { PROJECT_ACTIVE_STATUS_OPTIONS } from "@/app/constants/masterStatusConstants";
 import {
   addParamFilterUpdate,
   ColumnMetaCustom,
@@ -49,6 +50,7 @@ import {
   Input,
   Select,
   Stack,
+  VStack,
   Text,
   useColorMode,
   Wrap,
@@ -359,79 +361,74 @@ function ProjectActivePortfolioReportPage() {
         accessorFn: (row) => row.reqNumber,
         id: "requirementInfo",
         cell: (info) => (
-          <Flex
-            w={"full"}
-            h={"full"}
-            justifyContent={"start"}
-            alignItems={"start"}
-            as={Stack}
-            spacing={1}
-            minW="200px"
-          >
-            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
-              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">
+          <VStack align="start" spacing={2} w="full" minW="200px" py={2}>
+            <HStack spacing={2} w="full">
+              <Text fontWeight={600} fontSize="xs" color="gray.600" minW="70px">
                 Req Number:
               </Text>
-              <Text fontSize="2xs" lineHeight="1.2">
+              <Text fontSize="xs">
                 {info.row.original.reqNumber || "-"}
               </Text>
-            </Flex>
-            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
-              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">
+            </HStack>
+            <VStack align="start" spacing={1} w="full">
+              <Text fontWeight={600} fontSize="xs" color="gray.600">
                 Narrative:
               </Text>
-              <Text fontSize="2xs" lineHeight="1.2" noOfLines={2}>
+              <Text fontSize="xs" noOfLines={2}>
                 {info.row.original.reqNarative || "-"}
               </Text>
-            </Flex>
-            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
-              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">
-                Memo Date:
+            </VStack>
+            <HStack spacing={4} w="full">
+              <VStack align="start" spacing={1}>
+                <Text fontWeight={600} fontSize="xs" color="gray.600">
+                  Memo Date:
+                </Text>
+                <Text fontSize="xs">
+                  {info.row.original.reqDate
+                    ? formatDateToDDMMYYYY(new Date(info.row.original.reqDate))
+                    : "-"}
+                </Text>
+              </VStack>
+              <VStack align="start" spacing={1}>
+                <Text fontWeight={600} fontSize="xs" color="gray.600">
+                  Receive Date:
+                </Text>
+                <Text fontSize="xs">
+                  {info.row.original.reqAcceptedDate
+                    ? formatDateToDDMMYYYY(
+                        new Date(info.row.original.reqAcceptedDate),
+                      )
+                    : "-"}
+                </Text>
+              </VStack>
+            </HStack>
+            <HStack spacing={2} w="full">
+              <Text fontWeight={600} fontSize="xs" color="gray.600">
+                Type:
               </Text>
-              <Text fontSize="2xs" lineHeight="1.2">
-                {info.row.original.reqDate
-                  ? formatDateToDDMMYYYY(new Date(info.row.original.reqDate))
-                  : "-"}
-              </Text>
-            </Flex>
-            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
-              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">
-                Receive Date:
-              </Text>
-              <Text fontSize="2xs" lineHeight="1.2">
-                {info.row.original.reqAcceptedDate
-                  ? formatDateToDDMMYYYY(
-                      new Date(info.row.original.reqAcceptedDate),
-                    )
-                  : "-"}
-              </Text>
-            </Flex>
-            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
-              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">
-                Requirement Type:
-              </Text>
-              <Text
-                fontSize="2xs"
-                lineHeight="1.2"
-                color={
+              <Badge
+                colorScheme={
                   info.row.original.projectType === "RFC"
-                    ? "purple.500"
+                    ? "purple"
                     : info.row.original.projectType === "PROCUREMENT" &&
                         !info.row.original.reqNumber
-                      ? "orange.500"
-                      : "blue.500"
+                      ? "orange"
+                      : "blue"
                 }
+                fontSize="xs"
+                px={2}
+                py={1}
               >
                 {info.row.original.projectType === "RFC"
                   ? "RFC"
                   : info.row.original.reqNumber
                     ? "BRD"
                     : info.row.original.projectType === "PROCUREMENT"
-                      ? "PROCUREMENT IT(WITHOUT REQUIREMENT)"
+                      ? "PROCUREMENT IT"
                       : "-"}
-              </Text>
-            </Flex>
-          </Flex>
+              </Badge>
+            </HStack>
+          </VStack>
         ),
         header: () => <span>Requirements</span>,
         size: 200,
@@ -440,78 +437,74 @@ function ProjectActivePortfolioReportPage() {
         accessorFn: (row) => row.projectName,
         id: "projectInfo",
         cell: (info) => (
-          <Flex
-            w={"full"}
-            h={"full"}
-            justifyContent={"start"}
-            alignItems={"start"}
-            as={Stack}
-            spacing={1}
-            minW="250px"
-          >
-            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
-              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">
-                Project Number:
+          <VStack align="start" spacing={2} w="full" minW="250px" py={2}>
+            <HStack spacing={2} w="full">
+              <Text fontWeight={600} fontSize="xs" color="gray.600" minW="80px">
+                Project No:
               </Text>
-              <Text fontSize="2xs" lineHeight="1.2">
+              <Text fontSize="xs" fontWeight={500}>
                 {info.row.original.projectNo}
               </Text>
-            </Flex>
-            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
-              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">
+            </HStack>
+            <VStack align="start" spacing={1} w="full">
+              <Text fontWeight={600} fontSize="xs" color="gray.600">
                 Project Name:
               </Text>
-              <Text fontSize="2xs" lineHeight="1.2" noOfLines={2}>
+              <Text fontSize="xs" noOfLines={2} fontWeight={500}>
                 {info.row.original.projectName}
               </Text>
-            </Flex>
-            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
-              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">
-                Register Date:
+            </VStack>
+            <HStack spacing={4} w="full">
+              <VStack align="start" spacing={1}>
+                <Text fontWeight={600} fontSize="xs" color="gray.600">
+                  Register Date:
+                </Text>
+                <Text fontSize="xs">
+                  {formatDateToDDMMYYYY(
+                    new Date(info.row.original.projectRegisterDate),
+                  )}
+                </Text>
+              </VStack>
+              <VStack align="start" spacing={1}>
+                <Text fontWeight={600} fontSize="xs" color="gray.600">
+                  Approved Date:
+                </Text>
+                <Text fontSize="xs">
+                  {info.row.original.projectApprovedDate
+                    ? formatDateToDDMMYYYY(
+                        new Date(info.row.original.projectApprovedDate),
+                      )
+                    : "-"}
+                </Text>
+              </VStack>
+            </HStack>
+            <HStack spacing={2} w="full">
+              <Text fontWeight={600} fontSize="xs" color="gray.600">
+                Type:
               </Text>
-              <Text fontSize="2xs" lineHeight="1.2">
-                {formatDateToDDMMYYYY(
-                  new Date(info.row.original.projectRegisterDate),
-                )}
-              </Text>
-            </Flex>
-            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
-              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">
-                Approved Date:
-              </Text>
-              <Text fontSize="2xs" lineHeight="1.2">
-                {info.row.original.projectApprovedDate
-                  ? formatDateToDDMMYYYY(
-                      new Date(info.row.original.projectApprovedDate),
-                    )
-                  : "-"}
-              </Text>
-            </Flex>
-            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
-              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">
-                Project Type:
-              </Text>
-              <Badge colorScheme="blue" variant="subtle" fontSize="2xs">
+              <Badge colorScheme="blue" fontSize="xs" px={2} py={1}>
                 {info.row.original.projectType}
               </Badge>
-            </Flex>
-            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
-              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">
-                Characteristic:
-              </Text>
-              <Text fontSize="2xs" lineHeight="1.2">
-                {info.row.original.projectCategory || "-"}
-              </Text>
-            </Flex>
-            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
-              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">
-                Sub Characteristic:
-              </Text>
-              <Text fontSize="2xs" lineHeight="1.2">
-                {info.row.original.projectSubCategory || "-"}
-              </Text>
-            </Flex>
-          </Flex>
+            </HStack>
+            <HStack spacing={4} w="full">
+              <VStack align="start" spacing={1}>
+                <Text fontWeight={600} fontSize="xs" color="gray.600">
+                  Category:
+                </Text>
+                <Text fontSize="xs">
+                  {info.row.original.projectCategory || "-"}
+                </Text>
+              </VStack>
+              <VStack align="start" spacing={1}>
+                <Text fontWeight={600} fontSize="xs" color="gray.600">
+                  Sub Category:
+                </Text>
+                <Text fontSize="xs">
+                  {info.row.original.projectSubCategory || "-"}
+                </Text>
+              </VStack>
+            </HStack>
+          </VStack>
         ),
         header: () => <span>Project Information</span>,
         size: 250,
@@ -520,64 +513,70 @@ function ProjectActivePortfolioReportPage() {
         accessorFn: (row) => row.projectOwnerDivisionName,
         id: "organization",
         cell: (info) => (
-          <Flex
-            w={"full"}
-            h={"full"}
-            justifyContent={"start"}
-            alignItems={"start"}
-            as={Stack}
-            spacing={1}
-            minW="200px"
-          >
-            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
-              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">
-                Owner Directorate:
+          <VStack align="start" spacing={2} w="full" minW="200px" py={2}>
+            <VStack align="start" spacing={1} w="full">
+              <Text fontWeight={600} fontSize="xs" color="blue.600">
+                Owner Organization
               </Text>
-              <Text fontSize="2xs" lineHeight="1.2">
-                {info.row.original.projectOwnerDirectorateName || "-"}
+              <VStack align="start" spacing={1} pl={2} w="full">
+                <HStack spacing={2}>
+                  <Text fontWeight={500} fontSize="xs" color="gray.600" minW="60px">
+                    Directorate:
+                  </Text>
+                  <Text fontSize="xs">
+                    {info.row.original.projectOwnerDirectorateName || "-"}
+                  </Text>
+                </HStack>
+                <HStack spacing={2}>
+                  <Text fontWeight={500} fontSize="xs" color="gray.600" minW="60px">
+                    Division:
+                  </Text>
+                  <Text fontSize="xs">
+                    {info.row.original.projectOwnerDivisionName || "-"}
+                  </Text>
+                </HStack>
+                <HStack spacing={2}>
+                  <Text fontWeight={500} fontSize="xs" color="gray.600" minW="60px">
+                    Group:
+                  </Text>
+                  <Text fontSize="xs">
+                    {info.row.original.projectOwnerGroupName || "-"}
+                  </Text>
+                </HStack>
+              </VStack>
+            </VStack>
+            <VStack align="start" spacing={1} w="full">
+              <Text fontWeight={600} fontSize="xs" color="green.600">
+                Management Organization
               </Text>
-            </Flex>
-            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
-              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">
-                Owner Division:
-              </Text>
-              <Text fontSize="2xs" lineHeight="1.2">
-                {info.row.original.projectOwnerDivisionName || "-"}
-              </Text>
-            </Flex>
-            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
-              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">
-                Owner Group:
-              </Text>
-              <Text fontSize="2xs" lineHeight="1.2">
-                {info.row.original.projectOwnerGroupName || "-"}
-              </Text>
-            </Flex>
-            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
-              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">
-                Manage Directorate:
-              </Text>
-              <Text fontSize="2xs" lineHeight="1.2">
-                {info.row.original.projectManageByDirectorateName || "-"}
-              </Text>
-            </Flex>
-            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
-              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">
-                Manage Division:
-              </Text>
-              <Text fontSize="2xs" lineHeight="1.2">
-                {info.row.original.projectManageByDivisionName || "-"}
-              </Text>
-            </Flex>
-            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
-              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">
-                Manage Group:
-              </Text>
-              <Text fontSize="2xs" lineHeight="1.2">
-                {info.row.original.projectManageByGroupName || "-"}
-              </Text>
-            </Flex>
-          </Flex>
+              <VStack align="start" spacing={1} pl={2} w="full">
+                <HStack spacing={2}>
+                  <Text fontWeight={500} fontSize="xs" color="gray.600" minW="60px">
+                    Directorate:
+                  </Text>
+                  <Text fontSize="xs">
+                    {info.row.original.projectManageByDirectorateName || "-"}
+                  </Text>
+                </HStack>
+                <HStack spacing={2}>
+                  <Text fontWeight={500} fontSize="xs" color="gray.600" minW="60px">
+                    Division:
+                  </Text>
+                  <Text fontSize="xs">
+                    {info.row.original.projectManageByDivisionName || "-"}
+                  </Text>
+                </HStack>
+                <HStack spacing={2}>
+                  <Text fontWeight={500} fontSize="xs" color="gray.600" minW="60px">
+                    Group:
+                  </Text>
+                  <Text fontSize="xs">
+                    {info.row.original.projectManageByGroupName || "-"}
+                  </Text>
+                </HStack>
+              </VStack>
+            </VStack>
+          </VStack>
         ),
         header: () => <span>Owner & Management</span>,
         size: 200,
@@ -1106,11 +1105,11 @@ function ProjectActivePortfolioReportPage() {
                 }}
                 rounded={radiusStyle}
               >
-                <option value="INITIATING">Initiating</option>
-                <option value="RUNNING">Running</option>
-                <option value="TEMPORARY CLOSED">Temporary Closed</option>
-                <option value="CLOSED">Closed</option>
-                <option value="ON HOLD">On Hold</option>
+                {PROJECT_ACTIVE_STATUS_OPTIONS.map((status) => (
+                  <option key={status.value} value={status.value}>
+                    {status.label}
+                  </option>
+                ))}
               </Select>
             </GridItem>
 
