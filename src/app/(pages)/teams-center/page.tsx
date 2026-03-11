@@ -87,7 +87,7 @@ function TeamsCenterPage() {
   const [totalPages, setTotalPageData] = useState<number>(0);
   const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
     pageIndex: 0,
-    pageSize: 5,
+    pageSize: 10,
   });
 
   // Refresh state management (following other pages pattern)
