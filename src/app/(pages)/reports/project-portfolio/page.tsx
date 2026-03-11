@@ -11,6 +11,8 @@ import {
   radiusStyle,
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
+  ORG_CATEGORY_KEY_GROUP,
+  DIVISION_ID_IT_BJB,
 } from "@/app/constants/applicationConstants";
 import { getStatusColor } from "@/app/utils/statusUtils";
 import { StatusBadge } from "@/app/components/StatusBadge";
@@ -110,7 +112,18 @@ function ProjectPortfolioReportPage() {
           search: "",
           limit: 1000,
           page: 0,
-          filterWhere: [],
+          filterWhere: [
+            {
+              field: "orgType",
+              operator: "=",
+              value: ORG_CATEGORY_KEY_GROUP
+            },
+            {
+              field: "parentId", 
+              operator: "=",
+              value: DIVISION_ID_IT_BJB
+            }
+          ],
           fieldOrder: ["orgName"],
           orderDir: "asc"
         } as PaggingListPayload, tokenData);
@@ -918,27 +931,27 @@ function ProjectPortfolioReportPage() {
                         setFilterProjectType(e.target.value);
                         let newFilters = ParamFilter;
                         
+                        // First, remove any existing project type filters
+                        newFilters = ParamFilter.filter(
+                          f => f.field !== "projectType" && f.field !== "requirementType"
+                        );
+                        
                         if (e.target.value === "RFC") {
-                          // For RFC, we need to filter by requirement type
-                          newFilters = addParamFilterUpdate(ParamFilter, {
-                            field: "requirement.requirementType",
+                          // For RFC, filter by requirementType field
+                          newFilters = addParamFilterUpdate(newFilters, {
+                            field: "requirementType",
                             value: "RFC",
                             operator: "=",
                             filterLabel: "Project Type RFC",
                           });
                         } else if (e.target.value) {
                           // For other types, filter by projectType
-                          newFilters = addParamFilterUpdate(ParamFilter, {
+                          newFilters = addParamFilterUpdate(newFilters, {
                             field: "projectType",
                             value: e.target.value,
                             operator: "=",
                             filterLabel: "Project Type",
                           });
-                        } else {
-                          // Remove project type filters when "All Types" selected
-                          newFilters = ParamFilter.filter(
-                            f => f.field !== "projectType" && f.field !== "requirement.requirementType"
-                          );
                         }
                         
                         handleFilterChange(newFilters);
