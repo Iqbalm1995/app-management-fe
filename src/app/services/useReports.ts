@@ -169,6 +169,70 @@ export interface ProjectClosePortofolioListResponse {
   sdlcReportsByWeek?: Record<number, string>;
 }
 
+export interface UserEvaluationReportListResponse {
+  userSysId: string;
+  nama: string;
+  nip: string;
+  userId?: string | null;
+  jabatan?: string | null;
+  namaUnitKerja?: string | null;
+  userOrgGroupCode?: string | null;
+  userOrgGroupName?: string | null;
+  userTeamCode?: string | null;
+  userTeamName?: string | null;
+  reqId?: string | null;
+  requirementType?: string | null;
+  reqNumber?: string | null;
+  reqNarative?: string | null;
+  reqAppLiveTargetDate?: string | null;
+  projectId: string;
+  projectNo: string;
+  projectName?: string | null;
+  projectRegisterDate: string;
+  projectClosedDate?: string | null;
+  projectCompletedDate?: string | null;
+  projectType: string;
+  projectCategory?: string | null;
+  projectOwnerDirectorateCode?: string | null;
+  projectOwnerDirectorateName?: string | null;
+  projectOwnerDivisionCode?: string | null;
+  projectOwnerDivisionName?: string | null;
+  projectOwnerGroupCode?: string | null;
+  projectOwnerGroupName?: string | null;
+  projectManageByDirectorateCode?: string | null;
+  projectManageByDirectorateName?: string | null;
+  projectManageByDivisionCode?: string | null;
+  projectManageByDivisionName?: string | null;
+  projectManageByGroupCode?: string | null;
+  projectManageByGroupName?: string | null;
+  projectStatus: string;
+  projectStatusPercentage: number;
+  proSdlcStageNameActive?: string | null;
+  appShortName?: string | null;
+  appName?: string | null;
+  userTotalTaskAssign: number;
+  userTotalTaskDone: number;
+  evBasicPoint: number;
+  evTimelessPoint: number;
+  evExtraPoint: number;
+  evTotalPoint: number;
+  evGrandTotal: number;
+  timeCapture: string;
+  yearPeriod: string;
+  quartalPeriod: string;
+  monthPeriod: string;
+}
+
+export interface UserEvaluationSnapshotResponse {
+  message: string;
+  snapshotTime: string;
+  yearPeriod: string;
+  quartalPeriod: string;
+  monthPeriod: string;
+  recordCount: number;
+  capturedBy: string;
+}
+
 interface useReportsServices {
   ListReportProjectPortofolio: (
     payload: PaggingListPayloadCustom,
@@ -212,6 +276,17 @@ interface useReportsServices {
     payload: PaggingListPayloadCustom,
     token: string,
   ) => Promise<Blob | null>;
+
+  CreateUserEvaluationSnapshot: (
+    token: string,
+  ) => Promise<ApiGenericResponse<UserEvaluationSnapshotResponse | null> | null>;
+
+  ListUserEvaluationReport: (
+    payload: PaggingListPayloadCustom,
+    token: string,
+  ) => Promise<ApiGenericResponse<
+    UserEvaluationReportListResponse[] | null
+  > | null>;
 
   isLoading: boolean;
   error: string | null;
@@ -1111,6 +1186,89 @@ const useReports = (): useReportsServices => {
     }
   };
 
+  const CreateUserEvaluationSnapshot = async (
+    token: string,
+  ): Promise<ApiGenericResponse<UserEvaluationSnapshotResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC,
+    );
+    const PathEndpoint: string = "/v1/Report/create-user-evaluation-snapshot";
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<UserEvaluationSnapshotResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, {}, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during snapshot creation.",
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const ListUserEvaluationReport = async (
+    payload: PaggingListPayloadCustom,
+    token: string,
+  ): Promise<ApiGenericResponse<
+    UserEvaluationReportListResponse[] | null
+  > | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC,
+    );
+    const PathEndpoint: string = "/v1/Report/list-user-evaluation-report";
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<UserEvaluationReportListResponse[]>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during request.",
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
   return {
     ListReportProjectPortofolio,
     ExportProjectPortofolioExcel,
@@ -1120,6 +1278,8 @@ const useReports = (): useReportsServices => {
     ExportProjectActivePortofolioListExcel,
     ListProjectClosePortofolio,
     ExportProjectClosePortofolioListExcel,
+    CreateUserEvaluationSnapshot,
+    ListUserEvaluationReport,
 
     isLoading,
     error,
