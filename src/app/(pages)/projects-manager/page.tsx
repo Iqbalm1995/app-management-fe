@@ -147,6 +147,7 @@ const ProjectManagerPage = () => {
   const [DataProjects, setDataProjects] = useState<ProjectDataResponse[]>([]);
   const [RefreshData, setRefreshData] = useState<number>(0);
   const [totalProjectsCount, setTotalProjectsCount] = useState<number>(0);
+  const [totalActiveProjectsCount, setTotalActiveProjectsCount] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
 
   // Table state
@@ -309,7 +310,15 @@ const ProjectManagerPage = () => {
         search: payload.search,
         limit: payload.limit,
         page: payload.page,
-        filterWhere: payload.filterWhere,
+        filterWhere: [
+          ...payload.filterWhere,
+          // Add projectType filter if specified
+          ...(payload.projectType ? [{
+            field: "projectType",
+            operator: "=" as const,
+            value: payload.projectType,
+          }] : [])
+        ],
         fieldOrder: payload.fieldOrder,
         orderDir: payload.orderDir,
       };
@@ -338,21 +347,13 @@ const ProjectManagerPage = () => {
         });
       }
 
-      // Add RFC-specific filters to filterWhere to ensure they work with both API endpoints
-      if (requirementType === "RFC") {
-        filterWhere.push({
-          field: "projectType",
-          operator: "=",
-          value: PROJECT_TYPE_INTERNAL_DEVELOPMENT,
-        });
-        // Remove requirementType filter from filterWhere - let client-side handle it
-      }      const PayloadList: PaggingListPayloadCustom = {
+      const PayloadList: PaggingListPayloadCustom = {
         search: globalFilter,
         projectType:
           requirementType === "BRD"
             ? PROJECT_TYPE_INTERNAL_DEVELOPMENT
             : requirementType === "RFC"
-            ? PROJECT_TYPE_INTERNAL_DEVELOPMENT
+            ? null
             : null,
         teamId: DataAuth.team?.id,
         requirementType: "", // Remove backend filtering completely
@@ -399,26 +400,31 @@ const ProjectManagerPage = () => {
               : -1;
 
           // Client-side filtering based on URL reqType parameter
-          console.log(`[DEBUG] URL requirementType: ${requirementType}`);
-          console.log(`[DEBUG] Total projects fetched: ${itemsData.length}`);
-          console.log(`[DEBUG] Sample project requirementData:`, itemsData[0]?.requirementData);
           
           const filteredData = itemsData.filter(project => {
             const projectReqType = project.requirementData?.requirementType;
-            console.log(`[DEBUG] Project ${project.projectName} - requirementType: ${projectReqType}`);
             
             if (requirementType === "RFC") {
-              return projectReqType === "RFC";
+              // Allow both INTERNAL_DEVELOPMENT and PROCUREMENT for RFC
+              // INTERNAL_DEVELOPMENT must have RFC requirement type
+              // PROCUREMENT projects can have RFC or no requirement type
+              return (projectReqType === "RFC" && project.projectType === "INTERNAL DEVELOPMENT") ||
+                     (project.projectType === "PROCUREMENT");
             } else if (requirementType === "BRD") {
-              return projectReqType === "BRD";
+              // Keep BRD as INTERNAL_DEVELOPMENT only
+              return projectReqType === "BRD" && project.projectType === "INTERNAL DEVELOPMENT";
+            } else {
+              // Show all projects when no specific requirement type
+              return true;
             }
-            return true; // Show all if no specific type
           });
           
-          console.log(`[DEBUG] Filtered projects count: ${filteredData.length}`);
 
+          // Calculate total active projects from complete filtered dataset
+          const totalActiveCount = filteredData.filter(p => p.projectStatus === "ACTIVE").length;
           setDataProjects(filteredData);
           setTotalProjectsCount(filteredData.length); // Use filtered count instead of API total
+          setTotalActiveProjectsCount(totalActiveCount);
           setTotalPageData(totalPages);
           setIsLoadingProcess(false);
         } catch (error) {
@@ -435,6 +441,7 @@ const ProjectManagerPage = () => {
     } else {
       // ✅ sekarang ini valid
       setDataProjects([]);
+      setTotalActiveProjectsCount(0);
       setTotalProjectsCount(0);
       setTotalPageData(0);
       setIsLoadingProcess(false);
@@ -497,6 +504,7 @@ const ProjectManagerPage = () => {
     setTotalPageData(0);
     setDataProjects([]);
     setTotalProjectsCount(0);
+    setTotalActiveProjectsCount(0);
     setRefreshData(RefreshData + 1);
   }, [RefreshData]);
 
@@ -706,6 +714,7 @@ const ProjectManagerPage = () => {
               setStatusFilter={setStatusFilter}
               DataProjects={DataProjects}
               colorMode={colorMode}
+              totalActiveProjectsCount={totalActiveProjectsCount}
               totalProjectsCount={totalProjectsCount}
             />
           </GridItem>

@@ -248,7 +248,7 @@ export default function BRDRFCView() {
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
   const [canMake, setCanMake] = useState<boolean>(false);
-  
+
   // Scroll State
   const [isTableHovered, setIsTableHovered] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -259,11 +259,11 @@ export default function BRDRFCView() {
 
     const handleNativeWheel = (e: WheelEvent) => {
       if (!isTableHovered) return;
-      
+
       e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
-      
+
       const hasHorizontalScroll = container.scrollWidth > container.clientWidth;
       if (hasHorizontalScroll) {
         container.scrollLeft += e.deltaY > 0 ? 100 : -100;
@@ -271,7 +271,7 @@ export default function BRDRFCView() {
     };
 
     container.addEventListener('wheel', handleNativeWheel, { passive: false });
-    
+
     return () => {
       container.removeEventListener('wheel', handleNativeWheel);
     };
@@ -753,14 +753,14 @@ export default function BRDRFCView() {
                     fontStyle="italic"
                     fontSize={"x-small"}
                   >
-                    Aplikasi Belum Disematkan
+                    Product Belum Disematkan
                   </Text>
                 )}
               </Flex>
             </Flex>
           </Flex>
         ),
-        header: () => <span>Aplikasi</span>,
+        header: () => <span>Product</span>,
         footer: (props) => props.column.id,
         // Custom variable
         meta: {
@@ -771,7 +771,7 @@ export default function BRDRFCView() {
               operator: "like",
               value: "",
               filterType: "text",
-              filterLabel: "Inisial Aplikasi",
+              filterLabel: "Inisial Product",
             },
             {
               field: "appInitialName",
@@ -1531,14 +1531,14 @@ export default function BRDRFCView() {
                   // <TableComponentFull table={table} />
                   // TABLE NEW DESIGN
                   <Box overflowX="auto" w="full" ref={scrollContainerRef}>
-                    <Box 
+                    <Box
                       minW="1400px"
                       onMouseEnter={() => setIsTableHovered(true)}
                       onMouseLeave={() => setIsTableHovered(false)}
                     >
                       <TableComponentWithFilterCTX
-                    table={table}
-                    handleFilterChange={handleFilterChange}
+                        table={table}
+                        handleFilterChange={handleFilterChange}
                       />
                     </Box>
                   </Box>

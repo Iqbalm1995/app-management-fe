@@ -436,7 +436,7 @@ export default function PendingApproveView() {
             </Tooltip>
           );
         },
-        header: () => <span>Aplikasi</span>,
+        header: () => <span>Product</span>,
         footer: (props) => props.column.id,
         meta: {
           isFilterable: false,
@@ -786,8 +786,8 @@ export default function PendingApproveView() {
           const userGroupId = DataAuth.team.orgGroupId;
           dataList = dataList.filter(project => {
             if (project.approvalStatus === "WAITING APPROVAL 1") {
-              return project.proOwnerGroupId === userGroupId || 
-                     project.proManageByGroupId === userGroupId;
+              return project.proOwnerGroupId === userGroupId ||
+                project.proManageByGroupId === userGroupId;
             }
             return true;
           });
@@ -845,7 +845,7 @@ export default function PendingApproveView() {
     FilterProjectType,
     FilterProjectStatus,
     FilterApprovalStatus,
-    DataAuth,  ]);
+    DataAuth,]);
 
   return (
     <LayoutAdmin>
@@ -1082,8 +1082,8 @@ export default function PendingApproveView() {
               ) : (
                 <Box position="relative">
                   <Box overflowX="auto" w="full">
-                    <Box 
-                      minW="1600px" 
+                    <Box
+                      minW="1600px"
                     >
                       <TableComponentFull table={table} colorMode={colorMode} />
                     </Box>

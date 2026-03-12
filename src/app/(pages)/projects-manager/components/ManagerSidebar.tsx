@@ -51,6 +51,7 @@ interface ManagerSidebarProps {
   statusFilter: string[];
   setStatusFilter: (value: string[]) => void;
   DataProjects: ProjectDataResponse[];
+  totalActiveProjectsCount: number;
   totalProjectsCount: number;
   colorMode: "light" | "dark";
 }
@@ -59,6 +60,7 @@ const ManagerSidebar = ({
   globalFilter,
   setGlobalFilter,
   statusFilter,
+  totalActiveProjectsCount,
   setStatusFilter,
   DataProjects,
   totalProjectsCount,
@@ -104,9 +106,7 @@ const ManagerSidebar = ({
 
   // Calculate project statistics
   const totalProjects = totalProjectsCount;
-  const activeProjects = DataProjects.filter(
-    (p) => p.projectStatus === "ACTIVE"
-  ).length;
+  const activeProjects = totalActiveProjectsCount; // Use total from complete filtered dataset
   const completedProjects = DataProjects.filter(
     (p) => p.projectStatus === "COMPLETED"
   ).length;
