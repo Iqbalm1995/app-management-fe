@@ -110,6 +110,7 @@ const TeamTab = ({ DataProject, canMake }: TeamTabProps) => {
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
   const [isAddingMembers, setIsAddingMembers] = useState(false);
   const [togglingUserId, setTogglingUserId] = useState<string | null>(null);
+  const [processingTeam, setProcessingTeam] = useState<string | null>(null);
 
   // Confirmation dialog states
   const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
@@ -386,6 +387,159 @@ const TeamTab = ({ DataProject, canMake }: TeamTabProps) => {
     }
   };
 
+
+  // Deactivate entire team
+  const deactivateTeam = async (groupCode: string, groupName: string, members: ProjectUserAssignmentResponse[]) => {
+    if (!DataProject || !tokenData) return;
+
+    const activeUserIds = members
+      .filter(m => m.userAssignStatus === "ACTIVE")
+      .map(m => m.userData.id);
+
+    if (activeUserIds.length === 0) {
+      showToast({
+        description: "No active members to deactivate",
+        statusToast: "info",
+      });
+      return;
+    }
+
+    setProcessingTeam(groupCode);
+    try {
+      const response = await AssignUnassignMembers(
+        {
+          projectId: DataProject.id,
+          assignUsers: [],
+          unassignUsers: activeUserIds,
+        },
+        tokenData
+      );
+
+      if (response?.statusCode === RES_CODE_OK) {
+        showToast({
+          description: `Deactivated ${activeUserIds.length} members from ${groupName}`,
+          statusToast: "success",
+        });
+        await loadProjectMembers();
+      } else {
+        showToast({
+          description: response?.message || "Failed to deactivate team",
+          statusToast: "error",
+        });
+      }
+    } catch (error) {
+      console.error("Error deactivating team:", error);
+      showToast({
+        description: "Failed to deactivate team",
+        statusToast: "error",
+      });
+    } finally {
+      setProcessingTeam(null);
+    }
+  };
+
+  // Remove entire team
+  const removeTeam = async (groupCode: string, groupName: string, members: ProjectUserAssignmentResponse[]) => {
+    if (!DataProject || !tokenData) return;
+
+    setProcessingTeam(groupCode);
+    try {
+      let successCount = 0;
+      let failCount = 0;
+
+      for (const member of members) {
+        try {
+          const response = await RemoveProjectMember(
+            {
+              projectId: DataProject.id,
+              userId: member.userData.id,
+            },
+            tokenData
+          );
+
+          if (response?.statusCode === RES_CODE_OK) {
+            successCount++;
+          } else {
+            failCount++;
+          }
+        } catch (error) {
+          failCount++;
+        }
+      }
+
+      if (successCount > 0) {
+        showToast({
+          description: `Removed ${successCount} members from ${groupName}${failCount > 0 ? ` (${failCount} failed)` : ''}`,
+          statusToast: successCount === members.length ? "success" : "warning",
+        });
+        await loadProjectMembers();
+      } else {
+        showToast({
+          description: "Failed to remove team members",
+          statusToast: "error",
+        });
+      }
+    } catch (error) {
+      console.error("Error removing team:", error);
+      showToast({
+        description: "Failed to remove team",
+        statusToast: "error",
+      });
+    } finally {
+      setProcessingTeam(null);
+    }
+  };
+
+  // Activate entire team
+  const activateTeam = async (groupCode: string, groupName: string, members: ProjectUserAssignmentResponse[]) => {
+    if (!DataProject || !tokenData) return;
+
+    const inactiveUserIds = members
+      .filter(m => m.userAssignStatus === "INACTIVE")
+      .map(m => m.userData.id);
+
+    if (inactiveUserIds.length === 0) {
+      showToast({
+        description: "No inactive members to activate",
+        statusToast: "info",
+      });
+      return;
+    }
+
+    setProcessingTeam(groupCode);
+    try {
+      const response = await AssignUnassignMembers(
+        {
+          projectId: DataProject.id,
+          assignUsers: inactiveUserIds,
+          unassignUsers: [],
+        },
+        tokenData
+      );
+
+      if (response?.statusCode === RES_CODE_OK) {
+        showToast({
+          description: `Activated ${inactiveUserIds.length} members from ${groupName}`,
+          statusToast: "success",
+        });
+        await loadProjectMembers();
+      } else {
+        showToast({
+          description: response?.message || "Failed to activate team",
+          statusToast: "error",
+        });
+      }
+    } catch (error) {
+      console.error("Error activating team:", error);
+      showToast({
+        description: "Failed to activate team",
+        statusToast: "error",
+      });
+    } finally {
+      setProcessingTeam(null);
+    }
+  };
+
   // Show confirmation dialog
   const showConfirmation = (
     caption: string,
@@ -543,8 +697,9 @@ const TeamTab = ({ DataProject, canMake }: TeamTabProps) => {
                       return Object.entries(orgGroups).map(
                         ([groupCode, { groupName, members }]) => (
                           <Box key={groupCode}>
-                            <HStack mb={3} spacing={3}>
-                              <Text
+                            <HStack mb={3} spacing={3} justify="space-between">
+                              <HStack spacing={3}>
+                                <Text
                                 fontSize="lg"
                                 fontWeight="bold"
                                 color={
@@ -555,7 +710,7 @@ const TeamTab = ({ DataProject, canMake }: TeamTabProps) => {
                               >
                                 {groupName}
                               </Text>
-                              <Badge
+                                <Badge
                                 colorScheme="blue"
                                 fontSize="sm"
                                 px={2}
@@ -564,6 +719,64 @@ const TeamTab = ({ DataProject, canMake }: TeamTabProps) => {
                               >
                                 {members.length}
                               </Badge>
+                              </HStack>
+                              {canMake && (
+                                <HStack spacing={2}>
+                                  {status === "ACTIVE" ? (
+                                    <Button
+                                      size="xs"
+                                      colorScheme="orange"
+                                      variant="outline"
+                                      onClick={() =>
+                                        showConfirmation(
+                                          "Deactivate Team",
+                                          `Are you sure you want to deactivate all active members from "${groupName}"?`,
+                                          () => deactivateTeam(groupCode, groupName, members)
+                                        )
+                                      }
+                                      isLoading={processingTeam === groupCode}
+                                      isDisabled={processingTeam !== null}
+                                    >
+                                      Deactivate Team
+                                    </Button>
+                                  ) : (
+                                    <>
+                                      <Button
+                                        size="xs"
+                                        colorScheme="green"
+                                        variant="outline"
+                                        onClick={() =>
+                                          showConfirmation(
+                                            "Activate Team",
+                                            `Are you sure you want to activate all inactive members from "${groupName}"?`,
+                                            () => activateTeam(groupCode, groupName, members)
+                                          )
+                                        }
+                                        isLoading={processingTeam === groupCode}
+                                        isDisabled={processingTeam !== null}
+                                      >
+                                        Activate Team
+                                      </Button>
+                                      <Button
+                                        size="xs"
+                                        colorScheme="red"
+                                        variant="outline"
+                                        onClick={() =>
+                                          showConfirmation(
+                                            "Remove Team",
+                                            `Are you sure you want to remove all ${members.length} members from "${groupName}"? This action cannot be undone.`,
+                                            () => removeTeam(groupCode, groupName, members)
+                                          )
+                                        }
+                                        isLoading={processingTeam === groupCode}
+                                        isDisabled={processingTeam !== null}
+                                      >
+                                        Remove Team
+                                      </Button>
+                                    </>
+                                  )}
+                                </HStack>
+                              )}
                             </HStack>
                             <VStack spacing={3} align="stretch">
                               {members.map((assignment, index) => {

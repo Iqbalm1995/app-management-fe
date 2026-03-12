@@ -153,11 +153,11 @@ export default function ApprovalHubView() {
 
     const handleNativeWheel = (e: WheelEvent) => {
       if (!isTableHovered) return;
-      
+
       e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
-      
+
       const hasHorizontalScroll = container.scrollWidth > container.clientWidth;
       if (hasHorizontalScroll) {
         container.scrollLeft += e.deltaY > 0 ? 100 : -100;
@@ -165,7 +165,7 @@ export default function ApprovalHubView() {
     };
 
     container.addEventListener('wheel', handleNativeWheel, { passive: false });
-    
+
     return () => {
       container.removeEventListener('wheel', handleNativeWheel);
     };
@@ -494,14 +494,14 @@ export default function ApprovalHubView() {
               operator: ">=",
               value: "",
               filterType: "date",
-              filterLabel: "Tgl. Awal Memo Dibuat",
+              filterLabel: "Tgl. Memo",
             },
             {
               field: "reqInititateDate",
               operator: "<=",
               value: "",
               filterType: "date",
-              filterLabel: "Tgl. Akhir Memo Dibuat",
+              filterLabel: "Tgl. Memo Diterima",
             },
             {
               field: "assignedToDate",
@@ -1109,17 +1109,17 @@ export default function ApprovalHubView() {
                   <LoadingMiniSignature />
                 ) : (
                   <Box overflowX="auto" w="full" ref={scrollContainerRef}>
-                    <Box 
+                    <Box
                       minW="1400px"
                       onMouseEnter={() => setIsTableHovered(true)}
                       onMouseLeave={() => setIsTableHovered(false)}
                     >
                       <TableComponentWithFilterCTX
-                    table={table}
-                    handleFilterChange={handleFilterChange}
-                  />
+                        table={table}
+                        handleFilterChange={handleFilterChange}
+                      />
                     </Box>
-                  </Box>                )}
+                  </Box>)}
               </Flex>
             </CardBody>
           </Card>

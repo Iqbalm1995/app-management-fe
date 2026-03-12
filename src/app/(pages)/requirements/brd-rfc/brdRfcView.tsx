@@ -566,6 +566,13 @@ export default function BRDRFCView() {
               filterLabel: "Perihal",
             },
             {
+              field: "reqNumber",
+              operator: "like",
+              value: "",
+              filterType: "text",
+              filterLabel: "Nomor Memo",
+            },
+            {
               field: "senderDivisionId",
               operator: "=",
               value: "",
@@ -631,14 +638,14 @@ export default function BRDRFCView() {
               operator: ">=",
               value: "",
               filterType: "date",
-              filterLabel: "Tgl. Awal Memo Dibuat",
+              filterLabel: "Tgl. Memo",
             },
             {
               field: "reqInititateDate",
               operator: "<=",
               value: "",
               filterType: "date",
-              filterLabel: "Tgl. Akhir Memo Dibuat",
+              filterLabel: "Tgl. Memo Diterima",
             },
             {
               field: "assignedToDate",
@@ -1476,6 +1483,20 @@ export default function BRDRFCView() {
                                     </Flex>
                                   ))}
                                 </Stack>
+                                {ParamFilter.length > 0 && (
+                                  <>
+                                    <Divider />
+                                    <Button
+                                      size="sm"
+                                      colorScheme="red"
+                                      variant="outline"
+                                      onClick={() => setParamFilter([])}
+                                      w="full"
+                                    >
+                                      Clear All
+                                    </Button>
+                                  </>
+                                )}
                               </Flex>
                             </PopoverBody>
                           </PopoverContent>
