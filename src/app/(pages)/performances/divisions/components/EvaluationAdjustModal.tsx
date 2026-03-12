@@ -20,6 +20,7 @@ import {
   Box,
   Grid,
   GridItem,
+  Select,
   NumberInput,
   NumberInputField,
   NumberInputStepper,
@@ -34,7 +35,7 @@ import {
   AlertIcon,
   Heading,
 } from "@chakra-ui/react";
-import { radiusStyle, RES_CODE_OK } from "@/app/constants/applicationConstants";
+import { radiusStyle, RES_CODE_OK, BAISC_POINT_EV_OPT, TIMELESS_POINT_EV_OPT, EXTRA_POINT_EV_OPT } from "@/app/constants/applicationConstants";
 import { UserEvaluationReportListResponse, RptUserEvaluationReport } from "@/app/services/useReports";
 import useReports from "@/app/services/useReports";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
@@ -321,27 +322,23 @@ const EvaluationAdjustModal = ({
                               <FormLabel fontSize="sm" fontWeight="bold" color="gray.600">
                                 Basic Point
                               </FormLabel>
-                              <NumberInput
-                                value={evBasicPoint}
-                                onChange={(_, value) => setEvBasicPoint(value || 0)}
-                                min={0}
-                                max={100}
-                                precision={2}
+                              <Select
+                                value={evBasicPoint.toString()}
+                                onChange={(e) => setEvBasicPoint(Number(e.target.value))}
                                 size="lg"
+                                bg={colorMode === "light" ? "white" : "gray.800"}
+                                borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
+                                _focus={{
+                                  borderColor: "secondary.500",
+                                  boxShadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
+                                }}
                               >
-                                <NumberInputField
-                                  bg={colorMode === "light" ? "white" : "gray.800"}
-                                  borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
-                                  _focus={{
-                                    borderColor: "secondary.500",
-                                    boxShadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
-                                  }}
-                                />
-                                <NumberInputStepper>
-                                  <NumberIncrementStepper />
-                                  <NumberDecrementStepper />
-                                </NumberInputStepper>
-                              </NumberInput>
+                                {BAISC_POINT_EV_OPT.map((option) => (
+                                  <option key={option.label} value={option.label}>
+                                    {option.value}
+                                  </option>
+                                ))}
+                              </Select>
                             </FormControl>
 
                             {/* Timeless Point */}
@@ -349,27 +346,23 @@ const EvaluationAdjustModal = ({
                               <FormLabel fontSize="sm" fontWeight="bold" color="gray.600">
                                 Timeless Point
                               </FormLabel>
-                              <NumberInput
-                                value={evTimelessPoint}
-                                onChange={(_, value) => setEvTimelessPoint(value || 0)}
-                                min={0}
-                                max={100}
-                                precision={2}
+                              <Select
+                                value={evTimelessPoint.toString()}
+                                onChange={(e) => setEvTimelessPoint(Number(e.target.value))}
                                 size="lg"
+                                bg={colorMode === "light" ? "white" : "gray.800"}
+                                borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
+                                _focus={{
+                                  borderColor: "secondary.500",
+                                  boxShadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
+                                }}
                               >
-                                <NumberInputField
-                                  bg={colorMode === "light" ? "white" : "gray.800"}
-                                  borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
-                                  _focus={{
-                                    borderColor: "secondary.500",
-                                    boxShadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
-                                  }}
-                                />
-                                <NumberInputStepper>
-                                  <NumberIncrementStepper />
-                                  <NumberDecrementStepper />
-                                </NumberInputStepper>
-                              </NumberInput>
+                                {TIMELESS_POINT_EV_OPT.map((option) => (
+                                  <option key={option.label} value={option.label}>
+                                    {option.value}
+                                  </option>
+                                ))}
+                              </Select>
                             </FormControl>
 
                             {/* Extra Point */}
@@ -377,27 +370,23 @@ const EvaluationAdjustModal = ({
                               <FormLabel fontSize="sm" fontWeight="bold" color="gray.600">
                                 Extra Point
                               </FormLabel>
-                              <NumberInput
-                                value={evExtraPoint}
-                                onChange={(_, value) => setEvExtraPoint(value || 0)}
-                                min={0}
-                                max={100}
-                                precision={2}
+                              <Select
+                                value={evExtraPoint.toString()}
+                                onChange={(e) => setEvExtraPoint(Number(e.target.value))}
                                 size="lg"
+                                bg={colorMode === "light" ? "white" : "gray.800"}
+                                borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
+                                _focus={{
+                                  borderColor: "secondary.500",
+                                  boxShadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
+                                }}
                               >
-                                <NumberInputField
-                                  bg={colorMode === "light" ? "white" : "gray.800"}
-                                  borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
-                                  _focus={{
-                                    borderColor: "secondary.500",
-                                    boxShadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
-                                  }}
-                                />
-                                <NumberInputStepper>
-                                  <NumberIncrementStepper />
-                                  <NumberDecrementStepper />
-                                </NumberInputStepper>
-                              </NumberInput>
+                                {EXTRA_POINT_EV_OPT.map((option) => (
+                                  <option key={option.label} value={option.label}>
+                                    {option.value}
+                                  </option>
+                                ))}
+                              </Select>
                             </FormControl>
 
                             <Divider />
