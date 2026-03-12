@@ -26,59 +26,123 @@ import {
 } from "./useRequirements";
 import { AppsResponse, ProjectUserAssignmentResponse } from "./useProjects";
 
-export interface ReportProjectPortofolioDataResponse {
+export interface UserEvaluationReportUpdatePayload {
+  Id: string;
+  EvBasicPoint: number;
+  EvTimelessPoint: number;
+  EvExtraPoint: number;
+  EvTotalPoint: number;
+  EvGrandTotal: number;
+}
+
+export interface RptUserEvaluationReport {
   id: string;
+  timeCapture: string;
+  monthPeriod: string;
+  yearPeriod: string;
+  quartalPeriod: string;
+  userSysId: string;
+  nama: string;
+  nip: string;
+  userId?: string | null;
+  jabatan?: string | null;
+  namaUnitKerja?: string | null;
+  userOrgGroupCode?: string | null;
+  userOrgGroupName?: string | null;
+  userTeamCode?: string | null;
+  userTeamName?: string | null;
+  reqId?: string | null;
+  requirementType?: string | null;
+  reqNumber?: string | null;
+  reqNarative?: string | null;
+  reqAppLiveTargetDate?: string | null;
+  projectId: string;
   projectNo: string;
-  projectCode: string;
-  projectName: string;
-  projectDesc: string;
-  projectStatus: string;
-  note?: string | null;
-  createdAt: string;
-  createdBy: string;
-  updatedAt: string;
-  updatedBy: string;
-  deletedAt: string;
-  projectCategory: string;
-  projectType: string;
-  projectRegisterDate?: string | null;
+  projectName?: string | null;
+  projectRegisterDate: string;
   projectClosedDate?: string | null;
-  projectDurationDays: number;
+  projectCompletedDate?: string | null;
+  projectType: string;
+  projectCategory?: string | null;
+  projectOwnerDirectorateCode?: string | null;
+  projectOwnerDirectorateName?: string | null;
+  projectOwnerDivisionCode?: string | null;
+  projectOwnerDivisionName?: string | null;
+  projectOwnerGroupCode?: string | null;
+  projectOwnerGroupName?: string | null;
+  projectManageByDirectorateCode?: string | null;
+  projectManageByDirectorateName?: string | null;
+  projectManageByDivisionCode?: string | null;
+  projectManageByDivisionName?: string | null;
+  projectManageByGroupCode?: string | null;
+  projectManageByGroupName?: string | null;
+  projectStatus: string;
   projectStatusPercentage: number;
-  proOwnerDivisionId: string;
-  proOwnerDivisionCode?: string | null;
-  proOwnerDivisionName?: string | null;
-  proOwnerGroupId?: string | null;
-  proOwnerGroupCode?: string | null;
-  proOwnerGroupName?: string | null;
-  proManageByDivisionId?: string | null;
-  proManageByDivisionCode?: string | null;
-  proManageByDivisionName?: string | null;
-  proManageByGroupId?: string | null;
-  proManageByGroupCode?: string | null;
-  proManageByGroupName?: string | null;
-  proManageByTeamId?: string | null;
-  proManageByTeamCode?: string | null;
-  proManageByTeamName?: string | null;
-  reqParentId?: string | null;
-  appsId?: string | null;
-  proOwnerDirectorateId?: string | null;
-  proOwnerDirectorateCode?: string | null;
-  proOwnerDirectorateName?: string | null;
-  proManageByDirectorateId?: string | null;
-  proManageByDirectorateCode?: string | null;
-  proManageByDirectorateName?: string | null;
-  projectAcquisitionCode?: string | null;
-  projectAcquisitionName?: string | null;
-  projectCharasteristicCode?: string | null;
-  projectCharasteristicName?: string | null;
-  projectSubCharasteristicCode?: string | null;
-  projectSubCharasteristicName?: string | null;
-  projectSubCharasteristicDesc?: string | null;
-  userAssignment: ProjectUserAssignmentResponse[];
-  requirement?: RequirementsResponse | null;
-  appsProject?: AppsResponse | null;
-  workPrograms: RequirementWorkProgramDataResponse[];
+  proSdlcStageNameActive?: string | null;
+  appShortName?: string | null;
+  appName?: string | null;
+  userTotalTaskAssign: number;
+  userTotalTaskDone: number;
+  evBasicPoint: number;
+  evTimelessPoint: number;
+  evExtraPoint: number;
+  evTotalPoint: number;
+  evGrandTotal: number;
+}
+
+export interface UserEvaluationReportListResponse {
+  id: string;
+  timeCapture: string;
+  monthPeriod: string;
+  yearPeriod: string;
+  quartalPeriod: string;
+  userSysId: string;
+  nama: string;
+  nip: string;
+  userId?: string | null;
+  jabatan?: string | null;
+  namaUnitKerja?: string | null;
+  userOrgGroupCode?: string | null;
+  userOrgGroupName?: string | null;
+  userTeamCode?: string | null;
+  userTeamName?: string | null;
+  reqId?: string | null;
+  requirementType?: string | null;
+  reqNumber?: string | null;
+  reqNarative?: string | null;
+  reqAppLiveTargetDate?: string | null;
+  projectId: string;
+  projectNo: string;
+  projectName?: string | null;
+  projectRegisterDate: string;
+  projectClosedDate?: string | null;
+  projectCompletedDate?: string | null;
+  projectType: string;
+  projectCategory?: string | null;
+  projectOwnerDirectorateCode?: string | null;
+  projectOwnerDirectorateName?: string | null;
+  projectOwnerDivisionCode?: string | null;
+  projectOwnerDivisionName?: string | null;
+  projectOwnerGroupCode?: string | null;
+  projectOwnerGroupName?: string | null;
+  projectManageByDirectorateCode?: string | null;
+  projectManageByDirectorateName?: string | null;
+  projectManageByDivisionCode?: string | null;
+  projectManageByDivisionName?: string | null;
+  projectManageByGroupCode?: string | null;
+  projectManageByGroupName?: string | null;
+  projectStatus: string;
+  projectStatusPercentage: number;
+  proSdlcStageNameActive?: string | null;
+  appShortName?: string | null;
+  appName?: string | null;
+  userTotalTaskAssign: number;
+  userTotalTaskDone: number;
+  evBasicPoint: number;
+  evTimelessPoint: number;
+  evExtraPoint: number;
+  evTotalPoint: number;
+  evGrandTotal: number;
 }
 
 export interface ProjectActivePortofolioListResponse {
@@ -169,7 +233,62 @@ export interface ProjectClosePortofolioListResponse {
   sdlcReportsByWeek?: Record<number, string>;
 }
 
-export interface UserEvaluationReportListResponse {
+export interface ReportProjectPortofolioDataResponse {
+  id: string;
+  projectNo: string;
+  projectCode: string;
+  projectName: string;
+  projectDesc: string;
+  projectStatus: string;
+  note?: string | null;
+  createdAt: string;
+  createdBy: string;
+  updatedAt: string;
+  updatedBy: string;
+  deletedAt: string;
+  projectCategory: string;
+  projectType: string;
+  projectRegisterDate?: string | null;
+  projectClosedDate?: string | null;
+  projectDurationDays: number;
+  projectStatusPercentage: number;
+  proOwnerDivisionId: string;
+  proOwnerDivisionCode?: string | null;
+  proOwnerDivisionName?: string | null;
+  proOwnerGroupId?: string | null;
+  proOwnerGroupCode?: string | null;
+  proOwnerGroupName?: string | null;
+  proManageByDivisionId?: string | null;
+  proManageByDivisionCode?: string | null;
+  proManageByDivisionName?: string | null;
+  proManageByGroupId?: string | null;
+  proManageByGroupCode?: string | null;
+  proManageByGroupName?: string | null;
+  proManageByTeamId?: string | null;
+  proManageByTeamCode?: string | null;
+  proManageByTeamName?: string | null;
+  reqParentId?: string | null;
+  appsId?: string | null;
+  proOwnerDirectorateId?: string | null;
+  proOwnerDirectorateCode?: string | null;
+  proOwnerDirectorateName?: string | null;
+  proManageByDirectorateId?: string | null;
+  proManageByDirectorateCode?: string | null;
+  proManageByDirectorateName?: string | null;
+  projectAcquisitionCode?: string | null;
+  projectAcquisitionName?: string | null;
+  projectCharasteristicCode?: string | null;
+  projectCharasteristicName?: string | null;
+  projectSubCharasteristicCode?: string | null;
+  projectSubCharasteristicName?: string | null;
+  projectSubCharasteristicDesc?: string | null;
+  userAssignment: ProjectUserAssignmentResponse[];
+  requirement?: RequirementsResponse | null;
+  appsProject?: AppsResponse | null;
+  workPrograms: RequirementWorkProgramDataResponse[];
+}
+
+export interface DivisionPerformanceResponse {
   userSysId: string;
   nama: string;
   nip: string;
@@ -287,6 +406,16 @@ interface useReportsServices {
   ) => Promise<ApiGenericResponse<
     UserEvaluationReportListResponse[] | null
   > | null>;
+
+  UpdateUserEvaluationReport: (
+    payload: UserEvaluationReportUpdatePayload,
+    token: string,
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+
+  GetUserEvaluationReportById: (
+    id: string,
+    token: string,
+  ) => Promise<ApiGenericResponse<RptUserEvaluationReport | null> | null>;
 
   isLoading: boolean;
   error: string | null;
@@ -1269,6 +1398,86 @@ const useReports = (): useReportsServices => {
     }
   };
 
+  const UpdateUserEvaluationReport = async (
+    payload: UserEvaluationReportUpdatePayload,
+    token: string,
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC,
+    );
+    const PathEndpoint: string = "/v1/Report/user-evaluation-report/update";
+    
+    console.log("Service payload:", payload);
+    
+    try {
+      const response = await axiosInstance.put<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during request.",
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const GetUserEvaluationReportById = async (
+    id: string,
+    token: string,
+  ): Promise<ApiGenericResponse<RptUserEvaluationReport | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC,
+    );
+    const PathEndpoint: string = `/v1/Report/user-evaluation-report/${id}`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<RptUserEvaluationReport | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during request.",
+        );
+        return errorResponse;
+      } else {
+        setError("An unexpected error occurred.");
+        return null;
+      }
+    }
+  };
+
   return {
     ListReportProjectPortofolio,
     ExportProjectPortofolioExcel,
@@ -1280,6 +1489,8 @@ const useReports = (): useReportsServices => {
     ExportProjectClosePortofolioListExcel,
     CreateUserEvaluationSnapshot,
     ListUserEvaluationReport,
+    UpdateUserEvaluationReport,
+    GetUserEvaluationReportById,
 
     isLoading,
     error,

@@ -80,10 +80,10 @@ export interface ListSearchByParam {
 
 export const addParamFilter = (
   list: ListSearchByParamProps[],
-  param: ListSearchByParamProps
+  param: ListSearchByParamProps,
 ): ListSearchByParamProps[] => {
   const isDuplicate = list.some(
-    (p) => p.field === param.field && p.operator === param.operator
+    (p) => p.field === param.field && p.operator === param.operator,
   );
 
   return isDuplicate ? list : [...list, param];
@@ -91,11 +91,11 @@ export const addParamFilter = (
 
 export const addParamFilterUpdate = (
   list: ListSearchByParamProps[],
-  param: ListSearchByParamProps
+  param: ListSearchByParamProps,
 ): ListSearchByParamProps[] => {
   // Find if a param with same field AND operator exists
   const existing = list.find(
-    (p) => p.field === param.field && p.operator === param.operator
+    (p) => p.field === param.field && p.operator === param.operator,
   );
 
   // If found and value is unchanged, return original list
@@ -105,7 +105,7 @@ export const addParamFilterUpdate = (
 
   // Otherwise, remove existing with same field+operator and append new param
   const updatedList = list.filter(
-    (p) => !(p.field === param.field && p.operator === param.operator)
+    (p) => !(p.field === param.field && p.operator === param.operator),
   );
 
   return [...updatedList, param];
@@ -113,7 +113,7 @@ export const addParamFilterUpdate = (
 
 export const removeParamFilter = (
   list: ListSearchByParamProps[],
-  target: ListSearchByParamProps
+  target: ListSearchByParamProps,
 ): ListSearchByParamProps[] => {
   return list.filter(
     (item) =>
@@ -121,7 +121,7 @@ export const removeParamFilter = (
         item.field === target.field &&
         item.operator === target.operator &&
         item.value === target.value
-      )
+      ),
   );
 };
 
@@ -201,4 +201,10 @@ export interface ColumnMetaCustom {
 export interface StepsProps {
   title: string;
   description: string;
+}
+
+export interface MapTypeProps {
+  RequirementType?: string | null;
+  ProjectType?: string | null;
+  PercentageWeight: number;
 }

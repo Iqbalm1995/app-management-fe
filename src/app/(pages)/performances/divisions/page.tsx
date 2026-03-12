@@ -59,7 +59,8 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import React, { useEffect, useMemo, useState } from "react";
-import { FiRefreshCcw, FiCamera } from "react-icons/fi";
+import { FiRefreshCcw, FiCamera, FiEdit3 } from "react-icons/fi";
+import EvaluationAdjustModal from "./components/EvaluationAdjustModal";
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Division Performance Report",
@@ -180,6 +181,10 @@ function DivisionPerformancePage() {
 
   const years = Array.from({ length: 8 }, (_, i) => currentYear - 5 + i);
 
+  // Modal state
+  const [isEvaluationModalOpen, setIsEvaluationModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserEvaluationReportListResponse | null>(null);
+
   const handleFilterChange = (newFilters: ListSearchByParamProps[]) => {
     setParamFilter(newFilters);
   };
@@ -187,6 +192,20 @@ function DivisionPerformancePage() {
   const RefreshAction = () => {
     setDataReport([]);
     setRefreshData(RefreshData + 1);
+  };
+
+  const handleOpenEvaluationModal = (user: UserEvaluationReportListResponse) => {
+    setSelectedUser(user);
+    setIsEvaluationModalOpen(true);
+  };
+
+  const handleCloseEvaluationModal = () => {
+    setIsEvaluationModalOpen(false);
+    setSelectedUser(null);
+  };
+
+  const handleEvaluationSuccess = () => {
+    RefreshAction();
   };
 
   const CreateSnapshot = async () => {
@@ -487,6 +506,27 @@ function DivisionPerformancePage() {
           </Text>
         ),
         header: () => <span>Grand Total</span>,
+        footer: (props) => props.column.id,
+        meta: {
+          isFilterable: false,
+        } as ColumnMetaCustom,
+      },
+      {
+        id: "actions",
+        cell: (info) => (
+          <Flex justifyContent="center" alignItems="center">
+            <Button
+              size="sm"
+              colorScheme="blue"
+              variant="outline"
+              leftIcon={<FiEdit3 />}
+              onClick={() => handleOpenEvaluationModal(info.row.original)}
+            >
+              Adjust Points
+            </Button>
+          </Flex>
+        ),
+        header: () => <span>Actions</span>,
         footer: (props) => props.column.id,
         meta: {
           isFilterable: false,
@@ -829,6 +869,14 @@ function DivisionPerformancePage() {
           </Card>
         </GridItem>
       </Grid>
+
+      {/* Evaluation Adjustment Modal */}
+      <EvaluationAdjustModal
+        isOpen={isEvaluationModalOpen}
+        onClose={handleCloseEvaluationModal}
+        user={selectedUser}
+        onSuccess={handleEvaluationSuccess}
+      />
     </LayoutAdmin>
   );
 }

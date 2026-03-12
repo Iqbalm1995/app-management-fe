@@ -1,4 +1,5 @@
 import {
+  MapTypeProps,
   OptionData,
   OptionDataWithIndex,
   OptionListProps,
@@ -453,4 +454,100 @@ export const APP_PROGRAMMING_FRAMEWORKS = [
   "iOS SDK",
   "TensorFlow",
   "PyTorch",
+];
+
+//.---- OPTIONS POINT SELECT
+
+// BASIC POINT OPTIONS
+export const BAISC_POINT_EV_OPT: OptionListProps[] = [
+  {
+    label: "0",
+    value: "0 - TIDAK ADA KONTRIBUSI",
+  },
+  {
+    label: "25",
+    value: "25 - KONTRIBUSI MINIMAL",
+  },
+  {
+    label: "50",
+    value: "50 - KONTRIBUSI RATA-RATA",
+  },
+  {
+    label: "75",
+    value: "75 - KONTRIBUSI DIATAS RATA-RATA",
+  },
+  {
+    label: "100",
+    value: "100 - MELEBIHI EKSPETASI, KEY PERSON",
+  },
+];
+
+// TIMELESS POINT OPTIONS
+export const TIMELESS_POINT_EV_OPT: OptionListProps[] = [
+  {
+    label: "0",
+    value: "0 - DELAY",
+  },
+  {
+    label: "100",
+    value: "100 - SESUAI SCHEDULE",
+  },
+  {
+    label: "125",
+    value: "125 - (1-100%) LEBIH CEPAT DARI TIMELINE",
+  },
+  {
+    label: "150",
+    value: "150 - (>100%) LEBIH CEPAT DARI TIMELINE",
+  },
+];
+
+// EXTRA POINT
+export const EXTRA_POINT_EV_OPT: OptionListProps[] = [
+  {
+    label: "0",
+    value: "0 - ORDINARY APPS",
+  },
+  {
+    label: "50",
+    value: "50 - MEDIUM CRITICAL APPS",
+  },
+  {
+    label: "100",
+    value: "100 - HIGHLT CRITICAL APPS",
+  },
+];
+
+// TYPE BOBOT POINT
+export const TYPE_REQ: MapTypeProps[] = [
+  {
+    RequirementType: "BRD",
+    ProjectType: "INTERNAL DEVELOPMENT",
+    PercentageWeight: 100,
+  },
+  {
+    RequirementType: "BRD",
+    ProjectType: "PROCUREMENT",
+    PercentageWeight: 100,
+  },
+  {
+    RequirementType: "RFC",
+    ProjectType: "INTERNAL DEVELOPMENT",
+    PercentageWeight: 75,
+  },
+  {
+    RequirementType: "RFC",
+    ProjectType: "PROCUREMENT",
+    PercentageWeight: 75,
+  },
+  {
+    RequirementType: "ANY",
+    ProjectType: "DEPLOYMENT",
+    PercentageWeight: 50,
+  },
+  {
+    RequirementType: "ANY",
+    ProjectType: "SUPPORT",
+    PercentageWeight: 25,
+  },
 ];
