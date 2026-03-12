@@ -181,7 +181,7 @@ const ProjectManagerPageContent = () => {
     if (storedData && token) {
       const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
       const UserData: AuthDataResponse = StorageAuth.dataLogin as AuthDataResponse;
-      
+
       // Set auth data
       setDataAuth(UserData);
       setTokenData(token);
@@ -269,7 +269,7 @@ const ProjectManagerPageContent = () => {
   ): Promise<ApiGenericResponse<ProjectDataResponse[] | null> | null> => {
     // Read decision from localStorage directly to avoid state timing issues
     let useAssignedEndpoint = false;
-    
+
     if (DataAuth?.team?.orgGroupId) {
       const orgValidationStr = localStorage.getItem("orgValidation");
       if (orgValidationStr) {
@@ -279,7 +279,7 @@ const ProjectManagerPageContent = () => {
             orgGroupId: string;
             validatedAt: number;
           } = JSON.parse(orgValidationStr);
-          
+
           if (orgValidation.orgGroupId === DataAuth.team.orgGroupId) {
             useAssignedEndpoint = orgValidation.isOrgTypeGroup;
           }
@@ -288,7 +288,7 @@ const ProjectManagerPageContent = () => {
         }
       }
     }
-    
+
     if (DataAuth?.team?.orgGroupId && useAssignedEndpoint) {
       return await GetAssignedProjects(payload, token);
     } else {
@@ -802,7 +802,7 @@ const ProjectManagerPageContent = () => {
                               Refresh
                             </Button>
                             {(canMake || canReview) && (
-                              <Link href={`projects-procurements/register?reqType=${requirementType.toLowerCase()}`}>
+                              <Link href={`projects-procurements/register`}>
                                 <Button
                                   size={"md"}
                                   colorScheme={"secondary"}

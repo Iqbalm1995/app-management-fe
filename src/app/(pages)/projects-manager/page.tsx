@@ -338,14 +338,24 @@ const ProjectManagerPage = () => {
         });
       }
 
-      const PayloadList: PaggingListPayloadCustom = {
+      // Add RFC-specific filters to filterWhere to ensure they work with both API endpoints
+      if (requirementType === "RFC") {
+        filterWhere.push({
+          field: "projectType",
+          operator: "=",
+          value: PROJECT_TYPE_INTERNAL_DEVELOPMENT,
+        });
+        // Remove requirementType filter from filterWhere - let client-side handle it
+      }      const PayloadList: PaggingListPayloadCustom = {
         search: globalFilter,
         projectType:
           requirementType === "BRD"
             ? PROJECT_TYPE_INTERNAL_DEVELOPMENT
+            : requirementType === "RFC"
+            ? PROJECT_TYPE_INTERNAL_DEVELOPMENT
             : null,
         teamId: DataAuth.team?.id,
-        requirementType: requirementType,
+        requirementType: "", // Remove backend filtering completely
         limit: pageSize,
         page: pageIndex,
         filterWhere: filterWhere,
@@ -388,8 +398,27 @@ const ProjectManagerPage = () => {
               ? Math.ceil(totalData / pageSize)
               : -1;
 
-          setDataProjects(itemsData);
-          setTotalProjectsCount(totalData);
+          // Client-side filtering based on URL reqType parameter
+          console.log(`[DEBUG] URL requirementType: ${requirementType}`);
+          console.log(`[DEBUG] Total projects fetched: ${itemsData.length}`);
+          console.log(`[DEBUG] Sample project requirementData:`, itemsData[0]?.requirementData);
+          
+          const filteredData = itemsData.filter(project => {
+            const projectReqType = project.requirementData?.requirementType;
+            console.log(`[DEBUG] Project ${project.projectName} - requirementType: ${projectReqType}`);
+            
+            if (requirementType === "RFC") {
+              return projectReqType === "RFC";
+            } else if (requirementType === "BRD") {
+              return projectReqType === "BRD";
+            }
+            return true; // Show all if no specific type
+          });
+          
+          console.log(`[DEBUG] Filtered projects count: ${filteredData.length}`);
+
+          setDataProjects(filteredData);
+          setTotalProjectsCount(filteredData.length); // Use filtered count instead of API total
           setTotalPageData(totalPages);
           setIsLoadingProcess(false);
         } catch (error) {

@@ -831,32 +831,6 @@ export default function PendingApproveView() {
   const refreshAction = () => {
     setRefreshData((prev) => prev + 1);
   };
-  const [isTableHovered, setIsTableHovered] = useState(false);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-
-    const handleNativeWheel = (e: WheelEvent) => {
-      if (!isTableHovered) return;
-      
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-      
-      const hasHorizontalScroll = container.scrollWidth > container.clientWidth;
-      if (hasHorizontalScroll) {
-        container.scrollLeft += e.deltaY > 0 ? 100 : -100;
-      }
-    };
-
-    container.addEventListener('wheel', handleNativeWheel, { passive: false });
-    
-    return () => {
-      container.removeEventListener('wheel', handleNativeWheel);
-    };
-  }, [isTableHovered]);
   useEffect(() => {
     if (tokenData) {
       GetDataList();
@@ -1107,11 +1081,9 @@ export default function PendingApproveView() {
                 </VStack>
               ) : (
                 <Box position="relative">
-                  <Box overflowX="auto" w="full" ref={scrollContainerRef}>
+                  <Box overflowX="auto" w="full">
                     <Box 
                       minW="1600px" 
-                      onMouseEnter={() => setIsTableHovered(true)}
-                      onMouseLeave={() => setIsTableHovered(false)}
                     >
                       <TableComponentFull table={table} colorMode={colorMode} />
                     </Box>
