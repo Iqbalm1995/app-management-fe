@@ -410,7 +410,7 @@ function WorkflowPresetListView() {
         return (
           <HStack spacing={2}>
             <Link
-              href={`/master-data/workflow/preset-workflow/detail?presetId=${preset.id}`}
+              href={`/master-data/workflow/preset-workflow-detail?presetId=${preset.id}`}
             >
               <IconButton
                 icon={<FiSettings />}

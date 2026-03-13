@@ -153,11 +153,11 @@ export default function ApprovalHubView() {
 
     const handleNativeWheel = (e: WheelEvent) => {
       if (!isTableHovered) return;
-      
+
       e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
-      
+
       const hasHorizontalScroll = container.scrollWidth > container.clientWidth;
       if (hasHorizontalScroll) {
         container.scrollLeft += e.deltaY > 0 ? 100 : -100;
@@ -165,7 +165,7 @@ export default function ApprovalHubView() {
     };
 
     container.addEventListener('wheel', handleNativeWheel, { passive: false });
-    
+
     return () => {
       container.removeEventListener('wheel', handleNativeWheel);
     };
@@ -494,14 +494,14 @@ export default function ApprovalHubView() {
               operator: ">=",
               value: "",
               filterType: "date",
-              filterLabel: "Tgl. Awal Memo Dibuat",
+              filterLabel: "Tgl. Memo",
             },
             {
               field: "reqInititateDate",
               operator: "<=",
               value: "",
               filterType: "date",
-              filterLabel: "Tgl. Akhir Memo Dibuat",
+              filterLabel: "Tgl. Memo Diterima",
             },
             {
               field: "assignedToDate",
@@ -997,7 +997,7 @@ export default function ApprovalHubView() {
 
                     {/* Action Buttons */}
                     <HStack spacing={2}>
-                      <Popover closeOnBlur={false} placement={"bottom"}>
+                      <Popover closeOnBlur={true} placement={"bottom"}>
                         <PopoverTrigger>
                           <Button size={"sm"} leftIcon={<FiFilter />}>
                             Filter{" "}
@@ -1014,49 +1014,47 @@ export default function ApprovalHubView() {
                             </Flex>
                           </Button>
                         </PopoverTrigger>
-                        <Portal>
-                          <PopoverContent width="auto" minW="xs">
-                            <PopoverBody>
-                              <Flex as={Stack} w={"full"}>
-                                <Text fontWeight={600}>Filter Data</Text>
-                                <Divider />
-                                <Stack spacing={2}>
-                                  {ParamFilter.length === 0 ? (
-                                    <Text fontSize="sm" color="gray.500">
-                                      No active filters
-                                    </Text>
-                                  ) : (
-                                    ParamFilter.map((dt, idx) => (
-                                      <Flex
-                                        key={idx}
-                                        w={"full"}
-                                        alignItems="center"
-                                        as={HStack}
-                                        spacing={2}
-                                      >
-                                        <Text>
-                                          {dt.filterLabel}:{" "}
-                                          <Text as={"span"} fontWeight={600}>
-                                            {dt.value}
-                                          </Text>
+                        <PopoverContent width="auto" minW="xs">
+                          <PopoverBody>
+                            <Flex as={Stack} w={"full"}>
+                              <Text fontWeight={600}>Filter Data</Text>
+                              <Divider />
+                              <Stack spacing={2}>
+                                {ParamFilter.length === 0 ? (
+                                  <Text fontSize="sm" color="gray.500">
+                                    No active filters
+                                  </Text>
+                                ) : (
+                                  ParamFilter.map((dt, idx) => (
+                                    <Flex
+                                      key={idx}
+                                      w={"full"}
+                                      alignItems="center"
+                                      as={HStack}
+                                      spacing={2}
+                                    >
+                                      <Text>
+                                        {dt.filterLabel}:{" "}
+                                        <Text as={"span"} fontWeight={600}>
+                                          {dt.value}
                                         </Text>
-                                        <Button
-                                          size={"xs"}
-                                          colorScheme={"red"}
-                                          justifyContent={"center"}
-                                          variant={"ghost"}
-                                          onClick={() => removeFilterData(dt)}
-                                        >
-                                          <FiX />
-                                        </Button>
-                                      </Flex>
-                                    ))
-                                  )}
-                                </Stack>
-                              </Flex>
-                            </PopoverBody>
-                          </PopoverContent>
-                        </Portal>
+                                      </Text>
+                                      <Button
+                                        size={"xs"}
+                                        colorScheme={"red"}
+                                        justifyContent={"center"}
+                                        variant={"ghost"}
+                                        onClick={() => removeFilterData(dt)}
+                                      >
+                                        <FiX />
+                                      </Button>
+                                    </Flex>
+                                  ))
+                                )}
+                              </Stack>
+                            </Flex>
+                          </PopoverBody>
+                        </PopoverContent>
                       </Popover>
                       <Button
                         size={"sm"}
@@ -1109,22 +1107,22 @@ export default function ApprovalHubView() {
                   <LoadingMiniSignature />
                 ) : (
                   <Box overflowX="auto" w="full" ref={scrollContainerRef}>
-                    <Box 
+                    <Box
                       minW="1400px"
                       onMouseEnter={() => setIsTableHovered(true)}
                       onMouseLeave={() => setIsTableHovered(false)}
                     >
                       <TableComponentWithFilterCTX
-                    table={table}
-                    handleFilterChange={handleFilterChange}
-                  />
+                        table={table}
+                        handleFilterChange={handleFilterChange}
+                      />
                     </Box>
-                  </Box>                )}
+                  </Box>)}
               </Flex>
             </CardBody>
           </Card>
         </GridItem>
-      </Grid>
-    </LayoutAdmin>
+      </Grid >
+    </LayoutAdmin >
   );
 }

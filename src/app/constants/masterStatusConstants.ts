@@ -46,17 +46,17 @@ export const PRO_STATUS_COMPLETED = "COMPLETED";
 export const PROJECT_STATUSES = [
   "INITIATING",
   "RUNNING",
-  "TEMPORARY CLOSED",
   "CLOSED",
+  "TEMPORARY CLOSED",
+  "COMPLETED",
   "ON HOLD",
   "CANCELED",
-  "COMPLETED",
 ];
 
 // PROJECT STATUS GROUPS (matches backend MasterStatusConstant.cs)
 export const PROJECT_ONGOING = [
   "INITIATING",
-  "RUNNING", 
+  "RUNNING",
   "TEMPORARY CLOSED",
   "CLOSED",
   "ON HOLD",

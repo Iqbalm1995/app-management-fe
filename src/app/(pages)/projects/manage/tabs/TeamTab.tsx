@@ -61,6 +61,8 @@ import {
   FiSearch,
   FiUserMinus,
   FiMoreVertical,
+  FiPenTool,
+  FiEdit,
 } from "react-icons/fi";
 import { useState, useEffect, useRef } from "react";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
@@ -110,6 +112,12 @@ const TeamTab = ({ DataProject, canMake }: TeamTabProps) => {
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
   const [isAddingMembers, setIsAddingMembers] = useState(false);
   const [togglingUserId, setTogglingUserId] = useState<string | null>(null);
+  const [processingTeam, setProcessingTeam] = useState<string | null>(null);
+
+  // Edit mode state
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+  const [bulkProcessing, setBulkProcessing] = useState(false);
 
   // Confirmation dialog states
   const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
@@ -326,9 +334,8 @@ const TeamTab = ({ DataProject, canMake }: TeamTabProps) => {
 
       if (response?.statusCode === RES_CODE_OK) {
         showToast({
-          description: `User status changed to ${
-            currentStatus === "ACTIVE" ? "INACTIVE" : "ACTIVE"
-          }`,
+          description: `User status changed to ${currentStatus === "ACTIVE" ? "INACTIVE" : "ACTIVE"
+            }`,
           statusToast: "success",
         });
         await loadProjectMembers();
@@ -386,6 +393,159 @@ const TeamTab = ({ DataProject, canMake }: TeamTabProps) => {
     }
   };
 
+
+  // Deactivate entire team
+  const deactivateTeam = async (groupCode: string, groupName: string, members: ProjectUserAssignmentResponse[]) => {
+    if (!DataProject || !tokenData) return;
+
+    const activeUserIds = members
+      .filter(m => m.userAssignStatus === "ACTIVE")
+      .map(m => m.userData.id);
+
+    if (activeUserIds.length === 0) {
+      showToast({
+        description: "No active members to deactivate",
+        statusToast: "info",
+      });
+      return;
+    }
+
+    setProcessingTeam(groupCode);
+    try {
+      const response = await AssignUnassignMembers(
+        {
+          projectId: DataProject.id,
+          assignUsers: [],
+          unassignUsers: activeUserIds,
+        },
+        tokenData
+      );
+
+      if (response?.statusCode === RES_CODE_OK) {
+        showToast({
+          description: `Deactivated ${activeUserIds.length} members from ${groupName}`,
+          statusToast: "success",
+        });
+        await loadProjectMembers();
+      } else {
+        showToast({
+          description: response?.message || "Failed to deactivate team",
+          statusToast: "error",
+        });
+      }
+    } catch (error) {
+      console.error("Error deactivating team:", error);
+      showToast({
+        description: "Failed to deactivate team",
+        statusToast: "error",
+      });
+    } finally {
+      setProcessingTeam(null);
+    }
+  };
+
+  // Remove entire team
+  const removeTeam = async (groupCode: string, groupName: string, members: ProjectUserAssignmentResponse[]) => {
+    if (!DataProject || !tokenData) return;
+
+    setProcessingTeam(groupCode);
+    try {
+      let successCount = 0;
+      let failCount = 0;
+
+      for (const member of members) {
+        try {
+          const response = await RemoveProjectMember(
+            {
+              projectId: DataProject.id,
+              userId: member.userData.id,
+            },
+            tokenData
+          );
+
+          if (response?.statusCode === RES_CODE_OK) {
+            successCount++;
+          } else {
+            failCount++;
+          }
+        } catch (error) {
+          failCount++;
+        }
+      }
+
+      if (successCount > 0) {
+        showToast({
+          description: `Removed ${successCount} members from ${groupName}${failCount > 0 ? ` (${failCount} failed)` : ''}`,
+          statusToast: successCount === members.length ? "success" : "warning",
+        });
+        await loadProjectMembers();
+      } else {
+        showToast({
+          description: "Failed to remove team members",
+          statusToast: "error",
+        });
+      }
+    } catch (error) {
+      console.error("Error removing team:", error);
+      showToast({
+        description: "Failed to remove team",
+        statusToast: "error",
+      });
+    } finally {
+      setProcessingTeam(null);
+    }
+  };
+
+  // Activate entire team
+  const activateTeam = async (groupCode: string, groupName: string, members: ProjectUserAssignmentResponse[]) => {
+    if (!DataProject || !tokenData) return;
+
+    const inactiveUserIds = members
+      .filter(m => m.userAssignStatus === "INACTIVE")
+      .map(m => m.userData.id);
+
+    if (inactiveUserIds.length === 0) {
+      showToast({
+        description: "No inactive members to activate",
+        statusToast: "info",
+      });
+      return;
+    }
+
+    setProcessingTeam(groupCode);
+    try {
+      const response = await AssignUnassignMembers(
+        {
+          projectId: DataProject.id,
+          assignUsers: inactiveUserIds,
+          unassignUsers: [],
+        },
+        tokenData
+      );
+
+      if (response?.statusCode === RES_CODE_OK) {
+        showToast({
+          description: `Activated ${inactiveUserIds.length} members from ${groupName}`,
+          statusToast: "success",
+        });
+        await loadProjectMembers();
+      } else {
+        showToast({
+          description: response?.message || "Failed to activate team",
+          statusToast: "error",
+        });
+      }
+    } catch (error) {
+      console.error("Error activating team:", error);
+      showToast({
+        description: "Failed to activate team",
+        statusToast: "error",
+      });
+    } finally {
+      setProcessingTeam(null);
+    }
+  };
+
   // Show confirmation dialog
   const showConfirmation = (
     caption: string,
@@ -398,14 +558,124 @@ const TeamTab = ({ DataProject, canMake }: TeamTabProps) => {
     setOpenConfirmDialog(true);
   };
 
-  const handleDialogTrigger = () => {
-    setOpenConfirmDialog(!openConfirmDialog);
-  };
-
   const handleConfirmedAction = () => {
     if (confirmAction) {
       confirmAction();
     }
+  };
+
+  // Bulk deactivate members
+  const bulkDeactivateMembers = async () => {
+    if (!DataProject || !tokenData || selectedMemberIds.length === 0) return;
+
+    setBulkProcessing(true);
+    try {
+      const response = await AssignUnassignMembers(
+        {
+          projectId: DataProject.id,
+          assignUsers: [],
+          unassignUsers: selectedMemberIds,
+        },
+        tokenData
+      );
+
+      if (response?.statusCode === RES_CODE_OK) {
+        showToast({
+          description: `Deactivated ${selectedMemberIds.length} members`,
+          statusToast: "success",
+        });
+        setSelectedMemberIds([]);
+        setIsEditMode(false);
+        await loadProjectMembers();
+      } else {
+        showToast({
+          description: response?.message || "Failed to deactivate members",
+          statusToast: "error",
+        });
+      }
+    } catch (error) {
+      console.error("Error deactivating members:", error);
+      showToast({
+        description: "Failed to deactivate members",
+        statusToast: "error",
+      });
+    } finally {
+      setBulkProcessing(false);
+    }
+  };
+
+  // Bulk activate members
+  const bulkActivateMembers = async () => {
+    if (!DataProject || !tokenData || selectedMemberIds.length === 0) return;
+
+    setBulkProcessing(true);
+    try {
+      const response = await AssignUnassignMembers(
+        {
+          projectId: DataProject.id,
+          assignUsers: selectedMemberIds,
+          unassignUsers: [],
+        },
+        tokenData
+      );
+
+      if (response?.statusCode === RES_CODE_OK) {
+        showToast({
+          description: `Activated ${selectedMemberIds.length} members`,
+          statusToast: "success",
+        });
+        setSelectedMemberIds([]);
+        setIsEditMode(false);
+        await loadProjectMembers();
+      } else {
+        showToast({
+          description: response?.message || "Failed to activate members",
+          statusToast: "error",
+        });
+      }
+    } catch (error) {
+      console.error("Error activating members:", error);
+      showToast({
+        description: "Failed to activate members",
+        statusToast: "error",
+      });
+    } finally {
+      setBulkProcessing(false);
+    }
+  };
+
+  // Toggle member selection with status validation
+  const toggleMemberSelection = (memberId: string, memberStatus: string) => {
+    setSelectedMemberIds((prev) => {
+      // If no members selected yet, allow selection
+      if (prev.length === 0) {
+        return [memberId];
+      }
+
+      // Get status of first selected member
+      const firstSelectedMember = projectMembers.find(
+        (m) => m.userData.id === prev[0]
+      );
+      const firstSelectedStatus = firstSelectedMember?.userAssignStatus;
+
+      // If trying to select member with different status, show toast
+      if (memberStatus !== firstSelectedStatus) {
+        showToast({
+          description: `Cannot mix ${firstSelectedStatus} and ${memberStatus} members. Deselect all first.`,
+          statusToast: "warning",
+        });
+        return prev;
+      }
+
+      // Same status, allow selection/deselection
+      return prev.includes(memberId)
+        ? prev.filter((id) => id !== memberId)
+        : [...prev, memberId];
+    });
+  };
+
+  const handleDialogTrigger = () => {
+    setOpenConfirmDialog(!openConfirmDialog);
   };
 
   // Filter users based on search - combine available and existing members
@@ -455,6 +725,20 @@ const TeamTab = ({ DataProject, canMake }: TeamTabProps) => {
             </Button>
             <Button
               size="sm"
+              colorScheme={isEditMode ? "orange" : "gray"}
+              variant={isEditMode ? "solid" : "outline"}
+              leftIcon={<FiEdit />}
+              rounded="full"
+              onClick={() => {
+                setIsEditMode(!isEditMode);
+                setSelectedMemberIds([]);
+              }}
+              isDisabled={!canMake}
+            >
+              {isEditMode ? "Done" : "Edit"}
+            </Button>
+            <Button
+              size="sm"
               variant="outline"
               leftIcon={<FiRefreshCw />}
               colorScheme="gray"
@@ -466,6 +750,113 @@ const TeamTab = ({ DataProject, canMake }: TeamTabProps) => {
             </Button>
           </HStack>
         </HStack>
+
+        {/* Bulk Actions Bar */}
+        {isEditMode && selectedMemberIds.length > 0 && (() => {
+          const selectedMember = projectMembers.find(
+            (m) => m.userData.id === selectedMemberIds[0]
+          );
+          const selectedStatus = selectedMember?.userAssignStatus;
+
+          return (
+            <HStack
+              bg={colorMode === "light" ? "blue.50" : "blue.900"}
+              p={4}
+              rounded="lg"
+              spacing={3}
+              justify="space-between"
+            >
+              <Text fontWeight="bold" color={colorMode === "light" ? "blue.800" : "blue.100"}>
+                {selectedMemberIds.length} member{selectedMemberIds.length !== 1 ? "s" : ""} selected ({selectedStatus})
+              </Text>
+              <HStack spacing={2}>
+                {selectedStatus === "ACTIVE" ? (
+                  <Button
+                    size="sm"
+                    colorScheme="orange"
+                    onClick={() =>
+                      showConfirmation(
+                        "Deactivate Members",
+                        `Are you sure you want to deactivate ${selectedMemberIds.length} selected member${selectedMemberIds.length !== 1 ? "s" : ""}?`,
+                        bulkDeactivateMembers
+                      )
+                    }
+                    isLoading={bulkProcessing}
+                    isDisabled={bulkProcessing}
+                  >
+                    Deactivate
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      size="sm"
+                      colorScheme="green"
+                      onClick={() =>
+                        showConfirmation(
+                          "Activate Members",
+                          `Are you sure you want to activate ${selectedMemberIds.length} selected member${selectedMemberIds.length !== 1 ? "s" : ""}?`,
+                          bulkActivateMembers
+                        )
+                      }
+                      isLoading={bulkProcessing}
+                      isDisabled={bulkProcessing}
+                    >
+                      Activate
+                    </Button>
+                    <Button
+                      size="sm"
+                      colorScheme="red"
+                      onClick={() =>
+                        showConfirmation(
+                          "Remove Members",
+                          `Are you sure you want to permanently remove ${selectedMemberIds.length} selected member${selectedMemberIds.length !== 1 ? "s" : ""}? This action cannot be undone.`,
+                          async () => {
+                            setBulkProcessing(true);
+                            try {
+                              let successCount = 0;
+                              for (const memberId of selectedMemberIds) {
+                                const response = await RemoveProjectMember(
+                                  {
+                                    projectId: DataProject!.id,
+                                    userId: memberId,
+                                  },
+                                  tokenData
+                                );
+                                if (response?.statusCode === RES_CODE_OK) {
+                                  successCount++;
+                                }
+                              }
+                              if (successCount > 0) {
+                                showToast({
+                                  description: `Removed ${successCount} members`,
+                                  statusToast: "success",
+                                });
+                                setSelectedMemberIds([]);
+                                setIsEditMode(false);
+                                await loadProjectMembers();
+                              }
+                            } catch (error) {
+                              showToast({
+                                description: "Failed to remove members",
+                                statusToast: "error",
+                              });
+                            } finally {
+                              setBulkProcessing(false);
+                            }
+                          }
+                        )
+                      }
+                      isLoading={bulkProcessing}
+                      isDisabled={bulkProcessing}
+                    >
+                      Remove
+                    </Button>
+                  </>
+                )}
+              </HStack>
+            </HStack>
+          );
+        })()}
 
         {/* Team Members Grid */}
         {isLoadingMembers ? (
@@ -543,27 +934,33 @@ const TeamTab = ({ DataProject, canMake }: TeamTabProps) => {
                       return Object.entries(orgGroups).map(
                         ([groupCode, { groupName, members }]) => (
                           <Box key={groupCode}>
-                            <HStack mb={3} spacing={3}>
-                              <Text
-                                fontSize="lg"
-                                fontWeight="bold"
-                                color={
-                                  colorMode === "light"
-                                    ? "gray.700"
-                                    : "gray.300"
-                                }
-                              >
-                                {groupName}
-                              </Text>
-                              <Badge
-                                colorScheme="blue"
-                                fontSize="sm"
-                                px={2}
-                                py={1}
-                                rounded="full"
-                              >
-                                {members.length}
-                              </Badge>
+                            <HStack mb={3} spacing={3} justify="space-between">
+                              <HStack spacing={3}>
+                                <Text
+                                  fontSize="lg"
+                                  fontWeight="bold"
+                                  color={
+                                    colorMode === "light"
+                                      ? "gray.700"
+                                      : "gray.300"
+                                  }
+                                >
+                                  {groupName}
+                                </Text>
+                                <Badge
+                                  colorScheme="blue"
+                                  fontSize="sm"
+                                  px={2}
+                                  py={1}
+                                  rounded="full"
+                                >
+                                  {members.length}
+                                </Badge>
+                              </HStack>
+                              {canMake && status !== "ACTIVE" && (
+                                <HStack spacing={2}>
+                                </HStack>
+                              )}
                             </HStack>
                             <VStack spacing={3} align="stretch">
                               {members.map((assignment, index) => {
@@ -644,7 +1041,7 @@ const TeamTab = ({ DataProject, canMake }: TeamTabProps) => {
                                             <Badge
                                               colorScheme={
                                                 assignment.userAssignStatus ===
-                                                "ACTIVE"
+                                                  "ACTIVE"
                                                   ? "green"
                                                   : "red"
                                               }
@@ -654,43 +1051,38 @@ const TeamTab = ({ DataProject, canMake }: TeamTabProps) => {
                                             >
                                               {assignment.userAssignStatus}
                                             </Badge>
-                                            <Menu>
-                                              <MenuButton
-                                                as={IconButton}
-                                                icon={<FiMoreVertical />}
-                                                size="xs"
-                                                variant="ghost"
-                                                isLoading={
-                                                  togglingUserId === member.id
+                                            {isEditMode ? (
+                                              <Checkbox
+                                                isChecked={selectedMemberIds.includes(
+                                                  member.id
+                                                )}
+                                                onChange={() =>
+                                                  toggleMemberSelection(
+                                                    member.id,
+                                                    assignment.userAssignStatus
+                                                  )
                                                 }
+                                                size="lg"
                                               />
-                                              <MenuList>
-                                                {assignment.userAssignStatus ===
-                                                "ACTIVE" ? (
-                                                  <MenuItem
-                                                    onClick={() =>
-                                                      showConfirmation(
-                                                        "Deactivate User",
-                                                        `Are you sure you want to deactivate "${member.nama}" from this project?`,
-                                                        () =>
-                                                          toggleUserStatus(
-                                                            member.id,
-                                                            member.nama,
-                                                            assignment.userAssignStatus
-                                                          )
-                                                      )
-                                                    }
-                                                    color="orange.500"
-                                                  >
-                                                    Deactivate
-                                                  </MenuItem>
-                                                ) : (
-                                                  <>
+                                            ) : (
+                                              <Menu>
+                                                <MenuButton
+                                                  as={IconButton}
+                                                  icon={<FiMoreVertical />}
+                                                  size="xs"
+                                                  variant="ghost"
+                                                  isLoading={
+                                                    togglingUserId === member.id
+                                                  }
+                                                />
+                                                <MenuList>
+                                                  {assignment.userAssignStatus ===
+                                                    "ACTIVE" ? (
                                                     <MenuItem
                                                       onClick={() =>
                                                         showConfirmation(
-                                                          "Activate User",
-                                                          `Are you sure you want to activate "${member.nama}" for this project?`,
+                                                          "Deactivate User",
+                                                          `Are you sure you want to deactivate "${member.nama}" from this project?`,
                                                           () =>
                                                             toggleUserStatus(
                                                               member.id,
@@ -699,30 +1091,50 @@ const TeamTab = ({ DataProject, canMake }: TeamTabProps) => {
                                                             )
                                                         )
                                                       }
-                                                      color="green.500"
+                                                      color="orange.500"
                                                     >
-                                                      Activate
+                                                      Deactivate
                                                     </MenuItem>
-                                                    <MenuItem
-                                                      onClick={() =>
-                                                        showConfirmation(
-                                                          "Remove User",
-                                                          `Are you sure you want to permanently remove "${member.nama}" from this project? This action cannot be undone.`,
-                                                          () =>
-                                                            removeUser(
-                                                              member.id,
-                                                              member.nama
-                                                            )
-                                                        )
-                                                      }
-                                                      color="red.500"
-                                                    >
-                                                      Remove
-                                                    </MenuItem>
-                                                  </>
-                                                )}
-                                              </MenuList>
-                                            </Menu>
+                                                  ) : (
+                                                    <>
+                                                      <MenuItem
+                                                        onClick={() =>
+                                                          showConfirmation(
+                                                            "Activate User",
+                                                            `Are you sure you want to activate "${member.nama}" for this project?`,
+                                                            () =>
+                                                              toggleUserStatus(
+                                                                member.id,
+                                                                member.nama,
+                                                                assignment.userAssignStatus
+                                                              )
+                                                          )
+                                                        }
+                                                        color="green.500"
+                                                      >
+                                                        Activate
+                                                      </MenuItem>
+                                                      <MenuItem
+                                                        onClick={() =>
+                                                          showConfirmation(
+                                                            "Remove User",
+                                                            `Are you sure you want to permanently remove "${member.nama}" from this project? This action cannot be undone.`,
+                                                            () =>
+                                                              removeUser(
+                                                                member.id,
+                                                                member.nama
+                                                              )
+                                                          )
+                                                        }
+                                                        color="red.500"
+                                                      >
+                                                        Remove
+                                                      </MenuItem>
+                                                    </>
+                                                  )}
+                                                </MenuList>
+                                              </Menu>
+                                            )}
                                           </HStack>
                                         </VStack>
                                       </HStack>

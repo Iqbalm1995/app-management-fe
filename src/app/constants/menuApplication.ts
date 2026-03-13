@@ -15,6 +15,7 @@ import {
   FaRegHeart,
   FaRegStar,
   FaVial,
+  FaTachometerAlt,
 } from "react-icons/fa";
 import { FaDiagramProject, FaO, FaUsersRays } from "react-icons/fa6";
 import {
@@ -137,10 +138,10 @@ export const LinkItems: LinkItemProps[] = [
         children: [],
       },
       {
-        name: "My Performaces",
-        icon: FaCode,
-        iconName: "FaCode",
-        link: "/performaces/my",
+        name: "My Performance",
+        icon: FaTachometerAlt,
+        iconName: "FaTachometerAlt",
+        link: "/performances/my-performance",
         role: ["admin"],
         menuID: "1",
         isPro: false,
@@ -215,6 +216,7 @@ export const LinkItems: LinkItemProps[] = [
         menuID: "1",
         children: [],
       },
+
       {
         name: "Prerequisites",
         icon: MdChangeHistory,

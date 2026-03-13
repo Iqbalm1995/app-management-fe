@@ -248,34 +248,8 @@ export default function BRDRFCView() {
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
   const [canMake, setCanMake] = useState<boolean>(false);
-  
+
   // Scroll State
-  const [isTableHovered, setIsTableHovered] = useState(false);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-
-    const handleNativeWheel = (e: WheelEvent) => {
-      if (!isTableHovered) return;
-      
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-      
-      const hasHorizontalScroll = container.scrollWidth > container.clientWidth;
-      if (hasHorizontalScroll) {
-        container.scrollLeft += e.deltaY > 0 ? 100 : -100;
-      }
-    };
-
-    container.addEventListener('wheel', handleNativeWheel, { passive: false });
-    
-    return () => {
-      container.removeEventListener('wheel', handleNativeWheel);
-    };
-  }, [isTableHovered]);
   const [canReview, setCanReview] = useState<boolean>(false);
   const [canApprove, setCanApprove] = useState<boolean>(false);
   const delay = (ms: number) =>
@@ -566,6 +540,13 @@ export default function BRDRFCView() {
               filterLabel: "Perihal",
             },
             {
+              field: "reqNumber",
+              operator: "like",
+              value: "",
+              filterType: "text",
+              filterLabel: "Nomor Memo",
+            },
+            {
               field: "senderDivisionId",
               operator: "=",
               value: "",
@@ -631,14 +612,14 @@ export default function BRDRFCView() {
               operator: ">=",
               value: "",
               filterType: "date",
-              filterLabel: "Tgl. Awal Memo Dibuat",
+              filterLabel: "Tgl. Memo",
             },
             {
               field: "reqInititateDate",
               operator: "<=",
               value: "",
               filterType: "date",
-              filterLabel: "Tgl. Akhir Memo Dibuat",
+              filterLabel: "Tgl. Memo Diterima",
             },
             {
               field: "assignedToDate",
@@ -753,14 +734,14 @@ export default function BRDRFCView() {
                     fontStyle="italic"
                     fontSize={"x-small"}
                   >
-                    Aplikasi Belum Disematkan
+                    Product Belum Disematkan
                   </Text>
                 )}
               </Flex>
             </Flex>
           </Flex>
         ),
-        header: () => <span>Aplikasi</span>,
+        header: () => <span>Product</span>,
         footer: (props) => props.column.id,
         // Custom variable
         meta: {
@@ -771,7 +752,7 @@ export default function BRDRFCView() {
               operator: "like",
               value: "",
               filterType: "text",
-              filterLabel: "Inisial Aplikasi",
+              filterLabel: "Inisial Product",
             },
             {
               field: "appInitialName",
@@ -1436,50 +1417,62 @@ export default function BRDRFCView() {
                             </Flex>
                           </Button>
                         </PopoverTrigger>
-                        <Portal>
-                          <PopoverContent width="auto" minW="xs">
-                            <PopoverBody>
-                              <Flex as={Stack} w={"full"}>
-                                <Text fontWeight={600}>Filter Data</Text>
-                                <Divider />
+                        <PopoverContent width="auto" minW="xs">
+                          <PopoverBody>
+                            <Flex as={Stack} w={"full"}>
+                              <Text fontWeight={600}>Filter Data</Text>
+                              <Divider />
 
-                                <Stack spacing={2}>
-                                  {ParamFilter.map((dt, idx) => (
-                                    <Flex
-                                      key={idx}
-                                      w={"full"}
-                                      alignItems="center"
-                                      as={HStack}
-                                      spacing={2}
-                                    >
-                                      <Text>
-                                        {dt.filterLabel} :{" "}
-                                        <Text as={"span"} fontWeight={600}>
-                                          {" "}
-                                          {dt.field === "senderDivisionId"
-                                            ? OptionDivision.find(
-                                              (opt) =>
-                                                opt.value === dt.value
-                                            )?.label || dt.value
-                                            : dt.value}
-                                        </Text>
+                              <Stack spacing={2}>
+                                {ParamFilter.map((dt, idx) => (
+                                  <Flex
+                                    key={idx}
+                                    w={"full"}
+                                    alignItems="center"
+                                    as={HStack}
+                                    spacing={2}
+                                  >
+                                    <Text>
+                                      {dt.filterLabel} :{" "}
+                                      <Text as={"span"} fontWeight={600}>
+                                        {" "}
+                                        {dt.field === "senderDivisionId"
+                                          ? OptionDivision.find(
+                                            (opt) =>
+                                              opt.value === dt.value
+                                          )?.label || dt.value
+                                          : dt.value}
                                       </Text>
-                                      <Button
-                                        size={"xs"}
-                                        colorScheme={"red"}
-                                        justifyContent={"center"}
-                                        variant={"ghost"}
-                                        onClick={() => removeFilterData(dt)}
-                                      >
-                                        <FiX />
-                                      </Button>
-                                    </Flex>
-                                  ))}
-                                </Stack>
-                              </Flex>
-                            </PopoverBody>
-                          </PopoverContent>
-                        </Portal>
+                                    </Text>
+                                    <Button
+                                      size={"xs"}
+                                      colorScheme={"red"}
+                                      justifyContent={"center"}
+                                      variant={"ghost"}
+                                      onClick={() => removeFilterData(dt)}
+                                    >
+                                      <FiX />
+                                    </Button>
+                                  </Flex>
+                                ))}
+                              </Stack>
+                              {ParamFilter.length > 0 && (
+                                <>
+                                  <Divider />
+                                  <Button
+                                    size="sm"
+                                    colorScheme="red"
+                                    variant="outline"
+                                    onClick={() => setParamFilter([])}
+                                    w="full"
+                                  >
+                                    Clear All
+                                  </Button>
+                                </>
+                              )}
+                            </Flex>
+                          </PopoverBody>
+                        </PopoverContent>
                       </Popover>
                       <Menu>
                         <MenuButton
@@ -1530,15 +1523,13 @@ export default function BRDRFCView() {
                 ) : (
                   // <TableComponentFull table={table} />
                   // TABLE NEW DESIGN
-                  <Box overflowX="auto" w="full" ref={scrollContainerRef}>
-                    <Box 
+                  <Box overflowX="auto" w="full">
+                    <Box
                       minW="1400px"
-                      onMouseEnter={() => setIsTableHovered(true)}
-                      onMouseLeave={() => setIsTableHovered(false)}
                     >
                       <TableComponentWithFilterCTX
-                    table={table}
-                    handleFilterChange={handleFilterChange}
+                        table={table}
+                        handleFilterChange={handleFilterChange}
                       />
                     </Box>
                   </Box>

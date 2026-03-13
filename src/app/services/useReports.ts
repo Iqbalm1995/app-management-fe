@@ -638,9 +638,9 @@ const useReports = (): useReportsServices => {
           item.projectType || "-",
           // Requirement Type or Pengadaan Internal IT
           item.requirement?.requirementType ||
-            (item.projectType === "PROCUREMENT"
-              ? "Pengadaan Internal IT"
-              : "-"),
+          (item.projectType === "PROCUREMENT"
+            ? "Pengadaan Internal IT"
+            : "-"),
           item.projectCharasteristicName || "-",
           item.projectSubCharasteristicName || "-",
           item.proOwnerDivisionName || "-",
@@ -1006,11 +1006,11 @@ const useReports = (): useReportsServices => {
 
         // Create worksheet with empty data first
         const worksheet = XLSX.utils.aoa_to_sheet([]);
-        
+
         // Add headers manually (33 base + 52 SDLC = 85 total)
         const baseHeaders = [
           'NO.', 'REQ NUMBER', 'NARRATIVE', 'MEMO DATE', 'MEMO RECEIVE DATE', 'REQUIREMENT TYPE',
-          'PROJECT NUMBER', 'PROJECT NAME', 'PROJECT REGISTER DATE', 'APPROVED DATE', 'PROJECT TYPE', 
+          'PROJECT NUMBER', 'PROJECT NAME', 'PROJECT REGISTER DATE', 'APPROVED DATE', 'PROJECT TYPE',
           'PROJECT CHARACTERISTIC NAME', 'PROJECT SUB CHARACTERISTIC NAME',
           'OWNER DIRECTORATE NAME', 'OWNER DIVISION NAME', 'OWNER GROUP NAME',
           'MANAGE BY DIRECTORATE NAME', 'MANAGE BY DIVISION NAME', 'MANAGE BY GROUP NAME',
@@ -1020,21 +1020,21 @@ const useReports = (): useReportsServices => {
           'PROJECT STATUS', 'PROJECT PROGRESSION', 'SDLC CURRENT ACTIVE STATUS', 'SDLC PROGRESSION',
           'PROJECT ASSIGN NAMA'
         ];
-        
+
         // Add SDLC week headers (52 columns)
-        const sdlcHeaders = Array.from({length: 52}, (_, i) => {
+        const sdlcHeaders = Array.from({ length: 52 }, (_, i) => {
           const week = i + 1;
-          const quarter = week >= 1 && week <= 13 ? 'Q1' : 
-                         week >= 14 && week <= 26 ? 'Q2' : 
-                         week >= 27 && week <= 39 ? 'Q3' : 'Q4';
+          const quarter = week >= 1 && week <= 13 ? 'Q1' :
+            week >= 14 && week <= 26 ? 'Q2' :
+              week >= 27 && week <= 39 ? 'Q3' : 'Q4';
           return `${quarter} - WEEK ${week}`;
         });
-        
+
         const headers = [...baseHeaders, ...sdlcHeaders];
-        
+
         // Add header row
         XLSX.utils.sheet_add_aoa(worksheet, [headers], { origin: 'A1' });
-        
+
         // Add data rows
         const dataRows = excelData.map((item: any) => [
           item['NO.'], item['REQ NUMBER'], item['NARRATIVE'], item['MEMO DATE'], item['MEMO RECEIVE DATE'], item['REQUIREMENT TYPE'],
@@ -1048,17 +1048,17 @@ const useReports = (): useReportsServices => {
           item['PROJECT STATUS'], item['PROJECT PROGRESSION'], item['SDLC CURRENT ACTIVE STATUS'], item['SDLC PROGRESSION'],
           item['PROJECT ASSIGN NAMA'],
           // Add SDLC week columns
-          ...Array.from({length: 52}, (_, i) => {
+          ...Array.from({ length: 52 }, (_, i) => {
             const week = i + 1;
-            const quarter = week >= 1 && week <= 13 ? 'Q1' : 
-                           week >= 14 && week <= 26 ? 'Q2' : 
-                           week >= 27 && week <= 39 ? 'Q3' : 'Q4';
+            const quarter = week >= 1 && week <= 13 ? 'Q1' :
+              week >= 14 && week <= 26 ? 'Q2' :
+                week >= 27 && week <= 39 ? 'Q3' : 'Q4';
             return item[`${quarter} - WEEK ${week}`] || '';
           })
         ]);
-        
+
         XLSX.utils.sheet_add_aoa(worksheet, dataRows, { origin: 'A2' });
-        
+
         // Set column widths for better readability (33 base + 52 SDLC = 85 columns)
         const baseColumnWidths = [
           { wch: 5 },   // NO.
@@ -1095,10 +1095,10 @@ const useReports = (): useReportsServices => {
           { wch: 15 },  // SDLC PROGRESSION
           { wch: 30 },  // PROJECT ASSIGN NAMA
         ];
-        
+
         // Add SDLC week column widths (52 columns)
         const sdlcColumnWidths = Array(52).fill({ wch: 18 }); // Q1 - WEEK 1 format
-        
+
         const columnWidths = [...baseColumnWidths, ...sdlcColumnWidths];
         worksheet['!cols'] = columnWidths;
 
@@ -1257,10 +1257,10 @@ const useReports = (): useReportsServices => {
         });
 
         const worksheet = XLSX.utils.aoa_to_sheet([]);
-        
+
         const baseHeaders = [
           'NO.', 'REQ NUMBER', 'NARRATIVE', 'MEMO DATE', 'MEMO RECEIVE DATE', 'REQUIREMENT TYPE',
-          'PROJECT NUMBER', 'PROJECT NAME', 'PROJECT REGISTER DATE', 'APPROVED DATE', 'PROJECT TYPE', 
+          'PROJECT NUMBER', 'PROJECT NAME', 'PROJECT REGISTER DATE', 'APPROVED DATE', 'PROJECT TYPE',
           'PROJECT CHARACTERISTIC NAME', 'PROJECT SUB CHARACTERISTIC NAME',
           'OWNER DIRECTORATE NAME', 'OWNER DIVISION NAME', 'OWNER GROUP NAME',
           'MANAGE BY DIRECTORATE NAME', 'MANAGE BY DIVISION NAME', 'MANAGE BY GROUP NAME',
@@ -1270,18 +1270,18 @@ const useReports = (): useReportsServices => {
           'PROJECT STATUS', 'PROJECT PROGRESSION', 'SDLC CURRENT ACTIVE STATUS', 'SDLC PROGRESSION',
           'PROJECT ASSIGN NAMA'
         ];
-        
-        const sdlcHeaders = Array.from({length: 52}, (_, i) => {
+
+        const sdlcHeaders = Array.from({ length: 52 }, (_, i) => {
           const week = i + 1;
-          const quarter = week >= 1 && week <= 13 ? 'Q1' : 
-                         week >= 14 && week <= 26 ? 'Q2' : 
-                         week >= 27 && week <= 39 ? 'Q3' : 'Q4';
+          const quarter = week >= 1 && week <= 13 ? 'Q1' :
+            week >= 14 && week <= 26 ? 'Q2' :
+              week >= 27 && week <= 39 ? 'Q3' : 'Q4';
           return `${quarter} - WEEK ${week}`;
         });
-        
+
         const headers = [...baseHeaders, ...sdlcHeaders];
         XLSX.utils.sheet_add_aoa(worksheet, [headers], { origin: 'A1' });
-        
+
         const dataRows = excelData.map((item: any) => [
           item['NO.'], item['REQ NUMBER'], item['NARRATIVE'], item['MEMO DATE'], item['MEMO RECEIVE DATE'], item['REQUIREMENT TYPE'],
           item['PROJECT NUMBER'], item['PROJECT NAME'], item['PROJECT REGISTER DATE'], item['APPROVED DATE'], item['PROJECT TYPE'],
@@ -1293,17 +1293,17 @@ const useReports = (): useReportsServices => {
           item['INTERNAL WORK PROGRAM CODE'], item['INTERNAL WORK PROGRAM NAME'], item['INTERNAL WORK PROGRAM BUDGET'],
           item['PROJECT STATUS'], item['PROJECT PROGRESSION'], item['SDLC CURRENT ACTIVE STATUS'], item['SDLC PROGRESSION'],
           item['PROJECT ASSIGN NAMA'],
-          ...Array.from({length: 52}, (_, i) => {
+          ...Array.from({ length: 52 }, (_, i) => {
             const week = i + 1;
-            const quarter = week >= 1 && week <= 13 ? 'Q1' : 
-                           week >= 14 && week <= 26 ? 'Q2' : 
-                           week >= 27 && week <= 39 ? 'Q3' : 'Q4';
+            const quarter = week >= 1 && week <= 13 ? 'Q1' :
+              week >= 14 && week <= 26 ? 'Q2' :
+                week >= 27 && week <= 39 ? 'Q3' : 'Q4';
             return item[`${quarter} - WEEK ${week}`] || '';
           })
         ]);
-        
+
         XLSX.utils.sheet_add_aoa(worksheet, dataRows, { origin: 'A2' });
-        
+
         const baseColumnWidths = [
           { wch: 5 }, { wch: 15 }, { wch: 30 }, { wch: 12 }, { wch: 15 }, { wch: 20 },
           { wch: 15 }, { wch: 35 }, { wch: 15 }, { wch: 12 }, { wch: 15 }, { wch: 25 }, { wch: 25 },
@@ -1311,7 +1311,7 @@ const useReports = (): useReportsServices => {
           { wch: 20 }, { wch: 15 }, { wch: 25 }, { wch: 20 }, { wch: 30 }, { wch: 20 },
           { wch: 20 }, { wch: 30 }, { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 30 }
         ];
-        
+
         const sdlcColumnWidths = Array(52).fill({ wch: 18 });
         const columnWidths = [...baseColumnWidths, ...sdlcColumnWidths];
         worksheet['!cols'] = columnWidths;

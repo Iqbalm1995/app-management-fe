@@ -789,13 +789,6 @@ const FilterColumnTable = ({
                             w={"full"}
                             pt={2}
                           >
-                            {/* <Button
-                              size="sm"
-                              onClick={() => handleReset(resetForm)}
-                              leftIcon={<FiRefreshCcw />}
-                            >
-                              Reset
-                            </Button> */}
                             <Button
                               type="submit"
                               size={"sm"}

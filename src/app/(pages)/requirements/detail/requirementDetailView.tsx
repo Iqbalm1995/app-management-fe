@@ -1220,7 +1220,7 @@ function RequirementDetailView() {
                           <FormControl>
                             <InputLayoutFull>
                               <FormLabel h={"full"} mt={2}>
-                                Media Akses Aplikasi
+                                Media Akses Product
                               </FormLabel>
                               <Stack spacing={0} h={"full"}>
                                 {DataRequirement.appAccessFrontsiteDns ||
@@ -1263,7 +1263,7 @@ function RequirementDetailView() {
                           <FormControl>
                             <InputLayoutFull>
                               <FormLabel h={"full"} mt={2}>
-                                Jenis Aplikasi
+                                Jenis Product
                               </FormLabel>
                               <Stack spacing={2} h={"full"}>
                                 <Text>{DataRequirement.appTypes || "N/A"}</Text>
@@ -1282,7 +1282,7 @@ function RequirementDetailView() {
                           <FormControl>
                             <InputLayoutFull>
                               <FormLabel h={"full"} mt={2}>
-                                Keterkaitan Aplikasi
+                                Keterkaitan Product
                               </FormLabel>
                               <Stack spacing={2} h={"full"}>
                                 <Text>
@@ -1303,7 +1303,7 @@ function RequirementDetailView() {
                           <FormControl>
                             <InputLayoutFull>
                               <FormLabel h={"full"} mt={2}>
-                                Kategori Aplikasi
+                                Kategori Product
                               </FormLabel>
                               <Stack spacing={0} h={"full"}>
                                 <Text>
@@ -1316,7 +1316,7 @@ function RequirementDetailView() {
                           <FormControl>
                             <InputLayoutFull>
                               <FormLabel h={"full"} mt={2}>
-                                Waktu Operasional Aplikasi
+                                Waktu Operasional Product
                               </FormLabel>
                               <Stack spacing={2} h={"full"}>
                                 <Text>
@@ -1420,7 +1420,7 @@ function RequirementDetailView() {
                           <FormControl>
                             <InputLayoutFull>
                               <FormLabel h={"full"} mt={2}>
-                                Scope Aplikasi
+                                Scope Product
                               </FormLabel>
                               <Box mt={-3}>
                                 <Button
@@ -1501,7 +1501,7 @@ function RequirementDetailView() {
                           <FormControl>
                             <InputLayoutFull>
                               <FormLabel h={"full"} mt={2}>
-                                Integrasi dengan aplikasi lain
+                                Integrasi dengan Product lain
                               </FormLabel>
                               <Stack spacing={0} h={"full"}>
                                 <Text>
@@ -2844,7 +2844,7 @@ const ReqInfoSummaryBacklogsView = ({
         <FormControl>
           <InputLayoutFull>
             <FormLabel h={"full"} mt={2}>
-              Media Akses Aplikasi
+              Media Akses Product
             </FormLabel>
             <Stack spacing={0} h={"full"}>
               {DataRequirement.appAccessFrontsiteDns ||
@@ -2877,7 +2877,7 @@ const ReqInfoSummaryBacklogsView = ({
         <FormControl>
           <InputLayoutFull>
             <FormLabel h={"full"} mt={2}>
-              Jenis Aplikasi
+              Jenis Product
             </FormLabel>
             <Stack spacing={2} h={"full"}>
               <Text>{DataRequirement.appTypes || "N/A"}</Text>
@@ -2896,7 +2896,7 @@ const ReqInfoSummaryBacklogsView = ({
         <FormControl>
           <InputLayoutFull>
             <FormLabel h={"full"} mt={2}>
-              Keterkaitan Aplikasi
+              Keterkaitan Product
             </FormLabel>
             <Stack spacing={2} h={"full"}>
               <Text>{DataRequirement.appRelatedness || "N/A"}</Text>
@@ -2915,7 +2915,7 @@ const ReqInfoSummaryBacklogsView = ({
         <FormControl>
           <InputLayoutFull>
             <FormLabel h={"full"} mt={2}>
-              Kategori Aplikasi
+              Kategori Product
             </FormLabel>
             <Stack spacing={0} h={"full"}>
               <Text>{DataRequirement.appTransactionals || "N/A"}</Text>
@@ -2926,7 +2926,7 @@ const ReqInfoSummaryBacklogsView = ({
         <FormControl>
           <InputLayoutFull>
             <FormLabel h={"full"} mt={2}>
-              Waktu Operasional Aplikasi
+              Waktu Operasional Product
             </FormLabel>
             <Stack spacing={2} h={"full"}>
               <Text>
@@ -3021,7 +3021,7 @@ const ReqInfoSummaryBacklogsView = ({
         <FormControl>
           <InputLayoutFull>
             <FormLabel h={"full"} mt={2}>
-              Scope Aplikasi
+              Scope Product
             </FormLabel>
             <Box mt={-3}>
               <Button
@@ -3098,7 +3098,7 @@ const ReqInfoSummaryBacklogsView = ({
         <FormControl>
           <InputLayoutFull>
             <FormLabel h={"full"} mt={2}>
-              Integrasi dengan aplikasi lain
+              Integrasi dengan Product lain
             </FormLabel>
             <Stack spacing={0} h={"full"}>
               <Text>{DataRequirement.appIntegrationOthersApps || "N/A"}</Text>

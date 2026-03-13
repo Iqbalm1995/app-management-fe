@@ -394,14 +394,14 @@ const RequirementListChooseData = memo(
                 operator: ">=",
                 value: "",
                 filterType: "date",
-                filterLabel: "Tgl. Awal Memo Dibuat",
+                filterLabel: "Tgl. Memo",
               },
               {
                 field: "reqInititateDate",
                 operator: "<=",
                 value: "",
                 filterType: "date",
-                filterLabel: "Tgl. Akhir Memo Dibuat",
+                filterLabel: "Tgl. Memo Diterima",
               },
               {
                 field: "assignedToDate",

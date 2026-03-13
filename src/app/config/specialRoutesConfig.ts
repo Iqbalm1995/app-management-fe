@@ -74,10 +74,10 @@ export interface DynamicRoutePattern {
   baseMenu?: string;
   moduleCode?: string;
   permission?:
-    | "make"
-    | "review"
-    | "approve"
-    | ("make" | "review" | "approve")[];
+  | "make"
+  | "review"
+  | "approve"
+  | ("make" | "review" | "approve")[];
 }
 
 export const dynamicRoutePatterns: DynamicRoutePattern[] = [
@@ -196,6 +196,10 @@ export const dynamicRoutePatterns: DynamicRoutePattern[] = [
   {
     pattern: "/master-data/sequences-config",
     baseMenu: "/master-data/sequences-config",
+  },
+  {
+    pattern: "/master-data/workflow/preset-workflow-detail",
+    baseMenu: "/master-data/workflow",
   },
 
   // Menus

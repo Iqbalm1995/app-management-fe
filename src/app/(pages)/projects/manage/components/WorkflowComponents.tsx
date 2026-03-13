@@ -182,6 +182,10 @@ export const WorkflowLevel2Box = ({
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
       "application/vnd.ms-powerpoint": [".ppt"],
       "application/vnd.openxmlformats-officedocument.presentationml.presentation": [".pptx"],
+      "application/zip": [".zip"],
+      "application/x-zip-compressed": [".zip"],
+      "application/x-rar-compressed": [".rar"],
+      "application/vnd.rar": [".rar"],
     },
     maxSize: 20 * 1024 * 1024,
     multiple: false,
@@ -239,7 +243,11 @@ export const WorkflowLevel2Box = ({
       return;
     }
 
-    const requestData = await InsertProjectWorkflowValue(data, tokenData);
+    // Convert datetime-local to ISO format for backend
+    const isoDate = data.DocumentDate ? new Date(data.DocumentDate).toISOString() : new Date().toISOString();
+    const dataWithIsoDate = { ...data, DocumentDate: isoDate };
+
+    const requestData = await InsertProjectWorkflowValue(dataWithIsoDate, tokenData);
     const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
 
     if (isErrorResponse || !requestData) {
@@ -388,6 +396,13 @@ export const WorkflowLevel2Box = ({
     ModalForm.onOpen();
     formik.setFieldValue("DocumentType", wfData.wfgName);
     formik.setFieldValue("ProjectWorkflowId", wfData.id);
+    
+    // Set current datetime
+    const now = new Date();
+    const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+      .toISOString()
+      .slice(0, 16);
+    formik.setFieldValue("DocumentDate", localDateTime);
   };
 
   // detail wf
@@ -615,7 +630,7 @@ export const WorkflowLevel2Box = ({
                               : "Seret & letakkan file di sini, atau klik untuk memilih file"}
                           </Text>
                           <Text fontSize="sm" color="gray.500">
-                            Format: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX (Max 20MB)
+                            Format: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, ZIP, RAR (Max 20MB)
                           </Text>
                         </VStack>
                       </Flex>
@@ -1353,6 +1368,10 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
       "application/vnd.ms-powerpoint": [".ppt"],
       "application/vnd.openxmlformats-officedocument.presentationml.presentation": [".pptx"],
+      "application/zip": [".zip"],
+      "application/x-zip-compressed": [".zip"],
+      "application/x-rar-compressed": [".rar"],
+      "application/vnd.rar": [".rar"],
     },
     maxSize: 20 * 1024 * 1024,
     multiple: false,
@@ -1453,6 +1472,13 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
     ModalForm.onOpen();
     formik.setFieldValue("DocumentType", workflow.wfgName);
     formik.setFieldValue("ProjectWorkflowId", workflow.id);
+    
+    // Set current datetime
+    const now = new Date();
+    const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+      .toISOString()
+      .slice(0, 16);
+    formik.setFieldValue("DocumentDate", localDateTime);
   };
 
   const handleOpenDetail = async () => {
@@ -1731,7 +1757,7 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
                             : "Seret & letakkan file di sini, atau klik untuk memilih file"}
                         </Text>
                         <Text fontSize="sm" color="gray.500">
-                          Format: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX (Max 20MB)
+                          Format: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, ZIP, RAR (Max 20MB)
                         </Text>
                       </VStack>
                     </Flex>

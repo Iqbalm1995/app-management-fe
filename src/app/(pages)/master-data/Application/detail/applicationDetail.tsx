@@ -1243,7 +1243,7 @@ function ApplicationDetail() {
                             >
                               <Box>
                                 <Text fontSize="sm" color="gray.500">
-                                  Kode Aplikasi
+                                  Kode Product
                                 </Text>
                                 <Text fontWeight="semibold">
                                   {DataApplication?.appCode || "-"}
@@ -1251,7 +1251,7 @@ function ApplicationDetail() {
                               </Box>
                               <Box>
                                 <Text fontSize="sm" color="gray.500">
-                                  Nama Aplikasi
+                                  Nama Product
                                 </Text>
                                 <Text fontWeight="semibold">
                                   {DataApplication?.appName || "-"}
@@ -1377,7 +1377,7 @@ function ApplicationDetail() {
                             }
                           >
                             <Heading size="md" mb={4} color="secondary.500">
-                              Detail Aplikasi
+                              Detail Product
                             </Heading>
                             <Grid
                               templateColumns={{
@@ -1388,7 +1388,7 @@ function ApplicationDetail() {
                             >
                               <Box>
                                 <Text fontSize="sm" color="gray.500">
-                                  Jenis Aplikasi
+                                  Jenis Product
                                 </Text>
                                 <Wrap mt={1}>
                                   {DataApplication?.appTypes
@@ -1481,7 +1481,7 @@ function ApplicationDetail() {
                               </Box>
                               <Box>
                                 <Text fontSize="sm" color="gray.500">
-                                  Integrasi Aplikasi Lain
+                                  Integrasi Product Lain
                                 </Text>
                                 <Wrap mt={1}>
                                   {DataApplication?.appIntegrationOthersApps
@@ -1664,7 +1664,7 @@ function ApplicationDetail() {
                             >
                               <Box>
                                 <Text fontSize="sm" color="gray.500">
-                                  Aplikasi Kritikal
+                                  Product Kritikal
                                 </Text>
                                 <Badge
                                   colorScheme={
@@ -2097,7 +2097,7 @@ function ApplicationDetail() {
                               }
                               mb={4}
                             >
-                              Media Akses Aplikasi
+                              Media Akses Product
                             </Text>
 
                             <Grid templateColumns="repeat(2, 1fr)" gap={6}>
@@ -2214,7 +2214,7 @@ function ApplicationDetail() {
 
                           <Divider />
 
-                          {/* Jenis Aplikasi */}
+                          {/* Jenis Product */}
                           <Box>
                             <Text
                               fontSize="lg"
@@ -2224,12 +2224,12 @@ function ApplicationDetail() {
                               }
                               mb={4}
                             >
-                              Jenis Aplikasi
+                              Jenis Product
                             </Text>
 
                             <FormControl>
                               <Text fontSize="sm" color="gray.500" mb={2}>
-                                Base Aplikasi
+                                Base Product
                               </Text>
                               <CheckboxGroup>
                                 <Grid
@@ -2300,7 +2300,7 @@ function ApplicationDetail() {
                                 }
                                 mb={4}
                               >
-                                Keterkaitan Aplikasi
+                                Keterkaitan Product
                               </Text>
                               <FormControl>
                                 <RadioGroup
@@ -2364,7 +2364,7 @@ function ApplicationDetail() {
                                 }
                                 mb={4}
                               >
-                                Kategori Aplikasi
+                                Kategori Product
                               </Text>
                               <FormControl>
                                 <RadioGroup
@@ -2404,7 +2404,7 @@ function ApplicationDetail() {
                               }
                               mb={4}
                             >
-                              Waktu Operasional Aplikasi
+                              Waktu Operasional Product
                             </Text>
 
                             <FormControl mb={4}>
@@ -2687,7 +2687,7 @@ function ApplicationDetail() {
 
                               <FormControl>
                                 <FormLabel fontSize="sm" fontWeight="semibold">
-                                  Integrasi Dengan Aplikasi Lain
+                                  Integrasi Dengan Product Lain
                                 </FormLabel>
                                 <Box
                                   pointerEvents={IsEditMode ? "auto" : "none"}
@@ -2717,7 +2717,7 @@ function ApplicationDetail() {
                                       Tambah Cepat
                                     </Text>
                                     <Text fontSize="xs" color="gray.500" mb={2}>
-                                      Rekomendasi Aplikasi Lain / Surrounding
+                                      Rekomendasi Product Lain / Surrounding
                                     </Text>
                                     <Wrap spacing={2}>
                                       {APP_INTEGRATED_OTHER_APPS.filter(
@@ -2782,7 +2782,7 @@ function ApplicationDetail() {
                               >
                                 {/* Is Critical */}
                                 <FormControl>
-                                  <FormLabel>Aplikasi Kritikal?</FormLabel>
+                                  <FormLabel>Product Kritikal?</FormLabel>
                                   <RadioGroup
                                     value={formData.appIsCritical}
                                     onChange={(value) =>
