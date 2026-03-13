@@ -95,11 +95,13 @@ const UpdateStageDatesModal = ({
 
   // Auto-clear end date if start date is changed to be after end date
   useEffect(() => {
-    if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
-      setEndDate("");
-      // Only reset unlock if not manually unlocked by user
-      if (!hasManuallyUnlocked.current) {
-        setIsEndDateUnlocked(false);
+    // Only validate when both dates are complete (YYYY-MM-DD = 10 chars)
+    if (startDate.length === 10 && endDate.length === 10) {
+      if (new Date(startDate) > new Date(endDate)) {
+        setEndDate("");
+        if (!hasManuallyUnlocked.current) {
+          setIsEndDateUnlocked(false);
+        }
       }
     }
   }, [startDate, endDate]);

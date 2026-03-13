@@ -595,7 +595,15 @@ const FeatureBacklogsView = ({
 
   const confirmAssignBacklogs = async () => {
     setIsConfirmOpen(false);
-    setActionLoading(true);
+    
+    // Cache urgency/impact before assign
+    const cachedBacklogData = availableBacklogs
+      .filter(b => selectedBacklogIds.includes(b.id))
+      .map(b => ({
+        id: b.id,
+        urgency: b.urgency,
+        impact: b.impact
+      }));    setActionLoading(true);
     try {
       const token = localStorage.getItem("tokenData") as string;
       const response = await AssignBacklogsToProject(
@@ -613,6 +621,16 @@ const FeatureBacklogsView = ({
         });
         setIsAssignBacklogModalOpen(false);
         setSelectedBacklogIds([]);
+        
+        // Restore cached urgency/impact values AFTER refresh
+        setTimeout(() => {
+          setAvailableBacklogs(prev => 
+            prev.map(b => {
+              const cached = cachedBacklogData.find(c => c.id === b.id);
+              return cached ? { ...b, urgency: cached.urgency, impact: cached.impact } : b;
+            })
+          );
+        }, 100);
         onRefresh();
       } else {
         showToast({

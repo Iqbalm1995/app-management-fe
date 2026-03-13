@@ -106,7 +106,7 @@ function ProjectPortfolioReportPage() {
   useEffect(() => {
     const loadGroups = async () => {
       if (!tokenData) return;
-      
+
       try {
         const response = await ListOrganization({
           search: "",
@@ -119,7 +119,7 @@ function ProjectPortfolioReportPage() {
               value: ORG_CATEGORY_KEY_GROUP
             },
             {
-              field: "parentId", 
+              field: "parentId",
               operator: "=",
               value: DIVISION_ID_IT_BJB
             }
@@ -207,7 +207,7 @@ function ProjectPortfolioReportPage() {
       console.log("Calling export service...");
       const blob = await ExportProjectPortofolioExcel(exportPayload, tokenData);
       console.log("Export response:", blob);
-      
+
       if (blob) {
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -217,7 +217,7 @@ function ProjectPortfolioReportPage() {
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
-        
+
         showToast({
           description: "Excel file exported successfully",
           statusToast: "success",
@@ -256,7 +256,7 @@ function ProjectPortfolioReportPage() {
 
     try {
       const blob = await ExportProjectPortofolioPDF(exportPayload, tokenData);
-      
+
       if (blob) {
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -266,7 +266,7 @@ function ProjectPortfolioReportPage() {
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
-        
+
         showToast({
           description: "PDF file exported successfully",
           statusToast: "success",
@@ -670,10 +670,10 @@ function ProjectPortfolioReportPage() {
       let updatedFilters = ParamFilter.filter(
         f => f.field !== "projectRegisterDate"
       );
-      
+
       updatedFilters = addParamFilterUpdate(updatedFilters, startDateFilter);
       updatedFilters = addParamFilterUpdate(updatedFilters, endDateFilter);
-      
+
       setParamFilter(updatedFilters);
     } else {
       // Remove date filters when "all" is selected
@@ -765,7 +765,7 @@ function ProjectPortfolioReportPage() {
         titleName={HeaderDataContent.titleName}
         breadCrumb={HeaderDataContent.breadCrumb}
       />
-      
+
       {/* Quarterly Filter Card */}
       <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"} mb={4}>
         <GridItem colSpan={12} w={"full"}>
@@ -805,7 +805,7 @@ function ProjectPortfolioReportPage() {
             </CardHeader>
             <CardBody>
               <Grid templateColumns="repeat(12, 1fr)" gap={4} w={"full"}>
-                <GridItem colSpan={{ base: 12, lg: 8 }}>
+                <GridItem colSpan={{ base: 12, lg: 6 }}>
                   <Flex alignItems={"center"} gap={4} wrap="wrap">
                     <Text fontWeight={600} minW="fit-content">
                       Register Date:
@@ -847,7 +847,7 @@ function ProjectPortfolioReportPage() {
                     )}
                   </Flex>
                 </GridItem>
-                <GridItem colSpan={{ base: 12, lg: 4 }}>
+                <GridItem colSpan={{ base: 12, lg: 6 }}>
                   <Flex alignItems={"center"} gap={3}>
                     <Text fontWeight={600} minW="fit-content">
                       Search:
@@ -857,11 +857,12 @@ function ProjectPortfolioReportPage() {
                       value={globalFilter ?? ""}
                       onChange={(e) => setGlobalFilter(e.target.value)}
                       size="md"
+                      flex={1}
                       bgColor={colorMode == "light" ? "white" : "gray.800"}
                     />
                   </Flex>
                 </GridItem>
-                <GridItem colSpan={{ base: 12, lg: 3 }}>
+                <GridItem colSpan={{ base: 12, md: 6, lg: 3 }}>
                   <Flex alignItems={"center"} gap={3}>
                     <Text fontWeight={600} minW="fit-content">
                       Status:
@@ -930,12 +931,12 @@ function ProjectPortfolioReportPage() {
                       onChange={(e) => {
                         setFilterProjectType(e.target.value);
                         let newFilters = ParamFilter;
-                        
+
                         // First, remove any existing project type filters
                         newFilters = ParamFilter.filter(
                           f => f.field !== "projectType" && f.field !== "requirementType"
                         );
-                        
+
                         if (e.target.value === "RFC") {
                           // For RFC, filter by requirementType field
                           newFilters = addParamFilterUpdate(newFilters, {
@@ -953,7 +954,7 @@ function ProjectPortfolioReportPage() {
                             filterLabel: "Project Type",
                           });
                         }
-                        
+
                         handleFilterChange(newFilters);
                       }}
                       size="md"
@@ -967,20 +968,6 @@ function ProjectPortfolioReportPage() {
                 </GridItem>
               </Grid>
               <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"} mt={3}>
-                <GridItem colSpan={{ base: 12, lg: 4 }}>
-                  <Flex alignItems={"center"} gap={3}>
-                    <Text fontWeight={600} minW="fit-content">
-                      Search:
-                    </Text>
-                    <Input
-                      placeholder="Search projects..."
-                      value={globalFilter ?? ""}
-                      onChange={(e) => setGlobalFilter(e.target.value)}
-                      size="md"
-                      bgColor={colorMode == "light" ? "white" : "gray.800"}
-                    />
-                  </Flex>
-                </GridItem>
               </Grid>
             </CardBody>
           </Card>
