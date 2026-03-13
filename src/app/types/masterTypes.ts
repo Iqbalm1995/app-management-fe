@@ -208,3 +208,8 @@ export interface MapTypeProps {
   ProjectType?: string | null;
   PercentageWeight: number;
 }
+
+export interface AllocationProintProps {
+  FieldName: string;
+  PercentageWeight: number;
+}

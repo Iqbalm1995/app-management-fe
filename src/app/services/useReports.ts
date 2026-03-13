@@ -417,6 +417,10 @@ interface useReportsServices {
     token: string,
   ) => Promise<ApiGenericResponse<RptUserEvaluationReport | null> | null>;
 
+  ExportUserEvaluationReportExcel: (
+    data: UserEvaluationReportListResponse[],
+  ) => Promise<Blob | null>;
+
   isLoading: boolean;
   error: string | null;
 }
@@ -1478,6 +1482,102 @@ const useReports = (): useReportsServices => {
     }
   };
 
+  const ExportUserEvaluationReportExcel = async (
+    data: UserEvaluationReportListResponse[],
+  ): Promise<Blob | null> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Import xlsx dynamically
+      const XLSX = await import("xlsx");
+
+      // Transform data for Excel export with all required columns
+      const excelData = data.map((item: UserEvaluationReportListResponse, index: number) => ({
+        "NO.": index + 1,
+        "NAMA": item.nama || "",
+        "NIP": item.nip || "",
+        "USER_ID": item.userId || "",
+        "JABATAN": item.jabatan || "",
+        "NAMA_UNIT_KERJA": item.namaUnitKerja || "",
+        "USER_ORG_GROUP_CODE": item.userOrgGroupCode || "",
+        "USER_ORG_GROUP_NAME": item.userOrgGroupName || "",
+        "USER_TEAM_CODE": item.userTeamCode || "",
+        "USER_TEAM_NAME": item.userTeamName || "",
+        "REQ_ID": item.reqId || "",
+        "REQUIREMENT_TYPE": item.requirementType || "",
+        "REQ_NUMBER": item.reqNumber || "",
+        "REQ_NARATIVE": item.reqNarative || "",
+        "REQ_APP_LIVE_TARGET_DATE": item.reqAppLiveTargetDate ? new Date(item.reqAppLiveTargetDate).toLocaleDateString("id-ID") : "",
+        "PROJECT_ID": item.projectId || "",
+        "PROJECT_NO": item.projectNo || "",
+        "PROJECT_NAME": item.projectName || "",
+        "PROJECT_REGISTER_DATE": item.projectRegisterDate ? new Date(item.projectRegisterDate).toLocaleDateString("id-ID") : "",
+        "PROJECT_CLOSED_DATE": item.projectClosedDate ? new Date(item.projectClosedDate).toLocaleDateString("id-ID") : "",
+        "PROJECT_COMPLETED_DATE": item.projectCompletedDate ? new Date(item.projectCompletedDate).toLocaleDateString("id-ID") : "",
+        "PROJECT_TYPE": item.projectType || "",
+        "PROJECT_CATEGORY": item.projectCategory || "",
+        "PROJECT_OWNER_DIRECTORATE_CODE": item.projectOwnerDirectorateCode || "",
+        "PROJECT_OWNER_DIRECTORATE_NAME": item.projectOwnerDirectorateName || "",
+        "PROJECT_OWNER_DIVISION_CODE": item.projectOwnerDivisionCode || "",
+        "PROJECT_OWNER_DIVISION_NAME": item.projectOwnerDivisionName || "",
+        "PROJECT_OWNER_GROUP_CODE": item.projectOwnerGroupCode || "",
+        "PROJECT_OWNER_GROUP_NAME": item.projectOwnerGroupName || "",
+        "PROJECT_MANAGE_BY_DIRECTORATE_CODE": item.projectManageByDirectorateCode || "",
+        "PROJECT_MANAGE_BY_DIRECTORATE_NAME": item.projectManageByDirectorateName || "",
+        "PROJECT_MANAGE_BY_DIVISION_CODE": item.projectManageByDivisionCode || "",
+        "PROJECT_MANAGE_BY_DIVISION_NAME": item.projectManageByDivisionName || "",
+        "PROJECT_MANAGE_BY_GROUP_CODE": item.projectManageByGroupCode || "",
+        "PROJECT_MANAGE_BY_GROUP_NAME": item.projectManageByGroupName || "",
+        "PROJECT_STATUS": item.projectStatus || "",
+        "PROJECT_STATUS_PERCENTAGE": item.projectStatusPercentage || 0,
+        "PRO_SDLC_STAGE_NAME_ACTIVE": item.proSdlcStageNameActive || "",
+        "APP_SHORT_NAME": item.appShortName || "",
+        "APP_NAME": item.appName || "",
+        "USER_TOTAL_TASK_ASSIGN": item.userTotalTaskAssign || 0,
+        "USER_TOTAL_TASK_DONE": item.userTotalTaskDone || 0,
+        "EV_BASIC_POINT": item.evBasicPoint || 0,
+        "EV_TIMELESS_POINT": item.evTimelessPoint || 0,
+        "EV_EXTRA_POINT": item.evExtraPoint || 0,
+        "EV_TOTAL_POINT": item.evTotalPoint || 0,
+        "EV_GRAND_TOTAL": item.evGrandTotal || 0,
+      }));
+
+      // Create workbook and worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(excelData);
+
+      // Set column widths
+      const colWidths = [
+        { wch: 5 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 25 },
+        { wch: 20 }, { wch: 25 }, { wch: 15 }, { wch: 20 }, { wch: 15 }, { wch: 15 },
+        { wch: 15 }, { wch: 30 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 30 },
+        { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 20 },
+        { wch: 30 }, { wch: 20 }, { wch: 30 }, { wch: 20 }, { wch: 25 }, { wch: 20 },
+        { wch: 30 }, { wch: 20 }, { wch: 30 }, { wch: 20 }, { wch: 25 }, { wch: 15 },
+        { wch: 15 }, { wch: 25 }, { wch: 20 }, { wch: 25 }, { wch: 15 }, { wch: 15 },
+        { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }
+      ];
+      ws["!cols"] = colWidths;
+
+      XLSX.utils.book_append_sheet(wb, ws, "User Evaluation Report");
+
+      // Generate Excel file as blob
+      const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      const blob = new Blob([excelBuffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+
+      setIsLoading(false);
+      return blob;
+    } catch (error) {
+      console.error("Export service error:", error);
+      setIsLoading(false);
+      setError("Failed to export Excel file");
+      return null;
+    }
+  };
+
   return {
     ListReportProjectPortofolio,
     ExportProjectPortofolioExcel,
@@ -1491,6 +1591,7 @@ const useReports = (): useReportsServices => {
     ListUserEvaluationReport,
     UpdateUserEvaluationReport,
     GetUserEvaluationReportById,
+    ExportUserEvaluationReportExcel,
 
     isLoading,
     error,

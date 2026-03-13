@@ -26,7 +26,9 @@ import useReports, {
   UserEvaluationReportListResponse,
 } from "@/app/services/useReports";
 import { PROJECT_STATUS_OPTIONS } from "@/app/constants/masterStatusConstants";
-import useOrganization, { OrganizationResponse } from "@/app/services/useOrganization";
+import useOrganization, {
+  OrganizationResponse,
+} from "@/app/services/useOrganization";
 import useTeams, { TeamsResponse } from "@/app/services/useTeams";
 import {
   addParamFilterUpdate,
@@ -36,6 +38,7 @@ import {
   PaggingListPayload,
 } from "@/app/types/masterTypes";
 import {
+  Badge,
   Button,
   Card,
   CardBody,
@@ -44,6 +47,7 @@ import {
   Grid,
   GridItem,
   Heading,
+  HStack,
   Input,
   Select,
   Stack,
@@ -59,7 +63,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import React, { useEffect, useMemo, useState } from "react";
-import { FiRefreshCcw, FiCamera, FiEdit3 } from "react-icons/fi";
+import { FiRefreshCcw, FiCamera, FiEdit3, FiDownload } from "react-icons/fi";
 import EvaluationAdjustModal from "./components/EvaluationAdjustModal";
 
 const HeaderDataContent: HeaderContentProps = {
@@ -73,7 +77,12 @@ function DivisionPerformancePage() {
   const { colorMode } = useColorMode();
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
-  const { ListUserEvaluationReport, CreateUserEvaluationSnapshot, isLoading: reportsLoading } = useReports();
+  const {
+    ListUserEvaluationReport,
+    CreateUserEvaluationSnapshot,
+    ExportUserEvaluationReportExcel,
+    isLoading: reportsLoading,
+  } = useReports();
   const { List: ListOrganization } = useOrganization();
   const { List: ListTeams } = useTeams();
 
@@ -99,27 +108,30 @@ function DivisionPerformancePage() {
   useEffect(() => {
     const loadGroups = async () => {
       if (!tokenData) return;
-      
+
       try {
-        const response = await ListOrganization({
-          search: "",
-          limit: 1000,
-          page: 0,
-          filterWhere: [
-            {
-              field: "orgType",
-              operator: "=",
-              value: ORG_CATEGORY_KEY_GROUP
-            },
-            {
-              field: "parentId", 
-              operator: "=",
-              value: DIVISION_ID_IT_BJB
-            }
-          ],
-          fieldOrder: ["orgName"],
-          orderDir: "asc"
-        } as PaggingListPayload, tokenData);
+        const response = await ListOrganization(
+          {
+            search: "",
+            limit: 1000,
+            page: 0,
+            filterWhere: [
+              {
+                field: "orgType",
+                operator: "=",
+                value: ORG_CATEGORY_KEY_GROUP,
+              },
+              {
+                field: "parentId",
+                operator: "=",
+                value: DIVISION_ID_IT_BJB,
+              },
+            ],
+            fieldOrder: ["orgName"],
+            orderDir: "asc",
+          } as PaggingListPayload,
+          tokenData,
+        );
         if (response?.statusCode === RES_CODE_OK && response.data) {
           setGroupOptions(response.data);
         }
@@ -135,16 +147,19 @@ function DivisionPerformancePage() {
   useEffect(() => {
     const loadTeams = async () => {
       if (!tokenData) return;
-      
+
       try {
-        const response = await ListTeams({
-          search: "",
-          limit: 1000,
-          page: 0,
-          filterWhere: [],
-          fieldOrder: ["teamName"],
-          orderDir: "asc"
-        } as PaggingListPayload, tokenData);
+        const response = await ListTeams(
+          {
+            search: "",
+            limit: 1000,
+            page: 0,
+            filterWhere: [],
+            fieldOrder: ["teamName"],
+            orderDir: "asc",
+          } as PaggingListPayload,
+          tokenData,
+        );
         if (response?.statusCode === RES_CODE_OK && response.data) {
           setTeamOptions(response.data);
         }
@@ -156,9 +171,12 @@ function DivisionPerformancePage() {
     loadTeams();
   }, [tokenData]);
 
-  const [DataReport, setDataReport] = useState<UserEvaluationReportListResponse[]>([]);
+  const [DataReport, setDataReport] = useState<
+    UserEvaluationReportListResponse[]
+  >([]);
   const [RefreshData, setRefreshData] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const [globalFilter, setGlobalFilter] = useState<string>("");
 
@@ -177,13 +195,15 @@ function DivisionPerformancePage() {
   const currentYear = new Date().getFullYear();
   const currentQuarter = getCurrentQuarter();
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
-  const [selectedQuarter, setSelectedQuarter] = useState<number>(currentQuarter);
+  const [selectedQuarter, setSelectedQuarter] =
+    useState<number>(currentQuarter);
 
   const years = Array.from({ length: 8 }, (_, i) => currentYear - 5 + i);
 
   // Modal state
   const [isEvaluationModalOpen, setIsEvaluationModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<UserEvaluationReportListResponse | null>(null);
+  const [selectedUser, setSelectedUser] =
+    useState<UserEvaluationReportListResponse | null>(null);
 
   const handleFilterChange = (newFilters: ListSearchByParamProps[]) => {
     setParamFilter(newFilters);
@@ -194,7 +214,9 @@ function DivisionPerformancePage() {
     setRefreshData(RefreshData + 1);
   };
 
-  const handleOpenEvaluationModal = (user: UserEvaluationReportListResponse) => {
+  const handleOpenEvaluationModal = (
+    user: UserEvaluationReportListResponse,
+  ) => {
     setSelectedUser(user);
     setIsEvaluationModalOpen(true);
   };
@@ -213,7 +235,7 @@ function DivisionPerformancePage() {
 
     try {
       const response = await CreateUserEvaluationSnapshot(tokenData);
-      
+
       if (response?.statusCode === RES_CODE_OK) {
         showToast({
           description: "Snapshot created successfully",
@@ -235,10 +257,66 @@ function DivisionPerformancePage() {
     }
   };
 
+  const handleExportToExcel = async () => {
+    if (!DataReport || DataReport.length === 0) {
+      showToast({
+        description: "No data available to export",
+        statusToast: "warning",
+      });
+      return;
+    }
+
+    setIsExporting(true);
+
+    try {
+      // Get current filtered data from table
+      const filteredData = table.getFilteredRowModel().rows.map(row => row.original);
+      
+      const blob = await ExportUserEvaluationReportExcel(filteredData);
+      
+      if (blob) {
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        
+        // Generate filename with current date and filters
+        const currentDate = new Date().toISOString().split('T')[0];
+        const filename = `User_Evaluation_Report_${selectedYear}_Q${selectedQuarter}_${currentDate}.xlsx`;
+        link.download = filename;
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        showToast({
+          description: "Excel file exported successfully",
+          statusToast: "success",
+        });
+      } else {
+        showToast({
+          description: "No data to export",
+          statusToast: "warning",
+        });
+      }
+    } catch (error) {
+      console.error("Export error:", error);
+      showToast({
+        description: "Failed to export Excel file",
+        statusToast: "error",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   // Filter teams based on selected group
   const filteredTeams = useMemo(() => {
     if (!FilterManageGroup) return TeamOptions;
-    return TeamOptions.filter(team => team.orgGroupCode === FilterManageGroup);
+    return TeamOptions.filter(
+      (team) => team.orgGroupCode === FilterManageGroup,
+    );
   }, [TeamOptions, FilterManageGroup]);
 
   // Quarterly filter effect
@@ -259,12 +337,12 @@ function DivisionPerformancePage() {
 
     // Remove existing period filters and add new ones
     let updatedFilters = ParamFilter.filter(
-      f => f.field !== "yearPeriod" && f.field !== "quartalPeriod"
+      (f) => f.field !== "yearPeriod" && f.field !== "quartalPeriod",
     );
-    
+
     updatedFilters = addParamFilterUpdate(updatedFilters, yearFilter);
     updatedFilters = addParamFilterUpdate(updatedFilters, quarterFilter);
-    
+
     setParamFilter(updatedFilters);
   }, [selectedYear, selectedQuarter]);
 
@@ -296,9 +374,15 @@ function DivisionPerformancePage() {
             spacing={1}
             minW="200px"
           >
-            <Text fontWeight={600} fontSize="sm">{info.row.original.nama}</Text>
-            <Text fontSize="sm" color="gray.500">{info.row.original.nip}</Text>
-            <Text fontSize="xs" color="blue.500">{info.row.original.jabatan || "-"}</Text>
+            <Text fontWeight={600} fontSize="sm">
+              {info.row.original.nama}
+            </Text>
+            <Text fontSize="sm" color="gray.500">
+              {info.row.original.nip}
+            </Text>
+            <Text fontSize="xs" color="blue.500">
+              {info.row.original.jabatan || "-"}
+            </Text>
             <Text fontSize="xs">{info.row.original.namaUnitKerja || "-"}</Text>
           </Flex>
         ),
@@ -359,12 +443,25 @@ function DivisionPerformancePage() {
             spacing={1}
             minW="250px"
           >
-            <Text fontWeight={600} fontSize="sm">{info.row.original.projectNo}</Text>
+            <Text fontWeight={600} fontSize="sm">
+              {info.row.original.projectNo}
+            </Text>
             <Text fontSize="sm">{info.row.original.projectName || "-"}</Text>
-            <Text fontSize="xs" color="gray.500">{info.row.original.projectType}</Text>
-            {info.row.original.requirementType && (
-              <Text fontSize="xs" color="blue.500">
-                {info.row.original.requirementType} | {info.row.original.reqNumber || "-"}
+            <Text fontSize="xs" color="gray.500">
+              {info.row.original.projectType}
+            </Text>
+            {info.row.original.requirementType ? (
+              <Flex as={HStack} spacing={2}>
+                <Badge colorScheme="secondary" variant={"solid"}>
+                  {info.row.original.requirementType}{" "}
+                </Badge>
+                <Text fontSize="xs" color="blue.500" gap={2}>
+                  {"No. " + info.row.original.reqNumber || "-"}
+                </Text>
+              </Flex>
+            ) : (
+              <Text fontSize="xs" color="gray.500">
+                No Requirement
               </Text>
             )}
           </Flex>
@@ -431,8 +528,12 @@ function DivisionPerformancePage() {
             spacing={0}
             minW="120px"
           >
-            <Text fontSize="xs">Assigned: {info.row.original.userTotalTaskAssign}</Text>
-            <Text fontSize="xs">Done: {info.row.original.userTotalTaskDone}</Text>
+            <Text fontSize="xs">
+              Assigned: {info.row.original.userTotalTaskAssign}
+            </Text>
+            <Text fontSize="xs">
+              Done: {info.row.original.userTotalTaskDone}
+            </Text>
           </Flex>
         ),
         header: () => <span>Tasks</span>,
@@ -487,7 +588,12 @@ function DivisionPerformancePage() {
         accessorFn: (row) => row.evTotalPoint,
         id: "totalPoint",
         cell: (info) => (
-          <Text fontSize="sm" fontWeight="bold" color="blue.600" textAlign="center">
+          <Text
+            fontSize="sm"
+            fontWeight="bold"
+            color="blue.600"
+            textAlign="center"
+          >
             {info.row.original.evTotalPoint}
           </Text>
         ),
@@ -501,7 +607,12 @@ function DivisionPerformancePage() {
         accessorFn: (row) => row.evGrandTotal,
         id: "grandTotal",
         cell: (info) => (
-          <Text fontSize="sm" fontWeight="bold" color="green.600" textAlign="center">
+          <Text
+            fontSize="sm"
+            fontWeight="bold"
+            color="green.600"
+            textAlign="center"
+          >
             {info.row.original.evGrandTotal}
           </Text>
         ),
@@ -533,7 +644,7 @@ function DivisionPerformancePage() {
         } as ColumnMetaCustom,
       },
     ],
-    [colorMode]
+    [colorMode],
   );
 
   useEffect(() => {
@@ -549,7 +660,10 @@ function DivisionPerformancePage() {
 
       setIsLoadingProcess(true);
       const GetDataList = async () => {
-        const requestData = await ListUserEvaluationReport(PayloadList, tokenData);
+        const requestData = await ListUserEvaluationReport(
+          PayloadList,
+          tokenData,
+        );
         const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
 
         if (isErrorResponse || !requestData) {
@@ -608,7 +722,7 @@ function DivisionPerformancePage() {
         titleName={HeaderDataContent.titleName}
         breadCrumb={HeaderDataContent.breadCrumb}
       />
-      
+
       {/* Filter Card */}
       <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"} mb={4}>
         <GridItem colSpan={12} w={"full"}>
@@ -656,7 +770,9 @@ function DivisionPerformancePage() {
                     <Select
                       value={selectedQuarter}
                       size={"md"}
-                      onChange={(e) => setSelectedQuarter(Number(e.target.value))}
+                      onChange={(e) =>
+                        setSelectedQuarter(Number(e.target.value))
+                      }
                       w="80px"
                       bgColor={colorMode == "light" ? "white" : "gray.800"}
                     >
@@ -721,8 +837,10 @@ function DivisionPerformancePage() {
                       onChange={(e) => {
                         setFilterManageGroup(e.target.value);
                         setFilterTeamCode("");
-                        
-                        let newFilters = ParamFilter.filter(f => f.field !== "userOrgGroupCode");
+
+                        let newFilters = ParamFilter.filter(
+                          (f) => f.field !== "userOrgGroupCode",
+                        );
                         if (e.target.value) {
                           newFilters = addParamFilterUpdate(newFilters, {
                             field: "userOrgGroupCode",
@@ -754,8 +872,10 @@ function DivisionPerformancePage() {
                       value={FilterTeamCode}
                       onChange={(e) => {
                         setFilterTeamCode(e.target.value);
-                        
-                        let newFilters = ParamFilter.filter(f => f.field !== "userTeamCode");
+
+                        let newFilters = ParamFilter.filter(
+                          (f) => f.field !== "userTeamCode",
+                        );
                         if (e.target.value) {
                           newFilters = addParamFilterUpdate(newFilters, {
                             field: "userTeamCode",
@@ -797,19 +917,38 @@ function DivisionPerformancePage() {
                 <Heading as="h5" size="md">
                   Division Performance Data
                 </Heading>
-                <Button
-                  size={"md"}
-                  leftIcon={<FiRefreshCcw />}
-                  onClick={() => RefreshAction()}
-                >
-                  Refresh
-                </Button>
+                <HStack spacing={2}>
+                  <Button
+                    size={"md"}
+                    leftIcon={<FiDownload />}
+                    onClick={handleExportToExcel}
+                    isLoading={isExporting}
+                    isDisabled={isExporting || DataReport.length === 0}
+                    loadingText="Exporting..."
+                    variant="outline"
+                    colorScheme="green"
+                  >
+                    Export Excel
+                  </Button>
+                  <Button
+                    size={"md"}
+                    leftIcon={<FiRefreshCcw />}
+                    onClick={() => RefreshAction()}
+                  >
+                    Refresh
+                  </Button>
+                </HStack>
               </Flex>
             </CardHeader>
             <CardBody>
               <Flex w={"full"} as={Stack} spacing={4}>
                 {IsLoadingProcess ? (
-                  <Flex direction="column" align="center" justify="center" py={20}>
+                  <Flex
+                    direction="column"
+                    align="center"
+                    justify="center"
+                    py={20}
+                  >
                     <LoadingMiniSignature />
                     <Text mt={4} fontSize="sm" color="gray.500">
                       Loading performance data...
@@ -819,7 +958,12 @@ function DivisionPerformancePage() {
                     </Text>
                   </Flex>
                 ) : DataReport.length === 0 ? (
-                  <Flex direction="column" align="center" justify="center" py={20}>
+                  <Flex
+                    direction="column"
+                    align="center"
+                    justify="center"
+                    py={20}
+                  >
                     <Text fontSize="lg" color="gray.500" mb={2}>
                       No Data Available
                     </Text>
@@ -834,7 +978,9 @@ function DivisionPerformancePage() {
                         Total: {DataReport.length} records
                       </Text>
                       <Flex align="center" gap={3}>
-                        <Text fontSize="sm" fontWeight="medium">Sort by:</Text>
+                        <Text fontSize="sm" fontWeight="medium">
+                          Sort by:
+                        </Text>
                         <Select
                           value={sortField}
                           onChange={(e) => setSortField(e.target.value)}
@@ -843,7 +989,9 @@ function DivisionPerformancePage() {
                           bgColor={colorMode == "light" ? "white" : "gray.800"}
                         >
                           <option value="nama">NAMA</option>
-                          <option value="usertotaltaskdone">TOTAL TASK DONE</option>
+                          <option value="usertotaltaskdone">
+                            TOTAL TASK DONE
+                          </option>
                           <option value="evgrandtotal">GRAND TOTAL</option>
                         </Select>
                         <Select

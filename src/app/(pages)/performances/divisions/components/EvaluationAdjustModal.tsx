@@ -34,13 +34,15 @@ import {
   Alert,
   AlertIcon,
   Heading,
+  IconButton,
+  useDisclosure,
 } from "@chakra-ui/react";
-import { radiusStyle, RES_CODE_OK, BAISC_POINT_EV_OPT, TIMELESS_POINT_EV_OPT, EXTRA_POINT_EV_OPT } from "@/app/constants/applicationConstants";
+import { radiusStyle, RES_CODE_OK, BAISC_POINT_EV_OPT, TIMELESS_POINT_EV_OPT, EXTRA_POINT_EV_OPT, TYPE_REQ, ALLOCATION_SECTION_POINTS } from "@/app/constants/applicationConstants";
 import { UserEvaluationReportListResponse, RptUserEvaluationReport } from "@/app/services/useReports";
 import useReports from "@/app/services/useReports";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { ConfirmationDialog } from "@/app/components/confirmationDialog";
-import { FiUser, FiEdit3, FiFolder, FiFileText, FiTarget, FiCalendar, FiTrendingUp } from "react-icons/fi";
+import { FiUser, FiEdit3, FiFolder, FiFileText, FiTarget, FiCalendar, FiTrendingUp, FiInfo } from "react-icons/fi";
 
 interface EvaluationAdjustModalProps {
   isOpen: boolean;
@@ -72,12 +74,56 @@ const EvaluationAdjustModal = ({
   const [evTotalPoint, setEvTotalPoint] = useState<number>(0);
   const [evGrandTotal, setEvGrandTotal] = useState<number>(0);
 
+  // Calculation info modal
+  const { isOpen: isCalcInfoOpen, onOpen: onCalcInfoOpen, onClose: onCalcInfoClose } = useDisclosure();
+
   useEffect(() => {
     const token = localStorage.getItem("tokenData") as string;
     if (token) {
       setTokenData(token);
     }
   }, []);
+
+  // Auto-calculation functions
+  const calculateTotalPoint = (basic: number, timeless: number, extra: number): number => {
+    const basicWeight = ALLOCATION_SECTION_POINTS.find(p => p.FieldName === "evBasicPoint")?.PercentageWeight || 0;
+    const timelessWeight = ALLOCATION_SECTION_POINTS.find(p => p.FieldName === "evTimelessPoint")?.PercentageWeight || 0;
+    const extraWeight = ALLOCATION_SECTION_POINTS.find(p => p.FieldName === "evExtraPoint")?.PercentageWeight || 0;
+    
+    return (basic * basicWeight / 100) + (timeless * timelessWeight / 100) + (extra * extraWeight / 100);
+  };
+
+  const calculateGrandTotal = (totalPoint: number): number => {
+    if (!reportData) {
+      return totalPoint;
+    }
+    
+    const reqType = reportData.requirementType || "ANY";
+    const projType = reportData.projectType;
+    
+    // Find exact match first
+    let typeConfig = TYPE_REQ.find(t => t.RequirementType === reqType && t.ProjectType === projType);
+    
+    // Fallback to ANY if no exact match
+    if (!typeConfig) {
+      typeConfig = TYPE_REQ.find(t => t.RequirementType === "ANY" && t.ProjectType === projType);
+    }
+    
+    const weight = typeConfig?.PercentageWeight || 100;
+    return totalPoint * weight / 100;
+  };
+
+  // Auto-calculate when base points change
+  useEffect(() => {
+    const newTotalPoint = calculateTotalPoint(evBasicPoint, evTimelessPoint, evExtraPoint);
+    setEvTotalPoint(newTotalPoint);
+  }, [evBasicPoint, evTimelessPoint, evExtraPoint]);
+
+  // Auto-calculate grand total when total point changes
+  useEffect(() => {
+    const newGrandTotal = calculateGrandTotal(evTotalPoint);
+    setEvGrandTotal(newGrandTotal);
+  }, [evTotalPoint, reportData]);
 
   useEffect(() => {
     if (isOpen && user && tokenData) {
@@ -262,6 +308,30 @@ const EvaluationAdjustModal = ({
                                 <Text fontWeight="medium" minW="80px" color="gray.600">Requirement:</Text>
                                 <Text>{user?.reqNumber || "-"}</Text>
                               </HStack>
+                              <HStack>
+                                <Text fontWeight="medium" minW="80px" color="gray.600">Type:</Text>
+                                <Badge 
+                                  colorScheme="blue" 
+                                  variant="solid" 
+                                  fontSize="xs"
+                                  px={3}
+                                  py={1}
+                                >
+                                  {reportData?.projectType || "Loading..."}
+                                </Badge>
+                              </HStack>
+                              <HStack>
+                                <Text fontWeight="medium" minW="80px" color="gray.600">Requirement:</Text>
+                                <Badge 
+                                  colorScheme="purple" 
+                                  variant="solid" 
+                                  fontSize="xs"
+                                  px={3}
+                                  py={1}
+                                >
+                                  {reportData?.requirementType || "ANY"}
+                                </Badge>
+                              </HStack>
                             </VStack>
                           </VStack>
                         </CardBody>
@@ -311,9 +381,22 @@ const EvaluationAdjustModal = ({
                     >
                       <CardBody>
                         <VStack align="stretch" spacing={6}>
-                          <HStack spacing={3}>
-                            <Icon as={FiTarget} color="secondary.500" boxSize={5} />
-                            <Heading size="sm">Evaluation Points</Heading>
+                          <HStack justify="space-between" align="center">
+                            <HStack spacing={3}>
+                              <Icon as={FiTarget} color="secondary.500" boxSize={5} />
+                              <Heading size="sm">Evaluation Points</Heading>
+                            </HStack>
+                            <IconButton
+                              aria-label="Calculation Information"
+                              icon={<FiInfo />}
+                              size="sm"
+                              variant="ghost"
+                              colorScheme="secondary"
+                              onClick={onCalcInfoOpen}
+                              _hover={{
+                                bg: colorMode === "light" ? "secondary.100" : "secondary.800",
+                              }}
+                            />
                           </HStack>
 
                           <VStack spacing={4} align="stretch">
@@ -397,8 +480,8 @@ const EvaluationAdjustModal = ({
                                 Total Point
                               </FormLabel>
                               <NumberInput
-                                value={evTotalPoint}
-                                onChange={(_, value) => setEvTotalPoint(value || 0)}
+                                value={evTotalPoint.toFixed(2)}
+                                isReadOnly
                                 min={0}
                                 precision={2}
                                 size="lg"
@@ -411,21 +494,38 @@ const EvaluationAdjustModal = ({
                                     boxShadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
                                   }}
                                 />
-                                <NumberInputStepper>
-                                  <NumberIncrementStepper />
-                                  <NumberDecrementStepper />
-                                </NumberInputStepper>
                               </NumberInput>
                             </FormControl>
 
                             {/* Grand Total */}
                             <FormControl>
-                              <FormLabel fontSize="sm" fontWeight="bold" color="gray.600">
-                                Grand Total
-                              </FormLabel>
+                              <HStack justify="space-between" align="center">
+                                <FormLabel fontSize="sm" fontWeight="bold" color="gray.600" mb={0}>
+                                  Grand Total
+                                </FormLabel>
+                                {reportData && (
+                                  <Badge 
+                                    colorScheme="orange" 
+                                    variant="subtle" 
+                                    fontSize="xs"
+                                    px={2}
+                                  >
+                                    {(() => {
+                                      const reqType = reportData.requirementType || "ANY";
+                                      const projType = reportData.projectType;
+                                      let typeConfig = TYPE_REQ.find(t => t.RequirementType === reqType && t.ProjectType === projType);
+                                      if (!typeConfig) {
+                                        typeConfig = TYPE_REQ.find(t => t.RequirementType === "ANY" && t.ProjectType === projType);
+                                      }
+                                      const weight = typeConfig?.PercentageWeight || 100;
+                                      return `${weight}% multiplier`;
+                                    })()}
+                                  </Badge>
+                                )}
+                              </HStack>
                               <NumberInput
-                                value={evGrandTotal}
-                                onChange={(_, value) => setEvGrandTotal(value || 0)}
+                                value={evGrandTotal.toFixed(2)}
+                                isReadOnly
                                 min={0}
                                 precision={2}
                                 size="lg"
@@ -440,10 +540,6 @@ const EvaluationAdjustModal = ({
                                     boxShadow: "0 0 0 1px var(--chakra-colors-secondary-500)",
                                   }}
                                 />
-                                <NumberInputStepper>
-                                  <NumberIncrementStepper />
-                                  <NumberDecrementStepper />
-                                </NumberInputStepper>
                               </NumberInput>
                             </FormControl>
                           </VStack>
@@ -488,6 +584,69 @@ const EvaluationAdjustModal = ({
         questionMsg={`Are you sure you want to update evaluation points for ${user?.nama}?\n\nProject: ${user?.projectNo} - ${user?.projectName}\n\nNew Points:\n• Basic Point: ${evBasicPoint}\n• Timeless Point: ${evTimelessPoint}\n• Extra Point: ${evExtraPoint}\n• Total Point: ${evTotalPoint}\n• Grand Total: ${evGrandTotal}\n\nThis action cannot be undone.`}
         captionMsg="Update Points"
       />
+
+      {/* Calculation Information Modal */}
+      <Modal isOpen={isCalcInfoOpen} onClose={onCalcInfoClose} size="lg">
+        <ModalOverlay backdropFilter="blur(4px)" />
+        <ModalContent>
+          <ModalHeader>
+            <HStack spacing={3}>
+              <Icon as={FiTarget} color="orange.500" boxSize={5} />
+              <Heading size="md">Calculation Method</Heading>
+            </HStack>
+          </ModalHeader>
+          <ModalCloseButton />
+          <Divider />
+          
+          <ModalBody py={6}>
+            <VStack align="start" spacing={6}>
+              <Box>
+                <Text fontWeight="bold" color="orange.600" mb={3} fontSize="lg">Total Point Calculation:</Text>
+                <VStack align="start" spacing={2} pl={3}>
+                  <Text>• Basic Point: 50% weight</Text>
+                  <Text>• Timeless Point: 30% weight</Text>
+                  <Text>• Extra Point: 20% weight</Text>
+                </VStack>
+                <Box mt={3} p={3} bg={colorMode === "light" ? "orange.100" : "orange.800"} rounded="md">
+                  <Text fontSize="sm" fontWeight="bold" color="orange.700" mb={2}>Example:</Text>
+                  <Text fontSize="sm" color="orange.700">
+                    Basic: 100 × 50% = 50.00<br/>
+                    Timeless: 150 × 30% = 45.00<br/>
+                    Extra: 100 × 20% = 20.00<br/>
+                    <strong>Total Point = 115.00</strong>
+                  </Text>
+                </Box>
+              </Box>
+              
+              <Box>
+                <Text fontWeight="bold" color="orange.600" mb={3} fontSize="lg">Grand Total Calculation:</Text>
+                <VStack align="start" spacing={2} pl={3}>
+                  <Text>• Based on project type multiplier</Text>
+                  <Text>• BRD Projects: 100% of Total Point</Text>
+                  <Text>• RFC Projects: 75% of Total Point</Text>
+                  <Text>• Deployment: 50% of Total Point</Text>
+                  <Text>• Support: 25% of Total Point</Text>
+                </VStack>
+                <Box mt={3} p={3} bg={colorMode === "light" ? "orange.100" : "orange.800"} rounded="md">
+                  <Text fontSize="sm" fontWeight="bold" color="orange.700" mb={2}>Examples:</Text>
+                  <Text fontSize="sm" color="orange.700">
+                    BRD: 115.00 × 100% = <strong>115.00</strong><br/>
+                    RFC: 115.00 × 75% = <strong>86.25</strong><br/>
+                    Deployment: 115.00 × 50% = <strong>57.50</strong><br/>
+                    Support: 115.00 × 25% = <strong>28.75</strong>
+                  </Text>
+                </Box>
+              </Box>
+            </VStack>
+          </ModalBody>
+          
+          <ModalFooter>
+            <Button onClick={onCalcInfoClose} colorScheme="secondary">
+              Close
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </>
   );
 };

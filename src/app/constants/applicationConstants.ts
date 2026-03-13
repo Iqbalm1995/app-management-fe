@@ -1,4 +1,5 @@
 import {
+  AllocationProintProps,
   MapTypeProps,
   OptionData,
   OptionDataWithIndex,
@@ -531,6 +532,11 @@ export const TYPE_REQ: MapTypeProps[] = [
     PercentageWeight: 100,
   },
   {
+    RequirementType: "ANY",
+    ProjectType: "PROCUREMENT",
+    PercentageWeight: 100,
+  },
+  {
     RequirementType: "RFC",
     ProjectType: "INTERNAL DEVELOPMENT",
     PercentageWeight: 75,
@@ -549,5 +555,21 @@ export const TYPE_REQ: MapTypeProps[] = [
     RequirementType: "ANY",
     ProjectType: "SUPPORT",
     PercentageWeight: 25,
+  },
+];
+
+// TYPE ALLOCATION SECTION POINT
+export const ALLOCATION_SECTION_POINTS: AllocationProintProps[] = [
+  {
+    FieldName: "evBasicPoint",
+    PercentageWeight: 50,
+  },
+  {
+    FieldName: "evTimelessPoint",
+    PercentageWeight: 30,
+  },
+  {
+    FieldName: "evExtraPoint",
+    PercentageWeight: 20,
   },
 ];

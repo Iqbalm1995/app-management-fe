@@ -515,7 +515,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Performances Group",
         icon: FaRegStar,
-        link: "/performances/divisions",
+        link: "/performances/groups",
         isPro: false,
         role: ["admin"],
         menuID: "1",
