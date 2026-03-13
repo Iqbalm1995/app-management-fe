@@ -103,6 +103,7 @@ const TeamTab = ({ DataProject, canMake }: TeamTabProps) => {
 
   // Add member state
   const [availableUsers, setAvailableUsers] = useState<UsersResponse[]>([]);
+  const [allLoadedUsers, setAllLoadedUsers] = useState<UsersResponse[]>([]); // Preserve all loaded users
   const [projectMembers, setProjectMembers] = useState<
     ProjectUserAssignmentResponse[]
   >([]);
@@ -230,6 +231,13 @@ const TeamTab = ({ DataProject, canMake }: TeamTabProps) => {
 
       if (response?.statusCode === RES_CODE_OK && response.data) {
         setAvailableUsers(response.data);
+        // Preserve all loaded users for local state persistence
+        setAllLoadedUsers(prev => {
+          const newUsers = response.data!.filter(
+            newUser => !prev.some(existingUser => existingUser.id === newUser.id)
+          );
+          return [...prev, ...newUsers];
+        });
       }
     } catch (error) {
       console.error("Error loading users:", error);
@@ -244,6 +252,8 @@ const TeamTab = ({ DataProject, canMake }: TeamTabProps) => {
     setAvailableUsers([]);
     const currentMemberIds = projectMembers.map((m) => m.userData.id);
     setSelectedUserIds(currentMemberIds);
+    // Initialize allLoadedUsers with existing project members
+    setAllLoadedUsers(projectMembers.map((m) => m.userData));
     onAddModalOpen();
   };
 
@@ -680,20 +690,30 @@ const TeamTab = ({ DataProject, canMake }: TeamTabProps) => {
 
   // Filter users based on search - combine available and existing members
   const allUsers = [
-    ...availableUsers,
-    // Only include ACTIVE project members in modal selection
-    ...projectMembers
-      .filter(m => m.userAssignStatus === "ACTIVE")
-      .map((m) => m.userData),
+    ...allLoadedUsers, // Use all loaded users instead of just current search results
+    // Include ALL project members (both ACTIVE and INACTIVE) in modal selection
+    ...projectMembers.map((m) => m.userData),
   ];
+  
   const uniqueUsers = allUsers.filter(
     (user, index, self) => index === self.findIndex((u) => u?.id === user?.id)
   );
 
   const filteredUsers = uniqueUsers.filter(
-    (user) =>
-      user?.nama?.toLowerCase().includes(searchUser.toLowerCase()) ||
-      user?.email?.toLowerCase().includes(searchUser.toLowerCase())
+    (user) => {
+      // Always show users that are currently selected (locally)
+      if (selectedUserIds.includes(user?.id || "")) {
+        return true;
+      }
+      // For non-selected users, only show if they match current search AND are in current search results
+      if (searchUser.length < 3) {
+        return false; // Don't show any non-selected users if no search
+      }
+      const matchesSearch = user?.nama?.toLowerCase().includes(searchUser.toLowerCase()) ||
+                           user?.email?.toLowerCase().includes(searchUser.toLowerCase());
+      const isInCurrentSearch = availableUsers.some(au => au.id === user?.id);
+      return matchesSearch && isInCurrentSearch;
+    }
   );
 
   return (
@@ -735,7 +755,7 @@ const TeamTab = ({ DataProject, canMake }: TeamTabProps) => {
               }}
               isDisabled={!canMake}
             >
-              {isEditMode ? "Done" : "Edit"}
+              {isEditMode ? "Done" : "Select"}
             </Button>
             <Button
               size="sm"

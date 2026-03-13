@@ -630,7 +630,8 @@ export const WorkflowLevel2Box = ({
                               : "Seret & letakkan file di sini, atau klik untuk memilih file"}
                           </Text>
                           <Text fontSize="sm" color="gray.500">
-                            Format: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, ZIP, RAR (Max 20MB)
+                            Format: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, ZIP,
+                            RAR (Max 20MB)
                           </Text>
                         </VStack>
                       </Flex>
@@ -694,7 +695,8 @@ export const WorkflowLevel2Box = ({
                         <HStack spacing={2}>
                           <Icon as={FiInfo} color="blue.500" />
                           <Text fontSize="xs">
-                            Masukkan URL lengkap dokumen (Google Drive, OneDrive, SharePoint, dll)
+                            Masukkan URL lengkap dokumen (Google Drive,
+                            OneDrive, SharePoint, dll)
                           </Text>
                         </HStack>
                       </FormHelperText>
@@ -775,7 +777,8 @@ export const WorkflowLevel2Box = ({
                             Document History
                           </Text>
                           <Text fontSize="sm" opacity={0.9}>
-                            {ListProjectWFValue.length} document{ListProjectWFValue.length > 1 ? "s" : ""} uploaded
+                            {ListProjectWFValue.length} document
+                            {ListProjectWFValue.length > 1 ? "s" : ""} uploaded
                           </Text>
                         </VStack>
                       </HStack>
@@ -783,7 +786,12 @@ export const WorkflowLevel2Box = ({
                   </Box>
 
                   {/* Timeline Cards */}
-                  <VStack spacing={4} align="stretch" position="relative" pl={8}>
+                  <VStack
+                    spacing={4}
+                    align="stretch"
+                    position="relative"
+                    pl={8}
+                  >
                     {/* Timeline Line */}
                     <Box
                       position="absolute"
@@ -804,9 +812,17 @@ export const WorkflowLevel2Box = ({
                           width="16px"
                           height="16px"
                           rounded="full"
-                          bg={item.mediaObjectData ? "green.500" : item.linkAttachment ? "blue.500" : "gray.400"}
+                          bg={
+                            item.mediaObjectData
+                              ? "green.500"
+                              : item.linkAttachment
+                                ? "blue.500"
+                                : "gray.400"
+                          }
                           border="3px solid"
-                          borderColor={colorMode === "light" ? "white" : "gray.900"}
+                          borderColor={
+                            colorMode === "light" ? "white" : "gray.900"
+                          }
                           zIndex={1}
                         />
 
@@ -816,7 +832,9 @@ export const WorkflowLevel2Box = ({
                           bg={colorMode === "light" ? "white" : "gray.800"}
                           rounded={radiusStyle}
                           border="1px"
-                          borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                          borderColor={
+                            colorMode === "light" ? "gray.200" : "gray.700"
+                          }
                           boxShadow="md"
                           _hover={{
                             boxShadow: "lg",
@@ -839,7 +857,12 @@ export const WorkflowLevel2Box = ({
                                 </Badge>
                               </HStack>
                             </VStack>
-                            <Badge colorScheme="green" fontSize="sm" px={3} py={1}>
+                            <Badge
+                              colorScheme="green"
+                              fontSize="sm"
+                              px={3}
+                              py={1}
+                            >
                               v{item.documentVersion}
                             </Badge>
                           </HStack>
@@ -847,11 +870,19 @@ export const WorkflowLevel2Box = ({
                           {/* Card Body */}
                           <VStack spacing={3} align="stretch">
                             {/* Document Info Grid */}
-                            <Grid templateColumns="repeat(2, 1fr)" gap={3} fontSize="sm">
+                            <Grid
+                              templateColumns="repeat(2, 1fr)"
+                              gap={3}
+                              fontSize="sm"
+                            >
                               <GridItem>
-                                <Text color="gray.500" fontSize="xs">Document Date</Text>
+                                <Text color="gray.500" fontSize="xs">
+                                  Document Date
+                                </Text>
                                 <Text fontWeight="medium">
-                                  {new Date(item.documentDate).toLocaleDateString("id-ID", {
+                                  {new Date(
+                                    item.documentDate,
+                                  ).toLocaleDateString("id-ID", {
                                     day: "numeric",
                                     month: "long",
                                     year: "numeric",
@@ -859,18 +890,34 @@ export const WorkflowLevel2Box = ({
                                 </Text>
                               </GridItem>
                               <GridItem>
-                                <Text color="gray.500" fontSize="xs">Uploaded By</Text>
-                                <Text fontWeight="medium">{item.createdBy}</Text>
-                              </GridItem>
-                              <GridItem>
-                                <Text color="gray.500" fontSize="xs">Created At</Text>
+                                <Text color="gray.500" fontSize="xs">
+                                  Uploaded By
+                                </Text>
                                 <Text fontWeight="medium">
-                                  {new Date(item.createdAt).toLocaleDateString("id-ID")} {new Date(item.createdAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+                                  {item.createdBy}
                                 </Text>
                               </GridItem>
                               <GridItem>
-                                <Text color="gray.500" fontSize="xs">Document Type</Text>
-                                <Text fontWeight="medium">{item.documentType}</Text>
+                                <Text color="gray.500" fontSize="xs">
+                                  Created At
+                                </Text>
+                                <Text fontWeight="medium">
+                                  {new Date(item.createdAt).toLocaleDateString(
+                                    "id-ID",
+                                  )}{" "}
+                                  {new Date(item.createdAt).toLocaleTimeString(
+                                    "id-ID",
+                                    { hour: "2-digit", minute: "2-digit" },
+                                  )}
+                                </Text>
+                              </GridItem>
+                              <GridItem>
+                                <Text color="gray.500" fontSize="xs">
+                                  Document Type
+                                </Text>
+                                <Text fontWeight="medium">
+                                  {item.documentType}
+                                </Text>
                               </GridItem>
                             </Grid>
 
@@ -881,12 +928,21 @@ export const WorkflowLevel2Box = ({
                               {/* File Attachment */}
                               {item.mediaObjectData && (
                                 <Box>
-                                  <Text fontSize="xs" fontWeight="bold" color="green.600" mb={2}>
+                                  <Text
+                                    fontSize="xs"
+                                    fontWeight="bold"
+                                    color="green.600"
+                                    mb={2}
+                                  >
                                     📎 FILE ATTACHMENT
                                   </Text>
                                   <HStack
                                     p={4}
-                                    bg={colorMode === "light" ? "green.50" : "green.900"}
+                                    bg={
+                                      colorMode === "light"
+                                        ? "green.50"
+                                        : "green.900"
+                                    }
                                     rounded="md"
                                     border="2px"
                                     borderColor="green.200"
@@ -896,20 +952,41 @@ export const WorkflowLevel2Box = ({
                                     <HStack spacing={3} flex={1} minW={0}>
                                       <Box flexShrink={0}>
                                         {renderFileIconSTR(
-                                          item.mediaObjectData.objectExtension?.trim() || "file"
+                                          item.mediaObjectData.objectExtension?.trim() ||
+                                            "file",
                                         )}
                                       </Box>
-                                      <VStack align="start" spacing={1} flex={1} minW={0}>
-                                        <Text fontSize="sm" fontWeight="bold" noOfLines={1}>
-                                          {item.mediaObjectData.objectRawName || item.documentName}
+                                      <VStack
+                                        align="start"
+                                        spacing={1}
+                                        flex={1}
+                                        minW={0}
+                                      >
+                                        <Text
+                                          fontSize="sm"
+                                          fontWeight="bold"
+                                          noOfLines={1}
+                                        >
+                                          {item.mediaObjectData.objectRawName ||
+                                            item.documentName}
                                         </Text>
                                         <HStack spacing={2}>
-                                          <Badge colorScheme="gray" fontSize="xs">
-                                            {item.mediaObjectData.objectExtension?.replace(".", "").toUpperCase()}
+                                          <Badge
+                                            colorScheme="gray"
+                                            fontSize="xs"
+                                          >
+                                            {item.mediaObjectData.objectExtension
+                                              ?.replace(".", "")
+                                              .toUpperCase()}
                                           </Badge>
                                           {item.mediaObjectData.objectSize && (
-                                            <Badge colorScheme="blue" fontSize="xs">
-                                              {formatKBMB(item.mediaObjectData.objectSize)}
+                                            <Badge
+                                              colorScheme="blue"
+                                              fontSize="xs"
+                                            >
+                                              {formatKBMB(
+                                                item.mediaObjectData.objectSize,
+                                              )}
                                             </Badge>
                                           )}
                                         </HStack>
@@ -920,8 +997,13 @@ export const WorkflowLevel2Box = ({
                                       colorScheme="green"
                                       leftIcon={<FiDownload />}
                                       onClick={() => {
-                                        if (item.mediaObjectData?.objectFullPath) {
-                                          window.open(item.mediaObjectData.objectFullPath, "_blank");
+                                        if (
+                                          item.mediaObjectData?.objectFullPath
+                                        ) {
+                                          window.open(
+                                            item.mediaObjectData.objectFullPath,
+                                            "_blank",
+                                          );
                                         }
                                       }}
                                       flexShrink={0}
@@ -935,12 +1017,21 @@ export const WorkflowLevel2Box = ({
                               {/* Link Attachment */}
                               {item.linkAttachment && (
                                 <Box>
-                                  <Text fontSize="xs" fontWeight="bold" color="blue.600" mb={2}>
+                                  <Text
+                                    fontSize="xs"
+                                    fontWeight="bold"
+                                    color="blue.600"
+                                    mb={2}
+                                  >
                                     🔗 EXTERNAL LINK
                                   </Text>
                                   <HStack
                                     p={4}
-                                    bg={colorMode === "light" ? "blue.50" : "blue.900"}
+                                    bg={
+                                      colorMode === "light"
+                                        ? "blue.50"
+                                        : "blue.900"
+                                    }
                                     rounded="md"
                                     border="2px"
                                     borderColor="blue.200"
@@ -948,12 +1039,27 @@ export const WorkflowLevel2Box = ({
                                     justify="space-between"
                                   >
                                     <HStack spacing={3} flex={1} minW={0}>
-                                      <Icon as={FiLink} boxSize={6} color="blue.500" flexShrink={0} />
-                                      <VStack align="start" spacing={1} flex={1} minW={0}>
+                                      <Icon
+                                        as={FiLink}
+                                        boxSize={6}
+                                        color="blue.500"
+                                        flexShrink={0}
+                                      />
+                                      <VStack
+                                        align="start"
+                                        spacing={1}
+                                        flex={1}
+                                        minW={0}
+                                      >
                                         <Text fontSize="sm" fontWeight="bold">
                                           External Document Link
                                         </Text>
-                                        <Text fontSize="xs" color="blue.700" noOfLines={2} wordBreak="break-all">
+                                        <Text
+                                          fontSize="xs"
+                                          color="blue.700"
+                                          noOfLines={2}
+                                          wordBreak="break-all"
+                                        >
                                           {item.linkAttachment}
                                         </Text>
                                       </VStack>
@@ -964,7 +1070,10 @@ export const WorkflowLevel2Box = ({
                                       leftIcon={<FiExternalLink />}
                                       onClick={() => {
                                         if (item.linkAttachment) {
-                                          window.open(item.linkAttachment, "_blank");
+                                          window.open(
+                                            item.linkAttachment,
+                                            "_blank",
+                                          );
                                         }
                                       }}
                                       flexShrink={0}
@@ -976,13 +1085,19 @@ export const WorkflowLevel2Box = ({
                               )}
 
                               {/* No Attachments */}
-                              {!item.mediaObjectData && !item.linkAttachment && (
-                                <Box p={4} bg="gray.100" rounded="md" textAlign="center">
-                                  <Text fontSize="sm" color="gray.500">
-                                    No attachments available
-                                  </Text>
-                                </Box>
-                              )}
+                              {!item.mediaObjectData &&
+                                !item.linkAttachment && (
+                                  <Box
+                                    p={4}
+                                    bg="gray.100"
+                                    rounded="md"
+                                    textAlign="center"
+                                  >
+                                    <Text fontSize="sm" color="gray.500">
+                                      No attachments available
+                                    </Text>
+                                  </Box>
+                                )}
                             </VStack>
                           </VStack>
                         </Box>
@@ -993,7 +1108,9 @@ export const WorkflowLevel2Box = ({
               ) : (
                 <Box textAlign="center" py={8}>
                   <Icon as={FiFile} boxSize={12} color="gray.400" mb={3} />
-                  <Text color="gray.500" fontSize="lg">No document history available</Text>
+                  <Text color="gray.500" fontSize="lg">
+                    No document history available
+                  </Text>
                 </Box>
               )}
 
@@ -1011,8 +1128,8 @@ export const WorkflowLevel2Box = ({
               </Box>
             </Flex>
           </ModalBody>
-        </ModalContent >
-      </Modal >
+        </ModalContent>
+      </Modal>
 
       <Box
         p={4}
@@ -1049,7 +1166,7 @@ export const WorkflowLevel2Box = ({
                 <Th py={3}>Jenis Dokumen</Th>
                 <Th py={3}>Nama Dokumen</Th>
                 <Th py={3}>Nomor Dokumen</Th>
-                <Th py={3}>Tanggal Upload</Th>
+                <Th py={3}>Tanggal Dokumen</Th>
                 <Th py={3}>Versi</Th>
                 <Th py={3}>Status</Th>
                 <Th width="200px">Actions</Th>
@@ -1080,7 +1197,7 @@ export const WorkflowLevel2Box = ({
                     {level3.workflowValues.length > 0 ? (
                       <Text>
                         {convertToCustomDateFormat(
-                          level3.workflowValues[0].documentDate
+                          level3.workflowValues[0].documentDate,
                         )}
                       </Text>
                     ) : (
@@ -1156,7 +1273,7 @@ export const WorkflowLevel2Box = ({
           </Table>
         </Flex>
       </Collapse>
-    </Box >
+    </Box>
   );
 };
 
@@ -1293,7 +1410,7 @@ export const DynamicWorkflowBox = ({
                     <Th py={3}>Jenis Dokumen</Th>
                     <Th py={3}>Nama Dokumen</Th>
                     <Th py={3}>Nomor Dokumen</Th>
-                    <Th py={3}>Tanggal Upload</Th>
+                    <Th py={3}>Tanggal Dokumen</Th>
                     <Th py={3}>Versi</Th>
                     <Th py={3}>Status</Th>
                     <Th width="200px">Actions</Th>

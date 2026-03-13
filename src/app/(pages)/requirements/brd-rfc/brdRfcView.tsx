@@ -342,6 +342,12 @@ export default function BRDRFCView() {
     onClose: onRegisterModalClose,
   } = useDisclosure();
 
+  const {
+    isOpen: isFilterPopoverOpen,
+    onOpen: onFilterPopoverOpen,
+    onClose: onFilterPopoverClose,
+  } = useDisclosure();
+
   const [totalPages, setTotalPageData] = useState<number>(0);
   const [globalFilter, setGlobalFilter] = useState<string>("");
   const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
@@ -1400,7 +1406,13 @@ export default function BRDRFCView() {
                     {/* BUTTON ACTION */}
                     <Flex as={Wrap} justifyContent={"end"} alignItems={"center"} gap={2} px={0} w={"full"}>
 
-                      <Popover closeOnBlur={true} placement={"bottom"}>
+                      <Popover 
+                        isOpen={isFilterPopoverOpen}
+                        onOpen={onFilterPopoverOpen}
+                        onClose={onFilterPopoverClose}
+                        closeOnBlur={true} 
+                        placement={"bottom"}
+                      >
                         <PopoverTrigger>
                           <Button size={"md"} leftIcon={<FiFilter />}>
                             Filter{" "}
@@ -1463,7 +1475,10 @@ export default function BRDRFCView() {
                                     size="sm"
                                     colorScheme="red"
                                     variant="outline"
-                                    onClick={() => setParamFilter([])}
+                                    onClick={() => {
+                                      setParamFilter([]);
+                                      onFilterPopoverClose();
+                                    }}
                                     w="full"
                                   >
                                     Clear All
